@@ -1,15 +1,70 @@
 services:
-  # etcd
-  etcd:
-    image: gcr.io/etcd-development/etcd:v3.5.14
-    container_name: etcd
+  # CB-Tumblebug
+  cb-tumblebug:
+    image: cloudbaristaorg/cb-tumblebug:0.9.3
+    pull_policy: missing
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cb-tumblebug
+    platform: linux/amd64
+    networks:
+      - internal_network
+      - external_network
     ports:
-      - target: 2379       # Port assinged to etcd in the container
-        published: 2379   # Port to be exposed to the host
-        protocol: tcp     # Protocol of the port     
-      - target: 2380      # Port assinged to etcd in the container
-        published: 2380   # Port to be exposed to the host
-        protocol: tcp     # Protocol of the port
+      - 1323:1323
+    depends_on: 
+      - cb-tumblebug-etcd
+      # - cb-tumblebug-etcd-conf
+      - cb-spider      
+    volumes:
+      - ./conf/:/app/conf/
+      - ./container-volume/cb-tumblebug-container/meta_db/:/app/meta_db/
+      - ./container-volume/cb-tumblebug-container/log/:/app/log/
+    environment:
+      # - TB_ROOT_PATH=/app
+      - TB_SPIDER_REST_URL=http://cb-spider:1024/spider
+      - TB_ETCD_ENDPOINTS=http://cb-tumblebug-etcd:2379
+      # - TB_ETCD_AUTH_ENABLED=true
+      # - TB_ETCD_USERNAME=default
+      # - TB_ETCD_PASSWORD=default
+      # - TB_SQLITE_URL=localhost:3306 
+      # - TB_SQLITE_DATABASE=cb_tumblebug 
+      # - TB_SQLITE_USER=cb_tumblebug 
+      # - TB_SQLITE_PASSWORD=cb_tumblebug 
+      # - TB_ALLOW_ORIGINS=*
+      # - TB_AUTH_ENABLED=true
+      # - TB_API_USERNAME=default
+      # - TB_API_PASSWORD=default
+      # - TB_AUTOCONTROL_DURATION_MS=10000
+      # - TB_SELF_ENDPOINT=localhost:1323
+      # - TB_DRAGONFLY_REST_URL=http://cb-dragonfly:9090/dragonfly
+      # - TB_DEFAULT_NAMESPACE=ns01
+      # - TB_DEFAULT_CREDENTIALHOLDER=admin
+      # - TB_LOGFILE_PATH=/app/log/tumblebug.log
+      # - TB_LOGFILE_MAXSIZE=10
+      # - TB_LOGFILE_MAXBACKUPS=3
+      # - TB_LOGFILE_MAXAGE=30
+      # - TB_LOGFILE_COMPRESS=false
+      # - TB_LOGLEVEL=debug
+      # - TB_LOGWRITER=both
+      # - TB_NODE_ENV=development
+    healthcheck: # for CB-Tumblebug
+      test: [ "CMD", "curl", "-f", "http://localhost:1323/tumblebug/readyz" ]
+      interval: 1m
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # cb-tumblebug-etcd
+  cb-tumblebug-etcd:
+    image: gcr.io/etcd-development/etcd:v3.5.14
+    container_name: cb-tumblebug-etcd
+    networks:
+      - internal_network
+    ports:
+      - 2379:2379
+      - 2380:2380
     volumes: 
       - ./container-volume/etcd/data:/etcd-data
     entrypoint: /usr/local/bin/etcd
@@ -47,42 +102,46 @@ services:
       retries: 3
       start_period: 10s
 
-  # etcd-conf
-  etcd-conf:
-    image: alpine:latest
-    container_name: etcd-conf
-    depends_on:
-      - etcd
-    volumes:
-      - ./scripts/etcd/:/scripts/etcd/
-    environment:
-      - ETCD_VERSION_TAG=v3.5.14
-      - ETCD_ENDPOINTS=http://etcd:2379
-      - ETCD_PATH=/tmp/etcd-download-test
-      - ETCD_AUTH_ENABLED=true
-      - ETCD_ROOT_PASSWORD=default
-      - ETCD_ADMIN_USERNAME=default
-      - ETCD_ADMIN_PASSWORD=default
-    command: sh -c "sh /scripts/etcd/etcd-conf.sh"
-    healthcheck: # for etcd-conf
-      test: ["CMD", "test", "-f", "/tmp/healthcheck"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+  # # cb-tumblebug-etcd-conf
+  # cb-tumblebug-etcd-conf:
+  #   image: alpine:latest
+  #   container_name: cb-tumblebug-etcd-conf
+  #   networks:
+  #     - internal_network
+  #     - external_network
+  #   depends_on:
+  #     - cb-tumblebug-etcd
+  #   volumes:
+  #     - ./scripts/etcd/:/scripts/etcd/
+  #   environment:
+  #     - ETCD_VERSION_TAG=v3.5.14
+  #     - ETCD_ENDPOINTS=http://cb-tumblebug-etcd:2379
+  #     - ETCD_PATH=/tmp/etcd-download-test
+  #     - ETCD_AUTH_ENABLED=true
+  #     - ETCD_ROOT_PASSWORD=default
+  #     - ETCD_ADMIN_USERNAME=default
+  #     - ETCD_ADMIN_PASSWORD=default
+  #   command: sh -c "sh /scripts/etcd/etcd-conf.sh"
+  #   healthcheck: # for etcd-conf
+  #     test: ["CMD", "test", "-f", "/tmp/healthcheck"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 10s
 
   # CB-Spider
   cb-spider:
     image: cloudbaristaorg/cb-spider:0.9.0
     container_name: cb-spider
     platform: linux/amd64
+    networks:
+      - internal_network
+      - external_network    # for outbound access (not ideal for security) 
+    # expose:
+    #   - 1024
     ports:
-      - target: 1024
-        published: 1024
-        protocol: tcp  
+      - 1024:1024
     volumes:
-      # - ./conf/log_conf.yaml:/root/go/src/github.com/cloud-barista/cb-spider/conf/log_conf.yaml
-      # - ./conf/store_conf.yaml:/root/go/src/github.com/cloud-barista/cb-spider/conf/store_conf.yaml
       - ./container-volume/cb-spider-container/meta_db/:/root/go/src/github.com/cloud-barista/cb-spider/meta_db/
       - ./container-volume/cb-spider-container/log/:/root/go/src/github.com/cloud-barista/cb-spider/log/
     environment:
@@ -101,74 +160,25 @@ services:
       retries: 3
       start_period: 10s
 
-  # CB-Tumblebug
-  cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.9.2
-    pull_policy: missing
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: cb-tumblebug
-    platform: linux/amd64
-    ports:
-      - target: 1323
-        published: 1323
-        protocol: tcp
-    depends_on: 
-      - cb-spider
-      - etcd-conf
-    volumes:
-      - ./conf/:/app/conf/
-      - ./container-volume/cb-tumblebug-container/meta_db/:/app/meta_db/
-      - ./container-volume/cb-tumblebug-container/log/:/app/log/
-    environment:
-      # - TB_ROOT_PATH=/app
-      - TB_SPIDER_REST_URL=http://cb-spider:1024/spider
-      - TB_DRAGONFLY_REST_URL=http://cb-dragonfly:9090/dragonfly
-      # - TB_SQLITE_URL=localhost:3306 
-      # - TB_SQLITE_DATABASE=cb_tumblebug 
-      # - TB_SQLITE_USER=cb_tumblebug 
-      # - TB_SQLITE_PASSWORD=cb_tumblebug 
-      - TB_ETCD_ENDPOINTS=http://etcd:2379
-      # - TB_ETCD_AUTH_ENABLED=true
-      # - TB_ETCD_USERNAME=default
-      # - TB_ETCD_PASSWORD=default
-      # - TB_ALLOW_ORIGINS=*
-      # - TB_AUTH_ENABLED=true
-      # - TB_API_USERNAME=default
-      # - TB_API_PASSWORD=default
-      # - TB_AUTOCONTROL_DURATION_MS=10000
-      - TB_SELF_ENDPOINT=localhost:1323
-      # - TB_DEFAULT_NAMESPACE=ns01
-      # - TB_DEFAULT_CREDENTIALHOLDER=admin
-      # - TB_LOGFILE_PATH=/app/log/tumblebug.log
-      # - TB_LOGFILE_MAXSIZE=10
-      # - TB_LOGFILE_MAXBACKUPS=3
-      # - TB_LOGFILE_MAXAGE=30
-      # - TB_LOGFILE_COMPRESS=false
-      # - TB_LOGLEVEL=debug
-      # - TB_LOGWRITER=both
-      # - TB_NODE_ENV=development
-    healthcheck: # for CB-Tumblebug
-      test: [ "CMD", "curl", "-f", "http://localhost:1323/tumblebug/readyz" ]
-      interval: 1m
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-
   # cb-mapui
   cb-mapui:
     image: cloudbaristaorg/cb-mapui:0.9.0
     container_name: cb-mapui
+    networks:
+      - external_network
     ports:
       - target: 1324
         published: 1324
         protocol: tcp
-    # depends_on:
-    #   - cb-tumblebug
     healthcheck: # for cb-mapui
       test: ["CMD", "nc", "-vz", "localhost", "1324"]
       interval: 1m
       timeout: 5s
       retries: 3
       start_period: 10s
+
+networks:
+  internal_network:
+    internal: true
+  external_network:
+    driver: bridge
