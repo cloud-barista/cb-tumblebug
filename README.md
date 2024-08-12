@@ -19,44 +19,52 @@
 
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
+## CB-TB? ✨
+
 CB-Tumblebug (CB-TB for short) is a system for managing multi-cloud infrastructure consisting of resources from multiple cloud service providers. (Cloud-Barista)
 
-- [CB-Tumblebug Overview](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Overview)
-- [CB-Tumblebug Features](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Features)
-- [CB-Tumblebug Architecture](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Architecture)
+- [Overview](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Overview), [Features](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Features), [Architecture](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Architecture)
+- [Supported Cloud Providers and Resource Types](https://docs.google.com/spreadsheets/d/1idBoaTxEMzuVACKUIMIE9OY1rPO-7yZ0y7Rs1dBG0og/edit?usp=sharing)
+  ![image](https://github.com/user-attachments/assets/7f2d026e-1780-48a7-9494-34ff51da3e76)
+  - This is for reference only, and we do not guarantee its functionality. Regular updates are made.
+  - The support for Kubernetes is currently mostly a WIP, and even when available, it offers only a limited set of features.
+
+---
+
+<details>
+<summary>Note: Ongoing Development of CB-Tumblebug </summary>
+
+```
+CB-TB has not reached version 1.0 yet. We welcome any new suggestions, issues, opinions, and contributors!
+Please note that the functionalities of Cloud-Barista are not yet stable or secure.
+Be cautious if you plan to use the current release in a production environment.
+If you encounter any difficulties using Cloud-Barista,
+please let us know by opening an issue or joining the Cloud-Barista Slack.
+```
+
+</details>
+
+<details>
+<summary>Note: Localization and Globalization of CB-Tumblebug </summary>
+    
+```
+As an open-source project initiated by Korean members,
+we aim to encourage participation from Korean contributors during the initial stages of this project.
+Therefore, the CB-TB repository will accept the use of the Korean language in its early stages.
+However, we hope this project will thrive regardless of contributors' countries in the long run.
+To facilitate this, the maintainers recommend using English at least for
+the titles of Issues, Pull Requests, and Commits, while accommodating local languages in the contents.
+```
+
+</details>
+
+### Popular Use Case 🌟
 
 - **Hot usecase of CB-Tumblebug**
   - **Deploy a Multi-Cloud Infra with GPUs and Enjoy muiltple LLMs in parallel (YouTube)**
     [![Multi-Cloud LLMs in parallel](https://github.com/cloud-barista/cb-tumblebug/assets/5966944/e15feb67-ba02-4066-af62-d9f8e8330a63)](https://www.youtube.com/watch?v=SD9ZoT_OZpQ)
   - [LLM-related scripts](https://github.com/cloud-barista/cb-tumblebug/tree/main/scripts/usecases/llm)
 
-<details>
-<summary>[Note] Development of CB-Tumblebug is ongoing </summary>
-
-```
-CB-TB is not v1.0 yet.
-We welcome any new suggestions, issues, opinions, and contributors!
-Please note that the functionalities of Cloud-Barista are not stable and secure yet.
-Be careful if you plan to use the current release in production.
-If you have any difficulties in using Cloud-Barista, please let us know.
-(Open an issue or join the Cloud-Barista Slack)
-```
-
-</details>
-
-<details>
-<summary>[Note] Localization and Globalization of CB-Tumblebug</summary>
-    
-```
-As an open-source project initiated by Korean members, 
-we would like to promote participation of Korean contributors during the initial stage of this project. 
-So, the CB-TB repo will accept the use of the Korean language in its early stages.
-However, we hope this project flourishes regardless of the contributor's country eventually.
-So, the maintainers recommend using English at least for the titles of Issues, Pull Requests, and Commits, 
-while the CB-TB repo accommodates local languages in their contents.
-```
-
-</details>
 
 ---
 
