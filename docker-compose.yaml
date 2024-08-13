@@ -1,7 +1,7 @@
 services:
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.9.3
+    image: cloudbaristaorg/cb-tumblebug:0.9.4
     pull_policy: missing
     build:
       context: .
