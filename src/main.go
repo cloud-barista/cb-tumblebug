@@ -317,7 +317,7 @@ func setConfig() {
 	credViper.SetConfigType("yaml")
 	err = credViper.ReadInConfig()
 	if err != nil {
-		log.Info().Err(err).Msg("")
+		log.Info().Msg("Local credentials file not found. Continue.")
 	} else {
 		log.Info().Msg(credViper.ConfigFileUsed())
 		err = credViper.Unmarshal(&common.RuntimeCredential)
