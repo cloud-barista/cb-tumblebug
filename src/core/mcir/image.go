@@ -119,9 +119,8 @@ func ConvertSpiderImageToTumblebugImage(spiderImage SpiderImageInfo) (TbImageInf
 }
 
 // RegisterImageWithId accepts image creation request, creates and returns an TB image object
-func RegisterImageWithId(nsId string, u *TbImageReq, update bool) (TbImageInfo, error) {
+func RegisterImageWithId(nsId string, u *TbImageReq, update bool, RDBonly bool) (TbImageInfo, error) {
 
-	resourceType := common.StrImage
 	content := TbImageInfo{}
 
 	err := common.CheckString(nsId)
@@ -130,38 +129,28 @@ func RegisterImageWithId(nsId string, u *TbImageReq, update bool) (TbImageInfo, 
 		return content, err
 	}
 
-	// err = validate.Struct(u)
-	// if err != nil {
-	// 	if _, ok := err.(*validator.InvalidValidationError); ok {
-	// 		log.Err(err).Msg("")
-	// 		return content, err
-	// 	}
-	// 	return content, err
-	// }
-
-	check, err := CheckResource(nsId, resourceType, u.Name)
-
-	if !update {
-		if check {
-			err := fmt.Errorf("The image " + u.Name + " already exists.")
+	resourceType := common.StrImage
+	if !RDBonly {
+		check, err := CheckResource(nsId, resourceType, u.Name)
+		if !update {
+			if check {
+				err := fmt.Errorf("The image " + u.Name + " already exists.")
+				return content, err
+			}
+		}
+		if err != nil {
+			err := fmt.Errorf("Failed to check the existence of the image " + u.Name + ".")
 			return content, err
 		}
-	}
-
-	if err != nil {
-		err := fmt.Errorf("Failed to check the existence of the image " + u.Name + ".")
-		return content, err
 	}
 
 	res, err := LookupImage(u.ConnectionName, u.CspImageId)
 	if err != nil {
 		log.Trace().Err(err).Msg("")
-		//err := fmt.Errorf("an error occurred while lookup image via CB-Spider")
-
 		return content, err
 	}
 	if res.IId.NameId == "" {
-		err := fmt.Errorf("CB-Spider returned empty IId.NameId with no error: %s", u.ConnectionName)
+		err := fmt.Errorf("CB-Spider returned empty IId.NameId without Error: %s", u.ConnectionName)
 		log.Error().Err(err).Msgf("Cannot LookupImage %s %v", u.CspImageId, res)
 		return content, err
 	}
@@ -178,19 +167,33 @@ func RegisterImageWithId(nsId string, u *TbImageReq, update bool) (TbImageInfo, 
 	content.Name = u.Name
 	content.AssociatedObjectList = []string{}
 
-	//log.Info().Msg("PUT registerImage")
-	Key := common.GenResourceKey(nsId, resourceType, content.Id)
-	Val, _ := json.Marshal(content)
-	err = kvstore.Put(Key, string(Val))
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return content, err
+	if !RDBonly {
+		Key := common.GenResourceKey(nsId, resourceType, content.Id)
+		Val, _ := json.Marshal(content)
+		err = kvstore.Put(Key, string(Val))
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return content, err
+		}
 	}
 
 	// "INSERT INTO `image`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
-	_, err = common.ORM.Insert(&content)
+	// Attempt to insert the new record
+	_, err = common.ORM.Insert(content)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		if update {
+			// If insert fails and update is true, attempt to update the existing record
+			_, updateErr := common.ORM.Update(content, &TbSpecInfo{Namespace: content.Namespace, Id: content.Id})
+			if updateErr != nil {
+				log.Error().Err(updateErr).Msg("Error updating spec after insert failure")
+				return content, updateErr
+			} else {
+				log.Trace().Msg("SQL: Update success after insert failure")
+			}
+		} else {
+			log.Error().Err(err).Msg("Error inserting spec and update flag is false")
+			return content, err
+		}
 	} else {
 		log.Trace().Msg("SQL: Insert success")
 	}
@@ -444,70 +447,116 @@ func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
 
 // UpdateImage accepts to-be TB image objects,
 // updates and returns the updated TB image objects
-func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbImageInfo, error) {
-	resourceType := common.StrImage
-	temp := TbImageInfo{}
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
+func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo, RDBonly bool) (TbImageInfo, error) {
+	if !RDBonly {
 
-	if len(fieldsToUpdate.Namespace) > 0 {
-		err := fmt.Errorf("You should not specify 'namespace' in the JSON request body.")
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
+		resourceType := common.StrImage
+		temp := TbImageInfo{}
+		err := common.CheckString(nsId)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return temp, err
+		}
 
-	if len(fieldsToUpdate.Id) > 0 {
-		err := fmt.Errorf("You should not specify 'id' in the JSON request body.")
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
+		if len(fieldsToUpdate.Namespace) > 0 {
+			err := fmt.Errorf("You should not specify 'namespace' in the JSON request body.")
+			log.Error().Err(err).Msg("")
+			return temp, err
+		}
 
-	check, err := CheckResource(nsId, resourceType, imageId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
+		if len(fieldsToUpdate.Id) > 0 {
+			err := fmt.Errorf("You should not specify 'id' in the JSON request body.")
+			log.Error().Err(err).Msg("")
+			return temp, err
+		}
 
-	if !check {
-		err := fmt.Errorf("The image " + imageId + " does not exist.")
-		return temp, err
-	}
+		check, err := CheckResource(nsId, resourceType, imageId)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return temp, err
+		}
 
-	tempInterface, err := GetResource(nsId, resourceType, imageId)
-	if err != nil {
-		err := fmt.Errorf("Failed to get the image " + imageId + ".")
-		return temp, err
-	}
-	asIsImage := TbImageInfo{}
-	err = common.CopySrcToDest(&tempInterface, &asIsImage)
-	if err != nil {
-		err := fmt.Errorf("Failed to CopySrcToDest() " + imageId + ".")
-		return temp, err
-	}
+		if !check {
+			err := fmt.Errorf("The image " + imageId + " does not exist.")
+			return temp, err
+		}
 
-	// Update specified fields only
-	toBeImage := asIsImage
-	toBeImageJSON, _ := json.Marshal(fieldsToUpdate)
-	err = json.Unmarshal(toBeImageJSON, &toBeImage)
+		tempInterface, err := GetResource(nsId, resourceType, imageId)
+		if err != nil {
+			err := fmt.Errorf("Failed to get the image " + imageId + ".")
+			return temp, err
+		}
+		asIsImage := TbImageInfo{}
+		err = common.CopySrcToDest(&tempInterface, &asIsImage)
+		if err != nil {
+			err := fmt.Errorf("Failed to CopySrcToDest() " + imageId + ".")
+			return temp, err
+		}
 
-	Key := common.GenResourceKey(nsId, resourceType, toBeImage.Id)
-	Val, _ := json.Marshal(toBeImage)
-	err = kvstore.Put(Key, string(Val))
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return temp, err
+		// Update specified fields only
+		toBeImage := asIsImage
+		toBeImageJSON, _ := json.Marshal(fieldsToUpdate)
+		err = json.Unmarshal(toBeImageJSON, &toBeImage)
+
+		Key := common.GenResourceKey(nsId, resourceType, toBeImage.Id)
+		Val, _ := json.Marshal(toBeImage)
+		err = kvstore.Put(Key, string(Val))
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return temp, err
+		}
+
 	}
-
 	// "UPDATE `image` SET `id`='" + imageId + "', ... WHERE `namespace`='" + nsId + "' AND `id`='" + imageId + "';"
-	_, err = common.ORM.Update(&toBeImage, &TbImageInfo{Namespace: nsId, Id: imageId})
+	_, err := common.ORM.Update(&fieldsToUpdate, &TbSpecInfo{Namespace: nsId, Id: imageId})
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		return fieldsToUpdate, err
 	} else {
 		log.Trace().Msg("SQL: Update success")
 	}
 
-	return toBeImage, nil
+	return fieldsToUpdate, nil
+}
+
+// GetImage accepts namespace ID and imageKey(id,name,type,...), and returns the TB image object
+func GetImage(nsId string, imageKey string) (TbImageInfo, error) {
+	if err := common.CheckString(nsId); err != nil {
+		log.Error().Err(err).Msg("Invalid namespace ID")
+		return TbImageInfo{}, err
+	}
+
+	log.Debug().Msg("[Get image] " + imageKey)
+
+	// ex: tencent+ap-jakarta+ubuntu22.04
+	image := TbImageInfo{Namespace: nsId, Id: imageKey}
+	has, err := common.ORM.Where("Namespace = ? AND Id = ?", nsId, imageKey).Get(&image)
+	if err != nil {
+		log.Info().Err(err).Msgf("Failed to get image %s by ID", imageKey)
+	}
+	if has {
+		return image, nil
+	}
+
+	// ex: img-487zeit5
+	image = TbImageInfo{Namespace: nsId, CspImageId: imageKey}
+	has, err = common.ORM.Where("Namespace = ? AND CspImageId = ?", nsId, imageKey).Get(&image)
+	if err != nil {
+		log.Info().Err(err).Msgf("Failed to get image %s by CspImageId", imageKey)
+	}
+	if has {
+		return image, nil
+	}
+
+	// ex: Ubuntu22.04
+	image = TbImageInfo{Namespace: nsId, GuestOS: imageKey}
+	has, err = common.ORM.Where("Namespace = ? AND GuestOS = ?", nsId, imageKey).Get(&image)
+	if err != nil {
+		log.Info().Err(err).Msgf("Failed to get image %s by GuestOS type", imageKey)
+	}
+	if has {
+		return image, nil
+	}
+
+	return TbImageInfo{}, fmt.Errorf("The imageKey %s not found by any of ID, CspImageId, GuestOS", imageKey)
 }

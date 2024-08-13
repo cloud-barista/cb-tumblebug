@@ -78,7 +78,7 @@ func RestPostImage(c echo.Context) error {
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
-		content, err := mcir.RegisterImageWithId(nsId, u, update)
+		content, err := mcir.RegisterImageWithId(nsId, u, update, false)
 		return common.EndRequestWithLog(c, reqID, err, content)
 	} else {
 		err := fmt.Errorf("You must specify: action=registerWithInfo or action=registerWithId")
@@ -116,7 +116,7 @@ func RestPutImage(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	content, err := mcir.UpdateImage(nsId, resourceId, *u)
+	content, err := mcir.UpdateImage(nsId, resourceId, *u, false)
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 

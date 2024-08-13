@@ -1388,7 +1388,7 @@ func checkCommonResAvailable(req *TbVmDynamicReq) error {
 	if strings.Contains(k.CommonImage, "+") {
 		vmReq.ImageId = k.CommonImage
 	}
-	_, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
+	_, err = mcir.GetImage(common.SystemCommonNs, vmReq.ImageId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get Image " + k.CommonImage + " from " + vmReq.ConnectionName)
 		log.Error().Err(err).Msg("")
@@ -1441,7 +1441,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 	if strings.Contains(k.CommonImage, "+") {
 		vmReq.ImageId = k.CommonImage
 	}
-	_, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
+	_, err = mcir.GetImage(common.SystemCommonNs, vmReq.ImageId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the Image " + vmReq.ImageId + " from " + vmReq.ConnectionName)
 		log.Error().Err(err).Msg("")

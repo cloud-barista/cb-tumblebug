@@ -160,6 +160,15 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 	if len(filteredSpecs) == 0 {
 		return []mcir.TbSpecInfo{}, nil
 	}
+	// // sorting based on VCPU and MemoryGiB
+	// sort.Slice(filteredSpecs, func(i, j int) bool {
+	// 	// sort based on VCPU first
+	// 	if filteredSpecs[i].VCPU != filteredSpecs[j].VCPU {
+	// 		return float32(filteredSpecs[i].VCPU) < float32(filteredSpecs[j].VCPU)
+	// 	}
+	// 	// if VCPU is same, sort based on MemoryGiB
+	// 	return float32(filteredSpecs[i].MemoryGiB) < float32(filteredSpecs[j].MemoryGiB)
+	// })
 
 	// Prioritizing
 	log.Debug().Msg("[Prioritizing specs]")
@@ -280,18 +289,23 @@ func RecommendVmLatency(nsId string, specList *[]mcir.TbSpecInfo, param *[]Param
 		//result[i].OrderInFilteredResult = uint16(i + 1)
 	}
 
-	// if evaluations for distance are same, low cost will have priolity
+	// Sorting result based on multiple criteria: OrderInFilteredResult, CostPerHour, VCPU, MemoryGiB
 	sort.Slice(result, func(i, j int) bool {
-		if result[i].OrderInFilteredResult < result[j].OrderInFilteredResult {
-			return true
-		} else if result[i].OrderInFilteredResult > result[j].OrderInFilteredResult {
-			return false
-		} else {
+		// 1st priority: OrderInFilteredResult
+		if result[i].OrderInFilteredResult != result[j].OrderInFilteredResult {
+			return result[i].OrderInFilteredResult < result[j].OrderInFilteredResult
+		}
+		// 2nd priority: CostPerHour
+		if result[i].CostPerHour != result[j].CostPerHour {
 			return result[i].CostPerHour < result[j].CostPerHour
 		}
-		//return result[i].OrderInFilteredResult < result[j].OrderInFilteredResult
+		// 3rd priority: VCPU
+		if result[i].VCPU != result[j].VCPU {
+			return float32(result[i].VCPU) < float32(result[j].VCPU)
+		}
+		// 4th priority: MemoryGiB
+		return float32(result[i].MemoryGiB) < float32(result[j].MemoryGiB)
 	})
-	// fmt.Printf("\n result : %v \n", result)
 
 	// updatedSpec, err := mcir.UpdateSpec(nsId, *result)
 	// content, err = mcir.SortSpecs(*specList, "memoryGiB", "descending")
@@ -508,16 +522,22 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 
 	result := append([]mcir.TbSpecInfo{}, (*specList)...)
 
-	// if evaluations for distance are same, low cost will have priolity
+	// Sorting result based on multiple criteria: OrderInFilteredResult, CostPerHour, VCPU, MemoryGiB
 	sort.Slice(result, func(i, j int) bool {
-		if result[i].OrderInFilteredResult < result[j].OrderInFilteredResult {
-			return true
-		} else if result[i].OrderInFilteredResult > result[j].OrderInFilteredResult {
-			return false
-		} else {
+		// 1st priority: OrderInFilteredResult
+		if result[i].OrderInFilteredResult != result[j].OrderInFilteredResult {
+			return result[i].OrderInFilteredResult < result[j].OrderInFilteredResult
+		}
+		// 2nd priority: CostPerHour
+		if result[i].CostPerHour != result[j].CostPerHour {
 			return result[i].CostPerHour < result[j].CostPerHour
 		}
-		//return result[i].OrderInFilteredResult < result[j].OrderInFilteredResult
+		// 3rd priority: VCPU
+		if result[i].VCPU != result[j].VCPU {
+			return float32(result[i].VCPU) < float32(result[j].VCPU)
+		}
+		// 4th priority: MemoryGiB
+		return float32(result[i].MemoryGiB) < float32(result[j].MemoryGiB)
 	})
 	// fmt.Printf("\n result : %v \n", result)
 
@@ -602,8 +622,6 @@ func RecommendVmCost(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.TbSpecInf
 		result[i].EvaluationScore09 = float32((Max - result[i].CostPerHour) / (Max - Min + 0.0000001)) // Add small value to avoid NaN by division
 	}
 
-	fmt.Printf("\n result : %v \n", result)
-
 	return result, nil
 }
 
@@ -621,7 +639,6 @@ func RecommendVmPerformance(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.Tb
 		result[i].OrderInFilteredResult = uint16(i + 1)
 		result[i].EvaluationScore09 = float32((result[i].EvaluationScore01 - Min) / (Max - Min + 0.0000001)) // Add small value to avoid NaN by division
 	}
-	fmt.Printf("\n result : %v \n", result)
 
 	return result, nil
 }

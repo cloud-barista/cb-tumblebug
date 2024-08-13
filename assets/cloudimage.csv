@@ -92,8 +92,8 @@ GCP,all,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debia
 GCP,all,https://www.googleapis.com/compute/v1/projects/deeplearning-platform-release/global/images/tf-2-15-cu121-v20240417-debian-11,Debian 11,"Google, Deep Learning VM for TensorFlow 2.15 with CUDA 12.1, M120, Debian 11, Python 3.10, with TensorFlow 2.15 for CUDA 12.1 with Intel MKL-DNN preinstalled",,vm
 GCP,all,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2,,,vm
 ALIBABA,all,ubuntu_18_04_x64_20G_alibase_20240223.vhd,Ubuntu 18.04,,,vm
-ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240530.vhd,Ubuntu 20.04,,,vm
-ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240628.vhd,Ubuntu 22.04,,,vm
+ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240723.vhd,Ubuntu 20.04,,,vm
+ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240710.vhd,Ubuntu 22.04,,,vm
 ALIBABA,all,aliyun_3_x64_20G_alibase_20240528.vhd,Alibaba Cloud Linux 3.2104,,,vm|k8s
 TENCENT,all,img-pi0ii46r,Ubuntu 18.04,,,vm|k8s
 TENCENT,all,img-22trbn9x,Ubuntu 20.04,,,vm|k8s
@@ -102,9 +102,11 @@ TENCENT,all,img-bpsjtw7n,Windows Server 2012 R2,,,vm
 IBM,us-south,r006-9de77234-3189-42f8-982d-f2266477cfe0,Ubuntu 18.04,,,vm
 IBM,us-south,r006-b4d8d8d4-7768-4a1b-9434-9483ca821a0d,Windows Server 2012 R2,,,vm
 IBM,br-sao,r042-92d1cd12-f014-4b9a-abf8-c5ca6494a9e5,Ubuntu 18.04,,,vm
+IBM,br-sao,r042-d932aff6-577b-40c9-b1c0-59820b847089,Ubuntu 22.04,Ubuntu Linux 22.04 Jammy Jellyfish Minimal Install (s390x),,vm
 IBM,ca-tor,r038-e92647cf-8be9-438a-b94c-251cc86bc99a,Ubuntu 18.04,,,vm
 IBM,us-east,r014-dc446598-a1b5-41c3-a1d6-add3afaf264e,Ubuntu 18.04,,,vm
 IBM,eu-de,r010-1f68eb2d-f35c-4959-8f4b-2b2f9cf78102,Ubuntu 18.04,,,vm
+IBM,eu-de,r010-450355ae-7f70-48fe-9aae-7cf4ac82bc9c,Ubuntu 22.04,Ubuntu Linux 22.04 LTS Jammy Jellyfish Minimal Install (amd64),,vm
 IBM,eu-gb,r018-1d7417c6-893e-49d4-b14d-9643d6b29812,Ubuntu 18.04,,,vm
 IBM,jp-osa,r034-522c639c-52e1-4cab-8dfb-bc0fb9f6f577,Ubuntu 18.04,,,vm
 IBM,au-syd,r026-a8c25ce6-0ca1-43e9-9b41-411c6217b8b8,Ubuntu 18.04,,,vm
