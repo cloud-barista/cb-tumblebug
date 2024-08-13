@@ -2,130 +2,158 @@ package logger
 
 import (
 	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
-	"strings"
-	"time"
+	"sync"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (
 	sharedLogFile *lumberjack.Logger
+	once          sync.Once
 )
+
+type Config struct {
+	LogLevel    string
+	LogWriter   string
+	LogFilePath string
+	MaxSize     int
+	MaxBackups  int
+	MaxAge      int
+	Compress    bool
+}
 
 func init() {
 
-	// Map environment variable names to config file key names
-	envPrefix := "TB"
-	viper.SetEnvPrefix(envPrefix)
-	replacer := strings.NewReplacer(".", "_")
-	viper.SetEnvKeyReplacer(replacer)
+	// For consistent log format across different running environments (e.g., local, Docker, Kubernetes)
+	// Set the caller field to the relative path from the project root
+	_, b, _, _ := runtime.Caller(0)
+	projectRoot := filepath.Join(filepath.Dir(b), "../../../../") // predict the project root directory from the current file having init() function
 
-	viper.AutomaticEnv()
-
-	// Set config values
-	logLevel := viper.GetString("loglevel")
-	env := viper.GetString("node.env")
-
-	// Set the global logger to use JSON format.
-	zerolog.TimeFieldFormat = time.RFC3339
-
-	// Get log file configuration from environment variables
-	logFilePath, maxSize, maxBackups, maxAge, compress := getLogFileConfig()
-
-	// Initialize a shared log file with lumberjack to manage log rotation
-	sharedLogFile = &lumberjack.Logger{
-		Filename:   logFilePath,
-		MaxSize:    maxSize,
-		MaxBackups: maxBackups,
-		MaxAge:     maxAge,
-		Compress:   compress,
+	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
+		// relative path from the project root
+		relPath, err := filepath.Rel(projectRoot, file)
+		if err != nil {
+			return filepath.Base(file) + ":" + strconv.Itoa(line) // return the original file path with line number if the relative path cannot be resolved
+		}
+		return relPath + ":" + strconv.Itoa(line)
 	}
-
-	// Set the log level
-	var level zerolog.Level
-	switch logLevel {
-	case "trace":
-		level = zerolog.TraceLevel
-	case "debug":
-		level = zerolog.DebugLevel
-	case "info":
-		level = zerolog.InfoLevel
-	case "warn":
-		level = zerolog.WarnLevel
-	case "error":
-		level = zerolog.ErrorLevel
-	case "fatal":
-		level = zerolog.FatalLevel
-	case "panic":
-		level = zerolog.PanicLevel
-	default:
-		log.Warn().Msgf("Invalid TB_LOGLEVEL value: %s. Using default value: info", logLevel)
-		level = zerolog.InfoLevel
-	}
-
-	logger := NewLogger(level)
-
-	// Set global logger
-	log.Logger = *logger
-
-	// Check the execution environment from the environment variable
-	// Log a message
-	log.Info().
-		Str("logLevel", level.String()).
-		Str("env", env).
-		Int("maxSize", maxSize).
-		Int("maxBackups", maxBackups).
-		Int("maxAge", maxAge).
-		Bool("compress", compress).
-		Msg("Global logger initialized")
 }
 
-// Create a new logger
-func NewLogger(level zerolog.Level) *zerolog.Logger {
-
-	// Set config values
-	logwriter := viper.GetString("logwriter")
-
-	// Multi-writer setup: logs to both file and console
-	multi := zerolog.MultiLevelWriter(
-		sharedLogFile,
-		zerolog.ConsoleWriter{Out: os.Stdout},
-	)
-
-	var logger zerolog.Logger
-
-	// Check the execution environment from the environment variable
-	// Configure the log output
-	if logwriter == "both" {
-		// Apply file to the global logger
-		logger = zerolog.New(multi).Level(level).With().Timestamp().Caller().Logger()
-	} else if logwriter == "file" {
-		// Apply file writer to the global logger
-		logger = zerolog.New(sharedLogFile).Level(level).With().Timestamp().Caller().Logger()
-	} else if logwriter == "stdout" {
-		// Apply ConsoleWriter to the global logger
-		logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).Level(level).With().Timestamp().Caller().Logger()
-	} else {
-		log.Warn().Msgf("Invalid TB_LOGWRITER value: %s. Using default value: both", logwriter)
-		// Apply multi-writer to the global logger
-		logger = zerolog.New(multi).Level(level).With().Timestamp().Caller().Logger()
+// NewLogger initializes a new logger with default values if not provided
+func NewLogger(config Config) *zerolog.Logger {
+	// Apply default values if not provided
+	if config.LogLevel == "" {
+		config.LogLevel = "debug"
+	}
+	if config.LogWriter == "" {
+		config.LogWriter = "console"
+	}
+	if config.LogFilePath == "" {
+		config.LogFilePath = "./log/app.log"
+	}
+	if config.MaxSize == 0 {
+		config.MaxSize = 10 // in MB
+	}
+	if config.MaxBackups == 0 {
+		config.MaxBackups = 3
+	}
+	if config.MaxAge == 0 {
+		config.MaxAge = 30 // in days
 	}
 
-	// Log a message
+	// Initialize shared log file for log rotation once
+	once.Do(func() {
+		sharedLogFile = &lumberjack.Logger{
+			Filename:   config.LogFilePath,
+			MaxSize:    config.MaxSize,
+			MaxBackups: config.MaxBackups,
+			MaxAge:     config.MaxAge,
+			Compress:   config.Compress,
+		}
+
+		// Ensure the log file exists before changing its permissions
+		if _, err := os.Stat(config.LogFilePath); os.IsNotExist(err) {
+			// Create the log file if it does not exist
+			file, err := os.Create(config.LogFilePath)
+			if err != nil {
+				log.Fatal().Msgf("Failed to create log file: %v", err)
+			}
+			file.Close()
+		}
+
+		// Change file permissions to -rw-r--r--
+		if err := os.Chmod(config.LogFilePath, 0644); err != nil {
+			log.Fatal().Msgf("Failed to change file permissions: %v", err)
+		}
+	})
+
+	level := getLogLevel(config.LogLevel)
+	logger := configureWriter(config.LogWriter, level)
+
+	// Log a message to confirm logger setup
 	logger.Info().
 		Str("logLevel", level.String()).
 		Msg("New logger created")
 
-	if logwriter == "file" {
+	return logger
+}
+
+// getLogLevel returns the zerolog.Level based on the string level
+func getLogLevel(logLevel string) zerolog.Level {
+	switch logLevel {
+	case "trace":
+		return zerolog.TraceLevel
+	case "debug":
+		return zerolog.DebugLevel
+	case "info":
+		return zerolog.InfoLevel
+	case "warn":
+		return zerolog.WarnLevel
+	case "error":
+		return zerolog.ErrorLevel
+	case "fatal":
+		return zerolog.FatalLevel
+	case "panic":
+		return zerolog.PanicLevel
+	default:
+		log.Warn().Msgf("Invalid log level: %s. Using default value: info", logLevel)
+		return zerolog.InfoLevel
+	}
+}
+
+// configureWriter sets up the logger based on the writer type
+func configureWriter(logWriter string, level zerolog.Level) *zerolog.Logger {
+	var logger zerolog.Logger
+	multi := zerolog.MultiLevelWriter(sharedLogFile, zerolog.ConsoleWriter{Out: os.Stdout})
+
+	switch logWriter {
+	case "both":
+		logger = zerolog.New(multi).Level(level).With().Timestamp().Caller().Logger()
+	case "file":
+		logger = zerolog.New(sharedLogFile).Level(level).With().Timestamp().Caller().Logger()
+	case "stdout":
+		logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).Level(level).With().Timestamp().Caller().Logger()
+	default:
+		log.Warn().Msgf("Invalid log writer: %s. Using default value: both", logWriter)
+		logger = zerolog.New(multi).Level(level).With().Timestamp().Caller().Logger()
+	}
+
+	logSetupInfo(logger, logWriter)
+	return &logger
+}
+
+// logSetupInfo logs the logger setup details
+func logSetupInfo(logger zerolog.Logger, logWriter string) {
+	if logWriter == "file" {
 		logger.Info().
 			Str("logFilePath", sharedLogFile.Filename).
 			Msg("Single-write setup (logs to file only)")
-
-	} else if logwriter == "stdout" {
+	} else if logWriter == "stdout" {
 		logger.Info().
 			Str("ConsoleWriter", "os.Stdout").
 			Msg("Single-write setup (logs to console only)")
@@ -135,49 +163,4 @@ func NewLogger(level zerolog.Level) *zerolog.Logger {
 			Str("ConsoleWriter", "os.Stdout").
 			Msg("Multi-writes setup (logs to both file and console)")
 	}
-
-	return &logger
-}
-
-// Get log file configuration from environment variables
-func getLogFileConfig() (string, int, int, int, bool) {
-
-	// Set config values
-	logFilePath := viper.GetString("logfile.path")
-
-	// Default: ./log/tumblebug.log
-	if logFilePath == "" {
-		log.Warn().Msg("TB_LOGFILE_PATH is not set. Using default value: ./log/tumblebug.log")
-		logFilePath = "./log/tumblebug.log"
-	}
-
-	// Default: 10 MB
-	maxSize, err := strconv.Atoi(viper.GetString("logfile.maxsize"))
-	if err != nil {
-		log.Warn().Msgf("Invalid TB_LOGFILE_MAXSIZE value: %s. Using default value: 10 MB", viper.GetString("logfile.maxsize"))
-		maxSize = 10
-	}
-
-	// Default: 3 backups
-	maxBackups, err := strconv.Atoi(viper.GetString("logfile.maxbackups"))
-	if err != nil {
-		log.Warn().Msgf("Invalid TB_LOGFILE_MAXBACKUPS value: %s. Using default value: 3 backups", viper.GetString("logfile.maxbackups"))
-		maxBackups = 3
-	}
-
-	// Default: 30 days
-	maxAge, err := strconv.Atoi(viper.GetString("logfile.maxage"))
-	if err != nil {
-		log.Warn().Msgf("Invalid TB_LOGFILE_MAXAGE value: %s. Using default value: 30 days", viper.GetString("logfile.maxage"))
-		maxAge = 30
-	}
-
-	// Default: false
-	compress, err := strconv.ParseBool(viper.GetString("logfile.compress"))
-	if err != nil {
-		log.Warn().Msgf("Invalid TB_LOGFILE_COMPRESS value: %s. Using default value: false", viper.GetString("logfile.compress"))
-		compress = false
-	}
-
-	return logFilePath, maxSize, maxBackups, maxAge, compress
 }

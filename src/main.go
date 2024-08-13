@@ -27,8 +27,7 @@ import (
 	"sync"
 	"time"
 
-	// Black import (_) is for running a package's init() function without using its other contents.
-	_ "github.com/cloud-barista/cb-tumblebug/src/core/common/logger"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/logger"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/etcd"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
@@ -72,6 +71,32 @@ func init() {
 	common.UpdateGlobalVariable(common.StrSpiderRestUrl)
 	common.UpdateGlobalVariable(common.TerrariumRestUrl)
 	common.UpdateGlobalVariable(common.StrAutocontrolDurationMs)
+
+	// Initialize the logger
+	logLevel := common.NVL(os.Getenv("TB_LOGLEVEL"), "debug")
+	logWriter := common.NVL(os.Getenv("TB_LOGWRITER"), "both")
+	logFilePath := common.NVL(os.Getenv("TB_LOGFILE_PATH"), "./log/tumblebug.log")
+	logMaxSizeStr := common.NVL(os.Getenv("TB_LOGFILE_MAXSIZE"), "10")
+	logMaxSize, _ := strconv.Atoi(logMaxSizeStr)
+	logMaxBackupsStr := common.NVL(os.Getenv("TB_LOGFILE_MAXBACKUPS"), "3")
+	logMaxBackups, _ := strconv.Atoi(logMaxBackupsStr)
+	logMaxAgeStr := common.NVL(os.Getenv("TB_LOGFILE_MAXAGE"), "3")
+	logMaxAge, _ := strconv.Atoi(logMaxAgeStr)
+	logCompressStr := common.NVL(os.Getenv("TB_LOGFILE_COMPRESS"), "false")
+	logCompress := (logCompressStr == "true")
+
+	logger := logger.NewLogger(logger.Config{
+		LogLevel:    logLevel,
+		LogWriter:   logWriter,
+		LogFilePath: logFilePath,
+		MaxSize:     logMaxSize,
+		MaxBackups:  logMaxBackups,
+		MaxAge:      logMaxAge,
+		Compress:    logCompress,
+	})
+
+	// Set the global logger
+	log.Logger = *logger
 
 	// load config
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()
