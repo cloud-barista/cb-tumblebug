@@ -75,6 +75,30 @@ func RestGetAvailableK8sClusterNodeImage(c echo.Context) error {
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
+// RestCheckNodeGroupsOnK8sCreation func is a rest api wrapper for CheckNodeGroupsOnK8sCreation.
+// RestCheckNodeGroupsOnK8sCreation godoc
+// @ID CheckNodeGroupsOnK8sCreation
+// @Summary Check whether nodegroups are required during the k8scluster creation
+// @Description Check whether nodegroups are required during the k8scluster creation
+// @Tags [Infra resource] K8sCluster management
+// @Accept  json
+// @Produce  json
+// @Param providerName query string true "Name of the CSP to retrieve"
+// @Success 200 {object} bool
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /checkNodeGroupsOnK8sCreation [get]
+func RestCheckNodeGroupsOnK8sCreation(c echo.Context) error {
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
+	providerName := c.QueryParam("providerName")
+
+	content, err := common.CheckNodeGroupsOnK8sCreation(providerName)
+	return common.EndRequestWithLog(c, reqID, err, content)
+}
+
 // RestPostK8sCluster func is a rest api wrapper for CreateK8sCluster.
 // RestPostK8sCluster godoc
 // @ID PostK8sCluster

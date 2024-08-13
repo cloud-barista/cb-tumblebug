@@ -73,10 +73,10 @@ type K8sClusterInfo struct {
 
 // K8sClusterDetail is structure for kubernetes cluster detail information
 type K8sClusterDetail struct {
-	NodeGroupsWithCluster bool                        `mapstructure:"nodegroupsWithCluster" json:"nodegroups_with_cluster"`
-	Version               []K8sClusterVersionDetail   `mapstructure:"version" json:"versions"`
-	NodeImage             []K8sClusterNodeImageDetail `mapstructure:"nodeImage" json:"node_images"`
-	RootDisk              []K8sClusterRootDiskDetail  `mapstructure:"rootDisk" json:"root_disks"`
+	NodeGroupsOnCreation bool                        `mapstructure:"nodeGroupsOnCreation" json:"nodegroups_on_creation"`
+	Version              []K8sClusterVersionDetail   `mapstructure:"version" json:"versions"`
+	NodeImage            []K8sClusterNodeImageDetail `mapstructure:"nodeImage" json:"node_images"`
+	RootDisk             []K8sClusterRootDiskDetail  `mapstructure:"rootDisk" json:"root_disks"`
 }
 
 // K8sClusterVersionDetail is structure for kubernetes cluster version detail information
