@@ -140,7 +140,7 @@ type SpiderNodeGroupReqInfo struct {
 type TbK8sNodeGroupReq struct {
 	Name         string `json:"name" example:"ng-01"`
 	ImageId      string `json:"imageId" example:"image-01"`
-	SpecId       string `json:"specId" example:"spec-01"`
+	SpecId       string `json:"specId" example:"Standard_B2s (temporarily, CSP's Spec Names are valid. It will be upgraded)"`
 	RootDiskType string `json:"rootDiskType" example:"cloud_essd" enum:"default, TYPE1, ..."` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
 	RootDiskSize string `json:"rootDiskSize" example:"40" enum:"default, 30, 42, ..."`        // "default", Integer (GB): ["50", ..., "1000"]
 	SshKeyId     string `json:"sshKeyId" example:"sshkey-01"`
