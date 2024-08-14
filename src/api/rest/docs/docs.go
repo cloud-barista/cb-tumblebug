@@ -706,7 +706,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.InspectResource"
+                            "$ref": "#/definitions/mci.InspectResource"
                         }
                     },
                     "404": {
@@ -742,7 +742,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.InspectResourceAllResult"
+                            "$ref": "#/definitions/mci.InspectResourceAllResult"
                         }
                     },
                     "404": {
@@ -1014,9 +1014,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/mcisDynamicCheckRequest": {
+        "/mciDynamicCheckRequest": {
             "post": {
-                "description": "Check available ConnectionConfig list before create MCIS Dynamically from common spec and image",
+                "description": "Check available ConnectionConfig list before create MCI Dynamically from common spec and image",
                 "consumes": [
                     "application/json"
                 ],
@@ -1024,18 +1024,18 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "Check available ConnectionConfig list for creating MCIS Dynamically",
-                "operationId": "PostMcisDynamicCheckRequest",
+                "summary": "Check available ConnectionConfig list for creating MCI Dynamically",
+                "operationId": "PostMciDynamicCheckRequest",
                 "parameters": [
                     {
-                        "description": "Details for MCIS dynamic request information",
-                        "name": "mcisReq",
+                        "description": "Details for MCI dynamic request information",
+                        "name": "mciReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.McisConnectionConfigCandidatesReq"
+                            "$ref": "#/definitions/mci.MciConnectionConfigCandidatesReq"
                         }
                     }
                 ],
@@ -1043,7 +1043,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.CheckMcisDynamicReqInfo"
+                            "$ref": "#/definitions/mci.CheckMciDynamicReqInfo"
                         }
                     },
                     "404": {
@@ -1061,9 +1061,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/mcisRecommendVm": {
+        "/mciRecommendVm": {
             "post": {
-                "description": "Recommend MCIS plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234",
+                "description": "Recommend MCI plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234",
                 "consumes": [
                     "application/json"
                 ],
@@ -1071,17 +1071,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "Recommend MCIS plan (filter and priority)",
+                "summary": "Recommend MCI plan (filter and priority)",
                 "operationId": "RecommendVm",
                 "parameters": [
                     {
-                        "description": "Recommend MCIS plan (filter and priority)",
+                        "description": "Recommend MCI plan (filter and priority)",
                         "name": "deploymentPlan",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/mcis.DeploymentPlan"
+                            "$ref": "#/definitions/mci.DeploymentPlan"
                         }
                     }
                 ],
@@ -1382,9 +1382,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/benchmark/mcis/{mcisId}": {
+        "/ns/{nsId}/benchmark/mci/{mciId}": {
             "post": {
-                "description": "Run MCIS benchmark for a single performance metric and return results",
+                "description": "Run MCI benchmark for a single performance metric and return results",
                 "consumes": [
                     "application/json"
                 ],
@@ -1392,9 +1392,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Performance benchmarking (WIP)"
+                    "[Infra service] MCI Performance benchmarking (WIP)"
                 ],
-                "summary": "Run MCIS benchmark for a single performance metric and return results",
+                "summary": "Run MCI benchmark for a single performance metric and return results",
                 "operationId": "GetBenchmark",
                 "parameters": [
                     {
@@ -1407,9 +1407,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -1419,7 +1419,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.RestGetBenchmarkRequest"
+                            "$ref": "#/definitions/mci.RestGetBenchmarkRequest"
                         }
                     },
                     {
@@ -1439,7 +1439,7 @@ const docTemplate = `{
                             "clean"
                         ],
                         "type": "string",
-                        "description": "Benchmark Action to MCIS",
+                        "description": "Benchmark Action to MCI",
                         "name": "action",
                         "in": "query",
                         "required": true
@@ -1449,7 +1449,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.BenchmarkInfoArray"
+                            "$ref": "#/definitions/mci.BenchmarkInfoArray"
                         }
                     },
                     "404": {
@@ -1467,9 +1467,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/benchmarkAll/mcis/{mcisId}": {
+        "/ns/{nsId}/benchmarkAll/mci/{mciId}": {
             "post": {
-                "description": "Run MCIS benchmark for all performance metrics and return results",
+                "description": "Run MCI benchmark for all performance metrics and return results",
                 "consumes": [
                     "application/json"
                 ],
@@ -1477,9 +1477,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Performance benchmarking (WIP)"
+                    "[Infra service] MCI Performance benchmarking (WIP)"
                 ],
-                "summary": "Run MCIS benchmark for all performance metrics and return results",
+                "summary": "Run MCI benchmark for all performance metrics and return results",
                 "operationId": "GetAllBenchmark",
                 "parameters": [
                     {
@@ -1492,9 +1492,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -1504,7 +1504,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.RestGetAllBenchmarkRequest"
+                            "$ref": "#/definitions/mci.RestGetAllBenchmarkRequest"
                         }
                     }
                 ],
@@ -1512,7 +1512,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.BenchmarkInfoArray"
+                            "$ref": "#/definitions/mci.BenchmarkInfoArray"
                         }
                     },
                     "404": {
@@ -1530,9 +1530,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/benchmarkLatency/mcis/{mcisId}": {
+        "/ns/{nsId}/benchmarkLatency/mci/{mciId}": {
             "get": {
-                "description": "Run MCIS benchmark for network latency",
+                "description": "Run MCI benchmark for network latency",
                 "consumes": [
                     "application/json"
                 ],
@@ -1540,9 +1540,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Performance benchmarking (WIP)"
+                    "[Infra service] MCI Performance benchmarking (WIP)"
                 ],
-                "summary": "Run MCIS benchmark for network latency",
+                "summary": "Run MCI benchmark for network latency",
                 "operationId": "GetLatencyBenchmark",
                 "parameters": [
                     {
@@ -1556,8 +1556,8 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "default": "probe",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     }
@@ -1566,7 +1566,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.BenchmarkInfoArray"
+                            "$ref": "#/definitions/mci.BenchmarkInfoArray"
                         }
                     },
                     "404": {
@@ -1584,9 +1584,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/cmd/mcis/{mcisId}": {
+        "/ns/{nsId}/cmd/mci/{mciId}": {
             "post": {
-                "description": "Send a command to specified MCIS",
+                "description": "Send a command to specified MCI",
                 "consumes": [
                     "application/json"
                 ],
@@ -1594,10 +1594,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Remote command"
+                    "[Infra service] MCI Remote command"
                 ],
-                "summary": "Send a command to specified MCIS",
-                "operationId": "PostCmdMcis",
+                "summary": "Send a command to specified MCI",
+                "operationId": "PostCmdMci",
                 "parameters": [
                     {
                         "type": "string",
@@ -1609,32 +1609,32 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "MCIS Command Request",
-                        "name": "mcisCmdReq",
+                        "description": "MCI Command Request",
+                        "name": "mciCmdReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.McisCmdReq"
+                            "$ref": "#/definitions/mci.MciCmdReq"
                         }
                     },
                     {
                         "type": "string",
                         "default": "g1",
-                        "description": "subGroupId to apply the command only for VMs in subGroup of MCIS",
+                        "description": "subGroupId to apply the command only for VMs in subGroup of MCI",
                         "name": "subGroupId",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "default": "g1-1",
-                        "description": "vmId to apply the command only for a VM in MCIS",
+                        "description": "vmId to apply the command only for a VM in MCI",
                         "name": "vmId",
                         "in": "query"
                     },
@@ -1649,7 +1649,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.McisSshCmdResult"
+                            "$ref": "#/definitions/mci.MciSshCmdResult"
                         }
                     },
                     "404": {
@@ -1667,9 +1667,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/control/mcis/{mcisId}": {
+        "/ns/{nsId}/control/mci/{mciId}": {
             "get": {
-                "description": "Control the lifecycle of MCIS (refine, suspend, resume, reboot, terminate)",
+                "description": "Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1677,10 +1677,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Control lifecycle"
+                    "[Infra service] MCI Control lifecycle"
                 ],
-                "summary": "Control the lifecycle of MCIS (refine, suspend, resume, reboot, terminate)",
-                "operationId": "GetControlMcis",
+                "summary": "Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)",
+                "operationId": "GetControlMci",
                 "parameters": [
                     {
                         "type": "string",
@@ -1692,9 +1692,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -1709,7 +1709,7 @@ const docTemplate = `{
                             "withdraw"
                         ],
                         "type": "string",
-                        "description": "Action to MCIS",
+                        "description": "Action to MCI",
                         "name": "action",
                         "in": "query",
                         "required": true
@@ -1747,7 +1747,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/control/mcis/{mcisId}/vm/{vmId}": {
+        "/ns/{nsId}/control/mci/{mciId}/vm/{vmId}": {
             "get": {
                 "description": "Control the lifecycle of VM (suspend, resume, reboot, terminate)",
                 "consumes": [
@@ -1757,10 +1757,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Control lifecycle"
+                    "[Infra service] MCI Control lifecycle"
                 ],
                 "summary": "Control the lifecycle of VM (suspend, resume, reboot, terminate)",
-                "operationId": "GetControlMcisVm",
+                "operationId": "GetControlMciVm",
                 "parameters": [
                     {
                         "type": "string",
@@ -1772,9 +1772,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -1794,7 +1794,7 @@ const docTemplate = `{
                             "terminate"
                         ],
                         "type": "string",
-                        "description": "Action to MCIS",
+                        "description": "Action to MCI",
                         "name": "action",
                         "in": "query",
                         "required": true
@@ -1872,9 +1872,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/installBenchmarkAgent/mcis/{mcisId}": {
+        "/ns/{nsId}/installBenchmarkAgent/mci/{mciId}": {
             "post": {
-                "description": "Install the benchmark agent to specified MCIS",
+                "description": "Install the benchmark agent to specified MCI",
                 "consumes": [
                     "application/json"
                 ],
@@ -1882,10 +1882,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Performance benchmarking (WIP)"
+                    "[Infra service] MCI Performance benchmarking (WIP)"
                 ],
-                "summary": "Install the benchmark agent to specified MCIS",
-                "operationId": "PostInstallBenchmarkAgentToMcis",
+                "summary": "Install the benchmark agent to specified MCI",
+                "operationId": "PostInstallBenchmarkAgentToMci",
                 "parameters": [
                     {
                         "type": "string",
@@ -1897,19 +1897,19 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "MCIS Command Request",
-                        "name": "mcisCmdReq",
+                        "description": "MCI Command Request",
+                        "name": "mciCmdReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.McisCmdReq"
+                            "$ref": "#/definitions/mci.MciCmdReq"
                         }
                     },
                     {
@@ -1926,7 +1926,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.McisSshCmdResult"
+                            "$ref": "#/definitions/mci.MciSshCmdResult"
                         }
                     },
                     "404": {
@@ -1995,13 +1995,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mcis.JSONResult"
+                                    "$ref": "#/definitions/mci.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mcis.RestGetAllK8sClusterResponse"
+                                            "$ref": "#/definitions/mci.RestGetAllK8sClusterResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
@@ -2062,7 +2062,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbK8sClusterReq"
+                            "$ref": "#/definitions/mci.TbK8sClusterReq"
                         }
                     }
                 ],
@@ -2070,7 +2070,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbK8sClusterInfo"
+                            "$ref": "#/definitions/mci.TbK8sClusterInfo"
                         }
                     },
                     "404": {
@@ -2169,7 +2169,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbK8sClusterInfo"
+                            "$ref": "#/definitions/mci.TbK8sClusterInfo"
                         }
                     },
                     "404": {
@@ -2270,7 +2270,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbK8sNodeGroupReq"
+                            "$ref": "#/definitions/mci.TbK8sNodeGroupReq"
                         }
                     }
                 ],
@@ -2278,7 +2278,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbK8sClusterInfo"
+                            "$ref": "#/definitions/mci.TbK8sClusterInfo"
                         }
                     },
                     "404": {
@@ -2397,7 +2397,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbChangeK8sNodeGroupAutoscaleSizeReq"
+                            "$ref": "#/definitions/mci.TbChangeK8sNodeGroupAutoscaleSizeReq"
                         }
                     }
                 ],
@@ -2405,7 +2405,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbChangeK8sNodeGroupAutoscaleSizeRes"
+                            "$ref": "#/definitions/mci.TbChangeK8sNodeGroupAutoscaleSizeRes"
                         }
                     },
                     "404": {
@@ -2468,7 +2468,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbSetK8sNodeGroupAutoscalingReq"
+                            "$ref": "#/definitions/mci.TbSetK8sNodeGroupAutoscalingReq"
                         }
                     }
                 ],
@@ -2476,7 +2476,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbSetK8sNodeGroupAutoscalingRes"
+                            "$ref": "#/definitions/mci.TbSetK8sNodeGroupAutoscalingRes"
                         }
                     },
                     "404": {
@@ -2531,7 +2531,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbUpgradeK8sClusterReq"
+                            "$ref": "#/definitions/mci.TbUpgradeK8sClusterReq"
                         }
                     }
                 ],
@@ -2617,9 +2617,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis": {
+        "/ns/{nsId}/mci": {
             "get": {
-                "description": "List all MCISs or MCISs' ID",
+                "description": "List all MCIs or MCIs' ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -2627,10 +2627,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "List all MCISs or MCISs' ID",
-                "operationId": "GetAllMcis",
+                "summary": "List all MCIs or MCIs' ID",
+                "operationId": "GetAllMci",
                 "parameters": [
                     {
                         "type": "string",
@@ -2658,22 +2658,22 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mcis.JSONResult"
+                                    "$ref": "#/definitions/mci.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mcis.RestGetAllMcisResponse"
+                                            "$ref": "#/definitions/mci.RestGetAllMciResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
                                         },
                                         "[SIMPLE]": {
-                                            "$ref": "#/definitions/mcis.RestGetAllMcisResponse"
+                                            "$ref": "#/definitions/mci.RestGetAllMciResponse"
                                         },
                                         "[STATUS]": {
-                                            "$ref": "#/definitions/mcis.RestGetAllMcisStatusResponse"
+                                            "$ref": "#/definitions/mci.RestGetAllMciStatusResponse"
                                         }
                                     }
                                 }
@@ -2695,7 +2695,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create MCIS",
+                "description": "Create MCI",
                 "consumes": [
                     "application/json"
                 ],
@@ -2703,10 +2703,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "Create MCIS",
-                "operationId": "PostMcis",
+                "summary": "Create MCI",
+                "operationId": "PostMci",
                 "parameters": [
                     {
                         "type": "string",
@@ -2717,12 +2717,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Details for an MCIS object",
-                        "name": "mcisReq",
+                        "description": "Details for an MCI object",
+                        "name": "mciReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisReq"
+                            "$ref": "#/definitions/mci.TbMciReq"
                         }
                     }
                 ],
@@ -2730,7 +2730,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                            "$ref": "#/definitions/mci.TbMciInfo"
                         }
                     },
                     "404": {
@@ -2748,7 +2748,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete all MCISs",
+                "description": "Delete all MCIs",
                 "consumes": [
                     "application/json"
                 ],
@@ -2756,10 +2756,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "Delete all MCISs",
-                "operationId": "DelAllMcis",
+                "summary": "Delete all MCIs",
+                "operationId": "DelAllMci",
                 "parameters": [
                     {
                         "type": "string",
@@ -2774,7 +2774,7 @@ const docTemplate = `{
                             "force"
                         ],
                         "type": "string",
-                        "description": "Option for delete MCIS (support force delete)",
+                        "description": "Option for delete MCI (support force delete)",
                         "name": "option",
                         "in": "query"
                     }
@@ -2795,9 +2795,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}": {
+        "/ns/{nsId}/mci/{mciId}": {
             "get": {
-                "description": "Get MCIS object (option: status, accessInfo, vmId)",
+                "description": "Get MCI object (option: status, accessInfo, vmId)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2805,10 +2805,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "Get MCIS object (option: status, accessInfo, vmId)",
-                "operationId": "GetMcis",
+                "summary": "Get MCI object (option: status, accessInfo, vmId)",
+                "operationId": "GetMci",
                 "parameters": [
                     {
                         "type": "string",
@@ -2820,9 +2820,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -2863,22 +2863,22 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mcis.JSONResult"
+                                    "$ref": "#/definitions/mci.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[AccessInfo]": {
-                                            "$ref": "#/definitions/mcis.McisAccessInfo"
+                                            "$ref": "#/definitions/mci.MciAccessInfo"
                                         },
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                                            "$ref": "#/definitions/mci.TbMciInfo"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
                                         },
                                         "[STATUS]": {
-                                            "$ref": "#/definitions/mcis.McisStatusInfo"
+                                            "$ref": "#/definitions/mci.MciStatusInfo"
                                         }
                                     }
                                 }
@@ -2900,7 +2900,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete MCIS",
+                "description": "Delete MCI",
                 "consumes": [
                     "application/json"
                 ],
@@ -2908,10 +2908,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "Delete MCIS",
-                "operationId": "DelMcis",
+                "summary": "Delete MCI",
+                "operationId": "DelMci",
                 "parameters": [
                     {
                         "type": "string",
@@ -2923,9 +2923,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -2935,7 +2935,7 @@ const docTemplate = `{
                             "force"
                         ],
                         "type": "string",
-                        "description": "Option for delete MCIS (support force delete)",
+                        "description": "Option for delete MCI (support force delete)",
                         "name": "option",
                         "in": "query"
                     }
@@ -2956,7 +2956,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/bastion/{bastionVmId}": {
+        "/ns/{nsId}/mci/{mciId}/bastion/{bastionVmId}": {
             "delete": {
                 "description": "Remove a bastion VM from all vNets",
                 "consumes": [
@@ -2966,7 +2966,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Remote command"
+                    "[Infra service] MCI Remote command"
                 ],
                 "summary": "Remove a bastion VM from all vNets",
                 "operationId": "RemoveBastionNodes",
@@ -2981,9 +2981,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3018,9 +3018,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/mcSwNlb": {
+        "/ns/{nsId}/mci/{mciId}/mcSwNlb": {
             "post": {
-                "description": "Create a special purpose MCIS for NLB and depoly and setting SW NLB",
+                "description": "Create a special purpose MCI for NLB and depoly and setting SW NLB",
                 "consumes": [
                     "application/json"
                 ],
@@ -3030,7 +3030,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra resource] NLB management"
                 ],
-                "summary": "Create a special purpose MCIS for NLB and depoly and setting SW NLB",
+                "summary": "Create a special purpose MCI for NLB and depoly and setting SW NLB",
                 "operationId": "PostMcNLB",
                 "parameters": [
                     {
@@ -3043,9 +3043,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3055,7 +3055,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbNLBReq"
+                            "$ref": "#/definitions/mci.TbNLBReq"
                         }
                     }
                 ],
@@ -3063,7 +3063,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.McNlbInfo"
+                            "$ref": "#/definitions/mci.McNlbInfo"
                         }
                     },
                     "404": {
@@ -3081,7 +3081,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/nlb": {
+        "/ns/{nsId}/mci/{mciId}/nlb": {
             "get": {
                 "description": "List all NLBs or NLBs' ID",
                 "consumes": [
@@ -3106,9 +3106,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3140,13 +3140,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mcis.JSONResult"
+                                    "$ref": "#/definitions/mci.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mcis.RestGetAllNLBResponse"
+                                            "$ref": "#/definitions/mci.RestGetAllNLBResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
@@ -3194,9 +3194,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3215,7 +3215,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbNLBReq"
+                            "$ref": "#/definitions/mci.TbNLBReq"
                         }
                     }
                 ],
@@ -3223,7 +3223,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbNLBInfo"
+                            "$ref": "#/definitions/mci.TbNLBInfo"
                         }
                     },
                     "404": {
@@ -3264,9 +3264,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3294,7 +3294,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}": {
+        "/ns/{nsId}/mci/{mciId}/nlb/{nlbId}": {
             "get": {
                 "description": "Get NLB",
                 "consumes": [
@@ -3319,9 +3319,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3338,7 +3338,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbNLBInfo"
+                            "$ref": "#/definitions/mci.TbNLBInfo"
                         }
                     },
                     "404": {
@@ -3379,9 +3379,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3409,7 +3409,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/healthz": {
+        "/ns/{nsId}/mci/{mciId}/nlb/{nlbId}/healthz": {
             "get": {
                 "description": "Get NLB Health",
                 "consumes": [
@@ -3434,9 +3434,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3453,7 +3453,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbNLBInfo"
+                            "$ref": "#/definitions/mci.TbNLBInfo"
                         }
                     },
                     "404": {
@@ -3471,7 +3471,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/vm": {
+        "/ns/{nsId}/mci/{mciId}/nlb/{nlbId}/vm": {
             "post": {
                 "description": "Add VMs to NLB",
                 "consumes": [
@@ -3496,9 +3496,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3516,7 +3516,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbNLBAddRemoveVMReq"
+                            "$ref": "#/definitions/mci.TbNLBAddRemoveVMReq"
                         }
                     }
                 ],
@@ -3524,7 +3524,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbNLBInfo"
+                            "$ref": "#/definitions/mci.TbNLBInfo"
                         }
                     },
                     "404": {
@@ -3565,9 +3565,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3585,7 +3585,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbNLBAddRemoveVMReq"
+                            "$ref": "#/definitions/mci.TbNLBAddRemoveVMReq"
                         }
                     }
                 ],
@@ -3605,9 +3605,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/site": {
+        "/ns/{nsId}/mci/{mciId}/site": {
             "get": {
-                "description": "Get sites in MCIS",
+                "description": "Get sites in MCI",
                 "consumes": [
                     "application/json"
                 ],
@@ -3615,10 +3615,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[VPN] Sites in MCIS"
+                    "[VPN] Sites in MCI"
                 ],
-                "summary": "Get sites in MCIS",
-                "operationId": "GetSitesInMcis",
+                "summary": "Get sites in MCI",
+                "operationId": "GetSitesInMci",
                 "parameters": [
                     {
                         "type": "string",
@@ -3630,9 +3630,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     }
@@ -3665,9 +3665,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/subgroup": {
+        "/ns/{nsId}/mci/{mciId}/subgroup": {
             "get": {
-                "description": "List SubGroup IDs in a specified MCIS",
+                "description": "List SubGroup IDs in a specified MCI",
                 "consumes": [
                     "application/json"
                 ],
@@ -3675,10 +3675,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "List SubGroup IDs in a specified MCIS",
-                "operationId": "GetMcisGroupIds",
+                "summary": "List SubGroup IDs in a specified MCI",
+                "operationId": "GetMciGroupIds",
                 "parameters": [
                     {
                         "type": "string",
@@ -3690,9 +3690,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     }
@@ -3719,9 +3719,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/subgroup/{subgroupId}": {
+        "/ns/{nsId}/mci/{mciId}/subgroup/{subgroupId}": {
             "get": {
-                "description": "List VMs with a SubGroup label in a specified MCIS",
+                "description": "List VMs with a SubGroup label in a specified MCI",
                 "consumes": [
                     "application/json"
                 ],
@@ -3729,10 +3729,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "List VMs with a SubGroup label in a specified MCIS",
-                "operationId": "GetMcisGroupVms",
+                "summary": "List VMs with a SubGroup label in a specified MCI",
+                "operationId": "GetMciGroupVms",
                 "parameters": [
                     {
                         "type": "string",
@@ -3744,9 +3744,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3790,7 +3790,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "ScaleOut subGroup in specified MCIS",
+                "description": "ScaleOut subGroup in specified MCI",
                 "consumes": [
                     "application/json"
                 ],
@@ -3798,10 +3798,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "ScaleOut subGroup in specified MCIS",
-                "operationId": "PostMcisSubGroupScaleOut",
+                "summary": "ScaleOut subGroup in specified MCI",
+                "operationId": "PostMciSubGroupScaleOut",
                 "parameters": [
                     {
                         "type": "string",
@@ -3813,9 +3813,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3833,7 +3833,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbScaleOutSubGroupReq"
+                            "$ref": "#/definitions/mci.TbScaleOutSubGroupReq"
                         }
                     }
                 ],
@@ -3841,7 +3841,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                            "$ref": "#/definitions/mci.TbMciInfo"
                         }
                     },
                     "404": {
@@ -3859,9 +3859,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/vm": {
+        "/ns/{nsId}/mci/{mciId}/vm": {
             "post": {
-                "description": "Create and add homogeneous VMs(subGroup) to a specified MCIS (Set subGroupSize for multiple VMs)",
+                "description": "Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize for multiple VMs)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3869,10 +3869,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "Create and add homogeneous VMs(subGroup) to a specified MCIS (Set subGroupSize for multiple VMs)",
-                "operationId": "PostMcisVm",
+                "summary": "Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize for multiple VMs)",
+                "operationId": "PostMciVm",
                 "parameters": [
                     {
                         "type": "string",
@@ -3884,9 +3884,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3896,7 +3896,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbVmReq"
+                            "$ref": "#/definitions/mci.TbVmReq"
                         }
                     }
                 ],
@@ -3904,7 +3904,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                            "$ref": "#/definitions/mci.TbMciInfo"
                         }
                     },
                     "404": {
@@ -3922,7 +3922,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/vm/{targetVmId}/bastion": {
+        "/ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion": {
             "get": {
                 "description": "Get bastion nodes for a VM",
                 "consumes": [
@@ -3932,7 +3932,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Remote command"
+                    "[Infra service] MCI Remote command"
                 ],
                 "summary": "Get bastion nodes for a VM",
                 "operationId": "GetBastionNodes",
@@ -3947,9 +3947,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -3987,7 +3987,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/vm/{targetVmId}/bastion/{bastionVmId}": {
+        "/ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion/{bastionVmId}": {
             "put": {
                 "description": "Set bastion nodes for a VM",
                 "consumes": [
@@ -3997,7 +3997,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Remote command"
+                    "[Infra service] MCI Remote command"
                 ],
                 "summary": "Set bastion nodes for a VM",
                 "operationId": "SetBastionNodes",
@@ -4012,9 +4012,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -4057,9 +4057,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/vm/{vmId}": {
+        "/ns/{nsId}/mci/{mciId}/vm/{vmId}": {
             "get": {
-                "description": "Get VM in specified MCIS",
+                "description": "Get VM in specified MCI",
                 "consumes": [
                     "application/json"
                 ],
@@ -4067,10 +4067,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "Get VM in specified MCIS",
-                "operationId": "GetMcisVm",
+                "summary": "Get VM in specified MCI",
+                "operationId": "GetMciVm",
                 "parameters": [
                     {
                         "type": "string",
@@ -4082,9 +4082,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -4103,7 +4103,7 @@ const docTemplate = `{
                             "idsInDetail"
                         ],
                         "type": "string",
-                        "description": "Option for MCIS",
+                        "description": "Option for MCI",
                         "name": "option",
                         "in": "query"
                     }
@@ -4114,19 +4114,19 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mcis.JSONResult"
+                                    "$ref": "#/definitions/mci.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mcis.TbVmInfo"
+                                            "$ref": "#/definitions/mci.TbVmInfo"
                                         },
                                         "[IDNAME]": {
-                                            "$ref": "#/definitions/mcis.TbIdNameInDetailInfo"
+                                            "$ref": "#/definitions/mci.TbIdNameInDetailInfo"
                                         },
                                         "[STATUS]": {
-                                            "$ref": "#/definitions/mcis.TbVmStatusInfo"
+                                            "$ref": "#/definitions/mci.TbVmStatusInfo"
                                         }
                                     }
                                 }
@@ -4148,7 +4148,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete VM in specified MCIS",
+                "description": "Delete VM in specified MCI",
                 "consumes": [
                     "application/json"
                 ],
@@ -4156,10 +4156,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "Delete VM in specified MCIS",
-                "operationId": "DelMcisVm",
+                "summary": "Delete VM in specified MCI",
+                "operationId": "DelMciVm",
                 "parameters": [
                     {
                         "type": "string",
@@ -4171,9 +4171,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -4211,7 +4211,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk": {
+        "/ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk": {
             "get": {
                 "description": "Get available dataDisks for a VM",
                 "consumes": [
@@ -4236,9 +4236,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -4319,9 +4319,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -4339,7 +4339,7 @@ const docTemplate = `{
                             "detach"
                         ],
                         "type": "string",
-                        "description": "Option for MCIS",
+                        "description": "Option for MCI",
                         "name": "option",
                         "in": "query",
                         "required": true
@@ -4359,7 +4359,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbVmInfo"
+                            "$ref": "#/definitions/mci.TbVmInfo"
                         }
                     },
                     "404": {
@@ -4409,9 +4409,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -4428,7 +4428,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbVmInfo"
+                            "$ref": "#/definitions/mci.TbVmInfo"
                         }
                     },
                     "404": {
@@ -4440,7 +4440,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/vm/{vmId}/snapshot": {
+        "/ns/{nsId}/mci/{mciId}/vm/{vmId}/snapshot": {
             "post": {
                 "description": "Snapshot VM and create a Custom Image Object using the Snapshot",
                 "consumes": [
@@ -4453,7 +4453,7 @@ const docTemplate = `{
                     "[Infra resource] Snapshot and Custom Image Management"
                 ],
                 "summary": "Snapshot VM and create a Custom Image Object using the Snapshot",
-                "operationId": "PostMcisVmSnapshot",
+                "operationId": "PostMciVmSnapshot",
                 "parameters": [
                     {
                         "description": "Request body to create VM snapshot",
@@ -4461,7 +4461,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbVmSnapshotReq"
+                            "$ref": "#/definitions/mci.TbVmSnapshotReq"
                         }
                     },
                     {
@@ -4474,9 +4474,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -4511,9 +4511,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/vmDynamic": {
+        "/ns/{nsId}/mci/{mciId}/vmDynamic": {
             "post": {
-                "description": "Create VM Dynamically and add it to MCIS",
+                "description": "Create VM Dynamically and add it to MCI",
                 "consumes": [
                     "application/json"
                 ],
@@ -4521,10 +4521,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "Create VM Dynamically and add it to MCIS",
-                "operationId": "PostMcisVmDynamic",
+                "summary": "Create VM Dynamically and add it to MCI",
+                "operationId": "PostMciVmDynamic",
                 "parameters": [
                     {
                         "type": "string",
@@ -4536,9 +4536,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -4548,7 +4548,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbVmDynamicReq"
+                            "$ref": "#/definitions/mci.TbVmDynamicReq"
                         }
                     }
                 ],
@@ -4556,7 +4556,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                            "$ref": "#/definitions/mci.TbMciInfo"
                         }
                     },
                     "404": {
@@ -4574,7 +4574,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}": {
+        "/ns/{nsId}/mci/{mciId}/vpn/{vpnId}": {
             "get": {
                 "description": "Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)",
                 "consumes": [
@@ -4599,9 +4599,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -4649,7 +4649,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/request/{requestId}": {
+        "/ns/{nsId}/mci/{mciId}/vpn/{vpnId}/request/{requestId}": {
             "get": {
                 "description": "Check the status of a specific request by its ID",
                 "consumes": [
@@ -4674,9 +4674,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -4724,9 +4724,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcisDynamic": {
+        "/ns/{nsId}/mciDynamic": {
             "post": {
-                "description": "Create MCIS Dynamically from common spec and image",
+                "description": "Create MCI Dynamically from common spec and image",
                 "consumes": [
                     "application/json"
                 ],
@@ -4734,10 +4734,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "Create MCIS Dynamically",
-                "operationId": "PostMcisDynamic",
+                "summary": "Create MCI Dynamically",
+                "operationId": "PostMciDynamic",
                 "parameters": [
                     {
                         "type": "string",
@@ -4748,12 +4748,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Request body to provision MCIS dynamically. Must include commonSpec and commonImage info of each VM request.(ex: {name: mcis01,vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]} ) You can use /mcisRecommendVm and /mcisDynamicCheckRequest to get it) Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570",
-                        "name": "mcisReq",
+                        "description": "Request body to provision MCI dynamically. Must include commonSpec and commonImage info of each VM request.(ex: {name: mci01,vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]} ) You can use /mciRecommendVm and /mciDynamicCheckRequest to get it) Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570",
+                        "name": "mciReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisDynamicReq"
+                            "$ref": "#/definitions/mci.TbMciDynamicReq"
                         }
                     },
                     {
@@ -4761,7 +4761,7 @@ const docTemplate = `{
                             "hold"
                         ],
                         "type": "string",
-                        "description": "Option for MCIS creation",
+                        "description": "Option for MCI creation",
                         "name": "option",
                         "in": "query"
                     },
@@ -4776,7 +4776,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                            "$ref": "#/definitions/mci.TbMciInfo"
                         }
                     },
                     "404": {
@@ -4794,9 +4794,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/monitoring/install/mcis/{mcisId}": {
+        "/ns/{nsId}/monitoring/install/mci/{mciId}": {
             "post": {
-                "description": "Install monitoring agent (CB-Dragonfly agent) to MCIS",
+                "description": "Install monitoring agent (CB-Dragonfly agent) to MCI",
                 "consumes": [
                     "application/json"
                 ],
@@ -4804,10 +4804,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Resource monitor (for developer)"
+                    "[Infra service] MCI Resource monitor (for developer)"
                 ],
-                "summary": "Install monitoring agent (CB-Dragonfly agent) to MCIS",
-                "operationId": "PostInstallMonitorAgentToMcis",
+                "summary": "Install monitoring agent (CB-Dragonfly agent) to MCI",
+                "operationId": "PostInstallMonitorAgentToMci",
                 "parameters": [
                     {
                         "type": "string",
@@ -4819,19 +4819,19 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Details for an MCIS object",
-                        "name": "mcisInfo",
+                        "description": "Details for an MCI object",
+                        "name": "mciInfo",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.McisCmdReq"
+                            "$ref": "#/definitions/mci.MciCmdReq"
                         }
                     }
                 ],
@@ -4839,7 +4839,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.AgentInstallContentWrapper"
+                            "$ref": "#/definitions/mci.AgentInstallContentWrapper"
                         }
                     },
                     "404": {
@@ -4857,9 +4857,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric}": {
+        "/ns/{nsId}/monitoring/mci/{mciId}/metric/{metric}": {
             "get": {
-                "description": "Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)",
+                "description": "Get monitoring data of specified MCI for specified monitoring metric (cpu, memory, disk, network)",
                 "consumes": [
                     "application/json"
                 ],
@@ -4867,9 +4867,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Resource monitor (for developer)"
+                    "[Infra service] MCI Resource monitor (for developer)"
                 ],
-                "summary": "Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)",
+                "summary": "Get monitoring data of specified MCI for specified monitoring metric (cpu, memory, disk, network)",
                 "operationId": "GetMonitorData",
                 "parameters": [
                     {
@@ -4882,9 +4882,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -4900,7 +4900,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.MonResultSimpleResponse"
+                            "$ref": "#/definitions/mci.MonResultSimpleResponse"
                         }
                     },
                     "404": {
@@ -4918,7 +4918,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/monitoring/status/mcis/{mcisId}/vm/{vmId}": {
+        "/ns/{nsId}/monitoring/status/mci/{mciId}/vm/{vmId}": {
             "put": {
                 "description": "Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)",
                 "consumes": [
@@ -4928,7 +4928,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Resource monitor (for developer)"
+                    "[Infra service] MCI Resource monitor (for developer)"
                 ],
                 "summary": "Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)",
                 "operationId": "PutMonitorAgentStatusInstalled",
@@ -4943,9 +4943,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -4962,7 +4962,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbVmInfo"
+                            "$ref": "#/definitions/mci.TbVmInfo"
                         }
                     },
                     "404": {
@@ -4980,9 +4980,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/policy/mcis": {
+        "/ns/{nsId}/policy/mci": {
             "get": {
-                "description": "List all MCIS policies",
+                "description": "List all MCI policies",
                 "consumes": [
                     "application/json"
                 ],
@@ -4990,10 +4990,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Auto control policy management (WIP)"
+                    "[Infra service] MCI Auto control policy management (WIP)"
                 ],
-                "summary": "List all MCIS policies",
-                "operationId": "GetAllMcisPolicy",
+                "summary": "List all MCI policies",
+                "operationId": "GetAllMciPolicy",
                 "parameters": [
                     {
                         "type": "string",
@@ -5008,7 +5008,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.RestGetAllMcisPolicyResponse"
+                            "$ref": "#/definitions/mci.RestGetAllMciPolicyResponse"
                         }
                     },
                     "404": {
@@ -5026,7 +5026,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete all MCIS policies",
+                "description": "Delete all MCI policies",
                 "consumes": [
                     "application/json"
                 ],
@@ -5034,10 +5034,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Auto control policy management (WIP)"
+                    "[Infra service] MCI Auto control policy management (WIP)"
                 ],
-                "summary": "Delete all MCIS policies",
-                "operationId": "DelAllMcisPolicy",
+                "summary": "Delete all MCI policies",
+                "operationId": "DelAllMciPolicy",
                 "parameters": [
                     {
                         "type": "string",
@@ -5064,9 +5064,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/policy/mcis/{mcisId}": {
+        "/ns/{nsId}/policy/mci/{mciId}": {
             "get": {
-                "description": "Get MCIS Policy",
+                "description": "Get MCI Policy",
                 "consumes": [
                     "application/json"
                 ],
@@ -5074,10 +5074,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Auto control policy management (WIP)"
+                    "[Infra service] MCI Auto control policy management (WIP)"
                 ],
-                "summary": "Get MCIS Policy",
-                "operationId": "GetMcisPolicy",
+                "summary": "Get MCI Policy",
+                "operationId": "GetMciPolicy",
                 "parameters": [
                     {
                         "type": "string",
@@ -5089,9 +5089,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     }
@@ -5100,7 +5100,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.McisPolicyInfo"
+                            "$ref": "#/definitions/mci.MciPolicyInfo"
                         }
                     },
                     "404": {
@@ -5118,7 +5118,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create MCIS Automation policy",
+                "description": "Create MCI Automation policy",
                 "consumes": [
                     "application/json"
                 ],
@@ -5126,10 +5126,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Auto control policy management (WIP)"
+                    "[Infra service] MCI Auto control policy management (WIP)"
                 ],
-                "summary": "Create MCIS Automation policy",
-                "operationId": "PostMcisPolicy",
+                "summary": "Create MCI Automation policy",
+                "operationId": "PostMciPolicy",
                 "parameters": [
                     {
                         "type": "string",
@@ -5141,19 +5141,19 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Details for an MCIS automation policy request",
-                        "name": "mcisPolicyReq",
+                        "description": "Details for an MCI automation policy request",
+                        "name": "mciPolicyReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.McisPolicyReq"
+                            "$ref": "#/definitions/mci.MciPolicyReq"
                         }
                     }
                 ],
@@ -5161,7 +5161,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.McisPolicyInfo"
+                            "$ref": "#/definitions/mci.MciPolicyInfo"
                         }
                     },
                     "404": {
@@ -5179,7 +5179,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete MCIS Policy",
+                "description": "Delete MCI Policy",
                 "consumes": [
                     "application/json"
                 ],
@@ -5187,10 +5187,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Auto control policy management (WIP)"
+                    "[Infra service] MCI Auto control policy management (WIP)"
                 ],
-                "summary": "Delete MCIS Policy",
-                "operationId": "DelMcisPolicy",
+                "summary": "Delete MCI Policy",
+                "operationId": "DelMciPolicy",
                 "parameters": [
                     {
                         "type": "string",
@@ -5202,9 +5202,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     }
@@ -5227,7 +5227,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/registerCspVm": {
             "post": {
-                "description": "Register existing VM in a CSP to Cloud-Barista MCIS",
+                "description": "Register existing VM in a CSP to Cloud-Barista MCI",
                 "consumes": [
                     "application/json"
                 ],
@@ -5235,9 +5235,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "Register existing VM in a CSP to Cloud-Barista MCIS",
+                "summary": "Register existing VM in a CSP to Cloud-Barista MCI",
                 "operationId": "PostRegisterCSPNativeVM",
                 "parameters": [
                     {
@@ -5249,12 +5249,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Details for an MCIS object with existing CSP VM ID",
-                        "name": "mcisReq",
+                        "description": "Details for an MCI object with existing CSP VM ID",
+                        "name": "mciReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisReq"
+                            "$ref": "#/definitions/mci.TbMciReq"
                         }
                     }
                 ],
@@ -5262,7 +5262,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                            "$ref": "#/definitions/mci.TbMciInfo"
                         }
                     },
                     "404": {
@@ -8327,7 +8327,7 @@ const docTemplate = `{
                 "operationId": "RegisterCspNativeResources",
                 "parameters": [
                     {
-                        "description": "Specify connectionName, NS Id, and MCIS Name",
+                        "description": "Specify connectionName, NS Id, and MCI Name",
                         "name": "Request",
                         "in": "body",
                         "required": true,
@@ -8352,8 +8352,8 @@ const docTemplate = `{
                         ],
                         "type": "string",
                         "default": "y",
-                        "description": "Flag to show VMs in a collective MCIS form (y,n)",
-                        "name": "mcisFlag",
+                        "description": "Flag to show VMs in a collective MCI form (y,n)",
+                        "name": "mciFlag",
                         "in": "query"
                     }
                 ],
@@ -8361,7 +8361,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.RegisterResourceResult"
+                            "$ref": "#/definitions/mci.RegisterResourceResult"
                         }
                     },
                     "404": {
@@ -8395,7 +8395,7 @@ const docTemplate = `{
                 "operationId": "RegisterCspNativeResourcesAll",
                 "parameters": [
                     {
-                        "description": "Specify NS Id and MCIS Name",
+                        "description": "Specify NS Id and MCI Name",
                         "name": "Request",
                         "in": "body",
                         "required": true,
@@ -8420,8 +8420,8 @@ const docTemplate = `{
                         ],
                         "type": "string",
                         "default": "y",
-                        "description": "Flag to show VMs in a collective MCIS form (y,n)",
-                        "name": "mcisFlag",
+                        "description": "Flag to show VMs in a collective MCI form (y,n)",
+                        "name": "mciFlag",
                         "in": "query"
                     }
                 ],
@@ -8429,7 +8429,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.RegisterResourceAllResult"
+                            "$ref": "#/definitions/mci.RegisterResourceAllResult"
                         }
                     },
                     "404": {
@@ -8607,7 +8607,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/stream-response/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}": {
+        "/stream-response/ns/{nsId}/mci/{mciId}/vpn/{vpnId}": {
             "put": {
                 "description": "(To be provided) Update a site-to-site VPN",
                 "consumes": [
@@ -8632,9 +8632,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -8707,9 +8707,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -8782,9 +8782,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
                         "in": "path",
                         "required": true
                     },
@@ -8825,9 +8825,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/systemMcis": {
+        "/systemMci": {
             "post": {
-                "description": "Create System MCIS Dynamically for Special Purpose",
+                "description": "Create System MCI Dynamically for Special Purpose",
                 "consumes": [
                     "application/json"
                 ],
@@ -8835,17 +8835,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra service] MCI Provisioning management"
                 ],
-                "summary": "Create System MCIS Dynamically for Special Purpose in NS:system-purpose-common-ns",
-                "operationId": "PostSystemMcis",
+                "summary": "Create System MCI Dynamically for Special Purpose in NS:system-purpose-common-ns",
+                "operationId": "PostSystemMci",
                 "parameters": [
                     {
                         "enum": [
                             "probe"
                         ],
                         "type": "string",
-                        "description": "Option for the purpose of system MCIS",
+                        "description": "Option for the purpose of system MCI",
                         "name": "option",
                         "in": "query"
                     }
@@ -8854,7 +8854,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                            "$ref": "#/definitions/mci.TbMciInfo"
                         }
                     },
                     "404": {
@@ -9567,7 +9567,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
-                "mcisName": {
+                "mciName": {
                     "type": "string",
                     "example": "csp"
                 },
@@ -9580,7 +9580,7 @@ const docTemplate = `{
         "common.RestRegisterCspNativeResourcesRequestAll": {
             "type": "object",
             "properties": {
-                "mcisName": {
+                "mciName": {
                     "type": "string",
                     "example": "csp"
                 },
@@ -9633,10 +9633,2487 @@ const docTemplate = `{
                 }
             }
         },
+        "mci.AgentInstallContent": {
+            "type": "object",
+            "properties": {
+                "mciId": {
+                    "type": "string"
+                },
+                "result": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
+                },
+                "vmIp": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.AgentInstallContentWrapper": {
+            "type": "object",
+            "properties": {
+                "resultArray": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.AgentInstallContent"
+                    }
+                }
+            }
+        },
+        "mci.AutoAction": {
+            "type": "object",
+            "properties": {
+                "actionType": {
+                    "type": "string",
+                    "enum": [
+                        "ScaleOut",
+                        "ScaleIn"
+                    ],
+                    "example": "ScaleOut"
+                },
+                "placementAlgo": {
+                    "type": "string",
+                    "example": "random"
+                },
+                "postCommand": {
+                    "description": "PostCommand is field for providing command to VMs after its creation. example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mci.MciCmdReq"
+                        }
+                    ]
+                },
+                "vmDynamicReq": {
+                    "$ref": "#/definitions/mci.TbVmDynamicReq"
+                }
+            }
+        },
+        "mci.AutoCondition": {
+            "type": "object",
+            "properties": {
+                "evaluationPeriod": {
+                    "type": "string",
+                    "example": "10"
+                },
+                "evaluationValue": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "metric": {
+                    "type": "string",
+                    "example": "cpu"
+                },
+                "operand": {
+                    "type": "string",
+                    "example": "80"
+                },
+                "operator": {
+                    "type": "string",
+                    "enum": [
+                        "\u003c",
+                        "\u003c=",
+                        "\u003e",
+                        "\u003e="
+                    ],
+                    "example": "\u003e="
+                }
+            }
+        },
+        "mci.BenchmarkInfo": {
+            "type": "object",
+            "properties": {
+                "desc": {
+                    "type": "string"
+                },
+                "elapsed": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                },
+                "result": {
+                    "type": "string"
+                },
+                "resultarray": {
+                    "description": "struct-element cycle ?",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.BenchmarkInfo"
+                    }
+                },
+                "specid": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.BenchmarkInfoArray": {
+            "type": "object",
+            "properties": {
+                "resultarray": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.BenchmarkInfo"
+                    }
+                }
+            }
+        },
+        "mci.CheckMciDynamicReqInfo": {
+            "type": "object",
+            "required": [
+                "reqCheck"
+            ],
+            "properties": {
+                "reqCheck": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.CheckVmDynamicReqInfo"
+                    }
+                }
+            }
+        },
+        "mci.CheckVmDynamicReqInfo": {
+            "type": "object",
+            "properties": {
+                "connectionConfigCandidates": {
+                    "description": "ConnectionConfigCandidates will provide ConnectionConfig options",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "image": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.TbImageInfo"
+                    }
+                },
+                "region": {
+                    "$ref": "#/definitions/common.RegionDetail"
+                },
+                "spec": {
+                    "$ref": "#/definitions/mcir.TbSpecInfo"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                }
+            }
+        },
+        "mci.DeploymentPlan": {
+            "type": "object",
+            "properties": {
+                "filter": {
+                    "$ref": "#/definitions/mci.FilterInfo"
+                },
+                "limit": {
+                    "type": "string",
+                    "enum": [
+                        "1",
+                        "2",
+                        "30"
+                    ],
+                    "example": "5"
+                },
+                "priority": {
+                    "$ref": "#/definitions/mci.PriorityInfo"
+                }
+            }
+        },
+        "mci.FilterCondition": {
+            "type": "object",
+            "properties": {
+                "condition": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.Operation"
+                    }
+                },
+                "metric": {
+                    "type": "string",
+                    "enum": [
+                        "vCPU",
+                        "memoryGiB",
+                        "costPerHour"
+                    ],
+                    "example": "vCPU"
+                }
+            }
+        },
+        "mci.FilterInfo": {
+            "type": "object",
+            "properties": {
+                "policy": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.FilterCondition"
+                    }
+                }
+            }
+        },
+        "mci.InspectResource": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "resourceOverview": {
+                    "$ref": "#/definitions/mci.resourceCountOverview"
+                },
+                "resourceType": {
+                    "type": "string"
+                },
+                "resources": {
+                    "$ref": "#/definitions/mci.resourcesByManageType"
+                },
+                "systemMessage": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.InspectResourceAllResult": {
+            "type": "object",
+            "properties": {
+                "availableConnection": {
+                    "type": "integer"
+                },
+                "cspOnlyOverview": {
+                    "$ref": "#/definitions/mci.inspectOverview"
+                },
+                "elapsedTime": {
+                    "type": "integer"
+                },
+                "inspectResult": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.InspectResourceResult"
+                    }
+                },
+                "registeredConnection": {
+                    "type": "integer"
+                },
+                "tumblebugOverview": {
+                    "$ref": "#/definitions/mci.inspectOverview"
+                }
+            }
+        },
+        "mci.InspectResourceResult": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspOnlyOverview": {
+                    "$ref": "#/definitions/mci.inspectOverview"
+                },
+                "elapsedTime": {
+                    "type": "integer"
+                },
+                "systemMessage": {
+                    "type": "string"
+                },
+                "tumblebugOverview": {
+                    "$ref": "#/definitions/mci.inspectOverview"
+                }
+            }
+        },
+        "mci.JSONResult": {
+            "type": "object"
+        },
+        "mci.McNlbInfo": {
+            "type": "object",
+            "properties": {
+                "deploymentLog": {
+                    "$ref": "#/definitions/mci.MciSshCmdResult"
+                },
+                "mcNlbHostInfo": {
+                    "$ref": "#/definitions/mci.TbMciInfo"
+                },
+                "mciAccessInfo": {
+                    "$ref": "#/definitions/mci.MciAccessInfo"
+                }
+            }
+        },
+        "mci.MciAccessInfo": {
+            "type": "object",
+            "properties": {
+                "mciId": {
+                    "type": "string"
+                },
+                "mciNlbListener": {
+                    "$ref": "#/definitions/mci.MciAccessInfo"
+                },
+                "mciSubGroupAccessInfo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.MciSubGroupAccessInfo"
+                    }
+                }
+            }
+        },
+        "mci.MciCmdReq": {
+            "type": "object",
+            "required": [
+                "command"
+            ],
+            "properties": {
+                "command": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"
+                    ]
+                },
+                "userName": {
+                    "type": "string",
+                    "example": "cb-user"
+                }
+            }
+        },
+        "mci.MciConnectionConfigCandidatesReq": {
+            "type": "object",
+            "required": [
+                "commonSpec"
+            ],
+            "properties": {
+                "commonSpec": {
+                    "description": "CommonSpec is field for id of a spec in common namespace",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "aws+ap-northeast-2+t2.small",
+                        "gcp+us-west1+g1-small"
+                    ]
+                }
+            }
+        },
+        "mci.MciPolicyInfo": {
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "description": "MCI Id (generated ID by the Name)",
+                    "type": "string"
+                },
+                "Name": {
+                    "description": "MCI Name (for request)",
+                    "type": "string"
+                },
+                "actionLog": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Description"
+                },
+                "policy": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.Policy"
+                    }
+                }
+            }
+        },
+        "mci.MciPolicyReq": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Description"
+                },
+                "policy": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.Policy"
+                    }
+                }
+            }
+        },
+        "mci.MciSshCmdResult": {
+            "type": "object",
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.SshCmdResult"
+                    }
+                }
+            }
+        },
+        "mci.MciStatusInfo": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "installMonAgent": {
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
+                    "type": "string",
+                    "example": "[yes, no]"
+                },
+                "label": {
+                    "description": "Label is for describing the mci in a keyword (any string can be used)",
+                    "type": "string",
+                    "example": "User custom label"
+                },
+                "masterIp": {
+                    "type": "string",
+                    "example": "32.201.134.113"
+                },
+                "masterSSHPort": {
+                    "type": "string"
+                },
+                "masterVmId": {
+                    "type": "string",
+                    "example": "vm-asiaeast1-cb-01"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "statusCount": {
+                    "$ref": "#/definitions/mci.StatusCountInfo"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "vm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.TbVmStatusInfo"
+                    }
+                }
+            }
+        },
+        "mci.MciSubGroupAccessInfo": {
+            "type": "object",
+            "properties": {
+                "bastionVmId": {
+                    "type": "string"
+                },
+                "mciVmAccessInfo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.MciVmAccessInfo"
+                    }
+                },
+                "nlbListener": {
+                    "$ref": "#/definitions/mci.TbNLBListenerInfo"
+                },
+                "subGroupId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.MciVmAccessInfo": {
+            "type": "object",
+            "properties": {
+                "privateIP": {
+                    "type": "string"
+                },
+                "privateKey": {
+                    "type": "string"
+                },
+                "publicIP": {
+                    "type": "string"
+                },
+                "sshPort": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
+                },
+                "vmUserAccount": {
+                    "type": "string"
+                },
+                "vmUserPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.MonResultSimple": {
+            "type": "object",
+            "properties": {
+                "err": {
+                    "type": "string"
+                },
+                "metric": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.MonResultSimpleResponse": {
+            "type": "object",
+            "properties": {
+                "mciId": {
+                    "type": "string"
+                },
+                "mciMonitoring": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.MonResultSimple"
+                    }
+                },
+                "nsId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.NLBListenerReq": {
+            "type": "object",
+            "properties": {
+                "port": {
+                    "description": "1-65535",
+                    "type": "string",
+                    "example": "80"
+                },
+                "protocol": {
+                    "description": "TCP|UDP",
+                    "type": "string",
+                    "example": "TCP"
+                }
+            }
+        },
+        "mci.Operation": {
+            "type": "object",
+            "properties": {
+                "operand": {
+                    "description": "10, 70, 80, 98, ...",
+                    "type": "string",
+                    "enum": [
+                        "4",
+                        "8",
+                        ".."
+                    ],
+                    "example": "4"
+                },
+                "operator": {
+                    "description": "\u003e=, \u003c=, ==",
+                    "type": "string",
+                    "enum": [
+                        "\u003e=",
+                        "\u003c=",
+                        "=="
+                    ],
+                    "example": "\u003c="
+                }
+            }
+        },
+        "mci.ParameterKeyVal": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "description": "coordinate",
+                    "type": "string",
+                    "enum": [
+                        "coordinateClose",
+                        "coordinateWithin",
+                        "coordinateFair"
+                    ],
+                    "example": "coordinateClose"
+                },
+                "val": {
+                    "description": "[\"Latitude,Longitude\",\"12,543\",..,\"31,433\"]",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "44.146838/-116.411403"
+                    ]
+                }
+            }
+        },
+        "mci.Policy": {
+            "type": "object",
+            "properties": {
+                "autoAction": {
+                    "$ref": "#/definitions/mci.AutoAction"
+                },
+                "autoCondition": {
+                    "$ref": "#/definitions/mci.AutoCondition"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.PriorityCondition": {
+            "type": "object",
+            "properties": {
+                "metric": {
+                    "type": "string",
+                    "enum": [
+                        "location",
+                        "cost",
+                        "random",
+                        "performance",
+                        "latency"
+                    ],
+                    "example": "location"
+                },
+                "parameter": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.ParameterKeyVal"
+                    }
+                },
+                "weight": {
+                    "type": "string",
+                    "enum": [
+                        "0.1",
+                        "0.2",
+                        "..."
+                    ],
+                    "example": "0.3"
+                }
+            }
+        },
+        "mci.PriorityInfo": {
+            "type": "object",
+            "properties": {
+                "policy": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.PriorityCondition"
+                    }
+                }
+            }
+        },
+        "mci.RegionInfo": {
+            "type": "object",
+            "properties": {
+                "region": {
+                    "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.RegisterResourceAllResult": {
+            "type": "object",
+            "properties": {
+                "availableConnection": {
+                    "type": "integer"
+                },
+                "elapsedTime": {
+                    "type": "integer"
+                },
+                "registerationOverview": {
+                    "$ref": "#/definitions/mci.registerationOverview"
+                },
+                "registerationResult": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.RegisterResourceResult"
+                    }
+                },
+                "registeredConnection": {
+                    "type": "integer"
+                }
+            }
+        },
+        "mci.RegisterResourceResult": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "elapsedTime": {
+                    "type": "integer"
+                },
+                "registerationOutputs": {
+                    "$ref": "#/definitions/common.IdList"
+                },
+                "registerationOverview": {
+                    "$ref": "#/definitions/mci.registerationOverview"
+                },
+                "systemMessage": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.RestGetAllBenchmarkRequest": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.RestGetAllK8sClusterResponse": {
+            "type": "object",
+            "properties": {
+                "cluster": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.TbK8sClusterInfo"
+                    }
+                }
+            }
+        },
+        "mci.RestGetAllMciPolicyResponse": {
+            "type": "object",
+            "properties": {
+                "mciPolicy": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.MciPolicyInfo"
+                    }
+                }
+            }
+        },
+        "mci.RestGetAllMciResponse": {
+            "type": "object",
+            "properties": {
+                "mci": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.TbMciInfo"
+                    }
+                }
+            }
+        },
+        "mci.RestGetAllMciStatusResponse": {
+            "type": "object",
+            "properties": {
+                "mci": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.MciStatusInfo"
+                    }
+                }
+            }
+        },
+        "mci.RestGetAllNLBResponse": {
+            "type": "object",
+            "properties": {
+                "nlb": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.TbNLBInfo"
+                    }
+                }
+            }
+        },
+        "mci.RestGetBenchmarkRequest": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.SpiderImageType": {
+            "type": "string",
+            "enum": [
+                "PublicImage",
+                "MyImage"
+            ],
+            "x-enum-varnames": [
+                "PublicImage",
+                "MyImage"
+            ]
+        },
+        "mci.SpiderVMInfo": {
+            "type": "object",
+            "properties": {
+                "cspid": {
+                    "description": "VM ID given by CSP (required for registering VM)",
+                    "type": "string"
+                },
+                "dataDiskIIDs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.IID"
+                    }
+                },
+                "dataDiskNames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "iid": {
+                    "description": "Fields for response",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.IID"
+                        }
+                    ]
+                },
+                "imageIId": {
+                    "$ref": "#/definitions/common.IID"
+                },
+                "imageName": {
+                    "type": "string"
+                },
+                "imageType": {
+                    "$ref": "#/definitions/mci.SpiderImageType"
+                },
+                "keyPairIId": {
+                    "$ref": "#/definitions/common.IID"
+                },
+                "keyPairName": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "description": "Fields for request",
+                    "type": "string"
+                },
+                "networkInterface": {
+                    "description": "ex) eth0",
+                    "type": "string"
+                },
+                "privateDNS": {
+                    "type": "string"
+                },
+                "privateIP": {
+                    "type": "string"
+                },
+                "publicDNS": {
+                    "type": "string"
+                },
+                "publicIP": {
+                    "type": "string"
+                },
+                "region": {
+                    "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mci.RegionInfo"
+                        }
+                    ]
+                },
+                "rootDeviceName": {
+                    "description": "\"/dev/sda1\", ...",
+                    "type": "string"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", \"50\", \"1000\" (GB)",
+                    "type": "string"
+                },
+                "rootDiskType": {
+                    "description": "\"SSD(gp2)\", \"Premium SSD\", ...",
+                    "type": "string"
+                },
+                "securityGroupIIds": {
+                    "description": "AWS, ex) sg-0b7452563e1121bb6",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.IID"
+                    }
+                },
+                "securityGroupNames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sshaccessPoint": {
+                    "type": "string"
+                },
+                "startTime": {
+                    "type": "string"
+                },
+                "subnetIID": {
+                    "description": "AWS, ex) subnet-8c4a53e4",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.IID"
+                        }
+                    ]
+                },
+                "subnetName": {
+                    "type": "string"
+                },
+                "vmspecName": {
+                    "description": "Fields for both request and response",
+                    "type": "string"
+                },
+                "vmuserId": {
+                    "description": "ex) user1",
+                    "type": "string"
+                },
+                "vmuserPasswd": {
+                    "type": "string"
+                },
+                "vpcIID": {
+                    "$ref": "#/definitions/common.IID"
+                },
+                "vpcname": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.SshCmdResult": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "err": {},
+                "mciId": {
+                    "type": "string"
+                },
+                "stderr": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "stdout": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "vmId": {
+                    "type": "string"
+                },
+                "vmIp": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.StatusCountInfo": {
+            "type": "object",
+            "properties": {
+                "countCreating": {
+                    "description": "CountCreating is for counting Creating",
+                    "type": "integer"
+                },
+                "countFailed": {
+                    "description": "CountFailed is for counting Failed",
+                    "type": "integer"
+                },
+                "countRebooting": {
+                    "description": "CountRebooting is for counting Rebooting",
+                    "type": "integer"
+                },
+                "countResuming": {
+                    "description": "CountResuming is for counting Resuming",
+                    "type": "integer"
+                },
+                "countRunning": {
+                    "description": "CountRunning is for counting Running",
+                    "type": "integer"
+                },
+                "countSuspended": {
+                    "description": "CountSuspended is for counting Suspended",
+                    "type": "integer"
+                },
+                "countSuspending": {
+                    "description": "CountSuspending is for counting Suspending",
+                    "type": "integer"
+                },
+                "countTerminated": {
+                    "description": "CountTerminated is for counting Terminated",
+                    "type": "integer"
+                },
+                "countTerminating": {
+                    "description": "CountTerminating is for counting Terminating",
+                    "type": "integer"
+                },
+                "countTotal": {
+                    "description": "CountTotal is for Total VMs",
+                    "type": "integer"
+                },
+                "countUndefined": {
+                    "description": "CountUndefined is for counting Undefined",
+                    "type": "integer"
+                }
+            }
+        },
+        "mci.TbChangeK8sNodeGroupAutoscaleSizeReq": {
+            "type": "object",
+            "properties": {
+                "desiredNodeSize": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "maxNodeSize": {
+                    "type": "string",
+                    "example": "3"
+                },
+                "minNodeSize": {
+                    "type": "string",
+                    "example": "1"
+                }
+            }
+        },
+        "mci.TbChangeK8sNodeGroupAutoscaleSizeRes": {
+            "type": "object",
+            "properties": {
+                "desiredNodeSize": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "id": {
+                    "type": "string",
+                    "example": "ng-01"
+                },
+                "imageId": {
+                    "description": "VM config.",
+                    "type": "string",
+                    "example": "image-01"
+                },
+                "k8sNodes": {
+                    "description": "id for nodes",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "node-01"
+                    ]
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "maxNodeSize": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "minNodeSize": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "onAutoScaling": {
+                    "description": "Scaling config.",
+                    "type": "boolean",
+                    "example": true
+                },
+                "rootDiskSize": {
+                    "type": "string",
+                    "example": "40"
+                },
+                "rootDiskType": {
+                    "type": "string",
+                    "example": "cloud_essd"
+                },
+                "specId": {
+                    "type": "string",
+                    "example": "spec-01"
+                },
+                "sshKeyId": {
+                    "type": "string",
+                    "example": "sshkey-01"
+                },
+                "status": {
+                    "description": "---",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mci.TbK8sNodeGroupStatus"
+                        }
+                    ],
+                    "example": "Creating"
+                }
+            }
+        },
+        "mci.TbIdNameInDetailInfo": {
+            "type": "object",
+            "properties": {
+                "idInCsp": {
+                    "type": "string"
+                },
+                "idInSp": {
+                    "type": "string"
+                },
+                "idInTb": {
+                    "type": "string"
+                },
+                "nameInCsp": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.TbK8sAccessInfo": {
+            "type": "object",
+            "properties": {
+                "endpoint": {
+                    "type": "string",
+                    "example": "http://1.2.3.4:6443"
+                },
+                "kubeconfig": {
+                    "type": "string",
+                    "example": "apiVersion: v1\nclusters:\n- cluster:\n certificate-authority-data: LS0..."
+                }
+            }
+        },
+        "mci.TbK8sAddonsInfo": {
+            "type": "object",
+            "properties": {
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                }
+            }
+        },
+        "mci.TbK8sClusterInfo": {
+            "type": "object",
+            "properties": {
+                "accessInfo": {
+                    "$ref": "#/definitions/mci.TbK8sAccessInfo"
+                },
+                "addons": {
+                    "$ref": "#/definitions/mci.TbK8sAddonsInfo"
+                },
+                "connectionName": {
+                    "type": "string",
+                    "example": "alibaba-ap-northeast-2"
+                },
+                "createdTime": {
+                    "type": "string",
+                    "example": "1970-01-01T00:00:00.00Z"
+                },
+                "cspK8sClusterId": {
+                    "type": "string",
+                    "example": "c123456789012345678901234567890"
+                },
+                "cspK8sClusterName": {
+                    "type": "string",
+                    "example": "ns01-k8scluster-01"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "My K8sCluster"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "k8scluster-01"
+                },
+                "k8sNodeGroupList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.TbK8sNodeGroupInfo"
+                    }
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "example": "k8scluster-01"
+                },
+                "network": {
+                    "$ref": "#/definitions/mci.TbK8sClusterNetworkInfo"
+                },
+                "status": {
+                    "description": "Creating, Active, Inactive, Updating, Deleting",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mci.TbK8sClusterStatus"
+                        }
+                    ],
+                    "example": "Creating"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                },
+                "version": {
+                    "description": "Kubernetes Version, ex) 1.23.3",
+                    "type": "string",
+                    "example": "1.30.1-aliyun.1"
+                }
+            }
+        },
+        "mci.TbK8sClusterNetworkInfo": {
+            "type": "object",
+            "properties": {
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "sg-01"
+                    ]
+                },
+                "subnetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "subnet-01"
+                    ]
+                },
+                "vNetId": {
+                    "type": "string",
+                    "example": "vpc-01"
+                }
+            }
+        },
+        "mci.TbK8sClusterReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "id",
+                "securityGroupIds",
+                "subnetIds",
+                "vNetId"
+            ],
+            "properties": {
+                "connectionName": {
+                    "description": "Namespace      string ` + "`" + `json:\"namespace\" validate:\"required\" example:\"ns01\"` + "`" + `",
+                    "type": "string",
+                    "example": "alibaba-ap-northeast-2"
+                },
+                "cspK8sClusterId": {
+                    "description": "Fields for \"Register existing K8sCluster\" feature\n@description CspK8sClusterId is required to register a k8s cluster from CSP (option=register)",
+                    "type": "string",
+                    "example": "required when option is register"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "My K8sCluster"
+                },
+                "id": {
+                    "description": "(1) K8sCluster Info",
+                    "type": "string",
+                    "example": "k8scluster-01"
+                },
+                "k8sNodeGroupList": {
+                    "description": "(3) NodeGroupInfo List",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.TbK8sNodeGroupReq"
+                    }
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "sg-01"
+                    ]
+                },
+                "subnetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "subnet-01"
+                    ]
+                },
+                "vNetId": {
+                    "description": "(2) Network Info",
+                    "type": "string",
+                    "example": "vpc-01"
+                },
+                "version": {
+                    "type": "string",
+                    "example": "1.30.1-aliyun.1"
+                }
+            }
+        },
+        "mci.TbK8sClusterStatus": {
+            "type": "string",
+            "enum": [
+                "Creating",
+                "Active",
+                "Inactive",
+                "Updating",
+                "Deleting"
+            ],
+            "x-enum-varnames": [
+                "TbK8sClusterCreating",
+                "TbK8sClusterActive",
+                "TbK8sClusterInactive",
+                "TbK8sClusterUpdating",
+                "TbK8sClusterDeleting"
+            ]
+        },
+        "mci.TbK8sNodeGroupInfo": {
+            "type": "object",
+            "properties": {
+                "desiredNodeSize": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "id": {
+                    "type": "string",
+                    "example": "ng-01"
+                },
+                "imageId": {
+                    "description": "VM config.",
+                    "type": "string",
+                    "example": "image-01"
+                },
+                "k8sNodes": {
+                    "description": "id for nodes",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "node-01"
+                    ]
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "maxNodeSize": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "minNodeSize": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "onAutoScaling": {
+                    "description": "Scaling config.",
+                    "type": "boolean",
+                    "example": true
+                },
+                "rootDiskSize": {
+                    "type": "string",
+                    "example": "40"
+                },
+                "rootDiskType": {
+                    "type": "string",
+                    "example": "cloud_essd"
+                },
+                "specId": {
+                    "type": "string",
+                    "example": "spec-01"
+                },
+                "sshKeyId": {
+                    "type": "string",
+                    "example": "sshkey-01"
+                },
+                "status": {
+                    "description": "---",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mci.TbK8sNodeGroupStatus"
+                        }
+                    ],
+                    "example": "Creating"
+                }
+            }
+        },
+        "mci.TbK8sNodeGroupReq": {
+            "type": "object",
+            "properties": {
+                "desiredNodeSize": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "imageId": {
+                    "type": "string",
+                    "example": "image-01"
+                },
+                "maxNodeSize": {
+                    "type": "string",
+                    "example": "3"
+                },
+                "minNodeSize": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "ng-01"
+                },
+                "onAutoScaling": {
+                    "description": "autoscale config.",
+                    "type": "string",
+                    "example": "true"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
+                    "type": "string",
+                    "example": "40"
+                },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
+                    "type": "string",
+                    "example": "cloud_essd"
+                },
+                "specId": {
+                    "type": "string",
+                    "example": "Standard_B2s (temporarily, CSP's Spec Names are valid. It will be upgraded)"
+                },
+                "sshKeyId": {
+                    "type": "string",
+                    "example": "sshkey-01"
+                }
+            }
+        },
+        "mci.TbK8sNodeGroupStatus": {
+            "type": "string",
+            "enum": [
+                "Creating",
+                "Active",
+                "Inactive",
+                "Updating",
+                "Deleting"
+            ],
+            "x-enum-varnames": [
+                "TbK8sNodeGroupCreating",
+                "TbK8sNodeGroupActive",
+                "TbK8sNodeGroupInactive",
+                "TbK8sNodeGroupUpdating",
+                "TbK8sNodeGroupDeleting"
+            ]
+        },
+        "mci.TbMciDynamicReq": {
+            "type": "object",
+            "required": [
+                "name",
+                "vm"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Made in CB-TB"
+                },
+                "installMonAgent": {
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
+                    "type": "string",
+                    "default": "no",
+                    "enum": [
+                        "yes",
+                        "no"
+                    ],
+                    "example": "no"
+                },
+                "label": {
+                    "description": "Label is for describing the mci in a keyword (any string can be used)",
+                    "type": "string",
+                    "example": "DynamicVM"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "mci01"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": ""
+                },
+                "vm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.TbVmDynamicReq"
+                    }
+                }
+            }
+        },
+        "mci.TbMciInfo": {
+            "type": "object",
+            "properties": {
+                "configureCloudAdaptiveNetwork": {
+                    "description": "ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)",
+                    "type": "string",
+                    "default": "no",
+                    "enum": [
+                        "yes",
+                        "no"
+                    ],
+                    "example": "yes"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "installMonAgent": {
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
+                    "type": "string",
+                    "default": "yes",
+                    "enum": [
+                        "yes",
+                        "no"
+                    ],
+                    "example": "yes"
+                },
+                "label": {
+                    "description": "Label is for describing the mci in a keyword (any string can be used)",
+                    "type": "string",
+                    "example": "User custom label"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "newVmList": {
+                    "description": "List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "placementAlgo": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "statusCount": {
+                    "$ref": "#/definitions/mci.StatusCountInfo"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "vm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.TbVmInfo"
+                    }
+                }
+            }
+        },
+        "mci.TbMciReq": {
+            "type": "object",
+            "required": [
+                "name",
+                "vm"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Made in CB-TB"
+                },
+                "installMonAgent": {
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
+                    "type": "string",
+                    "default": "yes",
+                    "enum": [
+                        "yes",
+                        "no"
+                    ],
+                    "example": "no"
+                },
+                "label": {
+                    "description": "Label is for describing the mci in a keyword (any string can be used)",
+                    "type": "string",
+                    "example": "custom tag"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "mci01"
+                },
+                "placementAlgo": {
+                    "type": "string"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": ""
+                },
+                "vm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.TbVmReq"
+                    }
+                }
+            }
+        },
+        "mci.TbNLBAddRemoveVMReq": {
+            "type": "object",
+            "properties": {
+                "targetGroup": {
+                    "$ref": "#/definitions/mci.TbNLBTargetGroupInfo"
+                }
+            }
+        },
+        "mci.TbNLBHealthCheckerInfo": {
+            "type": "object",
+            "properties": {
+                "interval": {
+                    "description": "secs, Interval time between health checks.",
+                    "type": "integer",
+                    "example": 10
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "port": {
+                    "description": "Listener Port or 1-65535",
+                    "type": "string",
+                    "example": "22"
+                },
+                "protocol": {
+                    "description": "TCP|HTTP|HTTPS",
+                    "type": "string",
+                    "example": "TCP"
+                },
+                "threshold": {
+                    "description": "num, The number of continuous health checks to change the VM status.",
+                    "type": "integer",
+                    "example": 3
+                },
+                "timeout": {
+                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "mci.TbNLBHealthCheckerReq": {
+            "type": "object",
+            "properties": {
+                "interval": {
+                    "description": "secs, Interval time between health checks.",
+                    "type": "string",
+                    "example": "default"
+                },
+                "threshold": {
+                    "description": "num, The number of continuous health checks to change the VM status.",
+                    "type": "string",
+                    "example": "default"
+                },
+                "timeout": {
+                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
+                    "type": "string",
+                    "example": "default"
+                }
+            }
+        },
+        "mci.TbNLBInfo": {
+            "type": "object",
+            "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "createdTime": {
+                    "type": "string"
+                },
+                "cspNLBId": {
+                    "type": "string"
+                },
+                "cspNLBName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "healthChecker": {
+                    "$ref": "#/definitions/mci.TbNLBHealthCheckerInfo"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isAutoGenerated": {
+                    "type": "boolean"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "listener": {
+                    "$ref": "#/definitions/mci.TbNLBListenerInfo"
+                },
+                "location": {
+                    "$ref": "#/definitions/common.Location"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "scope": {
+                    "description": "REGION(V) | GLOBAL",
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "targetGroup": {
+                    "$ref": "#/definitions/mci.TbNLBTargetGroupInfo"
+                },
+                "type": {
+                    "description": "PUBLIC(V) | INTERNAL",
+                    "type": "string"
+                }
+            }
+        },
+        "mci.TbNLBListenerInfo": {
+            "type": "object",
+            "properties": {
+                "dnsName": {
+                    "description": "Optional, Auto Generated and attached",
+                    "type": "string",
+                    "example": "ns01-group-cd3.elb.ap-northeast-2.amazonaws.com"
+                },
+                "ip": {
+                    "description": "Auto Generated and attached",
+                    "type": "string",
+                    "example": "x.x.x.x"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "port": {
+                    "description": "1-65535",
+                    "type": "string",
+                    "example": "80"
+                },
+                "protocol": {
+                    "description": "TCP|UDP",
+                    "type": "string",
+                    "example": "TCP"
+                }
+            }
+        },
+        "mci.TbNLBReq": {
+            "type": "object",
+            "required": [
+                "healthChecker",
+                "listener",
+                "scope",
+                "targetGroup",
+                "type"
+            ],
+            "properties": {
+                "cspNLBId": {
+                    "description": "Existing NLB (used only for option=register)",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "healthChecker": {
+                    "description": "HealthChecker",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mci.TbNLBHealthCheckerReq"
+                        }
+                    ]
+                },
+                "listener": {
+                    "description": "Frontend",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mci.NLBListenerReq"
+                        }
+                    ]
+                },
+                "scope": {
+                    "description": "REGION(V) | GLOBAL",
+                    "type": "string",
+                    "enum": [
+                        "REGION",
+                        "GLOBAL"
+                    ],
+                    "example": "REGION"
+                },
+                "targetGroup": {
+                    "description": "Backend",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mci.TbNLBTargetGroupReq"
+                        }
+                    ]
+                },
+                "type": {
+                    "description": "PUBLIC(V) | INTERNAL",
+                    "type": "string",
+                    "enum": [
+                        "PUBLIC",
+                        "INTERNAL"
+                    ],
+                    "example": "PUBLIC"
+                }
+            }
+        },
+        "mci.TbNLBTargetGroupInfo": {
+            "type": "object",
+            "properties": {
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "port": {
+                    "description": "Listener Port or 1-65535",
+                    "type": "string",
+                    "example": "80"
+                },
+                "protocol": {
+                    "description": "TCP|HTTP|HTTPS",
+                    "type": "string",
+                    "example": "TCP"
+                },
+                "subGroupId": {
+                    "type": "string",
+                    "example": "g1"
+                },
+                "vms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "mci.TbNLBTargetGroupReq": {
+            "type": "object",
+            "properties": {
+                "port": {
+                    "description": "Listener Port or 1-65535",
+                    "type": "string",
+                    "example": "80"
+                },
+                "protocol": {
+                    "description": "TCP|HTTP|HTTPS",
+                    "type": "string",
+                    "example": "TCP"
+                },
+                "subGroupId": {
+                    "type": "string",
+                    "example": "g1"
+                }
+            }
+        },
+        "mci.TbScaleOutSubGroupReq": {
+            "type": "object",
+            "required": [
+                "numVMsToAdd"
+            ],
+            "properties": {
+                "numVMsToAdd": {
+                    "description": "Define addtional VMs to scaleOut",
+                    "type": "string",
+                    "example": "2"
+                }
+            }
+        },
+        "mci.TbSetK8sNodeGroupAutoscalingReq": {
+            "type": "object",
+            "properties": {
+                "onAutoScaling": {
+                    "type": "string",
+                    "example": "true"
+                }
+            }
+        },
+        "mci.TbSetK8sNodeGroupAutoscalingRes": {
+            "type": "object",
+            "properties": {
+                "result": {
+                    "type": "string",
+                    "example": "true"
+                }
+            }
+        },
+        "mci.TbUpgradeK8sClusterReq": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "string",
+                    "example": "1.30.1-alyun.1"
+                }
+            }
+        },
+        "mci.TbVmDynamicReq": {
+            "type": "object",
+            "required": [
+                "commonImage",
+                "commonSpec"
+            ],
+            "properties": {
+                "commonImage": {
+                    "description": "CommonImage is field for id of a image in common namespace",
+                    "type": "string",
+                    "example": "ubuntu18.04"
+                },
+                "commonSpec": {
+                    "description": "CommonSpec is field for id of a spec in common namespace",
+                    "type": "string",
+                    "example": "aws+ap-northeast-2+t2.small"
+                },
+                "connectionName": {
+                    "description": "if ConnectionName is given, the VM tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Description"
+                },
+                "label": {
+                    "type": "string",
+                    "example": "DynamicVM"
+                },
+                "name": {
+                    "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
+                    "type": "string",
+                    "example": "g1-1"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
+                    "type": "string",
+                    "default": "default",
+                    "example": "default, 30, 42, ..."
+                },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
+                    "type": "string",
+                    "default": "default",
+                    "example": "default, TYPE1, ..."
+                },
+                "subGroupSize": {
+                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be gernetad. VMs will be created accordingly.",
+                    "type": "string",
+                    "default": "1",
+                    "example": "3"
+                },
+                "vmUserPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.TbVmInfo": {
+            "type": "object",
+            "properties": {
+                "connectionConfig": {
+                    "$ref": "#/definitions/common.ConnConfig"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "createdTime": {
+                    "description": "Created time",
+                    "type": "string",
+                    "example": "2022-11-10 23:00:00"
+                },
+                "cspViewVmDetail": {
+                    "$ref": "#/definitions/mci.SpiderVMInfo"
+                },
+                "dataDiskIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "idByCSP": {
+                    "description": "CSP managed ID or Name",
+                    "type": "string"
+                },
+                "imageId": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/common.Location"
+                },
+                "monAgentStatus": {
+                    "description": "Montoring agent status",
+                    "type": "string",
+                    "example": "[installed, notInstalled, failed]"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "networkAgentStatus": {
+                    "description": "NetworkAgent status",
+                    "type": "string",
+                    "example": "[notInstalled, installing, installed, failed]"
+                },
+                "privateDNS": {
+                    "type": "string"
+                },
+                "privateIP": {
+                    "type": "string"
+                },
+                "publicDNS": {
+                    "type": "string"
+                },
+                "publicIP": {
+                    "type": "string"
+                },
+                "region": {
+                    "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mci.RegionInfo"
+                        }
+                    ]
+                },
+                "rootDeviceName": {
+                    "type": "string"
+                },
+                "rootDiskSize": {
+                    "type": "string"
+                },
+                "rootDiskType": {
+                    "type": "string"
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "sshKeyId": {
+                    "type": "string"
+                },
+                "sshPort": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Required by CB-Tumblebug",
+                    "type": "string"
+                },
+                "subGroupId": {
+                    "description": "defined if the VM is in a group",
+                    "type": "string"
+                },
+                "subnetId": {
+                    "type": "string"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "vNetId": {
+                    "type": "string"
+                },
+                "vmUserAccount": {
+                    "type": "string"
+                },
+                "vmUserPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.TbVmReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "imageId",
+                "name",
+                "securityGroupIds",
+                "specId",
+                "sshKeyId",
+                "subnetId",
+                "vNetId"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string",
+                    "example": "testcloud01-seoul"
+                },
+                "dataDiskIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Description"
+                },
+                "idByCsp": {
+                    "description": "CSP managed ID or Name (required for option=register)",
+                    "type": "string",
+                    "example": "i-014fa6ede6ada0b2c"
+                },
+                "imageId": {
+                    "description": "ImageType        string   ` + "`" + `json:\"imageType\"` + "`" + `",
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "name": {
+                    "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
+                    "type": "string",
+                    "example": "g1-1"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
+                    "type": "string",
+                    "example": "default, 30, 42, ..."
+                },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
+                    "type": "string",
+                    "example": "default, TYPE1, ..."
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "sshKeyId": {
+                    "type": "string"
+                },
+                "subGroupSize": {
+                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be gernetad. VMs will be created accordingly.",
+                    "type": "string",
+                    "example": "3"
+                },
+                "subnetId": {
+                    "type": "string"
+                },
+                "vNetId": {
+                    "type": "string"
+                },
+                "vmUserAccount": {
+                    "type": "string"
+                },
+                "vmUserPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.TbVmSnapshotReq": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-snapshot"
+                }
+            }
+        },
+        "mci.TbVmStatusInfo": {
+            "type": "object",
+            "properties": {
+                "createdTime": {
+                    "description": "Created time",
+                    "type": "string",
+                    "example": "2022-11-10 23:00:00"
+                },
+                "cspVmId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/common.Location"
+                },
+                "monAgentStatus": {
+                    "description": "Montoring agent status",
+                    "type": "string",
+                    "example": "[installed, notInstalled, failed]"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nativeStatus": {
+                    "type": "string"
+                },
+                "privateIp": {
+                    "type": "string"
+                },
+                "publicIp": {
+                    "type": "string"
+                },
+                "sshPort": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.inspectOverview": {
+            "type": "object",
+            "properties": {
+                "customImage": {
+                    "type": "integer"
+                },
+                "dataDisk": {
+                    "type": "integer"
+                },
+                "nlb": {
+                    "type": "integer"
+                },
+                "securityGroup": {
+                    "type": "integer"
+                },
+                "sshKey": {
+                    "type": "integer"
+                },
+                "vNet": {
+                    "type": "integer"
+                },
+                "vm": {
+                    "type": "integer"
+                }
+            }
+        },
+        "mci.registerationOverview": {
+            "type": "object",
+            "properties": {
+                "customImage": {
+                    "type": "integer"
+                },
+                "dataDisk": {
+                    "type": "integer"
+                },
+                "failed": {
+                    "type": "integer"
+                },
+                "nlb": {
+                    "type": "integer"
+                },
+                "securityGroup": {
+                    "type": "integer"
+                },
+                "sshKey": {
+                    "type": "integer"
+                },
+                "vNet": {
+                    "type": "integer"
+                },
+                "vm": {
+                    "type": "integer"
+                }
+            }
+        },
+        "mci.resourceCountOverview": {
+            "type": "object",
+            "properties": {
+                "onCspOnly": {
+                    "type": "integer"
+                },
+                "onCspTotal": {
+                    "type": "integer"
+                },
+                "onSpider": {
+                    "type": "integer"
+                },
+                "onTumblebug": {
+                    "type": "integer"
+                }
+            }
+        },
+        "mci.resourceOnCsp": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "info": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.resourceOnCspInfo"
+                    }
+                }
+            }
+        },
+        "mci.resourceOnCspInfo": {
+            "type": "object",
+            "properties": {
+                "idByCsp": {
+                    "type": "string"
+                },
+                "refNameOrId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.resourceOnSpider": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "info": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.resourceOnSpiderInfo"
+                    }
+                }
+            }
+        },
+        "mci.resourceOnSpiderInfo": {
+            "type": "object",
+            "properties": {
+                "idByCsp": {
+                    "type": "string"
+                },
+                "idBySp": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.resourceOnTumblebug": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "info": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mci.resourceOnTumblebugInfo"
+                    }
+                }
+            }
+        },
+        "mci.resourceOnTumblebugInfo": {
+            "type": "object",
+            "properties": {
+                "idByCsp": {
+                    "type": "string"
+                },
+                "idByTb": {
+                    "type": "string"
+                },
+                "mciId": {
+                    "type": "string"
+                },
+                "nsId": {
+                    "type": "string"
+                },
+                "objectKey": {
+                    "type": "string"
+                }
+            }
+        },
+        "mci.resourcesByManageType": {
+            "type": "object",
+            "properties": {
+                "onCspOnly": {
+                    "$ref": "#/definitions/mci.resourceOnCsp"
+                },
+                "onCspTotal": {
+                    "$ref": "#/definitions/mci.resourceOnCsp"
+                },
+                "onSpider": {
+                    "$ref": "#/definitions/mci.resourceOnSpider"
+                },
+                "onTumblebug": {
+                    "$ref": "#/definitions/mci.resourceOnTumblebug"
+                }
+            }
+        },
         "mcir.BastionNode": {
             "type": "object",
             "properties": {
-                "mcisId": {
+                "mciId": {
                     "type": "string"
                 },
                 "vmId": {
@@ -10870,2483 +13347,6 @@ const docTemplate = `{
                 }
             }
         },
-        "mcis.AgentInstallContent": {
-            "type": "object",
-            "properties": {
-                "mcisId": {
-                    "type": "string"
-                },
-                "result": {
-                    "type": "string"
-                },
-                "vmId": {
-                    "type": "string"
-                },
-                "vmIp": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.AgentInstallContentWrapper": {
-            "type": "object",
-            "properties": {
-                "resultArray": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.AgentInstallContent"
-                    }
-                }
-            }
-        },
-        "mcis.AutoAction": {
-            "type": "object",
-            "properties": {
-                "actionType": {
-                    "type": "string",
-                    "enum": [
-                        "ScaleOut",
-                        "ScaleIn"
-                    ],
-                    "example": "ScaleOut"
-                },
-                "placementAlgo": {
-                    "type": "string",
-                    "example": "random"
-                },
-                "postCommand": {
-                    "description": "PostCommand is field for providing command to VMs after its creation. example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.McisCmdReq"
-                        }
-                    ]
-                },
-                "vmDynamicReq": {
-                    "$ref": "#/definitions/mcis.TbVmDynamicReq"
-                }
-            }
-        },
-        "mcis.AutoCondition": {
-            "type": "object",
-            "properties": {
-                "evaluationPeriod": {
-                    "type": "string",
-                    "example": "10"
-                },
-                "evaluationValue": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "metric": {
-                    "type": "string",
-                    "example": "cpu"
-                },
-                "operand": {
-                    "type": "string",
-                    "example": "80"
-                },
-                "operator": {
-                    "type": "string",
-                    "enum": [
-                        "\u003c",
-                        "\u003c=",
-                        "\u003e",
-                        "\u003e="
-                    ],
-                    "example": "\u003e="
-                }
-            }
-        },
-        "mcis.BenchmarkInfo": {
-            "type": "object",
-            "properties": {
-                "desc": {
-                    "type": "string"
-                },
-                "elapsed": {
-                    "type": "string"
-                },
-                "regionName": {
-                    "type": "string"
-                },
-                "result": {
-                    "type": "string"
-                },
-                "resultarray": {
-                    "description": "struct-element cycle ?",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.BenchmarkInfo"
-                    }
-                },
-                "specid": {
-                    "type": "string"
-                },
-                "unit": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.BenchmarkInfoArray": {
-            "type": "object",
-            "properties": {
-                "resultarray": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.BenchmarkInfo"
-                    }
-                }
-            }
-        },
-        "mcis.CheckMcisDynamicReqInfo": {
-            "type": "object",
-            "required": [
-                "reqCheck"
-            ],
-            "properties": {
-                "reqCheck": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.CheckVmDynamicReqInfo"
-                    }
-                }
-            }
-        },
-        "mcis.CheckVmDynamicReqInfo": {
-            "type": "object",
-            "properties": {
-                "connectionConfigCandidates": {
-                    "description": "ConnectionConfigCandidates will provide ConnectionConfig options",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "image": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbImageInfo"
-                    }
-                },
-                "region": {
-                    "$ref": "#/definitions/common.RegionDetail"
-                },
-                "spec": {
-                    "$ref": "#/definitions/mcir.TbSpecInfo"
-                },
-                "systemMessage": {
-                    "description": "Latest system message such as error message",
-                    "type": "string",
-                    "example": "Failed because ..."
-                }
-            }
-        },
-        "mcis.DeploymentPlan": {
-            "type": "object",
-            "properties": {
-                "filter": {
-                    "$ref": "#/definitions/mcis.FilterInfo"
-                },
-                "limit": {
-                    "type": "string",
-                    "enum": [
-                        "1",
-                        "2",
-                        "30"
-                    ],
-                    "example": "5"
-                },
-                "priority": {
-                    "$ref": "#/definitions/mcis.PriorityInfo"
-                }
-            }
-        },
-        "mcis.FilterCondition": {
-            "type": "object",
-            "properties": {
-                "condition": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.Operation"
-                    }
-                },
-                "metric": {
-                    "type": "string",
-                    "enum": [
-                        "vCPU",
-                        "memoryGiB",
-                        "costPerHour"
-                    ],
-                    "example": "vCPU"
-                }
-            }
-        },
-        "mcis.FilterInfo": {
-            "type": "object",
-            "properties": {
-                "policy": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.FilterCondition"
-                    }
-                }
-            }
-        },
-        "mcis.InspectResource": {
-            "type": "object",
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "resourceOverview": {
-                    "$ref": "#/definitions/mcis.resourceCountOverview"
-                },
-                "resourceType": {
-                    "type": "string"
-                },
-                "resources": {
-                    "$ref": "#/definitions/mcis.resourcesByManageType"
-                },
-                "systemMessage": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.InspectResourceAllResult": {
-            "type": "object",
-            "properties": {
-                "availableConnection": {
-                    "type": "integer"
-                },
-                "cspOnlyOverview": {
-                    "$ref": "#/definitions/mcis.inspectOverview"
-                },
-                "elapsedTime": {
-                    "type": "integer"
-                },
-                "inspectResult": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.InspectResourceResult"
-                    }
-                },
-                "registeredConnection": {
-                    "type": "integer"
-                },
-                "tumblebugOverview": {
-                    "$ref": "#/definitions/mcis.inspectOverview"
-                }
-            }
-        },
-        "mcis.InspectResourceResult": {
-            "type": "object",
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspOnlyOverview": {
-                    "$ref": "#/definitions/mcis.inspectOverview"
-                },
-                "elapsedTime": {
-                    "type": "integer"
-                },
-                "systemMessage": {
-                    "type": "string"
-                },
-                "tumblebugOverview": {
-                    "$ref": "#/definitions/mcis.inspectOverview"
-                }
-            }
-        },
-        "mcis.JSONResult": {
-            "type": "object"
-        },
-        "mcis.McNlbInfo": {
-            "type": "object",
-            "properties": {
-                "deploymentLog": {
-                    "$ref": "#/definitions/mcis.McisSshCmdResult"
-                },
-                "mcNlbHostInfo": {
-                    "$ref": "#/definitions/mcis.TbMcisInfo"
-                },
-                "mcisAccessInfo": {
-                    "$ref": "#/definitions/mcis.McisAccessInfo"
-                }
-            }
-        },
-        "mcis.McisAccessInfo": {
-            "type": "object",
-            "properties": {
-                "mcisId": {
-                    "type": "string"
-                },
-                "mcisNlbListener": {
-                    "$ref": "#/definitions/mcis.McisAccessInfo"
-                },
-                "mcisSubGroupAccessInfo": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.McisSubGroupAccessInfo"
-                    }
-                }
-            }
-        },
-        "mcis.McisCmdReq": {
-            "type": "object",
-            "required": [
-                "command"
-            ],
-            "properties": {
-                "command": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"
-                    ]
-                },
-                "userName": {
-                    "type": "string",
-                    "example": "cb-user"
-                }
-            }
-        },
-        "mcis.McisConnectionConfigCandidatesReq": {
-            "type": "object",
-            "required": [
-                "commonSpec"
-            ],
-            "properties": {
-                "commonSpec": {
-                    "description": "CommonSpec is field for id of a spec in common namespace",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "aws+ap-northeast-2+t2.small",
-                        "gcp+us-west1+g1-small"
-                    ]
-                }
-            }
-        },
-        "mcis.McisPolicyInfo": {
-            "type": "object",
-            "properties": {
-                "Id": {
-                    "description": "MCIS Id (generated ID by the Name)",
-                    "type": "string"
-                },
-                "Name": {
-                    "description": "MCIS Name (for request)",
-                    "type": "string"
-                },
-                "actionLog": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "Description"
-                },
-                "policy": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.Policy"
-                    }
-                }
-            }
-        },
-        "mcis.McisPolicyReq": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Description"
-                },
-                "policy": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.Policy"
-                    }
-                }
-            }
-        },
-        "mcis.McisSshCmdResult": {
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.SshCmdResult"
-                    }
-                }
-            }
-        },
-        "mcis.McisStatusInfo": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "installMonAgent": {
-                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
-                    "type": "string",
-                    "example": "[yes, no]"
-                },
-                "label": {
-                    "description": "Label is for describing the mcis in a keyword (any string can be used)",
-                    "type": "string",
-                    "example": "User custom label"
-                },
-                "masterIp": {
-                    "type": "string",
-                    "example": "32.201.134.113"
-                },
-                "masterSSHPort": {
-                    "type": "string"
-                },
-                "masterVmId": {
-                    "type": "string",
-                    "example": "vm-asiaeast1-cb-01"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "statusCount": {
-                    "$ref": "#/definitions/mcis.StatusCountInfo"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                },
-                "targetAction": {
-                    "type": "string"
-                },
-                "targetStatus": {
-                    "type": "string"
-                },
-                "vm": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.TbVmStatusInfo"
-                    }
-                }
-            }
-        },
-        "mcis.McisSubGroupAccessInfo": {
-            "type": "object",
-            "properties": {
-                "bastionVmId": {
-                    "type": "string"
-                },
-                "mcisVmAccessInfo": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.McisVmAccessInfo"
-                    }
-                },
-                "nlbListener": {
-                    "$ref": "#/definitions/mcis.TbNLBListenerInfo"
-                },
-                "subGroupId": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.McisVmAccessInfo": {
-            "type": "object",
-            "properties": {
-                "privateIP": {
-                    "type": "string"
-                },
-                "privateKey": {
-                    "type": "string"
-                },
-                "publicIP": {
-                    "type": "string"
-                },
-                "sshPort": {
-                    "type": "string"
-                },
-                "vmId": {
-                    "type": "string"
-                },
-                "vmUserAccount": {
-                    "type": "string"
-                },
-                "vmUserPassword": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.MonResultSimple": {
-            "type": "object",
-            "properties": {
-                "err": {
-                    "type": "string"
-                },
-                "metric": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
-                },
-                "vmId": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.MonResultSimpleResponse": {
-            "type": "object",
-            "properties": {
-                "mcisId": {
-                    "type": "string"
-                },
-                "mcisMonitoring": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.MonResultSimple"
-                    }
-                },
-                "nsId": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.NLBListenerReq": {
-            "type": "object",
-            "properties": {
-                "port": {
-                    "description": "1-65535",
-                    "type": "string",
-                    "example": "80"
-                },
-                "protocol": {
-                    "description": "TCP|UDP",
-                    "type": "string",
-                    "example": "TCP"
-                }
-            }
-        },
-        "mcis.Operation": {
-            "type": "object",
-            "properties": {
-                "operand": {
-                    "description": "10, 70, 80, 98, ...",
-                    "type": "string",
-                    "enum": [
-                        "4",
-                        "8",
-                        ".."
-                    ],
-                    "example": "4"
-                },
-                "operator": {
-                    "description": "\u003e=, \u003c=, ==",
-                    "type": "string",
-                    "enum": [
-                        "\u003e=",
-                        "\u003c=",
-                        "=="
-                    ],
-                    "example": "\u003c="
-                }
-            }
-        },
-        "mcis.ParameterKeyVal": {
-            "type": "object",
-            "properties": {
-                "key": {
-                    "description": "coordinate",
-                    "type": "string",
-                    "enum": [
-                        "coordinateClose",
-                        "coordinateWithin",
-                        "coordinateFair"
-                    ],
-                    "example": "coordinateClose"
-                },
-                "val": {
-                    "description": "[\"Latitude,Longitude\",\"12,543\",..,\"31,433\"]",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "44.146838/-116.411403"
-                    ]
-                }
-            }
-        },
-        "mcis.Policy": {
-            "type": "object",
-            "properties": {
-                "autoAction": {
-                    "$ref": "#/definitions/mcis.AutoAction"
-                },
-                "autoCondition": {
-                    "$ref": "#/definitions/mcis.AutoCondition"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.PriorityCondition": {
-            "type": "object",
-            "properties": {
-                "metric": {
-                    "type": "string",
-                    "enum": [
-                        "location",
-                        "cost",
-                        "random",
-                        "performance",
-                        "latency"
-                    ],
-                    "example": "location"
-                },
-                "parameter": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.ParameterKeyVal"
-                    }
-                },
-                "weight": {
-                    "type": "string",
-                    "enum": [
-                        "0.1",
-                        "0.2",
-                        "..."
-                    ],
-                    "example": "0.3"
-                }
-            }
-        },
-        "mcis.PriorityInfo": {
-            "type": "object",
-            "properties": {
-                "policy": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.PriorityCondition"
-                    }
-                }
-            }
-        },
-        "mcis.RegionInfo": {
-            "type": "object",
-            "properties": {
-                "region": {
-                    "type": "string"
-                },
-                "zone": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.RegisterResourceAllResult": {
-            "type": "object",
-            "properties": {
-                "availableConnection": {
-                    "type": "integer"
-                },
-                "elapsedTime": {
-                    "type": "integer"
-                },
-                "registerationOverview": {
-                    "$ref": "#/definitions/mcis.registerationOverview"
-                },
-                "registerationResult": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.RegisterResourceResult"
-                    }
-                },
-                "registeredConnection": {
-                    "type": "integer"
-                }
-            }
-        },
-        "mcis.RegisterResourceResult": {
-            "type": "object",
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "elapsedTime": {
-                    "type": "integer"
-                },
-                "registerationOutputs": {
-                    "$ref": "#/definitions/common.IdList"
-                },
-                "registerationOverview": {
-                    "$ref": "#/definitions/mcis.registerationOverview"
-                },
-                "systemMessage": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.RestGetAllBenchmarkRequest": {
-            "type": "object",
-            "properties": {
-                "host": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.RestGetAllK8sClusterResponse": {
-            "type": "object",
-            "properties": {
-                "cluster": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.TbK8sClusterInfo"
-                    }
-                }
-            }
-        },
-        "mcis.RestGetAllMcisPolicyResponse": {
-            "type": "object",
-            "properties": {
-                "mcisPolicy": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.McisPolicyInfo"
-                    }
-                }
-            }
-        },
-        "mcis.RestGetAllMcisResponse": {
-            "type": "object",
-            "properties": {
-                "mcis": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.TbMcisInfo"
-                    }
-                }
-            }
-        },
-        "mcis.RestGetAllMcisStatusResponse": {
-            "type": "object",
-            "properties": {
-                "mcis": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.McisStatusInfo"
-                    }
-                }
-            }
-        },
-        "mcis.RestGetAllNLBResponse": {
-            "type": "object",
-            "properties": {
-                "nlb": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.TbNLBInfo"
-                    }
-                }
-            }
-        },
-        "mcis.RestGetBenchmarkRequest": {
-            "type": "object",
-            "properties": {
-                "host": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.SpiderImageType": {
-            "type": "string",
-            "enum": [
-                "PublicImage",
-                "MyImage"
-            ],
-            "x-enum-varnames": [
-                "PublicImage",
-                "MyImage"
-            ]
-        },
-        "mcis.SpiderVMInfo": {
-            "type": "object",
-            "properties": {
-                "cspid": {
-                    "description": "VM ID given by CSP (required for registering VM)",
-                    "type": "string"
-                },
-                "dataDiskIIDs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.IID"
-                    }
-                },
-                "dataDiskNames": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "iid": {
-                    "description": "Fields for response",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
-                },
-                "imageIId": {
-                    "$ref": "#/definitions/common.IID"
-                },
-                "imageName": {
-                    "type": "string"
-                },
-                "imageType": {
-                    "$ref": "#/definitions/mcis.SpiderImageType"
-                },
-                "keyPairIId": {
-                    "$ref": "#/definitions/common.IID"
-                },
-                "keyPairName": {
-                    "type": "string"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "description": "Fields for request",
-                    "type": "string"
-                },
-                "networkInterface": {
-                    "description": "ex) eth0",
-                    "type": "string"
-                },
-                "privateDNS": {
-                    "type": "string"
-                },
-                "privateIP": {
-                    "type": "string"
-                },
-                "publicDNS": {
-                    "type": "string"
-                },
-                "publicIP": {
-                    "type": "string"
-                },
-                "region": {
-                    "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.RegionInfo"
-                        }
-                    ]
-                },
-                "rootDeviceName": {
-                    "description": "\"/dev/sda1\", ...",
-                    "type": "string"
-                },
-                "rootDiskSize": {
-                    "description": "\"default\", \"50\", \"1000\" (GB)",
-                    "type": "string"
-                },
-                "rootDiskType": {
-                    "description": "\"SSD(gp2)\", \"Premium SSD\", ...",
-                    "type": "string"
-                },
-                "securityGroupIIds": {
-                    "description": "AWS, ex) sg-0b7452563e1121bb6",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.IID"
-                    }
-                },
-                "securityGroupNames": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sshaccessPoint": {
-                    "type": "string"
-                },
-                "startTime": {
-                    "type": "string"
-                },
-                "subnetIID": {
-                    "description": "AWS, ex) subnet-8c4a53e4",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
-                },
-                "subnetName": {
-                    "type": "string"
-                },
-                "vmspecName": {
-                    "description": "Fields for both request and response",
-                    "type": "string"
-                },
-                "vmuserId": {
-                    "description": "ex) user1",
-                    "type": "string"
-                },
-                "vmuserPasswd": {
-                    "type": "string"
-                },
-                "vpcIID": {
-                    "$ref": "#/definitions/common.IID"
-                },
-                "vpcname": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.SshCmdResult": {
-            "type": "object",
-            "properties": {
-                "command": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "err": {},
-                "mcisId": {
-                    "type": "string"
-                },
-                "stderr": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "stdout": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "vmId": {
-                    "type": "string"
-                },
-                "vmIp": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.StatusCountInfo": {
-            "type": "object",
-            "properties": {
-                "countCreating": {
-                    "description": "CountCreating is for counting Creating",
-                    "type": "integer"
-                },
-                "countFailed": {
-                    "description": "CountFailed is for counting Failed",
-                    "type": "integer"
-                },
-                "countRebooting": {
-                    "description": "CountRebooting is for counting Rebooting",
-                    "type": "integer"
-                },
-                "countResuming": {
-                    "description": "CountResuming is for counting Resuming",
-                    "type": "integer"
-                },
-                "countRunning": {
-                    "description": "CountRunning is for counting Running",
-                    "type": "integer"
-                },
-                "countSuspended": {
-                    "description": "CountSuspended is for counting Suspended",
-                    "type": "integer"
-                },
-                "countSuspending": {
-                    "description": "CountSuspending is for counting Suspending",
-                    "type": "integer"
-                },
-                "countTerminated": {
-                    "description": "CountTerminated is for counting Terminated",
-                    "type": "integer"
-                },
-                "countTerminating": {
-                    "description": "CountTerminating is for counting Terminating",
-                    "type": "integer"
-                },
-                "countTotal": {
-                    "description": "CountTotal is for Total VMs",
-                    "type": "integer"
-                },
-                "countUndefined": {
-                    "description": "CountUndefined is for counting Undefined",
-                    "type": "integer"
-                }
-            }
-        },
-        "mcis.TbChangeK8sNodeGroupAutoscaleSizeReq": {
-            "type": "object",
-            "properties": {
-                "desiredNodeSize": {
-                    "type": "string",
-                    "example": "1"
-                },
-                "maxNodeSize": {
-                    "type": "string",
-                    "example": "3"
-                },
-                "minNodeSize": {
-                    "type": "string",
-                    "example": "1"
-                }
-            }
-        },
-        "mcis.TbChangeK8sNodeGroupAutoscaleSizeRes": {
-            "type": "object",
-            "properties": {
-                "desiredNodeSize": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "id": {
-                    "type": "string",
-                    "example": "ng-01"
-                },
-                "imageId": {
-                    "description": "VM config.",
-                    "type": "string",
-                    "example": "image-01"
-                },
-                "k8sNodes": {
-                    "description": "id for nodes",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "node-01"
-                    ]
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "maxNodeSize": {
-                    "type": "integer",
-                    "example": 3
-                },
-                "minNodeSize": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "onAutoScaling": {
-                    "description": "Scaling config.",
-                    "type": "boolean",
-                    "example": true
-                },
-                "rootDiskSize": {
-                    "type": "string",
-                    "example": "40"
-                },
-                "rootDiskType": {
-                    "type": "string",
-                    "example": "cloud_essd"
-                },
-                "specId": {
-                    "type": "string",
-                    "example": "spec-01"
-                },
-                "sshKeyId": {
-                    "type": "string",
-                    "example": "sshkey-01"
-                },
-                "status": {
-                    "description": "---",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.TbK8sNodeGroupStatus"
-                        }
-                    ],
-                    "example": "Creating"
-                }
-            }
-        },
-        "mcis.TbIdNameInDetailInfo": {
-            "type": "object",
-            "properties": {
-                "idInCsp": {
-                    "type": "string"
-                },
-                "idInSp": {
-                    "type": "string"
-                },
-                "idInTb": {
-                    "type": "string"
-                },
-                "nameInCsp": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.TbK8sAccessInfo": {
-            "type": "object",
-            "properties": {
-                "endpoint": {
-                    "type": "string",
-                    "example": "http://1.2.3.4:6443"
-                },
-                "kubeconfig": {
-                    "type": "string",
-                    "example": "apiVersion: v1\nclusters:\n- cluster:\n certificate-authority-data: LS0..."
-                }
-            }
-        },
-        "mcis.TbK8sAddonsInfo": {
-            "type": "object",
-            "properties": {
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                }
-            }
-        },
-        "mcis.TbK8sClusterInfo": {
-            "type": "object",
-            "properties": {
-                "accessInfo": {
-                    "$ref": "#/definitions/mcis.TbK8sAccessInfo"
-                },
-                "addons": {
-                    "$ref": "#/definitions/mcis.TbK8sAddonsInfo"
-                },
-                "connectionName": {
-                    "type": "string",
-                    "example": "alibaba-ap-northeast-2"
-                },
-                "createdTime": {
-                    "type": "string",
-                    "example": "1970-01-01T00:00:00.00Z"
-                },
-                "cspK8sClusterId": {
-                    "type": "string",
-                    "example": "c123456789012345678901234567890"
-                },
-                "cspK8sClusterName": {
-                    "type": "string",
-                    "example": "ns01-k8scluster-01"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "My K8sCluster"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "k8scluster-01"
-                },
-                "k8sNodeGroupList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.TbK8sNodeGroupInfo"
-                    }
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "type": "string",
-                    "example": "k8scluster-01"
-                },
-                "network": {
-                    "$ref": "#/definitions/mcis.TbK8sClusterNetworkInfo"
-                },
-                "status": {
-                    "description": "Creating, Active, Inactive, Updating, Deleting",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.TbK8sClusterStatus"
-                        }
-                    ],
-                    "example": "Creating"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                },
-                "systemMessage": {
-                    "description": "Latest system message such as error message",
-                    "type": "string",
-                    "example": "Failed because ..."
-                },
-                "version": {
-                    "description": "Kubernetes Version, ex) 1.23.3",
-                    "type": "string",
-                    "example": "1.30.1-aliyun.1"
-                }
-            }
-        },
-        "mcis.TbK8sClusterNetworkInfo": {
-            "type": "object",
-            "properties": {
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "securityGroupIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "sg-01"
-                    ]
-                },
-                "subnetIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "subnet-01"
-                    ]
-                },
-                "vNetId": {
-                    "type": "string",
-                    "example": "vpc-01"
-                }
-            }
-        },
-        "mcis.TbK8sClusterReq": {
-            "type": "object",
-            "required": [
-                "connectionName",
-                "id",
-                "securityGroupIds",
-                "subnetIds",
-                "vNetId"
-            ],
-            "properties": {
-                "connectionName": {
-                    "description": "Namespace      string ` + "`" + `json:\"namespace\" validate:\"required\" example:\"ns01\"` + "`" + `",
-                    "type": "string",
-                    "example": "alibaba-ap-northeast-2"
-                },
-                "cspK8sClusterId": {
-                    "description": "Fields for \"Register existing K8sCluster\" feature\n@description CspK8sClusterId is required to register a k8s cluster from CSP (option=register)",
-                    "type": "string",
-                    "example": "required when option is register"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "My K8sCluster"
-                },
-                "id": {
-                    "description": "(1) K8sCluster Info",
-                    "type": "string",
-                    "example": "k8scluster-01"
-                },
-                "k8sNodeGroupList": {
-                    "description": "(3) NodeGroupInfo List",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.TbK8sNodeGroupReq"
-                    }
-                },
-                "securityGroupIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "sg-01"
-                    ]
-                },
-                "subnetIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "subnet-01"
-                    ]
-                },
-                "vNetId": {
-                    "description": "(2) Network Info",
-                    "type": "string",
-                    "example": "vpc-01"
-                },
-                "version": {
-                    "type": "string",
-                    "example": "1.30.1-aliyun.1"
-                }
-            }
-        },
-        "mcis.TbK8sClusterStatus": {
-            "type": "string",
-            "enum": [
-                "Creating",
-                "Active",
-                "Inactive",
-                "Updating",
-                "Deleting"
-            ],
-            "x-enum-varnames": [
-                "TbK8sClusterCreating",
-                "TbK8sClusterActive",
-                "TbK8sClusterInactive",
-                "TbK8sClusterUpdating",
-                "TbK8sClusterDeleting"
-            ]
-        },
-        "mcis.TbK8sNodeGroupInfo": {
-            "type": "object",
-            "properties": {
-                "desiredNodeSize": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "id": {
-                    "type": "string",
-                    "example": "ng-01"
-                },
-                "imageId": {
-                    "description": "VM config.",
-                    "type": "string",
-                    "example": "image-01"
-                },
-                "k8sNodes": {
-                    "description": "id for nodes",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "node-01"
-                    ]
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "maxNodeSize": {
-                    "type": "integer",
-                    "example": 3
-                },
-                "minNodeSize": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "onAutoScaling": {
-                    "description": "Scaling config.",
-                    "type": "boolean",
-                    "example": true
-                },
-                "rootDiskSize": {
-                    "type": "string",
-                    "example": "40"
-                },
-                "rootDiskType": {
-                    "type": "string",
-                    "example": "cloud_essd"
-                },
-                "specId": {
-                    "type": "string",
-                    "example": "spec-01"
-                },
-                "sshKeyId": {
-                    "type": "string",
-                    "example": "sshkey-01"
-                },
-                "status": {
-                    "description": "---",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.TbK8sNodeGroupStatus"
-                        }
-                    ],
-                    "example": "Creating"
-                }
-            }
-        },
-        "mcis.TbK8sNodeGroupReq": {
-            "type": "object",
-            "properties": {
-                "desiredNodeSize": {
-                    "type": "string",
-                    "example": "1"
-                },
-                "imageId": {
-                    "type": "string",
-                    "example": "image-01"
-                },
-                "maxNodeSize": {
-                    "type": "string",
-                    "example": "3"
-                },
-                "minNodeSize": {
-                    "type": "string",
-                    "example": "1"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "ng-01"
-                },
-                "onAutoScaling": {
-                    "description": "autoscale config.",
-                    "type": "string",
-                    "example": "true"
-                },
-                "rootDiskSize": {
-                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
-                    "type": "string",
-                    "example": "40"
-                },
-                "rootDiskType": {
-                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
-                    "type": "string",
-                    "example": "cloud_essd"
-                },
-                "specId": {
-                    "type": "string",
-                    "example": "spec-01"
-                },
-                "sshKeyId": {
-                    "type": "string",
-                    "example": "sshkey-01"
-                }
-            }
-        },
-        "mcis.TbK8sNodeGroupStatus": {
-            "type": "string",
-            "enum": [
-                "Creating",
-                "Active",
-                "Inactive",
-                "Updating",
-                "Deleting"
-            ],
-            "x-enum-varnames": [
-                "TbK8sNodeGroupCreating",
-                "TbK8sNodeGroupActive",
-                "TbK8sNodeGroupInactive",
-                "TbK8sNodeGroupUpdating",
-                "TbK8sNodeGroupDeleting"
-            ]
-        },
-        "mcis.TbMcisDynamicReq": {
-            "type": "object",
-            "required": [
-                "name",
-                "vm"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Made in CB-TB"
-                },
-                "installMonAgent": {
-                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
-                    "type": "string",
-                    "default": "no",
-                    "enum": [
-                        "yes",
-                        "no"
-                    ],
-                    "example": "no"
-                },
-                "label": {
-                    "description": "Label is for describing the mcis in a keyword (any string can be used)",
-                    "type": "string",
-                    "example": "DynamicVM"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "mcis01"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": ""
-                },
-                "vm": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.TbVmDynamicReq"
-                    }
-                }
-            }
-        },
-        "mcis.TbMcisInfo": {
-            "type": "object",
-            "properties": {
-                "configureCloudAdaptiveNetwork": {
-                    "description": "ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)",
-                    "type": "string",
-                    "default": "no",
-                    "enum": [
-                        "yes",
-                        "no"
-                    ],
-                    "example": "yes"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "installMonAgent": {
-                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
-                    "type": "string",
-                    "default": "yes",
-                    "enum": [
-                        "yes",
-                        "no"
-                    ],
-                    "example": "yes"
-                },
-                "label": {
-                    "description": "Label is for describing the mcis in a keyword (any string can be used)",
-                    "type": "string",
-                    "example": "User custom label"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "newVmList": {
-                    "description": "List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "placementAlgo": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "statusCount": {
-                    "$ref": "#/definitions/mcis.StatusCountInfo"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                },
-                "systemMessage": {
-                    "description": "Latest system message such as error message",
-                    "type": "string",
-                    "example": "Failed because ..."
-                },
-                "targetAction": {
-                    "type": "string"
-                },
-                "targetStatus": {
-                    "type": "string"
-                },
-                "vm": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.TbVmInfo"
-                    }
-                }
-            }
-        },
-        "mcis.TbMcisReq": {
-            "type": "object",
-            "required": [
-                "name",
-                "vm"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Made in CB-TB"
-                },
-                "installMonAgent": {
-                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
-                    "type": "string",
-                    "default": "yes",
-                    "enum": [
-                        "yes",
-                        "no"
-                    ],
-                    "example": "no"
-                },
-                "label": {
-                    "description": "Label is for describing the mcis in a keyword (any string can be used)",
-                    "type": "string",
-                    "example": "custom tag"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "mcis01"
-                },
-                "placementAlgo": {
-                    "type": "string"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": ""
-                },
-                "vm": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.TbVmReq"
-                    }
-                }
-            }
-        },
-        "mcis.TbNLBAddRemoveVMReq": {
-            "type": "object",
-            "properties": {
-                "targetGroup": {
-                    "$ref": "#/definitions/mcis.TbNLBTargetGroupInfo"
-                }
-            }
-        },
-        "mcis.TbNLBHealthCheckerInfo": {
-            "type": "object",
-            "properties": {
-                "interval": {
-                    "description": "secs, Interval time between health checks.",
-                    "type": "integer",
-                    "example": 10
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "port": {
-                    "description": "Listener Port or 1-65535",
-                    "type": "string",
-                    "example": "22"
-                },
-                "protocol": {
-                    "description": "TCP|HTTP|HTTPS",
-                    "type": "string",
-                    "example": "TCP"
-                },
-                "threshold": {
-                    "description": "num, The number of continuous health checks to change the VM status.",
-                    "type": "integer",
-                    "example": 3
-                },
-                "timeout": {
-                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
-                    "type": "integer",
-                    "example": 10
-                }
-            }
-        },
-        "mcis.TbNLBHealthCheckerReq": {
-            "type": "object",
-            "properties": {
-                "interval": {
-                    "description": "secs, Interval time between health checks.",
-                    "type": "string",
-                    "example": "default"
-                },
-                "threshold": {
-                    "description": "num, The number of continuous health checks to change the VM status.",
-                    "type": "string",
-                    "example": "default"
-                },
-                "timeout": {
-                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
-                    "type": "string",
-                    "example": "default"
-                }
-            }
-        },
-        "mcis.TbNLBInfo": {
-            "type": "object",
-            "properties": {
-                "associatedObjectList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "createdTime": {
-                    "type": "string"
-                },
-                "cspNLBId": {
-                    "type": "string"
-                },
-                "cspNLBName": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "healthChecker": {
-                    "$ref": "#/definitions/mcis.TbNLBHealthCheckerInfo"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "isAutoGenerated": {
-                    "type": "boolean"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "listener": {
-                    "$ref": "#/definitions/mcis.TbNLBListenerInfo"
-                },
-                "location": {
-                    "$ref": "#/definitions/common.Location"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "scope": {
-                    "description": "REGION(V) | GLOBAL",
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                },
-                "targetGroup": {
-                    "$ref": "#/definitions/mcis.TbNLBTargetGroupInfo"
-                },
-                "type": {
-                    "description": "PUBLIC(V) | INTERNAL",
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.TbNLBListenerInfo": {
-            "type": "object",
-            "properties": {
-                "dnsName": {
-                    "description": "Optional, Auto Generated and attached",
-                    "type": "string",
-                    "example": "ns01-group-cd3.elb.ap-northeast-2.amazonaws.com"
-                },
-                "ip": {
-                    "description": "Auto Generated and attached",
-                    "type": "string",
-                    "example": "x.x.x.x"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "port": {
-                    "description": "1-65535",
-                    "type": "string",
-                    "example": "80"
-                },
-                "protocol": {
-                    "description": "TCP|UDP",
-                    "type": "string",
-                    "example": "TCP"
-                }
-            }
-        },
-        "mcis.TbNLBReq": {
-            "type": "object",
-            "required": [
-                "healthChecker",
-                "listener",
-                "scope",
-                "targetGroup",
-                "type"
-            ],
-            "properties": {
-                "cspNLBId": {
-                    "description": "Existing NLB (used only for option=register)",
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "healthChecker": {
-                    "description": "HealthChecker",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.TbNLBHealthCheckerReq"
-                        }
-                    ]
-                },
-                "listener": {
-                    "description": "Frontend",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.NLBListenerReq"
-                        }
-                    ]
-                },
-                "scope": {
-                    "description": "REGION(V) | GLOBAL",
-                    "type": "string",
-                    "enum": [
-                        "REGION",
-                        "GLOBAL"
-                    ],
-                    "example": "REGION"
-                },
-                "targetGroup": {
-                    "description": "Backend",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.TbNLBTargetGroupReq"
-                        }
-                    ]
-                },
-                "type": {
-                    "description": "PUBLIC(V) | INTERNAL",
-                    "type": "string",
-                    "enum": [
-                        "PUBLIC",
-                        "INTERNAL"
-                    ],
-                    "example": "PUBLIC"
-                }
-            }
-        },
-        "mcis.TbNLBTargetGroupInfo": {
-            "type": "object",
-            "properties": {
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "port": {
-                    "description": "Listener Port or 1-65535",
-                    "type": "string",
-                    "example": "80"
-                },
-                "protocol": {
-                    "description": "TCP|HTTP|HTTPS",
-                    "type": "string",
-                    "example": "TCP"
-                },
-                "subGroupId": {
-                    "type": "string",
-                    "example": "g1"
-                },
-                "vms": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "mcis.TbNLBTargetGroupReq": {
-            "type": "object",
-            "properties": {
-                "port": {
-                    "description": "Listener Port or 1-65535",
-                    "type": "string",
-                    "example": "80"
-                },
-                "protocol": {
-                    "description": "TCP|HTTP|HTTPS",
-                    "type": "string",
-                    "example": "TCP"
-                },
-                "subGroupId": {
-                    "type": "string",
-                    "example": "g1"
-                }
-            }
-        },
-        "mcis.TbScaleOutSubGroupReq": {
-            "type": "object",
-            "required": [
-                "numVMsToAdd"
-            ],
-            "properties": {
-                "numVMsToAdd": {
-                    "description": "Define addtional VMs to scaleOut",
-                    "type": "string",
-                    "example": "2"
-                }
-            }
-        },
-        "mcis.TbSetK8sNodeGroupAutoscalingReq": {
-            "type": "object",
-            "properties": {
-                "onAutoScaling": {
-                    "type": "string",
-                    "example": "true"
-                }
-            }
-        },
-        "mcis.TbSetK8sNodeGroupAutoscalingRes": {
-            "type": "object",
-            "properties": {
-                "result": {
-                    "type": "string",
-                    "example": "true"
-                }
-            }
-        },
-        "mcis.TbUpgradeK8sClusterReq": {
-            "type": "object",
-            "properties": {
-                "version": {
-                    "type": "string",
-                    "example": "1.30.1-alyun.1"
-                }
-            }
-        },
-        "mcis.TbVmDynamicReq": {
-            "type": "object",
-            "required": [
-                "commonImage",
-                "commonSpec"
-            ],
-            "properties": {
-                "commonImage": {
-                    "description": "CommonImage is field for id of a image in common namespace",
-                    "type": "string",
-                    "example": "ubuntu18.04"
-                },
-                "commonSpec": {
-                    "description": "CommonSpec is field for id of a spec in common namespace",
-                    "type": "string",
-                    "example": "aws+ap-northeast-2+t2.small"
-                },
-                "connectionName": {
-                    "description": "if ConnectionName is given, the VM tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "Description"
-                },
-                "label": {
-                    "type": "string",
-                    "example": "DynamicVM"
-                },
-                "name": {
-                    "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
-                    "type": "string",
-                    "example": "g1-1"
-                },
-                "rootDiskSize": {
-                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
-                    "type": "string",
-                    "default": "default",
-                    "example": "default, 30, 42, ..."
-                },
-                "rootDiskType": {
-                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
-                    "type": "string",
-                    "default": "default",
-                    "example": "default, TYPE1, ..."
-                },
-                "subGroupSize": {
-                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be gernetad. VMs will be created accordingly.",
-                    "type": "string",
-                    "default": "1",
-                    "example": "3"
-                },
-                "vmUserPassword": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.TbVmInfo": {
-            "type": "object",
-            "properties": {
-                "connectionConfig": {
-                    "$ref": "#/definitions/common.ConnConfig"
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "createdTime": {
-                    "description": "Created time",
-                    "type": "string",
-                    "example": "2022-11-10 23:00:00"
-                },
-                "cspViewVmDetail": {
-                    "$ref": "#/definitions/mcis.SpiderVMInfo"
-                },
-                "dataDiskIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "idByCSP": {
-                    "description": "CSP managed ID or Name",
-                    "type": "string"
-                },
-                "imageId": {
-                    "type": "string"
-                },
-                "label": {
-                    "type": "string"
-                },
-                "location": {
-                    "$ref": "#/definitions/common.Location"
-                },
-                "monAgentStatus": {
-                    "description": "Montoring agent status",
-                    "type": "string",
-                    "example": "[installed, notInstalled, failed]"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "networkAgentStatus": {
-                    "description": "NetworkAgent status",
-                    "type": "string",
-                    "example": "[notInstalled, installing, installed, failed]"
-                },
-                "privateDNS": {
-                    "type": "string"
-                },
-                "privateIP": {
-                    "type": "string"
-                },
-                "publicDNS": {
-                    "type": "string"
-                },
-                "publicIP": {
-                    "type": "string"
-                },
-                "region": {
-                    "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.RegionInfo"
-                        }
-                    ]
-                },
-                "rootDeviceName": {
-                    "type": "string"
-                },
-                "rootDiskSize": {
-                    "type": "string"
-                },
-                "rootDiskType": {
-                    "type": "string"
-                },
-                "securityGroupIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "specId": {
-                    "type": "string"
-                },
-                "sshKeyId": {
-                    "type": "string"
-                },
-                "sshPort": {
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Required by CB-Tumblebug",
-                    "type": "string"
-                },
-                "subGroupId": {
-                    "description": "defined if the VM is in a group",
-                    "type": "string"
-                },
-                "subnetId": {
-                    "type": "string"
-                },
-                "systemMessage": {
-                    "description": "Latest system message such as error message",
-                    "type": "string",
-                    "example": "Failed because ..."
-                },
-                "targetAction": {
-                    "type": "string"
-                },
-                "targetStatus": {
-                    "type": "string"
-                },
-                "vNetId": {
-                    "type": "string"
-                },
-                "vmUserAccount": {
-                    "type": "string"
-                },
-                "vmUserPassword": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.TbVmReq": {
-            "type": "object",
-            "required": [
-                "connectionName",
-                "imageId",
-                "name",
-                "securityGroupIds",
-                "specId",
-                "sshKeyId",
-                "subnetId",
-                "vNetId"
-            ],
-            "properties": {
-                "connectionName": {
-                    "type": "string",
-                    "example": "testcloud01-seoul"
-                },
-                "dataDiskIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "description": {
-                    "type": "string",
-                    "example": "Description"
-                },
-                "idByCsp": {
-                    "description": "CSP managed ID or Name (required for option=register)",
-                    "type": "string",
-                    "example": "i-014fa6ede6ada0b2c"
-                },
-                "imageId": {
-                    "description": "ImageType        string   ` + "`" + `json:\"imageType\"` + "`" + `",
-                    "type": "string"
-                },
-                "label": {
-                    "type": "string"
-                },
-                "name": {
-                    "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
-                    "type": "string",
-                    "example": "g1-1"
-                },
-                "rootDiskSize": {
-                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
-                    "type": "string",
-                    "example": "default, 30, 42, ..."
-                },
-                "rootDiskType": {
-                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
-                    "type": "string",
-                    "example": "default, TYPE1, ..."
-                },
-                "securityGroupIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "specId": {
-                    "type": "string"
-                },
-                "sshKeyId": {
-                    "type": "string"
-                },
-                "subGroupSize": {
-                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be gernetad. VMs will be created accordingly.",
-                    "type": "string",
-                    "example": "3"
-                },
-                "subnetId": {
-                    "type": "string"
-                },
-                "vNetId": {
-                    "type": "string"
-                },
-                "vmUserAccount": {
-                    "type": "string"
-                },
-                "vmUserPassword": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.TbVmSnapshotReq": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1-snapshot"
-                }
-            }
-        },
-        "mcis.TbVmStatusInfo": {
-            "type": "object",
-            "properties": {
-                "createdTime": {
-                    "description": "Created time",
-                    "type": "string",
-                    "example": "2022-11-10 23:00:00"
-                },
-                "cspVmId": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "location": {
-                    "$ref": "#/definitions/common.Location"
-                },
-                "monAgentStatus": {
-                    "description": "Montoring agent status",
-                    "type": "string",
-                    "example": "[installed, notInstalled, failed]"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "nativeStatus": {
-                    "type": "string"
-                },
-                "privateIp": {
-                    "type": "string"
-                },
-                "publicIp": {
-                    "type": "string"
-                },
-                "sshPort": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "systemMessage": {
-                    "description": "Latest system message such as error message",
-                    "type": "string",
-                    "example": "Failed because ..."
-                },
-                "targetAction": {
-                    "type": "string"
-                },
-                "targetStatus": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.inspectOverview": {
-            "type": "object",
-            "properties": {
-                "customImage": {
-                    "type": "integer"
-                },
-                "dataDisk": {
-                    "type": "integer"
-                },
-                "nlb": {
-                    "type": "integer"
-                },
-                "securityGroup": {
-                    "type": "integer"
-                },
-                "sshKey": {
-                    "type": "integer"
-                },
-                "vNet": {
-                    "type": "integer"
-                },
-                "vm": {
-                    "type": "integer"
-                }
-            }
-        },
-        "mcis.registerationOverview": {
-            "type": "object",
-            "properties": {
-                "customImage": {
-                    "type": "integer"
-                },
-                "dataDisk": {
-                    "type": "integer"
-                },
-                "failed": {
-                    "type": "integer"
-                },
-                "nlb": {
-                    "type": "integer"
-                },
-                "securityGroup": {
-                    "type": "integer"
-                },
-                "sshKey": {
-                    "type": "integer"
-                },
-                "vNet": {
-                    "type": "integer"
-                },
-                "vm": {
-                    "type": "integer"
-                }
-            }
-        },
-        "mcis.resourceCountOverview": {
-            "type": "object",
-            "properties": {
-                "onCspOnly": {
-                    "type": "integer"
-                },
-                "onCspTotal": {
-                    "type": "integer"
-                },
-                "onSpider": {
-                    "type": "integer"
-                },
-                "onTumblebug": {
-                    "type": "integer"
-                }
-            }
-        },
-        "mcis.resourceOnCsp": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer"
-                },
-                "info": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.resourceOnCspInfo"
-                    }
-                }
-            }
-        },
-        "mcis.resourceOnCspInfo": {
-            "type": "object",
-            "properties": {
-                "idByCsp": {
-                    "type": "string"
-                },
-                "refNameOrId": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.resourceOnSpider": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer"
-                },
-                "info": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.resourceOnSpiderInfo"
-                    }
-                }
-            }
-        },
-        "mcis.resourceOnSpiderInfo": {
-            "type": "object",
-            "properties": {
-                "idByCsp": {
-                    "type": "string"
-                },
-                "idBySp": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.resourceOnTumblebug": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer"
-                },
-                "info": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.resourceOnTumblebugInfo"
-                    }
-                }
-            }
-        },
-        "mcis.resourceOnTumblebugInfo": {
-            "type": "object",
-            "properties": {
-                "idByCsp": {
-                    "type": "string"
-                },
-                "idByTb": {
-                    "type": "string"
-                },
-                "mcisId": {
-                    "type": "string"
-                },
-                "nsId": {
-                    "type": "string"
-                },
-                "objectKey": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.resourcesByManageType": {
-            "type": "object",
-            "properties": {
-                "onCspOnly": {
-                    "$ref": "#/definitions/mcis.resourceOnCsp"
-                },
-                "onCspTotal": {
-                    "$ref": "#/definitions/mcis.resourceOnCsp"
-                },
-                "onSpider": {
-                    "$ref": "#/definitions/mcis.resourceOnSpider"
-                },
-                "onTumblebug": {
-                    "$ref": "#/definitions/mcis.resourceOnTumblebug"
-                }
-            }
-        },
         "model.Response": {
             "type": "object",
             "properties": {
@@ -13435,9 +13435,9 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 3
                 },
-                "mcisId": {
+                "mciId": {
                     "type": "string",
-                    "example": "mcis-01"
+                    "example": "mci-01"
                 },
                 "nsId": {
                     "type": "string",
