@@ -26,7 +26,7 @@ import (
 // @ID PostMci
 // @Summary Create MCI
 // @Description Create MCI
-// @Tags [Infra service] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -56,7 +56,7 @@ func RestPostMci(c echo.Context) error {
 // @ID PostRegisterCSPNativeVM
 // @Summary Register existing VM in a CSP to Cloud-Barista MCI
 // @Description Register existing VM in a CSP to Cloud-Barista MCI
-// @Tags [Infra service] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -86,7 +86,7 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 // @ID PostSystemMci
 // @Summary Create System MCI Dynamically for Special Purpose in NS:system-purpose-common-ns
 // @Description Create System MCI Dynamically for Special Purpose
-// @Tags [Infra service] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param option query string false "Option for the purpose of system MCI" Enums(probe)
@@ -114,7 +114,7 @@ func RestPostSystemMci(c echo.Context) error {
 // @ID PostMciDynamic
 // @Summary Create MCI Dynamically
 // @Description Create MCI Dynamically from common spec and image
-// @Tags [Infra service] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -147,7 +147,7 @@ func RestPostMciDynamic(c echo.Context) error {
 // @ID PostMciVmDynamic
 // @Summary Create VM Dynamically and add it to MCI
 // @Description Create VM Dynamically and add it to MCI
-// @Tags [Infra service] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -178,7 +178,7 @@ func RestPostMciVmDynamic(c echo.Context) error {
 // @ID PostMciDynamicCheckRequest
 // @Summary Check available ConnectionConfig list for creating MCI Dynamically
 // @Description Check available ConnectionConfig list before create MCI Dynamically from common spec and image
-// @Tags [Infra service] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param mciReq body MciConnectionConfigCandidatesReq true "Details for MCI dynamic request information"
@@ -204,7 +204,7 @@ func RestPostMciDynamicCheckRequest(c echo.Context) error {
 // @ID PostMciVm
 // @Summary Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize for multiple VMs)
 // @Description Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize for multiple VMs)
-// @Tags [Infra service] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -234,7 +234,7 @@ func RestPostMciVm(c echo.Context) error {
 // @ID PostMciSubGroupScaleOut
 // @Summary ScaleOut subGroup in specified MCI
 // @Description ScaleOut subGroup in specified MCI
-// @Tags [Infra service] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)

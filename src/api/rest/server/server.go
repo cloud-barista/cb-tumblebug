@@ -420,10 +420,8 @@ func RunServer(port string) {
 
 	g.POST("/:nsId/resources/spec", rest_mcir.RestPostSpec)
 	g.GET("/:nsId/resources/spec/:resourceId", rest_mcir.RestGetSpec)
-	g.GET("/:nsId/resources/spec", rest_mcir.RestGetAllResources)
 	g.PUT("/:nsId/resources/spec/:resourceId", rest_mcir.RestPutSpec)
 	g.DELETE("/:nsId/resources/spec/:resourceId", rest_mcir.RestDelResource)
-	g.DELETE("/:nsId/resources/spec", rest_mcir.RestDelAllResources)
 
 	g.POST("/:nsId/resources/fetchSpecs", rest_mcir.RestFetchSpecs)
 	g.POST("/:nsId/resources/filterSpecsByRange", rest_mcir.RestFilterSpecsByRange)

@@ -26,7 +26,7 @@ import (
 // @ID PostInstallBenchmarkAgentToMci
 // @Summary Install the benchmark agent to specified MCI
 // @Description Install the benchmark agent to specified MCI
-// @Tags [Infra service] MCI Performance benchmarking (WIP)
+// @Tags [MC-Infra] MCI Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -75,7 +75,7 @@ type RestGetAllBenchmarkRequest struct {
 // @ID GetAllBenchmark
 // @Summary Run MCI benchmark for all performance metrics and return results
 // @Description Run MCI benchmark for all performance metrics and return results
-// @Tags [Infra service] MCI Performance benchmarking (WIP)
+// @Tags [MC-Infra] MCI Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -107,7 +107,7 @@ func RestGetAllBenchmark(c echo.Context) error {
 // @ID GetLatencyBenchmark
 // @Summary Run MCI benchmark for network latency
 // @Description Run MCI benchmark for network latency
-// @Tags [Infra service] MCI Performance benchmarking (WIP)
+// @Tags [MC-Infra] MCI Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
@@ -136,7 +136,7 @@ type RestGetBenchmarkRequest struct {
 // @ID GetBenchmark
 // @Summary Run MCI benchmark for a single performance metric and return results
 // @Description Run MCI benchmark for a single performance metric and return results
-// @Tags [Infra service] MCI Performance benchmarking (WIP)
+// @Tags [MC-Infra] MCI Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
