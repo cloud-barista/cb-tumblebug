@@ -12332,7 +12332,7 @@ const docTemplate = `{
                 },
                 "specId": {
                     "type": "string",
-                    "example": "spec-01"
+                    "example": "Standard_B2s (temporarily, CSP's Spec Names are valid. It will be upgraded)"
                 },
                 "sshKeyId": {
                     "type": "string",

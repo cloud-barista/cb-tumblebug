@@ -2275,7 +2275,8 @@ definitions:
         example: cloud_essd
         type: string
       specId:
-        example: spec-01
+        example: Standard_B2s (temporarily, CSP's Spec Names are valid. It will be
+          upgraded)
         type: string
       sshKeyId:
         example: sshkey-01
