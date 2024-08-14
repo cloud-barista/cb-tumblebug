@@ -134,7 +134,7 @@ definitions:
         items:
           $ref: '#/definitions/common.K8sClusterNodeImageDetail'
         type: array
-      nodegroups_with_cluster:
+      nodegroups_on_creation:
         type: boolean
       root_disks:
         items:
@@ -3318,6 +3318,36 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get available kubernetes cluster version
+      tags:
+      - '[Infra resource] K8sCluster management'
+  /checkNodeGroupsOnK8sCreation:
+    get:
+      consumes:
+      - application/json
+      description: Check whether nodegroups are required during the k8scluster creation
+      operationId: CheckNodeGroupsOnK8sCreation
+      parameters:
+      - description: Name of the CSP to retrieve
+        in: query
+        name: providerName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Check whether nodegroups are required during the k8scluster creation
       tags:
       - '[Infra resource] K8sCluster management'
   /cloudInfo:

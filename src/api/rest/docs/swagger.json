@@ -154,6 +154,51 @@
                 }
             }
         },
+        "/checkNodeGroupsOnK8sCreation": {
+            "get": {
+                "description": "Check whether nodegroups are required during the k8scluster creation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] K8sCluster management"
+                ],
+                "summary": "Check whether nodegroups are required during the k8scluster creation",
+                "operationId": "CheckNodeGroupsOnK8sCreation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the CSP to retrieve",
+                        "name": "providerName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/cloudInfo": {
             "get": {
                 "description": "Get cloud information",
@@ -9173,7 +9218,7 @@
                         "$ref": "#/definitions/common.K8sClusterNodeImageDetail"
                     }
                 },
-                "nodegroups_with_cluster": {
+                "nodegroups_on_creation": {
                     "type": "boolean"
                 },
                 "root_disks": {
