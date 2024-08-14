@@ -408,6 +408,15 @@
       "contributions": [
         "review"
       ]
+    },
+    {
+      "login": "SungWoongz",
+      "name": "SungWoongz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/99646153?v=4",
+      "profile": "https://github.com/SungWoongz",
+      "contributions": [
+        "userTesting"
+      ]
     }
   ],
   "contributorsPerLine": 7,
