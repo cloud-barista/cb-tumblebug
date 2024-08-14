@@ -27,7 +27,7 @@ import (
 // @ID GetControlMci
 // @Summary Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)
 // @Description Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)
-// @Tags [Infra service] MCI Control lifecycle
+// @Tags [MC-Infra] MCI Control lifecycle
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -73,7 +73,7 @@ func RestGetControlMci(c echo.Context) error {
 // @ID GetControlMciVm
 // @Summary Control the lifecycle of VM (suspend, resume, reboot, terminate)
 // @Description Control the lifecycle of VM (suspend, resume, reboot, terminate)
-// @Tags [Infra service] MCI Control lifecycle
+// @Tags [MC-Infra] MCI Control lifecycle
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)

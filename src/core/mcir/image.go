@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -519,7 +520,7 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo, RDBonl
 	return fieldsToUpdate, nil
 }
 
-// GetImage accepts namespace ID and imageKey(id,name,type,...), and returns the TB image object
+// GetImage accepts namespace Id and imageKey(Id,CspImageId,GuestOS,...), and returns the TB image object
 func GetImage(nsId string, imageKey string) (TbImageInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
@@ -528,9 +529,13 @@ func GetImage(nsId string, imageKey string) (TbImageInfo, error) {
 
 	log.Debug().Msg("[Get image] " + imageKey)
 
+	// make comparison case-insensitive
+	nsId = strings.ToLower(nsId)
+	imageKey = strings.ToLower(imageKey)
+
 	// ex: tencent+ap-jakarta+ubuntu22.04
 	image := TbImageInfo{Namespace: nsId, Id: imageKey}
-	has, err := common.ORM.Where("Namespace = ? AND Id = ?", nsId, imageKey).Get(&image)
+	has, err := common.ORM.Where("LOWER(Namespace) = ? AND LOWER(Id) = ?", nsId, imageKey).Get(&image)
 	if err != nil {
 		log.Info().Err(err).Msgf("Failed to get image %s by ID", imageKey)
 	}
@@ -540,7 +545,7 @@ func GetImage(nsId string, imageKey string) (TbImageInfo, error) {
 
 	// ex: img-487zeit5
 	image = TbImageInfo{Namespace: nsId, CspImageId: imageKey}
-	has, err = common.ORM.Where("Namespace = ? AND CspImageId = ?", nsId, imageKey).Get(&image)
+	has, err = common.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspImageId) = ?", nsId, imageKey).Get(&image)
 	if err != nil {
 		log.Info().Err(err).Msgf("Failed to get image %s by CspImageId", imageKey)
 	}
@@ -550,7 +555,7 @@ func GetImage(nsId string, imageKey string) (TbImageInfo, error) {
 
 	// ex: Ubuntu22.04
 	image = TbImageInfo{Namespace: nsId, GuestOS: imageKey}
-	has, err = common.ORM.Where("Namespace = ? AND GuestOS = ?", nsId, imageKey).Get(&image)
+	has, err = common.ORM.Where("LOWER(Namespace) = ? AND LOWER(GuestOS) LIKE ?", nsId, imageKey).Get(&image)
 	if err != nil {
 		log.Info().Err(err).Msgf("Failed to get image %s by GuestOS type", imageKey)
 	}

@@ -429,27 +429,40 @@ type Range struct {
 	Max float32 `json:"max"`
 }
 
-// GetSpec accepts namespace ID and spec ID, and returns the TB spec object
-func GetSpec(nsId string, specId string) (TbSpecInfo, error) {
+// GetSpec accepts namespace Id and specKey(Id,CspImageId,...), and returns the TB spec object
+func GetSpec(nsId string, specKey string) (TbSpecInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
 		return TbSpecInfo{}, err
 	}
 
-	log.Debug().Msg("[Get spec]" + specId)
+	log.Debug().Msg("[Get spec] " + specKey)
 
-	spec := TbSpecInfo{Namespace: nsId, Id: specId}
-	has, err := common.ORM.Where("Namespace = ? AND Id = ?", nsId, specId).Get(&spec)
+	// make comparison case-insensitive
+	nsId = strings.ToLower(nsId)
+	specKey = strings.ToLower(specKey)
+
+	// ex: tencent+ap-jakarta+ubuntu22.04
+	spec := TbSpecInfo{Namespace: nsId, Id: specKey}
+	has, err := common.ORM.Where("LOWER(Namespace) = ? AND LOWER(Id) = ?", nsId, specKey).Get(&spec)
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to get spec %s", specId)
-		return TbSpecInfo{}, err
+		log.Info().Err(err).Msgf("Failed to get spec %s by ID", specKey)
+	}
+	if has {
+		return spec, nil
 	}
 
-	if !has {
-		return TbSpecInfo{}, fmt.Errorf("spec with ID %s not found", specId)
+	// ex: img-487zeit5
+	spec = TbSpecInfo{Namespace: nsId, CspSpecName: specKey}
+	has, err = common.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspSpecName) = ?", nsId, specKey).Get(&spec)
+	if err != nil {
+		log.Info().Err(err).Msgf("Failed to get spec %s by CspSpecName", specKey)
+	}
+	if has {
+		return spec, nil
 	}
 
-	return spec, nil
+	return TbSpecInfo{}, fmt.Errorf("The specKey %s not found by any of ID, CspSpecName", specKey)
 }
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects

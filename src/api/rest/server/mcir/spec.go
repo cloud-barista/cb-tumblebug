@@ -288,31 +288,6 @@ func RestGetSpec(c echo.Context) error {
 	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
-// Response structure for RestGetAllSpec
-type RestGetAllSpecResponse struct {
-	Spec []mcir.TbSpecInfo `json:"spec"`
-}
-
-// RestGetAllSpec godoc
-// @ID GetAllSpec
-// @Summary List all specs or specs' ID
-// @Description List all specs or specs' ID
-// @Tags [Infra resource] MCIR Spec management
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
-// @Param option query string false "Option" Enums(id)
-// @Param filterKey query string false "Field key for filtering (ex: providerName)"
-// @Param filterVal query string false "Field value for filtering (ex: aws)"
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSpecResponse,[ID]=common.IdList} "Different return structures by the given option param"
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/resources/spec [get]
-func RestGetAllSpec(c echo.Context) error {
-	// This is a dummy function for Swagger.
-	return nil
-}
-
 // RestDelSpec godoc
 // @ID DelSpec
 // @Summary Delete spec
@@ -326,23 +301,6 @@ func RestGetAllSpec(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec/{specId} [delete]
 func RestDelSpec(c echo.Context) error {
-	// This is a dummy function for Swagger.
-	return nil
-}
-
-// RestDelAllSpec godoc
-// @ID DelAllSpec
-// @Summary Delete all specs
-// @Description Delete all specs
-// @Tags [Infra resource] MCIR Spec management
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
-// @Param match query string false "Delete resources containing matched ID-substring only" default()
-// @Success 200 {object} common.IdList
-// @Failure 404 {object} common.SimpleMsg
-// @Router /ns/{nsId}/resources/spec [delete]
-func RestDelAllSpec(c echo.Context) error {
 	// This is a dummy function for Swagger.
 	return nil
 }
