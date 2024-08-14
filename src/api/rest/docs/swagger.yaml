@@ -152,6 +152,12 @@ definitions:
           $ref: '#/definitions/common.K8sClusterDetail'
         type: object
     type: object
+  common.K8sClusterNodeGroupsOnCreation:
+    properties:
+      result:
+        example: "true"
+        type: string
+    type: object
   common.K8sClusterNodeImageDetail:
     properties:
       availables:
@@ -3338,7 +3344,7 @@ paths:
         "200":
           description: OK
           schema:
-            type: boolean
+            $ref: '#/definitions/common.K8sClusterNodeGroupsOnCreation'
         "404":
           description: Not Found
           schema:

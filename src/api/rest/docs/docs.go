@@ -188,7 +188,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "boolean"
+                            "$ref": "#/definitions/common.K8sClusterNodeGroupsOnCreation"
                         }
                     },
                     "404": {
@@ -9250,6 +9250,15 @@ const docTemplate = `{
                     "additionalProperties": {
                         "$ref": "#/definitions/common.K8sClusterDetail"
                     }
+                }
+            }
+        },
+        "common.K8sClusterNodeGroupsOnCreation": {
+            "type": "object",
+            "properties": {
+                "result": {
+                    "type": "string",
+                    "example": "true"
                 }
             }
         },
