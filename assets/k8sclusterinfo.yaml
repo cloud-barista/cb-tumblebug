@@ -4,14 +4,14 @@
 # The file is in YAML format and contains the following fields:
 # k8scluster: Top level key
 #   <csp>: Name of the CSP
-#     nodegroupsWithCluster:
+#     nodeGroupsOnCreation:
 #     version:
 #       - region: [region1, region2, common(special keyword: most of regions)]
 #
 
 k8scluster:
   azure:
-    nodegroupsWithCluster: true
+    nodeGroupsOnCreation: true
     nodeImageDesignation: false
     version:
       - region: [westeurope,westus]
@@ -41,7 +41,7 @@ k8scluster:
           min: 10
           max: 40
   gcp:
-    nodegroupsWithCluster: true
+    nodeGroupsOnCreation: true
     nodeImageDesignation: true
     version:
       - region: [common]
@@ -61,7 +61,7 @@ k8scluster:
           min: 10
           max: 40
   alibaba:
-    nodegroupsWithCluster: false
+    nodeGroupsOnCreation: false
     nodeImageDesignation: true
     version:
       # ServiceUnavailable or NotSupportedSLB
@@ -84,7 +84,7 @@ k8scluster:
           min: 10
           max: 40
   nhncloud:
-    nodegroupsWithCluster: true
+    nodeGroupsOnCreation: true
     nodeImageDesignation: true
     version:
       - region: [kr1, kr2]
@@ -106,7 +106,7 @@ k8scluster:
           min: 10
           max: 40
   tencent:
-    nodegroupsWithCluster: false
+    nodeGroupsOnCreation: false
     nodeImageDesignation: true
     version:
       - region: [common]

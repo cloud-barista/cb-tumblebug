@@ -1329,6 +1329,23 @@ func GetAvailableK8sClusterNodeImage(providerName string, regionName string) (*[
 	return nil, fmt.Errorf("no available kubernetes cluster node image for region(%s) of provider(%s)", regionName, providerName)
 }
 
+// CheckNodeGroupsOnK8sCreation is func to check whether nodegroups are required during the k8scluster creation
+func CheckNodeGroupsOnK8sCreation(providerName string) (bool, error) {
+	//
+	// Check nodeGroupsOnCreation field in k8sclusterinfo.yaml
+	//
+
+	providerName = strings.ToLower(providerName)
+
+	// Get K8sClusterDetail for providerName
+	k8sClusterDetail := getK8sClusterDetail(providerName)
+	if k8sClusterDetail == nil {
+		return false, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
+	}
+
+	return k8sClusterDetail.NodeGroupsOnCreation, nil
+}
+
 /*
 func isValidSpecForK8sCluster(spec *mcir.TbSpecInfo) bool {
 	//
