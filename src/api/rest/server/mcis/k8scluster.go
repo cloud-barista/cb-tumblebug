@@ -84,7 +84,7 @@ func RestGetAvailableK8sClusterNodeImage(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param providerName query string true "Name of the CSP to retrieve"
-// @Success 200 {object} bool
+// @Success 200 {object} common.K8sClusterNodeGroupsOnCreation
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /checkNodeGroupsOnK8sCreation [get]

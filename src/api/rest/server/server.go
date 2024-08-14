@@ -355,6 +355,7 @@ func RunServer(port string) {
 	// K8sCluster
 	e.GET("/tumblebug/availableK8sClusterVersion", rest_mcis.RestGetAvailableK8sClusterVersion)
 	e.GET("/tumblebug/availableK8sClusterNodeImage", rest_mcis.RestGetAvailableK8sClusterNodeImage)
+	e.GET("/tumblebug/checkNodeGroupsOnK8sCreation", rest_mcis.RestCheckNodeGroupsOnK8sCreation)
 	g.POST("/:nsId/k8scluster", rest_mcis.RestPostK8sCluster)
 	g.POST("/:nsId/k8scluster/:k8sClusterId/k8snodegroup", rest_mcis.RestPostK8sNodeGroup)
 	g.DELETE("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName", rest_mcis.RestDeleteK8sNodeGroup)
