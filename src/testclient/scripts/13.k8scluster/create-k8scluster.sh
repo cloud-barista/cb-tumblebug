@@ -69,7 +69,7 @@ else # Type-II CSP
                 "k8sNodeGroupList": [ {
                         "name": "${K8SNODEGROUPNAME}",
 			"imageId": "default",
-                        "specId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
+                        "specId": "${SPEC_NAME[$INDEX,$REGION]}",
                         "rootDiskType": "${RootDiskType}",
                         "rootDiskSize": "${RootDiskSize}",
                         "sshKeyId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
