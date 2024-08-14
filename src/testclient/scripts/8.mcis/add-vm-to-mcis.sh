@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## 8. vm: Add VM to MCIS"
+echo "## 8. vm: Add VM to MCI"
 echo "####################################################################"
 
 source ../init.sh
@@ -20,7 +20,7 @@ else
 	RootDiskSize="${DISK_SIZE[$INDEX,$REGION]}"
 fi
 
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis/$MCISID/vm -H 'Content-Type: application/json' -d \
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mci/$MCIID/vm -H 'Content-Type: application/json' -d \
 		'{
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'",
 			"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",

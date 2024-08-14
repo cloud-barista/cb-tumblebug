@@ -11,53 +11,53 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to handle REST API for mcis
-package mcis
+// Package mci is to handle REST API for mci
+package mci
 
 import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 	"github.com/labstack/echo/v4"
 )
 
-// RestPostInstallBenchmarkAgentToMcis godoc
-// @ID PostInstallBenchmarkAgentToMcis
-// @Summary Install the benchmark agent to specified MCIS
-// @Description Install the benchmark agent to specified MCIS
-// @Tags [Infra service] MCIS Performance benchmarking (WIP)
+// RestPostInstallBenchmarkAgentToMci godoc
+// @ID PostInstallBenchmarkAgentToMci
+// @Summary Install the benchmark agent to specified MCI
+// @Description Install the benchmark agent to specified MCI
+// @Tags [Infra service] MCI Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param mciCmdReq body mci.MciCmdReq true "MCI Command Request"
 // @Param option query string false "Option for checking update" Enums(update)
-// @Success 200 {object} mcis.McisSshCmdResult
+// @Success 200 {object} mci.MciSshCmdResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/installBenchmarkAgent/mcis/{mcisId} [post]
-func RestPostInstallBenchmarkAgentToMcis(c echo.Context) error {
+// @Router /ns/{nsId}/installBenchmarkAgent/mci/{mciId} [post]
+func RestPostInstallBenchmarkAgentToMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 	option := c.QueryParam("option")
 
-	req := &mcis.McisCmdReq{}
+	req := &mci.MciCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	resultArray, err := mcis.InstallBenchmarkAgentToMcis(nsId, mcisId, req, option)
+	resultArray, err := mci.InstallBenchmarkAgentToMci(nsId, mciId, req, option)
 	if err != nil {
 		common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	content := mcis.McisSshCmdResult{}
+	content := mci.MciSshCmdResult{}
 	for _, v := range resultArray {
 		content.Results = append(content.Results, v)
 	}
@@ -73,18 +73,18 @@ type RestGetAllBenchmarkRequest struct {
 
 // RestGetAllBenchmark godoc
 // @ID GetAllBenchmark
-// @Summary Run MCIS benchmark for all performance metrics and return results
-// @Description Run MCIS benchmark for all performance metrics and return results
-// @Tags [Infra service] MCIS Performance benchmarking (WIP)
+// @Summary Run MCI benchmark for all performance metrics and return results
+// @Description Run MCI benchmark for all performance metrics and return results
+// @Tags [Infra service] MCI Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param hostIP body RestGetAllBenchmarkRequest true "Host IP address to benchmark"
-// @Success 200 {object} mcis.BenchmarkInfoArray
+// @Success 200 {object} mci.BenchmarkInfoArray
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/benchmarkAll/mcis/{mcisId} [post]
+// @Router /ns/{nsId}/benchmarkAll/mci/{mciId} [post]
 func RestGetAllBenchmark(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
@@ -92,39 +92,39 @@ func RestGetAllBenchmark(c echo.Context) error {
 	}
 
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 
 	req := &RestGetAllBenchmarkRequest{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	content, err := mcis.RunAllBenchmarks(nsId, mcisId, req.Host)
+	content, err := mci.RunAllBenchmarks(nsId, mciId, req.Host)
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestGetLatencyBenchmark godoc
 // @ID GetLatencyBenchmark
-// @Summary Run MCIS benchmark for network latency
-// @Description Run MCIS benchmark for network latency
-// @Tags [Infra service] MCIS Performance benchmarking (WIP)
+// @Summary Run MCI benchmark for network latency
+// @Description Run MCI benchmark for network latency
+// @Tags [Infra service] MCI Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
-// @Param mcisId path string true "MCIS ID" default(probe)
-// @Success 200 {object} mcis.BenchmarkInfoArray
+// @Param mciId path string true "MCI ID" default(probe)
+// @Success 200 {object} mci.BenchmarkInfoArray
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/benchmarkLatency/mcis/{mcisId} [get]
+// @Router /ns/{nsId}/benchmarkLatency/mci/{mciId} [get]
 func RestGetBenchmarkLatency(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 
-	content, err := mcis.RunLatencyBenchmark(nsId, mcisId, "")
+	content, err := mci.RunLatencyBenchmark(nsId, mciId, "")
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
@@ -134,26 +134,26 @@ type RestGetBenchmarkRequest struct {
 
 // RestGetBenchmark godoc
 // @ID GetBenchmark
-// @Summary Run MCIS benchmark for a single performance metric and return results
-// @Description Run MCIS benchmark for a single performance metric and return results
-// @Tags [Infra service] MCIS Performance benchmarking (WIP)
+// @Summary Run MCI benchmark for a single performance metric and return results
+// @Description Run MCI benchmark for a single performance metric and return results
+// @Tags [Infra service] MCI Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param hostIP body RestGetBenchmarkRequest true "Host IP address to benchmark"
-// @Param action query string true "Benchmark Action to MCIS" Enums(install, init, cpus, cpum, memR, memW, fioR, fioW, dbR, dbW, rtt, mrtt, clean)
-// @Success 200 {object} mcis.BenchmarkInfoArray
+// @Param action query string true "Benchmark Action to MCI" Enums(install, init, cpus, cpum, memR, memW, fioR, fioW, dbR, dbW, rtt, mrtt, clean)
+// @Success 200 {object} mci.BenchmarkInfoArray
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/benchmark/mcis/{mcisId} [post]
+// @Router /ns/{nsId}/benchmark/mci/{mciId} [post]
 func RestGetBenchmark(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 	action := c.QueryParam("action")
 
 	req := &RestGetBenchmarkRequest{}
@@ -161,6 +161,6 @@ func RestGetBenchmark(c echo.Context) error {
 		return err
 	}
 
-	content, err := mcis.CoreGetBenchmark(nsId, mcisId, action, req.Host)
+	content, err := mci.CoreGetBenchmark(nsId, mciId, action, req.Host)
 	return common.EndRequestWithLog(c, reqID, err, content)
 }

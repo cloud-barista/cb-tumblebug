@@ -1,22 +1,22 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## Set Local MCIS DNS (/etc/hosts of each VM in MC-Infra)"
+echo "## Set Local MCI DNS (/etc/hosts of each VM in MC-Infra)"
 echo "####################################################################"
 
 source ../init.sh
 
 echo ""
 
-MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID})
-VMARRAY=$(jq '.vm' <<<"$MCISINFO")
+MCIINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID})
+VMARRAY=$(jq '.vm' <<<"$MCIINFO")
 
 echo ""
 echo "[GENERATED PRIVATE KEY (PEM, PPK) first]"
 
 echo ""
 
-echo "[MCIS INFO: $MCISID]"
+echo "[MCI INFO: $MCIID]"
 # for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 # 	_jq() {
 # 		echo ${row} | base64 --decode | jq -r ${1}
@@ -79,7 +79,7 @@ wait
 
 CMD="cat /etc/hosts"
 VAR1=$(
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${CMD}]"
 	}

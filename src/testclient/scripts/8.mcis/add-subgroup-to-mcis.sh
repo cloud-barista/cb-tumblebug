@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#function add-vm-to-mcis() {
+#function add-vm-to-mci() {
 
 	echo "####################################################################"
-	echo "## 9. Create vm on MCIS"
+	echo "## 9. Create vm on MCI"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -35,7 +35,7 @@
 	echo "Designated Subnet ID (for testing only): $SUBNETID"
 
 	
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis/$MCISID/vm -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mci/$MCIID/vm -H 'Content-Type: application/json' -d \
 		'{
 			"subGroupSize": "'${NUMVM}'",
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'",
@@ -56,4 +56,4 @@
 		}' | jq '' 
 #}
 
-#add-vm-to-mcis
+#add-vm-to-mci

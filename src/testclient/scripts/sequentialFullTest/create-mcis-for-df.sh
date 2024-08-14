@@ -22,15 +22,15 @@ function test_sequence()
 	../5.sshKey/create-sshKey.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	../6.image/registerImageWithId.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	../7.spec/register-spec.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-	../8.mcis/create-mcis-no-agent.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../8.mci/create-mci-no-agent.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	dozing 1
-	../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../8.mci/status-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 	_self=$CMDPATH
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[CMD] (MCIRS(${SECONDS}s)) ${_self} (MCIS) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[CMD] (MCIRS(${SECONDS}s)) ${_self} (MCI) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat  ./executionStatus
@@ -57,7 +57,7 @@ function test_sequence()
 		source ../../../../conf/credentials.conf
 
 	echo "####################################################################"
-	echo "## Create MCIS from Zero Base"
+	echo "## Create MCI from Zero Base"
 	echo "####################################################################"
 
 

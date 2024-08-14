@@ -2,17 +2,17 @@
 
 
 echo "####################################################################"
-echo "## Deploy-Xonotic-FPS-Game-to-mcis "
+echo "## Deploy-Xonotic-FPS-Game-to-mci "
 echo "####################################################################"
 
 SECONDS=0
 source ../init.sh
 
 
-MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=status)
-VMARRAY=$(jq -r '.status.vm' <<<"$MCISINFO")
-MASTERIP=$(jq -r '.status.masterIp' <<<"$MCISINFO")
-MASTERVM=$(jq -r '.status.masterVmId' <<<"$MCISINFO")
+MCIINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=status)
+VMARRAY=$(jq -r '.status.vm' <<<"$MCIINFO")
+MASTERIP=$(jq -r '.status.masterIp' <<<"$MCIINFO")
+MASTERVM=$(jq -r '.status.masterVmId' <<<"$MCIINFO")
 
 echo "MASTERIP: $MASTERIP"
 
@@ -20,13 +20,13 @@ LAUNCHCMD="sudo scope launch $IPLIST $PRIVIPLIST"
 #echo $LAUNCHCMD
 
 echo ""
-echo "Installing Xonotic to MCIS..."
+echo "Installing Xonotic to MCI..."
 #InstallFilePath="https://.../xonotic-0.8.2.zip"
 InstallFilePath="https://z.xnz.me/xonotic/builds/xonotic-0.8.2.zip"
 INSTALLCMD="sudo apt-get update > /dev/null; wget $InstallFilePath ; sudo apt install unzip -y; unzip xonotic-0.8.2.zip"
 echo ""
 
-VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${INSTALLCMD}]"
 	}
@@ -38,7 +38,7 @@ echo ""
 LAUNCHCMD="cd Xonotic/; nohup ./xonotic-linux64-dedicated 1>server.log 2>&1 &"
 
 echo "Launching Xonotic for master node..."
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$MASTERVM -H 'Content-Type: application/json' -d @- <<EOF
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID/vm/$MASTERVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${LAUNCHCMD}]"
 	}
@@ -51,6 +51,6 @@ duration=$SECONDS
 printElapsed $@
 echo ""
 
-echo "[MCIS Xonotic: complete] Access to"
+echo "[MCI Xonotic: complete] Access to"
 echo " $MASTERIP:26000"
 echo ""

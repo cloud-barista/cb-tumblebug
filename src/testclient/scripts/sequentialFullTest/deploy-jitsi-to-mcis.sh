@@ -2,7 +2,7 @@
 
 
 echo "####################################################################"
-echo "## deploy-jitsi-to-mcis (parameters: -x EMAIL -y PublicDNS)"
+echo "## deploy-jitsi-to-mci (parameters: -x EMAIL -y PublicDNS)"
 echo "####################################################################"
 
 SECONDS=0
@@ -13,8 +13,8 @@ EMAIL=${OPTION01}
 PublicDNS=${OPTION02}
 
 if [ "${INDEX}" == "0" ]; then
-	# MCISPREFIX=avengers
-	MCISID=${POSTFIX}
+	# MCIPREFIX=avengers
+	MCIID=${POSTFIX}
 fi
 
 if [ -z "$EMAIL" ]; then
@@ -31,8 +31,8 @@ fi
 
 
 
-MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=status)
-VMARRAY=$(jq -r '.status.vm' <<<"$MCISINFO")
+MCIINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=status)
+VMARRAY=$(jq -r '.status.vm' <<<"$MCIINFO")
 
 echo "VMARRAY: $VMARRAY"
 
@@ -52,7 +52,7 @@ done
 CMD="wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/jitsi/startServer.sh; chmod +x ~/startServer.sh; sudo ~/startServer.sh $PublicIP $PublicDNS $EMAIL"
 echo "CMD: $CMD"
 
-VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${CMD}]"
 	}
@@ -66,6 +66,6 @@ duration=$SECONDS
 printElapsed $@
 echo ""
 
-echo "[MCIS Jitsi: complete] Access to"
+echo "[MCI Jitsi: complete] Access to"
 echo " ${PublicDNS}"
 echo ""

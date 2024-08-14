@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## Copy a local file to all VMs in the MCIS (-x source-file-path / -y destination-file-path)"
+echo "## Copy a local file to all VMs in the MCI (-x source-file-path / -y destination-file-path)"
 echo "####################################################################"
 
 source ../init.sh
@@ -11,11 +11,11 @@ DESTPATH=$OPTION02
 
 echo ""
 
-MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID})
-VMARRAY=$(jq '.vm' <<<"$MCISINFO")
+MCIINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID})
+VMARRAY=$(jq '.vm' <<<"$MCIINFO")
 
 echo ""
-echo "[MCIS INFO: $MCISID]"
+echo "[MCI INFO: $MCIID]"
 
 for rowi in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	{
@@ -41,7 +41,7 @@ wait
 
 CMD="ls ${DESTPATH}"
 VAR1=$(
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${CMD}]"
 	}

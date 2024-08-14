@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## test-mcis-dynamic-all.sh (parameters: -x (create or delete) -y numVM)"
+echo "## test-mci-dynamic-all.sh (parameters: -x (create or delete) -y numVM)"
 echo "####################################################################"
 
 
@@ -13,8 +13,8 @@ option=${OPTION01}
 subGroupSizeInput=${OPTION02:-1}
 
 
-PRINT="index,mcisName,connectionName,specId,image,subGroupSize,startTime,endTime,elapsedTime,option"
-echo "${PRINT}" >./mcisTest-$option.csv
+PRINT="index,mciName,connectionName,specId,image,subGroupSize,startTime,endTime,elapsedTime,option"
+echo "${PRINT}" >./mciTest-$option.csv
 
 
 description="Made in CB-TB"
@@ -38,20 +38,20 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
             rootDiskSize=$(_jq '.rootDiskSize')
             image="ubuntu18.04"
             subGroupSize=$subGroupSizeInput
-            mcisName=$specId
+            mciName=$specId
 
             if [ "${option}" == "create" ]; then
                 echo "[$i] connection: $connectionName / specId: $specId / image: $image / replica: $subGroupSize "
             elif [ "${option}" == "delete" ]; then
-                echo "[$i] mcisName: $mcisName / replica: $subGroupSize "
+                echo "[$i] mciName: $mciName / replica: $subGroupSize "
             fi
             ((i++))
         }
 done
 
 echo
-echo "[Test] will $option MCISs using all common Specs sequentially"
-echo "[options] Operation: $option , mcisSize: $subGroupSizeInput , fileName: mcisTest-$option.csv"
+echo "[Test] will $option MCIs using all common Specs sequentially"
+echo "[options] Operation: $option , mciSize: $subGroupSizeInput , fileName: mciTest-$option.csv"
 echo
 
 while true; do
@@ -93,25 +93,25 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
         rootDiskSize=$(_jq '.rootDiskSize')
         image="ubuntu18.04"
         subGroupSize=$subGroupSizeInput
-        mcisName=$specId
+        mciName=$specId
 
         echo
-        echo "mcisName: $mcisName   specId: $specId   image: $image   connectionName: $connectionName   rootDiskType: $rootDiskType   rootDiskSize: $rootDiskSize  subGroupSize: $subGroupSize "
+        echo "mciName: $mciName   specId: $specId   image: $image   connectionName: $connectionName   rootDiskType: $rootDiskType   rootDiskSize: $rootDiskSize  subGroupSize: $subGroupSize "
         sleepDuration=$((1 + RANDOM % 600))
         echo "sleepDuration: $sleepDuration"
         sleep $sleepDuration
 
         startTime=$SECONDS
         if [ "${option}" == "delete" ]; then
-            echo "Terminate and Delete [$mcisName]"
-            curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${mcisName}?option=terminate | jq ''
+            echo "Terminate and Delete [$mciName]"
+            curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mci/${mciName}?option=terminate | jq ''
 
 
         elif [ "${option}" == "create" ]; then
-            echo "Creat MCIS dynamic [$mcisName]"
-            VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcisDynamic -H 'Content-Type: application/json' -d @- <<EOF
+            echo "Creat MCI dynamic [$mciName]"
+            VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mciDynamic -H 'Content-Type: application/json' -d @- <<EOF
             {
-                    "name": "${mcisName}",
+                    "name": "${mciName}",
                     "description": "${description}",
                     "installMonAgent": "${installMonAgent}",
                     "label": "${label}",
@@ -134,9 +134,9 @@ EOF
         endTime=$SECONDS
         elapsedTime=$(($endTime-$startTime))
 
-        PRINT="${i},${mcisName},${connectionName},${specId},${image},${subGroupSize},${startTime},${endTime},${elapsedTime},${option}"
+        PRINT="${i},${mciName},${connectionName},${specId},${image},${subGroupSize},${startTime},${endTime},${elapsedTime},${option}"
         echo "$PRINT"
-        echo "$PRINT" >>./mcisTest-$option.csv
+        echo "$PRINT" >>./mciTest-$option.csv
 
         echo "[$i] Elapsed time: $elapsedTime s"
         ((i++))

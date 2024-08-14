@@ -1,17 +1,17 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## 8. Get MCIS"
+echo "## 8. Get MCI"
 echo "####################################################################"
 
 source ../init.sh
 
 
 if [ "${INDEX}" == "0" ]; then
-	MCISID=${POSTFIX}
+	MCIID=${POSTFIX}
 else
-	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 fi
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID} | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID} | jq ''
 

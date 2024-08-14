@@ -15,7 +15,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/rs/zerolog/log"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 	"github.com/go-resty/resty/v2"
 
 	terrariumModel "github.com/cloud-barista/mc-terrarium/pkg/api/rest/model"
@@ -57,10 +57,10 @@ func setConfig() {
 func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "./app",
-		Short: "[Demo] VPN tunnel on MCIS",
+		Short: "[Demo] VPN tunnel on MCI",
 		Long: `
 ########################################################################
-## [Demo] This program demonstrates VPN tunnel configuration on MCIS. ##
+## [Demo] This program demonstrates VPN tunnel configuration on MCI. ##
 ########################################################################`,
 	}
 
@@ -69,15 +69,15 @@ func main() {
 		Short: "Create resources",
 	}
 
-	var createMcisDynamicCmd = &cobra.Command{
-		Use:   "mcis",
-		Short: "Create MCIS dynamically",
-		Run:   createMcis,
+	var createMciDynamicCmd = &cobra.Command{
+		Use:   "mci",
+		Short: "Create MCI dynamically",
+		Run:   createMci,
 	}
 	// Command-line flags with shorthand
-	createMcisDynamicCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
-	createMcisDynamicCmd.Flags().StringP("mcisId", "m", "", "MCIS ID")
-	createMcisDynamicCmd.Flags().StringP("file", "f", "", "Specify the JSON file for the request body")
+	createMciDynamicCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
+	createMciDynamicCmd.Flags().StringP("mciId", "m", "", "MCI ID")
+	createMciDynamicCmd.Flags().StringP("file", "f", "", "Specify the JSON file for the request body")
 
 	var createVpnCmd = &cobra.Command{
 		Use:   "vpn",
@@ -86,11 +86,11 @@ func main() {
 	}
 	// Command-line flags with shorthand
 	createVpnCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
-	createVpnCmd.Flags().StringP("mcisId", "m", "", "MCIS ID")
+	createVpnCmd.Flags().StringP("mciId", "m", "", "MCI ID")
 	createVpnCmd.Flags().StringP("trId", "t", "", "Terrarium ID")
 
 	createCmd.AddCommand(
-		createMcisDynamicCmd,
+		createMciDynamicCmd,
 		createVpnCmd,
 	)
 
@@ -99,13 +99,13 @@ func main() {
 		Short: "Delete resources",
 	}
 
-	var terminateMcisCmd = &cobra.Command{
-		Use:   "mcis",
-		Short: "Suspend and terminate MCIS",
-		Run:   terminateMcis,
+	var terminateMciCmd = &cobra.Command{
+		Use:   "mci",
+		Short: "Suspend and terminate MCI",
+		Run:   terminateMci,
 	}
-	terminateMcisCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
-	terminateMcisCmd.Flags().StringP("mcisId", "m", "", "MCIS ID")
+	terminateMciCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
+	terminateMciCmd.Flags().StringP("mciId", "m", "", "MCI ID")
 
 	var destroyVpnCmd = &cobra.Command{
 		Use:   "vpn",
@@ -116,7 +116,7 @@ func main() {
 	destroyVpnCmd.Flags().StringP("trId", "t", "", "Terrarium ID")
 
 	deleteCmd.AddCommand(
-		terminateMcisCmd,
+		terminateMciCmd,
 		destroyVpnCmd,
 	)
 
@@ -131,16 +131,16 @@ func main() {
 	}
 }
 
-func createMcis(cmd *cobra.Command, args []string) {
+func createMci(cmd *cobra.Command, args []string) {
 
-	// Set namespace ID, MCIS ID, and request body file
+	// Set namespace ID, MCI ID, and request body file
 	nsId, _ := cmd.Flags().GetString("namespaceId")
-	mcisId, _ := cmd.Flags().GetString("mcisId")
+	mciId, _ := cmd.Flags().GetString("mciId")
 	filePath, _ := cmd.Flags().GetString("file")
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCIS ID", mcisId).
+		Str("MCI ID", mciId).
 		Str("File path", filePath).
 		Msg("[args]")
 
@@ -148,31 +148,31 @@ func createMcis(cmd *cobra.Command, args []string) {
 		nsId = viper.GetString("tumblebug.demo.nsId")
 	}
 
-	if mcisId == "" {
-		mcisId = viper.GetString("tumblebug.demo.mcisId")
+	if mciId == "" {
+		mciId = viper.GetString("tumblebug.demo.mciId")
 	}
 
 	if filePath == "" {
-		filePath = viper.GetString("tumblebug.api.mcisDynamic.reqBody")
+		filePath = viper.GetString("tumblebug.api.mciDynamic.reqBody")
 	}
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCIS ID", mcisId).
+		Str("MCI ID", mciId).
 		Str("File path", filePath).
 		Msg("[config.yaml]")
 
-	if nsId == "" || mcisId == "" || filePath == "" {
-		err := fmt.Errorf("bad request: nsId, mcisId, or file path is not set")
+	if nsId == "" || mciId == "" || filePath == "" {
+		err := fmt.Errorf("bad request: nsId, mciId, or file path is not set")
 		log.Fatal().Err(err).
 			Str("Namespace ID", nsId).
-			Str("MCIS ID", mcisId).
+			Str("MCI ID", mciId).
 			Str("File path", filePath).
 			Msg("Please set the values in the config file or pass them as arguments")
 		return
 	}
 
-	log.Info().Msg("Starting creating an MCIS dynamically...")
+	log.Info().Msg("Starting creating an MCI dynamically...")
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// Prepare to call Tumblebug APIs
@@ -228,67 +228,67 @@ func createMcis(cmd *cobra.Command, args []string) {
 	log.Info().Msg(resTbReadiness.Message)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: mcisDynamic
+	// Tumblebug API: mciDynamic
 
 	// Set the API path
-	urlPostMcisDynamic := fmt.Sprintf("%s/ns/%s/mcisDynamic", tbApiBase, nsId)
+	urlPostMciDynamic := fmt.Sprintf("%s/ns/%s/mciDynamic", tbApiBase, nsId)
 
-	// Read the request body written in mcisDynamic.json
-	mcisDynamicFile, err := os.Open(filePath)
+	// Read the request body written in mciDynamic.json
+	mciDynamicFile, err := os.Open(filePath)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to open %s", filePath)
 		return
 	}
-	defer mcisDynamicFile.Close()
+	defer mciDynamicFile.Close()
 
-	mcisDynamicData, err := io.ReadAll(mcisDynamicFile)
+	mciDynamicData, err := io.ReadAll(mciDynamicFile)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to read %s", filePath)
 		return
 	}
 
-	reqMcisDynamic := new(mcis.TbMcisDynamicReq)
-	err = json.Unmarshal(mcisDynamicData, &reqMcisDynamic)
+	reqMciDynamic := new(mci.TbMciDynamicReq)
+	err = json.Unmarshal(mciDynamicData, &reqMciDynamic)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to unmarshal %s", filePath)
 		return
 	}
 
-	// Set MCIS ID
-	reqMcisDynamic.Name = mcisId
+	// Set MCI ID
+	reqMciDynamic.Name = mciId
 
-	respBytes, err = callApi("POST", urlPostMcisDynamic, tbAuth, reqMcisDynamic)
+	respBytes, err = callApi("POST", urlPostMciDynamic, tbAuth, reqMciDynamic)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
 	}
 
 	// Print the response
-	mcisInfo := new(mcis.TbMcisInfo)
-	if err := json.Unmarshal(respBytes, mcisInfo); err != nil {
+	mciInfo := new(mci.TbMciInfo)
+	if err := json.Unmarshal(respBytes, mciInfo); err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}
 
-	prettyMcisInfo, err := json.MarshalIndent(mcisInfo, "", "   ")
+	prettyMciInfo, err := json.MarshalIndent(mciInfo, "", "   ")
 	if err != nil {
 		log.Error().Err(err).Msgf("")
 		return
 	}
 
-	log.Debug().Msgf("[Response] %+v", string(prettyMcisInfo))
+	log.Debug().Msgf("[Response] %+v", string(prettyMciInfo))
 }
 
 func createVpnTunnel(cmd *cobra.Command, args []string) {
 
-	// Set namespace ID, MCIS ID, and terrarium ID
+	// Set namespace ID, MCI ID, and terrarium ID
 	nsId, _ := cmd.Flags().GetString("namespaceId")
-	mcisId, _ := cmd.Flags().GetString("mcisId")
+	mciId, _ := cmd.Flags().GetString("mciId")
 	trId, _ := cmd.Flags().GetString("trId")
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCIS ID", mcisId).
+		Str("MCI ID", mciId).
 		Str("Terrarium ID", trId).
 		Msg("[args]")
 
@@ -296,8 +296,8 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 		nsId = viper.GetString("tumblebug.demo.nsId")
 	}
 
-	if mcisId == "" {
-		mcisId = viper.GetString("tumblebug.demo.mcisId")
+	if mciId == "" {
+		mciId = viper.GetString("tumblebug.demo.mciId")
 	}
 
 	if trId == "" {
@@ -306,15 +306,15 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCIS ID", mcisId).
+		Str("MCI ID", mciId).
 		Str("Terrarium ID", trId).
 		Msg("[config.yaml]")
 
-	if nsId == "" || mcisId == "" || trId == "" {
-		err := fmt.Errorf("bad request: nsId, mcisId, or rgId is not set")
+	if nsId == "" || mciId == "" || trId == "" {
+		err := fmt.Errorf("bad request: nsId, mciId, or rgId is not set")
 		log.Fatal().Err(err).
 			Str("Namespace ID", nsId).
-			Str("MCIS ID", mcisId).
+			Str("MCI ID", mciId).
 			Str("Terrarium ID", trId).
 			Msg("Please set the values in the config file or pass them as arguments")
 		return
@@ -376,39 +376,39 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	log.Info().Msg(resTbReadiness.Message)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: Get MCIS
+	// Tumblebug API: Get MCI
 
 	// Set the API path
 	queryParams := "" //"option=status"
-	urlGetMcisStatus := fmt.Sprintf("%s/ns/%s/mcis/%s", tbApiBase, nsId, mcisId)
+	urlGetMciStatus := fmt.Sprintf("%s/ns/%s/mci/%s", tbApiBase, nsId, mciId)
 	if queryParams != "" {
-		urlGetMcisStatus += "?" + queryParams
+		urlGetMciStatus += "?" + queryParams
 	}
 
-	// Request to create an mcis dynamically
-	respBytes, err = callApi("GET", urlGetMcisStatus, tbAuth, nil)
+	// Request to create an mci dynamically
+	respBytes, err = callApi("GET", urlGetMciStatus, tbAuth, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
 	}
 
 	// Print the response
-	mcisInfo := new(mcis.TbMcisInfo)
-	if err := json.Unmarshal(respBytes, mcisInfo); err != nil {
+	mciInfo := new(mci.TbMciInfo)
+	if err := json.Unmarshal(respBytes, mciInfo); err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}
 
-	prettyMcisInfo, err := json.MarshalIndent(mcisInfo, "", "   ")
+	prettyMciInfo, err := json.MarshalIndent(mciInfo, "", "   ")
 	if err != nil {
 		log.Error().Err(err).Msgf("")
 		return
 	}
 
-	log.Debug().Msgf("[Response] %+v", string(prettyMcisInfo))
+	log.Debug().Msgf("[Response] %+v", string(prettyMciInfo))
 
-	// Print the mcisInfo
-	for _, vm := range mcisInfo.Vm {
+	// Print the mciInfo
+	for _, vm := range mciInfo.Vm {
 		log.Debug().
 			Str("ProviderName", vm.ConnectionConfig.ProviderName).
 			Str("ConfigName", vm.ConnectionConfig.ConfigName).
@@ -445,8 +445,8 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	azureGatewaySubnetCidrBlock := ""
 
 	vNetId := ""
-	// Print the mcisInfo
-	for _, vm := range mcisInfo.Vm {
+	// Print the mciInfo
+	for _, vm := range mciInfo.Vm {
 		providerName := strings.ToLower(vm.ConnectionConfig.ProviderName)
 		switch providerName {
 		case "aws":
@@ -662,7 +662,7 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 		Msg("[config.yaml]")
 
 	if rgId == "" {
-		err := fmt.Errorf("bad request: nsId, mcisId, or rgId is not set")
+		err := fmt.Errorf("bad request: nsId, mciId, or rgId is not set")
 		log.Fatal().Err(err).
 			Str("Terrarium ID", rgId).
 			Msg("Please set the values in the config file or pass them as arguments")
@@ -758,40 +758,40 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 
 }
 
-func terminateMcis(cmd *cobra.Command, args []string) {
+func terminateMci(cmd *cobra.Command, args []string) {
 
-	// Set namespace ID, MCIS ID, and request body file
+	// Set namespace ID, MCI ID, and request body file
 	nsId, _ := cmd.Flags().GetString("namespaceId")
-	mcisId, _ := cmd.Flags().GetString("mcisId")
+	mciId, _ := cmd.Flags().GetString("mciId")
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCIS ID", mcisId).
+		Str("MCI ID", mciId).
 		Msg("[args]")
 
 	if nsId == "" {
 		nsId = viper.GetString("tumblebug.demo.nsId")
 	}
 
-	if mcisId == "" {
-		mcisId = viper.GetString("tumblebug.demo.mcisId")
+	if mciId == "" {
+		mciId = viper.GetString("tumblebug.demo.mciId")
 	}
 
 	log.Debug().
 		Str("Namespace ID", nsId).
-		Str("MCIS ID", mcisId).
+		Str("MCI ID", mciId).
 		Msg("[config.yaml]")
 
-	if nsId == "" || mcisId == "" {
-		err := fmt.Errorf("bad request: nsId or mcisId is not set")
+	if nsId == "" || mciId == "" {
+		err := fmt.Errorf("bad request: nsId or mciId is not set")
 		log.Fatal().Err(err).
 			Str("Namespace ID", nsId).
-			Str("MCIS ID", mcisId).
+			Str("MCI ID", mciId).
 			Msg("Please set the values in the config file or pass them as arguments")
 		return
 	}
 
-	log.Info().Msg("Starting terminating an MCIS dynamically...")
+	log.Info().Msg("Starting terminating an MCI dynamically...")
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// Prepare to call Tumblebug APIs
@@ -847,17 +847,17 @@ func terminateMcis(cmd *cobra.Command, args []string) {
 	log.Info().Msg(resTbReadiness.Message)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: Suspend MCIS
+	// Tumblebug API: Suspend MCI
 
 	// Set the API path
 	queryParams := "action=suspend"
-	urlGetMcisControlLifecycle := fmt.Sprintf("%s/ns/%s/control/mcis/%s", tbApiBase, nsId, mcisId)
+	urlGetMciControlLifecycle := fmt.Sprintf("%s/ns/%s/control/mci/%s", tbApiBase, nsId, mciId)
 
 	if queryParams != "" {
-		urlGetMcisControlLifecycle += "?" + queryParams
+		urlGetMciControlLifecycle += "?" + queryParams
 	}
 
-	respBytes, err = callApi("GET", urlGetMcisControlLifecycle, tbAuth, nil)
+	respBytes, err = callApi("GET", urlGetMciControlLifecycle, tbAuth, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
@@ -881,52 +881,52 @@ func terminateMcis(cmd *cobra.Command, args []string) {
 	log.Debug().Msgf("[Response] %+v", respText)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: Keep checking the status of MCIS until it is suspended
+	// Tumblebug API: Keep checking the status of MCI until it is suspended
 
 	for {
 		time.Sleep(5 * time.Second)
 
 		// Set the API path
 		queryParams = "" //"option=status"
-		urlGetMcisStatus := fmt.Sprintf("%s/ns/%s/mcis/%s", tbApiBase, nsId, mcisId)
+		urlGetMciStatus := fmt.Sprintf("%s/ns/%s/mci/%s", tbApiBase, nsId, mciId)
 		if queryParams != "" {
-			urlGetMcisStatus += "?" + queryParams
+			urlGetMciStatus += "?" + queryParams
 		}
 
-		// Request to create an mcis dynamically
-		respBytes, err = callApi("GET", urlGetMcisStatus, tbAuth, nil)
+		// Request to create an mci dynamically
+		respBytes, err = callApi("GET", urlGetMciStatus, tbAuth, nil)
 		if err != nil {
 			log.Error().Err(err).Msg(string(respBytes))
 			return
 		}
 
 		// Print the response
-		mcisInfo := new(mcis.TbMcisInfo)
-		if err := json.Unmarshal(respBytes, mcisInfo); err != nil {
+		mciInfo := new(mci.TbMciInfo)
+		if err := json.Unmarshal(respBytes, mciInfo); err != nil {
 			log.Error().Err(err).Msg("")
 			return
 		}
 
-		if strings.Contains(mcisInfo.Status, "Suspended") && !strings.Contains(mcisInfo.Status, "Partial") {
-			log.Info().Msgf("MCIS(id: %s) status: ", mcisInfo.Status)
+		if strings.Contains(mciInfo.Status, "Suspended") && !strings.Contains(mciInfo.Status, "Partial") {
+			log.Info().Msgf("MCI(id: %s) status: ", mciInfo.Status)
 			break
 		} else {
-			log.Debug().Msgf("MCIS(id: %s) status: ", mcisInfo.Status)
+			log.Debug().Msgf("MCI(id: %s) status: ", mciInfo.Status)
 		}
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: Terminate MCIS
+	// Tumblebug API: Terminate MCI
 
 	// Set the API path
 	queryParams = "action=terminate"
-	urlGetMcisControlLifecycle = fmt.Sprintf("%s/ns/%s/control/mcis/%s", tbApiBase, nsId, mcisId)
+	urlGetMciControlLifecycle = fmt.Sprintf("%s/ns/%s/control/mci/%s", tbApiBase, nsId, mciId)
 
 	if queryParams != "" {
-		urlGetMcisControlLifecycle += "?" + queryParams
+		urlGetMciControlLifecycle += "?" + queryParams
 	}
 
-	respBytes, err = callApi("GET", urlGetMcisControlLifecycle, tbAuth, nil)
+	respBytes, err = callApi("GET", urlGetMciControlLifecycle, tbAuth, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
@@ -949,52 +949,52 @@ func terminateMcis(cmd *cobra.Command, args []string) {
 	log.Debug().Msgf("[Response] %+v", respText)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: Keep checking the status of MCIS until it is terminated
+	// Tumblebug API: Keep checking the status of MCI until it is terminated
 
 	for {
 		time.Sleep(5 * time.Second)
 
 		// Set the API path
 		queryParams = "" //"option=status"
-		urlGetMcisStatus := fmt.Sprintf("%s/ns/%s/mcis/%s", tbApiBase, nsId, mcisId)
+		urlGetMciStatus := fmt.Sprintf("%s/ns/%s/mci/%s", tbApiBase, nsId, mciId)
 		if queryParams != "" {
-			urlGetMcisStatus += "?" + queryParams
+			urlGetMciStatus += "?" + queryParams
 		}
 
-		// Request to create an mcis dynamically
-		respBytes, err = callApi("GET", urlGetMcisStatus, tbAuth, nil)
+		// Request to create an mci dynamically
+		respBytes, err = callApi("GET", urlGetMciStatus, tbAuth, nil)
 		if err != nil {
 			log.Error().Err(err).Msg(string(respBytes))
 			return
 		}
 
 		// Print the response
-		mcisInfo := new(mcis.TbMcisInfo)
-		if err := json.Unmarshal(respBytes, mcisInfo); err != nil {
+		mciInfo := new(mci.TbMciInfo)
+		if err := json.Unmarshal(respBytes, mciInfo); err != nil {
 			log.Error().Err(err).Msg("")
 			return
 		}
 
-		if strings.Contains(mcisInfo.Status, "Terminated") && !strings.Contains(mcisInfo.Status, "Partial") {
-			log.Info().Msgf("MCIS(id: %s) status: %s", mcisInfo.Id, mcisInfo.Status)
+		if strings.Contains(mciInfo.Status, "Terminated") && !strings.Contains(mciInfo.Status, "Partial") {
+			log.Info().Msgf("MCI(id: %s) status: %s", mciInfo.Id, mciInfo.Status)
 			break
 		} else {
-			log.Debug().Msgf("MCIS(id: %s) status: %s", mcisInfo.Id, mcisInfo.Status)
+			log.Debug().Msgf("MCI(id: %s) status: %s", mciInfo.Id, mciInfo.Status)
 		}
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: Delete MCIS
+	// Tumblebug API: Delete MCI
 
 	// Set the API path
 	queryParams = ""
-	urlDeleteMcis := fmt.Sprintf("%s/ns/%s/mcis/%s", tbApiBase, nsId, mcisId)
+	urlDeleteMci := fmt.Sprintf("%s/ns/%s/mci/%s", tbApiBase, nsId, mciId)
 
 	if queryParams != "" {
-		urlDeleteMcis += "?" + queryParams
+		urlDeleteMci += "?" + queryParams
 	}
 
-	respBytes, err = callApi("DELETE", urlDeleteMcis, tbAuth, nil)
+	respBytes, err = callApi("DELETE", urlDeleteMci, tbAuth, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return

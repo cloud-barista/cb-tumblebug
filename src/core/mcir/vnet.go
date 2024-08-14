@@ -148,8 +148,8 @@ type TbSubnetInfo struct { // Tumblebug
 
 // BastionNode is a struct that represents TB BastionNode object.
 type BastionNode struct {
-	McisId string `json:"mcisId"`
-	VmId   string `json:"vmId"`
+	MciId string `json:"mciId"`
+	VmId  string `json:"vmId"`
 }
 
 // CreateVNet accepts vNet creation request, creates and returns an TB vNet object

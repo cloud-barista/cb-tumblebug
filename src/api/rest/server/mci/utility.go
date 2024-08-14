@@ -11,26 +11,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to handle REST API for mcis
-package mcis
+// Package mci is to handle REST API for mci
+package mci
 
 import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 	"github.com/labstack/echo/v4"
 )
 
-func RestCheckMcis(c echo.Context) error {
+func RestCheckMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 
-	exists, err := mcis.CheckMcis(nsId, mcisId)
+	exists, err := mci.CheckMci(nsId, mciId)
 
 	type JsonTemplate struct {
 		Exists bool `json:"exists"`
@@ -46,10 +46,10 @@ func RestCheckVm(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
 
-	exists, err := mcis.CheckVm(nsId, mcisId, vmId)
+	exists, err := mci.CheckVm(nsId, mciId, vmId)
 
 	type JsonTemplate struct {
 		Exists bool `json:"exists"`

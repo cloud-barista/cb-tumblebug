@@ -28,7 +28,7 @@ while true; do
     esac
 done
 
-./clean-mcis-only.sh "$@"
+./clean-mci-only.sh "$@"
 
 ./clean-mcir-ns-cloud-domestic.sh "$@"
 

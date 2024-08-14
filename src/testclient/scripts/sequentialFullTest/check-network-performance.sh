@@ -8,15 +8,15 @@ source ../init.sh
 
 echo ""
 
-MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=status)
-VMARRAY=$(jq '.status.vm' <<<"$MCISINFO")
+MCIINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=status)
+VMARRAY=$(jq '.status.vm' <<<"$MCIINFO")
 
 echo ""
 echo "[GENERATED PRIVATE KEY (PEM, PPK)]"
 
 echo ""
 
-echo "[MCIS INFO: $MCISID]"
+echo "[MCI INFO: $MCIID]"
 for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	_jq() {
 		echo ${row} | base64 --decode | jq -r ${1}
@@ -25,10 +25,10 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	id=$(_jq '.id')
 	ip=$(_jq '.publicIp')
 
-	VMINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/vm/${id})
+	VMINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}/vm/${id})
 	VMKEYID=$(jq -r '.sshKeyId' <<<"$VMINFO")
 
-	# KEYFILENAME="MCIS_${MCISID}_VM_${id}"
+	# KEYFILENAME="MCI_${MCIID}_VM_${id}"
 	KEYFILENAME="${VMKEYID}"
 
 	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey/$VMKEYID -H 'Content-Type: application/json' | jq '.privateKey' | sed -e 's/\\n/\n/g' -e 's/\"//g' >./sshkey-tmp/$KEYFILENAME.pem
@@ -82,17 +82,17 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	ip=$(_jq '.publicIp')
 	privIp=$(_jq '.privateIp')
 
-	VMINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/vm/${id})
+	VMINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}/vm/${id})
 	VMKEYID=$(jq -r '.sshKeyId' <<<"$VMINFO")
 
 	KEYINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/${NSID}/resources/sshKey/${VMKEYID})
 	USERNAME=$(jq -r '.verifiedUsername' <<<"$KEYINFO")
 
-	# KEYFILENAME="MCIS_${MCISID}_VM_${id}"
+	# KEYFILENAME="MCI_${MCIID}_VM_${id}"
 	KEYFILENAME="${VMKEYID}"
 
 	echo ""
-	printf ' [VMIP]: %s (priv: %s)   [MCISID]: %s   [VMID]: %s\n' "$ip" "$privIp" "$MCISID" "$id"
+	printf ' [VMIP]: %s (priv: %s)   [MCIID]: %s   [VMID]: %s\n' "$ip" "$privIp" "$MCIID" "$id"
 	printf ' ssh -i ./sshkey-tmp/%s.pem %s@%s -o StrictHostKeyChecking=no\n' "$KEYFILENAME" "$USERNAME" "$ip"
 	# ssh -i ./sshkey-tmp/$KEYFILENAME.pem $USERNAME@$ip -o StrictHostKeyChecking=no "fping -e $PRIVIPLIST"
 done
@@ -104,7 +104,7 @@ LAUNCHCMD="sudo apt-get update > /dev/null; sudo apt-get install -y iputils-ping
 echo "[Prepare fping (CMD: $LAUNCHCMD)]"
 
 VAR1=$(
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${LAUNCHCMD}]"
 	}
@@ -132,7 +132,7 @@ LAUNCHCMD="fping -e $VMLIST"
 # LAUNCHCMD="fping $PRIVIPLIST -q -n -c 10"
 
 VAR1=$(
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${LAUNCHCMD}]"
 	}
@@ -189,7 +189,7 @@ echo ""
 # 		LAUNCHCMD="ping -c 3 -W 1 $k | tail -1 " # | awk '{print $4}' | cut -d '/' -f 2
 
 # 		VAR1=$(
-# 			curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$i -H 'Content-Type: application/json' -d @- <<EOF
+# 			curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID/vm/$i -H 'Content-Type: application/json' -d @- <<EOF
 # 	{
 # 	"command"        : "[${LAUNCHCMD}]"
 # 	}
@@ -211,17 +211,17 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	ip=$(_jq '.publicIp')
 	privIp=$(_jq '.privateIp')
 
-	VMINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/vm/${id})
+	VMINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}/vm/${id})
 	VMKEYID=$(jq -r '.sshKeyId' <<<"$VMINFO")
 
 	KEYINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/${NSID}/resources/sshKey/${VMKEYID})
 	USERNAME=$(jq -r '.verifiedUsername' <<<"$KEYINFO")
 
-	# KEYFILENAME="MCIS_${MCISID}_VM_${id}"
+	# KEYFILENAME="MCI_${MCIID}_VM_${id}"
 	KEYFILENAME="${VMKEYID}"
 
 	#echo ""
-	#printf ' [VMIP]: %s (priv: %s)   [MCISID]: %s   [VMID]: %s\n' "$ip" "$privIp" "$MCISID" "$id"
+	#printf ' [VMIP]: %s (priv: %s)   [MCIID]: %s   [VMID]: %s\n' "$ip" "$privIp" "$MCIID" "$id"
 	#printf ' ssh -i ./sshkey-tmp/%s.pem %s@%s -o StrictHostKeyChecking=no\n' "$KEYFILENAME" "$USERNAME" "$ip"
 	# ssh -i ./sshkey-tmp/$KEYFILENAME.pem $USERNAME@$ip -o StrictHostKeyChecking=no "fping -e $PRIVIPLIST"
 	printf "%-15s" $id

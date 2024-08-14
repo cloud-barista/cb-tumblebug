@@ -1,37 +1,37 @@
 #!/bin/bash
 
-#function status_mcis() {
+#function status_mci() {
 
 echo "####################################################################"
-echo "## 8. VM: Status MCIS"
+echo "## 8. VM: Status MCI"
 echo "####################################################################"
 
 source ../init.sh
 
 # if [ "${INDEX}" == "0" ]; then
-# 	MCISID=${POSTFIX}
+# 	MCIID=${POSTFIX}
 # else
-# 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+# 	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 # fi
 
-echo "${MCISID}"
+echo "${MCIID}"
 
-GetMCISOption=status
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=${GetMCISOption} | jq ''
+GetMCIOption=status
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=${GetMCIOption} | jq ''
 
 echo -e "${BOLD}"
-echo -e "Table: All VMs in the MCIS : ${MCISID}"
+echo -e "Table: All VMs in the MCI : ${MCIID}"
 
 echo -e "${NC} ${BLUE} ${BOLD}"
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=${GetMCISOption} |
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=${GetMCIOption} |
     jq '.status | .vm | sort_by(.id)' |
     jq -r '(["VM-ID","Status","PublicIP","PrivateIP","CloudType","CloudRegion","CreatedTime"] | (., map(length*"-"))), (.[] | [.id, .status, .publicIp, .privateIp, .location.cloudType, .location.nativeRegion, .createdTime]) | @tsv' |
     column -t
 echo -e "${NC}"
 
-#HTTP_CODE=$(curl -o /dev/null -w "%{http_code}\n" -H "${AUTH}" "http://${TumblebugServer}/tumblebug/ns/$NSID/mcis/${MCISID}?option=status" --silent)
+#HTTP_CODE=$(curl -o /dev/null -w "%{http_code}\n" -H "${AUTH}" "http://${TumblebugServer}/tumblebug/ns/$NSID/mci/${MCIID}?option=status" --silent)
 #echo "Status: $HTTP_CODE"
 
 #}
 
-#status_mcis
+#status_mci

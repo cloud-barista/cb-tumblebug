@@ -10,21 +10,21 @@ SECONDS=0
 source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
-	# MCISPREFIX=avengers
-	MCISID=${POSTFIX}
+	# MCIPREFIX=avengers
+	MCIID=${POSTFIX}
 fi
 
 CMD="wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setcbdf.sh -O ~/setcbdf.sh; chmod +x ~/setcbdf.sh; ~/setcbdf.sh"
 echo "CMD: $CMD"
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d \
 		'{
 			"command"        : "[${CMD}]"
 		}' | jq '' #|| return 1
 
-	MCISINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=status`
-	MASTERIP=$(jq -r '.status.masterIp' <<< "$MCISINFO")
-	MASTERVM=$(jq -r '.status.masterVmId' <<< "$MCISINFO")
+	MCIINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=status`
+	MASTERIP=$(jq -r '.status.masterIp' <<< "$MCIINFO")
+	MASTERVM=$(jq -r '.status.masterVmId' <<< "$MCIINFO")
 	
 	echo "MASTERIP: $MASTERIP"
 	echo "MASTERVM: $MASTERVM"
@@ -77,4 +77,4 @@ echo "CMD: $CMD"
 
 #}
 
-#deploy_cb-df_to_mcis
+#deploy_cb-df_to_mci

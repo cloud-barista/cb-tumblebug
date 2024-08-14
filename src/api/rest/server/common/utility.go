@@ -26,7 +26,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 	"github.com/rs/zerolog/log"
 )
 
@@ -443,7 +443,7 @@ type RestInspectResourcesRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestInspectResourcesRequest true "Specify connectionName and resource type"
-// @Success 200 {object} mcis.InspectResource
+// @Success 200 {object} mci.InspectResource
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /inspectResources [post]
@@ -462,11 +462,11 @@ func RestInspectResources(c echo.Context) error {
 	var content interface{}
 	var err error
 	// if u.Type == common.StrVNet || u.Type == common.StrSecurityGroup || u.Type == common.StrSSHKey {
-	// 	content, err = mcis.InspectResources(u.ConnectionName, u.Type)
+	// 	content, err = mci.InspectResources(u.ConnectionName, u.Type)
 	// } else if u.Type == "vm" {
-	// 	content, err = mcis.InspectVMs(u.ConnectionName)
+	// 	content, err = mci.InspectVMs(u.ConnectionName)
 	// }
-	content, err = mcis.InspectResources(u.ConnectionName, u.ResourceType)
+	content, err = mci.InspectResources(u.ConnectionName, u.ResourceType)
 	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
@@ -478,7 +478,7 @@ func RestInspectResources(c echo.Context) error {
 // @Tags [Admin] System management
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} mcis.InspectResourceAllResult
+// @Success 200 {object} mci.InspectResourceAllResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /inspectResourcesOverview [get]
@@ -487,7 +487,7 @@ func RestInspectResourcesOverview(c echo.Context) error {
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
-	content, err := mcis.InspectResourcesOverview()
+	content, err := mci.InspectResourcesOverview()
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
@@ -495,7 +495,7 @@ func RestInspectResourcesOverview(c echo.Context) error {
 type RestRegisterCspNativeResourcesRequest struct {
 	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"`
 	NsId           string `json:"nsId" example:"ns01"`
-	McisName       string `json:"mcisName" example:"csp"`
+	MciName        string `json:"mciName" example:"csp"`
 }
 
 // RestRegisterCspNativeResources godoc
@@ -505,10 +505,10 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Tags [Admin] System management
 // @Accept  json
 // @Produce  json
-// @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName, NS Id, and MCIS Name""
+// @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName, NS Id, and MCI Name""
 // @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
-// @Param mcisFlag query string false "Flag to show VMs in a collective MCIS form (y,n)" Enums(y, n) default(y)
-// @Success 200 {object} mcis.RegisterResourceResult
+// @Param mciFlag query string false "Flag to show VMs in a collective MCI form (y,n)" Enums(y, n) default(y)
+// @Success 200 {object} mci.RegisterResourceResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /registerCspResources [post]
@@ -522,17 +522,17 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 	option := c.QueryParam("option")
-	mcisFlag := c.QueryParam("mcisFlag")
+	mciFlag := c.QueryParam("mciFlag")
 
-	content, err := mcis.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.McisName, option, mcisFlag)
+	content, err := mci.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.MciName, option, mciFlag)
 	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
 
 // Request struct for RestRegisterCspNativeResources
 type RestRegisterCspNativeResourcesRequestAll struct {
-	NsId     string `json:"nsId" example:"ns01"`
-	McisName string `json:"mcisName" example:"csp"`
+	NsId    string `json:"nsId" example:"ns01"`
+	MciName string `json:"mciName" example:"csp"`
 }
 
 // RestRegisterCspNativeResourcesAll godoc
@@ -542,10 +542,10 @@ type RestRegisterCspNativeResourcesRequestAll struct {
 // @Tags [Admin] System management
 // @Accept  json
 // @Produce  json
-// @Param Request body RestRegisterCspNativeResourcesRequestAll true "Specify NS Id and MCIS Name"
+// @Param Request body RestRegisterCspNativeResourcesRequestAll true "Specify NS Id and MCI Name"
 // @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
-// @Param mcisFlag query string false "Flag to show VMs in a collective MCIS form (y,n)" Enums(y, n) default(y)
-// @Success 200 {object} mcis.RegisterResourceAllResult
+// @Param mciFlag query string false "Flag to show VMs in a collective MCI form (y,n)" Enums(y, n) default(y)
+// @Success 200 {object} mci.RegisterResourceAllResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /registerCspResourcesAll [post]
@@ -559,9 +559,9 @@ func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 	option := c.QueryParam("option")
-	mcisFlag := c.QueryParam("mcisFlag")
+	mciFlag := c.QueryParam("mciFlag")
 
-	content, err := mcis.RegisterCspNativeResourcesAll(u.NsId, u.McisName, option, mcisFlag)
+	content, err := mci.RegisterCspNativeResourcesAll(u.NsId, u.MciName, option, mciFlag)
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 

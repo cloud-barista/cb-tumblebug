@@ -11,8 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to manage multi-cloud infra service
-package mcis
+// Package mci is to manage multi-cloud infra service
+package mci
 
 import (
 	"encoding/json"
@@ -45,7 +45,7 @@ const (
 // MonAgentInstallReq struct
 type MonAgentInstallReq struct {
 	NsId     string `json:"nsId,omitempty"`
-	McisId   string `json:"mcisId,omitempty"`
+	MciId    string `json:"mciId,omitempty"`
 	VmId     string `json:"vmId,omitempty"`
 	PublicIp string `json:"publicIp,omitempty"`
 	Port     string `json:"port,omitempty"`
@@ -64,10 +64,10 @@ func DFMonAgentInstallReqStructLevelValidation(sl validator.StructLevel) {
 		sl.ReportError(u.NsId, "nsId", "NsId", err.Error(), "")
 	}
 
-	err = common.CheckString(u.McisId)
+	err = common.CheckString(u.MciId)
 	if err != nil {
 		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
-		sl.ReportError(u.McisId, "mcisId", "McisId", err.Error(), "")
+		sl.ReportError(u.MciId, "mciId", "MciId", err.Error(), "")
 	}
 
 	err = common.CheckString(u.VmId)
@@ -95,11 +95,11 @@ type MonResultSimple struct {
 	Err    string `json:"err"`
 }
 
-// MonResultSimpleResponse struct is for containing Mcis monitoring results
+// MonResultSimpleResponse struct is for containing Mci monitoring results
 type MonResultSimpleResponse struct {
-	NsId           string            `json:"nsId"`
-	McisId         string            `json:"mcisId"`
-	McisMonitoring []MonResultSimple `json:"mcisMonitoring"`
+	NsId          string            `json:"nsId"`
+	MciId         string            `json:"mciId"`
+	MciMonitoring []MonResultSimple `json:"mciMonitoring"`
 }
 
 // Module for checking CB-Dragonfly endpoint (call get config)
@@ -138,7 +138,7 @@ func CheckDragonflyEndpoint() error {
 // monAgentInstallReq is struct for CB-Dragonfly monitoring agent installation request
 type monAgentInstallReq struct {
 	NsId        string `json:"ns_id"`
-	McisId      string `json:"mcis_id"`
+	MciId       string `json:"mci_id"`
 	VmId        string `json:"vm_id"`
 	PublicIp    string `json:"public_ip"`
 	UserName    string `json:"user_name"`
@@ -149,46 +149,46 @@ type monAgentInstallReq struct {
 }
 
 // CallMonitoringAsync is func to call CB-Dragonfly monitoring framework
-func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisServiceType string, vmID string, givenUserName string, method string, cmd string, returnResult *[]SshCmdResult) {
+func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, mciServiceType string, vmID string, givenUserName string, method string, cmd string, returnResult *[]SshCmdResult) {
 
 	defer wg.Done() //goroutin sync done
 
-	vmIP, _, sshPort, err := GetVmIp(nsID, mcisID, vmID)
+	vmIP, _, sshPort, err := GetVmIp(nsID, mciID, vmID)
 	errStr := ""
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		errStr += "/ " + err.Error()
 	}
-	userName, privateKey, err := VerifySshUserName(nsID, mcisID, vmID, vmIP, sshPort, givenUserName)
+	userName, privateKey, err := VerifySshUserName(nsID, mciID, vmID, vmIP, sshPort, givenUserName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		errStr += "/ " + err.Error()
 	}
-	log.Debug().Msg("[CallMonitoringAsync] " + mcisID + "/" + vmID + "(" + vmIP + ")" + "with userName:" + userName)
+	log.Debug().Msg("[CallMonitoringAsync] " + mciID + "/" + vmID + "(" + vmIP + ")" + "with userName:" + userName)
 
 	// set vm MonAgentStatus = "installing" (to avoid duplicated requests)
-	vmInfoTmp, _ := GetVmObject(nsID, mcisID, vmID)
+	vmInfoTmp, _ := GetVmObject(nsID, mciID, vmID)
 	vmInfoTmp.MonAgentStatus = "installing"
-	UpdateVmInfo(nsID, mcisID, vmInfoTmp)
+	UpdateVmInfo(nsID, mciID, vmInfoTmp)
 
-	if mcisServiceType == "" {
-		mcisServiceType = common.StrMCIS
+	if mciServiceType == "" {
+		mciServiceType = common.StrMCI
 	}
 
 	url := common.DragonflyRestUrl + cmd
 	log.Debug().Msg("\n[Calling DRAGONFLY] START")
-	log.Debug().Msg("VM:" + nsID + "/" + mcisID + "/" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.ConnectionConfig.ProviderName + ", service_type:" + mcisServiceType)
+	log.Debug().Msg("VM:" + nsID + "/" + mciID + "/" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.ConnectionConfig.ProviderName + ", service_type:" + mciServiceType)
 
 	requestBody := monAgentInstallReq{
 		NsId:        nsID,
-		McisId:      mcisID,
+		MciId:       mciID,
 		VmId:        vmID,
 		PublicIp:    vmIP,
 		Port:        sshPort,
 		UserName:    userName,
 		SshKey:      privateKey,
 		CspType:     vmInfoTmp.ConnectionConfig.ProviderName,
-		ServiceType: mcisServiceType,
+		ServiceType: mciServiceType,
 	}
 	if requestBody.SshKey == "" {
 		common.PrintJsonPretty(requestBody)
@@ -249,10 +249,10 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 
 	//wg.Done() //goroutin sync done
 
-	//vmInfoTmp, _ := GetVmObject(nsID, mcisID, vmID)
+	//vmInfoTmp, _ := GetVmObject(nsID, mciID, vmID)
 
 	sshResultTmp := SshCmdResult{}
-	sshResultTmp.McisId = mcisID
+	sshResultTmp.MciId = mciID
 	sshResultTmp.VmId = vmID
 	sshResultTmp.VmIp = vmIP
 
@@ -273,11 +273,11 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 		vmInfoTmp.MonAgentStatus = "installed"
 	}
 
-	UpdateVmInfo(nsID, mcisID, vmInfoTmp)
+	UpdateVmInfo(nsID, mciID, vmInfoTmp)
 
 }
 
-func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
+func InstallMonitorAgentToMci(nsId string, mciId string, mciServiceType string, req *MciCmdReq) (AgentInstallContentWrapper, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -286,17 +286,17 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType strin
 		return temp, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		temp := AgentInstallContentWrapper{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	check, _ := CheckMcis(nsId, mcisId)
+	check, _ := CheckMci(nsId, mciId)
 
 	if !check {
 		temp := AgentInstallContentWrapper{}
-		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		err := fmt.Errorf("The mci " + mciId + " does not exist.")
 		return temp, err
 	}
 
@@ -305,7 +305,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType strin
 	//install script
 	cmd := "/agent"
 
-	vmList, err := ListVmId(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
@@ -321,7 +321,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType strin
 	method := "POST"
 
 	for _, v := range vmList {
-		vmObjTmp, _ := GetVmObject(nsId, mcisId, v)
+		vmObjTmp, _ := GetVmObject(nsId, mciId, v)
 		fmt.Println("MonAgentStatus : " + vmObjTmp.MonAgentStatus)
 
 		// Request agent installation (skip if in installing or installed status)
@@ -330,7 +330,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType strin
 			// Avoid RunRemoteCommand to not ready VM
 			if err == nil {
 				wg.Add(1)
-				go CallMonitoringAsync(&wg, nsId, mcisId, mcisServiceType, v, req.UserName, method, cmd, &resultArray)
+				go CallMonitoringAsync(&wg, nsId, mciId, mciServiceType, v, req.UserName, method, cmd, &resultArray)
 			} else {
 				log.Error().Err(err).Msg("")
 			}
@@ -342,7 +342,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType strin
 	for _, v := range resultArray {
 
 		resultTmp := AgentInstallContent{}
-		resultTmp.McisId = mcisId
+		resultTmp.MciId = mciId
 		resultTmp.VmId = v.VmId
 		resultTmp.VmIp = v.VmIp
 		resultTmp.Result = v.Stdout[0]
@@ -356,15 +356,15 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType strin
 }
 
 // SetMonitoringAgentStatusInstalled is func to Set Monitoring Agent Status Installed
-func SetMonitoringAgentStatusInstalled(nsId string, mcisId string, vmId string) error {
+func SetMonitoringAgentStatusInstalled(nsId string, mciId string, vmId string) error {
 	targetStatus := "installed"
-	return UpdateMonitoringAgentStatusManually(nsId, mcisId, vmId, targetStatus)
+	return UpdateMonitoringAgentStatusManually(nsId, mciId, vmId, targetStatus)
 }
 
 // UpdateMonitoringAgentStatusManually is func to Update Monitoring Agent Installation Status Manually
-func UpdateMonitoringAgentStatusManually(nsId string, mcisId string, vmId string, targetStatus string) error {
+func UpdateMonitoringAgentStatusManually(nsId string, mciId string, vmId string, targetStatus string) error {
 
-	vmInfoTmp, err := GetVmObject(nsId, mcisId, vmId)
+	vmInfoTmp, err := GetVmObject(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -372,7 +372,7 @@ func UpdateMonitoringAgentStatusManually(nsId string, mcisId string, vmId string
 
 	// set vm MonAgentStatus
 	vmInfoTmp.MonAgentStatus = targetStatus
-	UpdateVmInfo(nsId, mcisId, vmInfoTmp)
+	UpdateVmInfo(nsId, mciId, vmInfoTmp)
 
 	//TODO: add validation for monitoring
 
@@ -380,7 +380,7 @@ func UpdateMonitoringAgentStatusManually(nsId string, mcisId string, vmId string
 }
 
 // GetMonitoringData func retrieves monitoring data from cb-dragonfly
-func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimpleResponse, error) {
+func GetMonitoringData(nsId string, mciId string, metric string) (MonResultSimpleResponse, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -389,23 +389,23 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 		return temp, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		temp := MonResultSimpleResponse{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	check, _ := CheckMcis(nsId, mcisId)
+	check, _ := CheckMci(nsId, mciId)
 
 	if !check {
 		temp := MonResultSimpleResponse{}
-		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		err := fmt.Errorf("The mci " + mciId + " does not exist.")
 		return temp, err
 	}
 
 	content := MonResultSimpleResponse{}
 
-	vmList, err := ListVmId(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
 		//log.Error().Err(err).Msg("")
 		return content, err
@@ -421,24 +421,24 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 	for _, vmId := range vmList {
 		wg.Add(1)
 
-		vmIp, _, _, err := GetVmIp(nsId, mcisId, vmId)
+		vmIp, _, _, err := GetVmIp(nsId, mciId, vmId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			wg.Done()
 			// continue to next vm even if error occurs
 		} else {
 			// DF: Get vm on-demand monitoring metric info
-			// Path Param: /ns/:nsId/mcis/:mcisId/vm/:vmId/agent_ip/:agent_ip/metric/:metric_name/ondemand-monitoring-info
-			cmd := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId + "/agent_ip/" + vmIp + "/metric/" + metric + "/ondemand-monitoring-info"
-			go CallGetMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, method, metric, cmd, &resultArray)
+			// Path Param: /ns/:nsId/mci/:mciId/vm/:vmId/agent_ip/:agent_ip/metric/:metric_name/ondemand-monitoring-info
+			cmd := "/ns/" + nsId + "/mci/" + mciId + "/vm/" + vmId + "/agent_ip/" + vmIp + "/metric/" + metric + "/ondemand-monitoring-info"
+			go CallGetMonitoringAsync(&wg, nsId, mciId, vmId, vmIp, method, metric, cmd, &resultArray)
 		}
 	}
 	wg.Wait() //goroutin sync wg
 
 	content.NsId = nsId
-	content.McisId = mcisId
+	content.MciId = mciId
 	for _, v := range resultArray {
-		content.McisMonitoring = append(content.McisMonitoring, v)
+		content.MciMonitoring = append(content.MciMonitoring, v)
 	}
 
 	fmt.Printf("%+v\n", content)
@@ -447,11 +447,11 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 
 }
 
-func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID string, vmIP string, method string, metric string, cmd string, returnResult *[]MonResultSimple) {
+func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, vmID string, vmIP string, method string, metric string, cmd string, returnResult *[]MonResultSimple) {
 
 	defer wg.Done() //goroutin sync done
 
-	log.Info().Msg("[Call CB-DF] " + mcisID + "/" + vmID + "(" + vmIP + ")")
+	log.Info().Msg("[Call CB-DF] " + mciID + "/" + vmID + "(" + vmIP + ")")
 
 	var response string
 	var errStr string
@@ -474,7 +474,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 		errStr = err.Error()
 	}
 
-	fmt.Print("[Call CB-DF Result (" + mcisID + "," + vmID + ")] ")
+	fmt.Print("[Call CB-DF Result (" + mciID + "," + vmID + ")] ")
 	res, err := client.Do(req)
 
 	if err != nil {

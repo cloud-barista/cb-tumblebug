@@ -30,7 +30,7 @@ done
 
 ./create-mcir-ns-cloud.sh "$@"
 
-./create-mcis-only.sh "$@"
+./create-mci-only.sh "$@"
 
 duration=$SECONDS
 

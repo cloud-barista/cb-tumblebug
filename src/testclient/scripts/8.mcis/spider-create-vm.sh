@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function spider_create_mcis() {
+#function spider_create_mci() {
 
 
 	TestSetFile=${4:-../testSet.env}
@@ -33,4 +33,4 @@
 		}' | jq ''
 #}
 
-#spider_create_mcis
+#spider_create_mci

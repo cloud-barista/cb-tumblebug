@@ -135,7 +135,7 @@ source ../init.sh
 if [ "${INDEX}" == "0" ]; then
 	echo "[Parallel execution for all CSP regions]"
 
-	../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../8.mci/status-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 	INDEXX=${NumCSP}
 	for ((cspi = 1; cspi <= INDEXX; cspi++)); do

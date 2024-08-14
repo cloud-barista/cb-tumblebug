@@ -26,7 +26,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 
-	//"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
+	//"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 
 	_ "github.com/go-sql-driver/mysql"
 )

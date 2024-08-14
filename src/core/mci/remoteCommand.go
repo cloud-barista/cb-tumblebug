@@ -11,8 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to manage multi-cloud infra service
-package mcis
+// Package mci is to manage multi-cloud infra service
+package mci
 
 import (
 	"bytes"
@@ -38,16 +38,16 @@ import (
 // sshDefaultUserName is array for temporal constants
 var sshDefaultUserName = []string{"cb-user", "ubuntu", "root", "ec2-user"}
 
-// McisCmdReq is struct for remote command
-type McisCmdReq struct {
+// MciCmdReq is struct for remote command
+type MciCmdReq struct {
 	UserName string   `json:"userName" example:"cb-user" default:""`
 	Command  []string `json:"command" validate:"required" example:"client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"`
 }
 
-// TbMcisCmdReqStructLevelValidation is func to validate fields in McisCmdReq
-func TbMcisCmdReqStructLevelValidation(sl validator.StructLevel) {
+// TbMciCmdReqStructLevelValidation is func to validate fields in MciCmdReq
+func TbMciCmdReqStructLevelValidation(sl validator.StructLevel) {
 
-	// u := sl.Current().Interface().(McisCmdReq)
+	// u := sl.Current().Interface().(MciCmdReq)
 
 	// err := common.CheckString(u.Command)
 	// if err != nil {
@@ -58,7 +58,7 @@ func TbMcisCmdReqStructLevelValidation(sl validator.StructLevel) {
 
 // SshCmdResult is struct for SshCmd Result
 type SshCmdResult struct { // Tumblebug
-	McisId  string         `json:"mcisId"`
+	MciId   string         `json:"mciId"`
 	VmId    string         `json:"vmId"`
 	VmIp    string         `json:"vmIp"`
 	Command map[int]string `json:"command"`
@@ -67,13 +67,13 @@ type SshCmdResult struct { // Tumblebug
 	Err     error          `json:"err"`
 }
 
-// McisSshCmdResult is struct for Set of SshCmd Results in terms of MCIS
-type McisSshCmdResult struct {
+// MciSshCmdResult is struct for Set of SshCmd Results in terms of MCI
+type MciSshCmdResult struct {
 	Results []SshCmdResult `json:"results"`
 }
 
-// RemoteCommandToMcis is func to command to all VMs in MCIS by SSH
-func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId string, req *McisCmdReq) ([]SshCmdResult, error) {
+// RemoteCommandToMci is func to command to all VMs in MCI by SSH
+func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId string, req *MciCmdReq) ([]SshCmdResult, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -81,7 +81,7 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 		return nil, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
@@ -119,21 +119,21 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 		return temp, err
 	}
 
-	check, _ := CheckMcis(nsId, mcisId)
+	check, _ := CheckMci(nsId, mciId)
 
 	if !check {
 		temp := []SshCmdResult{}
-		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		err := fmt.Errorf("The mci " + mciId + " does not exist.")
 		return temp, err
 	}
 
-	vmList, err := ListVmId(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	if subGroupId != "" {
-		vmListInGroup, err := ListVmBySubGroup(nsId, mcisId, subGroupId)
+		vmListInGroup, err := ListVmBySubGroup(nsId, mciId, subGroupId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
@@ -159,7 +159,7 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 	for i, vmId := range vmList {
 		processedCommands := make([]string, len(req.Command))
 		for j, cmd := range req.Command {
-			processedCmd, err := processCommand(cmd, nsId, mcisId, vmId, i)
+			processedCmd, err := processCommand(cmd, nsId, mciId, vmId, i)
 			if err != nil {
 				return nil, err
 			}
@@ -171,7 +171,7 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 	// Execute commands in parallel using goroutines
 	for vmId, commands := range vmCommands {
 		wg.Add(1)
-		go RunRemoteCommandAsync(&wg, nsId, mcisId, vmId, req.UserName, commands, &resultArray)
+		go RunRemoteCommandAsync(&wg, nsId, mciId, vmId, req.UserName, commands, &resultArray)
 	}
 	wg.Wait() // goroutine sync wg
 
@@ -179,34 +179,34 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 }
 
 // RunRemoteCommand is func to execute a SSH command to a VM (sync call)
-func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName string, cmds []string) (map[int]string, map[int]string, error) {
+func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName string, cmds []string) (map[int]string, map[int]string, error) {
 
 	// use privagte IP of the target VM
-	_, targetVmIP, targetSshPort, err := GetVmIp(nsId, mcisId, vmId)
+	_, targetVmIP, targetSshPort, err := GetVmIp(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
-	targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, mcisId, vmId, targetVmIP, targetSshPort, givenUserName)
+	targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, mciId, vmId, targetVmIP, targetSshPort, givenUserName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
 
 	// Set Bastion SSH config (bastionEndpoint, userName, Private Key)
-	bastionNodes, err := GetBastionNodes(nsId, mcisId, vmId)
+	bastionNodes, err := GetBastionNodes(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
 	bastionNode := bastionNodes[0]
 	// use public IP of the bastion VM
-	bastionIp, _, bastionSshPort, err := GetVmIp(nsId, bastionNode.McisId, bastionNode.VmId)
+	bastionIp, _, bastionSshPort, err := GetVmIp(nsId, bastionNode.MciId, bastionNode.VmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
-	bastionUserName, bastionSshKey, err := VerifySshUserName(nsId, bastionNode.McisId, bastionNode.VmId, bastionIp, bastionSshPort, givenUserName)
+	bastionUserName, bastionSshKey, err := VerifySshUserName(nsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, givenUserName)
 	bastionEndpoint := fmt.Sprintf("%s:%s", bastionIp, bastionSshPort)
 
 	bastionSshInfo := sshInfo{
@@ -215,7 +215,7 @@ func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName str
 		PrivateKey: []byte(bastionSshKey),
 	}
 
-	log.Debug().Msg("[SSH] " + mcisId + "." + vmId + "(" + targetVmIP + ")" + " with userName: " + targetUserName)
+	log.Debug().Msg("[SSH] " + mciId + "." + vmId + "(" + targetVmIP + ")" + " with userName: " + targetUserName)
 	for i, v := range cmds {
 		log.Debug().Msg("[SSH] cmd[" + fmt.Sprint(i) + "]: " + v)
 	}
@@ -239,14 +239,14 @@ func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName str
 }
 
 // RunRemoteCommandAsync is func to execute a SSH command to a VM (async call)
-func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, givenUserName string, cmd []string, returnResult *[]SshCmdResult) {
+func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, givenUserName string, cmd []string, returnResult *[]SshCmdResult) {
 
 	defer wg.Done() //goroutine sync done
 
-	vmIP, _, _, err := GetVmIp(nsId, mcisId, vmId)
+	vmIP, _, _, err := GetVmIp(nsId, mciId, vmId)
 
 	sshResultTmp := SshCmdResult{}
-	sshResultTmp.McisId = mcisId
+	sshResultTmp.MciId = mciId
 	sshResultTmp.VmId = vmId
 	sshResultTmp.VmIp = vmIP
 	sshResultTmp.Command = make(map[int]string)
@@ -260,7 +260,7 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId 
 	}
 
 	// RunRemoteCommand
-	stdoutResults, stderrResults, err := RunRemoteCommand(nsId, mcisId, vmId, givenUserName, cmd)
+	stdoutResults, stderrResults, err := RunRemoteCommand(nsId, mciId, vmId, givenUserName, cmd)
 
 	if err != nil {
 		sshResultTmp.Stdout = stdoutResults
@@ -280,12 +280,12 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId 
 }
 
 // VerifySshUserName is func to verify SSH username
-func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, sshPort string, givenUserName string) (string, string, error) {
+func VerifySshUserName(nsId string, mciId string, vmId string, vmIp string, sshPort string, givenUserName string) (string, string, error) {
 
 	// Disable the verification of SSH username (until bastion host is supported)
 
 	// // find vaild username
-	// userName, verifiedUserName, privateKey := GetVmSshKey(nsId, mcisId, vmId)
+	// userName, verifiedUserName, privateKey := GetVmSshKey(nsId, mciId, vmId)
 	// userNames := []string{
 	// 	sshDefaultUserName[0],
 	// 	userName,
@@ -327,7 +327,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 	// 	}
 	// }
 
-	userName, _, privateKey, err := GetVmSshKey(nsId, mcisId, vmId)
+	userName, _, privateKey, err := GetVmSshKey(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", "", err
@@ -351,7 +351,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 	// Disable the verification of SSH username (until bastion host is supported)
 
 	// if theUserName != "" {
-	// 	err := UpdateVmSshKey(nsId, mcisId, vmId, theUserName)
+	// 	err := UpdateVmSshKey(nsId, mciId, vmId, theUserName)
 	// 	if err != nil {
 	// 		log.Error().Err(err).Msg("")
 	// 		return "", "", err
@@ -387,13 +387,13 @@ func CheckConnectivity(host string, port string) error {
 }
 
 // GetVmSshKey is func to get VM SShKey. Returns username, verifiedUsername, privateKey
-func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, string, error) {
+func GetVmSshKey(nsId string, mciId string, vmId string) (string, string, string, error) {
 
 	var content struct {
 		SshKeyId string `json:"sshKeyId"`
 	}
 
-	key := common.GenMcisKey(nsId, mcisId, vmId)
+	key := common.GenMciKey(nsId, mciId, vmId)
 
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
@@ -430,13 +430,13 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, strin
 }
 
 // UpdateVmSshKey is func to update VM SShKey
-func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName string) error {
+func UpdateVmSshKey(nsId string, mciId string, vmId string, verifiedUserName string) error {
 
 	var content struct {
 		SshKeyId string `json:"sshKeyId"`
 	}
 
-	key := common.GenMcisKey(nsId, mcisId, vmId)
+	key := common.GenMciKey(nsId, mciId, vmId)
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -595,20 +595,20 @@ type BastionInfo struct {
 }
 
 // SetBastionNodes func sets bastion nodes
-func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId string) (string, error) {
+func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionVmId string) (string, error) {
 
 	// Check if bastion node already exists for the target VM (for random assignment)
-	currentBastion, err := GetBastionNodes(nsId, mcisId, targetVmId)
+	currentBastion, err := GetBastionNodes(nsId, mciId, targetVmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
 	if len(currentBastion) > 0 && bastionVmId == "" {
-		return "", fmt.Errorf("bastion node already exists for VM (ID: %s) in MCIS (ID: %s) under namespace (ID: %s)",
-			targetVmId, mcisId, nsId)
+		return "", fmt.Errorf("bastion node already exists for VM (ID: %s) in MCI (ID: %s) under namespace (ID: %s)",
+			targetVmId, mciId, nsId)
 	}
 
-	vmObj, err := GetVmObject(nsId, mcisId, targetVmId)
+	vmObj, err := GetVmObject(nsId, mciId, targetVmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
@@ -631,12 +631,12 @@ func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId 
 		if subnetInfo.Id == vmObj.SubnetId {
 
 			if bastionVmId == "" {
-				vmIdsInSubnet, err := ListVmByFilter(nsId, mcisId, "SubnetId", subnetInfo.Id)
+				vmIdsInSubnet, err := ListVmByFilter(nsId, mciId, "SubnetId", subnetInfo.Id)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 				}
 				for _, v := range vmIdsInSubnet {
-					tmpPublicIp, _, _, err := GetVmIp(nsId, mcisId, v)
+					tmpPublicIp, _, _, err := GetVmIp(nsId, mciId, v)
 					if err != nil {
 						log.Error().Err(err).Msg("")
 					}
@@ -654,23 +654,23 @@ func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId 
 				}
 			}
 
-			bastionCandidate := mcir.BastionNode{McisId: mcisId, VmId: bastionVmId}
+			bastionCandidate := mcir.BastionNode{MciId: mciId, VmId: bastionVmId}
 			// Append bastionVmId only if it doesn't already exist.
 			subnetInfo.BastionNodes = append(subnetInfo.BastionNodes, bastionCandidate)
 			tempVNetInfo.SubnetInfoList[i] = subnetInfo
 			mcir.UpdateResourceObject(nsId, common.StrVNet, tempVNetInfo)
 
-			return fmt.Sprintf("Successfully set the bastion (ID: %s) for subnet (ID: %s) in vNet (ID: %s) for VM (ID: %s) in MCIS (ID: %s).",
-				bastionVmId, subnetInfo.Id, vmObj.VNetId, targetVmId, mcisId), nil
+			return fmt.Sprintf("Successfully set the bastion (ID: %s) for subnet (ID: %s) in vNet (ID: %s) for VM (ID: %s) in MCI (ID: %s).",
+				bastionVmId, subnetInfo.Id, vmObj.VNetId, targetVmId, mciId), nil
 		}
 	}
-	return "", fmt.Errorf("failed to set bastion. Subnet (ID: %s) not found in VNet (ID: %s) for VM (ID: %s) in MCIS (ID: %s) under namespace (ID: %s)",
-		vmObj.SubnetId, vmObj.VNetId, targetVmId, mcisId, nsId)
+	return "", fmt.Errorf("failed to set bastion. Subnet (ID: %s) not found in VNet (ID: %s) for VM (ID: %s) in MCI (ID: %s) under namespace (ID: %s)",
+		vmObj.SubnetId, vmObj.VNetId, targetVmId, mciId, nsId)
 }
 
 // RemoveBastionNodes func removes existing bastion nodes info
-func RemoveBastionNodes(nsId string, mcisId string, bastionVmId string) (string, error) {
-	resourceListInNs, err := mcir.ListResource(nsId, common.StrVNet, "mcisId", mcisId)
+func RemoveBastionNodes(nsId string, mciId string, bastionVmId string) (string, error) {
+	resourceListInNs, err := mcir.ListResource(nsId, common.StrVNet, "mciId", mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
@@ -692,14 +692,14 @@ func RemoveBastionNodes(nsId string, mcisId string, bastionVmId string) (string,
 			}
 		}
 	}
-	return fmt.Sprintf("Successfully removed the bastion (ID: %s) in MCIS (ID: %s) from all subnets", bastionVmId, mcisId), nil
+	return fmt.Sprintf("Successfully removed the bastion (ID: %s) in MCI (ID: %s) from all subnets", bastionVmId, mciId), nil
 }
 
 // GetBastionNodes func retrieves bastion nodes for a given VM
-func GetBastionNodes(nsId string, mcisId string, targetVmId string) ([]mcir.BastionNode, error) {
+func GetBastionNodes(nsId string, mciId string, targetVmId string) ([]mcir.BastionNode, error) {
 	returnValue := []mcir.BastionNode{}
-	// Fetch VM object based on nsId, mcisId, and targetVmId
-	vmObj, err := GetVmObject(nsId, mcisId, targetVmId)
+	// Fetch VM object based on nsId, mciId, and targetVmId
+	vmObj, err := GetVmObject(nsId, mciId, targetVmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return returnValue, err
@@ -810,7 +810,7 @@ func findMatchingParenthesis(command string, start int) int {
 }
 
 // processCommand is function to replace the keywords with actual values
-func processCommand(command, nsId, mcisId, vmId string, vmIndex int) (string, error) {
+func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, error) {
 	start := 0
 	for {
 		start = strings.Index(command[start:], "$$Func(")
@@ -832,15 +832,15 @@ func processCommand(command, nsId, mcisId, vmId string, vmIndex int) (string, er
 
 		var replacement string
 		if strings.EqualFold(funcName, "GetPublicIP") {
-			targetMcisId := mcisId
+			targetMciId := mciId
 			targetVmId := vmId
 			if val, ok := params["target"]; ok {
 				parts := strings.Split(val, ".")
 				if len(parts) == 2 {
-					targetMcisId = parts[0]
+					targetMciId = parts[0]
 					targetVmId = parts[1]
 				} else if strings.EqualFold(val, "this") {
-					targetMcisId = mcisId
+					targetMciId = mciId
 					targetVmId = vmId
 				}
 			}
@@ -852,20 +852,20 @@ func processCommand(command, nsId, mcisId, vmId string, vmIndex int) (string, er
 			if post, ok := params["postfix"]; ok {
 				postfix = post
 			}
-			replacement, err = getPublicIP(nsId, targetMcisId, targetVmId, prefix, postfix)
+			replacement, err = getPublicIP(nsId, targetMciId, targetVmId, prefix, postfix)
 
 			if err != nil {
 				return "", fmt.Errorf("Built-in function getPublicIP error: %s", err.Error())
 			}
 
 		} else if strings.EqualFold(funcName, "GetPublicIPs") {
-			targetMcisId := mcisId
+			targetMciId := mciId
 
 			if val, ok := params["target"]; ok {
 				if strings.EqualFold(val, "this") {
-					targetMcisId = mcisId
+					targetMciId = mciId
 				} else {
-					targetMcisId = val
+					targetMciId = val
 				}
 			}
 			separator := ","
@@ -880,7 +880,7 @@ func processCommand(command, nsId, mcisId, vmId string, vmIndex int) (string, er
 			if post, ok := params["postfix"]; ok {
 				postfix = post
 			}
-			replacement, err = getPublicIPs(nsId, targetMcisId, separator, prefix, postfix)
+			replacement, err = getPublicIPs(nsId, targetMciId, separator, prefix, postfix)
 
 			if err != nil {
 				return "", fmt.Errorf("Built-in function getPublicIPs error: %s", err.Error())
@@ -907,8 +907,8 @@ func processCommand(command, nsId, mcisId, vmId string, vmIndex int) (string, er
 
 // Built-in functions for remote command
 // getPublicIP function to get and replace string with the public IP of the target
-func getPublicIP(nsId, mcisId, vmId, prefix, postfix string) (string, error) {
-	vmStatus, err := GetVmCurrentPublicIp(nsId, mcisId, vmId)
+func getPublicIP(nsId, mciId, vmId, prefix, postfix string) (string, error) {
+	vmStatus, err := GetVmCurrentPublicIp(nsId, mciId, vmId)
 	if err != nil {
 		return "", err
 	}
@@ -917,13 +917,13 @@ func getPublicIP(nsId, mcisId, vmId, prefix, postfix string) (string, error) {
 }
 
 // getPublicIP function to get and replace string with the public IP list of the target
-func getPublicIPs(nsId, mcisId, separator, prefix, postfix string) (string, error) {
-	mcisStatus, err := GetMcisStatus(nsId, mcisId)
+func getPublicIPs(nsId, mciId, separator, prefix, postfix string) (string, error) {
+	mciStatus, err := GetMciStatus(nsId, mciId)
 	if err != nil {
 		return "", err
 	}
-	ips := make([]string, len(mcisStatus.Vm))
-	for i, vmStatus := range mcisStatus.Vm {
+	ips := make([]string, len(mciStatus.Vm))
+	for i, vmStatus := range mciStatus.Vm {
 		ips[i] = prefix + vmStatus.PublicIp + postfix
 	}
 	return strings.Join(ips, separator), nil

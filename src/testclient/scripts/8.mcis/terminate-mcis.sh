@@ -1,23 +1,23 @@
 #!/bin/bash
 
-#function just_terminate_mcis() {
+#function just_terminate_mci() {
 
 echo "####################################################################"
-echo "## 8. VM: Just Terminate MCIS"
+echo "## 8. VM: Just Terminate MCI"
 echo "####################################################################"
 
 source ../init.sh
 
 # if [ "${INDEX}" == "0" ]; then
-# 	MCISID=${POSTFIX}
+# 	MCIID=${POSTFIX}
 # else
-# 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+# 	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 # fi
 
-echo "${MCISID}"
+echo "${MCIID}"
 
 ControlCmd=terminate
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/mcis/${MCISID}?action=${ControlCmd} | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/mci/${MCIID}?action=${ControlCmd} | jq ''
 
 
-#just_terminate_mcis
+#just_terminate_mci

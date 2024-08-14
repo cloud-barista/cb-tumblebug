@@ -6,4 +6,4 @@ echo "####################################################################"
 
 source ../init.sh
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/$MCISID/nlb | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/$MCIID/nlb | jq ''

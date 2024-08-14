@@ -11,8 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to manage multi-cloud infra service
-package mcis
+// Package mci is to manage multi-cloud infra service
+package mci
 
 import (
 	"encoding/json"
@@ -40,10 +40,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// [MCIS and VM object information managemenet]
+// [MCI and VM object information managemenet]
 
-// McisStatusInfo is struct to define simple information of MCIS with updated status of all VMs
-type McisStatusInfo struct {
+// MciStatusInfo is struct to define simple information of MCI with updated status of all VMs
+type MciStatusInfo struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 
@@ -59,10 +59,10 @@ type McisStatusInfo struct {
 	MasterIp      string `json:"masterIp" example:"32.201.134.113"`
 	MasterSSHPort string `json:"masterSSHPort"`
 
-	// Label is for describing the mcis in a keyword (any string can be used)
+	// Label is for describing the mci in a keyword (any string can be used)
 	Label string `json:"label" example:"User custom label"`
 
-	// SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
+	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
 
 	Vm []TbVmStatusInfo `json:"vm"`
@@ -95,8 +95,8 @@ type TbVmStatusInfo struct {
 	Location common.Location `json:"location"`
 }
 
-// ListMcisId is func to list MCIS ID
-func ListMcisId(nsId string) ([]string, error) {
+// ListMciId is func to list MCI ID
+func ListMciId(nsId string) ([]string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -104,10 +104,10 @@ func ListMcisId(nsId string) ([]string, error) {
 		return nil, err
 	}
 
-	var mcisList []string
+	var mciList []string
 
-	// Check MCIS exists
-	key := common.GenMcisKey(nsId, "", "")
+	// Check MCI exists
+	key := common.GenMciKey(nsId, "", "")
 	key += "/"
 
 	keyValue, err := kvstore.GetKvList(key)
@@ -118,20 +118,20 @@ func ListMcisId(nsId string) ([]string, error) {
 	}
 
 	for _, v := range keyValue {
-		if strings.Contains(v.Key, "/mcis/") {
-			trimmedString := strings.TrimPrefix(v.Key, (key + "mcis/"))
-			// prevent malformed key (if key for mcis id includes '/', the key does not represent MCIS ID)
+		if strings.Contains(v.Key, "/mci/") {
+			trimmedString := strings.TrimPrefix(v.Key, (key + "mci/"))
+			// prevent malformed key (if key for mci id includes '/', the key does not represent MCI ID)
 			if !strings.Contains(trimmedString, "/") {
-				mcisList = append(mcisList, trimmedString)
+				mciList = append(mciList, trimmedString)
 			}
 		}
 	}
 
-	return mcisList, nil
+	return mciList, nil
 }
 
 // ListVmId is func to list VM IDs
-func ListVmId(nsId string, mcisId string) ([]string, error) {
+func ListVmId(nsId string, mciId string) ([]string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -139,7 +139,7 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 		return nil, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
@@ -147,13 +147,13 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 
 	var vmList []string
 
-	// Check MCIS exists
-	key := common.GenMcisKey(nsId, mcisId, "")
+	// Check MCI exists
+	key := common.GenMciKey(nsId, mciId, "")
 	key += "/"
 
 	_, err = kvstore.GetKv(key)
 	if err != nil {
-		log.Debug().Msg("[Not found] " + mcisId)
+		log.Debug().Msg("[Not found] " + mciId)
 		log.Error().Err(err).Msg("")
 		return vmList, err
 	}
@@ -180,13 +180,13 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 }
 
 // ListVmByLabel is func to list VM by label
-func ListVmByLabel(nsId string, mcisId string, label string) ([]string, error) {
+func ListVmByLabel(nsId string, mciId string, label string) ([]string, error) {
 
-	log.Debug().Msg("[GetVmListByLabel]" + mcisId + " by " + label)
+	log.Debug().Msg("[GetVmListByLabel]" + mciId + " by " + label)
 
 	var vmListByLabel []string
 
-	vmList, err := ListVmId(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mciId)
 	fmt.Println(vmList)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -198,7 +198,7 @@ func ListVmByLabel(nsId string, mcisId string, label string) ([]string, error) {
 
 	// delete vms info
 	for _, v := range vmList {
-		vmObj, vmErr := GetVmObject(nsId, mcisId, v)
+		vmObj, vmErr := GetVmObject(nsId, mciId, v)
 		if vmErr != nil {
 			log.Error().Err(err).Msg("")
 			return nil, vmErr
@@ -213,16 +213,16 @@ func ListVmByLabel(nsId string, mcisId string, label string) ([]string, error) {
 
 }
 
-// ListVmByFilter is func to get list VMs in a MCIS by a filter consist of Key and Value
-func ListVmByFilter(nsId string, mcisId string, filterKey string, filterVal string) ([]string, error) {
+// ListVmByFilter is func to get list VMs in a MCI by a filter consist of Key and Value
+func ListVmByFilter(nsId string, mciId string, filterKey string, filterVal string) ([]string, error) {
 
-	check, err := CheckMcis(nsId, mcisId)
+	check, err := CheckMci(nsId, mciId)
 	if !check {
-		err := fmt.Errorf("Not found the MCIS: " + mcisId + " from the NS: " + nsId)
+		err := fmt.Errorf("Not found the MCI: " + mciId + " from the NS: " + nsId)
 		return nil, err
 	}
 
-	vmList, err := ListVmId(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
@@ -237,7 +237,7 @@ func ListVmByFilter(nsId string, mcisId string, filterKey string, filterVal stri
 	var groupVmList []string
 
 	for _, v := range vmList {
-		vmObj, vmErr := GetVmObject(nsId, mcisId, v)
+		vmObj, vmErr := GetVmObject(nsId, mciId, v)
 		if vmErr != nil {
 			log.Error().Err(err).Msg("")
 			return nil, vmErr
@@ -264,15 +264,15 @@ func ListVmByFilter(nsId string, mcisId string, filterKey string, filterVal stri
 	return groupVmList, nil
 }
 
-// ListVmBySubGroup is func to get VM list with a SubGroup label in a specified MCIS
-func ListVmBySubGroup(nsId string, mcisId string, groupId string) ([]string, error) {
+// ListVmBySubGroup is func to get VM list with a SubGroup label in a specified MCI
+func ListVmBySubGroup(nsId string, mciId string, groupId string) ([]string, error) {
 	// SubGroupId is the Key for SubGroupId in TbVmInfo struct
 	filterKey := "SubGroupId"
-	return ListVmByFilter(nsId, mcisId, filterKey, groupId)
+	return ListVmByFilter(nsId, mciId, filterKey, groupId)
 }
 
-// ListSubGroupId is func to return list of SubGroups in a given MCIS
-func ListSubGroupId(nsId string, mcisId string) ([]string, error) {
+// ListSubGroupId is func to return list of SubGroups in a given MCI
+func ListSubGroupId(nsId string, mciId string) ([]string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -280,14 +280,14 @@ func ListSubGroupId(nsId string, mcisId string) ([]string, error) {
 		return nil, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	log.Debug().Msg("[ListSubGroupId]")
-	key := common.GenMcisKey(nsId, mcisId, "")
+	key := common.GenMciKey(nsId, mciId, "")
 	key += "/"
 
 	keyValue, err := kvstore.GetKvList(key)
@@ -308,103 +308,103 @@ func ListSubGroupId(nsId string, mcisId string) ([]string, error) {
 	return subGroupList, nil
 }
 
-// GetMcisInfo is func to return MCIS information with the current status update
-func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
+// GetMciInfo is func to return MCI information with the current status update
+func GetMciInfo(nsId string, mciId string) (*TbMciInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := &TbMcisInfo{}
+		temp := &TbMciInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
-		temp := &TbMcisInfo{}
+		temp := &TbMciInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	check, _ := CheckMcis(nsId, mcisId)
+	check, _ := CheckMci(nsId, mciId)
 
 	if !check {
-		temp := &TbMcisInfo{}
-		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		temp := &TbMciInfo{}
+		err := fmt.Errorf("The mci " + mciId + " does not exist.")
 		return temp, err
 	}
 
-	mcisObj, err := GetMcisObject(nsId, mcisId)
+	mciObj, err := GetMciObject(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	// common.PrintJsonPretty(mcisObj)
+	// common.PrintJsonPretty(mciObj)
 
-	mcisStatus, err := GetMcisStatus(nsId, mcisId)
+	mciStatus, err := GetMciStatus(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	// common.PrintJsonPretty(mcisStatus)
+	// common.PrintJsonPretty(mciStatus)
 
-	mcisObj.Status = mcisStatus.Status
-	mcisObj.StatusCount = mcisStatus.StatusCount
+	mciObj.Status = mciStatus.Status
+	mciObj.StatusCount = mciStatus.StatusCount
 
-	vmList, err := ListVmId(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	sort.Slice(mcisObj.Vm, func(i, j int) bool {
-		return mcisObj.Vm[i].Id < mcisObj.Vm[j].Id
+	sort.Slice(mciObj.Vm, func(i, j int) bool {
+		return mciObj.Vm[i].Id < mciObj.Vm[j].Id
 	})
 
 	for vmInfoIndex := range vmList {
-		for vmStatusInfoIndex := range mcisStatus.Vm {
-			if mcisObj.Vm[vmInfoIndex].Id == mcisStatus.Vm[vmStatusInfoIndex].Id {
-				mcisObj.Vm[vmInfoIndex].Status = mcisStatus.Vm[vmStatusInfoIndex].Status
-				mcisObj.Vm[vmInfoIndex].TargetStatus = mcisStatus.Vm[vmStatusInfoIndex].TargetStatus
-				mcisObj.Vm[vmInfoIndex].TargetAction = mcisStatus.Vm[vmStatusInfoIndex].TargetAction
+		for vmStatusInfoIndex := range mciStatus.Vm {
+			if mciObj.Vm[vmInfoIndex].Id == mciStatus.Vm[vmStatusInfoIndex].Id {
+				mciObj.Vm[vmInfoIndex].Status = mciStatus.Vm[vmStatusInfoIndex].Status
+				mciObj.Vm[vmInfoIndex].TargetStatus = mciStatus.Vm[vmStatusInfoIndex].TargetStatus
+				mciObj.Vm[vmInfoIndex].TargetAction = mciStatus.Vm[vmStatusInfoIndex].TargetAction
 				break
 			}
 		}
 	}
 
-	return &mcisObj, nil
+	return &mciObj, nil
 }
 
-// GetMcisAccessInfo is func to retrieve MCIS Access information
-func GetMcisAccessInfo(nsId string, mcisId string, option string) (*McisAccessInfo, error) {
+// GetMciAccessInfo is func to retrieve MCI Access information
+func GetMciAccessInfo(nsId string, mciId string, option string) (*MciAccessInfo, error) {
 
-	output := &McisAccessInfo{}
-	temp := &McisAccessInfo{}
+	output := &MciAccessInfo{}
+	temp := &MciAccessInfo{}
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	check, _ := CheckMcis(nsId, mcisId)
+	check, _ := CheckMci(nsId, mciId)
 
 	if !check {
-		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		err := fmt.Errorf("The mci " + mciId + " does not exist.")
 		return temp, err
 	}
 
-	output.McisId = mcisId
+	output.MciId = mciId
 
-	mcNlbAccess, err := GetMcNlbAccess(nsId, mcisId)
+	mcNlbAccess, err := GetMcNlbAccess(nsId, mciId)
 	if err == nil {
-		output.McisNlbListener = mcNlbAccess
+		output.MciNlbListener = mcNlbAccess
 	}
 
-	subGroupList, err := ListSubGroupId(nsId, mcisId)
+	subGroupList, err := ListSubGroupId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return temp, err
@@ -412,26 +412,26 @@ func GetMcisAccessInfo(nsId string, mcisId string, option string) (*McisAccessIn
 	// TODO: make in parallel
 
 	for _, groupId := range subGroupList {
-		subGroupAccessInfo := McisSubGroupAccessInfo{}
+		subGroupAccessInfo := MciSubGroupAccessInfo{}
 		subGroupAccessInfo.SubGroupId = groupId
-		nlb, err := GetNLB(nsId, mcisId, groupId)
+		nlb, err := GetNLB(nsId, mciId, groupId)
 		if err == nil {
 			subGroupAccessInfo.NlbListener = &nlb.Listener
 		}
-		vmList, err := ListVmBySubGroup(nsId, mcisId, groupId)
+		vmList, err := ListVmBySubGroup(nsId, mciId, groupId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return temp, err
 		}
 		var wg sync.WaitGroup
-		chanResults := make(chan McisVmAccessInfo)
+		chanResults := make(chan MciVmAccessInfo)
 
 		for _, vmId := range vmList {
 			wg.Add(1)
-			go func(nsId string, mcisId string, vmId string, option string, chanResults chan McisVmAccessInfo) {
+			go func(nsId string, mciId string, vmId string, option string, chanResults chan MciVmAccessInfo) {
 				defer wg.Done()
-				vmInfo, err := GetVmCurrentPublicIp(nsId, mcisId, vmId)
-				vmAccessInfo := McisVmAccessInfo{}
+				vmInfo, err := GetVmCurrentPublicIp(nsId, mciId, vmId)
+				vmAccessInfo := MciVmAccessInfo{}
 				if err != nil {
 					log.Info().Err(err).Msg("")
 					vmAccessInfo.PublicIP = ""
@@ -444,7 +444,7 @@ func GetMcisAccessInfo(nsId string, mcisId string, option string) (*McisAccessIn
 				}
 				vmAccessInfo.VmId = vmId
 
-				_, verifiedUserName, privateKey, err := GetVmSshKey(nsId, mcisId, vmId)
+				_, verifiedUserName, privateKey, err := GetVmSshKey(nsId, mciId, vmId)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					vmAccessInfo.PrivateKey = ""
@@ -458,24 +458,24 @@ func GetMcisAccessInfo(nsId string, mcisId string, option string) (*McisAccessIn
 
 				//vmAccessInfo.VmUserPassword
 				chanResults <- vmAccessInfo
-			}(nsId, mcisId, vmId, option, chanResults)
+			}(nsId, mciId, vmId, option, chanResults)
 		}
 		go func() {
 			wg.Wait()
 			close(chanResults)
 		}()
 		for result := range chanResults {
-			subGroupAccessInfo.McisVmAccessInfo = append(subGroupAccessInfo.McisVmAccessInfo, result)
+			subGroupAccessInfo.MciVmAccessInfo = append(subGroupAccessInfo.MciVmAccessInfo, result)
 		}
 
-		output.McisSubGroupAccessInfo = append(output.McisSubGroupAccessInfo, subGroupAccessInfo)
+		output.MciSubGroupAccessInfo = append(output.MciSubGroupAccessInfo, subGroupAccessInfo)
 	}
 
 	return output, nil
 }
 
-// ListMcisInfo is func to get all MCIS objects
-func ListMcisInfo(nsId string, option string) ([]TbMcisInfo, error) {
+// ListMciInfo is func to get all MCI objects
+func ListMciInfo(nsId string, option string) ([]TbMciInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -486,70 +486,70 @@ func ListMcisInfo(nsId string, option string) ([]TbMcisInfo, error) {
 	/*
 		var content struct {
 			//Name string     `json:"name"`
-			Mcis []mcis.TbMcisInfo `json:"mcis"`
+			Mci []mci.TbMciInfo `json:"mci"`
 		}
 	*/
-	// content := RestGetAllMcisResponse{}
+	// content := RestGetAllMciResponse{}
 
-	Mcis := []TbMcisInfo{}
+	Mci := []TbMciInfo{}
 
-	mcisList, err := ListMcisId(nsId)
+	mciList, err := ListMciId(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	for _, v := range mcisList {
+	for _, v := range mciList {
 
-		key := common.GenMcisKey(nsId, v, "")
+		key := common.GenMciKey(nsId, v, "")
 		keyValue, err := kvstore.GetKv(key)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			err = fmt.Errorf("In CoreGetAllMcis(); kvstore.GetKv() returned an error.")
+			err = fmt.Errorf("In CoreGetAllMci(); kvstore.GetKv() returned an error.")
 			log.Error().Err(err).Msg("")
 			// return nil, err
 		}
 
 		if keyValue == (kvstore.KeyValue{}) {
-			return nil, fmt.Errorf("in CoreGetAllMcis() mcis loop; Cannot find " + key)
+			return nil, fmt.Errorf("in CoreGetAllMci() mci loop; Cannot find " + key)
 		}
-		mcisTmp := TbMcisInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
-		mcisId := v
-		mcisTmp.Id = mcisId
+		mciTmp := TbMciInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &mciTmp)
+		mciId := v
+		mciTmp.Id = mciId
 
 		if option == "status" || option == "simple" {
-			//get current mcis status
-			mcisStatus, err := GetMcisStatus(nsId, mcisId)
+			//get current mci status
+			mciStatus, err := GetMciStatus(nsId, mciId)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return nil, err
 			}
-			mcisTmp.Status = mcisStatus.Status
+			mciTmp.Status = mciStatus.Status
 		} else {
-			//Set current mcis status with NullStr
-			mcisTmp.Status = ""
+			//Set current mci status with NullStr
+			mciTmp.Status = ""
 		}
 
 		// The cases with id, status, or others. except simple
 
-		vmList, err := ListVmId(nsId, mcisId)
+		vmList, err := ListVmId(nsId, mciId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
 		}
 
 		for _, v1 := range vmList {
-			vmKey := common.GenMcisKey(nsId, mcisId, v1)
+			vmKey := common.GenMciKey(nsId, mciId, v1)
 			vmKeyValue, err := kvstore.GetKv(key)
 			if err != nil {
-				err = fmt.Errorf("In CoreGetAllMcis(); kvstore.GetKv() returned an error")
+				err = fmt.Errorf("In CoreGetAllMci(); kvstore.GetKv() returned an error")
 				log.Error().Err(err).Msg("")
 				// return nil, err
 			}
 
 			if vmKeyValue == (kvstore.KeyValue{}) {
-				return nil, fmt.Errorf("in CoreGetAllMcis() vm loop; Cannot find " + vmKey)
+				return nil, fmt.Errorf("in CoreGetAllMci() vm loop; Cannot find " + vmKey)
 			}
 			vmTmp := TbVmInfo{}
 			json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
@@ -557,7 +557,7 @@ func ListMcisInfo(nsId string, option string) ([]TbMcisInfo, error) {
 
 			if option == "status" {
 				//get current vm status
-				vmStatusInfoTmp, err := FetchVmStatus(nsId, mcisId, v1)
+				vmStatusInfoTmp, err := FetchVmStatus(nsId, mciId, v1)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 				}
@@ -572,17 +572,17 @@ func ListMcisInfo(nsId string, option string) ([]TbMcisInfo, error) {
 				vmTmp.Status = ""
 			}
 
-			mcisTmp.Vm = append(mcisTmp.Vm, vmTmp)
+			mciTmp.Vm = append(mciTmp.Vm, vmTmp)
 		}
 
-		Mcis = append(Mcis, mcisTmp)
+		Mci = append(Mci, mciTmp)
 	}
 
-	return Mcis, nil
+	return Mci, nil
 }
 
-// ListVmInfo is func to Get McisVm Info
-func ListVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
+// ListVmInfo is func to Get MciVm Info
+func ListVmInfo(nsId string, mciId string, vmId string) (*TbVmInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -591,7 +591,7 @@ func ListVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 		return temp, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		temp := &TbVmInfo{}
 		log.Error().Err(err).Msg("")
@@ -604,7 +604,7 @@ func ListVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	check, _ := CheckVm(nsId, mcisId, vmId)
+	check, _ := CheckVm(nsId, mciId, vmId)
 
 	if !check {
 		temp := &TbVmInfo{}
@@ -612,15 +612,15 @@ func ListVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 		return temp, err
 	}
 
-	log.Debug().Msg("[Get MCIS-VM info for id]" + vmId)
+	log.Debug().Msg("[Get MCI-VM info for id]" + vmId)
 
-	key := common.GenMcisKey(nsId, mcisId, "")
+	key := common.GenMciKey(nsId, mciId, "")
 
-	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
+	vmKey := common.GenMciKey(nsId, mciId, vmId)
 	vmKeyValue, err := kvstore.GetKv(vmKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CoreGetMcisVmInfo(); kvstore.GetKv() returned an error.")
+		err = fmt.Errorf("In CoreGetMciVmInfo(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -633,7 +633,7 @@ func ListVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 	vmTmp.Id = vmId
 
 	//get current vm status
-	vmStatusInfoTmp, err := FetchVmStatus(nsId, mcisId, vmId)
+	vmStatusInfoTmp, err := FetchVmStatus(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	}
@@ -645,39 +645,39 @@ func ListVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 	return &vmTmp, nil
 }
 
-// GetMcisObject is func to retrieve MCIS object from database (no current status update)
-func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
-	log.Debug().Msg("[GetMcisObject]" + mcisId)
-	key := common.GenMcisKey(nsId, mcisId, "")
+// GetMciObject is func to retrieve MCI object from database (no current status update)
+func GetMciObject(nsId string, mciId string) (TbMciInfo, error) {
+	log.Debug().Msg("[GetMciObject]" + mciId)
+	key := common.GenMciKey(nsId, mciId, "")
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return TbMcisInfo{}, err
+		return TbMciInfo{}, err
 	}
-	mcisTmp := TbMcisInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
+	mciTmp := TbMciInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &mciTmp)
 
-	vmList, err := ListVmId(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return TbMcisInfo{}, err
+		return TbMciInfo{}, err
 	}
 
 	for _, vmID := range vmList {
-		vmtmp, err := GetVmObject(nsId, mcisId, vmID)
+		vmtmp, err := GetVmObject(nsId, mciId, vmID)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return TbMcisInfo{}, err
+			return TbMciInfo{}, err
 		}
-		mcisTmp.Vm = append(mcisTmp.Vm, vmtmp)
+		mciTmp.Vm = append(mciTmp.Vm, vmtmp)
 	}
 
-	return mcisTmp, nil
+	return mciTmp, nil
 }
 
 // GetVmObject is func to get VM object
-func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
-	key := common.GenMcisKey(nsId, mcisId, vmId)
+func GetVmObject(nsId string, mciId string, vmId string) (TbVmInfo, error) {
+	key := common.GenMciKey(nsId, mciId, vmId)
 	keyValue, err := kvstore.GetKv(key)
 	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		err = fmt.Errorf("failed to get GetVmObject (ID: %s)", key)
@@ -695,8 +695,8 @@ func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
 }
 
 // GetVmIdNameInDetail is func to get ID and Name details
-func GetVmIdNameInDetail(nsId string, mcisId string, vmId string) (*TbIdNameInDetailInfo, error) {
-	key := common.GenMcisKey(nsId, mcisId, vmId)
+func GetVmIdNameInDetail(nsId string, mciId string, vmId string) (*TbIdNameInDetailInfo, error) {
+	key := common.GenMciKey(nsId, mciId, vmId)
 	keyValue, err := kvstore.GetKv(key)
 	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		log.Error().Err(err).Msg("")
@@ -752,79 +752,79 @@ func GetVmIdNameInDetail(nsId string, mcisId string, vmId string) (*TbIdNameInDe
 	return &idDetails, nil
 }
 
-// [MCIS and VM status management]
+// [MCI and VM status management]
 
-// GetMcisStatus is func to Get Mcis Status
-func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
+// GetMciStatus is func to Get Mci Status
+func GetMciStatus(nsId string, mciId string) (*MciStatusInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &McisStatusInfo{}, err
+		return &MciStatusInfo{}, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &McisStatusInfo{}, err
+		return &MciStatusInfo{}, err
 	}
 
-	key := common.GenMcisKey(nsId, mcisId, "")
+	key := common.GenMciKey(nsId, mciId, "")
 
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &McisStatusInfo{}, err
+		return &MciStatusInfo{}, err
 	}
 	if keyValue == (kvstore.KeyValue{}) {
 		err := fmt.Errorf("Not found [" + key + "]")
 		log.Error().Err(err).Msg("")
-		return &McisStatusInfo{}, err
+		return &MciStatusInfo{}, err
 	}
 
-	mcisStatus := McisStatusInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &mcisStatus)
+	mciStatus := MciStatusInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &mciStatus)
 
-	mcisTmp := TbMcisInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
+	mciTmp := TbMciInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &mciTmp)
 
-	vmList, err := ListVmId(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &McisStatusInfo{}, err
+		return &MciStatusInfo{}, err
 	}
 	if len(vmList) == 0 {
-		return &McisStatusInfo{}, nil
+		return &MciStatusInfo{}, nil
 	}
 
 	//goroutin sync wg
 	var wg sync.WaitGroup
 	for _, v := range vmList {
 		wg.Add(1)
-		go FetchVmStatusAsync(&wg, nsId, mcisId, v, &mcisStatus)
+		go FetchVmStatusAsync(&wg, nsId, mciId, v, &mciStatus)
 	}
 	wg.Wait() //goroutine sync wg
 
 	for _, v := range vmList {
-		// set master IP of MCIS (Default rule: select 1st Running VM as master)
-		vmtmp, err := GetVmObject(nsId, mcisId, v)
+		// set master IP of MCI (Default rule: select 1st Running VM as master)
+		vmtmp, err := GetVmObject(nsId, mciId, v)
 		if err == nil {
 			if vmtmp.Status == StatusRunning {
-				mcisStatus.MasterVmId = vmtmp.Id
-				mcisStatus.MasterIp = vmtmp.PublicIP
-				mcisStatus.MasterSSHPort = vmtmp.SSHPort
+				mciStatus.MasterVmId = vmtmp.Id
+				mciStatus.MasterIp = vmtmp.PublicIP
+				mciStatus.MasterSSHPort = vmtmp.SSHPort
 				break
 			}
 		}
 	}
 
-	sort.Slice(mcisStatus.Vm, func(i, j int) bool {
-		return mcisStatus.Vm[i].Id < mcisStatus.Vm[j].Id
+	sort.Slice(mciStatus.Vm, func(i, j int) bool {
+		return mciStatus.Vm[i].Id < mciStatus.Vm[j].Id
 	})
 
 	statusFlag := []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	statusFlagStr := []string{StatusFailed, StatusSuspended, StatusRunning, StatusTerminated, StatusCreating, StatusSuspending, StatusResuming, StatusRebooting, StatusTerminating, StatusUndefined}
-	for _, v := range mcisStatus.Vm {
+	for _, v := range mciStatus.Vm {
 
 		switch v.Status {
 		case StatusFailed:
@@ -859,49 +859,49 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 		}
 	}
 
-	numVm := len(mcisStatus.Vm)
+	numVm := len(mciStatus.Vm)
 	//numUnNormalStatus := statusFlag[0] + statusFlag[9]
 	//numNormalStatus := numVm - numUnNormalStatus
 	runningStatus := statusFlag[2]
 
 	proportionStr := ":" + strconv.Itoa(tmpMax) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numVm) + ")"
 	if tmpMax == numVm {
-		mcisStatus.Status = statusFlagStr[tmpMaxIndex] + proportionStr
+		mciStatus.Status = statusFlagStr[tmpMaxIndex] + proportionStr
 	} else if tmpMax < numVm {
-		mcisStatus.Status = "Partial-" + statusFlagStr[tmpMaxIndex] + proportionStr
+		mciStatus.Status = "Partial-" + statusFlagStr[tmpMaxIndex] + proportionStr
 	} else {
-		mcisStatus.Status = statusFlagStr[9] + proportionStr
+		mciStatus.Status = statusFlagStr[9] + proportionStr
 	}
 	// for representing Failed status in front.
 
 	proportionStr = ":" + strconv.Itoa(statusFlag[0]) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numVm) + ")"
 	if statusFlag[0] > 0 {
-		mcisStatus.Status = "Partial-" + statusFlagStr[0] + proportionStr
+		mciStatus.Status = "Partial-" + statusFlagStr[0] + proportionStr
 		if statusFlag[0] == numVm {
-			mcisStatus.Status = statusFlagStr[0] + proportionStr
+			mciStatus.Status = statusFlagStr[0] + proportionStr
 		}
 	}
 
 	// proportionStr = "-(" + strconv.Itoa(statusFlag[9]) + "/" + strconv.Itoa(numVm) + ")"
 	// if statusFlag[9] > 0 {
-	// 	mcisStatus.Status = statusFlagStr[9] + proportionStr
+	// 	mciStatus.Status = statusFlagStr[9] + proportionStr
 	// }
 
-	// Set mcisStatus.StatusCount
-	mcisStatus.StatusCount.CountTotal = numVm
-	mcisStatus.StatusCount.CountFailed = statusFlag[0]
-	mcisStatus.StatusCount.CountSuspended = statusFlag[1]
-	mcisStatus.StatusCount.CountRunning = statusFlag[2]
-	mcisStatus.StatusCount.CountTerminated = statusFlag[3]
-	mcisStatus.StatusCount.CountCreating = statusFlag[4]
-	mcisStatus.StatusCount.CountSuspending = statusFlag[5]
-	mcisStatus.StatusCount.CountResuming = statusFlag[6]
-	mcisStatus.StatusCount.CountRebooting = statusFlag[7]
-	mcisStatus.StatusCount.CountTerminating = statusFlag[8]
-	mcisStatus.StatusCount.CountUndefined = statusFlag[9]
+	// Set mciStatus.StatusCount
+	mciStatus.StatusCount.CountTotal = numVm
+	mciStatus.StatusCount.CountFailed = statusFlag[0]
+	mciStatus.StatusCount.CountSuspended = statusFlag[1]
+	mciStatus.StatusCount.CountRunning = statusFlag[2]
+	mciStatus.StatusCount.CountTerminated = statusFlag[3]
+	mciStatus.StatusCount.CountCreating = statusFlag[4]
+	mciStatus.StatusCount.CountSuspending = statusFlag[5]
+	mciStatus.StatusCount.CountResuming = statusFlag[6]
+	mciStatus.StatusCount.CountRebooting = statusFlag[7]
+	mciStatus.StatusCount.CountTerminating = statusFlag[8]
+	mciStatus.StatusCount.CountUndefined = statusFlag[9]
 
 	isDone := true
-	for _, v := range mcisStatus.Vm {
+	for _, v := range mciStatus.Vm {
 		if v.TargetStatus != StatusComplete {
 			if v.Status != StatusTerminated {
 				isDone = false
@@ -909,44 +909,44 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 		}
 	}
 	if isDone {
-		mcisStatus.TargetAction = ActionComplete
-		mcisStatus.TargetStatus = StatusComplete
-		mcisTmp.TargetAction = ActionComplete
-		mcisTmp.TargetStatus = StatusComplete
-		mcisTmp.StatusCount = mcisStatus.StatusCount
-		UpdateMcisInfo(nsId, mcisTmp)
+		mciStatus.TargetAction = ActionComplete
+		mciStatus.TargetStatus = StatusComplete
+		mciTmp.TargetAction = ActionComplete
+		mciTmp.TargetStatus = StatusComplete
+		mciTmp.StatusCount = mciStatus.StatusCount
+		UpdateMciInfo(nsId, mciTmp)
 	}
 
-	return &mcisStatus, nil
+	return &mciStatus, nil
 
 	//need to change status
 
 }
 
-// ListMcisStatus is func to get MCIS status all
-func ListMcisStatus(nsId string) ([]McisStatusInfo, error) {
+// ListMciStatus is func to get MCI status all
+func ListMciStatus(nsId string) ([]MciStatusInfo, error) {
 
-	//mcisStatuslist := []McisStatusInfo{}
-	mcisList, err := ListMcisId(nsId)
+	//mciStatuslist := []MciStatusInfo{}
+	mciList, err := ListMciId(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return []McisStatusInfo{}, err
+		return []MciStatusInfo{}, err
 	}
 
 	var wg sync.WaitGroup
-	chanResults := make(chan McisStatusInfo)
-	var mcisStatuslist []McisStatusInfo
+	chanResults := make(chan MciStatusInfo)
+	var mciStatuslist []MciStatusInfo
 
-	for _, mcisId := range mcisList {
+	for _, mciId := range mciList {
 		wg.Add(1)
-		go func(nsId string, mcisId string, chanResults chan McisStatusInfo) {
+		go func(nsId string, mciId string, chanResults chan MciStatusInfo) {
 			defer wg.Done()
-			mcisStatus, err := GetMcisStatus(nsId, mcisId)
+			mciStatus, err := GetMciStatus(nsId, mciId)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 			}
-			chanResults <- *mcisStatus
-		}(nsId, mcisId, chanResults)
+			chanResults <- *mciStatus
+		}(nsId, mciId, chanResults)
 	}
 
 	go func() {
@@ -954,21 +954,21 @@ func ListMcisStatus(nsId string) ([]McisStatusInfo, error) {
 		close(chanResults)
 	}()
 	for result := range chanResults {
-		mcisStatuslist = append(mcisStatuslist, result)
+		mciStatuslist = append(mciStatuslist, result)
 	}
 
-	return mcisStatuslist, nil
+	return mciStatuslist, nil
 
 	//need to change status
 
 }
 
 // GetVmCurrentPublicIp is func to get VM public IP
-func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
+func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (TbVmStatusInfo, error) {
 	errorInfo := TbVmStatusInfo{}
 	errorInfo.Status = StatusFailed
 
-	key := common.GenMcisKey(nsId, mcisId, vmId)
+	key := common.GenMciKey(nsId, mciId, vmId)
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil || keyValue == (kvstore.KeyValue{}) {
 		if keyValue == (kvstore.KeyValue{}) {
@@ -1035,9 +1035,9 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 }
 
 // GetVmIp is func to get VM IP to return PublicIP, PrivateIP, SSHPort
-func GetVmIp(nsId string, mcisId string, vmId string) (string, string, string, error) {
+func GetVmIp(nsId string, mciId string, vmId string) (string, string, string, error) {
 
-	vmObject, err := GetVmObject(nsId, mcisId, vmId)
+	vmObject, err := GetVmObject(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", "", "", err
@@ -1047,14 +1047,14 @@ func GetVmIp(nsId string, mcisId string, vmId string) (string, string, string, e
 }
 
 // GetVmSpecId is func to get VM SpecId
-func GetVmSpecId(nsId string, mcisId string, vmId string) string {
+func GetVmSpecId(nsId string, mciId string, vmId string) string {
 
 	var content struct {
 		SpecId string `json:"specId"`
 	}
 
 	log.Debug().Msg("[getVmSpecID]" + vmId)
-	key := common.GenMcisKey(nsId, mcisId, vmId)
+	key := common.GenMciKey(nsId, mciId, vmId)
 
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
@@ -1072,11 +1072,11 @@ func GetVmSpecId(nsId string, mcisId string, vmId string) string {
 }
 
 // FetchVmStatusAsync is func to get VM status async
-func FetchVmStatusAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, results *McisStatusInfo) error {
+func FetchVmStatusAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, results *MciStatusInfo) error {
 	defer wg.Done() //goroutine sync done
 
-	if nsId != "" && mcisId != "" && vmId != "" {
-		vmStatusTmp, err := FetchVmStatus(nsId, mcisId, vmId)
+	if nsId != "" && mciId != "" && vmId != "" {
+		vmStatusTmp, err := FetchVmStatus(nsId, mciId, vmId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			vmStatusTmp.Status = StatusFailed
@@ -1090,11 +1090,11 @@ func FetchVmStatusAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId str
 }
 
 // FetchVmStatus is func to fetch VM status (call to CSPs)
-func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
+func FetchVmStatus(nsId string, mciId string, vmId string) (TbVmStatusInfo, error) {
 
 	errorInfo := TbVmStatusInfo{}
 
-	temp, err := GetVmObject(nsId, mcisId, vmId)
+	temp, err := GetVmObject(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return errorInfo, err
@@ -1190,7 +1190,7 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 		callResult.Status = StatusUndefined
 	}
 
-	temp, err = GetVmObject(nsId, mcisId, vmId)
+	temp, err = GetVmObject(nsId, mciId, vmId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return errorInfo, err
@@ -1261,7 +1261,7 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 			vmStatusTmp.TargetAction = ActionComplete
 
 			//Get current public IP when status has been changed.
-			vmInfoTmp, err := GetVmCurrentPublicIp(nsId, mcisId, temp.Id)
+			vmInfoTmp, err := GetVmCurrentPublicIp(nsId, mciId, temp.Id)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				errorInfo.SystemMessage = err.Error()
@@ -1290,14 +1290,14 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 
 	if cspVmId != "" {
 		// don't update VM info, if cspVmId is empty
-		UpdateVmInfo(nsId, mcisId, temp)
+		UpdateVmInfo(nsId, mciId, temp)
 	}
 
 	return vmStatusTmp, nil
 }
 
-// GetMcisVmStatus is func to Get McisVm Status
-func GetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusInfo, error) {
+// GetMciVmStatus is func to Get MciVm Status
+func GetMciVmStatus(nsId string, mciId string, vmId string) (*TbVmStatusInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1306,7 +1306,7 @@ func GetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusInfo, 
 		return temp, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		temp := &TbVmStatusInfo{}
 		log.Error().Err(err).Msg("")
@@ -1320,7 +1320,7 @@ func GetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusInfo, 
 		return temp, err
 	}
 
-	check, _ := CheckVm(nsId, mcisId, vmId)
+	check, _ := CheckVm(nsId, mciId, vmId)
 
 	if !check {
 		temp := &TbVmStatusInfo{}
@@ -1328,7 +1328,7 @@ func GetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusInfo, 
 		return temp, err
 	}
 
-	vmStatusResponse, err := FetchVmStatus(nsId, mcisId, vmId)
+	vmStatusResponse, err := FetchVmStatus(nsId, mciId, vmId)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1338,14 +1338,14 @@ func GetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusInfo, 
 	return &vmStatusResponse, nil
 }
 
-// [Update MCIS and VM object]
+// [Update MCI and VM object]
 
-// UpdateMcisInfo is func to update MCIS Info (without VM info in MCIS)
-func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
+// UpdateMciInfo is func to update MCI Info (without VM info in MCI)
+func UpdateMciInfo(nsId string, mciInfoData TbMciInfo) {
 
-	mcisInfoData.Vm = nil
+	mciInfoData.Vm = nil
 
-	key := common.GenMcisKey(nsId, mcisInfoData.Id, "")
+	key := common.GenMciKey(nsId, mciInfoData.Id, "")
 
 	// Check existence of the key. If no key, no update.
 	keyValue, err := kvstore.GetKv(key)
@@ -1353,11 +1353,11 @@ func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
 		return
 	}
 
-	mcisTmp := TbMcisInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
+	mciTmp := TbMciInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &mciTmp)
 
-	if !reflect.DeepEqual(mcisTmp, mcisInfoData) {
-		val, _ := json.Marshal(mcisInfoData)
+	if !reflect.DeepEqual(mciTmp, mciInfoData) {
+		val, _ := json.Marshal(mciInfoData)
 		err = kvstore.Put(key, string(val))
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -1366,8 +1366,8 @@ func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
 }
 
 // UpdateVmInfo is func to update VM Info
-func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
-	key := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
+func UpdateVmInfo(nsId string, mciId string, vmInfoData TbVmInfo) {
+	key := common.GenMciKey(nsId, mciId, vmInfoData.Id)
 
 	// Check existence of the key. If no key, no update.
 	keyValue, err := kvstore.GetKv(key)
@@ -1388,8 +1388,8 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 }
 
 // ProvisionDataDisk is func to provision DataDisk to VM (create and attach to VM)
-func ProvisionDataDisk(nsId string, mcisId string, vmId string, u *mcir.TbDataDiskVmReq) (TbVmInfo, error) {
-	vm, err := GetVmObject(nsId, mcisId, vmId)
+func ProvisionDataDisk(nsId string, mciId string, vmId string, u *mcir.TbDataDiskVmReq) (TbVmInfo, error) {
+	vm, err := GetVmObject(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return TbVmInfo{}, err
@@ -1410,7 +1410,7 @@ func ProvisionDataDisk(nsId string, mcisId string, vmId string, u *mcir.TbDataDi
 	}
 	retry := 3
 	for i := 0; i < retry; i++ {
-		vmInfo, err := AttachDetachDataDisk(nsId, mcisId, vmId, common.AttachDataDisk, newDataDisk.Id, false)
+		vmInfo, err := AttachDetachDataDisk(nsId, mciId, vmId, common.AttachDataDisk, newDataDisk.Id, false)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		} else {
@@ -1422,13 +1422,13 @@ func ProvisionDataDisk(nsId string, mcisId string, vmId string, u *mcir.TbDataDi
 }
 
 // AttachDetachDataDisk is func to attach/detach DataDisk to/from VM
-func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command string, dataDiskId string, force bool) (TbVmInfo, error) {
-	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
+func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string, dataDiskId string, force bool) (TbVmInfo, error) {
+	vmKey := common.GenMciKey(nsId, mciId, vmId)
 
 	// Check existence of the key. If no key, no update.
 	keyValue, err := kvstore.GetKv(vmKey)
 	if keyValue == (kvstore.KeyValue{}) || err != nil {
-		err := fmt.Errorf("Failed to find 'ns/mcis/vm': %s/%s/%s \n", nsId, mcisId, vmId)
+		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
 		return TbVmInfo{}, err
 	}
@@ -1563,7 +1563,7 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	// fmt.Printf("in AttachDetachDataDisk(), updatedSpiderVM.DataDiskIIDs: %s", updatedSpiderVM.DataDiskIIDs) // for debug
 	vm.CspViewVmDetail = callResultSpiderVMInfo
 
-	UpdateVmInfo(nsId, mcisId, vm)
+	UpdateVmInfo(nsId, mciId, vm)
 
 	// Update TB DataDisk object's 'associatedObjects' field
 	mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, dataDiskId, cmdToUpdateAsso, vmKey)
@@ -1600,13 +1600,13 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	return vm, nil
 }
 
-func GetAvailableDataDisks(nsId string, mcisId string, vmId string, option string) (interface{}, error) {
-	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
+func GetAvailableDataDisks(nsId string, mciId string, vmId string, option string) (interface{}, error) {
+	vmKey := common.GenMciKey(nsId, mciId, vmId)
 
 	// Check existence of the key. If no key, no update.
 	keyValue, err := kvstore.GetKv(vmKey)
 	if keyValue == (kvstore.KeyValue{}) || err != nil {
-		err := fmt.Errorf("Failed to find 'ns/mcis/vm': %s/%s/%s \n", nsId, mcisId, vmId)
+		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
@@ -1654,10 +1654,10 @@ func GetAvailableDataDisks(nsId string, mcisId string, vmId string, option strin
 	}
 }
 
-// [Delete MCIS and VM object]
+// [Delete MCI and VM object]
 
-// DelMcis is func to delete MCIS object
-func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
+// DelMci is func to delete MCI object
+func DelMci(nsId string, mciId string, option string) (common.IdList, error) {
 
 	option = common.ToLower(option)
 	deletedResources := common.IdList{}
@@ -1669,80 +1669,80 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 		return deletedResources, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return deletedResources, err
 	}
-	check, _ := CheckMcis(nsId, mcisId)
+	check, _ := CheckMci(nsId, mciId)
 
 	if !check {
-		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		err := fmt.Errorf("The mci " + mciId + " does not exist.")
 		return deletedResources, err
 	}
 
-	log.Debug().Msg("[Delete MCIS] " + mcisId)
+	log.Debug().Msg("[Delete MCI] " + mciId)
 
-	// Check MCIS status is Terminated so that approve deletion
-	mcisStatus, _ := GetMcisStatus(nsId, mcisId)
-	if mcisStatus == nil {
-		err := fmt.Errorf("MCIS " + mcisId + " status nil, Deletion is not allowed (use option=force for force deletion)")
+	// Check MCI status is Terminated so that approve deletion
+	mciStatus, _ := GetMciStatus(nsId, mciId)
+	if mciStatus == nil {
+		err := fmt.Errorf("MCI " + mciId + " status nil, Deletion is not allowed (use option=force for force deletion)")
 		log.Error().Err(err).Msg("")
 		if option != "force" {
 			return deletedResources, err
 		}
 	}
 
-	if !(!strings.Contains(mcisStatus.Status, "Partial-") && strings.Contains(mcisStatus.Status, StatusTerminated)) {
+	if !(!strings.Contains(mciStatus.Status, "Partial-") && strings.Contains(mciStatus.Status, StatusTerminated)) {
 
-		// with terminate option, do MCIS refine and terminate in advance (skip if already StatusTerminated)
+		// with terminate option, do MCI refine and terminate in advance (skip if already StatusTerminated)
 		if strings.EqualFold(option, ActionTerminate) {
 
 			// ActionRefine
-			_, err := HandleMcisAction(nsId, mcisId, ActionRefine, true)
+			_, err := HandleMciAction(nsId, mciId, ActionRefine, true)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return deletedResources, err
 			}
 
 			// ActionTerminate
-			_, err = HandleMcisAction(nsId, mcisId, ActionTerminate, true)
+			_, err = HandleMciAction(nsId, mciId, ActionTerminate, true)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return deletedResources, err
 			}
 			// for deletion, need to wait until termination is finished
 			// Sleep for 5 seconds
-			fmt.Printf("\n\n[Info] Sleep for 5 seconds for safe MCIS-VMs termination.\n\n")
+			fmt.Printf("\n\n[Info] Sleep for 5 seconds for safe MCI-VMs termination.\n\n")
 			time.Sleep(5 * time.Second)
-			mcisStatus, _ = GetMcisStatus(nsId, mcisId)
+			mciStatus, _ = GetMciStatus(nsId, mciId)
 		}
 
 	}
 
-	// Check MCIS status is Terminated (not Partial)
-	if mcisStatus.Id != "" && !(!strings.Contains(mcisStatus.Status, "Partial-") && (strings.Contains(mcisStatus.Status, StatusTerminated) || strings.Contains(mcisStatus.Status, StatusUndefined) || strings.Contains(mcisStatus.Status, StatusFailed))) {
-		err := fmt.Errorf("MCIS " + mcisId + " is " + mcisStatus.Status + " and not " + StatusTerminated + "/" + StatusUndefined + "/" + StatusFailed + ", Deletion is not allowed (use option=force for force deletion)")
+	// Check MCI status is Terminated (not Partial)
+	if mciStatus.Id != "" && !(!strings.Contains(mciStatus.Status, "Partial-") && (strings.Contains(mciStatus.Status, StatusTerminated) || strings.Contains(mciStatus.Status, StatusUndefined) || strings.Contains(mciStatus.Status, StatusFailed))) {
+		err := fmt.Errorf("MCI " + mciId + " is " + mciStatus.Status + " and not " + StatusTerminated + "/" + StatusUndefined + "/" + StatusFailed + ", Deletion is not allowed (use option=force for force deletion)")
 		log.Error().Err(err).Msg("")
 		if option != "force" {
 			return deletedResources, err
 		}
 	}
 
-	key := common.GenMcisKey(nsId, mcisId, "")
+	key := common.GenMciKey(nsId, mciId, "")
 
-	// delete associated MCIS Policy
-	check, _ = CheckMcisPolicy(nsId, mcisId)
+	// delete associated MCI Policy
+	check, _ = CheckMciPolicy(nsId, mciId)
 	if check {
-		err = DelMcisPolicy(nsId, mcisId)
+		err = DelMciPolicy(nsId, mciId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
 		}
-		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"Policy: "+mcisId)
+		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"Policy: "+mciId)
 	}
 
-	vmList, err := ListVmId(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return deletedResources, err
@@ -1750,11 +1750,11 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 
 	// delete vms info
 	for _, v := range vmList {
-		vmKey := common.GenMcisKey(nsId, mcisId, v)
+		vmKey := common.GenMciKey(nsId, mciId, v)
 		fmt.Println(vmKey)
 
 		// get vm info
-		vmInfo, err := GetVmObject(nsId, mcisId, v)
+		vmInfo, err := GetVmObject(nsId, mciId, v)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
@@ -1786,13 +1786,13 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 	}
 
 	// delete subGroup info
-	subGroupList, err := ListSubGroupId(nsId, mcisId)
+	subGroupList, err := ListSubGroupId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return deletedResources, err
 	}
 	for _, v := range subGroupList {
-		subGroupKey := common.GenMcisSubGroupKey(nsId, mcisId, v)
+		subGroupKey := common.GenMciSubGroupKey(nsId, mciId, v)
 		err := kvstore.Delete(subGroupKey)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -1806,38 +1806,38 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 	if option == "force" {
 		forceFlag = "true"
 	}
-	output, err := DelAllNLB(nsId, mcisId, "", forceFlag)
+	output, err := DelAllNLB(nsId, mciId, "", forceFlag)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return deletedResources, err
 	}
 	deletedResources.IdList = append(deletedResources.IdList, output.IdList...)
 
-	// delete associated MCIS NLBs
-	mcisNlbId := mcisId + "-nlb"
-	check, _ = CheckMcis(nsId, mcisNlbId)
+	// delete associated MCI NLBs
+	mciNlbId := mciId + "-nlb"
+	check, _ = CheckMci(nsId, mciNlbId)
 	if check {
-		mcisNlbDeleteResult, err := DelMcis(nsId, mcisNlbId, option)
+		mciNlbDeleteResult, err := DelMci(nsId, mciNlbId, option)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
 		}
-		deletedResources.IdList = append(deletedResources.IdList, mcisNlbDeleteResult.IdList...)
+		deletedResources.IdList = append(deletedResources.IdList, mciNlbDeleteResult.IdList...)
 	}
 
-	// delete mcis info
+	// delete mci info
 	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return deletedResources, err
 	}
-	deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"MCIS: "+mcisId)
+	deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"MCI: "+mciId)
 
 	return deletedResources, nil
 }
 
-// DelMcisVm is func to delete VM object
-func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
+// DelMciVm is func to delete VM object
+func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1845,7 +1845,7 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 		return err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -1856,7 +1856,7 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	check, _ := CheckVm(nsId, mcisId, vmId)
+	check, _ := CheckVm(nsId, mciId, vmId)
 
 	if !check {
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
@@ -1871,7 +1871,7 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 		var wg sync.WaitGroup
 		results := make(chan ControlVmResult, 1)
 		wg.Add(1)
-		go ControlVmAsync(&wg, nsId, mcisId, vmId, ActionTerminate, results)
+		go ControlVmAsync(&wg, nsId, mciId, vmId, ActionTerminate, results)
 		checkErr := <-results
 		wg.Wait()
 		close(results)
@@ -1889,10 +1889,10 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 	}
 
 	// get vm info
-	vmInfo, _ := GetVmObject(nsId, mcisId, vmId)
+	vmInfo, _ := GetVmObject(nsId, mciId, vmId)
 
 	// delete vms info
-	key := common.GenMcisKey(nsId, mcisId, vmId)
+	key := common.GenMciKey(nsId, mciId, vmId)
 	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1900,19 +1900,19 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 	}
 
 	// remove empty SubGroups
-	subGroup, err := ListSubGroupId(nsId, mcisId)
+	subGroup, err := ListSubGroupId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list subGroup to remove")
 		return err
 	}
 	for _, v := range subGroup {
-		vmListInSubGroup, err := ListVmBySubGroup(nsId, mcisId, v)
+		vmListInSubGroup, err := ListVmBySubGroup(nsId, mciId, v)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to list vm in subGroup to remove")
 			return err
 		}
 		if len(vmListInSubGroup) == 0 {
-			subGroupKey := common.GenMcisSubGroupKey(nsId, mcisId, v)
+			subGroupKey := common.GenMciSubGroupKey(nsId, mciId, v)
 			err := kvstore.Delete(subGroupKey)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to remove the empty subGroup")
@@ -1941,8 +1941,8 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 	return nil
 }
 
-// DelAllMcis is func to delete all MCIS objects
-func DelAllMcis(nsId string, option string) (string, error) {
+// DelAllMci is func to delete all MCI objects
+func DelAllMci(nsId string, option string) (string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1950,31 +1950,31 @@ func DelAllMcis(nsId string, option string) (string, error) {
 		return "", err
 	}
 
-	mcisList, err := ListMcisId(nsId)
+	mciList, err := ListMciId(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
-	if len(mcisList) == 0 {
-		return "No MCIS to delete", nil
+	if len(mciList) == 0 {
+		return "No MCI to delete", nil
 	}
 
-	for _, v := range mcisList {
-		_, err := DelMcis(nsId, v, option)
+	for _, v := range mciList {
+		_, err := DelMci(nsId, v, option)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return "", fmt.Errorf("Failed to delete All MCISs")
+			return "", fmt.Errorf("Failed to delete All MCIs")
 		}
 	}
 
-	return "All MCISs has been deleted", nil
+	return "All MCIs has been deleted", nil
 }
 
 // UpdateVmPublicIp is func to update VM public IP
-func UpdateVmPublicIp(nsId string, mcisId string, vmInfoData TbVmInfo) error {
+func UpdateVmPublicIp(nsId string, mciId string, vmInfoData TbVmInfo) error {
 
-	vmInfoTmp, err := GetVmCurrentPublicIp(nsId, mcisId, vmInfoData.Id)
+	vmInfoTmp, err := GetVmCurrentPublicIp(nsId, mciId, vmInfoData.Id)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -1982,17 +1982,17 @@ func UpdateVmPublicIp(nsId string, mcisId string, vmInfoData TbVmInfo) error {
 	if vmInfoData.PublicIP != vmInfoTmp.PublicIp || vmInfoData.SSHPort != vmInfoTmp.SSHPort {
 		vmInfoData.PublicIP = vmInfoTmp.PublicIp
 		vmInfoData.SSHPort = vmInfoTmp.SSHPort
-		UpdateVmInfo(nsId, mcisId, vmInfoData)
+		UpdateVmInfo(nsId, mciId, vmInfoData)
 	}
 	return nil
 }
 
 // GetVmTemplate is func to get VM template
-func GetVmTemplate(nsId string, mcisId string, algo string) (TbVmInfo, error) {
+func GetVmTemplate(nsId string, mciId string, algo string) (TbVmInfo, error) {
 
-	log.Debug().Msg("[GetVmTemplate]" + mcisId + " by algo: " + algo)
+	log.Debug().Msg("[GetVmTemplate]" + mciId + " by algo: " + algo)
 
-	vmList, err := ListVmId(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return TbVmInfo{}, err
@@ -2003,7 +2003,7 @@ func GetVmTemplate(nsId string, mcisId string, algo string) (TbVmInfo, error) {
 
 	rand.Seed(time.Now().UnixNano())
 	index := rand.Intn(len(vmList))
-	vmObj, vmErr := GetVmObject(nsId, mcisId, vmList[index])
+	vmObj, vmErr := GetVmObject(nsId, mciId, vmList[index])
 	var vmTemplate TbVmInfo
 
 	// only take template required to create VM

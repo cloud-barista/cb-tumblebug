@@ -11,8 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to manage multi-cloud infra service
-package mcis
+// Package mci is to manage multi-cloud infra service
+package mci
 
 import (
 	"encoding/json"
@@ -89,14 +89,14 @@ type AgentInstallContentWrapper struct {
 
 // AgentInstallContent ...
 type AgentInstallContent struct {
-	McisId string `json:"mcisId"`
+	MciId  string `json:"mciId"`
 	VmId   string `json:"vmId"`
 	VmIp   string `json:"vmIp"`
 	Result string `json:"result"`
 }
 
-// InstallBenchmarkAgentToMcis is func to install milkyway agents in MCIS
-func InstallBenchmarkAgentToMcis(nsId string, mcisId string, req *McisCmdReq, option string) ([]SshCmdResult, error) {
+// InstallBenchmarkAgentToMci is func to install milkyway agents in MCI
+func InstallBenchmarkAgentToMci(nsId string, mciId string, req *MciCmdReq, option string) ([]SshCmdResult, error) {
 
 	// SSH command to install benchmarking agent
 	cmd := "wget https://github.com/cloud-barista/cb-milkyway/raw/master/src/milkyway -O ~/milkyway; chmod +x ~/milkyway; ~/milkyway > /dev/null 2>&1 & sudo netstat -tulpn | grep milkyway"
@@ -109,7 +109,7 @@ func InstallBenchmarkAgentToMcis(nsId string, mcisId string, req *McisCmdReq, op
 	// Replace given parameter with the installation cmd
 	req.Command = append(req.Command, cmd)
 
-	sshCmdResult, err := RemoteCommandToMcis(nsId, mcisId, "", "", req)
+	sshCmdResult, err := RemoteCommandToMci(nsId, mciId, "", "", req)
 
 	if err != nil {
 		temp := []SshCmdResult{}
@@ -122,7 +122,7 @@ func InstallBenchmarkAgentToMcis(nsId string, mcisId string, req *McisCmdReq, op
 }
 
 // CallMilkyway is func to call milkyway agents
-func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId string, vmId string, vmIp string, action string, option string, results *BenchmarkInfoArray) {
+func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mciId string, vmId string, vmIp string, action string, option string, results *BenchmarkInfoArray) {
 	defer wg.Done() //goroutine sync done
 
 	url := "http://" + vmIp + milkywayPort + action
@@ -146,7 +146,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 		reqTmp := MultihostBenchmarkReq{}
 		for _, vm := range vmList {
 			vmIdTmp := vm
-			vmIpTmp, _, _, err := GetVmIp(nsId, mcisId, vmIdTmp)
+			vmIpTmp, _, _, err := GetVmIp(nsId, mciId, vmIdTmp)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 			}
@@ -154,7 +154,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 
 			hostTmp := BenchmarkReq{}
 			hostTmp.Host = vmIpTmp
-			hostTmp.Spec = GetVmSpecId(nsId, mcisId, vmIdTmp)
+			hostTmp.Spec = GetVmSpecId(nsId, mciId, vmIdTmp)
 			reqTmp.Multihost = append(reqTmp.Multihost, hostTmp)
 		}
 		common.PrintJsonPretty(reqTmp)
@@ -201,12 +201,12 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 	if errStr != "" {
 		resultTmp.Result = errStr
 	}
-	resultTmp.SpecId = GetVmSpecId(nsId, mcisId, vmId)
+	resultTmp.SpecId = GetVmSpecId(nsId, mciId, vmId)
 	results.ResultArray = append(results.ResultArray, resultTmp)
 }
 
 // RunAllBenchmarks is func to get all Benchmarks
-func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoArray, error) {
+func RunAllBenchmarks(nsId string, mciId string, host string) (*BenchmarkInfoArray, error) {
 
 	var err error
 
@@ -217,24 +217,24 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 		return &temp, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		temp := BenchmarkInfoArray{}
 		log.Error().Err(err).Msg("")
 		return &temp, err
 	}
-	check, _ := CheckMcis(nsId, mcisId)
+	check, _ := CheckMci(nsId, mciId)
 
 	if !check {
 		temp := &BenchmarkInfoArray{}
-		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		err := fmt.Errorf("The mci " + mciId + " does not exist.")
 		return temp, err
 	}
 
 	target := host
 
 	action := "all"
-	fmt.Println("[Get MCIS benchmark action: " + action + target)
+	fmt.Println("[Get MCI benchmark action: " + action + target)
 
 	option := "localhost"
 	option = target
@@ -247,7 +247,7 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 
 	for i, v := range allBenchCmd {
 		log.Debug().Msg("[Benchmark] " + v)
-		content, err = BenchmarkAction(nsId, mcisId, v, option)
+		content, err = BenchmarkAction(nsId, mciId, v, option)
 		for _, k := range content.ResultArray {
 			SpecId := k.SpecId
 			Result := k.Result
@@ -326,7 +326,7 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 
 	action = "mrtt"
 	log.Debug().Msg("[Benchmark] " + action)
-	content, err = BenchmarkAction(nsId, mcisId, action, option)
+	content, err = BenchmarkAction(nsId, mciId, action, option)
 	for _, k := range content.ResultArray {
 		SpecId := k.SpecId
 		iX, exist := rttIndexMapX[SpecId]
@@ -413,8 +413,8 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 	return &content, nil
 }
 
-// RunLatencyBenchmark is func to get MCIS benchmark for network latency
-func RunLatencyBenchmark(nsId string, mcisId string, host string) (*BenchmarkInfoArray, error) {
+// RunLatencyBenchmark is func to get MCI benchmark for network latency
+func RunLatencyBenchmark(nsId string, mciId string, host string) (*BenchmarkInfoArray, error) {
 
 	var err error
 
@@ -425,17 +425,17 @@ func RunLatencyBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 		return &temp, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		temp := BenchmarkInfoArray{}
 		log.Error().Err(err).Msg("")
 		return &temp, err
 	}
-	check, _ := CheckMcis(nsId, mcisId)
+	check, _ := CheckMci(nsId, mciId)
 
 	if !check {
 		temp := &BenchmarkInfoArray{}
-		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		err := fmt.Errorf("The mci " + mciId + " does not exist.")
 		return temp, err
 	}
 
@@ -463,7 +463,7 @@ func RunLatencyBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 
 	action := "mrtt"
 	log.Debug().Msg("[Benchmark] " + action)
-	content, err = BenchmarkAction(nsId, mcisId, action, option)
+	content, err = BenchmarkAction(nsId, mciId, action, option)
 	for _, k := range content.ResultArray {
 		SpecId := k.SpecId
 		iX, exist := rttIndexMapX[SpecId]
@@ -553,7 +553,7 @@ func RunLatencyBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 }
 
 // CoreGetBenchmark is func to get Benchmark
-func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*BenchmarkInfoArray, error) {
+func CoreGetBenchmark(nsId string, mciId string, action string, host string) (*BenchmarkInfoArray, error) {
 
 	var err error
 
@@ -564,23 +564,23 @@ func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*
 		return &temp, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		temp := BenchmarkInfoArray{}
 		log.Error().Err(err).Msg("")
 		return &temp, err
 	}
-	check, _ := CheckMcis(nsId, mcisId)
+	check, _ := CheckMci(nsId, mciId)
 
 	if !check {
 		temp := &BenchmarkInfoArray{}
-		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		err := fmt.Errorf("The mci " + mciId + " does not exist.")
 		return temp, err
 	}
 
 	target := host
 
-	log.Debug().Msg("[Get MCIS benchmark action: " + action + target)
+	log.Debug().Msg("[Get MCI benchmark action: " + action + target)
 
 	option := "localhost"
 	option = target
@@ -591,7 +591,7 @@ func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*
 
 	log.Debug().Msg("[Benchmark] " + action)
 	if strings.Contains(vaildActions, action) {
-		content, err = BenchmarkAction(nsId, mcisId, action, option)
+		content, err = BenchmarkAction(nsId, mciId, action, option)
 	} else {
 		return nil, fmt.Errorf("Not available action")
 	}
@@ -604,11 +604,11 @@ func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*
 }
 
 // BenchmarkAction is func to action Benchmark
-func BenchmarkAction(nsId string, mcisId string, action string, option string) (BenchmarkInfoArray, error) {
+func BenchmarkAction(nsId string, mciId string, action string, option string) (BenchmarkInfoArray, error) {
 
 	var results BenchmarkInfoArray
 
-	vmList, err := ListVmId(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return BenchmarkInfoArray{}, err
@@ -620,13 +620,13 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 	for _, vmId := range vmList {
 		wg.Add(1)
 
-		vmIp, _, _, err := GetVmIp(nsId, mcisId, vmId)
+		vmIp, _, _, err := GetVmIp(nsId, mciId, vmId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			wg.Done()
 			// continue to next vm even if error occurs
 		} else {
-			go CallMilkyway(&wg, vmList, nsId, mcisId, vmId, vmIp, action, option, &results)
+			go CallMilkyway(&wg, vmList, nsId, mciId, vmId, vmIp, action, option, &results)
 		}
 	}
 	wg.Wait() //goroutine sync wg

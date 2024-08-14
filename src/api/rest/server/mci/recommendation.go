@@ -11,29 +11,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to handle REST API for mcis
-package mcis
+// Package mci is to handle REST API for mci
+package mci
 
 import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 	"github.com/labstack/echo/v4"
 )
 
 // RestRecommendVm godoc
 // @ID RecommendVm
-// @Summary Recommend MCIS plan (filter and priority)
-// @Description Recommend MCIS plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
-// @Tags [Infra service] MCIS Provisioning management
+// @Summary Recommend MCI plan (filter and priority)
+// @Description Recommend MCI plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
+// @Tags [Infra service] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param deploymentPlan body mcis.DeploymentPlan false "Recommend MCIS plan (filter and priority)"
+// @Param deploymentPlan body mci.DeploymentPlan false "Recommend MCI plan (filter and priority)"
 // @Success 200 {object} []mcir.TbSpecInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /mcisRecommendVm [post]
+// @Router /mciRecommendVm [post]
 func RestRecommendVm(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
@@ -41,50 +41,50 @@ func RestRecommendVm(c echo.Context) error {
 	}
 	nsId := common.SystemCommonNs
 
-	u := &mcis.DeploymentPlan{}
+	u := &mci.DeploymentPlan{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	content, err := mcis.RecommendVm(nsId, *u)
+	content, err := mci.RecommendVm(nsId, *u)
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
-type RestPostMcisRecommendResponse struct {
+type RestPostMciRecommendResponse struct {
 	//VmReq          []TbVmRecommendReq    `json:"vmReq"`
-	VmRecommend    []mcis.TbVmRecommendInfo `json:"vmRecommend"`
-	PlacementAlgo  string                   `json:"placementAlgo"`
-	PlacementParam []common.KeyValue        `json:"placementParam"`
+	VmRecommend    []mci.TbVmRecommendInfo `json:"vmRecommend"`
+	PlacementAlgo  string                  `json:"placementAlgo"`
+	PlacementParam []common.KeyValue       `json:"placementParam"`
 }
 
-// RestPostMcisRecommend godoc
+// RestPostMciRecommend godoc
 // @Deprecated
-// func RestPostMcisRecommend(c echo.Context) error {
-// 	// @Summary Get MCIS recommendation
-// 	// @Description Get MCIS recommendation
-// 	// @Tags [Infra service] MCIS Provisioning management
+// func RestPostMciRecommend(c echo.Context) error {
+// 	// @Summary Get MCI recommendation
+// 	// @Description Get MCI recommendation
+// 	// @Tags [Infra service] MCI Provisioning management
 // 	// @Accept  json
 // 	// @Produce  json
 // 	// @Param nsId path string true "Namespace ID" default(ns01)
-// 	// @Param mcisRecommendReq body mcis.McisRecommendReq true "Details for an MCIS object"
-// 	// @Success 200 {object} RestPostMcisRecommendResponse
+// 	// @Param mciRecommendReq body mci.MciRecommendReq true "Details for an MCI object"
+// 	// @Success 200 {object} RestPostMciRecommendResponse
 // 	// @Failure 404 {object} common.SimpleMsg
 // 	// @Failure 500 {object} common.SimpleMsg
-// 	// @Router /ns/{nsId}/mcis/recommend [post]
+// 	// @Router /ns/{nsId}/mci/recommend [post]
 // 	nsId := c.Param("nsId")
 
-// 	req := &mcis.McisRecommendReq{}
+// 	req := &mci.MciRecommendReq{}
 // 	if err := c.Bind(req); err != nil {
 // 		return err
 // 	}
 
-// 	result, err := mcis.CorePostMcisRecommend(nsId, req)
+// 	result, err := mci.CorePostMciRecommend(nsId, req)
 // 	if err != nil {
 // 		mapA := map[string]string{"message": err.Error()}
 // 		return c.JSON(http.StatusInternalServerError, &mapA)
 // 	}
 
-// 	content := RestPostMcisRecommendResponse{}
+// 	content := RestPostMciRecommendResponse{}
 // 	content.VmRecommend = result
 // 	content.PlacementAlgo = req.PlacementAlgo
 // 	content.PlacementParam = req.PlacementParam

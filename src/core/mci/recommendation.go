@@ -11,8 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to manage multi-cloud infra service
-package mcis
+// Package mci is to manage multi-cloud infra service
+package mci
 
 import (
 	"fmt"
@@ -214,7 +214,7 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 
 }
 
-// RecommendVmLatency func prioritize specs by latency based on given MCIS (fair)
+// RecommendVmLatency func prioritize specs by latency based on given MCI (fair)
 func RecommendVmLatency(nsId string, specList *[]mcir.TbSpecInfo, param *[]ParameterKeyVal) ([]mcir.TbSpecInfo, error) {
 
 	result := []mcir.TbSpecInfo{}
@@ -654,7 +654,7 @@ func RecommendVmPerformance(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.Tb
 // 		ConnectionName string
 // 	}
 
-// 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize
+// 	key := common.GenMciKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize
 // 	log.Debug().Msg(key)
 // 	keyValue, err := kvstore.GetKvList(key)
 // 	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
@@ -696,8 +696,8 @@ func RecommendVmPerformance(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.Tb
 
 // }
 
-// // CorePostMcisRecommend is func to command to all VMs in MCIS with SSH
-// func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendInfo, error) {
+// // CorePostMciRecommend is func to command to all VMs in MCI with SSH
+// func CorePostMciRecommend(nsId string, req *MciRecommendReq) ([]TbVmRecommendInfo, error) {
 
 // 	err := common.CheckString(nsId)
 // 	if err != nil {
@@ -708,12 +708,12 @@ func RecommendVmPerformance(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.Tb
 // 	/*
 // 		var content struct {
 // 			//VmReq          []TbVmRecommendReq    `json:"vmReq"`
-// 			VmRecommend    []mcis.TbVmRecommendInfo `json:"vmRecommend"`
+// 			VmRecommend    []mci.TbVmRecommendInfo `json:"vmRecommend"`
 // 			PlacementAlgo  string                   `json:"placementAlgo"`
 // 			PlacementParam []common.KeyValue        `json:"placementParam"`
 // 		}
 // 	*/
-// 	//content := RestPostMcisRecommendResponse{}
+// 	//content := RestPostMciRecommendResponse{}
 // 	//content.VmReq = req.VmReq
 // 	//content.PlacementAlgo = req.PlacementAlgo
 // 	//content.PlacementParam = req.PlacementParam
@@ -734,7 +734,7 @@ func RecommendVmPerformance(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.Tb
 
 // 		if err != nil {
 // 			log.Error().Err(err).Msg("")
-// 			return nil, fmt.Errorf("Failed to recommend MCIS")
+// 			return nil, fmt.Errorf("Failed to recommend MCI")
 // 		}
 
 // 		VmRecommend = append(VmRecommend, vmTmp)
