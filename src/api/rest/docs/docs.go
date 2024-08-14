@@ -12210,6 +12210,11 @@ const docTemplate = `{
                 "vm"
             ],
             "properties": {
+                "cidrBlock": {
+                    "description": "CidrBlock is a logical address block for the MCIS and is subnetted for vNets and subnets",
+                    "type": "string",
+                    "example": "10.10.0.0/16"
+                },
                 "description": {
                     "type": "string",
                     "example": "Made in CB-TB"
