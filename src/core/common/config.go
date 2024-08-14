@@ -71,6 +71,10 @@ type K8sClusterInfo struct {
 	CSPs map[string]K8sClusterDetail `mapstructure:"k8scluster" json:"k8s_cluster"`
 }
 
+type K8sClusterNodeGroupsOnCreation struct {
+	Result string `json:"result" example:"true"`
+}
+
 // K8sClusterDetail is structure for kubernetes cluster detail information
 type K8sClusterDetail struct {
 	NodeGroupsOnCreation bool                        `mapstructure:"nodeGroupsOnCreation" json:"nodegroups_on_creation"`
