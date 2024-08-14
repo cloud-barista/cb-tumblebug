@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function command_mcis() {
+#function command_mci() {
 
 
 	TestSetFile=${4:-../testSet.env}
@@ -12,7 +12,7 @@
     source ../conf.env
 	
 	echo "####################################################################"
-	echo "## Command (SSH) to MCIS "
+	echo "## Command (SSH) to MCI "
 	echo "####################################################################"
 
 	CSP=${1}
@@ -23,17 +23,17 @@
 	getCloudIndex $CSP
 
 
-	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
 	if [ "${INDEX}" == "0" ]; then
-		# MCISPREFIX=avengers
-		MCISID=${POSTFIX}
+		# MCIPREFIX=avengers
+		MCIID=${POSTFIX}
 	fi
 
     LAUNCHCMD="sudo scope stop"
     
     echo "Launching Weavescope for the other nodes..."
-    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
     {
     "command"        : "[${LAUNCHCMD}]"
     }
@@ -41,4 +41,4 @@ EOF
 
 #}
 
-#command_mcis
+#command_mci

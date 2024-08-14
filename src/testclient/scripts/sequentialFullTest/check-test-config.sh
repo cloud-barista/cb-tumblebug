@@ -54,9 +54,9 @@ for ((cspi = 1; cspi <= INDEXX; cspi++)); do
 	TotalVM=$(($TotalVM + $((1 * INDEXY * NUMVM))))
 done
 
-echo -e "${BOLD}3) MCIS Configuration${NC}"
+echo -e "${BOLD}3) MCI Configuration${NC}"
 echo -e " - NameSpace ID :${GREEN}${BOLD} $NSID${NC}"
-echo -e " - MCIS ID :${GREEN}${BOLD} $MCISID${NC}"
+echo -e " - MCI ID :${GREEN}${BOLD} $MCIID${NC}"
 echo -e " - Number of Total VMs :${GREEN}${BOLD} $TotalVM${NC}"
 
 for ((cspi = 1; cspi <= INDEXX; cspi++)); do

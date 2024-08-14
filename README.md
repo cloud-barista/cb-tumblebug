@@ -279,7 +279,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 ### Using CB-TB MapUI
 
 - With CB-MapUI, you can create, view, and control Mutli-Cloud infra.
-  - [CB-MapUI](https://github.com/cloud-barista/cb-mapui) is a project to visualize the deployment of MCIS in a map GUI.
+  - [CB-MapUI](https://github.com/cloud-barista/cb-mapui) is a project to visualize the deployment of MCI in a map GUI.
   - Run the CB-MapUI container using the CB-TB script
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
@@ -311,19 +311,19 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     - [Create network object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Network%20management/post_ns__nsId__resources_vNet)
     - [Create security group object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Security%20group%20management/post_ns__nsId__resources_securityGroup)
     - [Create access key object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Access%20key%20management/post_ns__nsId__resources_sshKey)
-  - Create, view, control, execute remote commands, shut down, and delete MCIS using the MCIS(multi-cloud infrastructure service) management APIs
-    - [Create MCIS](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCIS%20Provisioning%20management/post_ns__nsId__mcis)
-    - [MCIS remote command](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCIS%20Remote%20command/post_ns__nsId__cmd_mcis__mcisId_)
-    - [View and control MCIS](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCIS%20Provisioning%20management/get_ns__nsId__mcis__mcisId_)
-    - [Terminate and Delete MCIS](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCIS%20Provisioning%20management/delete_ns__nsId__mcis__mcisId_)
+  - Create, view, control, execute remote commands, shut down, and delete MCI using the MCI(multi-cloud infrastructure service) management APIs
+    - [Create MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/post_ns__nsId__mci)
+    - [MCI remote command](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Remote%20command/post_ns__nsId__cmd_mci__mciId_)
+    - [View and control MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/get_ns__nsId__mci__mciId_)
+    - [Terminate and Delete MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/delete_ns__nsId__mci__mciId_)
   - CB-TB optimal and dynamic provisioning
-    - [CB-TB optimal and dynamic provisioning](https://github.com/cloud-barista/cb-tumblebug/wiki/Dynamic-and-optimal-mcis-provisioning-guide)
+    - [CB-TB optimal and dynamic provisioning](https://github.com/cloud-barista/cb-tumblebug/wiki/Dynamic-and-optimal-mci-provisioning-guide)
 
 ---
 
 ### Using CB-TB Scripts
 
-[`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/) provides Bash shell-based scripts that simplify and automate the MCIS (MC-Infra) provisioning procedures, which require complex steps.
+[`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/) provides Bash shell-based scripts that simplify and automate the MCI (MC-Infra) provisioning procedures, which require complex steps.
 
 <details>
 <summary>[Note] Details </summary>
@@ -341,7 +341,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
      - How to modify test VM image: [`IMAGE_NAME[$IX,$IY]=ami-061eb2b23f9f8839c`](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/conf.env#L49)
      - How to modify test VM spec: [`SPEC_NAME[$IX,$IY]=m4.4xlarge`](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/conf.env#L50)
 3. Configure [`testSet.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/testSet.env)
-   - Set the cloud and region configurations to be used for MCIS provisioning in a file (you can change the existing `testSet.env` or copy and use it)
+   - Set the cloud and region configurations to be used for MCI provisioning in a file (you can change the existing `testSet.env` or copy and use it)
    - Specify the types of CSPs to combine
      - Change the number in [NumCSP=](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/testSet.env#L9) to specify the total number of CSPs to combine
      - Specify the types of CSPs to combine by rearranging the lines in [L15-L24](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/testSet.env#L15) (use up to the number specified in NumCSP)
@@ -361,14 +361,14 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 - You can test the entire process at once by executing `create-all.sh` and `clean-all.sh` included in `src/testclient/scripts/sequentialFullTest/`
 
   ```bash
-  └── sequentialFullTest # Automatic testing from cloud information registration to NS creation, MCIR creation, and MCIS creation
+  └── sequentialFullTest # Automatic testing from cloud information registration to NS creation, MCIR creation, and MCI creation
       ├── check-test-config.sh # Check the multi-cloud infrastructure configuration specified in the current testSet
-      ├── create-all.sh # Automatic testing from cloud information registration to NS creation, MCIR creation, and MCIS creation
-      ├── gen-sshKey.sh # Generate SSH key files to access MCIS
-      ├── command-mcis.sh # Execute remote commands on the created MCIS (multiple VMs)
-      ├── deploy-nginx-mcis.sh # Automatically deploy Nginx on the created MCIS (multiple VMs)
-      ├── create-mcis-for-df.sh # Create MCIS for hosting CB-Dragonfly
-      ├── deploy-dragonfly-docker.sh # Automatically deploy CB-Dragonfly on MCIS and set up the environment
+      ├── create-all.sh # Automatic testing from cloud information registration to NS creation, MCIR creation, and MCI creation
+      ├── gen-sshKey.sh # Generate SSH key files to access MCI
+      ├── command-mci.sh # Execute remote commands on the created MCI (multiple VMs)
+      ├── deploy-nginx-mci.sh # Automatically deploy Nginx on the created MCI (multiple VMs)
+      ├── create-mci-for-df.sh # Create MCI for hosting CB-Dragonfly
+      ├── deploy-dragonfly-docker.sh # Automatically deploy CB-Dragonfly on MCI and set up the environment
       ├── clean-all.sh # Delete all objects in reverse order of creation
       ├── create-k8scluster-only.sh # Create a K8s cluster for the multi-cloud infrastructure specified in the testSet
       ├── get-k8scluster.sh # Get K8s cluster information for the multi-cloud infrastructure specified in the testSet
@@ -382,14 +382,14 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
       └── executionStatus # Logs of the tests performed (information is added when testAll is executed and removed when cleanAll is executed. You can check the ongoing tasks)
   ```
 
-- MCIS Creation Test
+- MCI Creation Test
 
-  - `./create-all.sh -n shson -f ../testSetCustom.env` # Create MCIS with the cloud combination configured in ../testSetCustom.env
-  - Automatically proceed with the process to check the MCIS creation configuration specified in `../testSetCustom.env`
+  - `./create-all.sh -n shson -f ../testSetCustom.env` # Create MCI with the cloud combination configured in ../testSetCustom.env
+  - Automatically proceed with the process to check the MCI creation configuration specified in `../testSetCustom.env`
   - Example of execution result
 
     ```bash
-    Table: All VMs in the MCIS : cb-shson
+    Table: All VMs in the MCI : cb-shson
 
     ID              Status   PublicIP       PrivateIP      CloudType  CloudRegion     CreatedTime
     --              ------   --------       ---------      ---------  -----------     -----------
@@ -397,50 +397,50 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     aws-ca-central-1-0   Running  x.97.xx.230    192.168.4.98   aws        ca-central-1    2021-09-17   14:59:58
     gcp-asia-east1-0  Running  xx.229.xxx.26  192.168.3.2    gcp        asia-east1      2021-09-17   14:59:42
 
-    [DATE: 17/09/2021 15:00:00] [ElapsedTime: 49s (0m:49s)] [Command: ./create-mcis-only.sh all 1 shson ../testSetCustom.env 1]
+    [DATE: 17/09/2021 15:00:00] [ElapsedTime: 49s (0m:49s)] [Command: ./create-mci-only.sh all 1 shson ../testSetCustom.env 1]
 
     [Executed Command List]
     [MCIR:aws-ap-southeast-1(28s)] create-mcir-ns-cloud.sh (MCIR) aws 1 shson ../testSetCustom.env
     [MCIR:aws-ca-central-1(34s)] create-mcir-ns-cloud.sh (MCIR) aws 2 shson ../testSetCustom.env
     [MCIR:gcp-asia-east1(93s)] create-mcir-ns-cloud.sh (MCIR) gcp 1 shson ../testSetCustom.env
-    [MCIS:cb-shsonvm4(19s+More)] create-mcis-only.sh (MCIS) all 1 shson ../testSetCustom.env
+    [MCI:cb-shsonvm4(19s+More)] create-mci-only.sh (MCI) all 1 shson ../testSetCustom.env
 
     [DATE: 17/09/2021 15:00:00] [ElapsedTime: 149s (2m:29s)] [Command: ./create-all.sh -n shson -f ../testSetCustom.env -x 1]
     ```
 
-- MCIS Removal Test (Use the input parameters used in creation for deletion)
+- MCI Removal Test (Use the input parameters used in creation for deletion)
 
   - `./clean-all.sh -n shson -f ../testSetCustom.env` # Perform removal of created resources according to `../testSetCustom.env`
   - **Be aware!**
-    - If you created MCIS (VMs) for testing in public clouds, the VMs may incur charges.
-    - You need to terminate MCIS by using `clean-all` to avoid unexpected billing.
+    - If you created MCI (VMs) for testing in public clouds, the VMs may incur charges.
+    - You need to terminate MCI by using `clean-all` to avoid unexpected billing.
     - Anyway, please be aware of cloud usage costs when using public CSPs.
 
-- Generate MCIS SSH access keys and access each VM
+- Generate MCI SSH access keys and access each VM
 
-  - `./gen-sshKey.sh -n shson -f ../testSetCustom.env` # Return access keys for all VMs configured in MCIS
+  - `./gen-sshKey.sh -n shson -f ../testSetCustom.env` # Return access keys for all VMs configured in MCI
   - Example of execution result
 
     ```bash
     ...
     [GENERATED PRIVATE KEY (PEM, PPK)]
-    [MCIS INFO: mc-shson]
-     [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-southeast-1-0
+    [MCI INFO: mc-shson]
+     [VMIP]: 13.212.254.59   [MCIID]: mc-shson   [VMID]: aws-ap-southeast-1-0
      ./sshkey-tmp/aws-ap-southeast-1-shson.pem
      ./sshkey-tmp/aws-ap-southeast-1-shson.ppk
      ...
 
     [SSH COMMAND EXAMPLE]
-     [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-southeast-1-0
+     [VMIP]: 13.212.254.59   [MCIID]: mc-shson   [VMID]: aws-ap-southeast-1-0
      ssh -i ./sshkey-tmp/aws-ap-southeast-1-shson.pem cb-user@13.212.254.59 -o StrictHostKeyChecking=no
      ...
-     [VMIP]: 35.182.30.37   [MCISID]: mc-shson   [VMID]: aws-ca-central-1-0
+     [VMIP]: 35.182.30.37   [MCIID]: mc-shson   [VMID]: aws-ca-central-1-0
      ssh -i ./sshkey-tmp/aws-ca-central-1-shson.pem cb-user@35.182.30.37 -o StrictHostKeyChecking=no
     ```
 
-- Verify MCIS via SSH remote command execution
+- Verify MCI via SSH remote command execution
 
-  - `./command-mcis.sh -n shson -f ../testSetCustom.env` # Execute IP and hostname retrieval for all VMs in MCIS
+  - `./command-mci.sh -n shson -f ../testSetCustom.env` # Execute IP and hostname retrieval for all VMs in MCI
 
 - K8s Cluster Test (WIP: Stability work in progress for each CSP)
 
@@ -465,21 +465,21 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
 ### Multi-Cloud Infrastructure Use Cases
 
-#### Deploying an MCIS Xonotic (3D FPS) Game Server
+#### Deploying an MCI Xonotic (3D FPS) Game Server
 
-- [Deploy Xonotic game servers on MCIS](https://github.com/cloud-barista/cb-tumblebug/wiki/Deploy-Xonotic-game-sever-in-a-Cloud-via-CB-Tumblebug)
+- [Deploy Xonotic game servers on MCI](https://github.com/cloud-barista/cb-tumblebug/wiki/Deploy-Xonotic-game-sever-in-a-Cloud-via-CB-Tumblebug)
 
-#### Distributed Deployment of MCIS Weave Scope Cluster Monitoring
+#### Distributed Deployment of MCI Weave Scope Cluster Monitoring
 
-- [Install Weave Scope cluster on MCIS](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-WeaveScope-deployment)
+- [Install Weave Scope cluster on MCI](https://github.com/cloud-barista/cb-tumblebug/wiki/MCI-WeaveScope-deployment)
 
-#### Deploying MCIS Jitsi Video Conferencing
+#### Deploying MCI Jitsi Video Conferencing
 
-- [Install Jitsi video conferencing on MCIS](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Jitsi-deployment)
+- [Install Jitsi video conferencing on MCI](https://github.com/cloud-barista/cb-tumblebug/wiki/MCI-Jitsi-deployment)
 
-#### Automatic Configuration of MCIS Ansible Execution Environment
+#### Automatic Configuration of MCI Ansible Execution Environment
 
-- [Automatically configure Ansible execution environment on MCIS](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Ansible-deployment)
+- [Automatically configure Ansible execution environment on MCI](https://github.com/cloud-barista/cb-tumblebug/wiki/MCI-Ansible-deployment)
 
 
 ---

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## Command (SSH) to MCIS with a user command (-x for command, OPTIONAL: -y for vmid)"
+echo "## Command (SSH) to MCI with a user command (-x for command, OPTIONAL: -y for vmid)"
 echo "####################################################################"
 
 source ../init.sh
@@ -19,7 +19,7 @@ echo $USERCMD
 if [ -z "$VMID" ]; then
 
 	VAR1=$(
-		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${USERCMD}]"
 	} 
@@ -27,7 +27,7 @@ EOF
 	)
 else
 	VAR1=$(
-		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
+		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${USERCMD}]"
 	} 

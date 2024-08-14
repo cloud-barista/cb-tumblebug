@@ -1,33 +1,33 @@
 #!/bin/bash
 
-function clean_mcis_sequence() {
+function clean_mci_sequence() {
 	local CSP=$1
 	local REGION=$2
 	local POSTFIX=$3
 	local TestSetFile=$4
 
-	# echo '## 8. MCIS: Refine first (remove failed VMs)'
-	# OUTPUT=$(../8.mcis/refine-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
+	# echo '## 8. MCI: Refine first (remove failed VMs)'
+	# OUTPUT=$(../8.mci/refine-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 
-	# echo '## 8. MCIS: Terminate'
-	# OUTPUT=$(../8.mcis/terminate-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
+	# echo '## 8. MCI: Terminate'
+	# OUTPUT=$(../8.mci/terminate-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 	# echo "${OUTPUT}"
 	# OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
 	# OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
 	# OUTPUT3=$(echo "${OUTPUT}" | grep -c 'does not exist')
 
 	# if [ "${OUTPUT1}" != 1 ] && [ "${OUTPUT2}" != 1 ] && [ "${OUTPUT3}" != 1 ]; then
-	# 	echo "============== sleep 30 before delete MCIS obj"
+	# 	echo "============== sleep 30 before delete MCI obj"
 	# 	dozing 30
 	# fi
 
-	../8.mcis/delete-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x terminate
+	../8.mci/delete-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x terminate
 }
 
 SECONDS=0
 
 echo "####################################################################"
-echo "## Remove MCIS only"
+echo "## Remove MCI only"
 echo "####################################################################"
 
 source ../init.sh
@@ -37,14 +37,14 @@ if [ "${INDEX}" == "0" ]; then
 else
 	echo "[Single execution for a CSP region]"
 fi
-clean_mcis_sequence $CSP $REGION $POSTFIX $TestSetFile
+clean_mci_sequence $CSP $REGION $POSTFIX $TestSetFile
 
 echo -e "${BOLD}"
 echo "[Cleaning related commands in history file executionStatus]"
 echo -e ""
-echo -e "${NC}${BLUE}- Removing  (MCIS) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}"
+echo -e "${NC}${BLUE}- Removing  (MCI) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}"
 echo -e "${NC}"
-sed -i "/(MCIS) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
+sed -i "/(MCI) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
 echo ""
 echo "[Executed Command List]"
 cat ./executionStatus

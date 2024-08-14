@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	//"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
-	//"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
+	//"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 
@@ -326,7 +326,7 @@ func DelNs(id string) error {
 	key := "/ns/" + id
 	log.Debug().Msg(key)
 
-	mcisList := GetChildIdList(key + "/mcis")
+	mciList := GetChildIdList(key + "/mci")
 	imageList := GetChildIdList(key + "/resources/image")
 	vNetList := GetChildIdList(key + "/resources/vNet")
 	//subnetList := GetChildIdList(key + "/resources/subnet")
@@ -336,15 +336,15 @@ func DelNs(id string) error {
 	sshKeyList := GetChildIdList(key + "/resources/sshKey")
 	//vNicList := GetChildIdList(key + "/resources/vNic")
 
-	if len(mcisList)+
+	if len(mciList)+
 		len(imageList)+
 		len(vNetList)+
 		//len(subnetList)
 		len(securityGroupList)+
 		len(specList)+
 		len(sshKeyList) > 0 {
-		errString := "Cannot delete NS " + id + ", which is not empty. There exists at least one MCIS or one of resources."
-		errString += " \n len(mcisList): " + strconv.Itoa(len(mcisList))
+		errString := "Cannot delete NS " + id + ", which is not empty. There exists at least one MCI or one of resources."
+		errString += " \n len(mciList): " + strconv.Itoa(len(mciList))
 		errString += " \n len(imageList): " + strconv.Itoa(len(imageList))
 		errString += " \n len(vNetList): " + strconv.Itoa(len(vNetList))
 		//errString += " \n len(publicIpList): " + strconv.Itoa(len(publicIpList))

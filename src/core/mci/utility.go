@@ -11,8 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to manage multi-cloud infra service
-package mcis
+// Package mci is to manage multi-cloud infra service
+package mci
 
 import (
 	//"encoding/json"
@@ -57,10 +57,10 @@ func init() {
 	// NOTE: only have to register a non-pointer type for 'Tb*Req', validator
 	// internally dereferences during it's type checks.
 
-	validate.RegisterStructValidation(TbMcisReqStructLevelValidation, TbMcisReq{})
+	validate.RegisterStructValidation(TbMciReqStructLevelValidation, TbMciReq{})
 	validate.RegisterStructValidation(TbVmReqStructLevelValidation, TbVmReq{})
-	validate.RegisterStructValidation(TbMcisCmdReqStructLevelValidation, McisCmdReq{})
-	// validate.RegisterStructValidation(TbMcisRecommendReqStructLevelValidation, McisRecommendReq{})
+	validate.RegisterStructValidation(TbMciCmdReqStructLevelValidation, MciCmdReq{})
+	// validate.RegisterStructValidation(TbMciRecommendReqStructLevelValidation, MciRecommendReq{})
 	// validate.RegisterStructValidation(TbVmRecommendReqStructLevelValidation, TbVmRecommendReq{})
 	// validate.RegisterStructValidation(TbBenchmarkReqStructLevelValidation, BenchmarkReq{})
 	// validate.RegisterStructValidation(TbMultihostBenchmarkReqStructLevelValidation, MultihostBenchmarkReq{})
@@ -94,14 +94,14 @@ type mcirIds struct {
 }
 */
 
-func CheckMcis(nsId string, mcisId string) (bool, error) {
+func CheckMci(nsId string, mciId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
-		err := fmt.Errorf("CheckMcis failed; nsId given is null.")
+		err := fmt.Errorf("CheckMci failed; nsId given is null.")
 		return false, err
-	} else if mcisId == "" {
-		err := fmt.Errorf("CheckMcis failed; mcisId given is null.")
+	} else if mciId == "" {
+		err := fmt.Errorf("CheckMci failed; mciId given is null.")
 		return false, err
 	}
 
@@ -111,18 +111,18 @@ func CheckMcis(nsId string, mcisId string) (bool, error) {
 		return false, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
-	key := common.GenMcisKey(nsId, mcisId, "")
+	key := common.GenMciKey(nsId, mciId, "")
 
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CheckMcis(); kvstore.GetKv() returned an error.")
+		err = fmt.Errorf("In CheckMci(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -135,7 +135,7 @@ func CheckMcis(nsId string, mcisId string) (bool, error) {
 }
 
 // CheckSubGroup func is to check given subGroupId is duplicated with existing
-func CheckSubGroup(nsId string, mcisId string, subGroupId string) (bool, error) {
+func CheckSubGroup(nsId string, mciId string, subGroupId string) (bool, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -143,13 +143,13 @@ func CheckSubGroup(nsId string, mcisId string, subGroupId string) (bool, error) 
 		return false, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
-	subGroupList, err := ListSubGroupId(nsId, mcisId)
+	subGroupList, err := ListSubGroupId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
@@ -162,14 +162,14 @@ func CheckSubGroup(nsId string, mcisId string, subGroupId string) (bool, error) 
 	return false, nil
 }
 
-func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
+func CheckVm(nsId string, mciId string, vmId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
 		err := fmt.Errorf("CheckVm failed; nsId given is null.")
 		return false, err
-	} else if mcisId == "" {
-		err := fmt.Errorf("CheckVm failed; mcisId given is null.")
+	} else if mciId == "" {
+		err := fmt.Errorf("CheckVm failed; mciId given is null.")
 		return false, err
 	} else if vmId == "" {
 		err := fmt.Errorf("CheckVm failed; vmId given is null.")
@@ -182,7 +182,7 @@ func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
 		return false, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
@@ -192,9 +192,9 @@ func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	log.Debug().Msg("[Check vm] " + mcisId + ", " + vmId)
+	log.Debug().Msg("[Check vm] " + mciId + ", " + vmId)
 
-	key := common.GenMcisKey(nsId, mcisId, vmId)
+	key := common.GenMciKey(nsId, mciId, vmId)
 
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
@@ -211,14 +211,14 @@ func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
 
 }
 
-func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
+func CheckMciPolicy(nsId string, mciId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
-		err := fmt.Errorf("CheckMcis failed; nsId given is null.")
+		err := fmt.Errorf("CheckMci failed; nsId given is null.")
 		return false, err
-	} else if mcisId == "" {
-		err := fmt.Errorf("CheckMcis failed; mcisId given is null.")
+	} else if mciId == "" {
+		err := fmt.Errorf("CheckMci failed; mciId given is null.")
 		return false, err
 	}
 
@@ -228,19 +228,19 @@ func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
 		return false, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	log.Debug().Msg("[Check McisPolicy] " + mcisId)
+	log.Debug().Msg("[Check MciPolicy] " + mciId)
 
-	key := common.GenMcisPolicyKey(nsId, mcisId, "")
+	key := common.GenMciPolicyKey(nsId, mciId, "")
 
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CheckMcisPolicy(); kvstore.GetKv() returned an error.")
+		err = fmt.Errorf("In CheckMciPolicy(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -348,7 +348,7 @@ type resourceOnTumblebugInfo struct {
 	IdByTb    string `json:"idByTb"`
 	IdByCsp   string `json:"idByCsp"`
 	NsId      string `json:"nsId"`
-	McisId    string `json:"mcisId,omitempty"`
+	MciId     string `json:"mciId,omitempty"`
 	ObjectKey string `json:"objectKey"`
 }
 
@@ -368,23 +368,23 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 		// Bring TB resources
 		switch resourceType {
 		case common.StrNLB:
-			mcisListinNs, _ := ListMcisId(ns)
-			if mcisListinNs == nil {
+			mciListinNs, _ := ListMciId(ns)
+			if mciListinNs == nil {
 				continue
 			}
-			for _, mcis := range mcisListinNs {
-				nlbListInMcis, err := ListNLBId(ns, mcis)
+			for _, mci := range mciListinNs {
+				nlbListInMci, err := ListNLBId(ns, mci)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					err := fmt.Errorf("an error occurred while getting resource list")
 					return nullObj, err
 				}
-				if nlbListInMcis == nil {
+				if nlbListInMci == nil {
 					continue
 				}
 
-				for _, nlbId := range nlbListInMcis {
-					nlb, err := GetNLB(ns, mcis, nlbId)
+				for _, nlbId := range nlbListInMci {
+					nlb, err := GetNLB(ns, mci, nlbId)
 					if err != nil {
 						log.Error().Err(err).Msg("")
 						err := fmt.Errorf("an error occurred while getting resource list")
@@ -396,31 +396,31 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 						temp.IdByTb = nlb.Id
 						temp.IdByCsp = nlb.CspNLBId
 						temp.NsId = ns
-						temp.McisId = mcis
-						temp.ObjectKey = GenNLBKey(ns, mcis, nlb.Id)
+						temp.MciId = mci
+						temp.ObjectKey = GenNLBKey(ns, mci, nlb.Id)
 
 						TbResourceList.Info = append(TbResourceList.Info, temp)
 					}
 				}
 			}
 		case common.StrVM:
-			mcisListinNs, _ := ListMcisId(ns)
-			if mcisListinNs == nil {
+			mciListinNs, _ := ListMciId(ns)
+			if mciListinNs == nil {
 				continue
 			}
-			for _, mcis := range mcisListinNs {
-				vmListInMcis, err := ListVmId(ns, mcis)
+			for _, mci := range mciListinNs {
+				vmListInMci, err := ListVmId(ns, mci)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					err := fmt.Errorf("an error occurred while getting resource list")
 					return nullObj, err
 				}
-				if vmListInMcis == nil {
+				if vmListInMci == nil {
 					continue
 				}
 
-				for _, vmId := range vmListInMcis {
-					vm, err := GetVmObject(ns, mcis, vmId)
+				for _, vmId := range vmListInMci {
+					vm, err := GetVmObject(ns, mci, vmId)
 					if err != nil {
 						log.Error().Err(err).Msg("")
 						err := fmt.Errorf("an error occurred while getting resource list")
@@ -432,8 +432,8 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 						temp.IdByTb = vm.Id
 						temp.IdByCsp = vm.CspViewVmDetail.IId.SystemId
 						temp.NsId = ns
-						temp.McisId = mcis
-						temp.ObjectKey = common.GenMcisKey(ns, mcis, vm.Id)
+						temp.MciId = mci
+						temp.ObjectKey = common.GenMciKey(ns, mci, vm.Id)
 
 						TbResourceList.Info = append(TbResourceList.Info, temp)
 					}
@@ -870,7 +870,7 @@ type registerationOverview struct {
 }
 
 // RegisterCspNativeResourcesAll func registers all CSP-native resources into CB-TB
-func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string, mcisFlag string) (RegisterResourceAllResult, error) {
+func RegisterCspNativeResourcesAll(nsId string, mciId string, option string, mciFlag string) (RegisterResourceAllResult, error) {
 	startTime := time.Now()
 
 	connectionConfigList, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
@@ -888,7 +888,7 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string, mc
 		go func(k common.ConnConfig) {
 			defer wait.Done()
 
-			mcisNameForRegister := mcisId + "-" + k.ConfigName
+			mciNameForRegister := mciId + "-" + k.ConfigName
 			// Assign RandomSleep range by clouds
 			// This code is temporal, CB-Spider needs to be enhnaced for locking mechanism.
 			// CB-SP v0.5.9 will not help with rate limit issue.
@@ -905,7 +905,7 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string, mc
 
 			common.RandomSleep(0, 50)
 
-			registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mcisNameForRegister, option, mcisFlag)
+			registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mciNameForRegister, option, mciFlag)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 			}
@@ -944,7 +944,7 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string, mc
 }
 
 // RegisterCspNativeResources func registers all CSP-native resources into CB-TB
-func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, option string, mcisFlag string) (RegisterResourceResult, error) {
+func RegisterCspNativeResources(nsId string, connConfig string, mciId string, option string, mciFlag string) (RegisterResourceResult, error) {
 	startTime := time.Now()
 
 	optionFlag := "register"
@@ -1124,10 +1124,10 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResourcesVm.Resources.OnCspOnly.Info {
-			req := TbMcisReq{}
-			req.Description = "MCIS for CSP managed VMs (registered to CB-TB)"
+			req := TbMciReq{}
+			req.Description = "MCI for CSP managed VMs (registered to CB-TB)"
 			req.InstallMonAgent = "no"
-			req.Name = mcisId
+			req.Name = mciId
 			req.Name = common.ChangeIdString(req.Name)
 
 			vm := TbVmReq{}
@@ -1136,8 +1136,8 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 			vm.Description = "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)"
 			vm.Name = vm.ConnectionName + "-" + r.RefNameOrId + "-" + vm.IdByCSP
 			vm.Name = common.ChangeIdString(vm.Name)
-			if mcisFlag == "n" {
-				// (if mcisFlag == "n") create a mcis for each vm
+			if mciFlag == "n" {
+				// (if mciFlag == "n") create a mci for each vm
 				req.Name = vm.Name
 			}
 			vm.Label = "not defined"
@@ -1151,7 +1151,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 
 			req.Vm = append(req.Vm, vm)
 
-			_, err = CreateMcis(nsId, &req, optionFlag)
+			_, err = CreateMci(nsId, &req, optionFlag)
 
 			registeredStatus = ""
 			if err != nil {
@@ -1176,7 +1176,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 
 }
 
-func FindTbVmByCspId(nsId string, mcisId string, vmIdByCsp string) (TbVmInfo, error) {
+func FindTbVmByCspId(nsId string, mciId string, vmIdByCsp string) (TbVmInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1184,7 +1184,7 @@ func FindTbVmByCspId(nsId string, mcisId string, vmIdByCsp string) (TbVmInfo, er
 		return TbVmInfo{}, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return TbVmInfo{}, err
@@ -1196,31 +1196,31 @@ func FindTbVmByCspId(nsId string, mcisId string, vmIdByCsp string) (TbVmInfo, er
 		return TbVmInfo{}, err
 	}
 
-	check, err := CheckMcis(nsId, mcisId)
+	check, err := CheckMci(nsId, mciId)
 
 	if !check {
-		err := fmt.Errorf("The MCIS " + mcisId + " does not exist.")
+		err := fmt.Errorf("The MCI " + mciId + " does not exist.")
 		return TbVmInfo{}, err
 	}
 
 	if err != nil {
-		err := fmt.Errorf("Failed to check the existence of the MCIS " + mcisId + ".")
+		err := fmt.Errorf("Failed to check the existence of the MCI " + mciId + ".")
 		return TbVmInfo{}, err
 	}
 
-	mcis, err := GetMcisObject(nsId, mcisId)
+	mci, err := GetMciObject(nsId, mciId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the MCIS " + mcisId + ".")
+		err := fmt.Errorf("Failed to get the MCI " + mciId + ".")
 		return TbVmInfo{}, err
 	}
 
-	vms := mcis.Vm
+	vms := mci.Vm
 	for _, v := range vms {
 		if v.IdByCSP == vmIdByCsp || v.CspViewVmDetail.IId.NameId == vmIdByCsp {
 			return v, nil
 		}
 	}
 
-	err = fmt.Errorf("Cannot find the VM %s in %s/%s", vmIdByCsp, nsId, mcisId)
+	err = fmt.Errorf("Cannot find the VM %s in %s/%s", vmIdByCsp, nsId, mciId)
 	return TbVmInfo{}, err
 }

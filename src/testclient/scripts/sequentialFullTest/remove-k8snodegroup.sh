@@ -42,7 +42,7 @@ function test_sequence_remove_k8snodegroup_allcsp() {
 
 	../13.k8scluster/force-remove-k8snodegroup.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM -z $K8SCLUSTERID_ADD
 	#dozing 1
-	#../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $MCISPREFIX
+	#../8.mci/status-mci.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $MCIPREFIX
 	#../13.k8scluster/get-k8scluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -z $K8SCLUSTERID_ADD
 
 	echo ""

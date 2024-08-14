@@ -20,8 +20,8 @@ import (
 	"strconv"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
 )
 
@@ -176,21 +176,21 @@ func RestDelAllDataDisk(c echo.Context) error {
 // @Produce  json
 // @Param attachDetachDataDiskReq body mcir.TbAttachDetachDataDiskReq false "Request body to attach/detach dataDisk"
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
-// @Param option query string true "Option for MCIS" Enums(attach, detach)
+// @Param option query string true "Option for MCI" Enums(attach, detach)
 // @Param force query string false "Force to attach/detach even if VM info is not matched" Enums(true, false)
-// @Success 200 {object} mcis.TbVmInfo
+// @Success 200 {object} mci.TbVmInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk [put]
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [put]
 func RestPutVmDataDisk(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
 
 	option := c.QueryParam("option")
@@ -213,7 +213,7 @@ func RestPutVmDataDisk(c echo.Context) error {
 	case common.AttachDataDisk:
 		fallthrough
 	case common.DetachDataDisk:
-		result, err := mcis.AttachDetachDataDisk(nsId, mcisId, vmId, option, u.DataDiskId, forceBool)
+		result, err := mci.AttachDetachDataDisk(nsId, mciId, vmId, option, u.DataDiskId, forceBool)
 		return common.EndRequestWithLog(c, reqID, err, result)
 
 	default:
@@ -231,18 +231,18 @@ func RestPutVmDataDisk(c echo.Context) error {
 // @Produce  json
 // @Param dataDiskInfo body mcir.TbDataDiskVmReq true "Details for an Data Disk object"
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
-// @Success 200 {object} mcis.TbVmInfo
+// @Success 200 {object} mci.TbVmInfo
 // @Failure 404 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk [post]
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [post]
 func RestPostVmDataDisk(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
 
 	u := &mcir.TbDataDiskVmReq{}
@@ -250,7 +250,7 @@ func RestPostVmDataDisk(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	result, err := mcis.ProvisionDataDisk(nsId, mcisId, vmId, u)
+	result, err := mci.ProvisionDataDisk(nsId, mciId, vmId, u)
 	if err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -266,23 +266,23 @@ func RestPostVmDataDisk(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllDataDiskResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk [get]
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [get]
 func RestGetVmDataDisk(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
 	optionFlag := c.QueryParam("option")
 
-	result, err := mcis.GetAvailableDataDisks(nsId, mcisId, vmId, optionFlag)
+	result, err := mci.GetAvailableDataDisks(nsId, mciId, vmId, optionFlag)
 	if err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}

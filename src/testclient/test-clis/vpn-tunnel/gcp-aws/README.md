@@ -3,10 +3,10 @@
 ### Overview
 
 This test CLI includes to:
-- create an MCIS,
+- create an MCI,
 - create VPN tunnels,
 - delete the VPN tunnels, and
-- delete the MCIS.
+- delete the MCI.
 
 #### Getting started
 
@@ -33,7 +33,7 @@ Please refer to the `--help`
 ```
 ```
 ########################################################################
-## [Demo] This program demonstrates VPN tunnel configuration on MCIS. ##
+## [Demo] This program demonstrates VPN tunnel configuration on MCI. ##
 ########################################################################
 
 Usage:
@@ -41,8 +41,8 @@ Usage:
 
 Examples:
 
-  [Long] ./demo --namespaceId "ns01" --mcisId "mcis01" --resourceGroupId "rg01"
-  [Short] ./demo -n "ns01" -m "mcis01" -r "rg01"
+  [Long] ./demo --namespaceId "ns01" --mciId "mci01" --resourceGroupId "rg01"
+  [Short] ./demo -n "ns01" -m "mci01" -r "rg01"
 
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
@@ -67,7 +67,7 @@ Usage:
   ./demo create [command]
 
 Available Commands:
-  mcis        Create MCIS dynamically
+  mci        Create MCI dynamically
   vpn         Create GCP to AWS VPN tunnel
 
 Flags:
@@ -87,7 +87,7 @@ Usage:
   ./demo delete [command]
 
 Available Commands:
-  mcis        Suspend and terminate MCIS
+  mci        Suspend and terminate MCI
   vpn         Destroy GCP to AWS VPN tunnel
 
 Flags:

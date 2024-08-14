@@ -38,8 +38,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 
 	restServer "github.com/cloud-barista/cb-tumblebug/src/api/rest/server"
 
@@ -407,7 +407,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	//Ticker for MCIS Orchestration Policy
+	//Ticker for MCI Orchestration Policy
 
 	log.Info().Msg("[Initiate Multi-Cloud Orchestration]")
 
@@ -418,7 +418,7 @@ func main() {
 			//display ticker if you need (remove '_ = t')
 			_ = t
 			//fmt.Println("- Orchestration Controller ", t.Format("2006-01-02 15:04:05"))
-			mcis.OrchestrationController()
+			mci.OrchestrationController()
 		}
 	}()
 	defer ticker.Stop()

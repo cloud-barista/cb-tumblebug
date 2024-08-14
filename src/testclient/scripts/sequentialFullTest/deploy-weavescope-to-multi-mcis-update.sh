@@ -8,7 +8,7 @@ if ! dpkg-query -W -f='${Status}' jq | grep "ok installed"; then sudo apt instal
 source ../conf.env
 
 echo "####################################################################"
-echo "## Command (SSH) to MCIS "
+echo "## Command (SSH) to MCI "
 echo "####################################################################"
 
 source ../common-functions.sh
@@ -17,32 +17,32 @@ source ../common-functions.sh
 # REGION=${2:-1}
 # POSTFIX=${3:-developer}
 
-# NUM_MCIS=${1}
+# NUM_MCI=${1}
 
-# if [ "${NUM_MCIS}" == "" ]; then
-#     echo "Usage: ./script.sh <NUM_MCIS> <MCIS_1> <MCIS_2> <MCIS_3> ..."
+# if [ "${NUM_MCI}" == "" ]; then
+#     echo "Usage: ./script.sh <NUM_MCI> <MCI_1> <MCI_2> <MCI_3> ..."
 #     exit 1
 # fi
 
-# for (( i=0; i<${NUM_MCIS}; i++ ));
+# for (( i=0; i<${NUM_MCI}; i++ ));
 # do
 #     j=$((i+2))
 #     echo ${$j};
 # done
 
-NUM_MCIS=$#
+NUM_MCI=$#
 
 WHOLE_IPLIST=""
 WHOLE_PRIVIPLIST=""
 LORDIP=""
 LORDVM=""
-LORDMCIS=""
+LORDMCI=""
 
-for MCISID in "$@"; do
-    MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=status)
-    VMARRAY=$(jq -r '.status.vm' <<<"$MCISINFO")
-    MASTERIP=$(jq -r '.status.masterIp' <<<"$MCISINFO")
-    MASTERVM=$(jq -r '.status.masterVmId' <<<"$MCISINFO")
+for MCIID in "$@"; do
+    MCIINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=status)
+    VMARRAY=$(jq -r '.status.vm' <<<"$MCIINFO")
+    MASTERIP=$(jq -r '.status.masterIp' <<<"$MCIINFO")
+    MASTERVM=$(jq -r '.status.masterVmId' <<<"$MCIINFO")
 
     echo "MASTERIP: $MASTERIP"
     echo "MASTERVM: $MASTERVM"
@@ -84,23 +84,23 @@ for MCISID in "$@"; do
     # WHOLE_PRIVIPLIST=(${WHOLE_PRIVIPLIST[@]} ${PRIVIPLIST[@]})
     LORDIP=$MASTERIP
     LORDVM=$MASTERVM
-    LORDMCIS=$MCISID
+    LORDMCI=$MCIID
 done
 
 echo ""
 echo "WHOLE_PublicIPList: $WHOLE_IPLIST"
 echo "WHOLE_PrivateIPList: $WHOLE_PRIVIPLIST"
 
-for MCISID in "$@"; do
+for MCIID in "$@"; do
     echo ""
-    echo "Installing Weavescope to MCIS..."
+    echo "Installing Weavescope to MCI..."
     ScopeInstallFile="git.io/scope"
     ScopeInstallFile="https://gist.githubusercontent.com/seokho-son/bb2703ca49555f9afe0d0097894c74fa/raw/9eb65b296b85bc53f53af3e8733603d807fb9287/scope"
     INSTALLCMD="sudo apt-get update > /dev/null;  sudo apt install docker.io -y; sudo curl -L $ScopeInstallFile -o /usr/local/bin/scope; sudo chmod a+x /usr/local/bin/scope"
     echo ""
 
     VAR1=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${INSTALLCMD}]"
 	}
@@ -112,7 +112,7 @@ done
 
 LAUNCHCMD="sudo scope stop"
 echo "Stopping Weavescope for master node if exist..."
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$LORDMCIS/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$LORDMCI/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${LAUNCHCMD}]"
 	}
@@ -123,24 +123,24 @@ LAUNCHCMD="sudo scope launch $WHOLE_IPLIST"
 #echo $LAUNCHCMD
 
 echo "Launching Weavescope for master node..."
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$LORDMCIS/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$LORDMCI/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${LAUNCHCMD}]"
 	}
 EOF
 
 echo ""
-echo "[MCIS Weavescope: master node only] Access to"
+echo "[MCI Weavescope: master node only] Access to"
 echo " $LORDIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
 echo ""
 
 LAUNCHCMD="sudo scope launch $LORDIP $WHOLE_PRIVIPLIST"
 echo "Working on clustring..."
 
-for MCISID in "$@"; do
+for MCIID in "$@"; do
 
     echo "Launching Weavescope for the other nodes..."
-    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
         {
         "command"        : "[${LAUNCHCMD}]"
         }
@@ -154,6 +154,6 @@ duration=$SECONDS
 printElapsed $@
 echo ""
 
-echo "[MCIS Weavescope: complete cluster] Access to"
+echo "[MCI Weavescope: complete cluster] Access to"
 echo " $LORDIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
 echo ""

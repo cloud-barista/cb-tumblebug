@@ -135,7 +135,7 @@ type TbDataDiskInfo struct {
 	CspDataDiskId        string            `json:"cspDataDiskId,omitempty" example:"vol-0d397c3239629bd43"`
 	CspDataDiskName      string            `json:"cspDataDiskName,omitempty" example:"ns01-aws-ap-southeast-1-datadisk"`
 	Status               DiskStatus        `json:"status" example:"Available"` // Available, Unavailable, Attached, ...
-	AssociatedObjectList []string          `json:"associatedObjectList" example:["/ns/ns01/mcis/mcis01/vm/aws-ap-southeast-1-1"]`
+	AssociatedObjectList []string          `json:"associatedObjectList" example:["/ns/ns01/mci/mci01/vm/aws-ap-southeast-1-1"]`
 	CreatedTime          time.Time         `json:"createdTime,omitempty" example:"2022-10-12T05:09:51.05Z"`
 	KeyValueList         []common.KeyValue `json:"keyValueList,omitempty"`
 	Description          string            `json:"description,omitempty" example:"Available"`

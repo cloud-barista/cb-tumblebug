@@ -7,7 +7,7 @@ SECONDS=0
 
 PublicIPs=$@
 
-echo "Installing Weavescope to MCIS..."
+echo "Installing Weavescope to MCI..."
 
 ScopeInstallFile="git.io/scope"
 ScopeInstallFile="https://gist.githubusercontent.com/seokho-son/bb2703ca49555f9afe0d0097894c74fa/raw/9eb65b296b85bc53f53af3e8733603d807fb9287/scope"

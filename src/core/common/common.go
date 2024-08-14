@@ -87,7 +87,7 @@ const (
 	StrDataDisk              string = "dataDisk"
 	StrNLB                   string = "nlb"
 	StrVM                    string = "vm"
-	StrMCIS                  string = "mcis"
+	StrMCI                   string = "mci"
 	StrK8s                   string = "k8s"
 	StrKubernetes            string = "kubernetes"
 	StrContainer             string = "container"

@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to handle REST API for mcis
+// Package mci is to handle REST API for mci
 package model
 
 var ProviderNames = map[string]string{
@@ -38,19 +38,19 @@ type sites struct {
 	Gcp   []SiteDetail `json:"gcp"`
 }
 
-// SitesInfo struct represents the overall site information including namespace and MCIS ID
+// SitesInfo struct represents the overall site information including namespace and MCI ID
 type SitesInfo struct {
-	NsId   string `json:"nsId" example:"ns-01"`
-	McisId string `json:"mcisId" example:"mcis-01"`
-	Count  int    `json:"count" example:"3"`
-	Sites  sites  `json:"sites"`
+	NsId  string `json:"nsId" example:"ns-01"`
+	MciId string `json:"mciId" example:"mci-01"`
+	Count int    `json:"count" example:"3"`
+	Sites sites  `json:"sites"`
 }
 
-func NewSiteInfo(nsId, mcisId string) *SitesInfo {
+func NewSiteInfo(nsId, mciId string) *SitesInfo {
 	siteInfo := &SitesInfo{
-		NsId:   nsId,
-		McisId: mcisId,
-		Count:  0,
+		NsId:  nsId,
+		MciId: mciId,
+		Count: 0,
 		Sites: sites{
 			Aws:   []SiteDetail{},
 			Azure: []SiteDetail{},

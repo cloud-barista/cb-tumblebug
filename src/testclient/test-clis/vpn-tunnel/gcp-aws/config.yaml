@@ -4,10 +4,10 @@ tumblebug:
     info: auth.json
   demo:
     nsId: kdemo-ns01
-    mcisId: kdemo-mcis01
+    mciId: kdemo-mci01
   api:
-    mcisDynamic:
-      reqBody: mcisDynamic.json
+    mciDynamic:
+      reqBody: mciDynamic.json
 
 terrarium:
   endpoint: http://localhost:8888

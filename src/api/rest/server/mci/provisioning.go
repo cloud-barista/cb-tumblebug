@@ -11,57 +11,57 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to handle REST API for mcis
-package mcis
+// Package mci is to handle REST API for mci
+package mci
 
 import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 	"github.com/labstack/echo/v4"
 )
 
-// RestPostMcis godoc
-// @ID PostMcis
-// @Summary Create MCIS
-// @Description Create MCIS
-// @Tags [Infra service] MCIS Provisioning management
+// RestPostMci godoc
+// @ID PostMci
+// @Summary Create MCI
+// @Description Create MCI
+// @Tags [Infra service] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisReq body TbMcisReq true "Details for an MCIS object"
-// @Success 200 {object} TbMcisInfo
+// @Param mciReq body TbMciReq true "Details for an MCI object"
+// @Success 200 {object} TbMciInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcis [post]
-func RestPostMcis(c echo.Context) error {
+// @Router /ns/{nsId}/mci [post]
+func RestPostMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
 
-	req := &mcis.TbMcisReq{}
+	req := &mci.TbMciReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	option := "create"
-	result, err := mcis.CreateMcis(nsId, req, option)
+	result, err := mci.CreateMci(nsId, req, option)
 	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestPostRegisterCSPNativeVM godoc
 // @ID PostRegisterCSPNativeVM
-// @Summary Register existing VM in a CSP to Cloud-Barista MCIS
-// @Description Register existing VM in a CSP to Cloud-Barista MCIS
-// @Tags [Infra service] MCIS Provisioning management
+// @Summary Register existing VM in a CSP to Cloud-Barista MCI
+// @Description Register existing VM in a CSP to Cloud-Barista MCI
+// @Tags [Infra service] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisReq body TbMcisReq true "Details for an MCIS object with existing CSP VM ID"
-// @Success 200 {object} TbMcisInfo
+// @Param mciReq body TbMciReq true "Details for an MCI object with existing CSP VM ID"
+// @Success 200 {object} TbMciInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/registerCspVm [post]
@@ -72,193 +72,193 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 	}
 	nsId := c.Param("nsId")
 
-	req := &mcis.TbMcisReq{}
+	req := &mci.TbMciReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	option := "register"
-	result, err := mcis.CreateMcis(nsId, req, option)
+	result, err := mci.CreateMci(nsId, req, option)
 	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
-// RestPostSystemMcis godoc
-// @ID PostSystemMcis
-// @Summary Create System MCIS Dynamically for Special Purpose in NS:system-purpose-common-ns
-// @Description Create System MCIS Dynamically for Special Purpose
-// @Tags [Infra service] MCIS Provisioning management
+// RestPostSystemMci godoc
+// @ID PostSystemMci
+// @Summary Create System MCI Dynamically for Special Purpose in NS:system-purpose-common-ns
+// @Description Create System MCI Dynamically for Special Purpose
+// @Tags [Infra service] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param option query string false "Option for the purpose of system MCIS" Enums(probe)
-// @Success 200 {object} TbMcisInfo
+// @Param option query string false "Option for the purpose of system MCI" Enums(probe)
+// @Success 200 {object} TbMciInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /systemMcis [post]
-func RestPostSystemMcis(c echo.Context) error {
+// @Router /systemMci [post]
+func RestPostSystemMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	option := c.QueryParam("option")
 
-	req := &mcis.TbMcisDynamicReq{}
+	req := &mci.TbMciDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	result, err := mcis.CreateSystemMcisDynamic(option)
+	result, err := mci.CreateSystemMciDynamic(option)
 	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
-// RestPostMcisDynamic godoc
-// @ID PostMcisDynamic
-// @Summary Create MCIS Dynamically
-// @Description Create MCIS Dynamically from common spec and image
-// @Tags [Infra service] MCIS Provisioning management
+// RestPostMciDynamic godoc
+// @ID PostMciDynamic
+// @Summary Create MCI Dynamically
+// @Description Create MCI Dynamically from common spec and image
+// @Tags [Infra service] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisReq body TbMcisDynamicReq true "Request body to provision MCIS dynamically. Must include commonSpec and commonImage info of each VM request.(ex: {name: mcis01,vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]} ) You can use /mcisRecommendVm and /mcisDynamicCheckRequest to get it) Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
-// @Param option query string false "Option for MCIS creation" Enums(hold)
+// @Param mciReq body TbMciDynamicReq true "Request body to provision MCI dynamically. Must include commonSpec and commonImage info of each VM request.(ex: {name: mci01,vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]} ) You can use /mciRecommendVm and /mciDynamicCheckRequest to get it) Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
+// @Param option query string false "Option for MCI creation" Enums(hold)
 // @Param x-request-id header string false "Custom request ID"
-// @Success 200 {object} TbMcisInfo
+// @Success 200 {object} TbMciInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcisDynamic [post]
-func RestPostMcisDynamic(c echo.Context) error {
+// @Router /ns/{nsId}/mciDynamic [post]
+func RestPostMciDynamic(c echo.Context) error {
 	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
 
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
 
-	req := &mcis.TbMcisDynamicReq{}
+	req := &mci.TbMciDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	result, err := mcis.CreateMcisDynamic(reqID, nsId, req, option)
+	result, err := mci.CreateMciDynamic(reqID, nsId, req, option)
 	if err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 	return c.JSON(http.StatusOK, result)
 }
 
-// RestPostMcisVmDynamic godoc
-// @ID PostMcisVmDynamic
-// @Summary Create VM Dynamically and add it to MCIS
-// @Description Create VM Dynamically and add it to MCIS
-// @Tags [Infra service] MCIS Provisioning management
+// RestPostMciVmDynamic godoc
+// @ID PostMciVmDynamic
+// @Summary Create VM Dynamically and add it to MCI
+// @Description Create VM Dynamically and add it to MCI
+// @Tags [Infra service] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmReq body TbVmDynamicReq true "Details for Vm dynamic request"
-// @Success 200 {object} TbMcisInfo
+// @Success 200 {object} TbMciInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcis/{mcisId}/vmDynamic [post]
-func RestPostMcisVmDynamic(c echo.Context) error {
+// @Router /ns/{nsId}/mci/{mciId}/vmDynamic [post]
+func RestPostMciVmDynamic(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 
-	req := &mcis.TbVmDynamicReq{}
+	req := &mci.TbVmDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	result, err := mcis.CreateMcisVmDynamic(nsId, mcisId, req)
+	result, err := mci.CreateMciVmDynamic(nsId, mciId, req)
 	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
-// RestPostMcisDynamicCheckRequest godoc
-// @ID PostMcisDynamicCheckRequest
-// @Summary Check available ConnectionConfig list for creating MCIS Dynamically
-// @Description Check available ConnectionConfig list before create MCIS Dynamically from common spec and image
-// @Tags [Infra service] MCIS Provisioning management
+// RestPostMciDynamicCheckRequest godoc
+// @ID PostMciDynamicCheckRequest
+// @Summary Check available ConnectionConfig list for creating MCI Dynamically
+// @Description Check available ConnectionConfig list before create MCI Dynamically from common spec and image
+// @Tags [Infra service] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param mcisReq body McisConnectionConfigCandidatesReq true "Details for MCIS dynamic request information"
-// @Success 200 {object} CheckMcisDynamicReqInfo
+// @Param mciReq body MciConnectionConfigCandidatesReq true "Details for MCI dynamic request information"
+// @Success 200 {object} CheckMciDynamicReqInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /mcisDynamicCheckRequest [post]
-func RestPostMcisDynamicCheckRequest(c echo.Context) error {
+// @Router /mciDynamicCheckRequest [post]
+func RestPostMciDynamicCheckRequest(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
-	req := &mcis.McisConnectionConfigCandidatesReq{}
+	req := &mci.MciConnectionConfigCandidatesReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	result, err := mcis.CheckMcisDynamicReq(req)
+	result, err := mci.CheckMciDynamicReq(req)
 	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
-// RestPostMcisVm godoc
-// @ID PostMcisVm
-// @Summary Create and add homogeneous VMs(subGroup) to a specified MCIS (Set subGroupSize for multiple VMs)
-// @Description Create and add homogeneous VMs(subGroup) to a specified MCIS (Set subGroupSize for multiple VMs)
-// @Tags [Infra service] MCIS Provisioning management
+// RestPostMciVm godoc
+// @ID PostMciVm
+// @Summary Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize for multiple VMs)
+// @Description Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize for multiple VMs)
+// @Tags [Infra service] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmReq body mcis.TbVmReq true "Details for VMs(subGroup)"
-// @Success 200 {object} mcis.TbMcisInfo
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param vmReq body mci.TbVmReq true "Details for VMs(subGroup)"
+// @Success 200 {object} mci.TbMciInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcis/{mcisId}/vm [post]
-func RestPostMcisVm(c echo.Context) error {
+// @Router /ns/{nsId}/mci/{mciId}/vm [post]
+func RestPostMciVm(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 
-	vmInfoData := &mcis.TbVmReq{}
+	vmInfoData := &mci.TbVmReq{}
 	if err := c.Bind(vmInfoData); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
-	result, err := mcis.CreateMcisGroupVm(nsId, mcisId, vmInfoData, true)
+	result, err := mci.CreateMciGroupVm(nsId, mciId, vmInfoData, true)
 	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
-// RestPostMcisSubGroupScaleOut godoc
-// @ID PostMcisSubGroupScaleOut
-// @Summary ScaleOut subGroup in specified MCIS
-// @Description ScaleOut subGroup in specified MCIS
-// @Tags [Infra service] MCIS Provisioning management
+// RestPostMciSubGroupScaleOut godoc
+// @ID PostMciSubGroupScaleOut
+// @Summary ScaleOut subGroup in specified MCI
+// @Description ScaleOut subGroup in specified MCI
+// @Tags [Infra service] MCI Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param subgroupId path string true "subGroup ID" default(g1)
-// @Param vmReq body mcis.TbScaleOutSubGroupReq true "subGroup scaleOut request"
-// @Success 200 {object} mcis.TbMcisInfo
+// @Param vmReq body mci.TbScaleOutSubGroupReq true "subGroup scaleOut request"
+// @Success 200 {object} mci.TbMciInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcis/{mcisId}/subgroup/{subgroupId} [post]
-func RestPostMcisSubGroupScaleOut(c echo.Context) error {
+// @Router /ns/{nsId}/mci/{mciId}/subgroup/{subgroupId} [post]
+func RestPostMciSubGroupScaleOut(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 	subgroupId := c.Param("subgroupId")
 
-	scaleOutReq := &mcis.TbScaleOutSubGroupReq{}
+	scaleOutReq := &mci.TbScaleOutSubGroupReq{}
 	if err := c.Bind(scaleOutReq); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	result, err := mcis.ScaleOutMcisSubGroup(nsId, mcisId, subgroupId, scaleOutReq.NumVMsToAdd)
+	result, err := mci.ScaleOutMciSubGroup(nsId, mciId, subgroupId, scaleOutReq.NumVMsToAdd)
 	return common.EndRequestWithLog(c, reqID, err, result)
 }

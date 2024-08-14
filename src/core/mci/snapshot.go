@@ -11,8 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to manage multi-cloud infra service
-package mcis
+// Package mci is to manage multi-cloud infra service
+package mci
 
 import (
 	"encoding/json"
@@ -30,13 +30,13 @@ type TbVmSnapshotReq struct {
 }
 
 // CreateVmSnapshot is func to create VM snapshot
-func CreateVmSnapshot(nsId string, mcisId string, vmId string, snapshotName string) (mcir.TbCustomImageInfo, error) {
-	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
+func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName string) (mcir.TbCustomImageInfo, error) {
+	vmKey := common.GenMciKey(nsId, mciId, vmId)
 
 	// Check existence of the key. If no key, no update.
 	keyValue, err := kvstore.GetKv(vmKey)
 	if keyValue == (kvstore.KeyValue{}) || err != nil {
-		err := fmt.Errorf("Failed to find 'ns/mcis/vm': %s/%s/%s \n", nsId, mcisId, vmId)
+		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
 		return mcir.TbCustomImageInfo{}, err
 	}
@@ -114,7 +114,7 @@ func CreateVmSnapshot(nsId string, mcisId string, vmId string, snapshotName stri
 
 	result, err := mcir.RegisterCustomImageWithInfo(nsId, tempTbCustomImageInfo)
 	if err != nil {
-		err := fmt.Errorf("Failed to find 'ns/mcis/vm': %s/%s/%s \n", nsId, mcisId, vmId)
+		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
 		return mcir.TbCustomImageInfo{}, err
 	}

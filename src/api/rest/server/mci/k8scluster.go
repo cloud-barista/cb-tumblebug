@@ -11,14 +11,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to handle REST API for mcis
-package mcis
+// Package mci is to handle REST API for mci
+package mci
 
 import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
@@ -109,8 +109,8 @@ func RestCheckNodeGroupsOnK8sCreation(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param option query string false "Option: [required params for register] connectionName, name, cspK8sClusterId" Enums(register)
-// @Param k8sClusterReq body mcis.TbK8sClusterReq true "Details of the K8sCluster object"
-// @Success 200 {object} mcis.TbK8sClusterInfo
+// @Param k8sClusterReq body mci.TbK8sClusterReq true "Details of the K8sCluster object"
+// @Success 200 {object} mci.TbK8sClusterInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/k8scluster [post]
@@ -120,14 +120,14 @@ func RestPostK8sCluster(c echo.Context) error {
 
 	optionFlag := c.QueryParam("option")
 
-	u := &mcis.TbK8sClusterReq{}
+	u := &mci.TbK8sClusterReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
 	log.Debug().Msg("[POST K8sCluster]")
 
-	content, err := mcis.CreateK8sCluster(nsId, u, optionFlag)
+	content, err := mci.CreateK8sCluster(nsId, u, optionFlag)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -150,8 +150,8 @@ func RestPostK8sCluster(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
-// @Param k8sClusterInfo body mcis.TbK8sClusterInfo true "Details of the K8sCluster object"
-// @Success 200 {object} mcis.TbK8sClusterInfo
+// @Param k8sClusterInfo body mci.TbK8sClusterInfo true "Details of the K8sCluster object"
+// @Success 200 {object} mci.TbK8sClusterInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/k8scluster/{k8sClusterId} [put]
@@ -172,8 +172,8 @@ func RestPutK8sCluster(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
-// @Param k8sNodeGroupReq body mcis.TbK8sNodeGroupReq true "Details of the K8sNodeGroup object" default(ng-01)
-// @Success 200 {object} mcis.TbK8sClusterInfo
+// @Param k8sNodeGroupReq body mci.TbK8sNodeGroupReq true "Details of the K8sNodeGroup object" default(ng-01)
+// @Success 200 {object} mci.TbK8sClusterInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup [post]
@@ -182,14 +182,14 @@ func RestPostK8sNodeGroup(c echo.Context) error {
 	nsId := c.Param("nsId")
 	k8sClusterId := c.Param("k8sClusterId")
 
-	u := &mcis.TbK8sNodeGroupReq{}
+	u := &mci.TbK8sNodeGroupReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
 	log.Debug().Msg("[POST K8sNodeGroup]")
 
-	content, err := mcis.AddK8sNodeGroup(nsId, k8sClusterId, u)
+	content, err := mci.AddK8sNodeGroup(nsId, k8sClusterId, u)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -222,7 +222,7 @@ func RestDeleteK8sNodeGroup(c echo.Context) error {
 
 	forceFlag := c.QueryParam("force")
 
-	res, err := mcis.RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, forceFlag)
+	res, err := mci.RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, forceFlag)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
@@ -250,8 +250,8 @@ func RestDeleteK8sNodeGroup(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
 // @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(ng-01)
-// @Param setK8sNodeGroupAutoscalingReq body mcis.TbSetK8sNodeGroupAutoscalingReq true "Details of the TbSetK8sNodeGroupAutoscalingReq object"
-// @Success 200 {object} mcis.TbSetK8sNodeGroupAutoscalingRes
+// @Param setK8sNodeGroupAutoscalingReq body mci.TbSetK8sNodeGroupAutoscalingReq true "Details of the TbSetK8sNodeGroupAutoscalingReq object"
+// @Success 200 {object} mci.TbSetK8sNodeGroupAutoscalingRes
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}/onautoscaling [put]
@@ -261,14 +261,14 @@ func RestPutSetK8sNodeGroupAutoscaling(c echo.Context) error {
 	k8sClusterId := c.Param("k8sClusterId")
 	k8sNodeGroupName := c.Param("k8sNodeGroupName")
 
-	u := &mcis.TbSetK8sNodeGroupAutoscalingReq{}
+	u := &mci.TbSetK8sNodeGroupAutoscalingReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
 	log.Debug().Msg("[PUT K8s Set AutoScaling]")
 
-	content, err := mcis.SetK8sNodeGroupAutoscaling(nsId, k8sClusterId, k8sNodeGroupName, u)
+	content, err := mci.SetK8sNodeGroupAutoscaling(nsId, k8sClusterId, k8sNodeGroupName, u)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -290,8 +290,8 @@ func RestPutSetK8sNodeGroupAutoscaling(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
 // @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(ng-01)
-// @Param changeK8sNodeGroupAutoscaleSizeReq body mcis.TbChangeK8sNodeGroupAutoscaleSizeReq true "Details of the TbChangeK8sNodeGroupAutoscaleSizeReq object"
-// @Success 200 {object} mcis.TbChangeK8sNodeGroupAutoscaleSizeRes
+// @Param changeK8sNodeGroupAutoscaleSizeReq body mci.TbChangeK8sNodeGroupAutoscaleSizeReq true "Details of the TbChangeK8sNodeGroupAutoscaleSizeReq object"
+// @Success 200 {object} mci.TbChangeK8sNodeGroupAutoscaleSizeRes
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}/autoscalesize [put]
@@ -301,14 +301,14 @@ func RestPutChangeK8sNodeGroupAutoscaleSize(c echo.Context) error {
 	k8sClusterId := c.Param("k8sClusterId")
 	k8sNodeGroupName := c.Param("k8sNodeGroupName")
 
-	u := &mcis.TbChangeK8sNodeGroupAutoscaleSizeReq{}
+	u := &mci.TbChangeK8sNodeGroupAutoscaleSizeReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
 	log.Debug().Msg("[PUT K8s Change AutoScale Size]")
 
-	content, err := mcis.ChangeK8sNodeGroupAutoscaleSize(nsId, k8sClusterId, k8sNodeGroupName, u)
+	content, err := mci.ChangeK8sNodeGroupAutoscaleSize(nsId, k8sClusterId, k8sNodeGroupName, u)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -329,7 +329,7 @@ func RestPutChangeK8sNodeGroupAutoscaleSize(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
-// @Success 200 {object} mcis.TbK8sClusterInfo
+// @Success 200 {object} mci.TbK8sClusterInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/k8scluster/{k8sClusterId} [get]
@@ -338,7 +338,7 @@ func RestGetK8sCluster(c echo.Context) error {
 	nsId := c.Param("nsId")
 	k8sClusterId := c.Param("k8sClusterId")
 
-	res, err := mcis.GetK8sCluster(nsId, k8sClusterId)
+	res, err := mci.GetK8sCluster(nsId, k8sClusterId)
 	if err != nil {
 		mapA := map[string]string{"message": "Failed to find the K8sCluster " + k8sClusterId + ": " + err.Error()}
 		return c.JSON(http.StatusNotFound, &mapA)
@@ -349,7 +349,7 @@ func RestGetK8sCluster(c echo.Context) error {
 
 // Response structure for RestGetAllK8sCluster
 type RestGetAllK8sClusterResponse struct {
-	K8sCluster []mcis.TbK8sClusterInfo `json:"cluster"`
+	K8sCluster []mci.TbK8sClusterInfo `json:"cluster"`
 }
 
 // RestGetAllK8sCluster godoc
@@ -378,7 +378,7 @@ func RestGetAllK8sCluster(c echo.Context) error {
 	if optionFlag == "id" {
 		content := common.IdList{}
 		var err error
-		content.IdList, err = mcis.ListK8sClusterId(nsId)
+		content.IdList, err = mci.ListK8sClusterId(nsId)
 		if err != nil {
 			mapA := map[string]string{"message": "Failed to list K8sClusters' ID; " + err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
@@ -387,17 +387,17 @@ func RestGetAllK8sCluster(c echo.Context) error {
 		return c.JSON(http.StatusOK, &content)
 	} else {
 
-		resourceList, err := mcis.ListK8sCluster(nsId, filterKey, filterVal)
+		resourceList, err := mci.ListK8sCluster(nsId, filterKey, filterVal)
 		if err != nil {
 			mapA := map[string]string{"message": "Failed to list K8sClusters; " + err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
 		}
 
 		var content struct {
-			K8sCluster []mcis.TbK8sClusterInfo `json:"K8sClusterInfo"`
+			K8sCluster []mci.TbK8sClusterInfo `json:"K8sClusterInfo"`
 		}
 
-		content.K8sCluster = resourceList.([]mcis.TbK8sClusterInfo) // type assertion (interface{} -> array)
+		content.K8sCluster = resourceList.([]mci.TbK8sClusterInfo) // type assertion (interface{} -> array)
 		return c.JSON(http.StatusOK, &content)
 	}
 }
@@ -422,7 +422,7 @@ func RestDeleteK8sCluster(c echo.Context) error {
 
 	forceFlag := c.QueryParam("force")
 
-	res, err := mcis.DeleteK8sCluster(nsId, k8sClusterId, forceFlag)
+	res, err := mci.DeleteK8sCluster(nsId, k8sClusterId, forceFlag)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
@@ -458,7 +458,7 @@ func RestDeleteAllK8sCluster(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 	subString := c.QueryParam("match")
 
-	output, err := mcis.DeleteAllK8sCluster(nsId, subString, forceFlag)
+	output, err := mci.DeleteAllK8sCluster(nsId, subString, forceFlag)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
@@ -478,7 +478,7 @@ func RestDeleteAllK8sCluster(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
-// @Param upgradeK8sClusterReq body mcis.TbUpgradeK8sClusterReq true "Details of the TbUpgradeK8sClusterReq object"
+// @Param upgradeK8sClusterReq body mci.TbUpgradeK8sClusterReq true "Details of the TbUpgradeK8sClusterReq object"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -488,14 +488,14 @@ func RestPutUpgradeK8sCluster(c echo.Context) error {
 	nsId := c.Param("nsId")
 	k8sClusterId := c.Param("k8sClusterId")
 
-	u := &mcis.TbUpgradeK8sClusterReq{}
+	u := &mci.TbUpgradeK8sClusterReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
 	log.Debug().Msg("[PUT Upgrade K8sCluster]")
 
-	content, err := mcis.UpgradeK8sCluster(nsId, k8sClusterId, u)
+	content, err := mci.UpgradeK8sCluster(nsId, k8sClusterId, u)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")

@@ -11,8 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to handle REST API for mcis
-package mcis
+// Package mci is to handle REST API for mci
+package mci
 
 import (
 	"encoding/json"
@@ -24,29 +24,29 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	terrariumModel "github.com/cloud-barista/mc-terrarium/pkg/api/rest/model"
 	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
 
-// RestGetSitesInMcis godoc
-// @ID GetSitesInMcis
-// @Summary Get sites in MCIS
-// @Description Get sites in MCIS
-// @Tags [VPN] Sites in MCIS
+// RestGetSitesInMci godoc
+// @ID GetSitesInMci
+// @Summary Get sites in MCI
+// @Description Get sites in MCI
+// @Tags [VPN] Sites in MCI
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Success 200 {object} model.SitesInfo "OK"
 // @Failure 400 {object} common.SimpleMsg "Bad Request"
 // @Failure 500 {object} common.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} common.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/mcis/{mcisId}/site [get]
-func RestGetSitesInMcis(c echo.Context) error {
+// @Router /ns/{nsId}/mci/{mciId}/site [get]
+func RestGetSitesInMci(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	if nsId == "" {
@@ -59,9 +59,9 @@ func RestGetSitesInMcis(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, res)
 	}
 
-	mcisId := c.Param("mcisId")
-	if mcisId == "" {
-		err := fmt.Errorf("invalid request, MCIS ID (mcisId: %s) is required", mcisId)
+	mciId := c.Param("mciId")
+	if mciId == "" {
+		err := fmt.Errorf("invalid request, MCI ID (mciId: %s) is required", mciId)
 		log.Warn().Msg(err.Error())
 		res := common.SimpleMsg{
 			Message: err.Error(),
@@ -69,7 +69,7 @@ func RestGetSitesInMcis(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, res)
 	}
 
-	SitesInfo, err := ExtractSitesInfoFromMcisInfo(nsId, mcisId)
+	SitesInfo, err := ExtractSitesInfoFromMciInfo(nsId, mciId)
 	if err != nil {
 		log.Err(err).Msg("")
 		res := common.SimpleMsg{
@@ -81,9 +81,9 @@ func RestGetSitesInMcis(c echo.Context) error {
 	return c.JSON(http.StatusOK, SitesInfo)
 }
 
-func ExtractSitesInfoFromMcisInfo(nsId, mcisId string) (*model.SitesInfo, error) {
-	// Get MCIS info
-	mcisInfo, err := mcis.GetMcisInfo(nsId, mcisId)
+func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
+	// Get MCI info
+	mciInfo, err := mci.GetMciInfo(nsId, mciId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return nil, err
@@ -93,13 +93,13 @@ func ExtractSitesInfoFromMcisInfo(nsId, mcisId string) (*model.SitesInfo, error)
 	checkedVpcs := make(map[string]bool)
 
 	// Newly create the SitesInfo structure
-	sitesInfo := model.NewSiteInfo(nsId, mcisId)
+	sitesInfo := model.NewSiteInfo(nsId, mciId)
 
 	sitesInAws := []model.SiteDetail{}
 	sitesInAzure := []model.SiteDetail{}
 	sitesInGcp := []model.SiteDetail{}
 
-	for _, vm := range mcisInfo.Vm {
+	for _, vm := range mciInfo.Vm {
 
 		vNetId := vm.VNetId
 		if vNetId == "" {
@@ -215,14 +215,14 @@ func ExtractSitesInfoFromMcisInfo(nsId, mcisId string) (*model.SitesInfo, error)
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param vpnReq body model.RestPostVpnRequest true "Sites info for VPN configuration"
 // @Success 200 {object} common.SimpleMsg "OK"
 // @Failure 400 {object} common.SimpleMsg "Bad Request"
 // @Failure 500 {object} common.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} common.SimpleMsg "Service Unavailable"
-// @Router /stream-response/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId} [post]
+// @Router /stream-response/ns/{nsId}/mci/{mciId}/vpn/{vpnId} [post]
 func RestPostSiteToSiteVpn(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -235,9 +235,9 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, res)
 	}
 
-	mcisId := c.Param("mcisId")
-	if mcisId == "" {
-		err := fmt.Errorf("invalid request, MCIS ID (mcisId: %s) is required", mcisId)
+	mciId := c.Param("mciId")
+	if mciId == "" {
+		err := fmt.Errorf("invalid request, MCI ID (mciId: %s) is required", mciId)
 		log.Warn().Msg(err.Error())
 		res := common.SimpleMsg{
 			Message: err.Error(),
@@ -288,7 +288,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 	apiPass := os.Getenv("TB_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
-	trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
+	trId := fmt.Sprintf("%s-%s-%s", nsId, mciId, vpnId)
 
 	// set endpoint
 	epTerrarium := common.TerrariumRestUrl
@@ -768,13 +768,13 @@ func whichCspSet(csp1, csp2 string) string {
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Success 200 {object} common.SimpleMsg "OK"
 // @Failure 400 {object} common.SimpleMsg "Bad Request"
 // @Failure 500 {object} common.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} common.SimpleMsg "Service Unavailable"
-// @Router /stream-response/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId} [delete]
+// @Router /stream-response/ns/{nsId}/mci/{mciId}/vpn/{vpnId} [delete]
 func RestDeleteSiteToSiteVpn(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -787,9 +787,9 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, res)
 	}
 
-	mcisId := c.Param("mcisId")
-	if mcisId == "" {
-		err := fmt.Errorf("invalid request, MCIS ID (mcisId: %s) is required", mcisId)
+	mciId := c.Param("mciId")
+	if mciId == "" {
+		err := fmt.Errorf("invalid request, MCI ID (mciId: %s) is required", mciId)
 		log.Warn().Msg(err.Error())
 		res := common.SimpleMsg{
 			Message: err.Error(),
@@ -818,7 +818,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	apiPass := os.Getenv("TB_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
-	trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
+	trId := fmt.Sprintf("%s-%s-%s", nsId, mciId, vpnId)
 
 	// set endpoint
 	epTerrarium := common.TerrariumRestUrl
@@ -1012,14 +1012,14 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param vpnReq body model.RestPostVpnGcpToAwsRequest true "Resources info for VPN tunnel configuration between GCP and AWS"
 // @Success 200 {object} common.SimpleMsg "OK"
 // @Failure 400 {object} common.SimpleMsg "Bad Request"
 // @Failure 500 {object} common.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} common.SimpleMsg "Service Unavailable"
-// @Router /stream-response/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId} [put]
+// @Router /stream-response/ns/{nsId}/mci/{mciId}/vpn/{vpnId} [put]
 func RestPutSiteToSiteVpn(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -1032,9 +1032,9 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, res)
 	}
 
-	mcisId := c.Param("mcisId")
-	if mcisId == "" {
-		err := fmt.Errorf("invalid request, MCIS ID (mcisId: %s) is required", mcisId)
+	mciId := c.Param("mciId")
+	if mciId == "" {
+		err := fmt.Errorf("invalid request, MCI ID (mciId: %s) is required", mciId)
 		log.Warn().Msg(err.Error())
 		res := common.SimpleMsg{
 			Message: err.Error(),
@@ -1075,7 +1075,7 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 	// client.SetBasicAuth(apiUser, apiPass)
 
 	// epTerrarium := "http://localhost:8888/terrarium"
-	// trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
+	// trId := fmt.Sprintf("%s-%s-%s", nsId, mciId, vpnId)
 
 	// // check readyz
 	// method := "GET"
@@ -1123,14 +1123,14 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param detail query string false "Resource info by detail (refined, raw)" default(refined)
 // @Success 200 {object} model.Response "OK"
 // @Failure 400 {object} model.Response "Bad Request"
 // @Failure 500 {object} model.Response "Internal Server Error"
 // @Failure 503 {object} model.Response "Service Unavailable"
-// @Router /ns/{nsId}/mcis/{mcisId}/vpn/{vpnId} [get]
+// @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [get]
 func RestGetSiteToSiteVpn(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -1144,9 +1144,9 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, res)
 	}
 
-	mcisId := c.Param("mcisId")
-	if mcisId == "" {
-		err := fmt.Errorf("invalid request, MCIS ID (mcisId: %s) is required", mcisId)
+	mciId := c.Param("mciId")
+	if mciId == "" {
+		err := fmt.Errorf("invalid request, MCI ID (mciId: %s) is required", mciId)
 		log.Warn().Msg(err.Error())
 		res := model.Response{
 			Success: false,
@@ -1196,7 +1196,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 	apiPass := os.Getenv("TB_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
-	trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
+	trId := fmt.Sprintf("%s-%s-%s", nsId, mciId, vpnId)
 
 	// set endpoint
 	epTerrarium := common.TerrariumRestUrl
@@ -1314,14 +1314,14 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param requestId path string true "Request ID"
 // @Success 200 {object} model.Response "OK"
 // @Failure 400 {object} model.Response "Bad Request"
 // @Failure 500 {object} model.Response "Internal Server Error"
 // @Failure 503 {object} model.Response "Service Unavailable"
-// @Router /ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/request/{requestId} [get]
+// @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId}/request/{requestId} [get]
 func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -1335,9 +1335,9 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, res)
 	}
 
-	mcisId := c.Param("mcisId")
-	if mcisId == "" {
-		err := fmt.Errorf("invalid request, MCIS ID (mcisId: %s) is required", mcisId)
+	mciId := c.Param("mciId")
+	if mciId == "" {
+		err := fmt.Errorf("invalid request, MCI ID (mciId: %s) is required", mciId)
 		log.Warn().Msg(err.Error())
 		res := model.Response{
 			Success: false,
@@ -1374,7 +1374,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	apiPass := os.Getenv("TB_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
-	trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
+	trId := fmt.Sprintf("%s-%s-%s", nsId, mciId, vpnId)
 
 	// set endpoint
 	epTerrarium := common.TerrariumRestUrl

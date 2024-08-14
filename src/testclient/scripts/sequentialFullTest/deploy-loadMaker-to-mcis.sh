@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## deploy-loadMaker-mcis "
+echo "## deploy-loadMaker-mci "
 echo "####################################################################"
 
 source ../init.sh
@@ -9,7 +9,7 @@ source ../init.sh
 CMD="wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/runLoadMaker.sh -O ~/runLoadMaker.sh; chmod +x ~/runLoadMaker.sh; sudo ~/runLoadMaker.sh"
 echo "CMD: $CMD"
 
-VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "[${CMD}]"
 	}

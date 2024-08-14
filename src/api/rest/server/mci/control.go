@@ -11,40 +11,40 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to handle REST API for mcis
-package mcis
+// Package mci is to handle REST API for mci
+package mci
 
 import (
 	"fmt"
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 	"github.com/labstack/echo/v4"
 )
 
-// RestGetControlMcis godoc
-// @ID GetControlMcis
-// @Summary Control the lifecycle of MCIS (refine, suspend, resume, reboot, terminate)
-// @Description Control the lifecycle of MCIS (refine, suspend, resume, reboot, terminate)
-// @Tags [Infra service] MCIS Control lifecycle
+// RestGetControlMci godoc
+// @ID GetControlMci
+// @Summary Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)
+// @Description Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)
+// @Tags [Infra service] MCI Control lifecycle
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param action query string true "Action to MCIS" Enums(suspend, resume, reboot, terminate, refine, continue, withdraw)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param action query string true "Action to MCI" Enums(suspend, resume, reboot, terminate, refine, continue, withdraw)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/control/mcis/{mcisId} [get]
-func RestGetControlMcis(c echo.Context) error {
+// @Router /ns/{nsId}/control/mci/{mciId} [get]
+func RestGetControlMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 
 	action := c.QueryParam("action")
 	force := c.QueryParam("force")
@@ -56,7 +56,7 @@ func RestGetControlMcis(c echo.Context) error {
 
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" || action == "continue" || action == "withdraw" {
 
-		resultString, err := mcis.HandleMcisAction(nsId, mcisId, action, forceOption)
+		resultString, err := mci.HandleMciAction(nsId, mciId, action, forceOption)
 		if err != nil {
 			return common.EndRequestWithLog(c, reqID, err, returnObj)
 		}
@@ -69,29 +69,29 @@ func RestGetControlMcis(c echo.Context) error {
 	}
 }
 
-// RestGetControlMcisVm godoc
-// @ID GetControlMcisVm
+// RestGetControlMciVm godoc
+// @ID GetControlMciVm
 // @Summary Control the lifecycle of VM (suspend, resume, reboot, terminate)
 // @Description Control the lifecycle of VM (suspend, resume, reboot, terminate)
-// @Tags [Infra service] MCIS Control lifecycle
+// @Tags [Infra service] MCI Control lifecycle
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
-// @Param action query string true "Action to MCIS" Enums(suspend, resume, reboot, terminate)
+// @Param action query string true "Action to MCI" Enums(suspend, resume, reboot, terminate)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/control/mcis/{mcisId}/vm/{vmId} [get]
-func RestGetControlMcisVm(c echo.Context) error {
+// @Router /ns/{nsId}/control/mci/{mciId}/vm/{vmId} [get]
+func RestGetControlMciVm(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
 
 	action := c.QueryParam("action")
@@ -105,7 +105,7 @@ func RestGetControlMcisVm(c echo.Context) error {
 
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" {
 
-		resultString, err := mcis.HandleMcisVmAction(nsId, mcisId, vmId, action, forceOption)
+		resultString, err := mci.HandleMciVmAction(nsId, mciId, vmId, action, forceOption)
 		if err != nil {
 			return common.EndRequestWithLog(c, reqID, err, returnObj)
 		}
@@ -118,36 +118,36 @@ func RestGetControlMcisVm(c echo.Context) error {
 	}
 }
 
-// RestPostMcisVmSnapshot godoc
-// @ID PostMcisVmSnapshot
+// RestPostMciVmSnapshot godoc
+// @ID PostMciVmSnapshot
 // @Summary Snapshot VM and create a Custom Image Object using the Snapshot
 // @Description Snapshot VM and create a Custom Image Object using the Snapshot
 // @Tags [Infra resource] Snapshot and Custom Image Management
 // @Accept  json
 // @Produce  json
-// @Param vmSnapshotReq body mcis.TbVmSnapshotReq true "Request body to create VM snapshot"
+// @Param vmSnapshotReq body mci.TbVmSnapshotReq true "Request body to create VM snapshot"
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Success 200 {object} mcir.TbCustomImageInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/snapshot [post]
-func RestPostMcisVmSnapshot(c echo.Context) error {
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/snapshot [post]
+func RestPostMciVmSnapshot(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
+	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
 
-	u := &mcis.TbVmSnapshotReq{}
+	u := &mci.TbVmSnapshotReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
-	result, err := mcis.CreateVmSnapshot(nsId, mcisId, vmId, u.Name)
+	result, err := mci.CreateVmSnapshot(nsId, mciId, vmId, u.Name)
 	if err != nil {
 		return common.EndRequestWithLog(c, reqID, err, common.SimpleMsg{Message: "Failed to create a snapshot"})
 	}

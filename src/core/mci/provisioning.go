@@ -11,8 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mcis is to manage multi-cloud infra service
-package mcis
+// Package mci is to manage multi-cloud infra service
+package mci
 
 import (
 	"encoding/json"
@@ -98,17 +98,17 @@ type RegionInfo struct {
 	Zone   string
 }
 
-// TbMcisReq is sturct for requirements to create MCIS
-type TbMcisReq struct {
-	Name string `json:"name" validate:"required" example:"mcis01"`
+// TbMciReq is sturct for requirements to create MCI
+type TbMciReq struct {
+	Name string `json:"name" validate:"required" example:"mci01"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"no" default:"yes" enums:"yes,no"` // yes or no
 
-	// Label is for describing the mcis in a keyword (any string can be used)
+	// Label is for describing the mci in a keyword (any string can be used)
 	Label string `json:"label" example:"custom tag" default:""`
 
-	// SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
+	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"" default:""`
 
 	PlacementAlgo string `json:"placementAlgo,omitempty"`
@@ -117,10 +117,10 @@ type TbMcisReq struct {
 	Vm []TbVmReq `json:"vm" validate:"required"`
 }
 
-// TbMcisReqStructLevelValidation is func to validate fields in TbMcisReqStruct
-func TbMcisReqStructLevelValidation(sl validator.StructLevel) {
+// TbMciReqStructLevelValidation is func to validate fields in TbMciReqStruct
+func TbMciReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(TbMcisReq)
+	u := sl.Current().Interface().(TbMciReq)
 
 	err := common.CheckString(u.Name)
 	if err != nil {
@@ -129,8 +129,8 @@ func TbMcisReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
-// TbMcisInfo is struct for MCIS info
-type TbMcisInfo struct {
+// TbMciInfo is struct for MCI info
+type TbMciInfo struct {
 	Id           string          `json:"id"`
 	Name         string          `json:"name"`
 	Status       string          `json:"status"`
@@ -144,10 +144,10 @@ type TbMcisInfo struct {
 	// ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)
 	ConfigureCloudAdaptiveNetwork string `json:"configureCloudAdaptiveNetwork" example:"yes" default:"no" enums:"yes,no"` // yes or no
 
-	// Label is for describing the mcis in a keyword (any string can be used)
+	// Label is for describing the mci in a keyword (any string can be used)
 	Label string `json:"label" example:"User custom label"`
 
-	// SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
+	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
 
 	// Latest system message such as error message
@@ -199,17 +199,17 @@ type TbScaleOutSubGroupReq struct {
 	//tobe added accoring to new future capability
 }
 
-// TbMcisDynamicReq is sturct for requirements to create MCIS dynamically (with default resource option)
-type TbMcisDynamicReq struct {
-	Name string `json:"name" validate:"required" example:"mcis01"`
+// TbMciDynamicReq is sturct for requirements to create MCI dynamically (with default resource option)
+type TbMciDynamicReq struct {
+	Name string `json:"name" validate:"required" example:"mci01"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
 
-	// Label is for describing the mcis in a keyword (any string can be used)
+	// Label is for describing the mci in a keyword (any string can be used)
 	Label string `json:"label" example:"DynamicVM" default:""`
 
-	// SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
+	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"" default:""`
 
 	Description string `json:"description" example:"Made in CB-TB"`
@@ -243,14 +243,14 @@ type TbVmDynamicReq struct {
 	ConnectionName string `json:"connectionName,omitempty" default:""`
 }
 
-// McisConnectionConfigCandidatesReq is struct for a request to check requirements to create a new MCIS instance dynamically (with default resource option)
-type McisConnectionConfigCandidatesReq struct {
+// MciConnectionConfigCandidatesReq is struct for a request to check requirements to create a new MCI instance dynamically (with default resource option)
+type MciConnectionConfigCandidatesReq struct {
 	// CommonSpec is field for id of a spec in common namespace
 	CommonSpecs []string `json:"commonSpec" validate:"required" example:"aws+ap-northeast-2+t2.small,gcp+us-west1+g1-small"`
 }
 
-// CheckMcisDynamicReqInfo is struct to check requirements to create a new MCIS instance dynamically (with default resource option)
-type CheckMcisDynamicReqInfo struct {
+// CheckMciDynamicReqInfo is struct to check requirements to create a new MCI instance dynamically (with default resource option)
+type CheckMciDynamicReqInfo struct {
 	ReqCheck []CheckVmDynamicReqInfo `json:"reqCheck" validate:"required"`
 }
 
@@ -403,23 +403,23 @@ type TbVmInfo struct {
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail,omitempty"`
 }
 
-// McisAccessInfo is struct to retrieve overall access information of a MCIS
-type McisAccessInfo struct {
-	McisId                 string
-	McisNlbListener        *McisAccessInfo `json:"mcisNlbListener,omitempty"`
-	McisSubGroupAccessInfo []McisSubGroupAccessInfo
+// MciAccessInfo is struct to retrieve overall access information of a MCI
+type MciAccessInfo struct {
+	MciId                 string
+	MciNlbListener        *MciAccessInfo `json:"mciNlbListener,omitempty"`
+	MciSubGroupAccessInfo []MciSubGroupAccessInfo
 }
 
-// McisSubGroupAccessInfo is struct for McisSubGroupAccessInfo
-type McisSubGroupAccessInfo struct {
-	SubGroupId       string
-	NlbListener      *TbNLBListenerInfo `json:"nlbListener,omitempty"`
-	BastionVmId      string
-	McisVmAccessInfo []McisVmAccessInfo
+// MciSubGroupAccessInfo is struct for MciSubGroupAccessInfo
+type MciSubGroupAccessInfo struct {
+	SubGroupId      string
+	NlbListener     *TbNLBListenerInfo `json:"nlbListener,omitempty"`
+	BastionVmId     string
+	MciVmAccessInfo []MciVmAccessInfo
 }
 
-// McisVmAccessInfo is struct for McisVmAccessInfo
-type McisVmAccessInfo struct {
+// MciVmAccessInfo is struct for MciVmAccessInfo
+type MciVmAccessInfo struct {
 	VmId           string `json:"vmId"`
 	PublicIP       string `json:"publicIP"`
 	PrivateIP      string `json:"privateIP"`
@@ -474,8 +474,8 @@ type StatusCountInfo struct {
 	CountUndefined int `json:"countUndefined"`
 }
 
-// McisRecommendReq is struct for McisRecommendReq
-type McisRecommendReq struct {
+// MciRecommendReq is struct for MciRecommendReq
+type MciRecommendReq struct {
 	VmReq          []TbVmRecommendReq `json:"vmReq"`
 	PlacementAlgo  string             `json:"placementAlgo"`
 	PlacementParam []common.KeyValue  `json:"placementParam"`
@@ -510,12 +510,12 @@ type TbVmRecommendInfo struct {
 	PlacementParam []common.KeyValue `json:"placementParam"`
 }
 
-var holdingMcisMap sync.Map
+var holdingMciMap sync.Map
 
-// MCIS and VM Provisioning
+// MCI and VM Provisioning
 
-// CreateMcisVm is func to post (create) McisVm
-func CreateMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, error) {
+// CreateMciVm is func to post (create) MciVm
+func CreateMciVm(nsId string, mciId string, vmInfoData *TbVmInfo) (*TbVmInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -524,7 +524,7 @@ func CreateMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, 
 		return temp, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
 		temp := &TbVmInfo{}
 		log.Error().Err(err).Msg("")
@@ -536,7 +536,7 @@ func CreateMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, 
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	check, _ := CheckVm(nsId, mcisId, vmInfoData.Name)
+	check, _ := CheckVm(nsId, mciId, vmInfoData.Name)
 
 	if check {
 		temp := &TbVmInfo{}
@@ -556,13 +556,13 @@ func CreateMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, 
 	wg.Add(1)
 
 	option := "create"
-	go AddVmToMcis(&wg, nsId, mcisId, vmInfoData, option)
+	go AddVmToMci(&wg, nsId, mciId, vmInfoData, option)
 
 	wg.Wait()
 
-	vmStatus, err := FetchVmStatus(nsId, mcisId, vmInfoData.Id)
+	vmStatus, err := FetchVmStatus(nsId, mciId, vmInfoData.Id)
 	if err != nil {
-		return nil, fmt.Errorf("Cannot find " + common.GenMcisKey(nsId, mcisId, vmInfoData.Id))
+		return nil, fmt.Errorf("Cannot find " + common.GenMciKey(nsId, mciId, vmInfoData.Id))
 	}
 
 	vmInfoData.Status = vmStatus.Status
@@ -571,11 +571,11 @@ func CreateMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, 
 
 	// Install CB-Dragonfly monitoring agent
 
-	mcisTmp, _ := GetMcisObject(nsId, mcisId)
+	mciTmp, _ := GetMciObject(nsId, mciId)
 
-	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisId, mcisTmp.InstallMonAgent)
+	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mciId, mciTmp.InstallMonAgent)
 
-	if !strings.Contains(mcisTmp.InstallMonAgent, "no") {
+	if !strings.Contains(mciTmp.InstallMonAgent, "no") {
 
 		// Sleep for 20 seconds for a safe DF agent installation.
 		fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe CB-Dragonfly Agent installation.\n\n")
@@ -585,31 +585,31 @@ func CreateMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, 
 		if check != nil {
 			fmt.Printf("\n\n[Warning] CB-Dragonfly is not available\n\n")
 		} else {
-			reqToMon := &McisCmdReq{}
-			reqToMon.UserName = "cb-user" // this MCIS user name is temporal code. Need to improve.
+			reqToMon := &MciCmdReq{}
+			reqToMon.UserName = "cb-user" // this MCI user name is temporal code. Need to improve.
 
-			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
-			content, err := InstallMonitorAgentToMcis(nsId, mcisId, common.StrMCIS, reqToMon)
+			fmt.Printf("\n[InstallMonitorAgentToMci]\n\n")
+			content, err := InstallMonitorAgentToMci(nsId, mciId, common.StrMCI, reqToMon)
 			if err != nil {
 				log.Error().Err(err).Msg("")
-				//mcisTmp.InstallMonAgent = "no"
+				//mciTmp.InstallMonAgent = "no"
 			}
 			common.PrintJsonPretty(content)
-			//mcisTmp.InstallMonAgent = "yes"
+			//mciTmp.InstallMonAgent = "yes"
 		}
 	}
 
 	return vmInfoData, nil
 }
 
-// ScaleOutMcisSubGroup is func to create MCIS groupVM
-func ScaleOutMcisSubGroup(nsId string, mcisId string, subGroupId string, numVMsToAdd string) (*TbMcisInfo, error) {
-	vmIdList, err := ListVmBySubGroup(nsId, mcisId, subGroupId)
+// ScaleOutMciSubGroup is func to create MCI groupVM
+func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToAdd string) (*TbMciInfo, error) {
+	vmIdList, err := ListVmBySubGroup(nsId, mciId, subGroupId)
 	if err != nil {
-		temp := &TbMcisInfo{}
+		temp := &TbMciInfo{}
 		return temp, err
 	}
-	vmObj, err := GetVmObject(nsId, mcisId, vmIdList[0])
+	vmObj, err := GetVmObject(nsId, mciId, vmIdList[0])
 
 	vmTemplate := &TbVmReq{}
 
@@ -630,28 +630,28 @@ func ScaleOutMcisSubGroup(nsId string, mcisId string, subGroupId string, numVMsT
 
 	vmTemplate.SubGroupSize = numVMsToAdd
 
-	result, err := CreateMcisGroupVm(nsId, mcisId, vmTemplate, true)
+	result, err := CreateMciGroupVm(nsId, mciId, vmTemplate, true)
 	if err != nil {
-		temp := &TbMcisInfo{}
+		temp := &TbMciInfo{}
 		return temp, err
 	}
 	return result, nil
 
 }
 
-// CreateMcisGroupVm is func to create MCIS groupVM
-func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGroup bool) (*TbMcisInfo, error) {
+// CreateMciGroupVm is func to create MCI groupVM
+func CreateMciGroupVm(nsId string, mciId string, vmRequest *TbVmReq, newSubGroup bool) (*TbMciInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := &TbMcisInfo{}
+		temp := &TbMciInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
-	err = common.CheckString(mcisId)
+	err = common.CheckString(mciId)
 	if err != nil {
-		temp := &TbMcisInfo{}
+		temp := &TbMciInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
@@ -686,10 +686,10 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 		return nil, err
 	}
 
-	mcisTmp, err := GetMcisObject(nsId, mcisId)
+	mciTmp, err := GetMciObject(nsId, mciId)
 
 	if err != nil {
-		temp := &TbMcisInfo{}
+		temp := &TbMciInfo{}
 		return temp, err
 	}
 
@@ -717,22 +717,22 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 	err = common.CheckString(tentativeVmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &TbMcisInfo{}, err
+		return &TbMciInfo{}, err
 	}
 
 	if subGroupSize > 0 {
 
-		log.Info().Msg("Create MCIS subGroup object")
+		log.Info().Msg("Create MCI subGroup object")
 
 		subGroupInfoData := TbSubGroupInfo{}
 		subGroupInfoData.Id = tentativeVmId
 		subGroupInfoData.Name = tentativeVmId
 		subGroupInfoData.SubGroupSize = vmRequest.SubGroupSize
 
-		key := common.GenMcisSubGroupKey(nsId, mcisId, vmRequest.Name)
+		key := common.GenMciSubGroupKey(nsId, mciId, vmRequest.Name)
 		keyValue, err := kvstore.GetKv(key)
 		if err != nil {
-			err = fmt.Errorf("In CreateMcisGroupVm(); kvstore.GetKv(): " + err.Error())
+			err = fmt.Errorf("In CreateMciGroupVm(); kvstore.GetKv(): " + err.Error())
 			log.Error().Err(err).Msg("")
 		}
 		if keyValue != (kvstore.KeyValue{}) {
@@ -740,7 +740,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 				json.Unmarshal([]byte(keyValue.Value), &subGroupInfoData)
 				existingVmSize, err := strconv.Atoi(subGroupInfoData.SubGroupSize)
 				if err != nil {
-					err = fmt.Errorf("In CreateMcisGroupVm(); kvstore.GetKv(): " + err.Error())
+					err = fmt.Errorf("In CreateMciGroupVm(); kvstore.GetKv(): " + err.Error())
 					log.Error().Err(err).Msg("")
 				}
 				// add the number of existing VMs in the SubGroup with requested number for additions
@@ -765,7 +765,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 		// check stored subGroup object
 		keyValue, err = kvstore.GetKv(key)
 		if err != nil {
-			err = fmt.Errorf("In CreateMcisGroupVm(); kvstore.GetKv(): " + err.Error())
+			err = fmt.Errorf("In CreateMciGroupVm(); kvstore.GetKv(): " + err.Error())
 			log.Error().Err(err).Msg("")
 			// return nil, err
 		}
@@ -823,33 +823,33 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 
 		wg.Add(1)
 		// option != register
-		go AddVmToMcis(&wg, nsId, mcisId, &vmInfoData, "")
+		go AddVmToMci(&wg, nsId, mciId, &vmInfoData, "")
 
 	}
 
 	wg.Wait()
 
-	//Update MCIS status
+	//Update MCI status
 
-	mcisTmp, err = GetMcisObject(nsId, mcisId)
+	mciTmp, err = GetMciObject(nsId, mciId)
 	if err != nil {
-		temp := &TbMcisInfo{}
+		temp := &TbMciInfo{}
 		return temp, err
 	}
 
-	mcisStatusTmp, _ := GetMcisStatus(nsId, mcisId)
+	mciStatusTmp, _ := GetMciStatus(nsId, mciId)
 
-	mcisTmp.Status = mcisStatusTmp.Status
+	mciTmp.Status = mciStatusTmp.Status
 
-	if mcisTmp.TargetStatus == mcisTmp.Status {
-		mcisTmp.TargetStatus = StatusComplete
-		mcisTmp.TargetAction = ActionComplete
+	if mciTmp.TargetStatus == mciTmp.Status {
+		mciTmp.TargetStatus = StatusComplete
+		mciTmp.TargetAction = ActionComplete
 	}
-	UpdateMcisInfo(nsId, mcisTmp)
+	UpdateMciInfo(nsId, mciTmp)
 
 	// Install CB-Dragonfly monitoring agent
 
-	if !strings.Contains(mcisTmp.InstallMonAgent, "no") {
+	if !strings.Contains(mciTmp.InstallMonAgent, "no") {
 
 		// Sleep for 60 seconds for a safe DF agent installation.
 		fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation.\n\n")
@@ -859,39 +859,39 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 		if check != nil {
 			fmt.Printf("\n\n[Warning] CB-Dragonfly is not available\n\n")
 		} else {
-			reqToMon := &McisCmdReq{}
-			reqToMon.UserName = "cb-user" // this MCIS user name is temporal code. Need to improve.
+			reqToMon := &MciCmdReq{}
+			reqToMon.UserName = "cb-user" // this MCI user name is temporal code. Need to improve.
 
-			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
-			content, err := InstallMonitorAgentToMcis(nsId, mcisId, common.StrMCIS, reqToMon)
+			fmt.Printf("\n[InstallMonitorAgentToMci]\n\n")
+			content, err := InstallMonitorAgentToMci(nsId, mciId, common.StrMCI, reqToMon)
 			if err != nil {
 				log.Error().Err(err).Msg("")
-				//mcisTmp.InstallMonAgent = "no"
+				//mciTmp.InstallMonAgent = "no"
 			}
 			common.PrintJsonPretty(content)
-			//mcisTmp.InstallMonAgent = "yes"
+			//mciTmp.InstallMonAgent = "yes"
 		}
 	}
 
-	vmList, err := ListVmBySubGroup(nsId, mcisId, tentativeVmId)
+	vmList, err := ListVmBySubGroup(nsId, mciId, tentativeVmId)
 
 	if err != nil {
-		mcisTmp.SystemMessage = err.Error()
+		mciTmp.SystemMessage = err.Error()
 	}
 	if vmList != nil {
-		mcisTmp.NewVmList = vmList
+		mciTmp.NewVmList = vmList
 	}
 
-	return &mcisTmp, nil
+	return &mciTmp, nil
 
 }
 
-// CreateMcis is func to create MCIS obeject and deploy requested VMs (register CSP native VM with option=register)
-func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error) {
+// CreateMci is func to create MCI obeject and deploy requested VMs (register CSP native VM with option=register)
+func CreateMci(nsId string, req *TbMciReq, option string) (*TbMciInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := &TbMcisInfo{}
+		temp := &TbMciInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
@@ -906,11 +906,11 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 		return nil, err
 	}
 
-	// skip mcis id checking for option=register
+	// skip mci id checking for option=register
 	if option != "register" {
-		check, _ := CheckMcis(nsId, req.Name)
+		check, _ := CheckMci(nsId, req.Name)
 		if check {
-			err := fmt.Errorf("The mcis " + req.Name + " already exists.")
+			err := fmt.Errorf("The mci " + req.Name + " already exists.")
 			return nil, err
 		}
 	} else {
@@ -920,14 +920,14 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	targetAction := ActionCreate
 	targetStatus := StatusRunning
 
-	mcisId := req.Name
+	mciId := req.Name
 	vmRequest := req.Vm
 
-	log.Info().Msg("Create MCIS object")
-	key := common.GenMcisKey(nsId, mcisId, "")
+	log.Info().Msg("Create MCI object")
+	key := common.GenMciKey(nsId, mciId, "")
 	mapA := map[string]string{
-		"id":              mcisId,
-		"name":            mcisId,
+		"id":              mciId,
+		"name":            mciId,
 		"description":     req.Description,
 		"status":          StatusCreating,
 		"targetAction":    targetAction,
@@ -938,14 +938,14 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	}
 	val, err := json.Marshal(mapA)
 	if err != nil {
-		err := fmt.Errorf("System Error: CreateMcis json.Marshal(mapA) Error")
+		err := fmt.Errorf("System Error: CreateMci json.Marshal(mapA) Error")
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	err = kvstore.Put(key, string(val))
 	if err != nil {
-		err := fmt.Errorf("System Error: CreateMcis kvstore.Put Error")
+		err := fmt.Errorf("System Error: CreateMci kvstore.Put Error")
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
@@ -955,31 +955,31 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 		err = common.CheckString(k.Name)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return &TbMcisInfo{}, err
+			return &TbMciInfo{}, err
 		}
 	}
 
-	// hold option will hold the MCIS creation process until the user releases it.
+	// hold option will hold the MCI creation process until the user releases it.
 	if option == "hold" {
-		key := common.GenMcisKey(nsId, mcisId, "")
-		holdingMcisMap.Store(key, "holding")
+		key := common.GenMciKey(nsId, mciId, "")
+		holdingMciMap.Store(key, "holding")
 		for {
-			value, ok := holdingMcisMap.Load(key)
+			value, ok := holdingMciMap.Load(key)
 			if !ok {
 				break
 			}
 			if value == "continue" {
-				holdingMcisMap.Delete(key)
+				holdingMciMap.Delete(key)
 				break
 			} else if value == "withdraw" {
-				holdingMcisMap.Delete(key)
-				DelMcis(nsId, mcisId, "force")
-				err := fmt.Errorf("Withdrawed MCIS creation")
+				holdingMciMap.Delete(key)
+				DelMci(nsId, mciId, "force")
+				err := fmt.Errorf("Withdrawed MCI creation")
 				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 
-			log.Info().Msgf("MCIS: %s (holding)", key)
+			log.Info().Msgf("MCI: %s (holding)", key)
 			time.Sleep(5 * time.Second)
 		}
 		option = "create"
@@ -1001,8 +1001,8 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 
 		if subGroupSize > 0 {
 
-			log.Info().Msg("Create MCIS subGroup object")
-			key := common.GenMcisSubGroupKey(nsId, mcisId, k.Name)
+			log.Info().Msg("Create MCI subGroup object")
+			key := common.GenMciSubGroupKey(nsId, mciId, k.Name)
 
 			subGroupInfoData := TbSubGroupInfo{}
 			subGroupInfoData.Id = common.ToLower(k.Name)
@@ -1072,83 +1072,83 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 			time.Sleep(time.Duration(i) * time.Second)
 
 			wg.Add(1)
-			go AddVmToMcis(&wg, nsId, mcisId, &vmInfoData, option)
-			//AddVmToMcis(nsId, req.Id, vmInfoData)
+			go AddVmToMci(&wg, nsId, mciId, &vmInfoData, option)
+			//AddVmToMci(nsId, req.Id, vmInfoData)
 
 		}
 	}
 	wg.Wait()
 
-	mcisTmp, err := GetMcisObject(nsId, mcisId)
+	mciTmp, err := GetMciObject(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	mcisStatusTmp, err := GetMcisStatus(nsId, mcisId)
+	mciStatusTmp, err := GetMciStatus(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	mcisTmp.Status = mcisStatusTmp.Status
+	mciTmp.Status = mciStatusTmp.Status
 
-	if mcisTmp.TargetStatus == mcisTmp.Status {
-		mcisTmp.TargetStatus = StatusComplete
-		mcisTmp.TargetAction = ActionComplete
+	if mciTmp.TargetStatus == mciTmp.Status {
+		mciTmp.TargetStatus = StatusComplete
+		mciTmp.TargetAction = ActionComplete
 	}
-	UpdateMcisInfo(nsId, mcisTmp)
+	UpdateMciInfo(nsId, mciTmp)
 
-	log.Debug().Msg("[MCIS has been created]" + mcisId)
+	log.Debug().Msg("[MCI has been created]" + mciId)
 
 	// Install CB-Dragonfly monitoring agent
 
-	mcisTmp.InstallMonAgent = req.InstallMonAgent
-	UpdateMcisInfo(nsId, mcisTmp)
+	mciTmp.InstallMonAgent = req.InstallMonAgent
+	UpdateMciInfo(nsId, mciTmp)
 
-	if !strings.Contains(mcisTmp.InstallMonAgent, "no") && option != "register" {
+	if !strings.Contains(mciTmp.InstallMonAgent, "no") && option != "register" {
 
 		check := CheckDragonflyEndpoint()
 		if check != nil {
 			fmt.Printf("\n\n[Warning] CB-Dragonfly is not available\n\n")
 		} else {
-			reqToMon := &McisCmdReq{}
-			reqToMon.UserName = "cb-user" // this MCIS user name is temporal code. Need to improve.
+			reqToMon := &MciCmdReq{}
+			reqToMon.UserName = "cb-user" // this MCI user name is temporal code. Need to improve.
 
 			fmt.Printf("\n===========================\n")
 			// Sleep for 60 seconds for a safe DF agent installation.
 			fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation.\n")
 			time.Sleep(60 * time.Second)
 
-			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
-			content, err := InstallMonitorAgentToMcis(nsId, mcisId, common.StrMCIS, reqToMon)
+			fmt.Printf("\n[InstallMonitorAgentToMci]\n\n")
+			content, err := InstallMonitorAgentToMci(nsId, mciId, common.StrMCI, reqToMon)
 			if err != nil {
 				log.Error().Err(err).Msg("")
-				//mcisTmp.InstallMonAgent = "no"
+				//mciTmp.InstallMonAgent = "no"
 			}
 			common.PrintJsonPretty(content)
-			//mcisTmp.InstallMonAgent = "yes"
+			//mciTmp.InstallMonAgent = "yes"
 		}
 	}
 
-	mcisResult, err := GetMcisInfo(nsId, mcisId)
+	mciResult, err := GetMciInfo(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	return mcisResult, nil
+	return mciResult, nil
 }
 
-// CheckMcisDynamicReq is func to check request info to create MCIS obeject and deploy requested VMs in a dynamic way
-func CheckMcisDynamicReq(req *McisConnectionConfigCandidatesReq) (*CheckMcisDynamicReqInfo, error) {
+// CheckMciDynamicReq is func to check request info to create MCI obeject and deploy requested VMs in a dynamic way
+func CheckMciDynamicReq(req *MciConnectionConfigCandidatesReq) (*CheckMciDynamicReqInfo, error) {
 
-	mcisReqInfo := CheckMcisDynamicReqInfo{}
+	mciReqInfo := CheckMciDynamicReqInfo{}
 
 	connectionConfigList, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
 	if err != nil {
-		err := fmt.Errorf("Cannot load ConnectionConfigList in MCIS dynamic request check.")
+		err := fmt.Errorf("Cannot load ConnectionConfigList in MCI dynamic request check.")
 		log.Error().Err(err).Msg("")
-		return &mcisReqInfo, err
+		return &mciReqInfo, err
 	}
 
 	// Find detail info and ConnectionConfigCandidates
@@ -1183,18 +1183,18 @@ func CheckMcisDynamicReq(req *McisConnectionConfigCandidatesReq) (*CheckMcisDyna
 		vmReqInfo.Image = availableImageList
 		vmReqInfo.Region = regionInfo
 		vmReqInfo.SystemMessage = errMessage
-		mcisReqInfo.ReqCheck = append(mcisReqInfo.ReqCheck, vmReqInfo)
+		mciReqInfo.ReqCheck = append(mciReqInfo.ReqCheck, vmReqInfo)
 	}
 
-	return &mcisReqInfo, err
+	return &mciReqInfo, err
 }
 
-// CreateSystemMcisDynamic is func to create MCIS obeject and deploy requested VMs in a dynamic way
-func CreateSystemMcisDynamic(option string) (*TbMcisInfo, error) {
+// CreateSystemMciDynamic is func to create MCI obeject and deploy requested VMs in a dynamic way
+func CreateSystemMciDynamic(option string) (*TbMciInfo, error) {
 	nsId := common.SystemCommonNs
-	req := &TbMcisDynamicReq{}
+	req := &TbMciDynamicReq{}
 
-	// special purpose MCIS
+	// special purpose MCI
 	req.Name = option
 	req.Label = option
 	req.SystemLabel = option
@@ -1251,33 +1251,33 @@ func CreateSystemMcisDynamic(option string) (*TbMcisInfo, error) {
 		return nil, err
 	}
 
-	return CreateMcisDynamic("", nsId, req, "")
+	return CreateMciDynamic("", nsId, req, "")
 }
 
-// CreateMcisDynamic is func to create MCIS obeject and deploy requested VMs in a dynamic way
-func CreateMcisDynamic(reqID string, nsId string, req *TbMcisDynamicReq, deployOption string) (*TbMcisInfo, error) {
+// CreateMciDynamic is func to create MCI obeject and deploy requested VMs in a dynamic way
+func CreateMciDynamic(reqID string, nsId string, req *TbMciDynamicReq, deployOption string) (*TbMciInfo, error) {
 
-	mcisReq := TbMcisReq{}
-	mcisReq.Name = req.Name
-	mcisReq.Label = req.Label
-	mcisReq.SystemLabel = req.SystemLabel
-	mcisReq.InstallMonAgent = req.InstallMonAgent
-	mcisReq.Description = req.Description
+	mciReq := TbMciReq{}
+	mciReq.Name = req.Name
+	mciReq.Label = req.Label
+	mciReq.SystemLabel = req.SystemLabel
+	mciReq.InstallMonAgent = req.InstallMonAgent
+	mciReq.Description = req.Description
 
-	emptyMcis := &TbMcisInfo{}
+	emptyMci := &TbMciInfo{}
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyMcis, err
+		return emptyMci, err
 	}
-	check, err := CheckMcis(nsId, req.Name)
+	check, err := CheckMci(nsId, req.Name)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyMcis, err
+		return emptyMci, err
 	}
 	if check {
-		err := fmt.Errorf("The mcis " + req.Name + " already exists.")
-		return emptyMcis, err
+		err := fmt.Errorf("The mci " + req.Name + " already exists.")
+		return emptyMci, err
 	}
 
 	vmRequest := req.Vm
@@ -1286,20 +1286,20 @@ func CreateMcisDynamic(reqID string, nsId string, req *TbMcisDynamicReq, deployO
 	for i, k := range vmRequest {
 		err = checkCommonResAvailable(&k)
 		if err != nil {
-			log.Error().Err(err).Msgf("[%d] Failed to find common resource for MCIS provision", i)
+			log.Error().Err(err).Msgf("[%d] Failed to find common resource for MCI provision", i)
 			errStr += "{[" + strconv.Itoa(i+1) + "] " + err.Error() + "} "
 		}
 	}
 	if errStr != "" {
 		err = fmt.Errorf(errStr)
-		return emptyMcis, err
+		return emptyMci, err
 	}
 
 	//If not, generate default resources dynamically.
 	for _, k := range vmRequest {
 		vmReq, err := getVmReqFromDynamicReq(reqID, nsId, &k)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to prefare resources for dynamic MCIS creation")
+			log.Error().Err(err).Msg("Failed to prefare resources for dynamic MCI creation")
 			// Rollback created default resources
 			time.Sleep(5 * time.Second)
 			log.Info().Msg("Try rollback created default resources")
@@ -1310,45 +1310,45 @@ func CreateMcisDynamic(reqID string, nsId string, req *TbMcisDynamicReq, deployO
 				ids := strings.Join(rollbackResult.IdList, ", ")
 				err = fmt.Errorf("Rollback results [%s]: %w", ids, err)
 			}
-			return emptyMcis, err
+			return emptyMci, err
 		}
-		mcisReq.Vm = append(mcisReq.Vm, *vmReq)
+		mciReq.Vm = append(mciReq.Vm, *vmReq)
 	}
 
-	common.PrintJsonPretty(mcisReq)
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Prepared all resources for provisioning MCIS:" + mcisReq.Name, Info: mcisReq, Time: time.Now()})
+	common.PrintJsonPretty(mciReq)
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Prepared all resources for provisioning MCI:" + mciReq.Name, Info: mciReq, Time: time.Now()})
 	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Start provisioning", Time: time.Now()})
 
-	// Run create MCIS with the generated MCIS request (option != register)
+	// Run create MCI with the generated MCI request (option != register)
 	option := "create"
 	if deployOption == "hold" {
 		option = "hold"
 	}
-	return CreateMcis(nsId, &mcisReq, option)
+	return CreateMci(nsId, &mciReq, option)
 }
 
-// CreateMcisVmDynamic is func to create requested VM in a dynamic way and add it to MCIS
-func CreateMcisVmDynamic(nsId string, mcisId string, req *TbVmDynamicReq) (*TbMcisInfo, error) {
+// CreateMciVmDynamic is func to create requested VM in a dynamic way and add it to MCI
+func CreateMciVmDynamic(nsId string, mciId string, req *TbVmDynamicReq) (*TbMciInfo, error) {
 
-	emptyMcis := &TbMcisInfo{}
+	emptyMci := &TbMciInfo{}
 	subGroupId := req.Name
-	check, err := CheckSubGroup(nsId, mcisId, subGroupId)
+	check, err := CheckSubGroup(nsId, mciId, subGroupId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyMcis, err
+		return emptyMci, err
 	}
 	if check {
 		err := fmt.Errorf("The name for SubGroup (prefix of VM Id) " + req.Name + " already exists.")
-		return emptyMcis, err
+		return emptyMci, err
 	}
 
 	vmReq, err := getVmReqFromDynamicReq("", nsId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyMcis, err
+		return emptyMci, err
 	}
 
-	return CreateMcisGroupVm(nsId, mcisId, vmReq, true)
+	return CreateMciGroupVm(nsId, mciId, vmReq, true)
 }
 
 // checkCommonResAvailable is func to check common resources availability
@@ -1398,7 +1398,7 @@ func checkCommonResAvailable(req *TbVmDynamicReq) error {
 	return nil
 }
 
-// getVmReqForDynamicMcis is func to getVmReqFromDynamicReq
+// getVmReqForDynamicMci is func to getVmReqFromDynamicReq
 func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*TbVmReq, error) {
 
 	onDemand := true
@@ -1531,24 +1531,24 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 	return vmReq, nil
 }
 
-// AddVmToMcis is func to add VM to MCIS
-func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbVmInfo, option string) error {
-	log.Debug().Msg("Start to add VM To MCIS")
+// AddVmToMci is func to add VM to MCI
+func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *TbVmInfo, option string) error {
+	log.Debug().Msg("Start to add VM To MCI")
 	//goroutin
 	defer wg.Done()
 
-	key := common.GenMcisKey(nsId, mcisId, "")
+	key := common.GenMciKey(nsId, mciId, "")
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
-		log.Fatal().Err(err).Msg("AddVmToMcis(); kvstore.GetKv() returned an error.")
+		log.Fatal().Err(err).Msg("AddVmToMci(); kvstore.GetKv() returned an error.")
 		return err
 	}
 	if keyValue == (kvstore.KeyValue{}) {
-		return fmt.Errorf("AddVmToMcis: Cannot find mcisId. Key: %s", key)
+		return fmt.Errorf("AddVmToMci: Cannot find mciId. Key: %s", key)
 	}
 
 	// Make VM object
-	key = common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
+	key = common.GenMciKey(nsId, mciId, vmInfoData.Id)
 	val, _ := json.Marshal(vmInfoData)
 	err = kvstore.Put(key, string(val))
 	if err != nil {
@@ -1563,7 +1563,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	}
 	vmInfoData.Location = configTmp.RegionDetail.Location
 
-	//AddVmInfoToMcis(nsId, mcisId, *vmInfoData)
+	//AddVmInfoToMci(nsId, mciId, *vmInfoData)
 	// Update VM object
 	val, _ = json.Marshal(vmInfoData)
 	err = kvstore.Put(key, string(val))
@@ -1573,12 +1573,12 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	}
 
 	//instanceIds, publicIPs := CreateVm(&vmInfoData)
-	err = CreateVm(nsId, mcisId, vmInfoData, option)
+	err = CreateVm(nsId, mciId, vmInfoData, option)
 
 	if err != nil {
 		vmInfoData.Status = StatusFailed
 		vmInfoData.SystemMessage = err.Error()
-		UpdateVmInfo(nsId, mcisId, *vmInfoData)
+		UpdateVmInfo(nsId, mciId, *vmInfoData)
 		log.Error().Err(err).Msg("")
 		return err
 	}
@@ -1588,7 +1588,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	vmInfoData.TargetStatus = StatusComplete
 
 	// get and set current vm status
-	vmStatusInfoTmp, err := FetchVmStatus(nsId, mcisId, vmInfoData.Id)
+	vmStatusInfoTmp, err := FetchVmStatus(nsId, mciId, vmInfoData.Id)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1606,14 +1606,14 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	vmInfoData.CreatedTime = t.Format("2006-01-02 15:04:05")
 	log.Debug().Msg(vmInfoData.CreatedTime)
 
-	UpdateVmInfo(nsId, mcisId, *vmInfoData)
+	UpdateVmInfo(nsId, mciId, *vmInfoData)
 
 	return nil
 
 }
 
 // CreateVm is func to create VM (option = "register" for register existing VM)
-func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) error {
+func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) error {
 
 	var err error = nil
 	switch {
@@ -1658,7 +1658,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 	//generate VM ID(Name) to request to CSP(Spider)
 	//combination of nsId, mcidId, and vmName reqested from user
-	requestBody.ReqInfo.Name = fmt.Sprintf("%s-%s-%s", nsId, mcisId, vmInfoData.Name)
+	requestBody.ReqInfo.Name = fmt.Sprintf("%s-%s-%s", nsId, mciId, vmInfoData.Name)
 
 	customImageFlag := false
 
@@ -1847,7 +1847,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		}
 
 	} else {
-		vmKey := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
+		vmKey := common.GenMciKey(nsId, mciId, vmInfoData.Id)
 
 		if customImageFlag == false {
 			mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfoData.ImageId, common.StrAdd, vmKey)
@@ -1884,14 +1884,14 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 		vmInfoData.DataDiskIds = append(vmInfoData.DataDiskIds, dataDisk.Id)
 
-		vmKey := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
+		vmKey := common.GenMciKey(nsId, mciId, vmInfoData.Id)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, dataDisk.Id, common.StrAdd, vmKey)
 	}
 
-	UpdateVmInfo(nsId, mcisId, *vmInfoData)
+	UpdateVmInfo(nsId, mciId, *vmInfoData)
 
 	// Assign a Bastion if none (randomly)
-	_, err = SetBastionNodes(nsId, mcisId, vmInfoData.Id, "")
+	_, err = SetBastionNodes(nsId, mciId, vmInfoData.Id, "")
 	if err != nil {
 		// just log error and continue
 		log.Info().Err(err).Msg("")

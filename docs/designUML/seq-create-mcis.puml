@@ -1,7 +1,7 @@
 @startuml
 
 header **CB-Tumblebug** (v0.5.0)
-title Basic sequence for creating MCIS
+title Basic sequence for creating MCI
 hide footbox
 
 actor	"User"		            as user		    #d1e0ff
@@ -88,12 +88,12 @@ tumblebug	-->	user	    : Return {Spec Obj ID}
 end
 |||
 
-group Create MCIS (Multi-Cloud Infra) 
-user	    ->	tumblebug	: POST /ns/:ns/mcis {MCIS request}
-tumblebug   ->	tumblebug	: Validate {MCIS request}
+group Create MCI (Multi-Cloud Infra) 
+user	    ->	tumblebug	: POST /ns/:ns/mci {MCI request}
+tumblebug   ->	tumblebug	: Validate {MCI request}
 tumblebug	-->	user	    : Return {Error} if not valid request
 
-tumblebug	->	db			: Create {MCIS Obj}
+tumblebug	->	db			: Create {MCI Obj}
     loop for all VM requests: Create each VM
     tumblebug	->	spider		: Create {VM}
     spider	    ->	csp		    : Create {VM}
@@ -101,7 +101,7 @@ tumblebug	->	db			: Create {MCIS Obj}
     csp	    ->  VM		    : Create {VM}
     tumblebug   <--	spider		: Return {VM}
     end
-tumblebug	->	db			: Update {MCIS Obj with VM Info}
+tumblebug	->	db			: Update {MCI Obj with VM Info}
 |||
 
     loop for all VMs: Check VM is Running 
@@ -112,7 +112,7 @@ tumblebug	->	db			: Update {MCIS Obj with VM Info}
         tumblebug   ->	tumblebug	: Check {VM Status:Running}
         end
     end
-tumblebug	->	db			: Update {MCIS Obj with VM Info}
+tumblebug	->	db			: Update {MCI Obj with VM Info}
 |||
 
     loop for all VMs: Install CB-Dragonfly Monitoring Agent
@@ -126,7 +126,7 @@ tumblebug	->	db			: Update {MCIS Obj with VM Info}
     end note
 
     tumblebug   -> dragonfly    : Check CB-Dragonlfy is Alive
-    tumblebug	->	db			: Update {MCIS with message} if not alive
+    tumblebug	->	db			: Update {MCI with message} if not alive
 
     note left
     If Dragonlfy
@@ -141,8 +141,8 @@ tumblebug	->	db			: Update {MCIS Obj with VM Info}
     dragonfly	<--	VM	        : Return {Agent Installation result}
     tumblebug   <--	dragonfly	: Return {Agent Installation result}
     end
-tumblebug	->	db			: Update {MCIS Obj with Agent Info}
-tumblebug	<--	db			: Get {MCIS Obj}
+tumblebug	->	db			: Update {MCI Obj with Agent Info}
+tumblebug	<--	db			: Get {MCI Obj}
 |||
 
     loop for all VMs: Update VM Status 
@@ -150,8 +150,8 @@ tumblebug	<--	db			: Get {MCIS Obj}
     spider	    ->	csp		    : Get {VM Status}
     tumblebug   <--	spider		: Return {VM Status}
     end
-tumblebug   ->	tumblebug	: Update {MCIS Obj}
-tumblebug	-->	user	    : Return {MCIS Obj}
+tumblebug   ->	tumblebug	: Update {MCI Obj}
+tumblebug	-->	user	    : Return {MCI Obj}
 end
 
 

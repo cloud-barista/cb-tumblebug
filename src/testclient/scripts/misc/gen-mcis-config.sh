@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## Gen MCIS config using all specs in the system ns"
+echo "## Gen MCI config using all specs in the system ns"
 echo "####################################################################"
 
 source ../init.sh
@@ -12,12 +12,12 @@ PRINT="{
   \"description\": \"Made in CB-TB\",
   \"installMonAgent\": \"no\",
   \"label\": \"DynamicVM\",
-  \"name\": \"mcis01\",
+  \"name\": \"mci01\",
   \"systemLabel\": \"\",
   \"vm\": ["
 
 echo "${PRINT}"
-echo "${PRINT}" >./mcisconfig.json
+echo "${PRINT}" >./mciconfig.json
 
 
 VAR1=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$nsForSystem/resources/spec -H 'Content-Type: application/json' )
@@ -30,17 +30,17 @@ for row in $(echo "${VAR1}" | jq -r '.spec[] | @base64'); do
   id=$(_jq '.id')
   rootDiskType=$(_jq '.rootDiskType')
   rootDiskSize=$(_jq '.rootDiskSize')
-  echo "  {" >>./mcisconfig.json
-  echo "    \"commonImage\": \"ubuntu18.04\"," >>./mcisconfig.json
-	echo "    \"commonSpec\": \"$id\","  >>./mcisconfig.json
-  echo "    \"rootDiskType\": \"$rootDiskType\","  >>./mcisconfig.json
-  echo "    \"rootDiskSize\": \"$rootDiskSize\""  >>./mcisconfig.json
-  echo "  },"  >>./mcisconfig.json
+  echo "  {" >>./mciconfig.json
+  echo "    \"commonImage\": \"ubuntu18.04\"," >>./mciconfig.json
+	echo "    \"commonSpec\": \"$id\","  >>./mciconfig.json
+  echo "    \"rootDiskType\": \"$rootDiskType\","  >>./mciconfig.json
+  echo "    \"rootDiskSize\": \"$rootDiskSize\""  >>./mciconfig.json
+  echo "  },"  >>./mciconfig.json
 done
 
-sed -i '$ d' ./mcisconfig.json
-echo "  }"  >>./mcisconfig.json
+sed -i '$ d' ./mciconfig.json
+echo "  }"  >>./mciconfig.json
 
-echo "]}" >>./mcisconfig.json
+echo "]}" >>./mciconfig.json
 
-cat ./mcisconfig.json
+cat ./mciconfig.json

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function list_mcis() {
+#function list_mci() {
 
 
     TestSetFile=${4:-../testSet.env}
@@ -12,11 +12,11 @@
     source ../conf.env
     
     echo "####################################################################"
-    echo "## 8. MCIS: List"
+    echo "## 8. MCI: List"
     echo "####################################################################"
 
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis | jq ''
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci | jq ''
 #}
 
-#list_mcis
+#list_mci

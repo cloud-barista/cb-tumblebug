@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mcisId=${1:-mcis}
+mciId=${1:-mci}
 listenMode=${2:-tcp}
 listenPort=${3:-80}
 balanceAlgo=${4:-roundrobin}
@@ -26,15 +26,15 @@ listen admin
 
 echo "
 ## define frontend
-frontend ${mcisId}.frontend
+frontend ${mciId}.frontend
         bind *:$listenPort
         mode $listenMode
-        default_backend    ${mcisId}.backend
+        default_backend    ${mciId}.backend
         option             forwardfor" | sudo tee -a /etc/haproxy/haproxy.cfg
 
 echo "
 ## define backend
-backend ${mcisId}.backend
+backend ${mciId}.backend
         balance            ${balanceAlgo}" | sudo tee -a /etc/haproxy/haproxy.cfg
 
 ## show config
