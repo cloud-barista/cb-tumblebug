@@ -363,7 +363,7 @@ definitions:
       connectionName:
         example: aws-ap-southeast-1
         type: string
-      mcisName:
+      mciName:
         example: csp
         type: string
       nsId:
@@ -372,7 +372,7 @@ definitions:
     type: object
   common.RestRegisterCspNativeResourcesRequestAll:
     properties:
-      mcisName:
+      mciName:
         example: csp
         type: string
       nsId:
@@ -408,9 +408,1768 @@ definitions:
       connectionName:
         type: string
     type: object
+  mci.AgentInstallContent:
+    properties:
+      mciId:
+        type: string
+      result:
+        type: string
+      vmId:
+        type: string
+      vmIp:
+        type: string
+    type: object
+  mci.AgentInstallContentWrapper:
+    properties:
+      resultArray:
+        items:
+          $ref: '#/definitions/mci.AgentInstallContent'
+        type: array
+    type: object
+  mci.AutoAction:
+    properties:
+      actionType:
+        enum:
+        - ScaleOut
+        - ScaleIn
+        example: ScaleOut
+        type: string
+      placementAlgo:
+        example: random
+        type: string
+      postCommand:
+        allOf:
+        - $ref: '#/definitions/mci.MciCmdReq'
+        description: PostCommand is field for providing command to VMs after its creation.
+          example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh
+          -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
+      vmDynamicReq:
+        $ref: '#/definitions/mci.TbVmDynamicReq'
+    type: object
+  mci.AutoCondition:
+    properties:
+      evaluationPeriod:
+        example: "10"
+        type: string
+      evaluationValue:
+        items:
+          type: string
+        type: array
+      metric:
+        example: cpu
+        type: string
+      operand:
+        example: "80"
+        type: string
+      operator:
+        enum:
+        - <
+        - <=
+        - '>'
+        - '>='
+        example: '>='
+        type: string
+    type: object
+  mci.BenchmarkInfo:
+    properties:
+      desc:
+        type: string
+      elapsed:
+        type: string
+      regionName:
+        type: string
+      result:
+        type: string
+      resultarray:
+        description: struct-element cycle ?
+        items:
+          $ref: '#/definitions/mci.BenchmarkInfo'
+        type: array
+      specid:
+        type: string
+      unit:
+        type: string
+    type: object
+  mci.BenchmarkInfoArray:
+    properties:
+      resultarray:
+        items:
+          $ref: '#/definitions/mci.BenchmarkInfo'
+        type: array
+    type: object
+  mci.CheckMciDynamicReqInfo:
+    properties:
+      reqCheck:
+        items:
+          $ref: '#/definitions/mci.CheckVmDynamicReqInfo'
+        type: array
+    required:
+    - reqCheck
+    type: object
+  mci.CheckVmDynamicReqInfo:
+    properties:
+      connectionConfigCandidates:
+        description: ConnectionConfigCandidates will provide ConnectionConfig options
+        items:
+          type: string
+        type: array
+      image:
+        items:
+          $ref: '#/definitions/mcir.TbImageInfo'
+        type: array
+      region:
+        $ref: '#/definitions/common.RegionDetail'
+      spec:
+        $ref: '#/definitions/mcir.TbSpecInfo'
+      systemMessage:
+        description: Latest system message such as error message
+        example: Failed because ...
+        type: string
+    type: object
+  mci.DeploymentPlan:
+    properties:
+      filter:
+        $ref: '#/definitions/mci.FilterInfo'
+      limit:
+        enum:
+        - "1"
+        - "2"
+        - "30"
+        example: "5"
+        type: string
+      priority:
+        $ref: '#/definitions/mci.PriorityInfo'
+    type: object
+  mci.FilterCondition:
+    properties:
+      condition:
+        items:
+          $ref: '#/definitions/mci.Operation'
+        type: array
+      metric:
+        enum:
+        - vCPU
+        - memoryGiB
+        - costPerHour
+        example: vCPU
+        type: string
+    type: object
+  mci.FilterInfo:
+    properties:
+      policy:
+        items:
+          $ref: '#/definitions/mci.FilterCondition'
+        type: array
+    type: object
+  mci.InspectResource:
+    properties:
+      connectionName:
+        type: string
+      resourceOverview:
+        $ref: '#/definitions/mci.resourceCountOverview'
+      resourceType:
+        type: string
+      resources:
+        $ref: '#/definitions/mci.resourcesByManageType'
+      systemMessage:
+        type: string
+    type: object
+  mci.InspectResourceAllResult:
+    properties:
+      availableConnection:
+        type: integer
+      cspOnlyOverview:
+        $ref: '#/definitions/mci.inspectOverview'
+      elapsedTime:
+        type: integer
+      inspectResult:
+        items:
+          $ref: '#/definitions/mci.InspectResourceResult'
+        type: array
+      registeredConnection:
+        type: integer
+      tumblebugOverview:
+        $ref: '#/definitions/mci.inspectOverview'
+    type: object
+  mci.InspectResourceResult:
+    properties:
+      connectionName:
+        type: string
+      cspOnlyOverview:
+        $ref: '#/definitions/mci.inspectOverview'
+      elapsedTime:
+        type: integer
+      systemMessage:
+        type: string
+      tumblebugOverview:
+        $ref: '#/definitions/mci.inspectOverview'
+    type: object
+  mci.JSONResult:
+    type: object
+  mci.McNlbInfo:
+    properties:
+      deploymentLog:
+        $ref: '#/definitions/mci.MciSshCmdResult'
+      mcNlbHostInfo:
+        $ref: '#/definitions/mci.TbMciInfo'
+      mciAccessInfo:
+        $ref: '#/definitions/mci.MciAccessInfo'
+    type: object
+  mci.MciAccessInfo:
+    properties:
+      mciId:
+        type: string
+      mciNlbListener:
+        $ref: '#/definitions/mci.MciAccessInfo'
+      mciSubGroupAccessInfo:
+        items:
+          $ref: '#/definitions/mci.MciSubGroupAccessInfo'
+        type: array
+    type: object
+  mci.MciCmdReq:
+    properties:
+      command:
+        example:
+        - 'client_ip=$(echo $SSH_CLIENT | awk ''{print $1}''); echo SSH client IP
+          is: $client_ip'
+        items:
+          type: string
+        type: array
+      userName:
+        example: cb-user
+        type: string
+    required:
+    - command
+    type: object
+  mci.MciConnectionConfigCandidatesReq:
+    properties:
+      commonSpec:
+        description: CommonSpec is field for id of a spec in common namespace
+        example:
+        - aws+ap-northeast-2+t2.small
+        - gcp+us-west1+g1-small
+        items:
+          type: string
+        type: array
+    required:
+    - commonSpec
+    type: object
+  mci.MciPolicyInfo:
+    properties:
+      Id:
+        description: MCI Id (generated ID by the Name)
+        type: string
+      Name:
+        description: MCI Name (for request)
+        type: string
+      actionLog:
+        type: string
+      description:
+        example: Description
+        type: string
+      policy:
+        items:
+          $ref: '#/definitions/mci.Policy'
+        type: array
+    type: object
+  mci.MciPolicyReq:
+    properties:
+      description:
+        example: Description
+        type: string
+      policy:
+        items:
+          $ref: '#/definitions/mci.Policy'
+        type: array
+    type: object
+  mci.MciSshCmdResult:
+    properties:
+      results:
+        items:
+          $ref: '#/definitions/mci.SshCmdResult'
+        type: array
+    type: object
+  mci.MciStatusInfo:
+    properties:
+      id:
+        type: string
+      installMonAgent:
+        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no]
+          default:yes)
+        example: '[yes, no]'
+        type: string
+      label:
+        description: Label is for describing the mci in a keyword (any string can
+          be used)
+        example: User custom label
+        type: string
+      masterIp:
+        example: 32.201.134.113
+        type: string
+      masterSSHPort:
+        type: string
+      masterVmId:
+        example: vm-asiaeast1-cb-01
+        type: string
+      name:
+        type: string
+      status:
+        type: string
+      statusCount:
+        $ref: '#/definitions/mci.StatusCountInfo'
+      systemLabel:
+        description: SystemLabel is for describing the mci in a keyword (any string
+          can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
+      targetAction:
+        type: string
+      targetStatus:
+        type: string
+      vm:
+        items:
+          $ref: '#/definitions/mci.TbVmStatusInfo'
+        type: array
+    type: object
+  mci.MciSubGroupAccessInfo:
+    properties:
+      bastionVmId:
+        type: string
+      mciVmAccessInfo:
+        items:
+          $ref: '#/definitions/mci.MciVmAccessInfo'
+        type: array
+      nlbListener:
+        $ref: '#/definitions/mci.TbNLBListenerInfo'
+      subGroupId:
+        type: string
+    type: object
+  mci.MciVmAccessInfo:
+    properties:
+      privateIP:
+        type: string
+      privateKey:
+        type: string
+      publicIP:
+        type: string
+      sshPort:
+        type: string
+      vmId:
+        type: string
+      vmUserAccount:
+        type: string
+      vmUserPassword:
+        type: string
+    type: object
+  mci.MonResultSimple:
+    properties:
+      err:
+        type: string
+      metric:
+        type: string
+      value:
+        type: string
+      vmId:
+        type: string
+    type: object
+  mci.MonResultSimpleResponse:
+    properties:
+      mciId:
+        type: string
+      mciMonitoring:
+        items:
+          $ref: '#/definitions/mci.MonResultSimple'
+        type: array
+      nsId:
+        type: string
+    type: object
+  mci.NLBListenerReq:
+    properties:
+      port:
+        description: 1-65535
+        example: "80"
+        type: string
+      protocol:
+        description: TCP|UDP
+        example: TCP
+        type: string
+    type: object
+  mci.Operation:
+    properties:
+      operand:
+        description: 10, 70, 80, 98, ...
+        enum:
+        - "4"
+        - "8"
+        - ..
+        example: "4"
+        type: string
+      operator:
+        description: '>=, <=, =='
+        enum:
+        - '>='
+        - <=
+        - ==
+        example: <=
+        type: string
+    type: object
+  mci.ParameterKeyVal:
+    properties:
+      key:
+        description: coordinate
+        enum:
+        - coordinateClose
+        - coordinateWithin
+        - coordinateFair
+        example: coordinateClose
+        type: string
+      val:
+        description: '["Latitude,Longitude","12,543",..,"31,433"]'
+        example:
+        - 44.146838/-116.411403
+        items:
+          type: string
+        type: array
+    type: object
+  mci.Policy:
+    properties:
+      autoAction:
+        $ref: '#/definitions/mci.AutoAction'
+      autoCondition:
+        $ref: '#/definitions/mci.AutoCondition'
+      status:
+        type: string
+    type: object
+  mci.PriorityCondition:
+    properties:
+      metric:
+        enum:
+        - location
+        - cost
+        - random
+        - performance
+        - latency
+        example: location
+        type: string
+      parameter:
+        items:
+          $ref: '#/definitions/mci.ParameterKeyVal'
+        type: array
+      weight:
+        enum:
+        - "0.1"
+        - "0.2"
+        - '...'
+        example: "0.3"
+        type: string
+    type: object
+  mci.PriorityInfo:
+    properties:
+      policy:
+        items:
+          $ref: '#/definitions/mci.PriorityCondition'
+        type: array
+    type: object
+  mci.RegionInfo:
+    properties:
+      region:
+        type: string
+      zone:
+        type: string
+    type: object
+  mci.RegisterResourceAllResult:
+    properties:
+      availableConnection:
+        type: integer
+      elapsedTime:
+        type: integer
+      registerationOverview:
+        $ref: '#/definitions/mci.registerationOverview'
+      registerationResult:
+        items:
+          $ref: '#/definitions/mci.RegisterResourceResult'
+        type: array
+      registeredConnection:
+        type: integer
+    type: object
+  mci.RegisterResourceResult:
+    properties:
+      connectionName:
+        type: string
+      elapsedTime:
+        type: integer
+      registerationOutputs:
+        $ref: '#/definitions/common.IdList'
+      registerationOverview:
+        $ref: '#/definitions/mci.registerationOverview'
+      systemMessage:
+        type: string
+    type: object
+  mci.RestGetAllBenchmarkRequest:
+    properties:
+      host:
+        type: string
+    type: object
+  mci.RestGetAllK8sClusterResponse:
+    properties:
+      cluster:
+        items:
+          $ref: '#/definitions/mci.TbK8sClusterInfo'
+        type: array
+    type: object
+  mci.RestGetAllMciPolicyResponse:
+    properties:
+      mciPolicy:
+        items:
+          $ref: '#/definitions/mci.MciPolicyInfo'
+        type: array
+    type: object
+  mci.RestGetAllMciResponse:
+    properties:
+      mci:
+        items:
+          $ref: '#/definitions/mci.TbMciInfo'
+        type: array
+    type: object
+  mci.RestGetAllMciStatusResponse:
+    properties:
+      mci:
+        items:
+          $ref: '#/definitions/mci.MciStatusInfo'
+        type: array
+    type: object
+  mci.RestGetAllNLBResponse:
+    properties:
+      nlb:
+        items:
+          $ref: '#/definitions/mci.TbNLBInfo'
+        type: array
+    type: object
+  mci.RestGetBenchmarkRequest:
+    properties:
+      host:
+        type: string
+    type: object
+  mci.SpiderImageType:
+    enum:
+    - PublicImage
+    - MyImage
+    type: string
+    x-enum-varnames:
+    - PublicImage
+    - MyImage
+  mci.SpiderVMInfo:
+    properties:
+      cspid:
+        description: VM ID given by CSP (required for registering VM)
+        type: string
+      dataDiskIIDs:
+        items:
+          $ref: '#/definitions/common.IID'
+        type: array
+      dataDiskNames:
+        items:
+          type: string
+        type: array
+      iid:
+        allOf:
+        - $ref: '#/definitions/common.IID'
+        description: Fields for response
+      imageIId:
+        $ref: '#/definitions/common.IID'
+      imageName:
+        type: string
+      imageType:
+        $ref: '#/definitions/mci.SpiderImageType'
+      keyPairIId:
+        $ref: '#/definitions/common.IID'
+      keyPairName:
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        description: Fields for request
+        type: string
+      networkInterface:
+        description: ex) eth0
+        type: string
+      privateDNS:
+        type: string
+      privateIP:
+        type: string
+      publicDNS:
+        type: string
+      publicIP:
+        type: string
+      region:
+        allOf:
+        - $ref: '#/definitions/mci.RegionInfo'
+        description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
+      rootDeviceName:
+        description: '"/dev/sda1", ...'
+        type: string
+      rootDiskSize:
+        description: '"default", "50", "1000" (GB)'
+        type: string
+      rootDiskType:
+        description: '"SSD(gp2)", "Premium SSD", ...'
+        type: string
+      securityGroupIIds:
+        description: AWS, ex) sg-0b7452563e1121bb6
+        items:
+          $ref: '#/definitions/common.IID'
+        type: array
+      securityGroupNames:
+        items:
+          type: string
+        type: array
+      sshaccessPoint:
+        type: string
+      startTime:
+        type: string
+      subnetIID:
+        allOf:
+        - $ref: '#/definitions/common.IID'
+        description: AWS, ex) subnet-8c4a53e4
+      subnetName:
+        type: string
+      vmspecName:
+        description: Fields for both request and response
+        type: string
+      vmuserId:
+        description: ex) user1
+        type: string
+      vmuserPasswd:
+        type: string
+      vpcIID:
+        $ref: '#/definitions/common.IID'
+      vpcname:
+        type: string
+    type: object
+  mci.SshCmdResult:
+    properties:
+      command:
+        additionalProperties:
+          type: string
+        type: object
+      err: {}
+      mciId:
+        type: string
+      stderr:
+        additionalProperties:
+          type: string
+        type: object
+      stdout:
+        additionalProperties:
+          type: string
+        type: object
+      vmId:
+        type: string
+      vmIp:
+        type: string
+    type: object
+  mci.StatusCountInfo:
+    properties:
+      countCreating:
+        description: CountCreating is for counting Creating
+        type: integer
+      countFailed:
+        description: CountFailed is for counting Failed
+        type: integer
+      countRebooting:
+        description: CountRebooting is for counting Rebooting
+        type: integer
+      countResuming:
+        description: CountResuming is for counting Resuming
+        type: integer
+      countRunning:
+        description: CountRunning is for counting Running
+        type: integer
+      countSuspended:
+        description: CountSuspended is for counting Suspended
+        type: integer
+      countSuspending:
+        description: CountSuspending is for counting Suspending
+        type: integer
+      countTerminated:
+        description: CountTerminated is for counting Terminated
+        type: integer
+      countTerminating:
+        description: CountTerminating is for counting Terminating
+        type: integer
+      countTotal:
+        description: CountTotal is for Total VMs
+        type: integer
+      countUndefined:
+        description: CountUndefined is for counting Undefined
+        type: integer
+    type: object
+  mci.TbChangeK8sNodeGroupAutoscaleSizeReq:
+    properties:
+      desiredNodeSize:
+        example: "1"
+        type: string
+      maxNodeSize:
+        example: "3"
+        type: string
+      minNodeSize:
+        example: "1"
+        type: string
+    type: object
+  mci.TbChangeK8sNodeGroupAutoscaleSizeRes:
+    properties:
+      desiredNodeSize:
+        example: 1
+        type: integer
+      id:
+        example: ng-01
+        type: string
+      imageId:
+        description: VM config.
+        example: image-01
+        type: string
+      k8sNodes:
+        description: id for nodes
+        example:
+        - node-01
+        items:
+          type: string
+        type: array
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      maxNodeSize:
+        example: 3
+        type: integer
+      minNodeSize:
+        example: 1
+        type: integer
+      onAutoScaling:
+        description: Scaling config.
+        example: true
+        type: boolean
+      rootDiskSize:
+        example: "40"
+        type: string
+      rootDiskType:
+        example: cloud_essd
+        type: string
+      specId:
+        example: spec-01
+        type: string
+      sshKeyId:
+        example: sshkey-01
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/mci.TbK8sNodeGroupStatus'
+        description: '---'
+        example: Creating
+    type: object
+  mci.TbIdNameInDetailInfo:
+    properties:
+      idInCsp:
+        type: string
+      idInSp:
+        type: string
+      idInTb:
+        type: string
+      nameInCsp:
+        type: string
+    type: object
+  mci.TbK8sAccessInfo:
+    properties:
+      endpoint:
+        example: http://1.2.3.4:6443
+        type: string
+      kubeconfig:
+        example: |-
+          apiVersion: v1
+          clusters:
+          - cluster:
+           certificate-authority-data: LS0...
+        type: string
+    type: object
+  mci.TbK8sAddonsInfo:
+    properties:
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+    type: object
+  mci.TbK8sClusterInfo:
+    properties:
+      accessInfo:
+        $ref: '#/definitions/mci.TbK8sAccessInfo'
+      addons:
+        $ref: '#/definitions/mci.TbK8sAddonsInfo'
+      connectionName:
+        example: alibaba-ap-northeast-2
+        type: string
+      createdTime:
+        example: "1970-01-01T00:00:00.00Z"
+        type: string
+      cspK8sClusterId:
+        example: c123456789012345678901234567890
+        type: string
+      cspK8sClusterName:
+        example: ns01-k8scluster-01
+        type: string
+      description:
+        example: My K8sCluster
+        type: string
+      id:
+        example: k8scluster-01
+        type: string
+      k8sNodeGroupList:
+        items:
+          $ref: '#/definitions/mci.TbK8sNodeGroupInfo'
+        type: array
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        example: k8scluster-01
+        type: string
+      network:
+        $ref: '#/definitions/mci.TbK8sClusterNetworkInfo'
+      status:
+        allOf:
+        - $ref: '#/definitions/mci.TbK8sClusterStatus'
+        description: Creating, Active, Inactive, Updating, Deleting
+        example: Creating
+      systemLabel:
+        description: SystemLabel is for describing the MCIR in a keyword (any string
+          can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
+      systemMessage:
+        description: Latest system message such as error message
+        example: Failed because ...
+        type: string
+      version:
+        description: Kubernetes Version, ex) 1.23.3
+        example: 1.30.1-aliyun.1
+        type: string
+    type: object
+  mci.TbK8sClusterNetworkInfo:
+    properties:
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      securityGroupIds:
+        example:
+        - sg-01
+        items:
+          type: string
+        type: array
+      subnetIds:
+        example:
+        - subnet-01
+        items:
+          type: string
+        type: array
+      vNetId:
+        example: vpc-01
+        type: string
+    type: object
+  mci.TbK8sClusterReq:
+    properties:
+      connectionName:
+        description: Namespace      string `json:"namespace" validate:"required" example:"ns01"`
+        example: alibaba-ap-northeast-2
+        type: string
+      cspK8sClusterId:
+        description: |-
+          Fields for "Register existing K8sCluster" feature
+          @description CspK8sClusterId is required to register a k8s cluster from CSP (option=register)
+        example: required when option is register
+        type: string
+      description:
+        example: My K8sCluster
+        type: string
+      id:
+        description: (1) K8sCluster Info
+        example: k8scluster-01
+        type: string
+      k8sNodeGroupList:
+        description: (3) NodeGroupInfo List
+        items:
+          $ref: '#/definitions/mci.TbK8sNodeGroupReq'
+        type: array
+      securityGroupIds:
+        example:
+        - sg-01
+        items:
+          type: string
+        type: array
+      subnetIds:
+        example:
+        - subnet-01
+        items:
+          type: string
+        type: array
+      vNetId:
+        description: (2) Network Info
+        example: vpc-01
+        type: string
+      version:
+        example: 1.30.1-aliyun.1
+        type: string
+    required:
+    - connectionName
+    - id
+    - securityGroupIds
+    - subnetIds
+    - vNetId
+    type: object
+  mci.TbK8sClusterStatus:
+    enum:
+    - Creating
+    - Active
+    - Inactive
+    - Updating
+    - Deleting
+    type: string
+    x-enum-varnames:
+    - TbK8sClusterCreating
+    - TbK8sClusterActive
+    - TbK8sClusterInactive
+    - TbK8sClusterUpdating
+    - TbK8sClusterDeleting
+  mci.TbK8sNodeGroupInfo:
+    properties:
+      desiredNodeSize:
+        example: 1
+        type: integer
+      id:
+        example: ng-01
+        type: string
+      imageId:
+        description: VM config.
+        example: image-01
+        type: string
+      k8sNodes:
+        description: id for nodes
+        example:
+        - node-01
+        items:
+          type: string
+        type: array
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      maxNodeSize:
+        example: 3
+        type: integer
+      minNodeSize:
+        example: 1
+        type: integer
+      onAutoScaling:
+        description: Scaling config.
+        example: true
+        type: boolean
+      rootDiskSize:
+        example: "40"
+        type: string
+      rootDiskType:
+        example: cloud_essd
+        type: string
+      specId:
+        example: spec-01
+        type: string
+      sshKeyId:
+        example: sshkey-01
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/mci.TbK8sNodeGroupStatus'
+        description: '---'
+        example: Creating
+    type: object
+  mci.TbK8sNodeGroupReq:
+    properties:
+      desiredNodeSize:
+        example: "1"
+        type: string
+      imageId:
+        example: image-01
+        type: string
+      maxNodeSize:
+        example: "3"
+        type: string
+      minNodeSize:
+        example: "1"
+        type: string
+      name:
+        example: ng-01
+        type: string
+      onAutoScaling:
+        description: autoscale config.
+        example: "true"
+        type: string
+      rootDiskSize:
+        description: '"default", Integer (GB): ["50", ..., "1000"]'
+        example: "40"
+        type: string
+      rootDiskType:
+        description: '"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure:
+          ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced",
+          "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"],
+          TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
+        example: cloud_essd
+        type: string
+      specId:
+        example: Standard_B2s (temporarily, CSP's Spec Names are valid. It will be
+          upgraded)
+        type: string
+      sshKeyId:
+        example: sshkey-01
+        type: string
+    type: object
+  mci.TbK8sNodeGroupStatus:
+    enum:
+    - Creating
+    - Active
+    - Inactive
+    - Updating
+    - Deleting
+    type: string
+    x-enum-varnames:
+    - TbK8sNodeGroupCreating
+    - TbK8sNodeGroupActive
+    - TbK8sNodeGroupInactive
+    - TbK8sNodeGroupUpdating
+    - TbK8sNodeGroupDeleting
+  mci.TbMciDynamicReq:
+    properties:
+      description:
+        example: Made in CB-TB
+        type: string
+      installMonAgent:
+        default: "no"
+        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no]
+          default:yes)
+        enum:
+        - "yes"
+        - "no"
+        example: "no"
+        type: string
+      label:
+        description: Label is for describing the mci in a keyword (any string can
+          be used)
+        example: DynamicVM
+        type: string
+      name:
+        example: mci01
+        type: string
+      systemLabel:
+        description: SystemLabel is for describing the mci in a keyword (any string
+          can be used) for special System purpose
+        example: ""
+        type: string
+      vm:
+        items:
+          $ref: '#/definitions/mci.TbVmDynamicReq'
+        type: array
+    required:
+    - name
+    - vm
+    type: object
+  mci.TbMciInfo:
+    properties:
+      configureCloudAdaptiveNetwork:
+        default: "no"
+        description: ConfigureCloudAdaptiveNetwork is an option to configure Cloud
+          Adaptive Network (CLADNet) ([yes/no] default:yes)
+        enum:
+        - "yes"
+        - "no"
+        example: "yes"
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      installMonAgent:
+        default: "yes"
+        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no]
+          default:yes)
+        enum:
+        - "yes"
+        - "no"
+        example: "yes"
+        type: string
+      label:
+        description: Label is for describing the mci in a keyword (any string can
+          be used)
+        example: User custom label
+        type: string
+      name:
+        type: string
+      newVmList:
+        description: List of IDs for new VMs. Return IDs if the VMs are newly added.
+          This field should be used for return body only.
+        items:
+          type: string
+        type: array
+      placementAlgo:
+        type: string
+      status:
+        type: string
+      statusCount:
+        $ref: '#/definitions/mci.StatusCountInfo'
+      systemLabel:
+        description: SystemLabel is for describing the mci in a keyword (any string
+          can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
+      systemMessage:
+        description: Latest system message such as error message
+        example: Failed because ...
+        type: string
+      targetAction:
+        type: string
+      targetStatus:
+        type: string
+      vm:
+        items:
+          $ref: '#/definitions/mci.TbVmInfo'
+        type: array
+    type: object
+  mci.TbMciReq:
+    properties:
+      description:
+        example: Made in CB-TB
+        type: string
+      installMonAgent:
+        default: "yes"
+        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no]
+          default:yes)
+        enum:
+        - "yes"
+        - "no"
+        example: "no"
+        type: string
+      label:
+        description: Label is for describing the mci in a keyword (any string can
+          be used)
+        example: custom tag
+        type: string
+      name:
+        example: mci01
+        type: string
+      placementAlgo:
+        type: string
+      systemLabel:
+        description: SystemLabel is for describing the mci in a keyword (any string
+          can be used) for special System purpose
+        example: ""
+        type: string
+      vm:
+        items:
+          $ref: '#/definitions/mci.TbVmReq'
+        type: array
+    required:
+    - name
+    - vm
+    type: object
+  mci.TbNLBAddRemoveVMReq:
+    properties:
+      targetGroup:
+        $ref: '#/definitions/mci.TbNLBTargetGroupInfo'
+    type: object
+  mci.TbNLBHealthCheckerInfo:
+    properties:
+      interval:
+        description: secs, Interval time between health checks.
+        example: 10
+        type: integer
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      port:
+        description: Listener Port or 1-65535
+        example: "22"
+        type: string
+      protocol:
+        description: TCP|HTTP|HTTPS
+        example: TCP
+        type: string
+      threshold:
+        description: num, The number of continuous health checks to change the VM
+          status.
+        example: 3
+        type: integer
+      timeout:
+        description: secs, Waiting time to decide an unhealthy VM when no response.
+        example: 10
+        type: integer
+    type: object
+  mci.TbNLBHealthCheckerReq:
+    properties:
+      interval:
+        description: secs, Interval time between health checks.
+        example: default
+        type: string
+      threshold:
+        description: num, The number of continuous health checks to change the VM
+          status.
+        example: default
+        type: string
+      timeout:
+        description: secs, Waiting time to decide an unhealthy VM when no response.
+        example: default
+        type: string
+    type: object
+  mci.TbNLBInfo:
+    properties:
+      associatedObjectList:
+        items:
+          type: string
+        type: array
+      connectionName:
+        type: string
+      createdTime:
+        type: string
+      cspNLBId:
+        type: string
+      cspNLBName:
+        type: string
+      description:
+        type: string
+      healthChecker:
+        $ref: '#/definitions/mci.TbNLBHealthCheckerInfo'
+      id:
+        type: string
+      isAutoGenerated:
+        type: boolean
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      listener:
+        $ref: '#/definitions/mci.TbNLBListenerInfo'
+      location:
+        $ref: '#/definitions/common.Location'
+      name:
+        type: string
+      scope:
+        description: REGION(V) | GLOBAL
+        type: string
+      status:
+        type: string
+      systemLabel:
+        description: SystemLabel is for describing the MCIR in a keyword (any string
+          can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
+      targetGroup:
+        $ref: '#/definitions/mci.TbNLBTargetGroupInfo'
+      type:
+        description: PUBLIC(V) | INTERNAL
+        type: string
+    type: object
+  mci.TbNLBListenerInfo:
+    properties:
+      dnsName:
+        description: Optional, Auto Generated and attached
+        example: ns01-group-cd3.elb.ap-northeast-2.amazonaws.com
+        type: string
+      ip:
+        description: Auto Generated and attached
+        example: x.x.x.x
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      port:
+        description: 1-65535
+        example: "80"
+        type: string
+      protocol:
+        description: TCP|UDP
+        example: TCP
+        type: string
+    type: object
+  mci.TbNLBReq:
+    properties:
+      cspNLBId:
+        description: Existing NLB (used only for option=register)
+        type: string
+      description:
+        type: string
+      healthChecker:
+        allOf:
+        - $ref: '#/definitions/mci.TbNLBHealthCheckerReq'
+        description: HealthChecker
+      listener:
+        allOf:
+        - $ref: '#/definitions/mci.NLBListenerReq'
+        description: Frontend
+      scope:
+        description: REGION(V) | GLOBAL
+        enum:
+        - REGION
+        - GLOBAL
+        example: REGION
+        type: string
+      targetGroup:
+        allOf:
+        - $ref: '#/definitions/mci.TbNLBTargetGroupReq'
+        description: Backend
+      type:
+        description: PUBLIC(V) | INTERNAL
+        enum:
+        - PUBLIC
+        - INTERNAL
+        example: PUBLIC
+        type: string
+    required:
+    - healthChecker
+    - listener
+    - scope
+    - targetGroup
+    - type
+    type: object
+  mci.TbNLBTargetGroupInfo:
+    properties:
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      port:
+        description: Listener Port or 1-65535
+        example: "80"
+        type: string
+      protocol:
+        description: TCP|HTTP|HTTPS
+        example: TCP
+        type: string
+      subGroupId:
+        example: g1
+        type: string
+      vms:
+        items:
+          type: string
+        type: array
+    type: object
+  mci.TbNLBTargetGroupReq:
+    properties:
+      port:
+        description: Listener Port or 1-65535
+        example: "80"
+        type: string
+      protocol:
+        description: TCP|HTTP|HTTPS
+        example: TCP
+        type: string
+      subGroupId:
+        example: g1
+        type: string
+    type: object
+  mci.TbScaleOutSubGroupReq:
+    properties:
+      numVMsToAdd:
+        description: Define addtional VMs to scaleOut
+        example: "2"
+        type: string
+    required:
+    - numVMsToAdd
+    type: object
+  mci.TbSetK8sNodeGroupAutoscalingReq:
+    properties:
+      onAutoScaling:
+        example: "true"
+        type: string
+    type: object
+  mci.TbSetK8sNodeGroupAutoscalingRes:
+    properties:
+      result:
+        example: "true"
+        type: string
+    type: object
+  mci.TbUpgradeK8sClusterReq:
+    properties:
+      version:
+        example: 1.30.1-alyun.1
+        type: string
+    type: object
+  mci.TbVmDynamicReq:
+    properties:
+      commonImage:
+        description: CommonImage is field for id of a image in common namespace
+        example: ubuntu18.04
+        type: string
+      commonSpec:
+        description: CommonSpec is field for id of a spec in common namespace
+        example: aws+ap-northeast-2+t2.small
+        type: string
+      connectionName:
+        description: |-
+          if ConnectionName is given, the VM tries to use associtated credential.
+          if not, it will use predefined ConnectionName in Spec objects
+        type: string
+      description:
+        example: Description
+        type: string
+      label:
+        example: DynamicVM
+        type: string
+      name:
+        description: VM name or subGroup name if is (not empty) && (> 0). If it is
+          a group, actual VM name will be generated with -N postfix.
+        example: g1-1
+        type: string
+      rootDiskSize:
+        default: default
+        description: '"default", Integer (GB): ["50", ..., "1000"]'
+        example: default, 30, 42, ...
+        type: string
+      rootDiskType:
+        default: default
+        description: '"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure:
+          ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced",
+          "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"],
+          TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
+        example: default, TYPE1, ...
+        type: string
+      subGroupSize:
+        default: "1"
+        description: if subGroupSize is (not empty) && (> 0), subGroup will be gernetad.
+          VMs will be created accordingly.
+        example: "3"
+        type: string
+      vmUserPassword:
+        type: string
+    required:
+    - commonImage
+    - commonSpec
+    type: object
+  mci.TbVmInfo:
+    properties:
+      connectionConfig:
+        $ref: '#/definitions/common.ConnConfig'
+      connectionName:
+        type: string
+      createdTime:
+        description: Created time
+        example: "2022-11-10 23:00:00"
+        type: string
+      cspViewVmDetail:
+        $ref: '#/definitions/mci.SpiderVMInfo'
+      dataDiskIds:
+        items:
+          type: string
+        type: array
+      description:
+        type: string
+      id:
+        type: string
+      idByCSP:
+        description: CSP managed ID or Name
+        type: string
+      imageId:
+        type: string
+      label:
+        type: string
+      location:
+        $ref: '#/definitions/common.Location'
+      monAgentStatus:
+        description: Montoring agent status
+        example: '[installed, notInstalled, failed]'
+        type: string
+      name:
+        type: string
+      networkAgentStatus:
+        description: NetworkAgent status
+        example: '[notInstalled, installing, installed, failed]'
+        type: string
+      privateDNS:
+        type: string
+      privateIP:
+        type: string
+      publicDNS:
+        type: string
+      publicIP:
+        type: string
+      region:
+        allOf:
+        - $ref: '#/definitions/mci.RegionInfo'
+        description: AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+      rootDeviceName:
+        type: string
+      rootDiskSize:
+        type: string
+      rootDiskType:
+        type: string
+      securityGroupIds:
+        items:
+          type: string
+        type: array
+      specId:
+        type: string
+      sshKeyId:
+        type: string
+      sshPort:
+        type: string
+      status:
+        description: Required by CB-Tumblebug
+        type: string
+      subGroupId:
+        description: defined if the VM is in a group
+        type: string
+      subnetId:
+        type: string
+      systemMessage:
+        description: Latest system message such as error message
+        example: Failed because ...
+        type: string
+      targetAction:
+        type: string
+      targetStatus:
+        type: string
+      vNetId:
+        type: string
+      vmUserAccount:
+        type: string
+      vmUserPassword:
+        type: string
+    type: object
+  mci.TbVmReq:
+    properties:
+      connectionName:
+        example: testcloud01-seoul
+        type: string
+      dataDiskIds:
+        items:
+          type: string
+        type: array
+      description:
+        example: Description
+        type: string
+      idByCsp:
+        description: CSP managed ID or Name (required for option=register)
+        example: i-014fa6ede6ada0b2c
+        type: string
+      imageId:
+        description: ImageType        string   `json:"imageType"`
+        type: string
+      label:
+        type: string
+      name:
+        description: VM name or subGroup name if is (not empty) && (> 0). If it is
+          a group, actual VM name will be generated with -N postfix.
+        example: g1-1
+        type: string
+      rootDiskSize:
+        description: '"default", Integer (GB): ["50", ..., "1000"]'
+        example: default, 30, 42, ...
+        type: string
+      rootDiskType:
+        description: '"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure:
+          ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced",
+          "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"],
+          TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
+        example: default, TYPE1, ...
+        type: string
+      securityGroupIds:
+        items:
+          type: string
+        type: array
+      specId:
+        type: string
+      sshKeyId:
+        type: string
+      subGroupSize:
+        description: if subGroupSize is (not empty) && (> 0), subGroup will be gernetad.
+          VMs will be created accordingly.
+        example: "3"
+        type: string
+      subnetId:
+        type: string
+      vNetId:
+        type: string
+      vmUserAccount:
+        type: string
+      vmUserPassword:
+        type: string
+    required:
+    - connectionName
+    - imageId
+    - name
+    - securityGroupIds
+    - specId
+    - sshKeyId
+    - subnetId
+    - vNetId
+    type: object
+  mci.TbVmSnapshotReq:
+    properties:
+      name:
+        example: aws-ap-southeast-1-snapshot
+        type: string
+    type: object
+  mci.TbVmStatusInfo:
+    properties:
+      createdTime:
+        description: Created time
+        example: "2022-11-10 23:00:00"
+        type: string
+      cspVmId:
+        type: string
+      id:
+        type: string
+      location:
+        $ref: '#/definitions/common.Location'
+      monAgentStatus:
+        description: Montoring agent status
+        example: '[installed, notInstalled, failed]'
+        type: string
+      name:
+        type: string
+      nativeStatus:
+        type: string
+      privateIp:
+        type: string
+      publicIp:
+        type: string
+      sshPort:
+        type: string
+      status:
+        type: string
+      systemMessage:
+        description: Latest system message such as error message
+        example: Failed because ...
+        type: string
+      targetAction:
+        type: string
+      targetStatus:
+        type: string
+    type: object
+  mci.inspectOverview:
+    properties:
+      customImage:
+        type: integer
+      dataDisk:
+        type: integer
+      nlb:
+        type: integer
+      securityGroup:
+        type: integer
+      sshKey:
+        type: integer
+      vNet:
+        type: integer
+      vm:
+        type: integer
+    type: object
+  mci.registerationOverview:
+    properties:
+      customImage:
+        type: integer
+      dataDisk:
+        type: integer
+      failed:
+        type: integer
+      nlb:
+        type: integer
+      securityGroup:
+        type: integer
+      sshKey:
+        type: integer
+      vNet:
+        type: integer
+      vm:
+        type: integer
+    type: object
+  mci.resourceCountOverview:
+    properties:
+      onCspOnly:
+        type: integer
+      onCspTotal:
+        type: integer
+      onSpider:
+        type: integer
+      onTumblebug:
+        type: integer
+    type: object
+  mci.resourceOnCsp:
+    properties:
+      count:
+        type: integer
+      info:
+        items:
+          $ref: '#/definitions/mci.resourceOnCspInfo'
+        type: array
+    type: object
+  mci.resourceOnCspInfo:
+    properties:
+      idByCsp:
+        type: string
+      refNameOrId:
+        type: string
+    type: object
+  mci.resourceOnSpider:
+    properties:
+      count:
+        type: integer
+      info:
+        items:
+          $ref: '#/definitions/mci.resourceOnSpiderInfo'
+        type: array
+    type: object
+  mci.resourceOnSpiderInfo:
+    properties:
+      idByCsp:
+        type: string
+      idBySp:
+        type: string
+    type: object
+  mci.resourceOnTumblebug:
+    properties:
+      count:
+        type: integer
+      info:
+        items:
+          $ref: '#/definitions/mci.resourceOnTumblebugInfo'
+        type: array
+    type: object
+  mci.resourceOnTumblebugInfo:
+    properties:
+      idByCsp:
+        type: string
+      idByTb:
+        type: string
+      mciId:
+        type: string
+      nsId:
+        type: string
+      objectKey:
+        type: string
+    type: object
+  mci.resourcesByManageType:
+    properties:
+      onCspOnly:
+        $ref: '#/definitions/mci.resourceOnCsp'
+      onCspTotal:
+        $ref: '#/definitions/mci.resourceOnCsp'
+      onSpider:
+        $ref: '#/definitions/mci.resourceOnSpider'
+      onTumblebug:
+        $ref: '#/definitions/mci.resourceOnTumblebug'
+    type: object
   mcir.BastionNode:
     properties:
-      mcisId:
+      mciId:
         type: string
       vmId:
         type: string
@@ -1257,1764 +3016,6 @@ definitions:
     - connectionName
     - name
     type: object
-  mcis.AgentInstallContent:
-    properties:
-      mcisId:
-        type: string
-      result:
-        type: string
-      vmId:
-        type: string
-      vmIp:
-        type: string
-    type: object
-  mcis.AgentInstallContentWrapper:
-    properties:
-      resultArray:
-        items:
-          $ref: '#/definitions/mcis.AgentInstallContent'
-        type: array
-    type: object
-  mcis.AutoAction:
-    properties:
-      actionType:
-        enum:
-        - ScaleOut
-        - ScaleIn
-        example: ScaleOut
-        type: string
-      placementAlgo:
-        example: random
-        type: string
-      postCommand:
-        allOf:
-        - $ref: '#/definitions/mcis.McisCmdReq'
-        description: PostCommand is field for providing command to VMs after its creation.
-          example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh
-          -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
-      vmDynamicReq:
-        $ref: '#/definitions/mcis.TbVmDynamicReq'
-    type: object
-  mcis.AutoCondition:
-    properties:
-      evaluationPeriod:
-        example: "10"
-        type: string
-      evaluationValue:
-        items:
-          type: string
-        type: array
-      metric:
-        example: cpu
-        type: string
-      operand:
-        example: "80"
-        type: string
-      operator:
-        enum:
-        - <
-        - <=
-        - '>'
-        - '>='
-        example: '>='
-        type: string
-    type: object
-  mcis.BenchmarkInfo:
-    properties:
-      desc:
-        type: string
-      elapsed:
-        type: string
-      regionName:
-        type: string
-      result:
-        type: string
-      resultarray:
-        description: struct-element cycle ?
-        items:
-          $ref: '#/definitions/mcis.BenchmarkInfo'
-        type: array
-      specid:
-        type: string
-      unit:
-        type: string
-    type: object
-  mcis.BenchmarkInfoArray:
-    properties:
-      resultarray:
-        items:
-          $ref: '#/definitions/mcis.BenchmarkInfo'
-        type: array
-    type: object
-  mcis.CheckMcisDynamicReqInfo:
-    properties:
-      reqCheck:
-        items:
-          $ref: '#/definitions/mcis.CheckVmDynamicReqInfo'
-        type: array
-    required:
-    - reqCheck
-    type: object
-  mcis.CheckVmDynamicReqInfo:
-    properties:
-      connectionConfigCandidates:
-        description: ConnectionConfigCandidates will provide ConnectionConfig options
-        items:
-          type: string
-        type: array
-      image:
-        items:
-          $ref: '#/definitions/mcir.TbImageInfo'
-        type: array
-      region:
-        $ref: '#/definitions/common.RegionDetail'
-      spec:
-        $ref: '#/definitions/mcir.TbSpecInfo'
-      systemMessage:
-        description: Latest system message such as error message
-        example: Failed because ...
-        type: string
-    type: object
-  mcis.DeploymentPlan:
-    properties:
-      filter:
-        $ref: '#/definitions/mcis.FilterInfo'
-      limit:
-        enum:
-        - "1"
-        - "2"
-        - "30"
-        example: "5"
-        type: string
-      priority:
-        $ref: '#/definitions/mcis.PriorityInfo'
-    type: object
-  mcis.FilterCondition:
-    properties:
-      condition:
-        items:
-          $ref: '#/definitions/mcis.Operation'
-        type: array
-      metric:
-        enum:
-        - vCPU
-        - memoryGiB
-        - costPerHour
-        example: vCPU
-        type: string
-    type: object
-  mcis.FilterInfo:
-    properties:
-      policy:
-        items:
-          $ref: '#/definitions/mcis.FilterCondition'
-        type: array
-    type: object
-  mcis.InspectResource:
-    properties:
-      connectionName:
-        type: string
-      resourceOverview:
-        $ref: '#/definitions/mcis.resourceCountOverview'
-      resourceType:
-        type: string
-      resources:
-        $ref: '#/definitions/mcis.resourcesByManageType'
-      systemMessage:
-        type: string
-    type: object
-  mcis.InspectResourceAllResult:
-    properties:
-      availableConnection:
-        type: integer
-      cspOnlyOverview:
-        $ref: '#/definitions/mcis.inspectOverview'
-      elapsedTime:
-        type: integer
-      inspectResult:
-        items:
-          $ref: '#/definitions/mcis.InspectResourceResult'
-        type: array
-      registeredConnection:
-        type: integer
-      tumblebugOverview:
-        $ref: '#/definitions/mcis.inspectOverview'
-    type: object
-  mcis.InspectResourceResult:
-    properties:
-      connectionName:
-        type: string
-      cspOnlyOverview:
-        $ref: '#/definitions/mcis.inspectOverview'
-      elapsedTime:
-        type: integer
-      systemMessage:
-        type: string
-      tumblebugOverview:
-        $ref: '#/definitions/mcis.inspectOverview'
-    type: object
-  mcis.JSONResult:
-    type: object
-  mcis.McNlbInfo:
-    properties:
-      deploymentLog:
-        $ref: '#/definitions/mcis.McisSshCmdResult'
-      mcNlbHostInfo:
-        $ref: '#/definitions/mcis.TbMcisInfo'
-      mcisAccessInfo:
-        $ref: '#/definitions/mcis.McisAccessInfo'
-    type: object
-  mcis.McisAccessInfo:
-    properties:
-      mcisId:
-        type: string
-      mcisNlbListener:
-        $ref: '#/definitions/mcis.McisAccessInfo'
-      mcisSubGroupAccessInfo:
-        items:
-          $ref: '#/definitions/mcis.McisSubGroupAccessInfo'
-        type: array
-    type: object
-  mcis.McisCmdReq:
-    properties:
-      command:
-        example:
-        - 'client_ip=$(echo $SSH_CLIENT | awk ''{print $1}''); echo SSH client IP
-          is: $client_ip'
-        items:
-          type: string
-        type: array
-      userName:
-        example: cb-user
-        type: string
-    required:
-    - command
-    type: object
-  mcis.McisConnectionConfigCandidatesReq:
-    properties:
-      commonSpec:
-        description: CommonSpec is field for id of a spec in common namespace
-        example:
-        - aws+ap-northeast-2+t2.small
-        - gcp+us-west1+g1-small
-        items:
-          type: string
-        type: array
-    required:
-    - commonSpec
-    type: object
-  mcis.McisPolicyInfo:
-    properties:
-      Id:
-        description: MCIS Id (generated ID by the Name)
-        type: string
-      Name:
-        description: MCIS Name (for request)
-        type: string
-      actionLog:
-        type: string
-      description:
-        example: Description
-        type: string
-      policy:
-        items:
-          $ref: '#/definitions/mcis.Policy'
-        type: array
-    type: object
-  mcis.McisPolicyReq:
-    properties:
-      description:
-        example: Description
-        type: string
-      policy:
-        items:
-          $ref: '#/definitions/mcis.Policy'
-        type: array
-    type: object
-  mcis.McisSshCmdResult:
-    properties:
-      results:
-        items:
-          $ref: '#/definitions/mcis.SshCmdResult'
-        type: array
-    type: object
-  mcis.McisStatusInfo:
-    properties:
-      id:
-        type: string
-      installMonAgent:
-        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no]
-          default:yes)
-        example: '[yes, no]'
-        type: string
-      label:
-        description: Label is for describing the mcis in a keyword (any string can
-          be used)
-        example: User custom label
-        type: string
-      masterIp:
-        example: 32.201.134.113
-        type: string
-      masterSSHPort:
-        type: string
-      masterVmId:
-        example: vm-asiaeast1-cb-01
-        type: string
-      name:
-        type: string
-      status:
-        type: string
-      statusCount:
-        $ref: '#/definitions/mcis.StatusCountInfo'
-      systemLabel:
-        description: SystemLabel is for describing the mcis in a keyword (any string
-          can be used) for special System purpose
-        example: Managed by CB-Tumblebug
-        type: string
-      targetAction:
-        type: string
-      targetStatus:
-        type: string
-      vm:
-        items:
-          $ref: '#/definitions/mcis.TbVmStatusInfo'
-        type: array
-    type: object
-  mcis.McisSubGroupAccessInfo:
-    properties:
-      bastionVmId:
-        type: string
-      mcisVmAccessInfo:
-        items:
-          $ref: '#/definitions/mcis.McisVmAccessInfo'
-        type: array
-      nlbListener:
-        $ref: '#/definitions/mcis.TbNLBListenerInfo'
-      subGroupId:
-        type: string
-    type: object
-  mcis.McisVmAccessInfo:
-    properties:
-      privateIP:
-        type: string
-      privateKey:
-        type: string
-      publicIP:
-        type: string
-      sshPort:
-        type: string
-      vmId:
-        type: string
-      vmUserAccount:
-        type: string
-      vmUserPassword:
-        type: string
-    type: object
-  mcis.MonResultSimple:
-    properties:
-      err:
-        type: string
-      metric:
-        type: string
-      value:
-        type: string
-      vmId:
-        type: string
-    type: object
-  mcis.MonResultSimpleResponse:
-    properties:
-      mcisId:
-        type: string
-      mcisMonitoring:
-        items:
-          $ref: '#/definitions/mcis.MonResultSimple'
-        type: array
-      nsId:
-        type: string
-    type: object
-  mcis.NLBListenerReq:
-    properties:
-      port:
-        description: 1-65535
-        example: "80"
-        type: string
-      protocol:
-        description: TCP|UDP
-        example: TCP
-        type: string
-    type: object
-  mcis.Operation:
-    properties:
-      operand:
-        description: 10, 70, 80, 98, ...
-        enum:
-        - "4"
-        - "8"
-        - ..
-        example: "4"
-        type: string
-      operator:
-        description: '>=, <=, =='
-        enum:
-        - '>='
-        - <=
-        - ==
-        example: <=
-        type: string
-    type: object
-  mcis.ParameterKeyVal:
-    properties:
-      key:
-        description: coordinate
-        enum:
-        - coordinateClose
-        - coordinateWithin
-        - coordinateFair
-        example: coordinateClose
-        type: string
-      val:
-        description: '["Latitude,Longitude","12,543",..,"31,433"]'
-        example:
-        - 44.146838/-116.411403
-        items:
-          type: string
-        type: array
-    type: object
-  mcis.Policy:
-    properties:
-      autoAction:
-        $ref: '#/definitions/mcis.AutoAction'
-      autoCondition:
-        $ref: '#/definitions/mcis.AutoCondition'
-      status:
-        type: string
-    type: object
-  mcis.PriorityCondition:
-    properties:
-      metric:
-        enum:
-        - location
-        - cost
-        - random
-        - performance
-        - latency
-        example: location
-        type: string
-      parameter:
-        items:
-          $ref: '#/definitions/mcis.ParameterKeyVal'
-        type: array
-      weight:
-        enum:
-        - "0.1"
-        - "0.2"
-        - '...'
-        example: "0.3"
-        type: string
-    type: object
-  mcis.PriorityInfo:
-    properties:
-      policy:
-        items:
-          $ref: '#/definitions/mcis.PriorityCondition'
-        type: array
-    type: object
-  mcis.RegionInfo:
-    properties:
-      region:
-        type: string
-      zone:
-        type: string
-    type: object
-  mcis.RegisterResourceAllResult:
-    properties:
-      availableConnection:
-        type: integer
-      elapsedTime:
-        type: integer
-      registerationOverview:
-        $ref: '#/definitions/mcis.registerationOverview'
-      registerationResult:
-        items:
-          $ref: '#/definitions/mcis.RegisterResourceResult'
-        type: array
-      registeredConnection:
-        type: integer
-    type: object
-  mcis.RegisterResourceResult:
-    properties:
-      connectionName:
-        type: string
-      elapsedTime:
-        type: integer
-      registerationOutputs:
-        $ref: '#/definitions/common.IdList'
-      registerationOverview:
-        $ref: '#/definitions/mcis.registerationOverview'
-      systemMessage:
-        type: string
-    type: object
-  mcis.RestGetAllBenchmarkRequest:
-    properties:
-      host:
-        type: string
-    type: object
-  mcis.RestGetAllK8sClusterResponse:
-    properties:
-      cluster:
-        items:
-          $ref: '#/definitions/mcis.TbK8sClusterInfo'
-        type: array
-    type: object
-  mcis.RestGetAllMcisPolicyResponse:
-    properties:
-      mcisPolicy:
-        items:
-          $ref: '#/definitions/mcis.McisPolicyInfo'
-        type: array
-    type: object
-  mcis.RestGetAllMcisResponse:
-    properties:
-      mcis:
-        items:
-          $ref: '#/definitions/mcis.TbMcisInfo'
-        type: array
-    type: object
-  mcis.RestGetAllMcisStatusResponse:
-    properties:
-      mcis:
-        items:
-          $ref: '#/definitions/mcis.McisStatusInfo'
-        type: array
-    type: object
-  mcis.RestGetAllNLBResponse:
-    properties:
-      nlb:
-        items:
-          $ref: '#/definitions/mcis.TbNLBInfo'
-        type: array
-    type: object
-  mcis.RestGetBenchmarkRequest:
-    properties:
-      host:
-        type: string
-    type: object
-  mcis.SpiderImageType:
-    enum:
-    - PublicImage
-    - MyImage
-    type: string
-    x-enum-varnames:
-    - PublicImage
-    - MyImage
-  mcis.SpiderVMInfo:
-    properties:
-      cspid:
-        description: VM ID given by CSP (required for registering VM)
-        type: string
-      dataDiskIIDs:
-        items:
-          $ref: '#/definitions/common.IID'
-        type: array
-      dataDiskNames:
-        items:
-          type: string
-        type: array
-      iid:
-        allOf:
-        - $ref: '#/definitions/common.IID'
-        description: Fields for response
-      imageIId:
-        $ref: '#/definitions/common.IID'
-      imageName:
-        type: string
-      imageType:
-        $ref: '#/definitions/mcis.SpiderImageType'
-      keyPairIId:
-        $ref: '#/definitions/common.IID'
-      keyPairName:
-        type: string
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      name:
-        description: Fields for request
-        type: string
-      networkInterface:
-        description: ex) eth0
-        type: string
-      privateDNS:
-        type: string
-      privateIP:
-        type: string
-      publicDNS:
-        type: string
-      publicIP:
-        type: string
-      region:
-        allOf:
-        - $ref: '#/definitions/mcis.RegionInfo'
-        description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
-      rootDeviceName:
-        description: '"/dev/sda1", ...'
-        type: string
-      rootDiskSize:
-        description: '"default", "50", "1000" (GB)'
-        type: string
-      rootDiskType:
-        description: '"SSD(gp2)", "Premium SSD", ...'
-        type: string
-      securityGroupIIds:
-        description: AWS, ex) sg-0b7452563e1121bb6
-        items:
-          $ref: '#/definitions/common.IID'
-        type: array
-      securityGroupNames:
-        items:
-          type: string
-        type: array
-      sshaccessPoint:
-        type: string
-      startTime:
-        type: string
-      subnetIID:
-        allOf:
-        - $ref: '#/definitions/common.IID'
-        description: AWS, ex) subnet-8c4a53e4
-      subnetName:
-        type: string
-      vmspecName:
-        description: Fields for both request and response
-        type: string
-      vmuserId:
-        description: ex) user1
-        type: string
-      vmuserPasswd:
-        type: string
-      vpcIID:
-        $ref: '#/definitions/common.IID'
-      vpcname:
-        type: string
-    type: object
-  mcis.SshCmdResult:
-    properties:
-      command:
-        additionalProperties:
-          type: string
-        type: object
-      err: {}
-      mcisId:
-        type: string
-      stderr:
-        additionalProperties:
-          type: string
-        type: object
-      stdout:
-        additionalProperties:
-          type: string
-        type: object
-      vmId:
-        type: string
-      vmIp:
-        type: string
-    type: object
-  mcis.StatusCountInfo:
-    properties:
-      countCreating:
-        description: CountCreating is for counting Creating
-        type: integer
-      countFailed:
-        description: CountFailed is for counting Failed
-        type: integer
-      countRebooting:
-        description: CountRebooting is for counting Rebooting
-        type: integer
-      countResuming:
-        description: CountResuming is for counting Resuming
-        type: integer
-      countRunning:
-        description: CountRunning is for counting Running
-        type: integer
-      countSuspended:
-        description: CountSuspended is for counting Suspended
-        type: integer
-      countSuspending:
-        description: CountSuspending is for counting Suspending
-        type: integer
-      countTerminated:
-        description: CountTerminated is for counting Terminated
-        type: integer
-      countTerminating:
-        description: CountTerminating is for counting Terminating
-        type: integer
-      countTotal:
-        description: CountTotal is for Total VMs
-        type: integer
-      countUndefined:
-        description: CountUndefined is for counting Undefined
-        type: integer
-    type: object
-  mcis.TbChangeK8sNodeGroupAutoscaleSizeReq:
-    properties:
-      desiredNodeSize:
-        example: "1"
-        type: string
-      maxNodeSize:
-        example: "3"
-        type: string
-      minNodeSize:
-        example: "1"
-        type: string
-    type: object
-  mcis.TbChangeK8sNodeGroupAutoscaleSizeRes:
-    properties:
-      desiredNodeSize:
-        example: 1
-        type: integer
-      id:
-        example: ng-01
-        type: string
-      imageId:
-        description: VM config.
-        example: image-01
-        type: string
-      k8sNodes:
-        description: id for nodes
-        example:
-        - node-01
-        items:
-          type: string
-        type: array
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      maxNodeSize:
-        example: 3
-        type: integer
-      minNodeSize:
-        example: 1
-        type: integer
-      onAutoScaling:
-        description: Scaling config.
-        example: true
-        type: boolean
-      rootDiskSize:
-        example: "40"
-        type: string
-      rootDiskType:
-        example: cloud_essd
-        type: string
-      specId:
-        example: spec-01
-        type: string
-      sshKeyId:
-        example: sshkey-01
-        type: string
-      status:
-        allOf:
-        - $ref: '#/definitions/mcis.TbK8sNodeGroupStatus'
-        description: '---'
-        example: Creating
-    type: object
-  mcis.TbIdNameInDetailInfo:
-    properties:
-      idInCsp:
-        type: string
-      idInSp:
-        type: string
-      idInTb:
-        type: string
-      nameInCsp:
-        type: string
-    type: object
-  mcis.TbK8sAccessInfo:
-    properties:
-      endpoint:
-        example: http://1.2.3.4:6443
-        type: string
-      kubeconfig:
-        example: |-
-          apiVersion: v1
-          clusters:
-          - cluster:
-           certificate-authority-data: LS0...
-        type: string
-    type: object
-  mcis.TbK8sAddonsInfo:
-    properties:
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-    type: object
-  mcis.TbK8sClusterInfo:
-    properties:
-      accessInfo:
-        $ref: '#/definitions/mcis.TbK8sAccessInfo'
-      addons:
-        $ref: '#/definitions/mcis.TbK8sAddonsInfo'
-      connectionName:
-        example: alibaba-ap-northeast-2
-        type: string
-      createdTime:
-        example: "1970-01-01T00:00:00.00Z"
-        type: string
-      cspK8sClusterId:
-        example: c123456789012345678901234567890
-        type: string
-      cspK8sClusterName:
-        example: ns01-k8scluster-01
-        type: string
-      description:
-        example: My K8sCluster
-        type: string
-      id:
-        example: k8scluster-01
-        type: string
-      k8sNodeGroupList:
-        items:
-          $ref: '#/definitions/mcis.TbK8sNodeGroupInfo'
-        type: array
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      name:
-        example: k8scluster-01
-        type: string
-      network:
-        $ref: '#/definitions/mcis.TbK8sClusterNetworkInfo'
-      status:
-        allOf:
-        - $ref: '#/definitions/mcis.TbK8sClusterStatus'
-        description: Creating, Active, Inactive, Updating, Deleting
-        example: Creating
-      systemLabel:
-        description: SystemLabel is for describing the MCIR in a keyword (any string
-          can be used) for special System purpose
-        example: Managed by CB-Tumblebug
-        type: string
-      systemMessage:
-        description: Latest system message such as error message
-        example: Failed because ...
-        type: string
-      version:
-        description: Kubernetes Version, ex) 1.23.3
-        example: 1.30.1-aliyun.1
-        type: string
-    type: object
-  mcis.TbK8sClusterNetworkInfo:
-    properties:
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      securityGroupIds:
-        example:
-        - sg-01
-        items:
-          type: string
-        type: array
-      subnetIds:
-        example:
-        - subnet-01
-        items:
-          type: string
-        type: array
-      vNetId:
-        example: vpc-01
-        type: string
-    type: object
-  mcis.TbK8sClusterReq:
-    properties:
-      connectionName:
-        description: Namespace      string `json:"namespace" validate:"required" example:"ns01"`
-        example: alibaba-ap-northeast-2
-        type: string
-      cspK8sClusterId:
-        description: |-
-          Fields for "Register existing K8sCluster" feature
-          @description CspK8sClusterId is required to register a k8s cluster from CSP (option=register)
-        example: required when option is register
-        type: string
-      description:
-        example: My K8sCluster
-        type: string
-      id:
-        description: (1) K8sCluster Info
-        example: k8scluster-01
-        type: string
-      k8sNodeGroupList:
-        description: (3) NodeGroupInfo List
-        items:
-          $ref: '#/definitions/mcis.TbK8sNodeGroupReq'
-        type: array
-      securityGroupIds:
-        example:
-        - sg-01
-        items:
-          type: string
-        type: array
-      subnetIds:
-        example:
-        - subnet-01
-        items:
-          type: string
-        type: array
-      vNetId:
-        description: (2) Network Info
-        example: vpc-01
-        type: string
-      version:
-        example: 1.30.1-aliyun.1
-        type: string
-    required:
-    - connectionName
-    - id
-    - securityGroupIds
-    - subnetIds
-    - vNetId
-    type: object
-  mcis.TbK8sClusterStatus:
-    enum:
-    - Creating
-    - Active
-    - Inactive
-    - Updating
-    - Deleting
-    type: string
-    x-enum-varnames:
-    - TbK8sClusterCreating
-    - TbK8sClusterActive
-    - TbK8sClusterInactive
-    - TbK8sClusterUpdating
-    - TbK8sClusterDeleting
-  mcis.TbK8sNodeGroupInfo:
-    properties:
-      desiredNodeSize:
-        example: 1
-        type: integer
-      id:
-        example: ng-01
-        type: string
-      imageId:
-        description: VM config.
-        example: image-01
-        type: string
-      k8sNodes:
-        description: id for nodes
-        example:
-        - node-01
-        items:
-          type: string
-        type: array
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      maxNodeSize:
-        example: 3
-        type: integer
-      minNodeSize:
-        example: 1
-        type: integer
-      onAutoScaling:
-        description: Scaling config.
-        example: true
-        type: boolean
-      rootDiskSize:
-        example: "40"
-        type: string
-      rootDiskType:
-        example: cloud_essd
-        type: string
-      specId:
-        example: spec-01
-        type: string
-      sshKeyId:
-        example: sshkey-01
-        type: string
-      status:
-        allOf:
-        - $ref: '#/definitions/mcis.TbK8sNodeGroupStatus'
-        description: '---'
-        example: Creating
-    type: object
-  mcis.TbK8sNodeGroupReq:
-    properties:
-      desiredNodeSize:
-        example: "1"
-        type: string
-      imageId:
-        example: image-01
-        type: string
-      maxNodeSize:
-        example: "3"
-        type: string
-      minNodeSize:
-        example: "1"
-        type: string
-      name:
-        example: ng-01
-        type: string
-      onAutoScaling:
-        description: autoscale config.
-        example: "true"
-        type: string
-      rootDiskSize:
-        description: '"default", Integer (GB): ["50", ..., "1000"]'
-        example: "40"
-        type: string
-      rootDiskType:
-        description: '"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure:
-          ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced",
-          "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"],
-          TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
-        example: cloud_essd
-        type: string
-      specId:
-        example: spec-01
-        type: string
-      sshKeyId:
-        example: sshkey-01
-        type: string
-    type: object
-  mcis.TbK8sNodeGroupStatus:
-    enum:
-    - Creating
-    - Active
-    - Inactive
-    - Updating
-    - Deleting
-    type: string
-    x-enum-varnames:
-    - TbK8sNodeGroupCreating
-    - TbK8sNodeGroupActive
-    - TbK8sNodeGroupInactive
-    - TbK8sNodeGroupUpdating
-    - TbK8sNodeGroupDeleting
-  mcis.TbMcisDynamicReq:
-    properties:
-      description:
-        example: Made in CB-TB
-        type: string
-      installMonAgent:
-        default: "no"
-        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no]
-          default:yes)
-        enum:
-        - "yes"
-        - "no"
-        example: "no"
-        type: string
-      label:
-        description: Label is for describing the mcis in a keyword (any string can
-          be used)
-        example: DynamicVM
-        type: string
-      name:
-        example: mcis01
-        type: string
-      systemLabel:
-        description: SystemLabel is for describing the mcis in a keyword (any string
-          can be used) for special System purpose
-        example: ""
-        type: string
-      vm:
-        items:
-          $ref: '#/definitions/mcis.TbVmDynamicReq'
-        type: array
-    required:
-    - name
-    - vm
-    type: object
-  mcis.TbMcisInfo:
-    properties:
-      configureCloudAdaptiveNetwork:
-        default: "no"
-        description: ConfigureCloudAdaptiveNetwork is an option to configure Cloud
-          Adaptive Network (CLADNet) ([yes/no] default:yes)
-        enum:
-        - "yes"
-        - "no"
-        example: "yes"
-        type: string
-      description:
-        type: string
-      id:
-        type: string
-      installMonAgent:
-        default: "yes"
-        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no]
-          default:yes)
-        enum:
-        - "yes"
-        - "no"
-        example: "yes"
-        type: string
-      label:
-        description: Label is for describing the mcis in a keyword (any string can
-          be used)
-        example: User custom label
-        type: string
-      name:
-        type: string
-      newVmList:
-        description: List of IDs for new VMs. Return IDs if the VMs are newly added.
-          This field should be used for return body only.
-        items:
-          type: string
-        type: array
-      placementAlgo:
-        type: string
-      status:
-        type: string
-      statusCount:
-        $ref: '#/definitions/mcis.StatusCountInfo'
-      systemLabel:
-        description: SystemLabel is for describing the mcis in a keyword (any string
-          can be used) for special System purpose
-        example: Managed by CB-Tumblebug
-        type: string
-      systemMessage:
-        description: Latest system message such as error message
-        example: Failed because ...
-        type: string
-      targetAction:
-        type: string
-      targetStatus:
-        type: string
-      vm:
-        items:
-          $ref: '#/definitions/mcis.TbVmInfo'
-        type: array
-    type: object
-  mcis.TbMcisReq:
-    properties:
-      description:
-        example: Made in CB-TB
-        type: string
-      installMonAgent:
-        default: "yes"
-        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no]
-          default:yes)
-        enum:
-        - "yes"
-        - "no"
-        example: "no"
-        type: string
-      label:
-        description: Label is for describing the mcis in a keyword (any string can
-          be used)
-        example: custom tag
-        type: string
-      name:
-        example: mcis01
-        type: string
-      placementAlgo:
-        type: string
-      systemLabel:
-        description: SystemLabel is for describing the mcis in a keyword (any string
-          can be used) for special System purpose
-        example: ""
-        type: string
-      vm:
-        items:
-          $ref: '#/definitions/mcis.TbVmReq'
-        type: array
-    required:
-    - name
-    - vm
-    type: object
-  mcis.TbNLBAddRemoveVMReq:
-    properties:
-      targetGroup:
-        $ref: '#/definitions/mcis.TbNLBTargetGroupInfo'
-    type: object
-  mcis.TbNLBHealthCheckerInfo:
-    properties:
-      interval:
-        description: secs, Interval time between health checks.
-        example: 10
-        type: integer
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      port:
-        description: Listener Port or 1-65535
-        example: "22"
-        type: string
-      protocol:
-        description: TCP|HTTP|HTTPS
-        example: TCP
-        type: string
-      threshold:
-        description: num, The number of continuous health checks to change the VM
-          status.
-        example: 3
-        type: integer
-      timeout:
-        description: secs, Waiting time to decide an unhealthy VM when no response.
-        example: 10
-        type: integer
-    type: object
-  mcis.TbNLBHealthCheckerReq:
-    properties:
-      interval:
-        description: secs, Interval time between health checks.
-        example: default
-        type: string
-      threshold:
-        description: num, The number of continuous health checks to change the VM
-          status.
-        example: default
-        type: string
-      timeout:
-        description: secs, Waiting time to decide an unhealthy VM when no response.
-        example: default
-        type: string
-    type: object
-  mcis.TbNLBInfo:
-    properties:
-      associatedObjectList:
-        items:
-          type: string
-        type: array
-      connectionName:
-        type: string
-      createdTime:
-        type: string
-      cspNLBId:
-        type: string
-      cspNLBName:
-        type: string
-      description:
-        type: string
-      healthChecker:
-        $ref: '#/definitions/mcis.TbNLBHealthCheckerInfo'
-      id:
-        type: string
-      isAutoGenerated:
-        type: boolean
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      listener:
-        $ref: '#/definitions/mcis.TbNLBListenerInfo'
-      location:
-        $ref: '#/definitions/common.Location'
-      name:
-        type: string
-      scope:
-        description: REGION(V) | GLOBAL
-        type: string
-      status:
-        type: string
-      systemLabel:
-        description: SystemLabel is for describing the MCIR in a keyword (any string
-          can be used) for special System purpose
-        example: Managed by CB-Tumblebug
-        type: string
-      targetGroup:
-        $ref: '#/definitions/mcis.TbNLBTargetGroupInfo'
-      type:
-        description: PUBLIC(V) | INTERNAL
-        type: string
-    type: object
-  mcis.TbNLBListenerInfo:
-    properties:
-      dnsName:
-        description: Optional, Auto Generated and attached
-        example: ns01-group-cd3.elb.ap-northeast-2.amazonaws.com
-        type: string
-      ip:
-        description: Auto Generated and attached
-        example: x.x.x.x
-        type: string
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      port:
-        description: 1-65535
-        example: "80"
-        type: string
-      protocol:
-        description: TCP|UDP
-        example: TCP
-        type: string
-    type: object
-  mcis.TbNLBReq:
-    properties:
-      cspNLBId:
-        description: Existing NLB (used only for option=register)
-        type: string
-      description:
-        type: string
-      healthChecker:
-        allOf:
-        - $ref: '#/definitions/mcis.TbNLBHealthCheckerReq'
-        description: HealthChecker
-      listener:
-        allOf:
-        - $ref: '#/definitions/mcis.NLBListenerReq'
-        description: Frontend
-      scope:
-        description: REGION(V) | GLOBAL
-        enum:
-        - REGION
-        - GLOBAL
-        example: REGION
-        type: string
-      targetGroup:
-        allOf:
-        - $ref: '#/definitions/mcis.TbNLBTargetGroupReq'
-        description: Backend
-      type:
-        description: PUBLIC(V) | INTERNAL
-        enum:
-        - PUBLIC
-        - INTERNAL
-        example: PUBLIC
-        type: string
-    required:
-    - healthChecker
-    - listener
-    - scope
-    - targetGroup
-    - type
-    type: object
-  mcis.TbNLBTargetGroupInfo:
-    properties:
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      port:
-        description: Listener Port or 1-65535
-        example: "80"
-        type: string
-      protocol:
-        description: TCP|HTTP|HTTPS
-        example: TCP
-        type: string
-      subGroupId:
-        example: g1
-        type: string
-      vms:
-        items:
-          type: string
-        type: array
-    type: object
-  mcis.TbNLBTargetGroupReq:
-    properties:
-      port:
-        description: Listener Port or 1-65535
-        example: "80"
-        type: string
-      protocol:
-        description: TCP|HTTP|HTTPS
-        example: TCP
-        type: string
-      subGroupId:
-        example: g1
-        type: string
-    type: object
-  mcis.TbScaleOutSubGroupReq:
-    properties:
-      numVMsToAdd:
-        description: Define addtional VMs to scaleOut
-        example: "2"
-        type: string
-    required:
-    - numVMsToAdd
-    type: object
-  mcis.TbSetK8sNodeGroupAutoscalingReq:
-    properties:
-      onAutoScaling:
-        example: "true"
-        type: string
-    type: object
-  mcis.TbSetK8sNodeGroupAutoscalingRes:
-    properties:
-      result:
-        example: "true"
-        type: string
-    type: object
-  mcis.TbUpgradeK8sClusterReq:
-    properties:
-      version:
-        example: 1.30.1-alyun.1
-        type: string
-    type: object
-  mcis.TbVmDynamicReq:
-    properties:
-      commonImage:
-        description: CommonImage is field for id of a image in common namespace
-        example: ubuntu18.04
-        type: string
-      commonSpec:
-        description: CommonSpec is field for id of a spec in common namespace
-        example: aws+ap-northeast-2+t2.small
-        type: string
-      connectionName:
-        description: |-
-          if ConnectionName is given, the VM tries to use associtated credential.
-          if not, it will use predefined ConnectionName in Spec objects
-        type: string
-      description:
-        example: Description
-        type: string
-      label:
-        example: DynamicVM
-        type: string
-      name:
-        description: VM name or subGroup name if is (not empty) && (> 0). If it is
-          a group, actual VM name will be generated with -N postfix.
-        example: g1-1
-        type: string
-      rootDiskSize:
-        default: default
-        description: '"default", Integer (GB): ["50", ..., "1000"]'
-        example: default, 30, 42, ...
-        type: string
-      rootDiskType:
-        default: default
-        description: '"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure:
-          ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced",
-          "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"],
-          TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
-        example: default, TYPE1, ...
-        type: string
-      subGroupSize:
-        default: "1"
-        description: if subGroupSize is (not empty) && (> 0), subGroup will be gernetad.
-          VMs will be created accordingly.
-        example: "3"
-        type: string
-      vmUserPassword:
-        type: string
-    required:
-    - commonImage
-    - commonSpec
-    type: object
-  mcis.TbVmInfo:
-    properties:
-      connectionConfig:
-        $ref: '#/definitions/common.ConnConfig'
-      connectionName:
-        type: string
-      createdTime:
-        description: Created time
-        example: "2022-11-10 23:00:00"
-        type: string
-      cspViewVmDetail:
-        $ref: '#/definitions/mcis.SpiderVMInfo'
-      dataDiskIds:
-        items:
-          type: string
-        type: array
-      description:
-        type: string
-      id:
-        type: string
-      idByCSP:
-        description: CSP managed ID or Name
-        type: string
-      imageId:
-        type: string
-      label:
-        type: string
-      location:
-        $ref: '#/definitions/common.Location'
-      monAgentStatus:
-        description: Montoring agent status
-        example: '[installed, notInstalled, failed]'
-        type: string
-      name:
-        type: string
-      networkAgentStatus:
-        description: NetworkAgent status
-        example: '[notInstalled, installing, installed, failed]'
-        type: string
-      privateDNS:
-        type: string
-      privateIP:
-        type: string
-      publicDNS:
-        type: string
-      publicIP:
-        type: string
-      region:
-        allOf:
-        - $ref: '#/definitions/mcis.RegionInfo'
-        description: AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-      rootDeviceName:
-        type: string
-      rootDiskSize:
-        type: string
-      rootDiskType:
-        type: string
-      securityGroupIds:
-        items:
-          type: string
-        type: array
-      specId:
-        type: string
-      sshKeyId:
-        type: string
-      sshPort:
-        type: string
-      status:
-        description: Required by CB-Tumblebug
-        type: string
-      subGroupId:
-        description: defined if the VM is in a group
-        type: string
-      subnetId:
-        type: string
-      systemMessage:
-        description: Latest system message such as error message
-        example: Failed because ...
-        type: string
-      targetAction:
-        type: string
-      targetStatus:
-        type: string
-      vNetId:
-        type: string
-      vmUserAccount:
-        type: string
-      vmUserPassword:
-        type: string
-    type: object
-  mcis.TbVmReq:
-    properties:
-      connectionName:
-        example: testcloud01-seoul
-        type: string
-      dataDiskIds:
-        items:
-          type: string
-        type: array
-      description:
-        example: Description
-        type: string
-      idByCsp:
-        description: CSP managed ID or Name (required for option=register)
-        example: i-014fa6ede6ada0b2c
-        type: string
-      imageId:
-        description: ImageType        string   `json:"imageType"`
-        type: string
-      label:
-        type: string
-      name:
-        description: VM name or subGroup name if is (not empty) && (> 0). If it is
-          a group, actual VM name will be generated with -N postfix.
-        example: g1-1
-        type: string
-      rootDiskSize:
-        description: '"default", Integer (GB): ["50", ..., "1000"]'
-        example: default, 30, 42, ...
-        type: string
-      rootDiskType:
-        description: '"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure:
-          ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced",
-          "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"],
-          TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
-        example: default, TYPE1, ...
-        type: string
-      securityGroupIds:
-        items:
-          type: string
-        type: array
-      specId:
-        type: string
-      sshKeyId:
-        type: string
-      subGroupSize:
-        description: if subGroupSize is (not empty) && (> 0), subGroup will be gernetad.
-          VMs will be created accordingly.
-        example: "3"
-        type: string
-      subnetId:
-        type: string
-      vNetId:
-        type: string
-      vmUserAccount:
-        type: string
-      vmUserPassword:
-        type: string
-    required:
-    - connectionName
-    - imageId
-    - name
-    - securityGroupIds
-    - specId
-    - sshKeyId
-    - subnetId
-    - vNetId
-    type: object
-  mcis.TbVmSnapshotReq:
-    properties:
-      name:
-        example: aws-ap-southeast-1-snapshot
-        type: string
-    type: object
-  mcis.TbVmStatusInfo:
-    properties:
-      createdTime:
-        description: Created time
-        example: "2022-11-10 23:00:00"
-        type: string
-      cspVmId:
-        type: string
-      id:
-        type: string
-      location:
-        $ref: '#/definitions/common.Location'
-      monAgentStatus:
-        description: Montoring agent status
-        example: '[installed, notInstalled, failed]'
-        type: string
-      name:
-        type: string
-      nativeStatus:
-        type: string
-      privateIp:
-        type: string
-      publicIp:
-        type: string
-      sshPort:
-        type: string
-      status:
-        type: string
-      systemMessage:
-        description: Latest system message such as error message
-        example: Failed because ...
-        type: string
-      targetAction:
-        type: string
-      targetStatus:
-        type: string
-    type: object
-  mcis.inspectOverview:
-    properties:
-      customImage:
-        type: integer
-      dataDisk:
-        type: integer
-      nlb:
-        type: integer
-      securityGroup:
-        type: integer
-      sshKey:
-        type: integer
-      vNet:
-        type: integer
-      vm:
-        type: integer
-    type: object
-  mcis.registerationOverview:
-    properties:
-      customImage:
-        type: integer
-      dataDisk:
-        type: integer
-      failed:
-        type: integer
-      nlb:
-        type: integer
-      securityGroup:
-        type: integer
-      sshKey:
-        type: integer
-      vNet:
-        type: integer
-      vm:
-        type: integer
-    type: object
-  mcis.resourceCountOverview:
-    properties:
-      onCspOnly:
-        type: integer
-      onCspTotal:
-        type: integer
-      onSpider:
-        type: integer
-      onTumblebug:
-        type: integer
-    type: object
-  mcis.resourceOnCsp:
-    properties:
-      count:
-        type: integer
-      info:
-        items:
-          $ref: '#/definitions/mcis.resourceOnCspInfo'
-        type: array
-    type: object
-  mcis.resourceOnCspInfo:
-    properties:
-      idByCsp:
-        type: string
-      refNameOrId:
-        type: string
-    type: object
-  mcis.resourceOnSpider:
-    properties:
-      count:
-        type: integer
-      info:
-        items:
-          $ref: '#/definitions/mcis.resourceOnSpiderInfo'
-        type: array
-    type: object
-  mcis.resourceOnSpiderInfo:
-    properties:
-      idByCsp:
-        type: string
-      idBySp:
-        type: string
-    type: object
-  mcis.resourceOnTumblebug:
-    properties:
-      count:
-        type: integer
-      info:
-        items:
-          $ref: '#/definitions/mcis.resourceOnTumblebugInfo'
-        type: array
-    type: object
-  mcis.resourceOnTumblebugInfo:
-    properties:
-      idByCsp:
-        type: string
-      idByTb:
-        type: string
-      mcisId:
-        type: string
-      nsId:
-        type: string
-      objectKey:
-        type: string
-    type: object
-  mcis.resourcesByManageType:
-    properties:
-      onCspOnly:
-        $ref: '#/definitions/mcis.resourceOnCsp'
-      onCspTotal:
-        $ref: '#/definitions/mcis.resourceOnCsp'
-      onSpider:
-        $ref: '#/definitions/mcis.resourceOnSpider'
-      onTumblebug:
-        $ref: '#/definitions/mcis.resourceOnTumblebug'
-    type: object
   model.Response:
     properties:
       details:
@@ -3077,8 +3078,8 @@ definitions:
       count:
         example: 3
         type: integer
-      mcisId:
-        example: mcis-01
+      mciId:
+        example: mci-01
         type: string
       nsId:
         example: ns-01
@@ -3697,7 +3698,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.InspectResource'
+            $ref: '#/definitions/mci.InspectResource'
         "404":
           description: Not Found
           schema:
@@ -3723,7 +3724,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.InspectResourceAllResult'
+            $ref: '#/definitions/mci.InspectResourceAllResult'
         "404":
           description: Not Found
           schema:
@@ -3904,27 +3905,27 @@ paths:
       summary: Lookup spec list
       tags:
       - '[Infra resource] MCIR Common'
-  /mcisDynamicCheckRequest:
+  /mciDynamicCheckRequest:
     post:
       consumes:
       - application/json
-      description: Check available ConnectionConfig list before create MCIS Dynamically
+      description: Check available ConnectionConfig list before create MCI Dynamically
         from common spec and image
-      operationId: PostMcisDynamicCheckRequest
+      operationId: PostMciDynamicCheckRequest
       parameters:
-      - description: Details for MCIS dynamic request information
+      - description: Details for MCI dynamic request information
         in: body
-        name: mcisReq
+        name: mciReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.McisConnectionConfigCandidatesReq'
+          $ref: '#/definitions/mci.MciConnectionConfigCandidatesReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.CheckMcisDynamicReqInfo'
+            $ref: '#/definitions/mci.CheckMciDynamicReqInfo'
         "404":
           description: Not Found
           schema:
@@ -3933,21 +3934,21 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Check available ConnectionConfig list for creating MCIS Dynamically
+      summary: Check available ConnectionConfig list for creating MCI Dynamically
       tags:
-      - '[Infra service] MCIS Provisioning management'
-  /mcisRecommendVm:
+      - '[Infra service] MCI Provisioning management'
+  /mciRecommendVm:
     post:
       consumes:
       - application/json
-      description: Recommend MCIS plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
+      description: Recommend MCI plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
       operationId: RecommendVm
       parameters:
-      - description: Recommend MCIS plan (filter and priority)
+      - description: Recommend MCI plan (filter and priority)
         in: body
         name: deploymentPlan
         schema:
-          $ref: '#/definitions/mcis.DeploymentPlan'
+          $ref: '#/definitions/mci.DeploymentPlan'
       produces:
       - application/json
       responses:
@@ -3965,9 +3966,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Recommend MCIS plan (filter and priority)
+      summary: Recommend MCI plan (filter and priority)
       tags:
-      - '[Infra service] MCIS Provisioning management'
+      - '[Infra service] MCI Provisioning management'
   /ns:
     delete:
       consumes:
@@ -4148,11 +4149,11 @@ paths:
       summary: Update namespace
       tags:
       - '[Namespace] Namespace management'
-  /ns/{nsId}/benchmark/mcis/{mcisId}:
+  /ns/{nsId}/benchmark/mci/{mciId}:
     post:
       consumes:
       - application/json
-      description: Run MCIS benchmark for a single performance metric and return results
+      description: Run MCI benchmark for a single performance metric and return results
       operationId: GetBenchmark
       parameters:
       - default: ns01
@@ -4161,10 +4162,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - description: Host IP address to benchmark
@@ -4172,8 +4173,8 @@ paths:
         name: hostIP
         required: true
         schema:
-          $ref: '#/definitions/mcis.RestGetBenchmarkRequest'
-      - description: Benchmark Action to MCIS
+          $ref: '#/definitions/mci.RestGetBenchmarkRequest'
+      - description: Benchmark Action to MCI
         enum:
         - install
         - init
@@ -4198,7 +4199,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.BenchmarkInfoArray'
+            $ref: '#/definitions/mci.BenchmarkInfoArray'
         "404":
           description: Not Found
           schema:
@@ -4207,14 +4208,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Run MCIS benchmark for a single performance metric and return results
+      summary: Run MCI benchmark for a single performance metric and return results
       tags:
-      - '[Infra service] MCIS Performance benchmarking (WIP)'
-  /ns/{nsId}/benchmarkAll/mcis/{mcisId}:
+      - '[Infra service] MCI Performance benchmarking (WIP)'
+  /ns/{nsId}/benchmarkAll/mci/{mciId}:
     post:
       consumes:
       - application/json
-      description: Run MCIS benchmark for all performance metrics and return results
+      description: Run MCI benchmark for all performance metrics and return results
       operationId: GetAllBenchmark
       parameters:
       - default: ns01
@@ -4223,10 +4224,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - description: Host IP address to benchmark
@@ -4234,14 +4235,14 @@ paths:
         name: hostIP
         required: true
         schema:
-          $ref: '#/definitions/mcis.RestGetAllBenchmarkRequest'
+          $ref: '#/definitions/mci.RestGetAllBenchmarkRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.BenchmarkInfoArray'
+            $ref: '#/definitions/mci.BenchmarkInfoArray'
         "404":
           description: Not Found
           schema:
@@ -4250,14 +4251,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Run MCIS benchmark for all performance metrics and return results
+      summary: Run MCI benchmark for all performance metrics and return results
       tags:
-      - '[Infra service] MCIS Performance benchmarking (WIP)'
-  /ns/{nsId}/benchmarkLatency/mcis/{mcisId}:
+      - '[Infra service] MCI Performance benchmarking (WIP)'
+  /ns/{nsId}/benchmarkLatency/mci/{mciId}:
     get:
       consumes:
       - application/json
-      description: Run MCIS benchmark for network latency
+      description: Run MCI benchmark for network latency
       operationId: GetLatencyBenchmark
       parameters:
       - default: system-purpose-common-ns
@@ -4267,9 +4268,9 @@ paths:
         required: true
         type: string
       - default: probe
-        description: MCIS ID
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       produces:
@@ -4278,7 +4279,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.BenchmarkInfoArray'
+            $ref: '#/definitions/mci.BenchmarkInfoArray'
         "404":
           description: Not Found
           schema:
@@ -4287,15 +4288,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Run MCIS benchmark for network latency
+      summary: Run MCI benchmark for network latency
       tags:
-      - '[Infra service] MCIS Performance benchmarking (WIP)'
-  /ns/{nsId}/cmd/mcis/{mcisId}:
+      - '[Infra service] MCI Performance benchmarking (WIP)'
+  /ns/{nsId}/cmd/mci/{mciId}:
     post:
       consumes:
       - application/json
-      description: Send a command to specified MCIS
-      operationId: PostCmdMcis
+      description: Send a command to specified MCI
+      operationId: PostCmdMci
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4303,25 +4304,25 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
-      - description: MCIS Command Request
+      - description: MCI Command Request
         in: body
-        name: mcisCmdReq
+        name: mciCmdReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.McisCmdReq'
+          $ref: '#/definitions/mci.MciCmdReq'
       - default: g1
-        description: subGroupId to apply the command only for VMs in subGroup of MCIS
+        description: subGroupId to apply the command only for VMs in subGroup of MCI
         in: query
         name: subGroupId
         type: string
       - default: g1-1
-        description: vmId to apply the command only for a VM in MCIS
+        description: vmId to apply the command only for a VM in MCI
         in: query
         name: vmId
         type: string
@@ -4335,7 +4336,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.McisSshCmdResult'
+            $ref: '#/definitions/mci.MciSshCmdResult'
         "404":
           description: Not Found
           schema:
@@ -4344,16 +4345,16 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Send a command to specified MCIS
+      summary: Send a command to specified MCI
       tags:
-      - '[Infra service] MCIS Remote command'
-  /ns/{nsId}/control/mcis/{mcisId}:
+      - '[Infra service] MCI Remote command'
+  /ns/{nsId}/control/mci/{mciId}:
     get:
       consumes:
       - application/json
-      description: Control the lifecycle of MCIS (refine, suspend, resume, reboot,
+      description: Control the lifecycle of MCI (refine, suspend, resume, reboot,
         terminate)
-      operationId: GetControlMcis
+      operationId: GetControlMci
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4361,13 +4362,13 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
-      - description: Action to MCIS
+      - description: Action to MCI
         enum:
         - suspend
         - resume
@@ -4402,15 +4403,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Control the lifecycle of MCIS (refine, suspend, resume, reboot, terminate)
+      summary: Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)
       tags:
-      - '[Infra service] MCIS Control lifecycle'
-  /ns/{nsId}/control/mcis/{mcisId}/vm/{vmId}:
+      - '[Infra service] MCI Control lifecycle'
+  /ns/{nsId}/control/mci/{mciId}/vm/{vmId}:
     get:
       consumes:
       - application/json
       description: Control the lifecycle of VM (suspend, resume, reboot, terminate)
-      operationId: GetControlMcisVm
+      operationId: GetControlMciVm
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4418,10 +4419,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1-1
@@ -4430,7 +4431,7 @@ paths:
         name: vmId
         required: true
         type: string
-      - description: Action to MCIS
+      - description: Action to MCI
         enum:
         - suspend
         - resume
@@ -4464,7 +4465,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Control the lifecycle of VM (suspend, resume, reboot, terminate)
       tags:
-      - '[Infra service] MCIS Control lifecycle'
+      - '[Infra service] MCI Control lifecycle'
   /ns/{nsId}/defaultResources:
     delete:
       consumes:
@@ -4492,12 +4493,12 @@ paths:
       summary: Delete all Default Resource Objects in the given namespace
       tags:
       - '[Infra resource] MCIR Common'
-  /ns/{nsId}/installBenchmarkAgent/mcis/{mcisId}:
+  /ns/{nsId}/installBenchmarkAgent/mci/{mciId}:
     post:
       consumes:
       - application/json
-      description: Install the benchmark agent to specified MCIS
-      operationId: PostInstallBenchmarkAgentToMcis
+      description: Install the benchmark agent to specified MCI
+      operationId: PostInstallBenchmarkAgentToMci
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4505,18 +4506,18 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
-      - description: MCIS Command Request
+      - description: MCI Command Request
         in: body
-        name: mcisCmdReq
+        name: mciCmdReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.McisCmdReq'
+          $ref: '#/definitions/mci.MciCmdReq'
       - description: Option for checking update
         enum:
         - update
@@ -4529,7 +4530,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.McisSshCmdResult'
+            $ref: '#/definitions/mci.MciSshCmdResult'
         "404":
           description: Not Found
           schema:
@@ -4538,9 +4539,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Install the benchmark agent to specified MCIS
+      summary: Install the benchmark agent to specified MCI
       tags:
-      - '[Infra service] MCIS Performance benchmarking (WIP)'
+      - '[Infra service] MCI Performance benchmarking (WIP)'
   /ns/{nsId}/k8scluster:
     delete:
       consumes:
@@ -4606,10 +4607,10 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mcis.JSONResult'
+            - $ref: '#/definitions/mci.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mcis.RestGetAllK8sClusterResponse'
+                  $ref: '#/definitions/mci.RestGetAllK8sClusterResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
               type: object
@@ -4648,14 +4649,14 @@ paths:
         name: k8sClusterReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbK8sClusterReq'
+          $ref: '#/definitions/mci.TbK8sClusterReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbK8sClusterInfo'
+            $ref: '#/definitions/mci.TbK8sClusterInfo'
         "404":
           description: Not Found
           schema:
@@ -4724,7 +4725,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbK8sClusterInfo'
+            $ref: '#/definitions/mci.TbK8sClusterInfo'
         "404":
           description: Not Found
           schema:
@@ -4760,14 +4761,14 @@ paths:
         name: k8sNodeGroupReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbK8sNodeGroupReq'
+          $ref: '#/definitions/mci.TbK8sNodeGroupReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbK8sClusterInfo'
+            $ref: '#/definitions/mci.TbK8sClusterInfo'
         "404":
           description: Not Found
           schema:
@@ -4848,14 +4849,14 @@ paths:
         name: changeK8sNodeGroupAutoscaleSizeReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbChangeK8sNodeGroupAutoscaleSizeReq'
+          $ref: '#/definitions/mci.TbChangeK8sNodeGroupAutoscaleSizeReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbChangeK8sNodeGroupAutoscaleSizeRes'
+            $ref: '#/definitions/mci.TbChangeK8sNodeGroupAutoscaleSizeRes'
         "404":
           description: Not Found
           schema:
@@ -4897,14 +4898,14 @@ paths:
         name: setK8sNodeGroupAutoscalingReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbSetK8sNodeGroupAutoscalingReq'
+          $ref: '#/definitions/mci.TbSetK8sNodeGroupAutoscalingReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbSetK8sNodeGroupAutoscalingRes'
+            $ref: '#/definitions/mci.TbSetK8sNodeGroupAutoscalingRes'
         "404":
           description: Not Found
           schema:
@@ -4940,7 +4941,7 @@ paths:
         name: upgradeK8sClusterReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbUpgradeK8sClusterReq'
+          $ref: '#/definitions/mci.TbUpgradeK8sClusterReq'
       produces:
       - application/json
       responses:
@@ -5001,12 +5002,12 @@ paths:
       summary: Load Default Resource from internal asset file
       tags:
       - '[Infra resource] MCIR Common'
-  /ns/{nsId}/mcis:
+  /ns/{nsId}/mci:
     delete:
       consumes:
       - application/json
-      description: Delete all MCISs
-      operationId: DelAllMcis
+      description: Delete all MCIs
+      operationId: DelAllMci
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5014,7 +5015,7 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Option for delete MCIS (support force delete)
+      - description: Option for delete MCI (support force delete)
         enum:
         - force
         in: query
@@ -5031,14 +5032,14 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete all MCISs
+      summary: Delete all MCIs
       tags:
-      - '[Infra service] MCIS Provisioning management'
+      - '[Infra service] MCI Provisioning management'
     get:
       consumes:
       - application/json
-      description: List all MCISs or MCISs' ID
-      operationId: GetAllMcis
+      description: List all MCIs or MCIs' ID
+      operationId: GetAllMci
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5061,16 +5062,16 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mcis.JSONResult'
+            - $ref: '#/definitions/mci.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mcis.RestGetAllMcisResponse'
+                  $ref: '#/definitions/mci.RestGetAllMciResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
                 '[SIMPLE]':
-                  $ref: '#/definitions/mcis.RestGetAllMcisResponse'
+                  $ref: '#/definitions/mci.RestGetAllMciResponse'
                 '[STATUS]':
-                  $ref: '#/definitions/mcis.RestGetAllMcisStatusResponse'
+                  $ref: '#/definitions/mci.RestGetAllMciStatusResponse'
               type: object
         "404":
           description: Not Found
@@ -5080,14 +5081,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List all MCISs or MCISs' ID
+      summary: List all MCIs or MCIs' ID
       tags:
-      - '[Infra service] MCIS Provisioning management'
+      - '[Infra service] MCI Provisioning management'
     post:
       consumes:
       - application/json
-      description: Create MCIS
-      operationId: PostMcis
+      description: Create MCI
+      operationId: PostMci
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5095,19 +5096,19 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Details for an MCIS object
+      - description: Details for an MCI object
         in: body
-        name: mcisReq
+        name: mciReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbMcisReq'
+          $ref: '#/definitions/mci.TbMciReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbMcisInfo'
+            $ref: '#/definitions/mci.TbMciInfo'
         "404":
           description: Not Found
           schema:
@@ -5116,15 +5117,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create MCIS
+      summary: Create MCI
       tags:
-      - '[Infra service] MCIS Provisioning management'
-  /ns/{nsId}/mcis/{mcisId}:
+      - '[Infra service] MCI Provisioning management'
+  /ns/{nsId}/mci/{mciId}:
     delete:
       consumes:
       - application/json
-      description: Delete MCIS
-      operationId: DelMcis
+      description: Delete MCI
+      operationId: DelMci
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5132,13 +5133,13 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
-      - description: Option for delete MCIS (support force delete)
+      - description: Option for delete MCI (support force delete)
         enum:
         - terminate
         - force
@@ -5156,14 +5157,14 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete MCIS
+      summary: Delete MCI
       tags:
-      - '[Infra service] MCIS Provisioning management'
+      - '[Infra service] MCI Provisioning management'
     get:
       consumes:
       - application/json
-      description: 'Get MCIS object (option: status, accessInfo, vmId)'
-      operationId: GetMcis
+      description: 'Get MCI object (option: status, accessInfo, vmId)'
+      operationId: GetMci
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5171,10 +5172,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - description: Option
@@ -5205,16 +5206,16 @@ paths:
           description: Different return structures by the given action param
           schema:
             allOf:
-            - $ref: '#/definitions/mcis.JSONResult'
+            - $ref: '#/definitions/mci.JSONResult'
             - properties:
                 '[AccessInfo]':
-                  $ref: '#/definitions/mcis.McisAccessInfo'
+                  $ref: '#/definitions/mci.MciAccessInfo'
                 '[DEFAULT]':
-                  $ref: '#/definitions/mcis.TbMcisInfo'
+                  $ref: '#/definitions/mci.TbMciInfo'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
                 '[STATUS]':
-                  $ref: '#/definitions/mcis.McisStatusInfo'
+                  $ref: '#/definitions/mci.MciStatusInfo'
               type: object
         "404":
           description: Not Found
@@ -5224,10 +5225,10 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: 'Get MCIS object (option: status, accessInfo, vmId)'
+      summary: 'Get MCI object (option: status, accessInfo, vmId)'
       tags:
-      - '[Infra service] MCIS Provisioning management'
-  /ns/{nsId}/mcis/{mcisId}/bastion/{bastionVmId}:
+      - '[Infra service] MCI Provisioning management'
+  /ns/{nsId}/mci/{mciId}/bastion/{bastionVmId}:
     delete:
       consumes:
       - application/json
@@ -5240,10 +5241,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1-1
@@ -5269,12 +5270,12 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Remove a bastion VM from all vNets
       tags:
-      - '[Infra service] MCIS Remote command'
-  /ns/{nsId}/mcis/{mcisId}/mcSwNlb:
+      - '[Infra service] MCI Remote command'
+  /ns/{nsId}/mci/{mciId}/mcSwNlb:
     post:
       consumes:
       - application/json
-      description: Create a special purpose MCIS for NLB and depoly and setting SW
+      description: Create a special purpose MCI for NLB and depoly and setting SW
         NLB
       operationId: PostMcNLB
       parameters:
@@ -5284,10 +5285,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - description: Details of the NLB object
@@ -5295,14 +5296,14 @@ paths:
         name: nlbReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbNLBReq'
+          $ref: '#/definitions/mci.TbNLBReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.McNlbInfo'
+            $ref: '#/definitions/mci.McNlbInfo'
         "404":
           description: Not Found
           schema:
@@ -5311,10 +5312,10 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create a special purpose MCIS for NLB and depoly and setting SW NLB
+      summary: Create a special purpose MCI for NLB and depoly and setting SW NLB
       tags:
       - '[Infra resource] NLB management'
-  /ns/{nsId}/mcis/{mcisId}/nlb:
+  /ns/{nsId}/mci/{mciId}/nlb:
     delete:
       consumes:
       - application/json
@@ -5327,10 +5328,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: ""
@@ -5364,10 +5365,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - description: Option
@@ -5391,10 +5392,10 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mcis.JSONResult'
+            - $ref: '#/definitions/mci.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mcis.RestGetAllNLBResponse'
+                  $ref: '#/definitions/mci.RestGetAllNLBResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
               type: object
@@ -5421,10 +5422,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - description: 'Option: [required params for register] connectionName, name,
@@ -5439,14 +5440,14 @@ paths:
         name: nlbReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbNLBReq'
+          $ref: '#/definitions/mci.TbNLBReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbNLBInfo'
+            $ref: '#/definitions/mci.TbNLBInfo'
         "404":
           description: Not Found
           schema:
@@ -5458,7 +5459,7 @@ paths:
       summary: Create NLB
       tags:
       - '[Infra resource] NLB management'
-  /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}:
+  /ns/{nsId}/mci/{mciId}/nlb/{nlbId}:
     delete:
       consumes:
       - application/json
@@ -5471,10 +5472,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - description: NLB ID
@@ -5508,10 +5509,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1
@@ -5526,7 +5527,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbNLBInfo'
+            $ref: '#/definitions/mci.TbNLBInfo'
         "404":
           description: Not Found
           schema:
@@ -5538,7 +5539,7 @@ paths:
       summary: Get NLB
       tags:
       - '[Infra resource] NLB management'
-  /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/healthz:
+  /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/healthz:
     get:
       consumes:
       - application/json
@@ -5551,10 +5552,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1
@@ -5569,7 +5570,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbNLBInfo'
+            $ref: '#/definitions/mci.TbNLBInfo'
         "404":
           description: Not Found
           schema:
@@ -5581,7 +5582,7 @@ paths:
       summary: Get NLB Health
       tags:
       - '[Infra resource] NLB management'
-  /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/vm:
+  /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/vm:
     delete:
       consumes:
       - application/json
@@ -5594,10 +5595,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1
@@ -5611,7 +5612,7 @@ paths:
         name: nlbAddRemoveVMReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbNLBAddRemoveVMReq'
+          $ref: '#/definitions/mci.TbNLBAddRemoveVMReq'
       produces:
       - application/json
       responses:
@@ -5638,10 +5639,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1
@@ -5655,14 +5656,14 @@ paths:
         name: nlbAddRemoveVMReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbNLBAddRemoveVMReq'
+          $ref: '#/definitions/mci.TbNLBAddRemoveVMReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbNLBInfo'
+            $ref: '#/definitions/mci.TbNLBInfo'
         "404":
           description: Not Found
           schema:
@@ -5674,12 +5675,12 @@ paths:
       summary: Add VMs to NLB
       tags:
       - '[Infra resource] NLB management (for developer)'
-  /ns/{nsId}/mcis/{mcisId}/site:
+  /ns/{nsId}/mci/{mciId}/site:
     get:
       consumes:
       - application/json
-      description: Get sites in MCIS
-      operationId: GetSitesInMcis
+      description: Get sites in MCI
+      operationId: GetSitesInMci
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5687,10 +5688,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       produces:
@@ -5712,15 +5713,15 @@ paths:
           description: Service Unavailable
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Get sites in MCIS
+      summary: Get sites in MCI
       tags:
-      - '[VPN] Sites in MCIS'
-  /ns/{nsId}/mcis/{mcisId}/subgroup:
+      - '[VPN] Sites in MCI'
+  /ns/{nsId}/mci/{mciId}/subgroup:
     get:
       consumes:
       - application/json
-      description: List SubGroup IDs in a specified MCIS
-      operationId: GetMcisGroupIds
+      description: List SubGroup IDs in a specified MCI
+      operationId: GetMciGroupIds
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5728,10 +5729,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       produces:
@@ -5749,15 +5750,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List SubGroup IDs in a specified MCIS
+      summary: List SubGroup IDs in a specified MCI
       tags:
-      - '[Infra service] MCIS Provisioning management'
-  /ns/{nsId}/mcis/{mcisId}/subgroup/{subgroupId}:
+      - '[Infra service] MCI Provisioning management'
+  /ns/{nsId}/mci/{mciId}/subgroup/{subgroupId}:
     get:
       consumes:
       - application/json
-      description: List VMs with a SubGroup label in a specified MCIS
-      operationId: GetMcisGroupVms
+      description: List VMs with a SubGroup label in a specified MCI
+      operationId: GetMciGroupVms
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5765,10 +5766,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1
@@ -5798,14 +5799,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List VMs with a SubGroup label in a specified MCIS
+      summary: List VMs with a SubGroup label in a specified MCI
       tags:
-      - '[Infra service] MCIS Provisioning management'
+      - '[Infra service] MCI Provisioning management'
     post:
       consumes:
       - application/json
-      description: ScaleOut subGroup in specified MCIS
-      operationId: PostMcisSubGroupScaleOut
+      description: ScaleOut subGroup in specified MCI
+      operationId: PostMciSubGroupScaleOut
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5813,10 +5814,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1
@@ -5830,14 +5831,14 @@ paths:
         name: vmReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbScaleOutSubGroupReq'
+          $ref: '#/definitions/mci.TbScaleOutSubGroupReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbMcisInfo'
+            $ref: '#/definitions/mci.TbMciInfo'
         "404":
           description: Not Found
           schema:
@@ -5846,16 +5847,16 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: ScaleOut subGroup in specified MCIS
+      summary: ScaleOut subGroup in specified MCI
       tags:
-      - '[Infra service] MCIS Provisioning management'
-  /ns/{nsId}/mcis/{mcisId}/vm:
+      - '[Infra service] MCI Provisioning management'
+  /ns/{nsId}/mci/{mciId}/vm:
     post:
       consumes:
       - application/json
-      description: Create and add homogeneous VMs(subGroup) to a specified MCIS (Set
+      description: Create and add homogeneous VMs(subGroup) to a specified MCI (Set
         subGroupSize for multiple VMs)
-      operationId: PostMcisVm
+      operationId: PostMciVm
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5863,10 +5864,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - description: Details for VMs(subGroup)
@@ -5874,14 +5875,14 @@ paths:
         name: vmReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbVmReq'
+          $ref: '#/definitions/mci.TbVmReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbMcisInfo'
+            $ref: '#/definitions/mci.TbMciInfo'
         "404":
           description: Not Found
           schema:
@@ -5890,11 +5891,11 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create and add homogeneous VMs(subGroup) to a specified MCIS (Set subGroupSize
+      summary: Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize
         for multiple VMs)
       tags:
-      - '[Infra service] MCIS Provisioning management'
-  /ns/{nsId}/mcis/{mcisId}/vm/{targetVmId}/bastion:
+      - '[Infra service] MCI Provisioning management'
+  /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion:
     get:
       consumes:
       - application/json
@@ -5907,10 +5908,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1-1
@@ -5938,8 +5939,8 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get bastion nodes for a VM
       tags:
-      - '[Infra service] MCIS Remote command'
-  /ns/{nsId}/mcis/{mcisId}/vm/{targetVmId}/bastion/{bastionVmId}:
+      - '[Infra service] MCI Remote command'
+  /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion/{bastionVmId}:
     put:
       consumes:
       - application/json
@@ -5952,10 +5953,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1-1
@@ -5987,13 +5988,13 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Set bastion nodes for a VM
       tags:
-      - '[Infra service] MCIS Remote command'
-  /ns/{nsId}/mcis/{mcisId}/vm/{vmId}:
+      - '[Infra service] MCI Remote command'
+  /ns/{nsId}/mci/{mciId}/vm/{vmId}:
     delete:
       consumes:
       - application/json
-      description: Delete VM in specified MCIS
-      operationId: DelMcisVm
+      description: Delete VM in specified MCI
+      operationId: DelMciVm
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6001,10 +6002,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1-1
@@ -6030,14 +6031,14 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete VM in specified MCIS
+      summary: Delete VM in specified MCI
       tags:
-      - '[Infra service] MCIS Provisioning management'
+      - '[Infra service] MCI Provisioning management'
     get:
       consumes:
       - application/json
-      description: Get VM in specified MCIS
-      operationId: GetMcisVm
+      description: Get VM in specified MCI
+      operationId: GetMciVm
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6045,10 +6046,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1-1
@@ -6057,7 +6058,7 @@ paths:
         name: vmId
         required: true
         type: string
-      - description: Option for MCIS
+      - description: Option for MCI
         enum:
         - default
         - status
@@ -6072,14 +6073,14 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mcis.JSONResult'
+            - $ref: '#/definitions/mci.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mcis.TbVmInfo'
+                  $ref: '#/definitions/mci.TbVmInfo'
                 '[IDNAME]':
-                  $ref: '#/definitions/mcis.TbIdNameInDetailInfo'
+                  $ref: '#/definitions/mci.TbIdNameInDetailInfo'
                 '[STATUS]':
-                  $ref: '#/definitions/mcis.TbVmStatusInfo'
+                  $ref: '#/definitions/mci.TbVmStatusInfo'
               type: object
         "404":
           description: Not Found
@@ -6089,10 +6090,10 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Get VM in specified MCIS
+      summary: Get VM in specified MCI
       tags:
-      - '[Infra service] MCIS Provisioning management'
-  /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk:
+      - '[Infra service] MCI Provisioning management'
+  /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk:
     get:
       consumes:
       - application/json
@@ -6105,10 +6106,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1-1
@@ -6160,10 +6161,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1-1
@@ -6178,7 +6179,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbVmInfo'
+            $ref: '#/definitions/mci.TbVmInfo'
         "404":
           description: Not Found
           schema:
@@ -6203,10 +6204,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1-1
@@ -6215,7 +6216,7 @@ paths:
         name: vmId
         required: true
         type: string
-      - description: Option for MCIS
+      - description: Option for MCI
         enum:
         - attach
         - detach
@@ -6236,7 +6237,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbVmInfo'
+            $ref: '#/definitions/mci.TbVmInfo'
         "404":
           description: Not Found
           schema:
@@ -6248,29 +6249,29 @@ paths:
       summary: Attach/Detach available dataDisk
       tags:
       - '[Infra resource] MCIR Data Disk management'
-  /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/snapshot:
+  /ns/{nsId}/mci/{mciId}/vm/{vmId}/snapshot:
     post:
       consumes:
       - application/json
       description: Snapshot VM and create a Custom Image Object using the Snapshot
-      operationId: PostMcisVmSnapshot
+      operationId: PostMciVmSnapshot
       parameters:
       - description: Request body to create VM snapshot
         in: body
         name: vmSnapshotReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbVmSnapshotReq'
+          $ref: '#/definitions/mci.TbVmSnapshotReq'
       - default: ns01
         description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: g1-1
@@ -6297,12 +6298,12 @@ paths:
       summary: Snapshot VM and create a Custom Image Object using the Snapshot
       tags:
       - '[Infra resource] Snapshot and Custom Image Management'
-  /ns/{nsId}/mcis/{mcisId}/vmDynamic:
+  /ns/{nsId}/mci/{mciId}/vmDynamic:
     post:
       consumes:
       - application/json
-      description: Create VM Dynamically and add it to MCIS
-      operationId: PostMcisVmDynamic
+      description: Create VM Dynamically and add it to MCI
+      operationId: PostMciVmDynamic
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6310,10 +6311,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - description: Details for Vm dynamic request
@@ -6321,14 +6322,14 @@ paths:
         name: vmReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbVmDynamicReq'
+          $ref: '#/definitions/mci.TbVmDynamicReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbMcisInfo'
+            $ref: '#/definitions/mci.TbMciInfo'
         "404":
           description: Not Found
           schema:
@@ -6337,10 +6338,10 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create VM Dynamically and add it to MCIS
+      summary: Create VM Dynamically and add it to MCI
       tags:
-      - '[Infra service] MCIS Provisioning management'
-  /ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}:
+      - '[Infra service] MCI Provisioning management'
+  /ns/{nsId}/mci/{mciId}/vpn/{vpnId}:
     get:
       consumes:
       - application/json
@@ -6354,10 +6355,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: vpn01
@@ -6393,7 +6394,7 @@ paths:
       summary: Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)
       tags:
       - '[VPN] Site-to-site VPN (under development)'
-  /ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/request/{requestId}:
+  /ns/{nsId}/mci/{mciId}/vpn/{vpnId}/request/{requestId}:
     get:
       consumes:
       - application/json
@@ -6406,10 +6407,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: vpn01
@@ -6445,12 +6446,12 @@ paths:
       summary: Check the status of a specific request by its ID
       tags:
       - '[VPN] Site-to-site VPN (under development)'
-  /ns/{nsId}/mcisDynamic:
+  /ns/{nsId}/mciDynamic:
     post:
       consumes:
       - application/json
-      description: Create MCIS Dynamically from common spec and image
-      operationId: PostMcisDynamic
+      description: Create MCI Dynamically from common spec and image
+      operationId: PostMciDynamic
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6458,17 +6459,17 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: 'Request body to provision MCIS dynamically. Must include commonSpec
-          and commonImage info of each VM request.(ex: {name: mcis01,vm: [{commonImage:
+      - description: 'Request body to provision MCI dynamically. Must include commonSpec
+          and commonImage info of each VM request.(ex: {name: mci01,vm: [{commonImage:
           aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]}
-          ) You can use /mcisRecommendVm and /mcisDynamicCheckRequest to get it) Check
+          ) You can use /mciRecommendVm and /mciDynamicCheckRequest to get it) Check
           the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570'
         in: body
-        name: mcisReq
+        name: mciReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbMcisDynamicReq'
-      - description: Option for MCIS creation
+          $ref: '#/definitions/mci.TbMciDynamicReq'
+      - description: Option for MCI creation
         enum:
         - hold
         in: query
@@ -6484,7 +6485,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbMcisInfo'
+            $ref: '#/definitions/mci.TbMciInfo'
         "404":
           description: Not Found
           schema:
@@ -6493,15 +6494,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create MCIS Dynamically
+      summary: Create MCI Dynamically
       tags:
-      - '[Infra service] MCIS Provisioning management'
-  /ns/{nsId}/monitoring/install/mcis/{mcisId}:
+      - '[Infra service] MCI Provisioning management'
+  /ns/{nsId}/monitoring/install/mci/{mciId}:
     post:
       consumes:
       - application/json
-      description: Install monitoring agent (CB-Dragonfly agent) to MCIS
-      operationId: PostInstallMonitorAgentToMcis
+      description: Install monitoring agent (CB-Dragonfly agent) to MCI
+      operationId: PostInstallMonitorAgentToMci
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6509,25 +6510,25 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
-      - description: Details for an MCIS object
+      - description: Details for an MCI object
         in: body
-        name: mcisInfo
+        name: mciInfo
         required: true
         schema:
-          $ref: '#/definitions/mcis.McisCmdReq'
+          $ref: '#/definitions/mci.MciCmdReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.AgentInstallContentWrapper'
+            $ref: '#/definitions/mci.AgentInstallContentWrapper'
         "404":
           description: Not Found
           schema:
@@ -6536,15 +6537,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Install monitoring agent (CB-Dragonfly agent) to MCIS
+      summary: Install monitoring agent (CB-Dragonfly agent) to MCI
       tags:
-      - '[Infra service] MCIS Resource monitor (for developer)'
-  /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric}:
+      - '[Infra service] MCI Resource monitor (for developer)'
+  /ns/{nsId}/monitoring/mci/{mciId}/metric/{metric}:
     get:
       consumes:
       - application/json
-      description: Get monitoring data of specified MCIS for specified monitoring
-        metric (cpu, memory, disk, network)
+      description: Get monitoring data of specified MCI for specified monitoring metric
+        (cpu, memory, disk, network)
       operationId: GetMonitorData
       parameters:
       - default: ns01
@@ -6553,10 +6554,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - description: 'Metric type: cpu, memory, disk, network'
@@ -6570,7 +6571,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.MonResultSimpleResponse'
+            $ref: '#/definitions/mci.MonResultSimpleResponse'
         "404":
           description: Not Found
           schema:
@@ -6579,11 +6580,11 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Get monitoring data of specified MCIS for specified monitoring metric
+      summary: Get monitoring data of specified MCI for specified monitoring metric
         (cpu, memory, disk, network)
       tags:
-      - '[Infra service] MCIS Resource monitor (for developer)'
-  /ns/{nsId}/monitoring/status/mcis/{mcisId}/vm/{vmId}:
+      - '[Infra service] MCI Resource monitor (for developer)'
+  /ns/{nsId}/monitoring/status/mci/{mciId}/vm/{vmId}:
     put:
       consumes:
       - application/json
@@ -6597,10 +6598,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: vm01
@@ -6615,7 +6616,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbVmInfo'
+            $ref: '#/definitions/mci.TbVmInfo'
         "404":
           description: Not Found
           schema:
@@ -6627,13 +6628,13 @@ paths:
       summary: Set monitoring agent (CB-Dragonfly agent) installation status installed
         (for Windows VM only)
       tags:
-      - '[Infra service] MCIS Resource monitor (for developer)'
-  /ns/{nsId}/policy/mcis:
+      - '[Infra service] MCI Resource monitor (for developer)'
+  /ns/{nsId}/policy/mci:
     delete:
       consumes:
       - application/json
-      description: Delete all MCIS policies
-      operationId: DelAllMcisPolicy
+      description: Delete all MCI policies
+      operationId: DelAllMciPolicy
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6652,14 +6653,14 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete all MCIS policies
+      summary: Delete all MCI policies
       tags:
-      - '[Infra service] MCIS Auto control policy management (WIP)'
+      - '[Infra service] MCI Auto control policy management (WIP)'
     get:
       consumes:
       - application/json
-      description: List all MCIS policies
-      operationId: GetAllMcisPolicy
+      description: List all MCI policies
+      operationId: GetAllMciPolicy
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6673,7 +6674,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.RestGetAllMcisPolicyResponse'
+            $ref: '#/definitions/mci.RestGetAllMciPolicyResponse'
         "404":
           description: Not Found
           schema:
@@ -6682,15 +6683,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List all MCIS policies
+      summary: List all MCI policies
       tags:
-      - '[Infra service] MCIS Auto control policy management (WIP)'
-  /ns/{nsId}/policy/mcis/{mcisId}:
+      - '[Infra service] MCI Auto control policy management (WIP)'
+  /ns/{nsId}/policy/mci/{mciId}:
     delete:
       consumes:
       - application/json
-      description: Delete MCIS Policy
-      operationId: DelMcisPolicy
+      description: Delete MCI Policy
+      operationId: DelMciPolicy
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6698,10 +6699,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       produces:
@@ -6715,14 +6716,14 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete MCIS Policy
+      summary: Delete MCI Policy
       tags:
-      - '[Infra service] MCIS Auto control policy management (WIP)'
+      - '[Infra service] MCI Auto control policy management (WIP)'
     get:
       consumes:
       - application/json
-      description: Get MCIS Policy
-      operationId: GetMcisPolicy
+      description: Get MCI Policy
+      operationId: GetMciPolicy
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6730,10 +6731,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       produces:
@@ -6742,7 +6743,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.McisPolicyInfo'
+            $ref: '#/definitions/mci.MciPolicyInfo'
         "404":
           description: Not Found
           schema:
@@ -6751,14 +6752,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Get MCIS Policy
+      summary: Get MCI Policy
       tags:
-      - '[Infra service] MCIS Auto control policy management (WIP)'
+      - '[Infra service] MCI Auto control policy management (WIP)'
     post:
       consumes:
       - application/json
-      description: Create MCIS Automation policy
-      operationId: PostMcisPolicy
+      description: Create MCI Automation policy
+      operationId: PostMciPolicy
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6766,25 +6767,25 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
-      - description: Details for an MCIS automation policy request
+      - description: Details for an MCI automation policy request
         in: body
-        name: mcisPolicyReq
+        name: mciPolicyReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.McisPolicyReq'
+          $ref: '#/definitions/mci.MciPolicyReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.McisPolicyInfo'
+            $ref: '#/definitions/mci.MciPolicyInfo'
         "404":
           description: Not Found
           schema:
@@ -6793,14 +6794,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create MCIS Automation policy
+      summary: Create MCI Automation policy
       tags:
-      - '[Infra service] MCIS Auto control policy management (WIP)'
+      - '[Infra service] MCI Auto control policy management (WIP)'
   /ns/{nsId}/registerCspVm:
     post:
       consumes:
       - application/json
-      description: Register existing VM in a CSP to Cloud-Barista MCIS
+      description: Register existing VM in a CSP to Cloud-Barista MCI
       operationId: PostRegisterCSPNativeVM
       parameters:
       - default: ns01
@@ -6809,19 +6810,19 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Details for an MCIS object with existing CSP VM ID
+      - description: Details for an MCI object with existing CSP VM ID
         in: body
-        name: mcisReq
+        name: mciReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.TbMcisReq'
+          $ref: '#/definitions/mci.TbMciReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbMcisInfo'
+            $ref: '#/definitions/mci.TbMciInfo'
         "404":
           description: Not Found
           schema:
@@ -6830,9 +6831,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Register existing VM in a CSP to Cloud-Barista MCIS
+      summary: Register existing VM in a CSP to Cloud-Barista MCI
       tags:
-      - '[Infra service] MCIS Provisioning management'
+      - '[Infra service] MCI Provisioning management'
   /ns/{nsId}/resources/customImage:
     delete:
       consumes:
@@ -8882,7 +8883,7 @@ paths:
         to CB-Tumblebug
       operationId: RegisterCspNativeResources
       parameters:
-      - description: Specify connectionName, NS Id, and MCIS Name
+      - description: Specify connectionName, NS Id, and MCI Name
         in: body
         name: Request
         required: true
@@ -8896,12 +8897,12 @@ paths:
         name: option
         type: string
       - default: "y"
-        description: Flag to show VMs in a collective MCIS form (y,n)
+        description: Flag to show VMs in a collective MCI form (y,n)
         enum:
         - "y"
         - "n"
         in: query
-        name: mcisFlag
+        name: mciFlag
         type: string
       produces:
       - application/json
@@ -8909,7 +8910,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.RegisterResourceResult'
+            $ref: '#/definitions/mci.RegisterResourceResult'
         "404":
           description: Not Found
           schema:
@@ -8930,7 +8931,7 @@ paths:
         from all Clouds to CB-Tumblebug
       operationId: RegisterCspNativeResourcesAll
       parameters:
-      - description: Specify NS Id and MCIS Name
+      - description: Specify NS Id and MCI Name
         in: body
         name: Request
         required: true
@@ -8944,12 +8945,12 @@ paths:
         name: option
         type: string
       - default: "y"
-        description: Flag to show VMs in a collective MCIS form (y,n)
+        description: Flag to show VMs in a collective MCI form (y,n)
         enum:
         - "y"
         - "n"
         in: query
-        name: mcisFlag
+        name: mciFlag
         type: string
       produces:
       - application/json
@@ -8957,7 +8958,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.RegisterResourceAllResult'
+            $ref: '#/definitions/mci.RegisterResourceAllResult'
         "404":
           description: Not Found
           schema:
@@ -9077,7 +9078,7 @@ paths:
       summary: Get all requests
       tags:
       - '[Admin] Request tracking'
-  /stream-response/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}:
+  /stream-response/ns/{nsId}/mci/{mciId}/vpn/{vpnId}:
     delete:
       consumes:
       - application/json
@@ -9090,10 +9091,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: vpn01
@@ -9136,10 +9137,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: vpn01
@@ -9188,10 +9189,10 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: mcis01
-        description: MCIS ID
+      - default: mci01
+        description: MCI ID
         in: path
-        name: mcisId
+        name: mciId
         required: true
         type: string
       - default: vpn01
@@ -9228,14 +9229,14 @@ paths:
       summary: (To be provided) Update a site-to-site VPN
       tags:
       - '[VPN] Site-to-site VPN (under development)'
-  /systemMcis:
+  /systemMci:
     post:
       consumes:
       - application/json
-      description: Create System MCIS Dynamically for Special Purpose
-      operationId: PostSystemMcis
+      description: Create System MCI Dynamically for Special Purpose
+      operationId: PostSystemMci
       parameters:
-      - description: Option for the purpose of system MCIS
+      - description: Option for the purpose of system MCI
         enum:
         - probe
         in: query
@@ -9247,7 +9248,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbMcisInfo'
+            $ref: '#/definitions/mci.TbMciInfo'
         "404":
           description: Not Found
           schema:
@@ -9256,9 +9257,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create System MCIS Dynamically for Special Purpose in NS:system-purpose-common-ns
+      summary: Create System MCI Dynamically for Special Purpose in NS:system-purpose-common-ns
       tags:
-      - '[Infra service] MCIS Provisioning management'
+      - '[Infra service] MCI Provisioning management'
   /util/net/design:
     post:
       consumes:
