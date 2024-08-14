@@ -2303,13 +2303,6 @@ definitions:
           $ref: '#/definitions/mcir.TbSecurityGroupInfo'
         type: array
     type: object
-  mcir.RestGetAllSpecResponse:
-    properties:
-      spec:
-        items:
-          $ref: '#/definitions/mcir.TbSpecInfo'
-        type: array
-    type: object
   mcir.RestGetAllSshKeyResponse:
     properties:
       sshKey:
@@ -3936,7 +3929,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Check available ConnectionConfig list for creating MCI Dynamically
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
   /mciRecommendVm:
     post:
       consumes:
@@ -3968,7 +3961,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Recommend MCI plan (filter and priority)
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
   /ns:
     delete:
       consumes:
@@ -4210,7 +4203,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Run MCI benchmark for a single performance metric and return results
       tags:
-      - '[Infra service] MCI Performance benchmarking (WIP)'
+      - '[MC-Infra] MCI Performance benchmarking (WIP)'
   /ns/{nsId}/benchmarkAll/mci/{mciId}:
     post:
       consumes:
@@ -4253,7 +4246,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Run MCI benchmark for all performance metrics and return results
       tags:
-      - '[Infra service] MCI Performance benchmarking (WIP)'
+      - '[MC-Infra] MCI Performance benchmarking (WIP)'
   /ns/{nsId}/benchmarkLatency/mci/{mciId}:
     get:
       consumes:
@@ -4290,7 +4283,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Run MCI benchmark for network latency
       tags:
-      - '[Infra service] MCI Performance benchmarking (WIP)'
+      - '[MC-Infra] MCI Performance benchmarking (WIP)'
   /ns/{nsId}/cmd/mci/{mciId}:
     post:
       consumes:
@@ -4347,7 +4340,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Send a command to specified MCI
       tags:
-      - '[Infra service] MCI Remote command'
+      - '[MC-Infra] MCI Remote command'
   /ns/{nsId}/control/mci/{mciId}:
     get:
       consumes:
@@ -4405,7 +4398,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)
       tags:
-      - '[Infra service] MCI Control lifecycle'
+      - '[MC-Infra] MCI Control lifecycle'
   /ns/{nsId}/control/mci/{mciId}/vm/{vmId}:
     get:
       consumes:
@@ -4465,7 +4458,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Control the lifecycle of VM (suspend, resume, reboot, terminate)
       tags:
-      - '[Infra service] MCI Control lifecycle'
+      - '[MC-Infra] MCI Control lifecycle'
   /ns/{nsId}/defaultResources:
     delete:
       consumes:
@@ -4541,7 +4534,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Install the benchmark agent to specified MCI
       tags:
-      - '[Infra service] MCI Performance benchmarking (WIP)'
+      - '[MC-Infra] MCI Performance benchmarking (WIP)'
   /ns/{nsId}/k8scluster:
     delete:
       consumes:
@@ -5034,7 +5027,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all MCIs
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
     get:
       consumes:
       - application/json
@@ -5083,7 +5076,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCIs or MCIs' ID
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
     post:
       consumes:
       - application/json
@@ -5119,7 +5112,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCI
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
   /ns/{nsId}/mci/{mciId}:
     delete:
       consumes:
@@ -5159,7 +5152,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCI
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
     get:
       consumes:
       - application/json
@@ -5227,7 +5220,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: 'Get MCI object (option: status, accessInfo, vmId)'
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
   /ns/{nsId}/mci/{mciId}/bastion/{bastionVmId}:
     delete:
       consumes:
@@ -5270,7 +5263,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Remove a bastion VM from all vNets
       tags:
-      - '[Infra service] MCI Remote command'
+      - '[MC-Infra] MCI Remote command'
   /ns/{nsId}/mci/{mciId}/mcSwNlb:
     post:
       consumes:
@@ -5752,7 +5745,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List SubGroup IDs in a specified MCI
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
   /ns/{nsId}/mci/{mciId}/subgroup/{subgroupId}:
     get:
       consumes:
@@ -5801,7 +5794,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List VMs with a SubGroup label in a specified MCI
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
     post:
       consumes:
       - application/json
@@ -5849,7 +5842,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: ScaleOut subGroup in specified MCI
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
   /ns/{nsId}/mci/{mciId}/vm:
     post:
       consumes:
@@ -5894,7 +5887,7 @@ paths:
       summary: Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize
         for multiple VMs)
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
   /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion:
     get:
       consumes:
@@ -5939,7 +5932,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get bastion nodes for a VM
       tags:
-      - '[Infra service] MCI Remote command'
+      - '[MC-Infra] MCI Remote command'
   /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion/{bastionVmId}:
     put:
       consumes:
@@ -5988,7 +5981,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Set bastion nodes for a VM
       tags:
-      - '[Infra service] MCI Remote command'
+      - '[MC-Infra] MCI Remote command'
   /ns/{nsId}/mci/{mciId}/vm/{vmId}:
     delete:
       consumes:
@@ -6033,7 +6026,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete VM in specified MCI
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
     get:
       consumes:
       - application/json
@@ -6092,7 +6085,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get VM in specified MCI
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
   /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk:
     get:
       consumes:
@@ -6340,7 +6333,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create VM Dynamically and add it to MCI
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
   /ns/{nsId}/mci/{mciId}/vpn/{vpnId}:
     get:
       consumes:
@@ -6496,7 +6489,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCI Dynamically
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
   /ns/{nsId}/monitoring/install/mci/{mciId}:
     post:
       consumes:
@@ -6539,7 +6532,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Install monitoring agent (CB-Dragonfly agent) to MCI
       tags:
-      - '[Infra service] MCI Resource monitor (for developer)'
+      - '[MC-Infra] MCI Resource monitor (for developer)'
   /ns/{nsId}/monitoring/mci/{mciId}/metric/{metric}:
     get:
       consumes:
@@ -6583,7 +6576,7 @@ paths:
       summary: Get monitoring data of specified MCI for specified monitoring metric
         (cpu, memory, disk, network)
       tags:
-      - '[Infra service] MCI Resource monitor (for developer)'
+      - '[MC-Infra] MCI Resource monitor (for developer)'
   /ns/{nsId}/monitoring/status/mci/{mciId}/vm/{vmId}:
     put:
       consumes:
@@ -6628,7 +6621,7 @@ paths:
       summary: Set monitoring agent (CB-Dragonfly agent) installation status installed
         (for Windows VM only)
       tags:
-      - '[Infra service] MCI Resource monitor (for developer)'
+      - '[MC-Infra] MCI Resource monitor (for developer)'
   /ns/{nsId}/policy/mci:
     delete:
       consumes:
@@ -6655,7 +6648,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all MCI policies
       tags:
-      - '[Infra service] MCI Auto control policy management (WIP)'
+      - '[MC-Infra] MCI Auto control policy management (WIP)'
     get:
       consumes:
       - application/json
@@ -6685,7 +6678,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCI policies
       tags:
-      - '[Infra service] MCI Auto control policy management (WIP)'
+      - '[MC-Infra] MCI Auto control policy management (WIP)'
   /ns/{nsId}/policy/mci/{mciId}:
     delete:
       consumes:
@@ -6718,7 +6711,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCI Policy
       tags:
-      - '[Infra service] MCI Auto control policy management (WIP)'
+      - '[MC-Infra] MCI Auto control policy management (WIP)'
     get:
       consumes:
       - application/json
@@ -6754,7 +6747,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCI Policy
       tags:
-      - '[Infra service] MCI Auto control policy management (WIP)'
+      - '[MC-Infra] MCI Auto control policy management (WIP)'
     post:
       consumes:
       - application/json
@@ -6796,7 +6789,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCI Automation policy
       tags:
-      - '[Infra service] MCI Auto control policy management (WIP)'
+      - '[MC-Infra] MCI Auto control policy management (WIP)'
   /ns/{nsId}/registerCspVm:
     post:
       consumes:
@@ -6833,7 +6826,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Register existing VM in a CSP to Cloud-Barista MCI
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
   /ns/{nsId}/resources/customImage:
     delete:
       consumes:
@@ -7904,88 +7897,6 @@ paths:
       tags:
       - '[Infra resource] MCIR Security group management'
   /ns/{nsId}/resources/spec:
-    delete:
-      consumes:
-      - application/json
-      description: Delete all specs
-      operationId: DelAllSpec
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - default: ""
-        description: Delete resources containing matched ID-substring only
-        in: query
-        name: match
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.IdList'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete all specs
-      tags:
-      - '[Infra resource] MCIR Spec management'
-    get:
-      consumes:
-      - application/json
-      description: List all specs or specs' ID
-      operationId: GetAllSpec
-      parameters:
-      - default: system-purpose-common-ns
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Option
-        enum:
-        - id
-        in: query
-        name: option
-        type: string
-      - description: 'Field key for filtering (ex: providerName)'
-        in: query
-        name: filterKey
-        type: string
-      - description: 'Field value for filtering (ex: aws)'
-        in: query
-        name: filterVal
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Different return structures by the given option param
-          schema:
-            allOf:
-            - $ref: '#/definitions/mcir.JSONResult'
-            - properties:
-                '[DEFAULT]':
-                  $ref: '#/definitions/mcir.RestGetAllSpecResponse'
-                '[ID]':
-                  $ref: '#/definitions/common.IdList'
-              type: object
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: List all specs or specs' ID
-      tags:
-      - '[Infra resource] MCIR Spec management'
     post:
       consumes:
       - application/json
@@ -9259,7 +9170,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create System MCI Dynamically for Special Purpose in NS:system-purpose-common-ns
       tags:
-      - '[Infra service] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning management'
   /util/net/design:
     post:
       consumes:

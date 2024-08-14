@@ -1024,7 +1024,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "Check available ConnectionConfig list for creating MCI Dynamically",
                 "operationId": "PostMciDynamicCheckRequest",
@@ -1071,7 +1071,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "Recommend MCI plan (filter and priority)",
                 "operationId": "RecommendVm",
@@ -1392,7 +1392,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Performance benchmarking (WIP)"
+                    "[MC-Infra] MCI Performance benchmarking (WIP)"
                 ],
                 "summary": "Run MCI benchmark for a single performance metric and return results",
                 "operationId": "GetBenchmark",
@@ -1477,7 +1477,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Performance benchmarking (WIP)"
+                    "[MC-Infra] MCI Performance benchmarking (WIP)"
                 ],
                 "summary": "Run MCI benchmark for all performance metrics and return results",
                 "operationId": "GetAllBenchmark",
@@ -1540,7 +1540,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Performance benchmarking (WIP)"
+                    "[MC-Infra] MCI Performance benchmarking (WIP)"
                 ],
                 "summary": "Run MCI benchmark for network latency",
                 "operationId": "GetLatencyBenchmark",
@@ -1594,7 +1594,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Remote command"
+                    "[MC-Infra] MCI Remote command"
                 ],
                 "summary": "Send a command to specified MCI",
                 "operationId": "PostCmdMci",
@@ -1677,7 +1677,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Control lifecycle"
+                    "[MC-Infra] MCI Control lifecycle"
                 ],
                 "summary": "Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)",
                 "operationId": "GetControlMci",
@@ -1757,7 +1757,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Control lifecycle"
+                    "[MC-Infra] MCI Control lifecycle"
                 ],
                 "summary": "Control the lifecycle of VM (suspend, resume, reboot, terminate)",
                 "operationId": "GetControlMciVm",
@@ -1882,7 +1882,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Performance benchmarking (WIP)"
+                    "[MC-Infra] MCI Performance benchmarking (WIP)"
                 ],
                 "summary": "Install the benchmark agent to specified MCI",
                 "operationId": "PostInstallBenchmarkAgentToMci",
@@ -2627,7 +2627,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "List all MCIs or MCIs' ID",
                 "operationId": "GetAllMci",
@@ -2703,7 +2703,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "Create MCI",
                 "operationId": "PostMci",
@@ -2756,7 +2756,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "Delete all MCIs",
                 "operationId": "DelAllMci",
@@ -2805,7 +2805,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "Get MCI object (option: status, accessInfo, vmId)",
                 "operationId": "GetMci",
@@ -2908,7 +2908,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "Delete MCI",
                 "operationId": "DelMci",
@@ -2966,7 +2966,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Remote command"
+                    "[MC-Infra] MCI Remote command"
                 ],
                 "summary": "Remove a bastion VM from all vNets",
                 "operationId": "RemoveBastionNodes",
@@ -3675,7 +3675,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "List SubGroup IDs in a specified MCI",
                 "operationId": "GetMciGroupIds",
@@ -3729,7 +3729,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "List VMs with a SubGroup label in a specified MCI",
                 "operationId": "GetMciGroupVms",
@@ -3798,7 +3798,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "ScaleOut subGroup in specified MCI",
                 "operationId": "PostMciSubGroupScaleOut",
@@ -3869,7 +3869,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize for multiple VMs)",
                 "operationId": "PostMciVm",
@@ -3932,7 +3932,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Remote command"
+                    "[MC-Infra] MCI Remote command"
                 ],
                 "summary": "Get bastion nodes for a VM",
                 "operationId": "GetBastionNodes",
@@ -3997,7 +3997,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Remote command"
+                    "[MC-Infra] MCI Remote command"
                 ],
                 "summary": "Set bastion nodes for a VM",
                 "operationId": "SetBastionNodes",
@@ -4067,7 +4067,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "Get VM in specified MCI",
                 "operationId": "GetMciVm",
@@ -4156,7 +4156,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "Delete VM in specified MCI",
                 "operationId": "DelMciVm",
@@ -4521,7 +4521,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "Create VM Dynamically and add it to MCI",
                 "operationId": "PostMciVmDynamic",
@@ -4734,7 +4734,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "Create MCI Dynamically",
                 "operationId": "PostMciDynamic",
@@ -4804,7 +4804,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Resource monitor (for developer)"
+                    "[MC-Infra] MCI Resource monitor (for developer)"
                 ],
                 "summary": "Install monitoring agent (CB-Dragonfly agent) to MCI",
                 "operationId": "PostInstallMonitorAgentToMci",
@@ -4867,7 +4867,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Resource monitor (for developer)"
+                    "[MC-Infra] MCI Resource monitor (for developer)"
                 ],
                 "summary": "Get monitoring data of specified MCI for specified monitoring metric (cpu, memory, disk, network)",
                 "operationId": "GetMonitorData",
@@ -4928,7 +4928,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Resource monitor (for developer)"
+                    "[MC-Infra] MCI Resource monitor (for developer)"
                 ],
                 "summary": "Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)",
                 "operationId": "PutMonitorAgentStatusInstalled",
@@ -4990,7 +4990,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Auto control policy management (WIP)"
+                    "[MC-Infra] MCI Auto control policy management (WIP)"
                 ],
                 "summary": "List all MCI policies",
                 "operationId": "GetAllMciPolicy",
@@ -5034,7 +5034,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Auto control policy management (WIP)"
+                    "[MC-Infra] MCI Auto control policy management (WIP)"
                 ],
                 "summary": "Delete all MCI policies",
                 "operationId": "DelAllMciPolicy",
@@ -5074,7 +5074,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Auto control policy management (WIP)"
+                    "[MC-Infra] MCI Auto control policy management (WIP)"
                 ],
                 "summary": "Get MCI Policy",
                 "operationId": "GetMciPolicy",
@@ -5126,7 +5126,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Auto control policy management (WIP)"
+                    "[MC-Infra] MCI Auto control policy management (WIP)"
                 ],
                 "summary": "Create MCI Automation policy",
                 "operationId": "PostMciPolicy",
@@ -5187,7 +5187,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Auto control policy management (WIP)"
+                    "[MC-Infra] MCI Auto control policy management (WIP)"
                 ],
                 "summary": "Delete MCI Policy",
                 "operationId": "DelMciPolicy",
@@ -5235,7 +5235,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "Register existing VM in a CSP to Cloud-Barista MCI",
                 "operationId": "PostRegisterCSPNativeVM",
@@ -6869,86 +6869,6 @@ const docTemplate = `{
             }
         },
         "/ns/{nsId}/resources/spec": {
-            "get": {
-                "description": "List all specs or specs' ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra resource] MCIR Spec management"
-                ],
-                "summary": "List all specs or specs' ID",
-                "operationId": "GetAllSpec",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "system-purpose-common-ns",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "enum": [
-                            "id"
-                        ],
-                        "type": "string",
-                        "description": "Option",
-                        "name": "option",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field key for filtering (ex: providerName)",
-                        "name": "filterKey",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field value for filtering (ex: aws)",
-                        "name": "filterVal",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Different return structures by the given option param",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/mcir.JSONResult"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "[DEFAULT]": {
-                                            "$ref": "#/definitions/mcir.RestGetAllSpecResponse"
-                                        },
-                                        "[ID]": {
-                                            "$ref": "#/definitions/common.IdList"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            },
             "post": {
                 "description": "Register spec",
                 "consumes": [
@@ -7021,51 +6941,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete all specs",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra resource] MCIR Spec management"
-                ],
-                "summary": "Delete all specs",
-                "operationId": "DelAllSpec",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "ns01",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "",
-                        "description": "Delete resources containing matched ID-substring only",
-                        "name": "match",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.IdList"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/common.SimpleMsg"
                         }
@@ -8835,7 +8710,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning management"
                 ],
                 "summary": "Create System MCI Dynamically for Special Purpose in NS:system-purpose-common-ns",
                 "operationId": "PostSystemMci",
@@ -12309,17 +12184,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcir.TbSecurityGroupInfo"
-                    }
-                }
-            }
-        },
-        "mcir.RestGetAllSpecResponse": {
-            "type": "object",
-            "properties": {
-                "spec": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbSpecInfo"
                     }
                 }
             }
