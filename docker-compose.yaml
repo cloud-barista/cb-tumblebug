@@ -1,12 +1,18 @@
+networks:
+  internal_network:
+    internal: true
+  external_network:
+    driver: bridge
+
 services:
   # CB-Tumblebug
   cb-tumblebug:
     image: cloudbaristaorg/cb-tumblebug:0.9.4
+    container_name: cb-tumblebug
     pull_policy: missing
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: cb-tumblebug
     platform: linux/amd64
     networks:
       - internal_network
@@ -102,37 +108,13 @@ services:
       retries: 3
       start_period: 10s
 
-  # # cb-tumblebug-etcd-conf
-  # cb-tumblebug-etcd-conf:
-  #   image: alpine:latest
-  #   container_name: cb-tumblebug-etcd-conf
-  #   networks:
-  #     - internal_network
-  #     - external_network
-  #   depends_on:
-  #     - cb-tumblebug-etcd
-  #   volumes:
-  #     - ./scripts/etcd/:/scripts/etcd/
-  #   environment:
-  #     - ETCD_VERSION_TAG=v3.5.14
-  #     - ETCD_ENDPOINTS=http://cb-tumblebug-etcd:2379
-  #     - ETCD_PATH=/tmp/etcd-download-test
-  #     - ETCD_AUTH_ENABLED=true
-  #     - ETCD_ROOT_PASSWORD=default
-  #     - ETCD_ADMIN_USERNAME=default
-  #     - ETCD_ADMIN_PASSWORD=default
-  #   command: sh -c "sh /scripts/etcd/etcd-conf.sh"
-  #   healthcheck: # for etcd-conf
-  #     test: ["CMD", "test", "-f", "/tmp/healthcheck"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #     start_period: 10s
-
   # CB-Spider
   cb-spider:
     image: cloudbaristaorg/cb-spider:0.9.0
     container_name: cb-spider
+    # build:
+    #   context: ../cb-spider
+    #   dockerfile: Dockerfile    
     platform: linux/amd64
     networks:
       - internal_network
@@ -162,8 +144,11 @@ services:
 
   # cb-mapui
   cb-mapui:
-    image: cloudbaristaorg/cb-mapui:0.9.0
+    image: cloudbaristaorg/cb-mapui:0.9.1
     container_name: cb-mapui
+    # build:
+    #   context: ../cb-mapui
+    #   dockerfile: Dockerfile
     networks:
       - external_network
     ports:
@@ -177,8 +162,30 @@ services:
       retries: 3
       start_period: 10s
 
-networks:
-  internal_network:
-    internal: true
-  external_network:
-    driver: bridge
+  # # cb-tumblebug-etcd-conf
+  # cb-tumblebug-etcd-conf:
+  #   image: alpine:latest
+  #   container_name: cb-tumblebug-etcd-conf
+  #   networks:
+  #     - internal_network
+  #     - external_network
+  #   depends_on:
+  #     - cb-tumblebug-etcd
+  #   volumes:
+  #     - ./scripts/etcd/:/scripts/etcd/
+  #   environment:
+  #     - ETCD_VERSION_TAG=v3.5.14
+  #     - ETCD_ENDPOINTS=http://cb-tumblebug-etcd:2379
+  #     - ETCD_PATH=/tmp/etcd-download-test
+  #     - ETCD_AUTH_ENABLED=true
+  #     - ETCD_ROOT_PASSWORD=default
+  #     - ETCD_ADMIN_USERNAME=default
+  #     - ETCD_ADMIN_PASSWORD=default
+  #   command: sh -c "sh /scripts/etcd/etcd-conf.sh"
+  #   healthcheck: # for etcd-conf
+  #     test: ["CMD", "test", "-f", "/tmp/healthcheck"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 10s
+
