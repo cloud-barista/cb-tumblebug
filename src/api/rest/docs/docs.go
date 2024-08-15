@@ -11523,7 +11523,7 @@ const docTemplate = `{
                     "example": "default, TYPE1, ..."
                 },
                 "subGroupSize": {
-                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be gernetad. VMs will be created accordingly.",
+                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be generated. VMs will be created accordingly.",
                     "type": "string",
                     "default": "1",
                     "example": "3"
@@ -11732,7 +11732,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "subGroupSize": {
-                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be gernetad. VMs will be created accordingly.",
+                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be generated. VMs will be created accordingly.",
                     "type": "string",
                     "example": "3"
                 },

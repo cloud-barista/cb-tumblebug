@@ -1844,7 +1844,7 @@ definitions:
         type: string
       subGroupSize:
         default: "1"
-        description: if subGroupSize is (not empty) && (> 0), subGroup will be gernetad.
+        description: if subGroupSize is (not empty) && (> 0), subGroup will be generated.
           VMs will be created accordingly.
         example: "3"
         type: string
@@ -1990,7 +1990,7 @@ definitions:
       sshKeyId:
         type: string
       subGroupSize:
-        description: if subGroupSize is (not empty) && (> 0), subGroup will be gernetad.
+        description: if subGroupSize is (not empty) && (> 0), subGroup will be generated.
           VMs will be created accordingly.
         example: "3"
         type: string
