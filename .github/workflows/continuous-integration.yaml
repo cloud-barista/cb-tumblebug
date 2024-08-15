@@ -54,12 +54,22 @@ jobs:
     # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
     runs-on: ubuntu-22.04
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
-
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      # Enable Cache Docker layers
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      # Enable Docker BuildKit
       - name: Build image
         env:
+          DOCKER_BUILDKIT: 1
           IMAGE_NAME: ${{ github.event.repository.name }}
-        run: docker build . --file Dockerfile --tag $IMAGE_NAME
+        run: docker build --cache-from=type=local,src=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max . --file Dockerfile --tag $IMAGE_NAME
