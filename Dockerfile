@@ -1,48 +1,52 @@
+# syntax=docker/dockerfile:1.4
 ##############################################################
 ## Stage 1 - Go Build
 ##############################################################
 
-# Using a specific version of golang based on bookworm for building the application
-# Debian "bookworm" is the current stable release (checked on 2024-07-15)
-# Debian 12.6 was released on June 29th, 2024.
 FROM golang:1.21.6-bookworm AS builder
 
-# Installing necessary packages
-# sqlite3 and libsqlite3-dev for SQLite support
-# build-essential for common build requirements
-RUN apt-get update && apt-get install -y sqlite3 libsqlite3-dev build-essential
+ENV GO111MODULE=on
 
-# Copying only necessary files for the build
 WORKDIR /go/src/github.com/cloud-barista/cb-tumblebug
+
+# Cache dependencies
 COPY go.mod go.sum go.work go.work.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go mod download
+
+# Copying the source files to the container
 COPY src ./src
 COPY assets ./assets
 COPY scripts ./scripts
 COPY conf ./conf
 
-# Building the Go application with specific flags
-RUN go build -ldflags '-w -extldflags "-static"' -tags cb-tumblebug -v -o src/cb-tumblebug src/main.go
+# Building the Go application
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -ldflags '-w -s' -tags cb-tumblebug -v -o src/cb-tumblebug src/main.go
 
 #############################################################
 ## Stage 2 - Application Setup
 ##############################################################
 
-# Using the latest Ubuntu image for the production stage
-FROM ubuntu:latest AS prod
+FROM ubuntu:22.04 AS prod
 
-# Setting the working directory for the application
 WORKDIR /app/src
 
+# Installing necessary packages and cleaning up
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copying necessary files from the builder stage to the production stage
-# Assets, scripts, and configuration files are copied excluding credentials.conf
-# which should be specified in .dockerignore
 COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/assets/ /app/assets/
 COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/scripts/ /app/scripts/
 COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/conf/ /app/conf/
 COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/src/cb-tumblebug /app/src/
 
-# Setting various environment variables required by the application
+# Setting environment variables
 ENV TB_ROOT_PATH=/app \
     TB_SPIDER_REST_URL=http://cb-spider:1024/spider \
     TB_DRAGONFLY_REST_URL=http://cb-dragonfly:9090/dragonfly \
@@ -74,8 +78,6 @@ ENV TB_ROOT_PATH=/app \
     TB_LOGWRITER=both \
     TB_NODE_ENV=development
 
-# Setting the entrypoint for the application
 ENTRYPOINT [ "/app/src/cb-tumblebug" ]
 
-# Exposing the port that the application will run on
 EXPOSE 1323

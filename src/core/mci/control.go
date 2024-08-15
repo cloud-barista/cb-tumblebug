@@ -20,16 +20,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	//"log"
-
 	"strings"
-	"time"
-
-	//csv file handling
-
-	// REST API (echo)
-
 	"sync"
+	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -39,7 +32,6 @@ import (
 )
 
 // MCI Control
-
 // ControlVmResult is struct for result of VM control
 type ControlVmResult struct {
 	VmId   string `json:"vmId"`

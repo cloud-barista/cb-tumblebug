@@ -19,17 +19,12 @@ import (
 	"fmt"
 	"io"
 
-	//"log"
 	"strconv"
 	"strings"
 
-	//csv file handling
-
 	"encoding/csv"
-	"os"
-
-	// REST API (echo)
 	"net/http"
+	"os"
 
 	"sync"
 
