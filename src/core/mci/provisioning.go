@@ -98,7 +98,7 @@ type RegionInfo struct {
 	Zone   string
 }
 
-// TbMciReq is sturct for requirements to create MCI
+// TbMciReq is struct for requirements to create MCI
 type TbMciReq struct {
 	Name string `json:"name" validate:"required" example:"mci01"`
 
@@ -169,7 +169,7 @@ type TbVmReq struct {
 	// CSP managed ID or Name (required for option=register)
 	IdByCSP string `json:"idByCsp,omitempty" example:"i-014fa6ede6ada0b2c"`
 
-	// if subGroupSize is (not empty) && (> 0), subGroup will be gernetad. VMs will be created accordingly.
+	// if subGroupSize is (not empty) && (> 0), subGroup will be generated. VMs will be created accordingly.
 	SubGroupSize string `json:"subGroupSize" example:"3" default:""`
 
 	Label string `json:"label"`
@@ -199,7 +199,7 @@ type TbScaleOutSubGroupReq struct {
 	//tobe added accoring to new future capability
 }
 
-// TbMciDynamicReq is sturct for requirements to create MCI dynamically (with default resource option)
+// TbMciDynamicReq is struct for requirements to create MCI dynamically (with default resource option)
 type TbMciDynamicReq struct {
 	Name string `json:"name" validate:"required" example:"mci01"`
 
@@ -222,7 +222,7 @@ type TbVmDynamicReq struct {
 	// VM name or subGroup name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
 	Name string `json:"name" example:"g1-1"`
 
-	// if subGroupSize is (not empty) && (> 0), subGroup will be gernetad. VMs will be created accordingly.
+	// if subGroupSize is (not empty) && (> 0), subGroup will be generated. VMs will be created accordingly.
 	SubGroupSize string `json:"subGroupSize" example:"3" default:"1"`
 
 	Label string `json:"label" example:"DynamicVM"`
