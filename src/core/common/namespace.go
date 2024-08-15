@@ -21,8 +21,6 @@ import (
 	"strconv"
 	"strings"
 
-	//"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
-	//"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 

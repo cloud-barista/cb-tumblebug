@@ -278,11 +278,12 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
 - With CB-MapUI, you can create, view, and control Mutli-Cloud infra.
   - [CB-MapUI](https://github.com/cloud-barista/cb-mapui) is a project to visualize the deployment of MCI in a map GUI.
-  - Run the CB-MapUI container using the CB-TB script
-    ```bash
-    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/runMapUI.sh
-    ```
+  - CB-MapUI also run with CB-Tumblebug by default (edit `dockercompose.yaml` to disable)
+    - If you run the CB-MapUI container using the CB-TB script, excute
+      ```bash
+      cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+      ./scripts/runMapUI.sh
+      ```
   - Access via web browser at http://{HostIP}:1324
     ![image](https://github.com/cloud-barista/cb-mapui/assets/5966944/2423fbcd-0fdb-4511-85e2-488ba15ae8c0)
 
@@ -528,11 +529,11 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   
   ```bash
   cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-  sudo docker compose up --build
+  sudo DOCKER_BUILDKIT=1 docker compose up --build
   ```
 
   This command will automatically build the CB-Tumblebug from the local source code
-  and start it within a Docker container, along with any other necessary services as defined in the `docker-compose.yml` file.
+  and start it within a Docker container, along with any other necessary services as defined in the `docker-compose.yml` file. `DOCKER_BUILDKIT=1` setting is used to speed up the build by using the go build cache technique.
 
 #### (2-2) Option 2: Run CB-Tumblebug from the Makefile
 

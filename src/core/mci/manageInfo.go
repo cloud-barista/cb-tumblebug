@@ -19,18 +19,12 @@ import (
 	"fmt"
 	"reflect"
 
-	//"log"
 	"strconv"
 	"strings"
 	"time"
 
-	//csv file handling
-
 	"math/rand"
 	"sort"
-
-	// REST API (echo)
-
 	"sync"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
