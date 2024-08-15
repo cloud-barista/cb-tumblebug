@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to manage multi-cloud infra service
+// Package mci is to manage multi-cloud infra
 package mci
 
 import (
