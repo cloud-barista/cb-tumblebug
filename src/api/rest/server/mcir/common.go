@@ -223,7 +223,7 @@ func RestGetResource(c echo.Context) error {
 // @Param resourceId path string true "Resource ID"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
-// @Router /{nsId}/checkResource/{resourceType}/{resourceId} [get]
+// @Router /ns/{nsId}/checkResource/{resourceType}/{resourceId} [get]
 func RestCheckResource(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {

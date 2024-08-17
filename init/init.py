@@ -37,7 +37,7 @@ expected_completion_time_seconds = 400
 
 # Check for credential path
 if not os.path.exists(CRED_PATH):
-    print(Fore.RED + "Error: CRED_PATH does not exist. Please run scripts/genCredential.sh first.")
+    print(Fore.RED + "Error: CRED_PATH does not exist. Please run init/genCredential.sh first.")
     sys.exit(1)
 elif not os.path.isfile(ENC_FILE_PATH):
     print(Fore.RED + f"Error: {CRED_FILE_NAME_ENC} does not exist. Please check if it has been generated.")
