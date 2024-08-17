@@ -3192,43 +3192,6 @@ info:
   title: CB-Tumblebug REST API
   version: latest
 paths:
-  /{nsId}/checkResource/{resourceType}/{resourceId}:
-    get:
-      consumes:
-      - application/json
-      description: Check resources' existence
-      operationId: CheckResource
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Resource Type
-        in: path
-        name: resourceType
-        required: true
-        type: string
-      - description: Resource ID
-        in: path
-        name: resourceId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Check resources' existence
-      tags:
-      - '[Infra resource] MCIR Common'
   /auth/test:
     get:
       consumes:
@@ -4284,6 +4247,43 @@ paths:
       summary: Run MCI benchmark for network latency
       tags:
       - '[MC-Infra] MCI Performance benchmarking (WIP)'
+  /ns/{nsId}/checkResource/{resourceType}/{resourceId}:
+    get:
+      consumes:
+      - application/json
+      description: Check resources' existence
+      operationId: CheckResource
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Resource Type
+        in: path
+        name: resourceType
+        required: true
+        type: string
+      - description: Resource ID
+        in: path
+        name: resourceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Check resources' existence
+      tags:
+      - '[Infra resource] MCIR Common'
   /ns/{nsId}/cmd/mci/{mciId}:
     post:
       consumes:
