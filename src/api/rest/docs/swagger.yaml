@@ -245,10 +245,10 @@ definitions:
         example: Description for this namespace
         type: string
       id:
-        example: ns01
+        example: default
         type: string
       name:
-        example: ns01
+        example: default
         type: string
     type: object
   common.NsReq:
@@ -257,7 +257,7 @@ definitions:
         example: Description for this namespace
         type: string
       name:
-        example: ns01
+        example: default
         type: string
     type: object
   common.RegionDetail:
@@ -367,7 +367,7 @@ definitions:
         example: csp
         type: string
       nsId:
-        example: ns01
+        example: default
         type: string
     type: object
   common.RestRegisterCspNativeResourcesRequestAll:
@@ -376,7 +376,7 @@ definitions:
         example: csp
         type: string
       nsId:
-        example: ns01
+        example: default
         type: string
     type: object
   common.SimpleMsg:
@@ -1216,7 +1216,7 @@ definitions:
         example: c123456789012345678901234567890
         type: string
       cspK8sClusterName:
-        example: ns01-k8scluster-01
+        example: default-k8scluster-01
         type: string
       description:
         example: My K8sCluster
@@ -1281,7 +1281,7 @@ definitions:
   mci.TbK8sClusterReq:
     properties:
       connectionName:
-        description: Namespace      string `json:"namespace" validate:"required" example:"ns01"`
+        description: Namespace      string `json:"namespace" validate:"required" example:"default"`
         example: alibaba-ap-northeast-2
         type: string
       cspK8sClusterId:
@@ -1681,7 +1681,7 @@ definitions:
     properties:
       dnsName:
         description: Optional, Auto Generated and attached
-        example: ns01-group-cd3.elb.ap-northeast-2.amazonaws.com
+        example: default-group-cd3.elb.ap-northeast-2.amazonaws.com
         type: string
       ip:
         description: Auto Generated and attached
@@ -2454,7 +2454,7 @@ definitions:
         type: string
       namespace:
         description: required to save in RDB
-        example: ns01
+        example: default
         type: string
       sourceVmId:
         example: aws-ap-southeast-1-1
@@ -2501,7 +2501,7 @@ definitions:
         example: vol-0d397c3239629bd43
         type: string
       cspDataDiskName:
-        example: ns01-aws-ap-southeast-1-datadisk
+        example: default-aws-ap-southeast-1-datadisk
         type: string
       description:
         example: Available
@@ -4019,7 +4019,7 @@ paths:
       description: Delete namespace
       operationId: DelNs
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4045,7 +4045,7 @@ paths:
       description: Get namespace
       operationId: GetNs
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4075,7 +4075,7 @@ paths:
       description: Update namespace
       operationId: PutNs
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4112,7 +4112,7 @@ paths:
       description: Run MCI benchmark for a single performance metric and return results
       operationId: GetBenchmark
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4174,7 +4174,7 @@ paths:
       description: Run MCI benchmark for all performance metrics and return results
       operationId: GetAllBenchmark
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4217,7 +4217,7 @@ paths:
       description: Run MCI benchmark for network latency
       operationId: GetLatencyBenchmark
       parameters:
-      - default: system-purpose-common-ns
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
@@ -4254,7 +4254,7 @@ paths:
       description: Check resources' existence
       operationId: CheckResource
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4291,7 +4291,7 @@ paths:
       description: Send a command to specified MCI
       operationId: PostCmdMci
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4349,7 +4349,7 @@ paths:
         terminate)
       operationId: GetControlMci
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4406,7 +4406,7 @@ paths:
       description: Control the lifecycle of VM (suspend, resume, reboot, terminate)
       operationId: GetControlMciVm
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4466,7 +4466,7 @@ paths:
       description: Delete all Default Resource Objects in the given namespace
       operationId: DelAllDefaultResources
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4493,7 +4493,7 @@ paths:
       description: Install the benchmark agent to specified MCI
       operationId: PostInstallBenchmarkAgentToMci
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4542,7 +4542,7 @@ paths:
       description: Delete all K8sClusters
       operationId: DeleteAllK8sCluster
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4573,7 +4573,7 @@ paths:
       description: List all K8sClusters or K8sClusters' ID
       operationId: GetAllK8sCluster
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4589,7 +4589,7 @@ paths:
         in: query
         name: filterKey
         type: string
-      - description: 'Field value for filtering (ex: ns01-alibaba-ap-northeast-2-vpc)'
+      - description: 'Field value for filtering (ex: default-alibaba-ap-northeast-2-vpc)'
         in: query
         name: filterVal
         type: string
@@ -4624,7 +4624,7 @@ paths:
       description: Create K8sCluster<br>Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1614
       operationId: PostK8sCluster
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4668,7 +4668,7 @@ paths:
       description: Delete K8sCluster
       operationId: DeleteK8sCluster
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4700,7 +4700,7 @@ paths:
       description: Get K8sCluster
       operationId: GetK8sCluster
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4737,7 +4737,7 @@ paths:
       description: Add a K8sNodeGroup
       operationId: PostK8sNodeGroup
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4780,7 +4780,7 @@ paths:
       description: Remove a K8sNodeGroup
       operationId: DeleteK8sNodeGroup
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4819,7 +4819,7 @@ paths:
       description: Change a K8sNodeGroup's Autoscale Size
       operationId: PutChangeK8sNodeGroupAutoscaleSize
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4868,7 +4868,7 @@ paths:
       description: Set a K8sNodeGroup's Autoscaling On/Off
       operationId: PutSetK8sNodeGroupAutoscaling
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4917,7 +4917,7 @@ paths:
       description: Upgrade a K8sCluster's version
       operationId: PutUpgradeK8sCluster
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -4960,7 +4960,7 @@ paths:
       description: Load Default Resource from internal asset file
       operationId: LoadDefaultResource
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5002,7 +5002,7 @@ paths:
       description: Delete all MCIs
       operationId: DelAllMci
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5034,7 +5034,7 @@ paths:
       description: List all MCIs or MCIs' ID
       operationId: GetAllMci
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5083,7 +5083,7 @@ paths:
       description: Create MCI
       operationId: PostMci
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5120,7 +5120,7 @@ paths:
       description: Delete MCI
       operationId: DelMci
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5159,7 +5159,7 @@ paths:
       description: 'Get MCI object (option: status, accessInfo, vmId)'
       operationId: GetMci
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5228,7 +5228,7 @@ paths:
       description: Remove a bastion VM from all vNets
       operationId: RemoveBastionNodes
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5272,7 +5272,7 @@ paths:
         NLB
       operationId: PostMcNLB
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5315,7 +5315,7 @@ paths:
       description: Delete all NLBs
       operationId: DelAllNLB
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5352,7 +5352,7 @@ paths:
       description: List all NLBs or NLBs' ID
       operationId: GetAllNLB
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5374,7 +5374,7 @@ paths:
         in: query
         name: filterKey
         type: string
-      - description: 'Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)'
+      - description: 'Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)'
         in: query
         name: filterVal
         type: string
@@ -5409,7 +5409,7 @@ paths:
       description: Create NLB
       operationId: PostNLB
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5459,7 +5459,7 @@ paths:
       description: Delete NLB
       operationId: DelNLB
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5496,7 +5496,7 @@ paths:
       description: Get NLB
       operationId: GetNLB
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5539,7 +5539,7 @@ paths:
       description: Get NLB Health
       operationId: GetNLBHealth
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5582,7 +5582,7 @@ paths:
       description: Delete VMs from NLB
       operationId: RemoveNLBVMs
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5626,7 +5626,7 @@ paths:
       description: Add VMs to NLB
       operationId: AddNLBVMs
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5675,7 +5675,7 @@ paths:
       description: Get sites in MCI
       operationId: GetSitesInMci
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5716,7 +5716,7 @@ paths:
       description: List SubGroup IDs in a specified MCI
       operationId: GetMciGroupIds
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5753,7 +5753,7 @@ paths:
       description: List VMs with a SubGroup label in a specified MCI
       operationId: GetMciGroupVms
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5801,7 +5801,7 @@ paths:
       description: ScaleOut subGroup in specified MCI
       operationId: PostMciSubGroupScaleOut
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5851,7 +5851,7 @@ paths:
         subGroupSize for multiple VMs)
       operationId: PostMciVm
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5895,7 +5895,7 @@ paths:
       description: Get bastion nodes for a VM
       operationId: GetBastionNodes
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5940,7 +5940,7 @@ paths:
       description: Set bastion nodes for a VM
       operationId: SetBastionNodes
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -5989,7 +5989,7 @@ paths:
       description: Delete VM in specified MCI
       operationId: DelMciVm
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6033,7 +6033,7 @@ paths:
       description: Get VM in specified MCI
       operationId: GetMciVm
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6093,7 +6093,7 @@ paths:
       description: Get available dataDisks for a VM
       operationId: GetVmDataDisk
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6148,7 +6148,7 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcir.TbDataDiskVmReq'
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6191,7 +6191,7 @@ paths:
         name: attachDetachDataDiskReq
         schema:
           $ref: '#/definitions/mcir.TbAttachDetachDataDiskReq'
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6255,7 +6255,7 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mci.TbVmSnapshotReq'
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6298,7 +6298,7 @@ paths:
       description: Create VM Dynamically and add it to MCI
       operationId: PostMciVmDynamic
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6342,7 +6342,7 @@ paths:
         supported)
       operationId: GetSiteToSiteVpn
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6394,7 +6394,7 @@ paths:
       description: Check the status of a specific request by its ID
       operationId: GetRequestStatusOfSiteToSiteVpn
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6446,7 +6446,7 @@ paths:
       description: Create MCI Dynamically from common spec and image
       operationId: PostMciDynamic
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6497,7 +6497,7 @@ paths:
       description: Install monitoring agent (CB-Dragonfly agent) to MCI
       operationId: PostInstallMonitorAgentToMci
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6541,7 +6541,7 @@ paths:
         (cpu, memory, disk, network)
       operationId: GetMonitorData
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6585,7 +6585,7 @@ paths:
         (for Windows VM only)
       operationId: PutMonitorAgentStatusInstalled
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6629,7 +6629,7 @@ paths:
       description: Delete all MCI policies
       operationId: DelAllMciPolicy
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6655,7 +6655,7 @@ paths:
       description: List all MCI policies
       operationId: GetAllMciPolicy
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6686,7 +6686,7 @@ paths:
       description: Delete MCI Policy
       operationId: DelMciPolicy
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6718,7 +6718,7 @@ paths:
       description: Get MCI Policy
       operationId: GetMciPolicy
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6754,7 +6754,7 @@ paths:
       description: Create MCI Automation policy
       operationId: PostMciPolicy
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6797,7 +6797,7 @@ paths:
       description: Register existing VM in a CSP to Cloud-Barista MCI
       operationId: PostRegisterCSPNativeVM
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6834,7 +6834,7 @@ paths:
       description: Delete all customImages
       operationId: DelAllCustomImage
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6865,7 +6865,7 @@ paths:
       description: List all customImages or customImages' ID
       operationId: GetAllCustomImage
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6916,7 +6916,7 @@ paths:
       description: Register existing Custom Image in a CSP (option=register)
       operationId: PostCustomImage
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6960,7 +6960,7 @@ paths:
       description: Delete customImage
       operationId: DelCustomImage
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -6991,7 +6991,7 @@ paths:
       description: Get customImage
       operationId: GetCustomImage
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7027,7 +7027,7 @@ paths:
       description: Delete all Data Disks
       operationId: DelAllDataDisk
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7058,7 +7058,7 @@ paths:
       description: List all Data Disks or Data Disks' ID
       operationId: GetAllDataDisk
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7109,7 +7109,7 @@ paths:
       description: Create Data Disk
       operationId: PostDataDisk
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7152,7 +7152,7 @@ paths:
       description: Delete Data Disk
       operationId: DelDataDisk
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7183,7 +7183,7 @@ paths:
       description: Get Data Disk
       operationId: GetDataDisk
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7224,7 +7224,7 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcir.TbDataDiskUpsizeReq'
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7260,7 +7260,7 @@ paths:
       description: Fetch images
       operationId: FetchImages
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7291,7 +7291,7 @@ paths:
       description: Fetch specs
       operationId: FetchSpecs
       parameters:
-      - default: system-purpose-common-ns
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
@@ -7322,7 +7322,7 @@ paths:
       description: Filter specs by range
       operationId: FilterSpecsByRange
       parameters:
-      - default: system-purpose-common-ns
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
@@ -7358,7 +7358,7 @@ paths:
       description: Delete all images
       operationId: DelAllImage
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7389,7 +7389,7 @@ paths:
       description: List all images or images' ID
       operationId: GetAllImage
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7448,7 +7448,7 @@ paths:
         name: action
         required: true
         type: string
-      - default: system-purpose-common-ns
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
@@ -7496,7 +7496,7 @@ paths:
       description: Delete image
       operationId: DelImage
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7527,7 +7527,7 @@ paths:
       description: Get image
       operationId: GetImage
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7568,7 +7568,7 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcir.TbImageInfo'
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7604,7 +7604,7 @@ paths:
       description: Search image
       operationId: SearchImage
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7641,7 +7641,7 @@ paths:
       description: Delete all Security Groups
       operationId: DelAllSecurityGroup
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7672,7 +7672,7 @@ paths:
       description: List all Security Groups or Security Groups' ID
       operationId: GetAllSecurityGroup
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7723,7 +7723,7 @@ paths:
       description: Create Security Group
       operationId: PostSecurityGroup
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7767,7 +7767,7 @@ paths:
       description: Delete Security Group
       operationId: DelSecurityGroup
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7798,7 +7798,7 @@ paths:
       description: Get Security Group
       operationId: GetSecurityGroup
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7834,7 +7834,7 @@ paths:
       description: Delete FirewallRules
       operationId: DelFirewallRules
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7866,7 +7866,7 @@ paths:
       description: Create FirewallRules
       operationId: PostFirewallRules
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -7911,7 +7911,7 @@ paths:
         name: action
         required: true
         type: string
-      - default: system-purpose-common-ns
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
@@ -7958,7 +7958,7 @@ paths:
       description: Delete spec
       operationId: DelSpec
       parameters:
-      - default: system-purpose-common-ns
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
@@ -7989,7 +7989,7 @@ paths:
       description: Get spec
       operationId: GetSpec
       parameters:
-      - default: system-purpose-common-ns
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
@@ -8030,7 +8030,7 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcir.TbSpecInfo'
-      - default: system-purpose-common-ns
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
@@ -8066,7 +8066,7 @@ paths:
       description: Delete all SSH Keys
       operationId: DelAllSshKey
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -8097,7 +8097,7 @@ paths:
       description: List all SSH Keys or SSH Keys' ID
       operationId: GetAllSshKey
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -8148,7 +8148,7 @@ paths:
       description: Create SSH Key
       operationId: PostSshKey
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -8192,7 +8192,7 @@ paths:
       description: Delete SSH Key
       operationId: DelSshKey
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -8223,7 +8223,7 @@ paths:
       description: Get SSH Key
       operationId: GetSshKey
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -8264,7 +8264,7 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcir.TbSshKeyInfo'
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -8300,7 +8300,7 @@ paths:
       description: Delete all VNets
       operationId: DelAllVNet
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -8331,7 +8331,7 @@ paths:
       description: List all VNets or VNets' ID
       operationId: GetAllVNet
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -8347,7 +8347,7 @@ paths:
         in: query
         name: filterKey
         type: string
-      - description: 'Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)'
+      - description: 'Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)'
         in: query
         name: filterVal
         type: string
@@ -8382,7 +8382,7 @@ paths:
       description: Create VNet
       operationId: PostVNet
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -8426,7 +8426,7 @@ paths:
       description: Delete VNet
       operationId: DelVNet
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -8457,7 +8457,7 @@ paths:
       description: Get VNet
       operationId: GetVNet
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -8493,7 +8493,7 @@ paths:
       description: Create Subnet
       operationId: PostSubnet
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -8535,7 +8535,7 @@ paths:
       description: Delete Subnet
       operationId: DelSubnet
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -8996,7 +8996,7 @@ paths:
       description: Delete a site-to-site VPN (Currently, GCP-AWS is supported)
       operationId: DeleteSiteToSiteVpn
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -9042,7 +9042,7 @@ paths:
       description: Create a site-to-site VPN (Currently, GCP-AWS is supported)
       operationId: PostSiteToSiteVpn
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -9094,7 +9094,7 @@ paths:
       description: (To be provided) Update a site-to-site VPN
       operationId: PutSiteToSiteVpn
       parameters:
-      - default: ns01
+      - default: default
         description: Namespace ID
         in: path
         name: nsId
@@ -9168,7 +9168,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create System MCI Dynamically for Special Purpose in NS:system-purpose-common-ns
+      summary: Create System MCI Dynamically for Special Purpose in NS:system
       tags:
       - '[MC-Infra] MCI Provisioning management'
   /util/net/design:
