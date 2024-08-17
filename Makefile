@@ -18,3 +18,7 @@ clean:
 
 swag swagger:
 	cd src/ && $(MAKE) swag
+
+# make compose will build and run the docker-compose file (DOCKER_BUILDKIT is for quick build)
+compose:
+	DOCKER_BUILDKIT=1 docker compose up --build
