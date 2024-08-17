@@ -97,7 +97,7 @@ const (
 	// StrFirewallRule               string = "firewallRule"
 
 	// SystemCommonNs is const for SystemCommon NameSpace ID
-	SystemCommonNs string = "system-purpose-common-ns"
+	SystemCommonNs string = "system"
 )
 
 var StartTime string

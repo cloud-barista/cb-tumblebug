@@ -29,7 +29,7 @@ import (
 // @Tags [Infra resource] MCIR Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option: [required params for register] connectionName, name, vNetId, cspSecurityGroupId" Enums(register)
 // @Param securityGroupReq body mcir.TbSecurityGroupReq true "Details for an securityGroup object"
 // @Success 200 {object} mcir.TbSecurityGroupInfo
@@ -83,7 +83,7 @@ func RestPutSecurityGroup(c echo.Context) error {
 // @Tags [Infra resource] MCIR Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param securityGroupId path string true "Security Group ID"
 // @Success 200 {object} mcir.TbSecurityGroupInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -106,7 +106,7 @@ type RestGetAllSecurityGroupResponse struct {
 // @Tags [Infra resource] MCIR Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex: systemLabel)"
 // @Param filterVal query string false "Field value for filtering (ex: Registered from CSP resource)"
@@ -126,7 +126,7 @@ func RestGetAllSecurityGroup(c echo.Context) error {
 // @Tags [Infra resource] MCIR Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param securityGroupId path string true "Security Group ID"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -143,7 +143,7 @@ func RestDelSecurityGroup(c echo.Context) error {
 // @Tags [Infra resource] MCIR Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg

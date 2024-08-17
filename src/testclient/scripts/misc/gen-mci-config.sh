@@ -6,7 +6,7 @@ echo "####################################################################"
 
 source ../init.sh
 
-nsForSystem="system-purpose-common-ns"
+nsForSystem="system"
 
 PRINT="{
   \"description\": \"Made in CB-TB\",

@@ -29,7 +29,7 @@ import (
 // @Tags [MC-Infra] MCI Resource monitor (for developer)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param mciInfo body mci.MciCmdReq true "Details for an MCI object"
 // @Success 200 {object} mci.AgentInstallContentWrapper
@@ -60,7 +60,7 @@ func RestPostInstallMonitorAgentToMci(c echo.Context) error {
 // @Tags [MC-Infra] MCI Resource monitor (for developer)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(vm01)
 // @Success 200 {object} mci.TbVmInfo
@@ -93,7 +93,7 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 // @Tags [MC-Infra] MCI Resource monitor (for developer)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param metric path string true "Metric type: cpu, memory, disk, network"
 // @Success 200 {object} mci.MonResultSimpleResponse

@@ -30,7 +30,7 @@ import (
 // @Tags [Infra resource] Snapshot and Custom Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string true "Option: " Enums(register)
 // @Param customImageRegisterReq body mcir.TbCustomImageReq true "Request to Register existing Custom Image in a CSP"
 // @Success 200 {object} mcir.TbCustomImageInfo
@@ -67,7 +67,7 @@ func RestPostCustomImage(c echo.Context) error {
 // @Tags [Infra resource] Snapshot and Custom Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param customImageId path string true "customImage ID"
 // @Success 200 {object} mcir.TbCustomImageInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -90,7 +90,7 @@ type RestGetAllCustomImageResponse struct {
 // @Tags [Infra resource] Snapshot and Custom Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex:guestOS)"
 // @Param filterVal query string false "Field value for filtering (ex: Ubuntu18.04)"
@@ -110,7 +110,7 @@ func RestGetAllCustomImage(c echo.Context) error {
 // @Tags [Infra resource] Snapshot and Custom Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param customImageId path string true "customImage ID"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -127,7 +127,7 @@ func RestDelCustomImage(c echo.Context) error {
 // @Tags [Infra resource] Snapshot and Custom Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg

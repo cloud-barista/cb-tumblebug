@@ -34,7 +34,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithCspSpecName)
-// @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
+// @Param nsId path string true "Namespace ID" default(system)
 // @Param specInfo body mcir.TbSpecInfo false "Specify details of a spec object (vCPU, memoryGiB, ...) manually"
 // @Param specName body mcir.TbSpecReq false "Specify name, connectionName and cspSpecName to register a spec object automatically"
 // @Param update query boolean false "Force update to existing spec object" default(false)
@@ -90,7 +90,7 @@ func RestPostSpec(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param specInfo body mcir.TbSpecInfo true "Details for an spec object"
-// @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
+// @Param nsId path string true "Namespace ID" default(system)
 // @Param specId path string true "Spec ID ({providerName}+{regionName}+{specName})"
 // @Success 200 {object} mcir.TbSpecInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -184,7 +184,7 @@ func RestLookupSpecList(c echo.Context) error {
 // @Tags [Infra resource] MCIR Spec management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
+// @Param nsId path string true "Namespace ID" default(system)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -234,7 +234,7 @@ type RestFilterSpecsResponse struct {
 // @Tags [Infra resource] MCIR Spec management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
+// @Param nsId path string true "Namespace ID" default(system)
 // @Param specRangeFilter body mcir.FilterSpecsByRangeRequest false "Filter for range-filtering specs"
 // @Success 200 {object} RestFilterSpecsResponse
 // @Failure 404 {object} common.SimpleMsg
@@ -266,7 +266,7 @@ func RestFilterSpecsByRange(c echo.Context) error {
 // @Tags [Infra resource] MCIR Spec management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
+// @Param nsId path string true "Namespace ID" default(system)
 // @Param specId path string true "Spec ID ({providerName}+{regionName}+{specName})"
 // @Success 200 {object} mcir.TbSpecInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -295,7 +295,7 @@ func RestGetSpec(c echo.Context) error {
 // @Tags [Infra resource] MCIR Spec management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
+// @Param nsId path string true "Namespace ID" default(system)
 // @Param specId path string true "Spec ID ({providerName}+{regionName}+{specName})"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg

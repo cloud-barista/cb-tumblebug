@@ -39,7 +39,7 @@ import (
 // @Tags [VPN] Sites in MCI
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Success 200 {object} model.SitesInfo "OK"
 // @Failure 400 {object} common.SimpleMsg "Bad Request"
@@ -214,7 +214,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 // @Tags [VPN] Site-to-site VPN (under development)
 // @Accept  json
 // @Produce  json-stream
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param vpnReq body model.RestPostVpnRequest true "Sites info for VPN configuration"
@@ -767,7 +767,7 @@ func whichCspSet(csp1, csp2 string) string {
 // @Tags [VPN] Site-to-site VPN (under development)
 // @Accept  json
 // @Produce  json-stream
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Success 200 {object} common.SimpleMsg "OK"
@@ -1011,7 +1011,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 // @Tags [VPN] Site-to-site VPN (under development)
 // @Accept  json
 // @Produce  json-stream
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param vpnReq body model.RestPostVpnGcpToAwsRequest true "Resources info for VPN tunnel configuration between GCP and AWS"
@@ -1122,7 +1122,7 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 // @Tags [VPN] Site-to-site VPN (under development)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param detail query string false "Resource info by detail (refined, raw)" default(refined)
@@ -1313,7 +1313,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 // @Tags [VPN] Site-to-site VPN (under development)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param requestId path string true "Request ID"

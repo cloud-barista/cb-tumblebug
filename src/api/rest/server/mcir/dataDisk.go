@@ -32,7 +32,7 @@ import (
 // @Tags [Infra resource] MCIR Data Disk management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option: " Enums(register)
 // @Param dataDiskInfo body mcir.TbDataDiskReq true "Details for an Data Disk object"
 // @Success 200 {object} mcir.TbDataDiskInfo
@@ -66,7 +66,7 @@ func RestPostDataDisk(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param dataDiskUpsizeReq body mcir.TbDataDiskUpsizeReq true "Request body to upsize the dataDisk"
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param dataDiskId path string true "DataDisk ID"
 // @Success 200 {object} mcir.TbDataDiskInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -97,7 +97,7 @@ func RestPutDataDisk(c echo.Context) error {
 // @Tags [Infra resource] MCIR Data Disk management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param dataDiskId path string true "Data Disk ID"
 // @Success 200 {object} mcir.TbDataDiskInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -120,7 +120,7 @@ type RestGetAllDataDiskResponse struct {
 // @Tags [Infra resource] MCIR Data Disk management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex: systemLabel)"
 // @Param filterVal query string false "Field value for filtering (ex: Registered from CSP resource)"
@@ -140,7 +140,7 @@ func RestGetAllDataDisk(c echo.Context) error {
 // @Tags [Infra resource] MCIR Data Disk management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param dataDiskId path string true "Data Disk ID"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -157,7 +157,7 @@ func RestDelDataDisk(c echo.Context) error {
 // @Tags [Infra resource] MCIR Data Disk management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
@@ -175,7 +175,7 @@ func RestDelAllDataDisk(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param attachDetachDataDiskReq body mcir.TbAttachDetachDataDiskReq false "Request body to attach/detach dataDisk"
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Param option query string true "Option for MCI" Enums(attach, detach)
@@ -230,7 +230,7 @@ func RestPutVmDataDisk(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param dataDiskInfo body mcir.TbDataDiskVmReq true "Details for an Data Disk object"
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Success 200 {object} mci.TbVmInfo
@@ -265,7 +265,7 @@ func RestPostVmDataDisk(c echo.Context) error {
 // @Tags [Infra resource] MCIR Data Disk management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllDataDiskResponse,[ID]=common.IdList} "Different return structures by the given option param"

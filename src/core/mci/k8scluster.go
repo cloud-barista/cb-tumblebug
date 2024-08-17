@@ -90,7 +90,7 @@ type SpiderClusterReqInfo struct {
 
 // TbK8sClusterReq is a struct to handle 'Create K8sCluster' request toward CB-Tumblebug.
 type TbK8sClusterReq struct { // Tumblebug
-	//Namespace      string `json:"namespace" validate:"required" example:"ns01"`
+	//Namespace      string `json:"namespace" validate:"required" example:"default"`
 	ConnectionName string `json:"connectionName" validate:"required" example:"alibaba-ap-northeast-2"`
 	Description    string `json:"description" example:"My K8sCluster"`
 
@@ -337,7 +337,7 @@ type TbK8sClusterInfo struct { // Tumblebug
 
 	Description       string `json:"description" example:"My K8sCluster"`
 	CspK8sClusterId   string `json:"cspK8sClusterId" example:"c123456789012345678901234567890"`
-	CspK8sClusterName string `json:"cspK8sClusterName" example:"ns01-k8scluster-01"`
+	CspK8sClusterName string `json:"cspK8sClusterName" example:"default-k8scluster-01"`
 
 	// Latest system message such as error message
 	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message

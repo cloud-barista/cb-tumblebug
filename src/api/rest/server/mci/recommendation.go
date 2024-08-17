@@ -65,7 +65,7 @@ type RestPostMciRecommendResponse struct {
 // 	// @Tags [MC-Infra] MCI Provisioning management
 // 	// @Accept  json
 // 	// @Produce  json
-// 	// @Param nsId path string true "Namespace ID" default(ns01)
+// 	// @Param nsId path string true "Namespace ID" default(default)
 // 	// @Param mciRecommendReq body mci.MciRecommendReq true "Details for an MCI object"
 // 	// @Success 200 {object} RestPostMciRecommendResponse
 // 	// @Failure 404 {object} common.SimpleMsg

@@ -33,7 +33,7 @@ type TbFirewallRulesWrapper struct {
 // @Tags [Infra resource] MCIR Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param firewallRuleReq body TbFirewallRulesWrapper true "FirewallRules to create"
 // @Success 200 {object} mcir.TbSecurityGroupInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -64,7 +64,7 @@ func RestPostFirewallRules(c echo.Context) error {
 // @Tags [Infra resource] MCIR Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param firewallRuleInfo body mcir.TbFirewallRulesInfo true "FirewallRules to update"
 // @Success 200 {object} mcir.TbFirewallRulesInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -85,7 +85,7 @@ func RestPutFirewallRules(c echo.Context) error {
 // @Tags [Infra resource] MCIR Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param firewallRuleReq body TbFirewallRulesWrapper true "FirewallRules to lookup"
 // @Success 200 {object} mcir.TbFirewallRulesInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -109,7 +109,7 @@ type RestGetAllFirewallRulesResponse struct {
 // @Tags [Infra resource] MCIR Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param firewallRuleReq body TbFirewallRulesWrapper true "FirewallRules to delete"
 // @Success 200 {object} mcir.TbSecurityGroupInfo
 // @Failure 404 {object} common.SimpleMsg

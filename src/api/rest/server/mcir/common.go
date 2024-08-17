@@ -218,7 +218,7 @@ func RestGetResource(c echo.Context) error {
 // @Tags [Infra resource] MCIR Common
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param resourceType path string true "Resource Type"
 // @Param resourceId path string true "Resource ID"
 // @Success 200 {object} common.SimpleMsg
@@ -332,7 +332,7 @@ func RestLoadCommonResource(c echo.Context) error {
 // @Tags [Infra resource] MCIR Common
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string true "Option" Enums(all,vnet,sg,sshkey)
 // @Param connectionName query string false "connectionName of cloud for designated resource" default()
 // @Success 200 {object} common.SimpleMsg
@@ -361,7 +361,7 @@ func RestLoadDefaultResource(c echo.Context) error {
 // @Tags [Infra resource] MCIR Common
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/defaultResources [delete]

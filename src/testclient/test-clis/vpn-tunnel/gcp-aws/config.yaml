@@ -3,7 +3,7 @@ tumblebug:
   auth:
     info: auth.json
   demo:
-    nsId: kdemo-ns01
+    nsId: kdemo-default
     mciId: kdemo-mci01
   api:
     mciDynamic:

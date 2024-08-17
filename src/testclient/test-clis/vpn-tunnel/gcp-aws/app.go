@@ -461,7 +461,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 
 			// Sample
 			// /subscriptions/xxxxxxxxx/resourceGroups/cb-tb-az-krc-tb/providers/xxxxxxx \
-			// /virtualNetworks/kdemo-ns01-kdemo-ns01-systemdefault-az-krc-cobrrejpr52be711ok20
+			// /virtualNetworks/kdemo-default-kdemo-default-systemdefault-az-krc-cobrrejpr52be711ok20
 			parts := strings.Split(vm.CspViewVmDetail.VpcIID.SystemId, "/")
 			log.Debug().Msgf("parts: %+v", parts)
 			azureResourceGroupName = parts[4]

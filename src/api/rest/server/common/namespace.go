@@ -67,7 +67,7 @@ func RestDelAllNs(c echo.Context) error {
 // @Tags [Namespace] Namespace management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId} [delete]
@@ -137,7 +137,7 @@ func RestGetAllNs(c echo.Context) error {
 // @Tags [Namespace] Namespace management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} common.NsInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -190,7 +190,7 @@ func RestPostNs(c echo.Context) error {
 // @Tags [Namespace] Namespace management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param namespace body common.NsReq true "Details to update existing namespace"
 // @Success 200 {object} common.NsInfo
 // @Failure 404 {object} common.SimpleMsg

@@ -29,7 +29,7 @@ import (
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciReq body TbMciReq true "Details for an MCI object"
 // @Success 200 {object} TbMciInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -59,7 +59,7 @@ func RestPostMci(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciReq body TbMciReq true "Details for an MCI object with existing CSP VM ID"
 // @Success 200 {object} TbMciInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -84,7 +84,7 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 
 // RestPostSystemMci godoc
 // @ID PostSystemMci
-// @Summary Create System MCI Dynamically for Special Purpose in NS:system-purpose-common-ns
+// @Summary Create System MCI Dynamically for Special Purpose in NS:system
 // @Description Create System MCI Dynamically for Special Purpose
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
@@ -117,7 +117,7 @@ func RestPostSystemMci(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciReq body TbMciDynamicReq true "Request body to provision MCI dynamically. Must include commonSpec and commonImage info of each VM request.(ex: {name: mci01,vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]} ) You can use /mciRecommendVm and /mciDynamicCheckRequest to get it) Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
 // @Param option query string false "Option for MCI creation" Enums(hold)
 // @Param x-request-id header string false "Custom request ID"
@@ -150,7 +150,7 @@ func RestPostMciDynamic(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmReq body TbVmDynamicReq true "Details for Vm dynamic request"
 // @Success 200 {object} TbMciInfo
@@ -207,7 +207,7 @@ func RestPostMciDynamicCheckRequest(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmReq body mci.TbVmReq true "Details for VMs(subGroup)"
 // @Success 200 {object} mci.TbMciInfo
@@ -237,7 +237,7 @@ func RestPostMciVm(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param subgroupId path string true "subGroup ID" default(g1)
 // @Param vmReq body mci.TbScaleOutSubGroupReq true "subGroup scaleOut request"

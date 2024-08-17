@@ -23,7 +23,7 @@ label="DynamicVM"
 
 echo 
 
-specList=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/system-purpose-common-ns/resources/spec)
+specList=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/system/resources/spec)
 specArray=$(jq -r '.spec' <<<"$specList")
 
 i=0
@@ -75,7 +75,7 @@ done
 
 SECONDS=0
 
-specList=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/system-purpose-common-ns/resources/spec)
+specList=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/system/resources/spec)
 specArray=$(jq -r '.spec' <<<"$specList")
 
 MainMciName="allforone"
