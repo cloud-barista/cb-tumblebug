@@ -41,7 +41,7 @@ type JSONResult struct {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param option query string false "Option" Enums(default, id, status, accessinfo)
 // @Param filterKey query string false "(For option=id) Field key for filtering (ex: connectionName)"
@@ -114,7 +114,7 @@ type RestGetAllMciStatusResponse struct {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option" Enums(id, simple, status)
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllMciResponse,[SIMPLE]=RestGetAllMciResponse,[ID]=common.IdList,[STATUS]=RestGetAllMciStatusResponse} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
@@ -191,7 +191,7 @@ func RestPutMci(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param option query string false "Option for delete MCI (support force delete)" Enums(terminate,force)
 // @Success 200 {object} common.IdList
@@ -217,7 +217,7 @@ func RestDelMci(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option for delete MCI (support force delete)" Enums(force)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -244,7 +244,7 @@ func RestDelAllMci(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Param option query string false "Option for MCI" Enums(default, status, idsInDetail)
@@ -286,7 +286,7 @@ func RestGetMciVm(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Param vmInfo body mci.TbVmInfo true "Details for an VM object"
@@ -306,7 +306,7 @@ func RestPutMciVm(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Param option query string false "Option for delete VM (support force delete)" Enums(force)
@@ -341,7 +341,7 @@ func RestDelMciVm(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param subgroupId path string true "subGroup ID" default(g1)
 // @Param option query string false "Option" Enums(id)
@@ -372,7 +372,7 @@ func RestGetMciGroupVms(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg

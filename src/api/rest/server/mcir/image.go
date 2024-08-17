@@ -34,7 +34,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithId)
-// @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
+// @Param nsId path string true "Namespace ID" default(system)
 // @Param imageInfo body mcir.TbImageInfo false "Specify details of a image object (cspImageName, guestOS, description, ...) manually"
 // @Param imageId body mcir.TbImageReq false "Specify name, connectionName and cspImageId to register an image object automatically"
 // @Param update query boolean false "Force update to existing image object" default(false)
@@ -95,7 +95,7 @@ func RestPostImage(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param imageInfo body mcir.TbImageInfo true "Details for an image object"
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param imageId path string true "Image ID ({providerName}+{regionName}+{imageName})"
 // @Success 200 {object} mcir.TbImageInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -189,7 +189,7 @@ func RestLookupImageList(c echo.Context) error {
 // @Tags [Infra resource] MCIR Image management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -234,7 +234,7 @@ func RestFetchImages(c echo.Context) error {
 // @Tags [Infra resource] MCIR Image management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param imageId path string true "Image ID ({providerName}+{regionName}+{imageName})"
 // @Success 200 {object} mcir.TbImageInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -257,7 +257,7 @@ type RestGetAllImageResponse struct {
 // @Tags [Infra resource] MCIR Image management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex:guestOS)"
 // @Param filterVal query string false "Field value for filtering (ex: Ubuntu18.04)"
@@ -277,7 +277,7 @@ func RestGetAllImage(c echo.Context) error {
 // @Tags [Infra resource] MCIR Image management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param imageId path string true "Image ID ({providerName}+{regionName}+{imageName})"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -294,7 +294,7 @@ func RestDelImage(c echo.Context) error {
 // @Tags [Infra resource] MCIR Image management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
@@ -316,7 +316,7 @@ type RestSearchImageRequest struct {
 // @Tags [Infra resource] MCIR Image management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param keywords body RestSearchImageRequest true "Keywords"
 // @Success 200 {object} RestGetAllImageResponse
 // @Failure 404 {object} common.SimpleMsg

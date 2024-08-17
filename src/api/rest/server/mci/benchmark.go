@@ -29,7 +29,7 @@ import (
 // @Tags [MC-Infra] MCI Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param mciCmdReq body mci.MciCmdReq true "MCI Command Request"
 // @Param option query string false "Option for checking update" Enums(update)
@@ -78,7 +78,7 @@ type RestGetAllBenchmarkRequest struct {
 // @Tags [MC-Infra] MCI Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param hostIP body RestGetAllBenchmarkRequest true "Host IP address to benchmark"
 // @Success 200 {object} mci.BenchmarkInfoArray
@@ -110,7 +110,7 @@ func RestGetAllBenchmark(c echo.Context) error {
 // @Tags [MC-Infra] MCI Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
+// @Param nsId path string true "Namespace ID" default(system)
 // @Param mciId path string true "MCI ID" default(probe)
 // @Success 200 {object} mci.BenchmarkInfoArray
 // @Failure 404 {object} common.SimpleMsg
@@ -139,7 +139,7 @@ type RestGetBenchmarkRequest struct {
 // @Tags [MC-Infra] MCI Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param hostIP body RestGetBenchmarkRequest true "Host IP address to benchmark"
 // @Param action query string true "Benchmark Action to MCI" Enums(install, init, cpus, cpum, memR, memW, fioR, fioW, dbR, dbW, rtt, mrtt, clean)

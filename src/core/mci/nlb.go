@@ -127,10 +127,10 @@ type SpiderNLBListenerInfo struct {
 
 // TbNLBListenerInfo is a struct to handle NLB Listener information from the CB-Tumblebug's REST API response
 type TbNLBListenerInfo struct {
-	Protocol string `json:"protocol" example:"TCP"`                                            // TCP|UDP
-	IP       string `json:"ip" example:"x.x.x.x"`                                              // Auto Generated and attached
-	Port     string `json:"port" example:"80"`                                                 // 1-65535
-	DNSName  string `json:"dnsName" example:"ns01-group-cd3.elb.ap-northeast-2.amazonaws.com"` // Optional, Auto Generated and attached
+	Protocol string `json:"protocol" example:"TCP"`                                               // TCP|UDP
+	IP       string `json:"ip" example:"x.x.x.x"`                                                 // Auto Generated and attached
+	Port     string `json:"port" example:"80"`                                                    // 1-65535
+	DNSName  string `json:"dnsName" example:"default-group-cd3.elb.ap-northeast-2.amazonaws.com"` // Optional, Auto Generated and attached
 
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
@@ -196,7 +196,7 @@ type TbNLBTargetGroupInfo struct {
 type TbNLBReq struct { // Tumblebug
 	// Name           string `json:"name" validate:"required" example:"mc"`
 	// ConnectionName string `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
-	// VNetId         string `json:"vNetId" validate:"required" example:"ns01-systemdefault-aws-ap-northeast-2"`
+	// VNetId         string `json:"vNetId" validate:"required" example:"default-systemdefault-aws-ap-northeast-2"`
 
 	Description string `json:"description"`
 	// Existing NLB (used only for option=register)

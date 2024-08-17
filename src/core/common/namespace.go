@@ -29,14 +29,14 @@ import (
 )
 
 type NsReq struct {
-	Name        string `json:"name" example:"ns01"`
+	Name        string `json:"name" example:"default"`
 	Description string `json:"description" example:"Description for this namespace"`
 }
 
 // swagger:response NsInfo
 type NsInfo struct {
-	Id          string `json:"id" example:"ns01"`
-	Name        string `json:"name" example:"ns01"`
+	Id          string `json:"id" example:"default"`
+	Name        string `json:"name" example:"default"`
 	Description string `json:"description" example:"Description for this namespace"`
 }
 

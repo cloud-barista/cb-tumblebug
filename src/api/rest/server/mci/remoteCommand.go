@@ -29,7 +29,7 @@ import (
 // @Tags [MC-Infra] MCI Remote command
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param mciCmdReq body mci.MciCmdReq true "MCI Command Request"
 // @Param subGroupId query string false "subGroupId to apply the command only for VMs in subGroup of MCI" default(g1)
@@ -82,7 +82,7 @@ func RestPostCmdMci(c echo.Context) error {
 // @Tags [MC-Infra] MCI Remote command
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param targetVmId path string true "Target VM ID" default(g1-1)
 // @Param bastionVmId path string true "Bastion VM ID" default(g1-1)
@@ -111,7 +111,7 @@ func RestSetBastionNodes(c echo.Context) error {
 // @Tags [MC-Infra] MCI Remote command
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param targetVmId path string true "Target VM ID" default(g1-1)
 // @Success 200 {object} []mcir.BastionNode
@@ -138,7 +138,7 @@ func RestGetBastionNodes(c echo.Context) error {
 // @Tags [MC-Infra] MCI Remote command
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param bastionVmId path string true "Bastion VM ID" default(g1-1)
 // @Success 200 {object} common.SimpleMsg

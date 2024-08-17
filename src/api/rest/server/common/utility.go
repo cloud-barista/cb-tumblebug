@@ -494,7 +494,7 @@ func RestInspectResourcesOverview(c echo.Context) error {
 // Request struct for RestRegisterCspNativeResources
 type RestRegisterCspNativeResourcesRequest struct {
 	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"`
-	NsId           string `json:"nsId" example:"ns01"`
+	NsId           string `json:"nsId" example:"default"`
 	MciName        string `json:"mciName" example:"csp"`
 }
 
@@ -531,7 +531,7 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 
 // Request struct for RestRegisterCspNativeResources
 type RestRegisterCspNativeResourcesRequestAll struct {
-	NsId    string `json:"nsId" example:"ns01"`
+	NsId    string `json:"nsId" example:"default"`
 	MciName string `json:"mciName" example:"csp"`
 }
 

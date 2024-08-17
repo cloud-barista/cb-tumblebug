@@ -41,8 +41,8 @@ Usage:
 
 Examples:
 
-  [Long] ./demo --namespaceId "ns01" --mciId "mci01" --resourceGroupId "rg01"
-  [Short] ./demo -n "ns01" -m "mci01" -r "rg01"
+  [Long] ./demo --namespaceId "default" --mciId "mci01" --resourceGroupId "rg01"
+  [Short] ./demo -n "default" -m "mci01" -r "rg01"
 
 Available Commands:
   completion  Generate the autocompletion script for the specified shell

@@ -29,7 +29,7 @@ import (
 // @Tags [Infra resource] NLB management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param option query string false "Option: [required params for register] connectionName, name, cspNLBId" Enums(register)
 // @Param nlbReq body mci.TbNLBReq true "Details of the NLB object"
@@ -63,7 +63,7 @@ func RestPostNLB(c echo.Context) error {
 // @Tags [Infra resource] NLB management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param nlbReq body mci.TbNLBReq true "Details of the NLB object"
 // @Success 200 {object} mci.McNlbInfo
@@ -97,7 +97,7 @@ func RestPostMcNLB(c echo.Context) error {
 // @Tags [Infra resource] NLB management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param nlbId path string true "NLB ID" default(g1)
 // @Param nlbInfo body mci.TbNLBInfo true "Details of the NLB object"
@@ -120,7 +120,7 @@ func RestPutNLB(c echo.Context) error {
 // @Tags [Infra resource] NLB management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param nlbId path string true "NLB ID" default(g1)
 // @Success 200 {object} mci.TbNLBInfo
@@ -152,11 +152,11 @@ type RestGetAllNLBResponse struct {
 // @Tags [Infra resource] NLB management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex: cspNLBName)"
-// @Param filterVal query string false "Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)"
+// @Param filterVal query string false "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllNLBResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -201,7 +201,7 @@ func RestGetAllNLB(c echo.Context) error {
 // @Tags [Infra resource] NLB management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param nlbId path string true "NLB ID"
 // @Success 200 {object} common.SimpleMsg
@@ -230,7 +230,7 @@ func RestDelNLB(c echo.Context) error {
 // @Tags [Infra resource] NLB management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} common.IdList
@@ -258,7 +258,7 @@ func RestDelAllNLB(c echo.Context) error {
 // @Tags [Infra resource] NLB management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param nlbId path string true "NLB ID" default(g1)
 // @Success 200 {object} mci.TbNLBInfo
@@ -287,7 +287,7 @@ func RestGetNLBHealth(c echo.Context) error {
 // @Tags [Infra resource] NLB management (for developer)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param nlbId path string true "NLB ID" default(g1)
 // @Param nlbAddRemoveVMReq body mci.TbNLBAddRemoveVMReq true "VMs to add to NLB"
@@ -319,7 +319,7 @@ func RestAddNLBVMs(c echo.Context) error {
 // @Tags [Infra resource] NLB management (for developer)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param nlbId path string true "NLB ID" default(g1)
 // @Param nlbAddRemoveVMReq body mci.TbNLBAddRemoveVMReq true "VMs to add to NLB"

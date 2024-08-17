@@ -14,7 +14,7 @@ if [ ! -z "$OPTION01" ]; then
 fi
 
 if [ -z "$NSID" ]; then
-	NSID="ns01"
+	NSID="default"
 fi
 
 resp=$(

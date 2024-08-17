@@ -31,7 +31,7 @@ import (
 // @Tags [MC-Infra] MCI Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param mciPolicyReq body mci.MciPolicyReq true "Details for an MCI automation policy request"
 // @Success 200 {object} mci.MciPolicyInfo
@@ -62,7 +62,7 @@ func RestPostMciPolicy(c echo.Context) error {
 // @Tags [MC-Infra] MCI Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Success 200 {object} mci.MciPolicyInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -102,7 +102,7 @@ type RestGetAllMciPolicyResponse struct {
 // @Tags [MC-Infra] MCI Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} RestGetAllMciPolicyResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -152,7 +152,7 @@ func RestPutMciPolicy(c echo.Context) error {
 // @Tags [MC-Infra] MCI Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -177,7 +177,7 @@ func RestDelMciPolicy(c echo.Context) error {
 // @Tags [MC-Infra] MCI Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/policy/mci [delete]

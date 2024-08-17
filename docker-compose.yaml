@@ -45,7 +45,7 @@ services:
       # - TB_AUTOCONTROL_DURATION_MS=10000
       # - TB_SELF_ENDPOINT=localhost:1323
       # - TB_DRAGONFLY_REST_URL=http://cb-dragonfly:9090/dragonfly
-      # - TB_DEFAULT_NAMESPACE=ns01
+      # - TB_DEFAULT_NAMESPACE=default
       # - TB_DEFAULT_CREDENTIALHOLDER=admin
       # - TB_LOGFILE_PATH=/app/log/tumblebug.log
       # - TB_LOGFILE_MAXSIZE=10

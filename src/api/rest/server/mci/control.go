@@ -30,7 +30,7 @@ import (
 // @Tags [MC-Infra] MCI Control lifecycle
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param action query string true "Action to MCI" Enums(suspend, resume, reboot, terminate, refine, continue, withdraw)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
@@ -76,7 +76,7 @@ func RestGetControlMci(c echo.Context) error {
 // @Tags [MC-Infra] MCI Control lifecycle
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Param action query string true "Action to MCI" Enums(suspend, resume, reboot, terminate)
@@ -126,7 +126,7 @@ func RestGetControlMciVm(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param vmSnapshotReq body mci.TbVmSnapshotReq true "Request body to create VM snapshot"
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Success 200 {object} mcir.TbCustomImageInfo

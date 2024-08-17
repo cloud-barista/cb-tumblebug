@@ -29,7 +29,7 @@ import (
 // @Tags [Infra resource] MCIR Access key management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option: [required params for register] connectionName, name, cspSshKeyId, fingerprint, username, publicKey, privateKey" Enums(register)
 // @Param sshKeyInfo body mcir.TbSshKeyReq true "Details for an SSH Key object"
 // @Success 200 {object} mcir.TbSshKeyInfo
@@ -63,7 +63,7 @@ func RestPostSshKey(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param sshKeyInfo body mcir.TbSshKeyInfo true "Details for an SSH Key object"
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param sshKeyId path string true "SshKey ID"
 // @Success 200 {object} mcir.TbSshKeyInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -93,7 +93,7 @@ func RestPutSshKey(c echo.Context) error {
 // @Tags [Infra resource] MCIR Access key management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param sshKeyId path string true "SSH Key ID"
 // @Success 200 {object} mcir.TbSshKeyInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -116,7 +116,7 @@ type RestGetAllSshKeyResponse struct {
 // @Tags [Infra resource] MCIR Access key management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex: systemLabel)"
 // @Param filterVal query string false "Field value for filtering (ex: Registered from CSP resource)"
@@ -136,7 +136,7 @@ func RestGetAllSshKey(c echo.Context) error {
 // @Tags [Infra resource] MCIR Access key management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param sshKeyId path string true "SSH Key ID"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -153,7 +153,7 @@ func RestDelSshKey(c echo.Context) error {
 // @Tags [Infra resource] MCIR Access key management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(default)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg

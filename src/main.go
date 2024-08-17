@@ -59,7 +59,7 @@ func init() {
 	common.DBUser = common.NVL(os.Getenv("TB_SQLITE_USER"), "cb_tumblebug")
 	common.DBPassword = common.NVL(os.Getenv("TB_SQLITE_PASSWORD"), "cb_tumblebug")
 	common.AutocontrolDurationMs = common.NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
-	common.DefaultNamespace = common.NVL(os.Getenv("TB_DEFAULT_NAMESPACE"), "ns01")
+	common.DefaultNamespace = common.NVL(os.Getenv("TB_DEFAULT_NAMESPACE"), "default")
 	common.DefaultCredentialHolder = common.NVL(os.Getenv("TB_DEFAULT_CREDENTIALHOLDER"), "admin")
 	// Etcd
 	common.EtcdEndpoints = common.NVL(os.Getenv("TB_ETCD_ENDPOINTS"), "localhost:2379")
