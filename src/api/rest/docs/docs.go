@@ -1262,7 +1262,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1306,7 +1306,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1359,7 +1359,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1399,7 +1399,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1484,7 +1484,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1547,7 +1547,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "system-purpose-common-ns",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1601,7 +1601,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1655,7 +1655,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1738,7 +1738,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1818,7 +1818,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1903,7 +1903,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1943,7 +1943,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2015,7 +2015,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2038,7 +2038,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Field value for filtering (ex: ns01-alibaba-ap-northeast-2-vpc)",
+                        "description": "Field value for filtering (ex: default-alibaba-ap-northeast-2-vpc)",
                         "name": "filterVal",
                         "in": "query"
                     }
@@ -2095,7 +2095,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2157,7 +2157,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2204,7 +2204,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2256,7 +2256,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2304,7 +2304,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2367,7 +2367,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2423,7 +2423,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2494,7 +2494,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2565,7 +2565,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2628,7 +2628,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2688,7 +2688,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2764,7 +2764,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2817,7 +2817,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2866,7 +2866,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2969,7 +2969,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3027,7 +3027,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3089,7 +3089,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3152,7 +3152,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3183,7 +3183,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)",
+                        "description": "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)",
                         "name": "filterVal",
                         "in": "query"
                     }
@@ -3240,7 +3240,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3310,7 +3310,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3365,7 +3365,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3425,7 +3425,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3480,7 +3480,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3542,7 +3542,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3611,7 +3611,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3676,7 +3676,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3736,7 +3736,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3790,7 +3790,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3859,7 +3859,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3930,7 +3930,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3993,7 +3993,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4058,7 +4058,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4128,7 +4128,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4217,7 +4217,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4282,7 +4282,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4365,7 +4365,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4455,7 +4455,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4520,7 +4520,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4582,7 +4582,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4645,7 +4645,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4720,7 +4720,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4795,7 +4795,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4865,7 +4865,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4928,7 +4928,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4989,7 +4989,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5051,7 +5051,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5095,7 +5095,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5135,7 +5135,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5187,7 +5187,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5248,7 +5248,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5296,7 +5296,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5351,7 +5351,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5431,7 +5431,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5494,7 +5494,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5541,7 +5541,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5592,7 +5592,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5639,7 +5639,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5719,7 +5719,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5781,7 +5781,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5828,7 +5828,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5888,7 +5888,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5939,7 +5939,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -5986,7 +5986,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6032,7 +6032,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "system-purpose-common-ns",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6078,7 +6078,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "system-purpose-common-ns",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6132,7 +6132,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6223,7 +6223,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "system-purpose-common-ns",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6290,7 +6290,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6337,7 +6337,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6397,7 +6397,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6448,7 +6448,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6495,7 +6495,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6550,7 +6550,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6630,7 +6630,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6692,7 +6692,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6739,7 +6739,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6790,7 +6790,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6837,7 +6837,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6890,7 +6890,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6950,7 +6950,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "system-purpose-common-ns",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7019,7 +7019,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "system-purpose-common-ns",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7079,7 +7079,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "system-purpose-common-ns",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7130,7 +7130,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "system-purpose-common-ns",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7177,7 +7177,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7257,7 +7257,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7319,7 +7319,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7366,7 +7366,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7426,7 +7426,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7477,7 +7477,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7524,7 +7524,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7547,7 +7547,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)",
+                        "description": "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)",
                         "name": "filterVal",
                         "in": "query"
                     }
@@ -7604,7 +7604,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7666,7 +7666,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7713,7 +7713,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7764,7 +7764,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7811,7 +7811,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7873,7 +7873,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -8553,7 +8553,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -8628,7 +8628,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -8703,7 +8703,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -8766,7 +8766,7 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] MCI Provisioning management"
                 ],
-                "summary": "Create System MCI Dynamically for Special Purpose in NS:system-purpose-common-ns",
+                "summary": "Create System MCI Dynamically for Special Purpose in NS:system",
                 "operationId": "PostSystemMci",
                 "parameters": [
                     {
@@ -9271,11 +9271,11 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string",
-                    "example": "ns01"
+                    "example": "default"
                 },
                 "name": {
                     "type": "string",
-                    "example": "ns01"
+                    "example": "default"
                 }
             }
         },
@@ -9288,7 +9288,7 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string",
-                    "example": "ns01"
+                    "example": "default"
                 }
             }
         },
@@ -9448,7 +9448,7 @@ const docTemplate = `{
                 },
                 "nsId": {
                     "type": "string",
-                    "example": "ns01"
+                    "example": "default"
                 }
             }
         },
@@ -9461,7 +9461,7 @@ const docTemplate = `{
                 },
                 "nsId": {
                     "type": "string",
-                    "example": "ns01"
+                    "example": "default"
                 }
             }
         },
@@ -10688,7 +10688,7 @@ const docTemplate = `{
                 },
                 "cspK8sClusterName": {
                     "type": "string",
-                    "example": "ns01-k8scluster-01"
+                    "example": "default-k8scluster-01"
                 },
                 "description": {
                     "type": "string",
@@ -10787,7 +10787,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "connectionName": {
-                    "description": "Namespace      string ` + "`" + `json:\"namespace\" validate:\"required\" example:\"ns01\"` + "`" + `",
+                    "description": "Namespace      string ` + "`" + `json:\"namespace\" validate:\"required\" example:\"default\"` + "`" + `",
                     "type": "string",
                     "example": "alibaba-ap-northeast-2"
                 },
@@ -11300,7 +11300,7 @@ const docTemplate = `{
                 "dnsName": {
                     "description": "Optional, Auto Generated and attached",
                     "type": "string",
-                    "example": "ns01-group-cd3.elb.ap-northeast-2.amazonaws.com"
+                    "example": "default-group-cd3.elb.ap-northeast-2.amazonaws.com"
                 },
                 "ip": {
                     "description": "Auto Generated and attached",
@@ -12417,7 +12417,7 @@ const docTemplate = `{
                 "namespace": {
                     "description": "required to save in RDB",
                     "type": "string",
-                    "example": "ns01"
+                    "example": "default"
                 },
                 "sourceVmId": {
                     "type": "string",
@@ -12485,7 +12485,7 @@ const docTemplate = `{
                 },
                 "cspDataDiskName": {
                     "type": "string",
-                    "example": "ns01-aws-ap-southeast-1-datadisk"
+                    "example": "default-aws-ap-southeast-1-datadisk"
                 },
                 "description": {
                     "type": "string",
