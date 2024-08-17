@@ -250,7 +250,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     - Delete CB-TB & CB-Spider metadata using the provided script
       ```bash
       cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-      ./scripts/cleanDB.sh
+      ./init/cleanDB.sh
       ```
 
 - Upgrading the CB-TB & CB-Spider versions
@@ -261,7 +261,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   - Delete CB-TB & CB-Spider metadata
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/cleanDB.sh
+    ./init/cleanDB.sh
     ```
   - Restart with the upgraded version
 
