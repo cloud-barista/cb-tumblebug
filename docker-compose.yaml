@@ -9,7 +9,6 @@ services:
   cb-tumblebug:
     image: cloudbaristaorg/cb-tumblebug:0.9.5
     container_name: cb-tumblebug
-    pull_policy: missing
     build:
       context: .
       dockerfile: Dockerfile
