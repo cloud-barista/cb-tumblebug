@@ -196,7 +196,7 @@ type TbNLBTargetGroupInfo struct {
 type TbNLBReq struct { // Tumblebug
 	// Name           string `json:"name" validate:"required" example:"mc"`
 	// ConnectionName string `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
-	// VNetId         string `json:"vNetId" validate:"required" example:"default-systemdefault-aws-ap-northeast-2"`
+	// VNetId         string `json:"vNetId" validate:"required" example:"default-shared-aws-ap-northeast-2"`
 
 	Description string `json:"description"`
 	// Existing NLB (used only for option=register)
@@ -463,7 +463,7 @@ func CreateNLB(nsId string, mciId string, u *TbNLBReq, option string) (TbNLBInfo
 	requestBody := SpiderNLBReqInfoWrapper{
 		ConnectionName: vm.ConnectionName,
 		ReqInfo: SpiderNLBReqInfo{
-			Name:     fmt.Sprintf("%s-%s", nsId, u.TargetGroup.SubGroupId),
+			Name:     common.GenUid(),
 			VPCName:  vNetInfo.CspVNetName,
 			Type:     u.Type,
 			Scope:    u.Scope,

@@ -1431,7 +1431,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 		return &TbVmReq{}, err
 	}
 
-	// Default resource name has this pattern (nsId + "-systemdefault-" + vmReq.ConnectionName)
+	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
 	resourceName := nsId + common.StrDefaultResourceName + vmReq.ConnectionName
 
 	vmReq.SpecId = specInfo.Id
@@ -1459,7 +1459,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 			return &TbVmReq{}, err
 		}
 		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
-		err2 := mcir.LoadDefaultResource(nsId, common.StrVNet, vmReq.ConnectionName)
+		err2 := mcir.LoadSharedResource(nsId, common.StrVNet, vmReq.ConnectionName)
 		if err2 != nil {
 			log.Error().Err(err2).Msg("Failed to create new default vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
 			return &TbVmReq{}, err2
@@ -1481,7 +1481,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 			return &TbVmReq{}, err
 		}
 		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
-		err2 := mcir.LoadDefaultResource(nsId, common.StrSSHKey, vmReq.ConnectionName)
+		err2 := mcir.LoadSharedResource(nsId, common.StrSSHKey, vmReq.ConnectionName)
 		if err2 != nil {
 			log.Error().Err(err2).Msg("Failed to create new default SSHKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
 			return &TbVmReq{}, err2
@@ -1503,7 +1503,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 			return &TbVmReq{}, err
 		}
 		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
-		err2 := mcir.LoadDefaultResource(nsId, common.StrSecurityGroup, vmReq.ConnectionName)
+		err2 := mcir.LoadSharedResource(nsId, common.StrSecurityGroup, vmReq.ConnectionName)
 		if err2 != nil {
 			log.Error().Err(err2).Msg("Failed to create new default securityGroup " + securityGroup + " from " + vmReq.ConnectionName)
 			return &TbVmReq{}, err2
