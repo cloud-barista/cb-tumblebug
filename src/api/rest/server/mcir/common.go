@@ -356,8 +356,8 @@ func RestLoadSharedResource(c echo.Context) error {
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
-// RestDelAllDefaultResources godoc
-// @ID DelAllDefaultResources
+// RestDelAllSharedResources godoc
+// @ID DelAllSharedResources
 // @Summary Delete all Default Resource Objects in the given namespace
 // @Description Delete all Default Resource Objects in the given namespace
 // @Tags [Infra resource] MCIR Common
@@ -366,15 +366,15 @@ func RestLoadSharedResource(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
-// @Router /ns/{nsId}/defaultResources [delete]
-func RestDelAllDefaultResources(c echo.Context) error {
+// @Router /ns/{nsId}/sharedResources [delete]
+func RestDelAllSharedResources(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
 
-	content, err := mcir.DelAllDefaultResources(nsId)
+	content, err := mcir.DelAllSharedResources(nsId)
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 

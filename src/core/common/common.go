@@ -93,7 +93,7 @@ const (
 	StrContainer             string = "container"
 	StrCommon                string = "common"
 	StrEmpty                 string = "empty"
-	StrDefaultResourceName   string = "-systemdefault-"
+	StrSharedResourceName    string = "-shared-"
 	// StrFirewallRule               string = "firewallRule"
 
 	// SystemCommonNs is const for SystemCommon NameSpace ID

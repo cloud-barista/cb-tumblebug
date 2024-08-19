@@ -1303,7 +1303,7 @@ func CreateMciDynamic(reqID string, nsId string, req *TbMciDynamicReq, deployOpt
 			// Rollback created default resources
 			time.Sleep(5 * time.Second)
 			log.Info().Msg("Try rollback created default resources")
-			rollbackResult, rollbackErr := mcir.DelAllDefaultResources(nsId)
+			rollbackResult, rollbackErr := mcir.DelAllSharedResources(nsId)
 			if rollbackErr != nil {
 				err = fmt.Errorf("Failed in rollback operation: %w", rollbackErr)
 			} else {
@@ -1432,7 +1432,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 	}
 
 	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
-	resourceName := nsId + common.StrDefaultResourceName + vmReq.ConnectionName
+	resourceName := nsId + common.StrSharedResourceName + vmReq.ConnectionName
 
 	vmReq.SpecId = specInfo.Id
 	osType := strings.ReplaceAll(k.CommonImage, " ", "")

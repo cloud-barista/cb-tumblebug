@@ -1859,7 +1859,7 @@ func LoadSharedResource(nsId string, resType string, connectionName string) erro
 
 	//resourceName := connectionName
 	// Default resource name has this pattern (nsId + "-shared-" + connectionName)
-	resourceName := nsId + common.StrDefaultResourceName + connectionName
+	resourceName := nsId + common.StrSharedResourceName + connectionName
 	description := "Generated Default Resource"
 
 	for _, resType := range resList {
@@ -1972,8 +1972,8 @@ func LoadSharedResource(nsId string, resType string, connectionName string) erro
 	return nil
 }
 
-// DelAllDefaultResources deletes all Default securityGroup, sshKey, vNet objects
-func DelAllDefaultResources(nsId string) (common.IdList, error) {
+// DelAllSharedResources deletes all Default securityGroup, sshKey, vNet objects
+func DelAllSharedResources(nsId string) (common.IdList, error) {
 
 	output := common.IdList{}
 	err := common.CheckString(nsId)
@@ -1982,7 +1982,7 @@ func DelAllDefaultResources(nsId string) (common.IdList, error) {
 		return output, err
 	}
 
-	matchedSubstring := nsId + common.StrDefaultResourceName
+	matchedSubstring := nsId + common.StrSharedResourceName
 
 	list, err := DelAllResources(nsId, common.StrSecurityGroup, matchedSubstring, "false")
 	if err != nil {
