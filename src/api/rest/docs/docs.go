@@ -1886,46 +1886,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/defaultResources": {
-            "delete": {
-                "description": "Delete all Default Resource Objects in the given namespace",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra resource] MCIR Common"
-                ],
-                "summary": "Delete all Default Resource Objects in the given namespace",
-                "operationId": "DelAllDefaultResources",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.IdList"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/ns/{nsId}/installBenchmarkAgent/mci/{mciId}": {
             "post": {
                 "description": "Install the benchmark agent to specified MCI",
@@ -7899,6 +7859,46 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/sharedResources": {
+            "delete": {
+                "description": "Delete all Default Resource Objects in the given namespace",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] MCIR Common"
+                ],
+                "summary": "Delete all Default Resource Objects in the given namespace",
+                "operationId": "DelAllSharedResources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.IdList"
                         }
                     },
                     "404": {
