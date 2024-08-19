@@ -2611,7 +2611,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/loadDefaultResource": {
+        "/ns/{nsId}/loadSharedResource": {
             "get": {
                 "description": "Load Default Resource from internal asset file",
                 "consumes": [
@@ -2624,7 +2624,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Common"
                 ],
                 "summary": "Load Default Resource from internal asset file",
-                "operationId": "LoadDefaultResource",
+                "operationId": "LoadSharedResource",
                 "parameters": [
                     {
                         "type": "string",

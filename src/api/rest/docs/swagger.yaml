@@ -4953,12 +4953,12 @@ paths:
       summary: Upgrade a K8sCluster's version
       tags:
       - '[Infra resource] K8sCluster management'
-  /ns/{nsId}/loadDefaultResource:
+  /ns/{nsId}/loadSharedResource:
     get:
       consumes:
       - application/json
       description: Load Default Resource from internal asset file
-      operationId: LoadDefaultResource
+      operationId: LoadSharedResource
       parameters:
       - default: default
         description: Namespace ID
