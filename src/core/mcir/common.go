@@ -1812,8 +1812,8 @@ func LoadCommonResource() (common.IdList, error) {
 	return regiesteredIds, nil
 }
 
-// LoadDefaultResource is to register default resource from asset files (../assets/*.csv)
-func LoadDefaultResource(nsId string, resType string, connectionName string) error {
+// LoadSharedResource is to register default resource from asset files (../assets/*.csv)
+func LoadSharedResource(nsId string, resType string, connectionName string) error {
 
 	// Check 'nsId' namespace.
 	_, err := common.GetNs(nsId)
@@ -1852,7 +1852,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 	}
 	if sliceIndex == -1 {
 		err := fmt.Errorf("Cannot find the connection config: %s", connectionName)
-		log.Error().Err(err).Msg("Failed to LoadDefaultResource")
+		log.Error().Err(err).Msg("Failed to LoadSharedResource")
 		return err
 	}
 	sliceIndex = (sliceIndex % 254) + 1

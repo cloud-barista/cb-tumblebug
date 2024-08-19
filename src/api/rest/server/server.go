@@ -247,7 +247,7 @@ func RunServer(port string) {
 	e.DELETE("/tumblebug/objects", rest_common.RestDeleteObjects)
 
 	e.GET("/tumblebug/loadCommonResource", rest_mcir.RestLoadCommonResource)
-	e.GET("/tumblebug/ns/:nsId/loadDefaultResource", rest_mcir.RestLoadDefaultResource)
+	e.GET("/tumblebug/ns/:nsId/loadSharedResource", rest_mcir.RestLoadSharedResource)
 	e.DELETE("/tumblebug/ns/:nsId/defaultResources", rest_mcir.RestDelAllDefaultResources)
 
 	e.POST("/tumblebug/forward/*", rest_common.RestForwardAnyReqToAny)

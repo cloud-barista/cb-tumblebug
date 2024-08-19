@@ -327,8 +327,8 @@ func RestLoadCommonResource(c echo.Context) error {
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
-// RestLoadDefaultResource godoc
-// @ID LoadDefaultResource
+// RestLoadSharedResource godoc
+// @ID LoadSharedResource
 // @Summary Load Default Resource from internal asset file
 // @Description Load Default Resource from internal asset file
 // @Tags [Infra resource] MCIR Common
@@ -339,8 +339,8 @@ func RestLoadCommonResource(c echo.Context) error {
 // @Param connectionName query string false "connectionName of cloud for designated resource" default()
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
-// @Router /ns/{nsId}/loadDefaultResource [get]
-func RestLoadDefaultResource(c echo.Context) error {
+// @Router /ns/{nsId}/loadSharedResource [get]
+func RestLoadSharedResource(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
@@ -351,7 +351,7 @@ func RestLoadDefaultResource(c echo.Context) error {
 	// default of connectionConfig is empty string. with empty string, register all resources.
 	connectionName := c.QueryParam("connectionName")
 
-	err := mcir.LoadDefaultResource(nsId, resType, connectionName)
+	err := mcir.LoadSharedResource(nsId, resType, connectionName)
 	content := map[string]string{"message": "Done"}
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
