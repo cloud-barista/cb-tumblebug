@@ -1858,7 +1858,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 	sliceIndex = (sliceIndex % 254) + 1
 
 	//resourceName := connectionName
-	// Default resource name has this pattern (nsId + "-systemdefault-" + connectionName)
+	// Default resource name has this pattern (nsId + "-shared-" + connectionName)
 	resourceName := nsId + common.StrDefaultResourceName + connectionName
 	description := "Generated Default Resource"
 

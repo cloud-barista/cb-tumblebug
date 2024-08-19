@@ -1431,7 +1431,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 		return &TbVmReq{}, err
 	}
 
-	// Default resource name has this pattern (nsId + "-systemdefault-" + vmReq.ConnectionName)
+	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
 	resourceName := nsId + common.StrDefaultResourceName + vmReq.ConnectionName
 
 	vmReq.SpecId = specInfo.Id
