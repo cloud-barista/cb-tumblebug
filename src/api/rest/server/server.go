@@ -248,7 +248,7 @@ func RunServer(port string) {
 
 	e.GET("/tumblebug/loadCommonResource", rest_mcir.RestLoadCommonResource)
 	e.GET("/tumblebug/ns/:nsId/loadSharedResource", rest_mcir.RestLoadSharedResource)
-	e.DELETE("/tumblebug/ns/:nsId/defaultResources", rest_mcir.RestDelAllDefaultResources)
+	e.DELETE("/tumblebug/ns/:nsId/sharedResources", rest_mcir.RestDelAllSharedResources)
 
 	e.POST("/tumblebug/forward/*", rest_common.RestForwardAnyReqToAny)
 
