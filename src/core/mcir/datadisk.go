@@ -187,7 +187,7 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 	requestBody := SpiderDiskReqInfoWrapper{
 		ConnectionName: u.ConnectionName,
 		ReqInfo: SpiderDiskInfo{
-			Name:     fmt.Sprintf("%s-%s", nsId, u.Name),
+			Name:     common.GenUid(),
 			CSPid:    u.CspDataDiskId, // for option=register
 			DiskType: u.DiskType,
 			DiskSize: u.DiskSize,
@@ -350,7 +350,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 	var resp *resty.Response
 	// var err error
 
-	url := fmt.Sprintf("%s/disk/%s/size", common.SpiderRestUrl, fmt.Sprintf("%s-%s", nsId, resourceId))
+	url := fmt.Sprintf("%s/disk/%s/size", common.SpiderRestUrl, dataDisk.CspDataDiskName)
 	resp, err = req.Put(url)
 
 	if err != nil {

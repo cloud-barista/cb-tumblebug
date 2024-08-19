@@ -1657,8 +1657,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 	requestBody.ConnectionName = vmInfoData.ConnectionName
 
 	//generate VM ID(Name) to request to CSP(Spider)
-	//combination of nsId, mcidId, and vmName reqested from user
-	requestBody.ReqInfo.Name = fmt.Sprintf("%s-%s-%s", nsId, mciId, vmInfoData.Name)
+	requestBody.ReqInfo.Name = common.GenUid()
 
 	customImageFlag := false
 
@@ -1770,6 +1769,9 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 			return err
 		}
 	}
+
+	log.Info().Msg("VM request body to CB-Spider")
+	common.PrintJsonPretty(requestBody)
 
 	// Randomly sleep within 20 Secs to avoid rateLimit from CSP
 	common.RandomSleep(0, 20)

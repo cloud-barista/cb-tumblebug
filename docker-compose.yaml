@@ -133,7 +133,7 @@ services:
       # - API_PASSWORD=
       - SPIDER_LOG_LEVEL=error
       - SPIDER_HISCALL_LOG_LEVEL=error
-      - ID_TRANSFORM_MODE=ON
+      - ID_TRANSFORM_MODE=OFF
     healthcheck: # for CB-Spider
       test: [ "CMD", "curl", "-f", "http://localhost:1024/spider/readyz" ]
       interval: 1m
