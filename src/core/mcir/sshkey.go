@@ -153,7 +153,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 
 	requestBody := SpiderKeyPairReqInfoWrapper{}
 	requestBody.ConnectionName = u.ConnectionName
-	requestBody.ReqInfo.Name = fmt.Sprintf("%s-%s", nsId, u.Name)
+	requestBody.ReqInfo.Name = common.GenUid()
 	requestBody.ReqInfo.CSPId = u.CspSshKeyId
 
 	var tempSpiderKeyPairInfo *SpiderKeyPairInfo
@@ -203,7 +203,6 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 	content.Id = u.Name
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
-	fmt.Printf("tempSpiderKeyPairInfo.IId.SystemId: %s \n", tempSpiderKeyPairInfo.IId.SystemId)
 	content.CspSshKeyId = tempSpiderKeyPairInfo.IId.SystemId
 	content.CspSshKeyName = tempSpiderKeyPairInfo.IId.NameId
 	content.Fingerprint = tempSpiderKeyPairInfo.Fingerprint

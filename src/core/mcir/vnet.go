@@ -188,7 +188,7 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 
 	requestBody := SpiderVPCReqInfoWrapper{}
 	requestBody.ConnectionName = u.ConnectionName
-	requestBody.ReqInfo.Name = fmt.Sprintf("%s-%s", nsId, u.Name)
+	requestBody.ReqInfo.Name = common.GenUid()
 	requestBody.ReqInfo.IPv4_CIDR = u.CidrBlock
 	requestBody.ReqInfo.CSPId = u.CspVNetId
 
@@ -204,6 +204,9 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
+		//spiderSubnetInfo.Name = common.GenUid()
+		//TODO: need to use GenUid() after enable CB-TB Subnet opject and its ID (for now, pass the given subnet name)
+		spiderSubnetInfo.Name = v.Name
 
 		requestBody.ReqInfo.SubnetInfoList = append(requestBody.ReqInfo.SubnetInfoList, spiderSubnetInfo)
 	}

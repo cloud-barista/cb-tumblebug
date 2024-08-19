@@ -73,31 +73,33 @@ func RestDelResource(c echo.Context) error {
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
+// Todo: need to reimplment the following invalid function
+
 // RestDelChildResource is a common function to handle 'DelChildResource' REST API requests.
 // Dummy functions for Swagger exist in [mcir/*.go]
-func RestDelChildResource(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
-	nsId := c.Param("nsId")
+// func RestDelChildResource(c echo.Context) error {
+// 	reqID, idErr := common.StartRequestWithLog(c)
+// 	if idErr != nil {
+// 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+// 	}
+// 	nsId := c.Param("nsId")
 
-	childResourceType := strings.Split(c.Path(), "/")[7]
-	// c.Path(): /tumblebug/ns/:nsId/resources/vNet/:vNetId/subnet/:subnetId
+// 	childResourceType := strings.Split(c.Path(), "/")[7]
+// 	// c.Path(): /tumblebug/ns/:nsId/resources/vNet/:vNetId/subnet/:subnetId
 
-	parentResourceId := c.Param("parentResourceId")
-	childResourceId := c.Param("childResourceId")
-	parentResourceId = strings.ReplaceAll(parentResourceId, " ", "+")
-	parentResourceId = strings.ReplaceAll(parentResourceId, "%2B", "+")
-	childResourceId = strings.ReplaceAll(childResourceId, " ", "+")
-	childResourceId = strings.ReplaceAll(childResourceId, "%2B", "+")
+// 	parentResourceId := c.Param("parentResourceId")
+// 	childResourceId := c.Param("childResourceId")
+// 	parentResourceId = strings.ReplaceAll(parentResourceId, " ", "+")
+// 	parentResourceId = strings.ReplaceAll(parentResourceId, "%2B", "+")
+// 	childResourceId = strings.ReplaceAll(childResourceId, " ", "+")
+// 	childResourceId = strings.ReplaceAll(childResourceId, "%2B", "+")
 
-	forceFlag := c.QueryParam("force")
+// 	forceFlag := c.QueryParam("force")
 
-	err := mcir.DelChildResource(nsId, childResourceType, parentResourceId, childResourceId, forceFlag)
-	content := map[string]string{"message": "The " + childResourceType + " " + childResourceId + " has been deleted"}
-	return common.EndRequestWithLog(c, reqID, err, content)
-}
+// 	err := mcir.DelChildResource(nsId, childResourceType, parentResourceId, childResourceId, forceFlag)
+// 	content := map[string]string{"message": "The " + childResourceType + " " + childResourceId + " has been deleted"}
+// 	return common.EndRequestWithLog(c, reqID, err, content)
+// }
 
 // RestGetAllResources is a common function to handle 'GetAllResources' REST API requests.
 // Dummy functions for Swagger exist in [mcir/*.go]

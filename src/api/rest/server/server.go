@@ -450,7 +450,7 @@ func RunServer(port string) {
 	// g.GET("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_mcir.RestGetSubnet)
 	// g.GET("/:nsId/resources/vNet/:vNetId/subnet", rest_mcir.RestGetAllSubnet)
 	// g.PUT("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_mcir.RestPutSubnet)
-	g.DELETE("/:nsId/resources/vNet/:parentResourceId/subnet/:childResourceId", rest_mcir.RestDelChildResource)
+	// g.DELETE("/:nsId/resources/vNet/:parentResourceId/subnet/:childResourceId", rest_mcir.RestDelChildResource)
 	// g.DELETE("/:nsId/resources/vNet/:vNetId/subnet", rest_mcir.RestDelAllSubnet)
 
 	/*

@@ -98,7 +98,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	if objectOnly == false { // then, call CB-Spider CreateSubnet API
 		requestBody := SpiderSubnetReqInfoWrapper{}
 		requestBody.ConnectionName = oldVNet.ConnectionName
-		requestBody.ReqInfo.Name = req.Name
+		requestBody.ReqInfo.Name = common.GenUid()
 		requestBody.ReqInfo.IPv4_CIDR = req.IPv4_CIDR
 
 		url := fmt.Sprintf("%s/vpc/%s/subnet", common.SpiderRestUrl, vNetId)

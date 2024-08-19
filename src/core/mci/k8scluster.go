@@ -495,8 +495,6 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	 * Build RequestBody for SpiderClusterReq{}
 	 */
 
-	spName := fmt.Sprintf("%s-%s", nsId, u.Id)
-
 	// Validate
 	err = validateAtCreateK8sCluster(u)
 	if err != nil {
@@ -605,7 +603,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 		}
 
 		spNodeGroupList = append(spNodeGroupList, SpiderNodeGroupReqInfo{
-			Name:            v.Name,
+			Name:            common.GenUid(),
 			ImageName:       spImgName,
 			VMSpecName:      spSpecName,
 			RootDiskType:    v.RootDiskType,
@@ -622,7 +620,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 		NameSpace:      "", // should be empty string from Tumblebug
 		ConnectionName: u.ConnectionName,
 		ReqInfo: SpiderClusterReqInfo{
-			Name:               spName,
+			Name:               common.GenUid(),
 			Version:            spVersion,
 			VPCName:            spVPCName,
 			SubnetNames:        spSubnetNames,
@@ -1210,7 +1208,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (TbK8sClusterInfo, error) {
 
 	client := resty.New()
 	client.SetTimeout(10 * time.Minute)
-	url := common.SpiderRestUrl + "/cluster/" + nsId + "-" + k8sClusterId
+	url := common.SpiderRestUrl + "/cluster/" + storedTbK8sCInfo.CspK8sClusterName
 	method := "GET"
 
 	// Create Request body for GetK8sCluster of CB-Spider

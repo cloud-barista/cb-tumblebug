@@ -45,7 +45,7 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 	json.Unmarshal([]byte(keyValue.Value), &vm)
 
 	if snapshotName == "" {
-		snapshotName = fmt.Sprintf("%s-%s", vm.Name, common.GenerateNewRandomString(5))
+		snapshotName = common.GenUid()
 	}
 
 	requestBody := mcir.SpiderMyImageReq{

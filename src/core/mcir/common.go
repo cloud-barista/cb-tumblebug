@@ -354,166 +354,168 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	return nil
 }
 
-// DelChildResource deletes the TB MCIR object
-func DelChildResource(nsId string, resourceType string, parentResourceId string, resourceId string, forceFlag string) error {
+// Todo: need to reimplment the following invalid function
 
-	var parentResourceType string
-	switch resourceType {
-	case common.StrSubnet:
-		parentResourceType = common.StrVNet
-	default:
-		err := fmt.Errorf("Not valid child resource type.")
-		return err
-	}
+// // DelChildResource deletes the TB MCIR object
+// func DelChildResource(nsId string, resourceType string, parentResourceId string, resourceId string, forceFlag string) error {
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
+// 	var parentResourceType string
+// 	switch resourceType {
+// 	case common.StrSubnet:
+// 		parentResourceType = common.StrVNet
+// 	default:
+// 		err := fmt.Errorf("Not valid child resource type.")
+// 		return err
+// 	}
 
-	err = common.CheckString(parentResourceId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
+// 	err := common.CheckString(nsId)
+// 	if err != nil {
+// 		log.Error().Err(err).Msg("")
+// 		return err
+// 	}
 
-	err = common.CheckString(resourceId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
+// 	err = common.CheckString(parentResourceId)
+// 	if err != nil {
+// 		log.Error().Err(err).Msg("")
+// 		return err
+// 	}
 
-	check, err := CheckResource(nsId, parentResourceType, parentResourceId)
+// 	err = common.CheckString(resourceId)
+// 	if err != nil {
+// 		log.Error().Err(err).Msg("")
+// 		return err
+// 	}
 
-	if !check {
-		errString := "The " + parentResourceType + " " + parentResourceId + " does not exist."
-		err := fmt.Errorf(errString)
-		return err
-	}
+// 	check, err := CheckResource(nsId, parentResourceType, parentResourceId)
 
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
+// 	if !check {
+// 		errString := "The " + parentResourceType + " " + parentResourceId + " does not exist."
+// 		err := fmt.Errorf(errString)
+// 		return err
+// 	}
 
-	check, err = CheckChildResource(nsId, resourceType, parentResourceId, resourceId)
+// 	if err != nil {
+// 		log.Error().Err(err).Msg("")
+// 		return err
+// 	}
 
-	if !check {
-		errString := "The " + resourceType + " " + resourceId + " does not exist."
-		err := fmt.Errorf(errString)
-		return err
-	}
+// 	check, err = CheckChildResource(nsId, resourceType, parentResourceId, resourceId)
 
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
+// 	if !check {
+// 		errString := "The " + resourceType + " " + resourceId + " does not exist."
+// 		err := fmt.Errorf(errString)
+// 		return err
+// 	}
 
-	parentResourceKey := common.GenResourceKey(nsId, parentResourceType, parentResourceId)
-	log.Debug().Msg("parentResourceKey: " + parentResourceKey)
+// 	if err != nil {
+// 		log.Error().Err(err).Msg("")
+// 		return err
+// 	}
 
-	childResourceKey := common.GenChildResourceKey(nsId, resourceType, parentResourceId, resourceId)
-	log.Debug().Msg("childResourceKey: " + childResourceKey)
+// 	parentResourceKey := common.GenResourceKey(nsId, parentResourceType, parentResourceId)
+// 	log.Debug().Msg("parentResourceKey: " + parentResourceKey)
 
-	parentKeyValue, _ := kvstore.GetKv(parentResourceKey)
+// 	childResourceKey := common.GenChildResourceKey(nsId, resourceType, parentResourceId, resourceId)
+// 	log.Debug().Msg("childResourceKey: " + childResourceKey)
 
-	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
+// 	parentKeyValue, _ := kvstore.GetKv(parentResourceKey)
 
-	var url string
+// 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
-	// Create Req body
-	type JsonTemplate struct {
-		ConnectionName string
-	}
-	requestBody := JsonTemplate{}
+// 	var url string
 
-	switch resourceType {
-	case common.StrSubnet:
-		temp := TbVNetInfo{}
-		err = json.Unmarshal([]byte(parentKeyValue.Value), &temp)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return err
-		}
-		requestBody.ConnectionName = temp.ConnectionName
-		url = fmt.Sprintf("%s/vpc/%s/subnet/%s", common.SpiderRestUrl, temp.Name, resourceId)
-	default:
-		err := fmt.Errorf("invalid resourceType")
-		return err
-	}
+// 	// Create Req body
+// 	type JsonTemplate struct {
+// 		ConnectionName string
+// 	}
+// 	requestBody := JsonTemplate{}
 
-	if forceFlag == "true" {
-		url += "?force=true"
-	}
-	var callResult interface{}
-	client := resty.New()
-	method := "DELETE"
-	//client.SetTimeout(60 * time.Second)
+// 	switch resourceType {
+// 	case common.StrSubnet:
+// 		vnet := TbVNetInfo{}
+// 		err = json.Unmarshal([]byte(parentKeyValue.Value), &vnet)
+// 		if err != nil {
+// 			log.Error().Err(err).Msg("")
+// 			return err
+// 		}
+// 		requestBody.ConnectionName = vnet.ConnectionName
+// 		url = fmt.Sprintf("%s/vpc/%s/subnet/%s", common.SpiderRestUrl, vnet.CspVNetName, vnet.SubnetInfoList)
+// 	default:
+// 		err := fmt.Errorf("invalid resourceType")
+// 		return err
+// 	}
 
-	err = common.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		common.SetUseBody(requestBody),
-		&requestBody,
-		&callResult,
-		common.VeryShortDuration,
-	)
+// 	if forceFlag == "true" {
+// 		url += "?force=true"
+// 	}
+// 	var callResult interface{}
+// 	client := resty.New()
+// 	method := "DELETE"
+// 	//client.SetTimeout(60 * time.Second)
 
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
+// 	err = common.ExecuteHttpRequest(
+// 		client,
+// 		method,
+// 		url,
+// 		nil,
+// 		common.SetUseBody(requestBody),
+// 		&requestBody,
+// 		&callResult,
+// 		common.VeryShortDuration,
+// 	)
 
-	err = kvstore.Delete(childResourceKey)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
+// 	if err != nil {
+// 		log.Error().Err(err).Msg("")
+// 		return err
+// 	}
 
-	// Delete the child element in parent resources' array
-	switch resourceType {
-	case common.StrSubnet:
-		oldVNet := TbVNetInfo{}
-		err = json.Unmarshal([]byte(parentKeyValue.Value), &oldVNet)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return err
-		}
+// 	err = kvstore.Delete(childResourceKey)
+// 	if err != nil {
+// 		log.Error().Err(err).Msg("")
+// 		return err
+// 	}
 
-		newVNet := TbVNetInfo{}
-		newVNet = oldVNet
+// 	// Delete the child element in parent resources' array
+// 	switch resourceType {
+// 	case common.StrSubnet:
+// 		oldVNet := TbVNetInfo{}
+// 		err = json.Unmarshal([]byte(parentKeyValue.Value), &oldVNet)
+// 		if err != nil {
+// 			log.Error().Err(err).Msg("")
+// 			return err
+// 		}
 
-		var subnetIndex int
-		subnetIndex = -1
-		for i, v := range newVNet.SubnetInfoList {
-			if v.Name == resourceId {
-				subnetIndex = i
-				break
-			}
-		}
+// 		newVNet := TbVNetInfo{}
+// 		newVNet = oldVNet
 
-		if subnetIndex != -1 {
-			DelEleInSlice(&newVNet.SubnetInfoList, subnetIndex)
-		} else {
-			err := fmt.Errorf("Failed to find and delete subnet %s in vNet %s.", resourceId, parentResourceId)
-			log.Error().Err(err).Msg("")
-		}
+// 		var subnetIndex int
+// 		subnetIndex = -1
+// 		for i, v := range newVNet.SubnetInfoList {
+// 			if v.Name == resourceId {
+// 				subnetIndex = i
+// 				break
+// 			}
+// 		}
 
-		Val, _ := json.Marshal(newVNet)
-		err = kvstore.Put(parentResourceKey, string(Val))
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return err
-		}
-		// default:
-	}
+// 		if subnetIndex != -1 {
+// 			DelEleInSlice(&newVNet.SubnetInfoList, subnetIndex)
+// 		} else {
+// 			err := fmt.Errorf("Failed to find and delete subnet %s in vNet %s.", resourceId, parentResourceId)
+// 			log.Error().Err(err).Msg("")
+// 		}
 
-	return nil
+// 		Val, _ := json.Marshal(newVNet)
+// 		err = kvstore.Put(parentResourceKey, string(Val))
+// 		if err != nil {
+// 			log.Error().Err(err).Msg("")
+// 			return err
+// 		}
+// 		// default:
+// 	}
 
-}
+// 	return nil
+
+// }
 
 // DelEleInSlice delete an element from slice by index
 //   - arr: the reference of slice
