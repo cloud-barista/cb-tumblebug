@@ -27,7 +27,7 @@ jobs:
     name: Build source code
     strategy:
       matrix:
-        go-version: ["1.21"]
+        go-version: ["1.23"]
         os: [ubuntu-22.04]
         #os: [ubuntu-22.04, ubuntu-20.04, windows-2022, windows-2019]
     runs-on: ${{matrix.os}}
