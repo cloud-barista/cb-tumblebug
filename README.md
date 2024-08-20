@@ -82,7 +82,7 @@ the titles of Issues, Pull Requests, and Commits, while accommodating local lang
 
 - Linux (recommend: `Ubuntu 22.04`)
 - Docker and Docker Compose 
-- Golang (recommend: `v1.21.6`) to build the source
+- Golang (recommend: `v1.23.0`) to build the source
 
 ---
 
@@ -500,8 +500,8 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
       - Download
         ```bash
-        wget https://go.dev/dl/go1.21.6.linux-amd64.tar.gz;
-        sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.21.6.linux-amd64.tar.gz
+        wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz;
+        sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.23.0.linux-amd64.tar.gz
         ```
       - Setup environment
 
