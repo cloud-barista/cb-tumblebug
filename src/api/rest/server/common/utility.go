@@ -114,14 +114,34 @@ func RestCheckHTTPVersion(c echo.Context) error {
 	return c.JSON(http.StatusOK, &okMessage)
 }
 
-// RestRegisterCredential func is a rest api wrapper for RegisterCredential.
-// RestRegisterCredential godoc
-// @ID RegisterCredential
-// @Summary Post register Credential info
-// @Description Post register Credential info
-// @Tags [Admin] Multi-Cloud environment configuration
+// RestGetPublicKeyForCredentialEncryption godoc
+// @ID GetPublicKeyForCredentialEncryption
+// @Summary Get RSA Public Key for Credential Encryption
+// @Description Generates an RSA key pair using a 4096-bit key size with the RSA algorithm. The public key is generated using the RSA algorithm with OAEP padding and SHA-256 as the hash function. This key is used to encrypt an AES key that will be used for hybrid encryption of credentials.
+// @Tags [Admin] Credential Management
 // @Accept  json
 // @Produce  json
+// @Success 200 {object} common.PublicKeyResponse
+// @Failure 500 {object} common.SimpleMsg
+// @Router /credential/publicKey [get]
+func RestGetPublicKeyForCredentialEncryption(c echo.Context) error {
+
+	reqID, err := common.StartRequestWithLog(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+	result, err := common.GetPublicKeyForCredentialEncryption()
+	return common.EndRequestWithLog(c, reqID, err, result)
+
+}
+
+// RestRegisterCredential is a REST API handler for registering credentials.
+// @ID RegisterCredential
+// @Summary Register Credential Information
+// @Description This API registers credential information using hybrid encryption. 1. First, compress and encrypt sensitive data using a client generated AES with a 256-bit key. 2. Then, encrypt the AES key using an RSA public key obtained from `GET /credential/publicKey`. 3. RSA encryption uses a 4096-bit key with OAEP padding and SHA-256 as the hash function. Ensure that all values are base64 encoded before sending them in the request. The public key token ID must be included in the request to allow the server to decrypt the data.
+// @Tags [Admin] Credential Management
+// @Accept json
+// @Produce json
 // @Param CredentialReq body common.CredentialReq true "Credential request info"
 // @Success 200 {object} common.CredentialInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -147,7 +167,7 @@ func RestRegisterCredential(c echo.Context) error {
 // @ID GetConnConfig
 // @Summary Get registered ConnConfig info
 // @Description Get registered ConnConfig info
-// @Tags [Admin] Multi-Cloud environment configuration
+// @Tags [Admin] Credential Management
 // @Accept  json
 // @Produce  json
 // @Param connConfigName path string true "Name of connection config (cloud config)"
@@ -172,7 +192,7 @@ func RestGetConnConfig(c echo.Context) error {
 // @ID GetConnConfigList
 // @Summary List all registered ConnConfig
 // @Description List all registered ConnConfig
-// @Tags [Admin] Multi-Cloud environment configuration
+// @Tags [Admin] Credential Management
 // @Accept  json
 // @Produce  json
 // @Param filterCredentialHolder query string false "filter objects by Credential Holder" default()

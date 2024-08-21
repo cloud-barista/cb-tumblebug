@@ -100,14 +100,34 @@ definitions:
         type: string
     type: object
   common.CredentialReq:
+    description: CredentialReq contains the necessary information to register a credential.
+      This includes the AES key encrypted with the RSA public key, which is then used
+      to decrypt the AES key on the server side.
     properties:
       credentialHolder:
+        description: CredentialHolder is the entity or user that holds the credential.
+        example: admin
         type: string
-      keyValueInfoList:
+      credentialKeyValueList:
+        description: CredentialKeyValueList contains key-(encrypted)value pairs that
+          include the sensitive credential data.
         items:
-          $ref: '#/definitions/common.KeyValue'
+          $ref: '#/definitions/common.KeyWithEncryptedValue'
         type: array
+      encryptedClientAesKeyByPublicKey:
+        description: EncryptedClientAesKeyByPublicKey is the client temporary AES
+          key encrypted with the RSA public key.
+        example: ZzXL27hbAUDT0ohglf2Gwr60sAqdPw3+CnCsn0RJXeiZxXnHfW03mFx5RaSfbwtPYCq1h6wwv7XsiWzfFmr02...
+        type: string
       providerName:
+        description: ProviderName specifies the cloud provider associated with the
+          credential (e.g., AWS, GCP).
+        example: aws
+        type: string
+      publicKeyTokenId:
+        description: PublicKeyTokenId is the unique token ID used to retrieve the
+          corresponding private key for decryption.
+        example: cr31av30uphc738d7h0g
         type: string
     type: object
   common.IID:
@@ -230,6 +250,15 @@ definitions:
       value:
         type: string
     type: object
+  common.KeyWithEncryptedValue:
+    properties:
+      key:
+        description: Key for the value
+        type: string
+      value:
+        description: Should be encrypted by the public key issued by GET /credential/publicKey
+        type: string
+    type: object
   common.Location:
     properties:
       display:
@@ -258,6 +287,13 @@ definitions:
         type: string
       name:
         example: default
+        type: string
+    type: object
+  common.PublicKeyResponse:
+    properties:
+      publicKey:
+        type: string
+      publicKeyTokenId:
         type: string
     type: object
   common.RegionDetail:
@@ -3515,7 +3551,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered ConnConfig
       tags:
-      - '[Admin] Multi-Cloud environment configuration'
+      - '[Admin] Credential Management'
   /connConfig/{connConfigName}:
     get:
       consumes:
@@ -3545,12 +3581,18 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered ConnConfig info
       tags:
-      - '[Admin] Multi-Cloud environment configuration'
+      - '[Admin] Credential Management'
   /credential:
     post:
       consumes:
       - application/json
-      description: Post register Credential info
+      description: This API registers credential information using hybrid encryption.
+        1. First, compress and encrypt sensitive data using a client generated AES
+        with a 256-bit key. 2. Then, encrypt the AES key using an RSA public key obtained
+        from `GET /credential/publicKey`. 3. RSA encryption uses a 4096-bit key with
+        OAEP padding and SHA-256 as the hash function. Ensure that all values are
+        base64 encoded before sending them in the request. The public key token ID
+        must be included in the request to allow the server to decrypt the data.
       operationId: RegisterCredential
       parameters:
       - description: Credential request info
@@ -3574,9 +3616,32 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Post register Credential info
+      summary: Register Credential Information
       tags:
-      - '[Admin] Multi-Cloud environment configuration'
+      - '[Admin] Credential Management'
+  /credential/publicKey:
+    get:
+      consumes:
+      - application/json
+      description: Generates an RSA key pair using a 4096-bit key size with the RSA
+        algorithm. The public key is generated using the RSA algorithm with OAEP padding
+        and SHA-256 as the hash function. This key is used to encrypt an AES key that
+        will be used for hybrid encryption of credentials.
+      operationId: GetPublicKeyForCredentialEncryption
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.PublicKeyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get RSA Public Key for Credential Encryption
+      tags:
+      - '[Admin] Credential Management'
   /forward/{path}:
     post:
       consumes:

@@ -449,7 +449,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Multi-Cloud environment configuration"
+                    "[Admin] Credential Management"
                 ],
                 "summary": "List all registered ConnConfig",
                 "operationId": "GetConnConfigList",
@@ -516,7 +516,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Multi-Cloud environment configuration"
+                    "[Admin] Credential Management"
                 ],
                 "summary": "Get registered ConnConfig info",
                 "operationId": "GetConnConfig",
@@ -553,7 +553,7 @@ const docTemplate = `{
         },
         "/credential": {
             "post": {
-                "description": "Post register Credential info",
+                "description": "This API registers credential information using hybrid encryption. 1. First, compress and encrypt sensitive data using a client generated AES with a 256-bit key. 2. Then, encrypt the AES key using an RSA public key obtained from ` + "`" + `GET /credential/publicKey` + "`" + `. 3. RSA encryption uses a 4096-bit key with OAEP padding and SHA-256 as the hash function. Ensure that all values are base64 encoded before sending them in the request. The public key token ID must be included in the request to allow the server to decrypt the data.",
                 "consumes": [
                     "application/json"
                 ],
@@ -561,9 +561,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Multi-Cloud environment configuration"
+                    "[Admin] Credential Management"
                 ],
-                "summary": "Post register Credential info",
+                "summary": "Register Credential Information",
                 "operationId": "RegisterCredential",
                 "parameters": [
                     {
@@ -587,6 +587,36 @@ const docTemplate = `{
                         "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/credential/publicKey": {
+            "get": {
+                "description": "Generates an RSA key pair using a 4096-bit key size with the RSA algorithm. The public key is generated using the RSA algorithm with OAEP padding and SHA-256 as the hash function. This key is used to encrypt an AES key that will be used for hybrid encryption of credentials.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Credential Management"
+                ],
+                "summary": "Get RSA Public Key for Credential Encryption",
+                "operationId": "GetPublicKeyForCredentialEncryption",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.PublicKeyResponse"
                         }
                     },
                     "500": {
@@ -9048,19 +9078,35 @@ const docTemplate = `{
             }
         },
         "common.CredentialReq": {
+            "description": "CredentialReq contains the necessary information to register a credential. This includes the AES key encrypted with the RSA public key, which is then used to decrypt the AES key on the server side.",
             "type": "object",
             "properties": {
                 "credentialHolder": {
-                    "type": "string"
+                    "description": "CredentialHolder is the entity or user that holds the credential.",
+                    "type": "string",
+                    "example": "admin"
                 },
-                "keyValueInfoList": {
+                "credentialKeyValueList": {
+                    "description": "CredentialKeyValueList contains key-(encrypted)value pairs that include the sensitive credential data.",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.KeyValue"
+                        "$ref": "#/definitions/common.KeyWithEncryptedValue"
                     }
                 },
+                "encryptedClientAesKeyByPublicKey": {
+                    "description": "EncryptedClientAesKeyByPublicKey is the client temporary AES key encrypted with the RSA public key.",
+                    "type": "string",
+                    "example": "ZzXL27hbAUDT0ohglf2Gwr60sAqdPw3+CnCsn0RJXeiZxXnHfW03mFx5RaSfbwtPYCq1h6wwv7XsiWzfFmr02..."
+                },
                 "providerName": {
-                    "type": "string"
+                    "description": "ProviderName specifies the cloud provider associated with the credential (e.g., AWS, GCP).",
+                    "type": "string",
+                    "example": "aws"
+                },
+                "publicKeyTokenId": {
+                    "description": "PublicKeyTokenId is the unique token ID used to retrieve the corresponding private key for decryption.",
+                    "type": "string",
+                    "example": "cr31av30uphc738d7h0g"
                 }
             }
         },
@@ -9248,6 +9294,19 @@ const docTemplate = `{
                 }
             }
         },
+        "common.KeyWithEncryptedValue": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "description": "Key for the value",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "Should be encrypted by the public key issued by GET /credential/publicKey",
+                    "type": "string"
+                }
+            }
+        },
         "common.Location": {
             "type": "object",
             "properties": {
@@ -9289,6 +9348,17 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "default"
+                }
+            }
+        },
+        "common.PublicKeyResponse": {
+            "type": "object",
+            "properties": {
+                "publicKey": {
+                    "type": "string"
+                },
+                "publicKeyTokenId": {
+                    "type": "string"
                 }
             }
         },

@@ -13,6 +13,12 @@ import yaml
 from tqdm import tqdm
 from colorama import Fore, init
 from getpass import getpass
+from Crypto.PublicKey import RSA
+from Crypto.Hash import SHA256
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad
 
 parser = argparse.ArgumentParser(description="Automatically proceed without confirmation.")
 parser.add_argument('-y', '--yes', action='store_true', help='Automatically answer yes to prompts and proceed.')
@@ -119,21 +125,60 @@ cred_data = yaml.safe_load(decrypted_content)['credentialholder']['admin']
 
 print(Fore.YELLOW + f"\nRegistering all valid credentials for all cloud regions...")
 
-# Function to register credentials
+# Function to encrypt credentials using AES and RSA public key
+def encrypt_credential_value_with_publickey(public_key_pem, credentials):
+    public_key = RSA.import_key(public_key_pem)
+    rsa_cipher = PKCS1_OAEP.new(public_key, hashAlgo=SHA256)
+    aes_key = get_random_bytes(32)  # AES-256 key
+
+    encrypted_credentials = {}
+    for k, v in credentials.items():
+        # Encrypt using AES
+        aes_cipher = AES.new(aes_key, AES.MODE_CBC)
+        ciphertext = aes_cipher.encrypt(pad(v.encode(), AES.block_size))
+        encrypted_credentials[k] = base64.b64encode(aes_cipher.iv + ciphertext).decode()
+
+    # Encrypt AES key with RSA and encode in Base64
+    encrypted_aes_key = base64.b64encode(rsa_cipher.encrypt(aes_key)).decode()
+
+    # Clear AES key from memory
+    del aes_key
+
+    return encrypted_credentials, encrypted_aes_key
+
+# Function to register credentials using encrypted values and encrypted AES key
 def register_credential(provider, credentials):
     try:
         if all(credentials.values()):
+            # Step 1: Get the public key for encryption
+            public_key_response = requests.get(f"http://{TUMBLEBUG_SERVER}/tumblebug/credential/publicKey", headers=HEADERS)
+            if public_key_response.status_code != 200:
+                return provider, "Failed to retrieve public key, Skip", Fore.RED
+
+            public_key_data = public_key_response.json()
+            public_key = public_key_data['publicKey']
+            public_key_token_id = public_key_data['publicKeyTokenId']
+
+            # Step 2: Encrypt the credentials using AES and RSA public key
+            encrypted_credentials, encrypted_aes_key = encrypt_credential_value_with_publickey(public_key, credentials)
+
+            # Step 3: Prepare the payload with the encrypted credentials and AES key
             credential_payload = {
                 "credentialHolder": "admin",
-                "keyValueInfoList": [{"key": k, "value": v} for k, v in credentials.items()],
-                "providerName": provider
+                "credentialKeyValueList": [{"key": k, "value": v} for k, v in encrypted_credentials.items()],
+                "providerName": provider,
+                "publicKeyTokenId": public_key_token_id,
+                "encryptedAesKey": encrypted_aes_key
             }
+
+            # Step 4: Register the encrypted credentials
             response = requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/credential", json=credential_payload, headers=HEADERS)
             return provider, response.json(), Fore.GREEN
         else:
             return provider, "Incomplete credential data, Skip", Fore.RED
     except Exception as e:
         return provider, f"Error registering credentials: {str(e)}", Fore.RED
+
 
 # Register credentials to TumblebugServer using ThreadPoolExecutor
 with ThreadPoolExecutor(max_workers=5) as executor:

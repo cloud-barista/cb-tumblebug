@@ -9,3 +9,6 @@ tqdm==4.66.3
 
 # Used for coloring and styling console output
 colorama==0.4.6
+
+# Used for cryptographic functions like RSA encryption
+pycryptodome==3.18.0
