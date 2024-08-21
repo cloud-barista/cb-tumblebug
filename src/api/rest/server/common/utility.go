@@ -135,60 +135,22 @@ func RestGetPublicKeyForCredentialEncryption(c echo.Context) error {
 
 }
 
-// RestRegisterCredential func is a REST API handler for registering credentials.
-// It processes the CredentialReq, decrypts the encrypted credentials using RSA, and stores them securely.
-// RestRegisterCredential godoc
+// RestRegisterCredential is a REST API handler for registering credentials.
 // @ID RegisterCredential
 // @Summary Register Credential Information
-// @Description This API is used to register credential information securely. The client must encrypt the sensitive information using a hybrid encryption method before sending it to the server.
-//
-// The encryption process involves the following steps:
-// 1. The client generates a random AES key.
-// 2. The credential data is compressed using gzip.
-// 3. The compressed data is encrypted using AES (Advanced Encryption Standard).
-// 4. The AES key is then encrypted using the RSA public key obtained from the `GET /credential/publicKey` endpoint.
-// 5. Both the encrypted AES key and the AES-encrypted data are sent to the server in the request payload.
-//
-// **Hashing and Encryption Details:**
-// - **RSA Key Pair Generation:** The server generates an RSA key pair with a key size of 4096 bits. The RSA public key is used by the client to encrypt the AES key.
-// - **AES Encryption:** AES encryption is used for the actual credential data, which is a symmetric encryption algorithm. AES-256 is recommended for this purpose.
-// - **Hash Algorithm:** The RSA encryption process uses the SHA-256 hashing algorithm with OAEP (Optimal Asymmetric Encryption Padding) for enhanced security.
-//
-// **Request Body Structure:**
-// - **credentialHolder**: The entity or user that holds the credential (e.g., "admin").
-// - **providerName**: The name of the cloud provider (e.g., "aws", "gcp").
-// - **credentialKeyValueList**: A list of key-value pairs where the value is encrypted using the AES key, and the AES key is encrypted using the RSA public key. The value should be base64 encoded before being included in the list.
-// - **publicKeyTokenId**: The token ID associated with the RSA key pair, which was returned by the `GET /credential/publicKey` endpoint.
-//
-// **Example:**
-//
-// ```json
-//
-//	{
-//	  "credentialHolder": "admin",
-//	  "providerName": "aws",
-//	  "credentialKeyValueList": [
-//	    {
-//	      "key": "ClientId",
-//	      "value": "Base64Encoded(AES_Encrypted(ClientId))"
-//	    },
-//	    {
-//	      "key": "ClientSecret",
-//	      "value": "Base64Encoded(AES_Encrypted(ClientSecret))"
-//	    }
-//	  ],
-//	  "publicKeyTokenId": "abcd1234"
-//	}
-//
-// ```
-//
+// @Description This API registers credential information using hybrid encryption.
+// 1. First, compress and encrypt sensitive data using AES with a 256-bit key.
+// 2. Then, encrypt the AES key using an RSA public key obtained from `GET /credential/publicKey`.
+// 3. RSA encryption uses a 4096-bit key with OAEP padding and SHA-256 as the hash function.
+// Ensure that all values are base64 encoded before sending them in the request.
+// The public key token ID must be included in the request to allow the server to decrypt the data.
 // @Tags [Admin] Credential Management
-// @Accept  json
-// @Produce  json
-// @Param CredentialReq body common.CredentialReq true "Credential request info with encrypted values."
-// @Success 200 {object} common.CredentialInfo "Returns the stored credential information without the sensitive data."
-// @Failure 404 {object} common.SimpleMsg "Not Found - The requested resource could not be found."
-// @Failure 500 {object} common.SimpleMsg "Internal Server Error - An error occurred while processing the request."
+// @Accept json
+// @Produce json
+// @Param CredentialReq body common.CredentialReq true "Credential request info"
+// @Success 200 {object} common.CredentialInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
 // @Router /credential [post]
 func RestRegisterCredential(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
