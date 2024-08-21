@@ -11,4 +11,4 @@ tqdm==4.66.3
 colorama==0.4.6
 
 # Used for cryptographic functions like RSA encryption
-pycryptodome==3.18.0
+pycryptodome==3.19.1
