@@ -101,7 +101,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 		requestBody.ReqInfo.Name = common.GenUid()
 		requestBody.ReqInfo.IPv4_CIDR = req.IPv4_CIDR
 
-		url := fmt.Sprintf("%s/vpc/%s/subnet", common.SpiderRestUrl, vNetId)
+		url := fmt.Sprintf("%s/vpc/%s/subnet", common.SpiderRestUrl, oldVNet.CspVNetName)
 
 		client := resty.New().SetCloseConnection(true)
 
