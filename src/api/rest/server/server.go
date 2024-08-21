@@ -215,6 +215,8 @@ func RunServer(port string) {
 	e.GET("/tumblebug/region", rest_common.RestGetRegionList)
 	e.GET("/tumblebug/provider/:providerName/region/:regionName", rest_common.RestGetRegion)
 	e.GET("/tumblebug/k8sClusterInfo", rest_common.RestGetK8sClusterInfo)
+
+	e.GET("/tumblebug/credential/publicKey", rest_common.RestGetPublicKeyForCredentialEncryption)
 	e.POST("/tumblebug/credential", rest_common.RestRegisterCredential)
 
 	e.POST("/tumblebug/lookupSpecs", rest_mcir.RestLookupSpecList)

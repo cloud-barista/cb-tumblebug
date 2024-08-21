@@ -100,14 +100,32 @@ definitions:
         type: string
     type: object
   common.CredentialReq:
+    description: CredentialReq contains the necessary information to register a credential.
     properties:
       credentialHolder:
+        description: CredentialHolder is the entity or user that holds the credential.
+        example: admin
         type: string
-      keyValueInfoList:
+      credentialKeyValueList:
+        description: CredentialKeyValueList contains key-(encrypted)value pairs that
+          include the sensitive credential data.
         items:
-          $ref: '#/definitions/common.KeyValue'
+          $ref: '#/definitions/common.KeyWithEncryptedValue'
         type: array
+      encryptedAesKey:
+        description: EncryptedAesKey is the AES key encrypted with the RSA public
+          key.
+        example: encryptedAesKeyBase64
+        type: string
       providerName:
+        description: ProviderName specifies the cloud provider associated with the
+          credential (e.g., AWS, GCP).
+        example: aws
+        type: string
+      publicKeyTokenId:
+        description: PublicKeyTokenId is the unique token ID used to retrieve the
+          corresponding private key for decryption.
+        example: abcd1234
         type: string
     type: object
   common.IID:
@@ -230,6 +248,15 @@ definitions:
       value:
         type: string
     type: object
+  common.KeyWithEncryptedValue:
+    properties:
+      key:
+        description: Key for the value
+        type: string
+      value:
+        description: Should be encrypted by the public key issued by GET /credential/publicKey
+        type: string
+    type: object
   common.Location:
     properties:
       display:
@@ -258,6 +285,13 @@ definitions:
         type: string
       name:
         example: default
+        type: string
+    type: object
+  common.PublicKeyResponse:
+    properties:
+      publicKey:
+        type: string
+      publicKeyTokenId:
         type: string
     type: object
   common.RegionDetail:
@@ -3515,7 +3549,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered ConnConfig
       tags:
-      - '[Admin] Multi-Cloud environment configuration'
+      - '[Admin] Credential Management'
   /connConfig/{connConfigName}:
     get:
       consumes:
@@ -3545,15 +3579,17 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered ConnConfig info
       tags:
-      - '[Admin] Multi-Cloud environment configuration'
+      - '[Admin] Credential Management'
   /credential:
     post:
       consumes:
       - application/json
-      description: Post register Credential info
+      description: This API is used to register credential information securely. The
+        client must encrypt the sensitive information using a hybrid encryption method
+        before sending it to the server.
       operationId: RegisterCredential
       parameters:
-      - description: Credential request info
+      - description: Credential request info with encrypted values.
         in: body
         name: CredentialReq
         required: true
@@ -3563,20 +3599,43 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns the stored credential information without the sensitive
+            data.
           schema:
             $ref: '#/definitions/common.CredentialInfo'
         "404":
-          description: Not Found
+          description: Not Found - The requested resource could not be found.
           schema:
             $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error - An error occurred while processing
+            the request.
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Register Credential Information
+      tags:
+      - '[Admin] Credential Management'
+  /credential/publicKey:
+    get:
+      consumes:
+      - application/json
+      description: Generates an RSA key pair and returns the public key for credential
+        encryption.
+      operationId: GetPublicKeyForCredentialEncryption
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.PublicKeyResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Post register Credential info
+      summary: Get RSA Public Key for Credential Encryption
       tags:
-      - '[Admin] Multi-Cloud environment configuration'
+      - '[Admin] Credential Management'
   /forward/{path}:
     post:
       consumes:

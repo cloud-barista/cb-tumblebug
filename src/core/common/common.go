@@ -28,6 +28,15 @@ type KeyValue struct {
 	Value string `json:"value"`
 }
 
+// KeyWithEncryptedValue is struct for key-(encrypted)value pair
+type KeyWithEncryptedValue struct {
+	// Key for the value
+	Key string `json:"key"`
+
+	// Should be encrypted by the public key issued by GET /credential/publicKey
+	Value string `json:"value"`
+}
+
 type IdList struct {
 	IdList []string `json:"output"`
 	mux    sync.Mutex

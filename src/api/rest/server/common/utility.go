@@ -114,18 +114,81 @@ func RestCheckHTTPVersion(c echo.Context) error {
 	return c.JSON(http.StatusOK, &okMessage)
 }
 
-// RestRegisterCredential func is a rest api wrapper for RegisterCredential.
-// RestRegisterCredential godoc
-// @ID RegisterCredential
-// @Summary Post register Credential info
-// @Description Post register Credential info
-// @Tags [Admin] Multi-Cloud environment configuration
+// RestGetPublicKeyForCredentialEncryption godoc
+// @ID GetPublicKeyForCredentialEncryption
+// @Summary Get RSA Public Key for Credential Encryption
+// @Description Generates an RSA key pair and returns the public key for credential encryption.
+// @Tags [Admin] Credential Management
 // @Accept  json
 // @Produce  json
-// @Param CredentialReq body common.CredentialReq true "Credential request info"
-// @Success 200 {object} common.CredentialInfo
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} common.PublicKeyResponse
 // @Failure 500 {object} common.SimpleMsg
+// @Router /credential/publicKey [get]
+func RestGetPublicKeyForCredentialEncryption(c echo.Context) error {
+
+	reqID, err := common.StartRequestWithLog(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+	result, err := common.GetPublicKeyForCredentialEncryption()
+	return common.EndRequestWithLog(c, reqID, err, result)
+
+}
+
+// RestRegisterCredential func is a REST API handler for registering credentials.
+// It processes the CredentialReq, decrypts the encrypted credentials using RSA, and stores them securely.
+// RestRegisterCredential godoc
+// @ID RegisterCredential
+// @Summary Register Credential Information
+// @Description This API is used to register credential information securely. The client must encrypt the sensitive information using a hybrid encryption method before sending it to the server.
+//
+// The encryption process involves the following steps:
+// 1. The client generates a random AES key.
+// 2. The credential data is compressed using gzip.
+// 3. The compressed data is encrypted using AES (Advanced Encryption Standard).
+// 4. The AES key is then encrypted using the RSA public key obtained from the `GET /credential/publicKey` endpoint.
+// 5. Both the encrypted AES key and the AES-encrypted data are sent to the server in the request payload.
+//
+// **Hashing and Encryption Details:**
+// - **RSA Key Pair Generation:** The server generates an RSA key pair with a key size of 4096 bits. The RSA public key is used by the client to encrypt the AES key.
+// - **AES Encryption:** AES encryption is used for the actual credential data, which is a symmetric encryption algorithm. AES-256 is recommended for this purpose.
+// - **Hash Algorithm:** The RSA encryption process uses the SHA-256 hashing algorithm with OAEP (Optimal Asymmetric Encryption Padding) for enhanced security.
+//
+// **Request Body Structure:**
+// - **credentialHolder**: The entity or user that holds the credential (e.g., "admin").
+// - **providerName**: The name of the cloud provider (e.g., "aws", "gcp").
+// - **credentialKeyValueList**: A list of key-value pairs where the value is encrypted using the AES key, and the AES key is encrypted using the RSA public key. The value should be base64 encoded before being included in the list.
+// - **publicKeyTokenId**: The token ID associated with the RSA key pair, which was returned by the `GET /credential/publicKey` endpoint.
+//
+// **Example:**
+//
+// ```json
+//
+//	{
+//	  "credentialHolder": "admin",
+//	  "providerName": "aws",
+//	  "credentialKeyValueList": [
+//	    {
+//	      "key": "ClientId",
+//	      "value": "Base64Encoded(AES_Encrypted(ClientId))"
+//	    },
+//	    {
+//	      "key": "ClientSecret",
+//	      "value": "Base64Encoded(AES_Encrypted(ClientSecret))"
+//	    }
+//	  ],
+//	  "publicKeyTokenId": "abcd1234"
+//	}
+//
+// ```
+//
+// @Tags [Admin] Credential Management
+// @Accept  json
+// @Produce  json
+// @Param CredentialReq body common.CredentialReq true "Credential request info with encrypted values."
+// @Success 200 {object} common.CredentialInfo "Returns the stored credential information without the sensitive data."
+// @Failure 404 {object} common.SimpleMsg "Not Found - The requested resource could not be found."
+// @Failure 500 {object} common.SimpleMsg "Internal Server Error - An error occurred while processing the request."
 // @Router /credential [post]
 func RestRegisterCredential(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -147,7 +210,7 @@ func RestRegisterCredential(c echo.Context) error {
 // @ID GetConnConfig
 // @Summary Get registered ConnConfig info
 // @Description Get registered ConnConfig info
-// @Tags [Admin] Multi-Cloud environment configuration
+// @Tags [Admin] Credential Management
 // @Accept  json
 // @Produce  json
 // @Param connConfigName path string true "Name of connection config (cloud config)"
@@ -172,7 +235,7 @@ func RestGetConnConfig(c echo.Context) error {
 // @ID GetConnConfigList
 // @Summary List all registered ConnConfig
 // @Description List all registered ConnConfig
-// @Tags [Admin] Multi-Cloud environment configuration
+// @Tags [Admin] Credential Management
 // @Accept  json
 // @Produce  json
 // @Param filterCredentialHolder query string false "filter objects by Credential Holder" default()

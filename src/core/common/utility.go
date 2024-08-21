@@ -23,6 +23,15 @@ import (
 	"sync"
 	"time"
 
+	"crypto/aes"
+	"crypto/cipher"
+	crand "crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/pem"
+
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	uid "github.com/rs/xid"
@@ -285,10 +294,22 @@ type CloudDriverInfo struct {
 }
 
 // CredentialReq is struct for containing a struct for credential request
+// @Description CredentialReq contains the necessary information to register a credential.
 type CredentialReq struct {
-	CredentialHolder string     `json:"credentialHolder"`
-	ProviderName     string     `json:"providerName"`
-	KeyValueInfoList []KeyValue `json:"keyValueInfoList"`
+	// CredentialHolder is the entity or user that holds the credential.
+	CredentialHolder string `json:"credentialHolder" example:"admin"`
+
+	// ProviderName specifies the cloud provider associated with the credential (e.g., AWS, GCP).
+	ProviderName string `json:"providerName" example:"aws"`
+
+	// CredentialKeyValueList contains key-(encrypted)value pairs that include the sensitive credential data.
+	CredentialKeyValueList []KeyWithEncryptedValue `json:"credentialKeyValueList"`
+
+	// PublicKeyTokenId is the unique token ID used to retrieve the corresponding private key for decryption.
+	PublicKeyTokenId string `json:"publicKeyTokenId" example:"abcd1234"`
+
+	// EncryptedAesKey is the AES key encrypted with the RSA public key.
+	EncryptedAesKey string `json:"encryptedAesKey" example:"encryptedAesKeyBase64"`
 }
 
 // CredentialInfo is struct for containing a struct for credential info
@@ -591,26 +612,143 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	return nil
 }
 
-// RegisterCredential is func to register credential and all releated connection configs
+// PublicKeyResponse is struct for containing the public key response
+type PublicKeyResponse struct {
+	PublicKeyTokenId string `json:"publicKeyTokenId"`
+	PublicKey        string `json:"publicKey"`
+}
+
+var privateKeyStore = make(map[string]*rsa.PrivateKey)
+var mu sync.Mutex // Concurrency safety
+
+// GetPublicKeyForCredentialEncryption generates an RSA key pair,
+// stores the private key in memory, and returns the public key along with its token ID.
+func GetPublicKeyForCredentialEncryption() (PublicKeyResponse, error) {
+
+	privateKey, err := rsa.GenerateKey(crand.Reader, 4096)
+	if err != nil {
+		return PublicKeyResponse{}, fmt.Errorf("failed to generate RSA key: %w", err)
+	}
+
+	uid := GenUid()
+
+	mu.Lock()
+	privateKeyStore[uid] = privateKey
+	mu.Unlock()
+
+	publicKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PUBLIC KEY",
+		Bytes: x509.MarshalPKCS1PublicKey(&privateKey.PublicKey),
+	})
+
+	return PublicKeyResponse{
+		PublicKeyTokenId: uid,
+		PublicKey:        string(publicKeyPEM),
+	}, nil
+}
+
+// hashFunction is the hash function used for RSA-OAEP decryption
+var hashFunction = sha256.New
+
+// unpad function to remove padding after AES decryption
+func unpad(data []byte, blockSize int) ([]byte, error) {
+	length := len(data)
+	unpadding := int(data[length-1])
+	if unpadding > blockSize || unpadding > length {
+		return nil, fmt.Errorf("invalid padding size")
+	}
+	return data[:(length - unpadding)], nil
+}
+
+// RegisterCredential is func to register credential and all related connection configs
 func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
+
+	mu.Lock()
+	privateKey, exists := privateKeyStore[req.PublicKeyTokenId]
+	mu.Unlock()
+
+	if !exists {
+		return CredentialInfo{}, fmt.Errorf("private key not found for token ID: %s", req.PublicKeyTokenId)
+	}
+
+	fmt.Printf("Private key exists: %+v\n", privateKey)
+	PrintJsonPretty(req)
+
+	// Decrypt the AES key
+	encryptedAesKey, err := base64.StdEncoding.DecodeString(req.EncryptedAesKey)
+	if err != nil {
+		return CredentialInfo{}, fmt.Errorf("failed to decode encrypted AES key: %w", err)
+	}
+
+	aesKey, err := rsa.DecryptOAEP(
+		sha256.New(), crand.Reader, privateKey, encryptedAesKey, nil,
+	)
+	if err != nil {
+		return CredentialInfo{}, fmt.Errorf("failed to decrypt AES key: %w", err)
+	}
+
+	// Clear AES key from memory after use
+	defer func() {
+		for i := range aesKey {
+			aesKey[i] = 0
+		}
+	}()
+
+	decryptedKeyValueList := make([]KeyValue, len(req.CredentialKeyValueList))
+
+	// Decrypt all encrypted values and populate the new list
+	for i, keyValue := range req.CredentialKeyValueList {
+		encryptedBytes, err := base64.StdEncoding.DecodeString(keyValue.Value)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return CredentialInfo{}, fmt.Errorf("failed to decode encrypted value: %w", err)
+		}
+
+		aesCipher, err := aes.NewCipher(aesKey)
+		if err != nil {
+			return CredentialInfo{}, fmt.Errorf("failed to create AES cipher: %w", err)
+		}
+
+		iv := encryptedBytes[:aes.BlockSize]
+		ciphertext := encryptedBytes[aes.BlockSize:]
+		aesBlock := cipher.NewCBCDecrypter(aesCipher, iv)
+		decryptedValue := make([]byte, len(ciphertext))
+		aesBlock.CryptBlocks(decryptedValue, ciphertext)
+
+		// Remove padding
+		decryptedValue, err = unpad(decryptedValue, aes.BlockSize)
+		if err != nil {
+			return CredentialInfo{}, fmt.Errorf("failed to unpad decrypted value: %w", err)
+		}
+
+		decryptedKeyValueList[i] = KeyValue{
+			Key:   keyValue.Key,
+			Value: string(decryptedValue),
+		}
+	}
+
+	// Delete the private key from memory after use
+	mu.Lock()
+	delete(privateKeyStore, req.PublicKeyTokenId)
+	mu.Unlock()
 
 	req.CredentialHolder = strings.ToLower(req.CredentialHolder)
 	req.ProviderName = strings.ToLower(req.ProviderName)
 	genneratedCredentialName := req.CredentialHolder + "-" + req.ProviderName
 	if req.CredentialHolder == DefaultCredentialHolder {
-		// credential with default credental holder (e.g., admin) has no prefix
+		// credential with default credential holder (e.g., admin) has no prefix
 		genneratedCredentialName = req.ProviderName
 	}
 
 	// replace `\\n` with `\n` in the value to restore the original PEM value
-	for i, keyValue := range req.KeyValueInfoList {
-		req.KeyValueInfoList[i].Value = strings.ReplaceAll(keyValue.Value, "\\n", "\n")
+	for i, keyValue := range decryptedKeyValueList {
+		decryptedKeyValueList[i].Value = strings.ReplaceAll(keyValue.Value, "\\n", "\n")
 	}
 
 	reqToSpider := CredentialInfo{
 		CredentialName:   genneratedCredentialName,
 		ProviderName:     strings.ToUpper(req.ProviderName),
-		KeyValueInfoList: req.KeyValueInfoList,
+		KeyValueInfoList: decryptedKeyValueList,
 	}
 
 	client := resty.New()
@@ -621,7 +759,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 
 	//PrintJsonPretty(requestBody)
 
-	err := ExecuteHttpRequest(
+	err = ExecuteHttpRequest(
 		client,
 		method,
 		url,

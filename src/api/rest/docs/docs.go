@@ -449,7 +449,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Multi-Cloud environment configuration"
+                    "[Admin] Credential Management"
                 ],
                 "summary": "List all registered ConnConfig",
                 "operationId": "GetConnConfigList",
@@ -516,7 +516,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Multi-Cloud environment configuration"
+                    "[Admin] Credential Management"
                 ],
                 "summary": "Get registered ConnConfig info",
                 "operationId": "GetConnConfig",
@@ -553,7 +553,7 @@ const docTemplate = `{
         },
         "/credential": {
             "post": {
-                "description": "Post register Credential info",
+                "description": "This API is used to register credential information securely. The client must encrypt the sensitive information using a hybrid encryption method before sending it to the server.",
                 "consumes": [
                     "application/json"
                 ],
@@ -561,13 +561,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Multi-Cloud environment configuration"
+                    "[Admin] Credential Management"
                 ],
-                "summary": "Post register Credential info",
+                "summary": "Register Credential Information",
                 "operationId": "RegisterCredential",
                 "parameters": [
                     {
-                        "description": "Credential request info",
+                        "description": "Credential request info with encrypted values.",
                         "name": "CredentialReq",
                         "in": "body",
                         "required": true,
@@ -578,15 +578,45 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns the stored credential information without the sensitive data.",
                         "schema": {
                             "$ref": "#/definitions/common.CredentialInfo"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Not Found - The requested resource could not be found.",
                         "schema": {
                             "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - An error occurred while processing the request.",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/credential/publicKey": {
+            "get": {
+                "description": "Generates an RSA key pair and returns the public key for credential encryption.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Credential Management"
+                ],
+                "summary": "Get RSA Public Key for Credential Encryption",
+                "operationId": "GetPublicKeyForCredentialEncryption",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.PublicKeyResponse"
                         }
                     },
                     "500": {
@@ -9048,19 +9078,35 @@ const docTemplate = `{
             }
         },
         "common.CredentialReq": {
+            "description": "CredentialReq contains the necessary information to register a credential.",
             "type": "object",
             "properties": {
                 "credentialHolder": {
-                    "type": "string"
+                    "description": "CredentialHolder is the entity or user that holds the credential.",
+                    "type": "string",
+                    "example": "admin"
                 },
-                "keyValueInfoList": {
+                "credentialKeyValueList": {
+                    "description": "CredentialKeyValueList contains key-(encrypted)value pairs that include the sensitive credential data.",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.KeyValue"
+                        "$ref": "#/definitions/common.KeyWithEncryptedValue"
                     }
                 },
+                "encryptedAesKey": {
+                    "description": "EncryptedAesKey is the AES key encrypted with the RSA public key.",
+                    "type": "string",
+                    "example": "encryptedAesKeyBase64"
+                },
                 "providerName": {
-                    "type": "string"
+                    "description": "ProviderName specifies the cloud provider associated with the credential (e.g., AWS, GCP).",
+                    "type": "string",
+                    "example": "aws"
+                },
+                "publicKeyTokenId": {
+                    "description": "PublicKeyTokenId is the unique token ID used to retrieve the corresponding private key for decryption.",
+                    "type": "string",
+                    "example": "abcd1234"
                 }
             }
         },
@@ -9248,6 +9294,19 @@ const docTemplate = `{
                 }
             }
         },
+        "common.KeyWithEncryptedValue": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "description": "Key for the value",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "Should be encrypted by the public key issued by GET /credential/publicKey",
+                    "type": "string"
+                }
+            }
+        },
         "common.Location": {
             "type": "object",
             "properties": {
@@ -9289,6 +9348,17 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "default"
+                }
+            }
+        },
+        "common.PublicKeyResponse": {
+            "type": "object",
+            "properties": {
+                "publicKey": {
+                    "type": "string"
+                },
+                "publicKeyTokenId": {
+                    "type": "string"
                 }
             }
         },
