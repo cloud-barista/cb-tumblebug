@@ -295,21 +295,23 @@ type CloudDriverInfo struct {
 
 // CredentialReq is struct for containing a struct for credential request
 // @Description CredentialReq contains the necessary information to register a credential.
+// @Description This includes the AES key encrypted with the RSA public key, which is then used to decrypt the AES key on the server side.
 type CredentialReq struct {
-	// CredentialHolder is the entity or user that holds the credential.
-	CredentialHolder string `json:"credentialHolder" example:"admin"`
 
 	// ProviderName specifies the cloud provider associated with the credential (e.g., AWS, GCP).
 	ProviderName string `json:"providerName" example:"aws"`
 
-	// CredentialKeyValueList contains key-(encrypted)value pairs that include the sensitive credential data.
-	CredentialKeyValueList []KeyWithEncryptedValue `json:"credentialKeyValueList"`
+	// CredentialHolder is the entity or user that holds the credential.
+	CredentialHolder string `json:"credentialHolder" example:"admin"`
 
 	// PublicKeyTokenId is the unique token ID used to retrieve the corresponding private key for decryption.
-	PublicKeyTokenId string `json:"publicKeyTokenId" example:"abcd1234"`
+	PublicKeyTokenId string `json:"publicKeyTokenId" example:"cr31av30uphc738d7h0g"`
 
-	// EncryptedAesKey is the AES key encrypted with the RSA public key.
-	EncryptedAesKey string `json:"encryptedAesKey" example:"encryptedAesKeyBase64"`
+	// EncryptedClientAesKeyByPublicKey is the client temporary AES key encrypted with the RSA public key.
+	EncryptedClientAesKeyByPublicKey string `json:"encryptedClientAesKeyByPublicKey" example:"ZzXL27hbAUDT0ohglf2Gwr60sAqdPw3+CnCsn0RJXeiZxXnHfW03mFx5RaSfbwtPYCq1h6wwv7XsiWzfFmr02..."`
+
+	// CredentialKeyValueList contains key-(encrypted)value pairs that include the sensitive credential data.
+	CredentialKeyValueList []KeyWithEncryptedValue `json:"credentialKeyValueList"`
 }
 
 // CredentialInfo is struct for containing a struct for credential info
@@ -675,7 +677,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 	PrintJsonPretty(req)
 
 	// Decrypt the AES key
-	encryptedAesKey, err := base64.StdEncoding.DecodeString(req.EncryptedAesKey)
+	encryptedAesKey, err := base64.StdEncoding.DecodeString(req.EncryptedClientAesKeyByPublicKey)
 	if err != nil {
 		return CredentialInfo{}, fmt.Errorf("failed to decode encrypted AES key: %w", err)
 	}

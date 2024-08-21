@@ -117,7 +117,7 @@ func RestCheckHTTPVersion(c echo.Context) error {
 // RestGetPublicKeyForCredentialEncryption godoc
 // @ID GetPublicKeyForCredentialEncryption
 // @Summary Get RSA Public Key for Credential Encryption
-// @Description Generates an RSA key pair and returns the public key for credential encryption.
+// @Description Generates an RSA key pair using a 4096-bit key size with the RSA algorithm. The public key is generated using the RSA algorithm with OAEP padding and SHA-256 as the hash function. This key is used to encrypt an AES key that will be used for hybrid encryption of credentials.
 // @Tags [Admin] Credential Management
 // @Accept  json
 // @Produce  json
@@ -138,12 +138,7 @@ func RestGetPublicKeyForCredentialEncryption(c echo.Context) error {
 // RestRegisterCredential is a REST API handler for registering credentials.
 // @ID RegisterCredential
 // @Summary Register Credential Information
-// @Description This API registers credential information using hybrid encryption.
-// 1. First, compress and encrypt sensitive data using AES with a 256-bit key.
-// 2. Then, encrypt the AES key using an RSA public key obtained from `GET /credential/publicKey`.
-// 3. RSA encryption uses a 4096-bit key with OAEP padding and SHA-256 as the hash function.
-// Ensure that all values are base64 encoded before sending them in the request.
-// The public key token ID must be included in the request to allow the server to decrypt the data.
+// @Description This API registers credential information using hybrid encryption. 1. First, compress and encrypt sensitive data using a client generated AES with a 256-bit key. 2. Then, encrypt the AES key using an RSA public key obtained from `GET /credential/publicKey`. 3. RSA encryption uses a 4096-bit key with OAEP padding and SHA-256 as the hash function. Ensure that all values are base64 encoded before sending them in the request. The public key token ID must be included in the request to allow the server to decrypt the data.
 // @Tags [Admin] Credential Management
 // @Accept json
 // @Produce json

@@ -553,7 +553,7 @@ const docTemplate = `{
         },
         "/credential": {
             "post": {
-                "description": "This API is used to register credential information securely. The client must encrypt the sensitive information using a hybrid encryption method before sending it to the server.",
+                "description": "This API registers credential information using hybrid encryption. 1. First, compress and encrypt sensitive data using a client generated AES with a 256-bit key. 2. Then, encrypt the AES key using an RSA public key obtained from ` + "`" + `GET /credential/publicKey` + "`" + `. 3. RSA encryption uses a 4096-bit key with OAEP padding and SHA-256 as the hash function. Ensure that all values are base64 encoded before sending them in the request. The public key token ID must be included in the request to allow the server to decrypt the data.",
                 "consumes": [
                     "application/json"
                 ],
@@ -567,7 +567,7 @@ const docTemplate = `{
                 "operationId": "RegisterCredential",
                 "parameters": [
                     {
-                        "description": "Credential request info with encrypted values.",
+                        "description": "Credential request info",
                         "name": "CredentialReq",
                         "in": "body",
                         "required": true,
@@ -578,19 +578,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Returns the stored credential information without the sensitive data.",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/common.CredentialInfo"
                         }
                     },
                     "404": {
-                        "description": "Not Found - The requested resource could not be found.",
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/common.SimpleMsg"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error - An error occurred while processing the request.",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/common.SimpleMsg"
                         }
@@ -600,7 +600,7 @@ const docTemplate = `{
         },
         "/credential/publicKey": {
             "get": {
-                "description": "Generates an RSA key pair and returns the public key for credential encryption.",
+                "description": "Generates an RSA key pair using a 4096-bit key size with the RSA algorithm. The public key is generated using the RSA algorithm with OAEP padding and SHA-256 as the hash function. This key is used to encrypt an AES key that will be used for hybrid encryption of credentials.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9078,7 +9078,7 @@ const docTemplate = `{
             }
         },
         "common.CredentialReq": {
-            "description": "CredentialReq contains the necessary information to register a credential.",
+            "description": "CredentialReq contains the necessary information to register a credential. This includes the AES key encrypted with the RSA public key, which is then used to decrypt the AES key on the server side.",
             "type": "object",
             "properties": {
                 "credentialHolder": {
@@ -9093,10 +9093,10 @@ const docTemplate = `{
                         "$ref": "#/definitions/common.KeyWithEncryptedValue"
                     }
                 },
-                "encryptedAesKey": {
-                    "description": "EncryptedAesKey is the AES key encrypted with the RSA public key.",
+                "encryptedClientAesKeyByPublicKey": {
+                    "description": "EncryptedClientAesKeyByPublicKey is the client temporary AES key encrypted with the RSA public key.",
                     "type": "string",
-                    "example": "encryptedAesKeyBase64"
+                    "example": "ZzXL27hbAUDT0ohglf2Gwr60sAqdPw3+CnCsn0RJXeiZxXnHfW03mFx5RaSfbwtPYCq1h6wwv7XsiWzfFmr02..."
                 },
                 "providerName": {
                     "description": "ProviderName specifies the cloud provider associated with the credential (e.g., AWS, GCP).",
@@ -9106,7 +9106,7 @@ const docTemplate = `{
                 "publicKeyTokenId": {
                     "description": "PublicKeyTokenId is the unique token ID used to retrieve the corresponding private key for decryption.",
                     "type": "string",
-                    "example": "abcd1234"
+                    "example": "cr31av30uphc738d7h0g"
                 }
             }
         },

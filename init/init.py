@@ -18,7 +18,7 @@ from Crypto.Hash import SHA256
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
-from Crypto.Util.Padding import pad, unpad
+from Crypto.Util.Padding import pad
 
 parser = argparse.ArgumentParser(description="Automatically proceed without confirmation.")
 parser.add_argument('-y', '--yes', action='store_true', help='Automatically answer yes to prompts and proceed.')
