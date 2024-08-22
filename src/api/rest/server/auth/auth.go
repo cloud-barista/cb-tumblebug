@@ -16,9 +16,10 @@ type AuthsInfo struct {
 }
 
 // TestJWTAuth godoc
+// @ID TestJWTAuth
 // @Summary Test JWT authentication
 // @Description Test JWT authentication
-// @Tags [Auth] Test JWT authentication
+// @Tags [Admin] API Request Management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} AuthsInfo "Information of JWT authentication"

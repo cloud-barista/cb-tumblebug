@@ -3235,6 +3235,7 @@ paths:
       consumes:
       - application/json
       description: Test JWT authentication
+      operationId: TestJWTAuth
       produces:
       - application/json
       responses:
@@ -3250,7 +3251,7 @@ paths:
       - Bearer: []
       summary: Test JWT authentication
       tags:
-      - '[Auth] Test JWT authentication'
+      - '[Admin] API Request Management'
   /availableK8sClusterNodeImage:
     get:
       consumes:
@@ -3285,7 +3286,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get available kubernetes cluster node image
       tags:
-      - '[Infra resource] K8sCluster management'
+      - '[Kubernetes] Cluster Management'
   /availableK8sClusterVersion:
     get:
       consumes:
@@ -3320,7 +3321,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get available kubernetes cluster version
       tags:
-      - '[Infra resource] K8sCluster management'
+      - '[Kubernetes] Cluster Management'
   /checkNodeGroupsOnK8sCreation:
     get:
       consumes:
@@ -3350,7 +3351,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Check whether nodegroups are required during the k8scluster creation
       tags:
-      - '[Infra resource] K8sCluster management'
+      - '[Kubernetes] Cluster Management'
   /cloudInfo:
     get:
       consumes:
@@ -3374,7 +3375,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get cloud information
       tags:
-      - '[Admin] Multi-Cloud environment configuration'
+      - '[Admin] Multi-Cloud Information'
   /config:
     delete:
       consumes:
@@ -3394,7 +3395,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Init all configs
       tags:
-      - '[Admin] System environment'
+      - '[Admin] System Configuration'
     get:
       consumes:
       - application/json
@@ -3417,7 +3418,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all configs
       tags:
-      - '[Admin] System environment'
+      - '[Admin] System Configuration'
     post:
       consumes:
       - application/json
@@ -3448,7 +3449,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create or Update config
       tags:
-      - '[Admin] System environment'
+      - '[Admin] System Configuration'
   /config/{configId}:
     delete:
       consumes:
@@ -3478,7 +3479,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Init config
       tags:
-      - '[Admin] System environment'
+      - '[Admin] System Configuration'
     get:
       consumes:
       - application/json
@@ -3507,7 +3508,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get config
       tags:
-      - '[Admin] System environment'
+      - '[Admin] System Configuration'
   /connConfig:
     get:
       consumes:
@@ -3675,7 +3676,7 @@ paths:
             type: object
       summary: Forward any (GET) request to CB-Spider
       tags:
-      - '[Admin] System utility'
+      - '[Admin] API Request Management'
   /httpVersion:
     get:
       consumes:
@@ -3700,7 +3701,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Check HTTP version of incoming request
       tags:
-      - '[Admin] System management'
+      - '[Admin] API Request Management'
   /inspectResources:
     post:
       consumes:
@@ -3733,7 +3734,7 @@ paths:
       summary: Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug,
         CB-Spider, CSP
       tags:
-      - '[Admin] System management'
+      - '[Admin] System Management'
   /inspectResourcesOverview:
     get:
       consumes:
@@ -3759,7 +3760,7 @@ paths:
       summary: Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered
         in CB-Tumblebug and CSP for all connections
       tags:
-      - '[Admin] System management'
+      - '[Admin] System Management'
   /k8sClusterInfo:
     get:
       consumes:
@@ -3783,7 +3784,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get kubernetes cluster information
       tags:
-      - '[Admin] Multi-Cloud environment configuration'
+      - '[Kubernetes] Cluster Management'
   /loadCommonResource:
     get:
       consumes:
@@ -3803,7 +3804,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Load Common Resources from internal asset files
       tags:
-      - '[Admin] Multi-Cloud environment configuration'
+      - '[Admin] System Configuration'
   /lookupImage:
     post:
       consumes:
@@ -3834,7 +3835,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup image
       tags:
-      - '[Infra resource] MCIR Common'
+      - '[Infra Resource] Image Management'
   /lookupImages:
     post:
       consumes:
@@ -3865,7 +3866,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup image list
       tags:
-      - '[Infra resource] MCIR Common'
+      - '[Infra Resource] Image Management'
   /lookupSpec:
     post:
       consumes:
@@ -3896,7 +3897,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup spec
       tags:
-      - '[Infra resource] MCIR Common'
+      - '[Infra Resource] Spec Management'
   /lookupSpecs:
     post:
       consumes:
@@ -3927,7 +3928,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup spec list
       tags:
-      - '[Infra resource] MCIR Common'
+      - '[Infra Resource] Spec Management'
   /mciDynamicCheckRequest:
     post:
       consumes:
@@ -3959,7 +3960,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Check available ConnectionConfig list for creating MCI Dynamically
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
   /mciRecommendVm:
     post:
       consumes:
@@ -3991,7 +3992,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Recommend MCI plan (filter and priority)
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
   /ns:
     delete:
       consumes:
@@ -4011,7 +4012,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all namespaces
       tags:
-      - '[Namespace] Namespace management'
+      - '[Admin] System Configuration'
     get:
       consumes:
       - application/json
@@ -4048,7 +4049,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all namespaces or namespaces' ID
       tags:
-      - '[Namespace] Namespace management'
+      - '[Admin] System Configuration'
     post:
       consumes:
       - application/json
@@ -4078,7 +4079,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create namespace
       tags:
-      - '[Namespace] Namespace management'
+      - '[Admin] System Configuration'
   /ns/{nsId}:
     delete:
       consumes:
@@ -4105,7 +4106,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete namespace
       tags:
-      - '[Namespace] Namespace management'
+      - '[Admin] System Configuration'
     get:
       consumes:
       - application/json
@@ -4135,7 +4136,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get namespace
       tags:
-      - '[Namespace] Namespace management'
+      - '[Admin] System Configuration'
     put:
       consumes:
       - application/json
@@ -4171,7 +4172,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Update namespace
       tags:
-      - '[Namespace] Namespace management'
+      - '[Admin] System Configuration'
   /ns/{nsId}/benchmark/mci/{mciId}:
     post:
       consumes:
@@ -4233,7 +4234,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Run MCI benchmark for a single performance metric and return results
       tags:
-      - '[MC-Infra] MCI Performance benchmarking (WIP)'
+      - '[MC-Infra] MCI Performance Benchmarking (WIP)'
   /ns/{nsId}/benchmarkAll/mci/{mciId}:
     post:
       consumes:
@@ -4276,7 +4277,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Run MCI benchmark for all performance metrics and return results
       tags:
-      - '[MC-Infra] MCI Performance benchmarking (WIP)'
+      - '[MC-Infra] MCI Performance Benchmarking (WIP)'
   /ns/{nsId}/benchmarkLatency/mci/{mciId}:
     get:
       consumes:
@@ -4313,7 +4314,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Run MCI benchmark for network latency
       tags:
-      - '[MC-Infra] MCI Performance benchmarking (WIP)'
+      - '[MC-Infra] MCI Performance Benchmarking (WIP)'
   /ns/{nsId}/checkResource/{resourceType}/{resourceId}:
     get:
       consumes:
@@ -4350,7 +4351,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Check resources' existence
       tags:
-      - '[Infra resource] MCIR Common'
+      - '[Infra Resource] Common Utility'
   /ns/{nsId}/cmd/mci/{mciId}:
     post:
       consumes:
@@ -4407,7 +4408,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Send a command to specified MCI
       tags:
-      - '[MC-Infra] MCI Remote command'
+      - '[MC-Infra] MCI Remote Command'
   /ns/{nsId}/control/mci/{mciId}:
     get:
       consumes:
@@ -4465,7 +4466,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)
       tags:
-      - '[MC-Infra] MCI Control lifecycle'
+      - '[MC-Infra] MCI Provisioning and Management'
   /ns/{nsId}/control/mci/{mciId}/vm/{vmId}:
     get:
       consumes:
@@ -4525,7 +4526,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Control the lifecycle of VM (suspend, resume, reboot, terminate)
       tags:
-      - '[MC-Infra] MCI Control lifecycle'
+      - '[MC-Infra] MCI Provisioning and Management'
   /ns/{nsId}/installBenchmarkAgent/mci/{mciId}:
     post:
       consumes:
@@ -4574,7 +4575,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Install the benchmark agent to specified MCI
       tags:
-      - '[MC-Infra] MCI Performance benchmarking (WIP)'
+      - '[MC-Infra] MCI Performance Benchmarking (WIP)'
   /ns/{nsId}/k8scluster:
     delete:
       consumes:
@@ -4606,7 +4607,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all K8sClusters
       tags:
-      - '[Infra resource] K8sCluster management'
+      - '[Kubernetes] Cluster Management'
     get:
       consumes:
       - application/json
@@ -4657,7 +4658,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all K8sClusters or K8sClusters' ID
       tags:
-      - '[Infra resource] K8sCluster management'
+      - '[Kubernetes] Cluster Management'
     post:
       consumes:
       - application/json
@@ -4700,7 +4701,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create K8sCluster
       tags:
-      - '[Infra resource] K8sCluster management'
+      - '[Kubernetes] Cluster Management'
   /ns/{nsId}/k8scluster/{k8sClusterId}:
     delete:
       consumes:
@@ -4733,7 +4734,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete K8sCluster
       tags:
-      - '[Infra resource] K8sCluster management'
+      - '[Kubernetes] Cluster Management'
     get:
       consumes:
       - application/json
@@ -4769,7 +4770,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get K8sCluster
       tags:
-      - '[Infra resource] K8sCluster management'
+      - '[Kubernetes] Cluster Management'
   /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup:
     post:
       consumes:
@@ -4812,7 +4813,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Add a K8sNodeGroup
       tags:
-      - '[Infra resource] K8sCluster management'
+      - '[Kubernetes] Cluster Management'
   /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}:
     delete:
       consumes:
@@ -4851,7 +4852,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Remove a K8sNodeGroup
       tags:
-      - '[Infra resource] K8sCluster management'
+      - '[Kubernetes] Cluster Management'
   /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}/autoscalesize:
     put:
       consumes:
@@ -4900,7 +4901,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Change a K8sNodeGroup's Autoscale Size
       tags:
-      - '[Infra resource] K8sCluster management'
+      - '[Kubernetes] Cluster Management'
   /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}/onautoscaling:
     put:
       consumes:
@@ -4949,7 +4950,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Set a K8sNodeGroup's Autoscaling On/Off
       tags:
-      - '[Infra resource] K8sCluster management'
+      - '[Kubernetes] Cluster Management'
   /ns/{nsId}/k8scluster/{k8sClusterId}/upgrade:
     put:
       consumes:
@@ -4992,7 +4993,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Upgrade a K8sCluster's version
       tags:
-      - '[Infra resource] K8sCluster management'
+      - '[Kubernetes] Cluster Management'
   /ns/{nsId}/loadSharedResource:
     get:
       consumes:
@@ -5034,7 +5035,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Load Default Resource from internal asset file
       tags:
-      - '[Infra resource] MCIR Common'
+      - '[Infra Resource] Common Utility'
   /ns/{nsId}/mci:
     delete:
       consumes:
@@ -5067,7 +5068,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all MCIs
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
     get:
       consumes:
       - application/json
@@ -5116,7 +5117,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCIs or MCIs' ID
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
     post:
       consumes:
       - application/json
@@ -5152,7 +5153,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCI
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
   /ns/{nsId}/mci/{mciId}:
     delete:
       consumes:
@@ -5192,7 +5193,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCI
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
     get:
       consumes:
       - application/json
@@ -5260,7 +5261,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: 'Get MCI object (option: status, accessInfo, vmId)'
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
   /ns/{nsId}/mci/{mciId}/bastion/{bastionVmId}:
     delete:
       consumes:
@@ -5303,7 +5304,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Remove a bastion VM from all vNets
       tags:
-      - '[MC-Infra] MCI Remote command'
+      - '[MC-Infra] MCI Remote Command'
   /ns/{nsId}/mci/{mciId}/mcSwNlb:
     post:
       consumes:
@@ -5347,7 +5348,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create a special purpose MCI for NLB and depoly and setting SW NLB
       tags:
-      - '[Infra resource] NLB management'
+      - '[Infra Resource] NLB Management'
   /ns/{nsId}/mci/{mciId}/nlb:
     delete:
       consumes:
@@ -5385,7 +5386,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all NLBs
       tags:
-      - '[Infra resource] NLB management'
+      - '[Infra Resource] NLB Management'
     get:
       consumes:
       - application/json
@@ -5442,7 +5443,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all NLBs or NLBs' ID
       tags:
-      - '[Infra resource] NLB management'
+      - '[Infra Resource] NLB Management'
     post:
       consumes:
       - application/json
@@ -5491,7 +5492,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create NLB
       tags:
-      - '[Infra resource] NLB management'
+      - '[Infra Resource] NLB Management'
   /ns/{nsId}/mci/{mciId}/nlb/{nlbId}:
     delete:
       consumes:
@@ -5529,7 +5530,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete NLB
       tags:
-      - '[Infra resource] NLB management'
+      - '[Infra Resource] NLB Management'
     get:
       consumes:
       - application/json
@@ -5571,7 +5572,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get NLB
       tags:
-      - '[Infra resource] NLB management'
+      - '[Infra Resource] NLB Management'
   /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/healthz:
     get:
       consumes:
@@ -5614,7 +5615,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get NLB Health
       tags:
-      - '[Infra resource] NLB management'
+      - '[Infra Resource] NLB Management'
   /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/vm:
     delete:
       consumes:
@@ -5659,7 +5660,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete VMs from NLB
       tags:
-      - '[Infra resource] NLB management (for developer)'
+      - '[Infra Resource] NLB Management (for developer)'
     post:
       consumes:
       - application/json
@@ -5707,7 +5708,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Add VMs to NLB
       tags:
-      - '[Infra resource] NLB management (for developer)'
+      - '[Infra Resource] NLB Management (for developer)'
   /ns/{nsId}/mci/{mciId}/site:
     get:
       consumes:
@@ -5748,7 +5749,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get sites in MCI
       tags:
-      - '[VPN] Sites in MCI'
+      - '[Infra Resource] Network Management'
   /ns/{nsId}/mci/{mciId}/subgroup:
     get:
       consumes:
@@ -5785,7 +5786,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List SubGroup IDs in a specified MCI
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
   /ns/{nsId}/mci/{mciId}/subgroup/{subgroupId}:
     get:
       consumes:
@@ -5834,7 +5835,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List VMs with a SubGroup label in a specified MCI
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
     post:
       consumes:
       - application/json
@@ -5882,7 +5883,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: ScaleOut subGroup in specified MCI
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
   /ns/{nsId}/mci/{mciId}/vm:
     post:
       consumes:
@@ -5927,7 +5928,7 @@ paths:
       summary: Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize
         for multiple VMs)
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
   /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion:
     get:
       consumes:
@@ -5972,7 +5973,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get bastion nodes for a VM
       tags:
-      - '[MC-Infra] MCI Remote command'
+      - '[MC-Infra] MCI Remote Command'
   /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion/{bastionVmId}:
     put:
       consumes:
@@ -6021,7 +6022,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Set bastion nodes for a VM
       tags:
-      - '[MC-Infra] MCI Remote command'
+      - '[MC-Infra] MCI Remote Command'
   /ns/{nsId}/mci/{mciId}/vm/{vmId}:
     delete:
       consumes:
@@ -6066,7 +6067,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete VM in specified MCI
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
     get:
       consumes:
       - application/json
@@ -6125,7 +6126,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get VM in specified MCI
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
   /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk:
     get:
       consumes:
@@ -6175,7 +6176,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get available dataDisks for a VM
       tags:
-      - '[Infra resource] MCIR Data Disk management'
+      - '[Infra Resource] Data Disk Management'
     post:
       consumes:
       - application/json
@@ -6219,7 +6220,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Provisioning (Create and attach) dataDisk
       tags:
-      - '[Infra resource] MCIR Data Disk management'
+      - '[Infra Resource] Data Disk Management'
     put:
       consumes:
       - application/json
@@ -6281,7 +6282,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Attach/Detach available dataDisk
       tags:
-      - '[Infra resource] MCIR Data Disk management'
+      - '[Infra Resource] Data Disk Management'
   /ns/{nsId}/mci/{mciId}/vm/{vmId}/snapshot:
     post:
       consumes:
@@ -6330,7 +6331,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Snapshot VM and create a Custom Image Object using the Snapshot
       tags:
-      - '[Infra resource] Snapshot and Custom Image Management'
+      - '[Infra Resource] Image Management'
   /ns/{nsId}/mci/{mciId}/vmDynamic:
     post:
       consumes:
@@ -6373,7 +6374,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create VM Dynamically and add it to MCI
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
   /ns/{nsId}/mci/{mciId}/vpn/{vpnId}:
     get:
       consumes:
@@ -6426,7 +6427,7 @@ paths:
             $ref: '#/definitions/model.Response'
       summary: Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)
       tags:
-      - '[VPN] Site-to-site VPN (under development)'
+      - '[Infra Resource] Site-to-site VPN Management (under development)'
   /ns/{nsId}/mci/{mciId}/vpn/{vpnId}/request/{requestId}:
     get:
       consumes:
@@ -6478,7 +6479,7 @@ paths:
             $ref: '#/definitions/model.Response'
       summary: Check the status of a specific request by its ID
       tags:
-      - '[VPN] Site-to-site VPN (under development)'
+      - '[Infra Resource] Site-to-site VPN Management (under development)'
   /ns/{nsId}/mciDynamic:
     post:
       consumes:
@@ -6529,7 +6530,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCI Dynamically
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
   /ns/{nsId}/monitoring/install/mci/{mciId}:
     post:
       consumes:
@@ -6572,7 +6573,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Install monitoring agent (CB-Dragonfly agent) to MCI
       tags:
-      - '[MC-Infra] MCI Resource monitor (for developer)'
+      - '[MC-Infra] MCI Resource Monitor (for developer)'
   /ns/{nsId}/monitoring/mci/{mciId}/metric/{metric}:
     get:
       consumes:
@@ -6616,7 +6617,7 @@ paths:
       summary: Get monitoring data of specified MCI for specified monitoring metric
         (cpu, memory, disk, network)
       tags:
-      - '[MC-Infra] MCI Resource monitor (for developer)'
+      - '[MC-Infra] MCI Resource Monitor (for developer)'
   /ns/{nsId}/monitoring/status/mci/{mciId}/vm/{vmId}:
     put:
       consumes:
@@ -6661,7 +6662,7 @@ paths:
       summary: Set monitoring agent (CB-Dragonfly agent) installation status installed
         (for Windows VM only)
       tags:
-      - '[MC-Infra] MCI Resource monitor (for developer)'
+      - '[MC-Infra] MCI Resource Monitor (for developer)'
   /ns/{nsId}/policy/mci:
     delete:
       consumes:
@@ -6688,7 +6689,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all MCI policies
       tags:
-      - '[MC-Infra] MCI Auto control policy management (WIP)'
+      - '[MC-Infra] MCI Orchestration Management (WIP)'
     get:
       consumes:
       - application/json
@@ -6718,7 +6719,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCI policies
       tags:
-      - '[MC-Infra] MCI Auto control policy management (WIP)'
+      - '[MC-Infra] MCI Orchestration Management (WIP)'
   /ns/{nsId}/policy/mci/{mciId}:
     delete:
       consumes:
@@ -6751,7 +6752,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCI Policy
       tags:
-      - '[MC-Infra] MCI Auto control policy management (WIP)'
+      - '[MC-Infra] MCI Orchestration Management (WIP)'
     get:
       consumes:
       - application/json
@@ -6787,7 +6788,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCI Policy
       tags:
-      - '[MC-Infra] MCI Auto control policy management (WIP)'
+      - '[MC-Infra] MCI Orchestration Management (WIP)'
     post:
       consumes:
       - application/json
@@ -6829,7 +6830,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCI Automation policy
       tags:
-      - '[MC-Infra] MCI Auto control policy management (WIP)'
+      - '[MC-Infra] MCI Orchestration Management (WIP)'
   /ns/{nsId}/registerCspVm:
     post:
       consumes:
@@ -6866,7 +6867,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Register existing VM in a CSP to Cloud-Barista MCI
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
   /ns/{nsId}/resources/customImage:
     delete:
       consumes:
@@ -6898,7 +6899,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all customImages
       tags:
-      - '[Infra resource] Snapshot and Custom Image Management'
+      - '[Infra Resource] Image Management'
     get:
       consumes:
       - application/json
@@ -6949,7 +6950,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all customImages or customImages' ID
       tags:
-      - '[Infra resource] Snapshot and Custom Image Management'
+      - '[Infra Resource] Image Management'
     post:
       consumes:
       - application/json
@@ -6992,7 +6993,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Register existing Custom Image in a CSP
       tags:
-      - '[Infra resource] Snapshot and Custom Image Management'
+      - '[Infra Resource] Image Management'
   /ns/{nsId}/resources/customImage/{customImageId}:
     delete:
       consumes:
@@ -7024,7 +7025,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete customImage
       tags:
-      - '[Infra resource] Snapshot and Custom Image Management'
+      - '[Infra Resource] Image Management'
     get:
       consumes:
       - application/json
@@ -7059,7 +7060,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get customImage
       tags:
-      - '[Infra resource] Snapshot and Custom Image Management'
+      - '[Infra Resource] Image Management'
   /ns/{nsId}/resources/dataDisk:
     delete:
       consumes:
@@ -7091,7 +7092,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all Data Disks
       tags:
-      - '[Infra resource] MCIR Data Disk management'
+      - '[Infra Resource] Data Disk Management'
     get:
       consumes:
       - application/json
@@ -7142,7 +7143,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all Data Disks or Data Disks' ID
       tags:
-      - '[Infra resource] MCIR Data Disk management'
+      - '[Infra Resource] Data Disk Management'
     post:
       consumes:
       - application/json
@@ -7184,7 +7185,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create Data Disk
       tags:
-      - '[Infra resource] MCIR Data Disk management'
+      - '[Infra Resource] Data Disk Management'
   /ns/{nsId}/resources/dataDisk/{dataDiskId}:
     delete:
       consumes:
@@ -7216,7 +7217,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete Data Disk
       tags:
-      - '[Infra resource] MCIR Data Disk management'
+      - '[Infra Resource] Data Disk Management'
     get:
       consumes:
       - application/json
@@ -7251,7 +7252,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get Data Disk
       tags:
-      - '[Infra resource] MCIR Data Disk management'
+      - '[Infra Resource] Data Disk Management'
     put:
       consumes:
       - application/json
@@ -7292,7 +7293,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Upsize Data Disk
       tags:
-      - '[Infra resource] MCIR Data Disk management'
+      - '[Infra Resource] Data Disk Management'
   /ns/{nsId}/resources/fetchImages:
     post:
       consumes:
@@ -7323,7 +7324,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Fetch images
       tags:
-      - '[Infra resource] MCIR Image management'
+      - '[Infra Resource] Image Management'
   /ns/{nsId}/resources/fetchSpecs:
     post:
       consumes:
@@ -7354,7 +7355,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Fetch specs
       tags:
-      - '[Infra resource] MCIR Spec management'
+      - '[Infra Resource] Spec Management'
   /ns/{nsId}/resources/filterSpecsByRange:
     post:
       consumes:
@@ -7390,7 +7391,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Filter specs by range
       tags:
-      - '[Infra resource] MCIR Spec management'
+      - '[Infra Resource] Spec Management'
   /ns/{nsId}/resources/image:
     delete:
       consumes:
@@ -7422,7 +7423,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all images
       tags:
-      - '[Infra resource] MCIR Image management'
+      - '[Infra Resource] Image Management'
     get:
       consumes:
       - application/json
@@ -7473,7 +7474,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all images or images' ID
       tags:
-      - '[Infra resource] MCIR Image management'
+      - '[Infra Resource] Image Management'
     post:
       consumes:
       - application/json
@@ -7528,7 +7529,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Register image
       tags:
-      - '[Infra resource] MCIR Image management'
+      - '[Infra Resource] Image Management'
   /ns/{nsId}/resources/image/{imageId}:
     delete:
       consumes:
@@ -7560,7 +7561,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete image
       tags:
-      - '[Infra resource] MCIR Image management'
+      - '[Infra Resource] Image Management'
     get:
       consumes:
       - application/json
@@ -7595,7 +7596,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get image
       tags:
-      - '[Infra resource] MCIR Image management'
+      - '[Infra Resource] Image Management'
     put:
       consumes:
       - application/json
@@ -7636,7 +7637,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Update image
       tags:
-      - '[Infra resource] MCIR Image management'
+      - '[Infra Resource] Image Management'
   /ns/{nsId}/resources/searchImage:
     post:
       consumes:
@@ -7673,7 +7674,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Search image
       tags:
-      - '[Infra resource] MCIR Image management'
+      - '[Infra Resource] Image Management'
   /ns/{nsId}/resources/securityGroup:
     delete:
       consumes:
@@ -7705,7 +7706,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all Security Groups
       tags:
-      - '[Infra resource] MCIR Security group management'
+      - '[Infra Resource] Security Group Management'
     get:
       consumes:
       - application/json
@@ -7756,7 +7757,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all Security Groups or Security Groups' ID
       tags:
-      - '[Infra resource] MCIR Security group management'
+      - '[Infra Resource] Security Group Management'
     post:
       consumes:
       - application/json
@@ -7799,7 +7800,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create Security Group
       tags:
-      - '[Infra resource] MCIR Security group management'
+      - '[Infra Resource] Security Group Management'
   /ns/{nsId}/resources/securityGroup/{securityGroupId}:
     delete:
       consumes:
@@ -7831,7 +7832,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete Security Group
       tags:
-      - '[Infra resource] MCIR Security group management'
+      - '[Infra Resource] Security Group Management'
     get:
       consumes:
       - application/json
@@ -7866,7 +7867,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get Security Group
       tags:
-      - '[Infra resource] MCIR Security group management'
+      - '[Infra Resource] Security Group Management'
   /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules:
     delete:
       consumes:
@@ -7899,7 +7900,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete FirewallRules
       tags:
-      - '[Infra resource] MCIR Security group management'
+      - '[Infra Resource] Security Group Management'
     post:
       consumes:
       - application/json
@@ -7935,7 +7936,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create FirewallRules
       tags:
-      - '[Infra resource] MCIR Security group management'
+      - '[Infra Resource] Security Group Management'
   /ns/{nsId}/resources/spec:
     post:
       consumes:
@@ -7990,7 +7991,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Register spec
       tags:
-      - '[Infra resource] MCIR Spec management'
+      - '[Infra Resource] Spec Management'
   /ns/{nsId}/resources/spec/{specId}:
     delete:
       consumes:
@@ -8022,7 +8023,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete spec
       tags:
-      - '[Infra resource] MCIR Spec management'
+      - '[Infra Resource] Spec Management'
     get:
       consumes:
       - application/json
@@ -8057,7 +8058,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get spec
       tags:
-      - '[Infra resource] MCIR Spec management'
+      - '[Infra Resource] Spec Management'
     put:
       consumes:
       - application/json
@@ -8098,7 +8099,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Update spec
       tags:
-      - '[Infra resource] MCIR Spec management'
+      - '[Infra Resource] Spec Management'
   /ns/{nsId}/resources/sshKey:
     delete:
       consumes:
@@ -8130,7 +8131,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all SSH Keys
       tags:
-      - '[Infra resource] MCIR Access key management'
+      - '[Infra Resource] Access Key Management'
     get:
       consumes:
       - application/json
@@ -8181,7 +8182,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all SSH Keys or SSH Keys' ID
       tags:
-      - '[Infra resource] MCIR Access key management'
+      - '[Infra Resource] Access Key Management'
     post:
       consumes:
       - application/json
@@ -8224,7 +8225,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create SSH Key
       tags:
-      - '[Infra resource] MCIR Access key management'
+      - '[Infra Resource] Access Key Management'
   /ns/{nsId}/resources/sshKey/{sshKeyId}:
     delete:
       consumes:
@@ -8256,7 +8257,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete SSH Key
       tags:
-      - '[Infra resource] MCIR Access key management'
+      - '[Infra Resource] Access Key Management'
     get:
       consumes:
       - application/json
@@ -8291,7 +8292,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get SSH Key
       tags:
-      - '[Infra resource] MCIR Access key management'
+      - '[Infra Resource] Access Key Management'
     put:
       consumes:
       - application/json
@@ -8332,7 +8333,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Update SSH Key
       tags:
-      - '[Infra resource] MCIR Access key management'
+      - '[Infra Resource] Access Key Management'
   /ns/{nsId}/resources/vNet:
     delete:
       consumes:
@@ -8364,7 +8365,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all VNets
       tags:
-      - '[Infra resource] MCIR Network management'
+      - '[Infra Resource] Network Management'
     get:
       consumes:
       - application/json
@@ -8415,7 +8416,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all VNets or VNets' ID
       tags:
-      - '[Infra resource] MCIR Network management'
+      - '[Infra Resource] Network Management'
     post:
       consumes:
       - application/json
@@ -8458,7 +8459,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create VNet
       tags:
-      - '[Infra resource] MCIR Network management'
+      - '[Infra Resource] Network Management'
   /ns/{nsId}/resources/vNet/{vNetId}:
     delete:
       consumes:
@@ -8490,7 +8491,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete VNet
       tags:
-      - '[Infra resource] MCIR Network management'
+      - '[Infra Resource] Network Management'
     get:
       consumes:
       - application/json
@@ -8525,7 +8526,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get VNet
       tags:
-      - '[Infra resource] MCIR Network management'
+      - '[Infra Resource] Network Management'
   /ns/{nsId}/resources/vNet/{vNetId}/subnet:
     post:
       consumes:
@@ -8567,7 +8568,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create Subnet
       tags:
-      - '[Infra resource] MCIR Network management'
+      - '[Infra Resource] Network Management'
   /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}:
     delete:
       consumes:
@@ -8604,7 +8605,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete Subnet
       tags:
-      - '[Infra resource] MCIR Network management'
+      - '[Infra Resource] Network Management'
   /ns/{nsId}/sharedResources:
     delete:
       consumes:
@@ -8631,7 +8632,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all Default Resource Objects in the given namespace
       tags:
-      - '[Infra resource] MCIR Common'
+      - '[Infra Resource] Common Utility'
   /object:
     delete:
       consumes:
@@ -8661,7 +8662,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete an object
       tags:
-      - '[Admin] System management'
+      - '[Admin] System Management'
     get:
       consumes:
       - application/json
@@ -8690,7 +8691,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get value of an object
       tags:
-      - '[Admin] System management'
+      - '[Admin] System Management'
   /objects:
     delete:
       consumes:
@@ -8720,7 +8721,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete child objects along with the given object
       tags:
-      - '[Admin] System management'
+      - '[Admin] System Management'
     get:
       consumes:
       - application/json
@@ -8749,7 +8750,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all objects for a given key
       tags:
-      - '[Admin] System management'
+      - '[Admin] System Management'
   /provider:
     get:
       consumes:
@@ -8773,7 +8774,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered Providers
       tags:
-      - '[Admin] Multi-Cloud environment configuration'
+      - '[Admin] Multi-Cloud Information'
   /provider/{providerName}/region/{regionName}:
     get:
       consumes:
@@ -8808,7 +8809,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered region info
       tags:
-      - '[Admin] Multi-Cloud environment configuration'
+      - '[Admin] Multi-Cloud Information'
   /readyz:
     get:
       consumes:
@@ -8828,7 +8829,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Check Tumblebug is ready
       tags:
-      - '[Admin] System management'
+      - '[Admin] System Management'
   /region:
     get:
       consumes:
@@ -8852,7 +8853,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered regions
       tags:
-      - '[Admin] Multi-Cloud environment configuration'
+      - '[Admin] Multi-Cloud Information'
   /registerCspResources:
     post:
       consumes:
@@ -8900,7 +8901,7 @@ paths:
       summary: Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to
         CB-Tumblebug
       tags:
-      - '[Admin] System management'
+      - '[Admin] System Management'
   /registerCspResourcesAll:
     post:
       consumes:
@@ -8948,7 +8949,7 @@ paths:
       summary: Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from
         all Clouds to CB-Tumblebug
       tags:
-      - '[Admin] System management'
+      - '[Admin] System Management'
   /request/{reqId}:
     delete:
       consumes:
@@ -8970,7 +8971,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete a specific request's details
       tags:
-      - '[Admin] Request tracking'
+      - '[Admin] API Request Management'
     get:
       consumes:
       - application/json
@@ -8999,7 +9000,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get request details
       tags:
-      - '[Admin] Request tracking'
+      - '[Admin] API Request Management'
   /requests:
     delete:
       consumes:
@@ -9015,7 +9016,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all requests' details
       tags:
-      - '[Admin] Request tracking'
+      - '[Admin] API Request Management'
     get:
       consumes:
       - application/json
@@ -9055,7 +9056,7 @@ paths:
             type: object
       summary: Get all requests
       tags:
-      - '[Admin] Request tracking'
+      - '[Admin] API Request Management'
   /stream-response/ns/{nsId}/mci/{mciId}/vpn/{vpnId}:
     delete:
       consumes:
@@ -9102,7 +9103,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete a site-to-site VPN (Currently, GCP-AWS is supported)
       tags:
-      - '[VPN] Site-to-site VPN (under development)'
+      - '[Infra Resource] Site-to-site VPN Management (under development)'
     post:
       consumes:
       - application/json
@@ -9154,7 +9155,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create a site-to-site VPN (Currently, GCP-AWS is supported)
       tags:
-      - '[VPN] Site-to-site VPN (under development)'
+      - '[Infra Resource] Site-to-site VPN Management (under development)'
     put:
       consumes:
       - application/json
@@ -9206,7 +9207,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: (To be provided) Update a site-to-site VPN
       tags:
-      - '[VPN] Site-to-site VPN (under development)'
+      - '[Infra Resource] Site-to-site VPN Management (under development)'
   /systemMci:
     post:
       consumes:
@@ -9237,7 +9238,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create System MCI Dynamically for Special Purpose in NS:system
       tags:
-      - '[MC-Infra] MCI Provisioning management'
+      - '[MC-Infra] MCI Provisioning and Management'
   /util/net/design:
     post:
       consumes:
@@ -9269,7 +9270,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Design a multi-cloud network configuration
       tags:
-      - '[Utility] Multi-cloud network design'
+      - '[Infra Resource] Network Management'
   /util/net/validate:
     post:
       consumes:
@@ -9301,7 +9302,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Validate a multi-cloud network configuration
       tags:
-      - '[Utility] Multi-cloud network design'
+      - '[Infra Resource] Network Management'
 securityDefinitions:
   BasicAuth:
     type: basic

@@ -26,7 +26,7 @@ import (
 // @ID PostSubnet
 // @Summary Create Subnet
 // @Description Create Subnet
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -58,7 +58,7 @@ func RestPostSubnet(c echo.Context) error {
 // @ID PutSubnet
 // @Summary Update Subnet
 // @Description Update Subnet
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param subnetInfo body mcir.TbSubnetInfo true "Details for an Subnet object"
@@ -78,7 +78,7 @@ func RestPutSubnet(c echo.Context) error {
 // @ID GetSubnet
 // @Summary Get Subnet
 // @Description Get Subnet
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -101,7 +101,7 @@ type RestGetAllSubnetResponse struct {
 // @ID GetAllSubnet
 // @Summary List all Subnets or Subnets' ID
 // @Description List all Subnets or Subnets' ID
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -120,7 +120,7 @@ func RestGetAllSubnet(c echo.Context) error {
 // @ID DelSubnet
 // @Summary Delete Subnet
 // @Description Delete Subnet
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -139,7 +139,7 @@ func RestDelSubnet(c echo.Context) error {
 // @ID DelAllSubnet
 // @Summary Delete all Subnets
 // @Description Delete all Subnets
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

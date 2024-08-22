@@ -217,7 +217,7 @@ func RestGetResource(c echo.Context) error {
 // @ID CheckResource
 // @Summary Check resources' existence
 // @Description Check resources' existence
-// @Tags [Infra resource] MCIR Common
+// @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -312,7 +312,7 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 // @ID LoadCommonResource
 // @Summary Load Common Resources from internal asset files
 // @Description Load Common Resources from internal asset files (Spec, Image)
-// @Tags [Admin] Multi-Cloud environment configuration
+// @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.IdList
@@ -331,7 +331,7 @@ func RestLoadCommonResource(c echo.Context) error {
 // @ID LoadSharedResource
 // @Summary Load Default Resource from internal asset file
 // @Description Load Default Resource from internal asset file
-// @Tags [Infra resource] MCIR Common
+// @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -360,7 +360,7 @@ func RestLoadSharedResource(c echo.Context) error {
 // @ID DelAllSharedResources
 // @Summary Delete all Default Resource Objects in the given namespace
 // @Description Delete all Default Resource Objects in the given namespace
-// @Tags [Infra resource] MCIR Common
+// @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

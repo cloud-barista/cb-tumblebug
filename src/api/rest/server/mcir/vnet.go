@@ -26,7 +26,7 @@ import (
 // @ID PostVNet
 // @Summary Create VNet
 // @Description Create VNet
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -58,7 +58,7 @@ func RestPostVNet(c echo.Context) error {
 // @ID PutVNet
 // @Summary Update VNet
 // @Description Update VNet
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param vNetInfo body mcir.TbVNetInfo true "Details for an VNet object"
@@ -77,7 +77,7 @@ func RestPutVNet(c echo.Context) error {
 // @ID GetVNet
 // @Summary Get VNet
 // @Description Get VNet
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -100,7 +100,7 @@ type RestGetAllVNetResponse struct {
 // @ID GetAllVNet
 // @Summary List all VNets or VNets' ID
 // @Description List all VNets or VNets' ID
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -120,7 +120,7 @@ func RestGetAllVNet(c echo.Context) error {
 // @ID DelVNet
 // @Summary Delete VNet
 // @Description Delete VNet
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -137,7 +137,7 @@ func RestDelVNet(c echo.Context) error {
 // @ID DelAllVNet
 // @Summary Delete all VNets
 // @Description Delete all VNets
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

@@ -29,7 +29,7 @@ import (
 // @ID PostDataDisk
 // @Summary Create Data Disk
 // @Description Create Data Disk
-// @Tags [Infra resource] MCIR Data Disk management
+// @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -62,7 +62,7 @@ func RestPostDataDisk(c echo.Context) error {
 // @ID PutDataDisk
 // @Summary Upsize Data Disk
 // @Description Upsize Data Disk
-// @Tags [Infra resource] MCIR Data Disk management
+// @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
 // @Param dataDiskUpsizeReq body mcir.TbDataDiskUpsizeReq true "Request body to upsize the dataDisk"
@@ -94,7 +94,7 @@ func RestPutDataDisk(c echo.Context) error {
 // @ID GetDataDisk
 // @Summary Get Data Disk
 // @Description Get Data Disk
-// @Tags [Infra resource] MCIR Data Disk management
+// @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -117,7 +117,7 @@ type RestGetAllDataDiskResponse struct {
 // @ID GetAllDataDisk
 // @Summary List all Data Disks or Data Disks' ID
 // @Description List all Data Disks or Data Disks' ID
-// @Tags [Infra resource] MCIR Data Disk management
+// @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -137,7 +137,7 @@ func RestGetAllDataDisk(c echo.Context) error {
 // @ID DelDataDisk
 // @Summary Delete Data Disk
 // @Description Delete Data Disk
-// @Tags [Infra resource] MCIR Data Disk management
+// @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -154,7 +154,7 @@ func RestDelDataDisk(c echo.Context) error {
 // @ID DelAllDataDisk
 // @Summary Delete all Data Disks
 // @Description Delete all Data Disks
-// @Tags [Infra resource] MCIR Data Disk management
+// @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -171,7 +171,7 @@ func RestDelAllDataDisk(c echo.Context) error {
 // @ID PutVmDataDisk
 // @Summary Attach/Detach available dataDisk
 // @Description Attach/Detach available dataDisk
-// @Tags [Infra resource] MCIR Data Disk management
+// @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
 // @Param attachDetachDataDiskReq body mcir.TbAttachDetachDataDiskReq false "Request body to attach/detach dataDisk"
@@ -226,7 +226,7 @@ func RestPutVmDataDisk(c echo.Context) error {
 // @ID PostVmDataDisk
 // @Summary Provisioning (Create and attach) dataDisk
 // @Description Provisioning (Create and attach) dataDisk
-// @Tags [Infra resource] MCIR Data Disk management
+// @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
 // @Param dataDiskInfo body mcir.TbDataDiskVmReq true "Details for an Data Disk object"
@@ -262,7 +262,7 @@ func RestPostVmDataDisk(c echo.Context) error {
 // @ID GetVmDataDisk
 // @Summary Get available dataDisks for a VM
 // @Description Get available dataDisks for a VM
-// @Tags [Infra resource] MCIR Data Disk management
+// @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

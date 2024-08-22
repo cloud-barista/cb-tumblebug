@@ -26,7 +26,7 @@ import (
 // @ID PostSshKey
 // @Summary Create SSH Key
 // @Description Create SSH Key
-// @Tags [Infra resource] MCIR Access key management
+// @Tags [Infra Resource] Access Key Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -59,7 +59,7 @@ func RestPostSshKey(c echo.Context) error {
 // @ID PutSshKey
 // @Summary Update SSH Key
 // @Description Update SSH Key
-// @Tags [Infra resource] MCIR Access key management
+// @Tags [Infra Resource] Access Key Management
 // @Accept  json
 // @Produce  json
 // @Param sshKeyInfo body mcir.TbSshKeyInfo true "Details for an SSH Key object"
@@ -90,7 +90,7 @@ func RestPutSshKey(c echo.Context) error {
 // @ID GetSshKey
 // @Summary Get SSH Key
 // @Description Get SSH Key
-// @Tags [Infra resource] MCIR Access key management
+// @Tags [Infra Resource] Access Key Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -113,7 +113,7 @@ type RestGetAllSshKeyResponse struct {
 // @ID GetAllSshKey
 // @Summary List all SSH Keys or SSH Keys' ID
 // @Description List all SSH Keys or SSH Keys' ID
-// @Tags [Infra resource] MCIR Access key management
+// @Tags [Infra Resource] Access Key Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -133,7 +133,7 @@ func RestGetAllSshKey(c echo.Context) error {
 // @ID DelSshKey
 // @Summary Delete SSH Key
 // @Description Delete SSH Key
-// @Tags [Infra resource] MCIR Access key management
+// @Tags [Infra Resource] Access Key Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -150,7 +150,7 @@ func RestDelSshKey(c echo.Context) error {
 // @ID DelAllSshKey
 // @Summary Delete all SSH Keys
 // @Description Delete all SSH Keys
-// @Tags [Infra resource] MCIR Access key management
+// @Tags [Infra Resource] Access Key Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

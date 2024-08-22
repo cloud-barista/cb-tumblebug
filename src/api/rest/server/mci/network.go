@@ -36,7 +36,7 @@ import (
 // @ID GetSitesInMci
 // @Summary Get sites in MCI
 // @Description Get sites in MCI
-// @Tags [VPN] Sites in MCI
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -211,7 +211,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 // @ID PostSiteToSiteVpn
 // @Summary Create a site-to-site VPN (Currently, GCP-AWS is supported)
 // @Description Create a site-to-site VPN (Currently, GCP-AWS is supported)
-// @Tags [VPN] Site-to-site VPN (under development)
+// @Tags [Infra Resource] Site-to-site VPN Management (under development)
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(default)
@@ -764,7 +764,7 @@ func whichCspSet(csp1, csp2 string) string {
 // @ID DeleteSiteToSiteVpn
 // @Summary Delete a site-to-site VPN (Currently, GCP-AWS is supported)
 // @Description Delete a site-to-site VPN (Currently, GCP-AWS is supported)
-// @Tags [VPN] Site-to-site VPN (under development)
+// @Tags [Infra Resource] Site-to-site VPN Management (under development)
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(default)
@@ -1008,7 +1008,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 // @ID PutSiteToSiteVpn
 // @Summary (To be provided) Update a site-to-site VPN
 // @Description (To be provided) Update a site-to-site VPN
-// @Tags [VPN] Site-to-site VPN (under development)
+// @Tags [Infra Resource] Site-to-site VPN Management (under development)
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(default)
@@ -1119,7 +1119,7 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 // @ID GetSiteToSiteVpn
 // @Summary Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)
 // @Description Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)
-// @Tags [VPN] Site-to-site VPN (under development)
+// @Tags [Infra Resource] Site-to-site VPN Management (under development)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -1310,7 +1310,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 // @ID GetRequestStatusOfSiteToSiteVpn
 // @Summary Check the status of a specific request by its ID
 // @Description Check the status of a specific request by its ID
-// @Tags [VPN] Site-to-site VPN (under development)
+// @Tags [Infra Resource] Site-to-site VPN Management (under development)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

@@ -28,7 +28,7 @@ import (
 // @ID GetAvailableK8sClusterVersion
 // @Summary Get available kubernetes cluster version
 // @Description Get available kubernetes cluster version
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param providerName query string true "Name of the CSP to retrieve"
@@ -54,7 +54,7 @@ func RestGetAvailableK8sClusterVersion(c echo.Context) error {
 // @ID GetAvailableK8sClusterNodeImage
 // @Summary Get available kubernetes cluster node image
 // @Description Get available kubernetes cluster node image
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param providerName query string true "Name of the CSP to retrieve"
@@ -80,7 +80,7 @@ func RestGetAvailableK8sClusterNodeImage(c echo.Context) error {
 // @ID CheckNodeGroupsOnK8sCreation
 // @Summary Check whether nodegroups are required during the k8scluster creation
 // @Description Check whether nodegroups are required during the k8scluster creation
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param providerName query string true "Name of the CSP to retrieve"
@@ -104,7 +104,7 @@ func RestCheckNodeGroupsOnK8sCreation(c echo.Context) error {
 // @ID PostK8sCluster
 // @Summary Create K8sCluster
 // @Description Create K8sCluster<br>Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1614
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -145,7 +145,7 @@ func RestPostK8sCluster(c echo.Context) error {
 // @ID PutK8sCluster
 // @Summary Update K8sCluster
 // @Description Update K8sCluster
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -167,7 +167,7 @@ func RestPutK8sCluster(c echo.Context) error {
 // @ID PostK8sNodeGroup
 // @Summary Add a K8sNodeGroup
 // @Description Add a K8sNodeGroup
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -205,7 +205,7 @@ func RestPostK8sNodeGroup(c echo.Context) error {
 // @ID DeleteK8sNodeGroup
 // @Summary Remove a K8sNodeGroup
 // @Description Remove a K8sNodeGroup
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -244,7 +244,7 @@ func RestDeleteK8sNodeGroup(c echo.Context) error {
 // @ID PutSetK8sNodeGroupAutoscaling
 // @Summary Set a K8sNodeGroup's Autoscaling On/Off
 // @Description Set a K8sNodeGroup's Autoscaling On/Off
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -284,7 +284,7 @@ func RestPutSetK8sNodeGroupAutoscaling(c echo.Context) error {
 // @ID PutChangeK8sNodeGroupAutoscaleSize
 // @Summary Change a K8sNodeGroup's Autoscale Size
 // @Description Change a K8sNodeGroup's Autoscale Size
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -324,7 +324,7 @@ func RestPutChangeK8sNodeGroupAutoscaleSize(c echo.Context) error {
 // @ID GetK8sCluster
 // @Summary Get K8sCluster
 // @Description Get K8sCluster
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -356,7 +356,7 @@ type RestGetAllK8sClusterResponse struct {
 // @ID GetAllK8sCluster
 // @Summary List all K8sClusters or K8sClusters' ID
 // @Description List all K8sClusters or K8sClusters' ID
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -407,7 +407,7 @@ func RestGetAllK8sCluster(c echo.Context) error {
 // @ID DeleteK8sCluster
 // @Summary Delete K8sCluster
 // @Description Delete K8sCluster
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -443,7 +443,7 @@ func RestDeleteK8sCluster(c echo.Context) error {
 // @ID DeleteAllK8sCluster
 // @Summary Delete all K8sClusters
 // @Description Delete all K8sClusters
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -473,7 +473,7 @@ func RestDeleteAllK8sCluster(c echo.Context) error {
 // @ID PutUpgradeK8sCluster
 // @Summary Upgrade a K8sCluster's version
 // @Description Upgrade a K8sCluster's version
-// @Tags [Infra resource] K8sCluster management
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
