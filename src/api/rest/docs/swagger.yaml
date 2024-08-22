@@ -88,6 +88,8 @@ definitions:
     type: object
   common.CredentialInfo:
     properties:
+      allConnections:
+        $ref: '#/definitions/common.ConnConfigList'
       credentialHolder:
         type: string
       credentialName:

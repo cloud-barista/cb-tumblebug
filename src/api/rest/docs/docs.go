@@ -9060,6 +9060,9 @@ const docTemplate = `{
         "common.CredentialInfo": {
             "type": "object",
             "properties": {
+                "allConnections": {
+                    "$ref": "#/definitions/common.ConnConfigList"
+                },
                 "credentialHolder": {
                     "type": "string"
                 },

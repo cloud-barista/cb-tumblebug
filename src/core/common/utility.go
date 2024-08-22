@@ -316,10 +316,11 @@ type CredentialReq struct {
 
 // CredentialInfo is struct for containing a struct for credential info
 type CredentialInfo struct {
-	CredentialName   string     `json:"credentialName"`
-	CredentialHolder string     `json:"credentialHolder"`
-	ProviderName     string     `json:"providerName"`
-	KeyValueInfoList []KeyValue `json:"keyValueInfoList"`
+	CredentialName   string         `json:"credentialName"`
+	CredentialHolder string         `json:"credentialHolder"`
+	ProviderName     string         `json:"providerName"`
+	KeyValueInfoList []KeyValue     `json:"keyValueInfoList"`
+	AllConnections   ConnConfigList `json:"allConnections"`
 }
 
 // GetConnConfig is func to get connection config
@@ -673,8 +674,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 		return CredentialInfo{}, fmt.Errorf("private key not found for token ID: %s", req.PublicKeyTokenId)
 	}
 
-	fmt.Printf("Private key exists: %+v\n", privateKey)
-	PrintJsonPretty(req)
+	// PrintJsonPretty(req)
 
 	// Decrypt the AES key
 	encryptedAesKey, err := base64.StdEncoding.DecodeString(req.EncryptedClientAesKeyByPublicKey)
@@ -961,6 +961,12 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 				}
 			}
 		}
+	}
+
+	callResult.AllConnections, err = GetConnConfigList(req.CredentialHolder, false, false)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return callResult, err
 	}
 
 	return callResult, nil

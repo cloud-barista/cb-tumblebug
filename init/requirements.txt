@@ -12,3 +12,6 @@ colorama==0.4.6
 
 # Used for cryptographic functions like RSA encryption
 pycryptodome==3.19.1
+
+# Used for displaying data in table format
+tabulate==0.8.9
