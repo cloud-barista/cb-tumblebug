@@ -9077,12 +9077,6 @@ const docTemplate = `{
                 },
                 "providerName": {
                     "type": "string"
-                },
-                "regionRepresentativeConnections": {
-                    "$ref": "#/definitions/common.ConnConfigList"
-                },
-                "verifiedConnections": {
-                    "$ref": "#/definitions/common.ConnConfigList"
                 }
             }
         },

@@ -100,10 +100,6 @@ definitions:
         type: array
       providerName:
         type: string
-      regionRepresentativeConnections:
-        $ref: '#/definitions/common.ConnConfigList'
-      verifiedConnections:
-        $ref: '#/definitions/common.ConnConfigList'
     type: object
   common.CredentialReq:
     description: CredentialReq contains the necessary information to register a credential.

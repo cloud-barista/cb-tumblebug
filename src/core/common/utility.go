@@ -316,13 +316,11 @@ type CredentialReq struct {
 
 // CredentialInfo is struct for containing a struct for credential info
 type CredentialInfo struct {
-	CredentialName                  string         `json:"credentialName"`
-	CredentialHolder                string         `json:"credentialHolder"`
-	ProviderName                    string         `json:"providerName"`
-	KeyValueInfoList                []KeyValue     `json:"keyValueInfoList"`
-	AllConnections                  ConnConfigList `json:"allConnections"`
-	VerifiedConnections             ConnConfigList `json:"verifiedConnections"`
-	RegionRepresentativeConnections ConnConfigList `json:"regionRepresentativeConnections"`
+	CredentialName   string         `json:"credentialName"`
+	CredentialHolder string         `json:"credentialHolder"`
+	ProviderName     string         `json:"providerName"`
+	KeyValueInfoList []KeyValue     `json:"keyValueInfoList"`
+	AllConnections   ConnConfigList `json:"allConnections"`
 }
 
 // GetConnConfig is func to get connection config
@@ -966,16 +964,6 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 	}
 
 	callResult.AllConnections, err = GetConnConfigList(req.CredentialHolder, false, false)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return callResult, err
-	}
-	callResult.VerifiedConnections, err = GetConnConfigList(req.CredentialHolder, true, false)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return callResult, err
-	}
-	callResult.RegionRepresentativeConnections, err = GetConnConfigList(req.CredentialHolder, true, true)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return callResult, err
