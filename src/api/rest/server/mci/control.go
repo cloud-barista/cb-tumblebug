@@ -27,7 +27,7 @@ import (
 // @ID GetControlMci
 // @Summary Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)
 // @Description Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)
-// @Tags [MC-Infra] MCI Control lifecycle
+// @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -73,7 +73,7 @@ func RestGetControlMci(c echo.Context) error {
 // @ID GetControlMciVm
 // @Summary Control the lifecycle of VM (suspend, resume, reboot, terminate)
 // @Description Control the lifecycle of VM (suspend, resume, reboot, terminate)
-// @Tags [MC-Infra] MCI Control lifecycle
+// @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -122,7 +122,7 @@ func RestGetControlMciVm(c echo.Context) error {
 // @ID PostMciVmSnapshot
 // @Summary Snapshot VM and create a Custom Image Object using the Snapshot
 // @Description Snapshot VM and create a Custom Image Object using the Snapshot
-// @Tags [Infra resource] Snapshot and Custom Image Management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param vmSnapshotReq body mci.TbVmSnapshotReq true "Request body to create VM snapshot"

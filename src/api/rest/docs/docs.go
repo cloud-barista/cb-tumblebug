@@ -38,9 +38,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Auth] Test JWT authentication"
+                    "[Admin] API Request Management"
                 ],
                 "summary": "Test JWT authentication",
+                "operationId": "TestJWTAuth",
                 "responses": {
                     "200": {
                         "description": "Information of JWT authentication",
@@ -67,7 +68,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] K8sCluster management"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Get available kubernetes cluster node image",
                 "operationId": "GetAvailableK8sClusterNodeImage",
@@ -119,7 +120,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] K8sCluster management"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Get available kubernetes cluster version",
                 "operationId": "GetAvailableK8sClusterVersion",
@@ -171,7 +172,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] K8sCluster management"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Check whether nodegroups are required during the k8scluster creation",
                 "operationId": "CheckNodeGroupsOnK8sCreation",
@@ -216,7 +217,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Multi-Cloud environment configuration"
+                    "[Admin] Multi-Cloud Information"
                 ],
                 "summary": "Get cloud information",
                 "operationId": "GetCloudInfo",
@@ -252,7 +253,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System environment"
+                    "[Admin] System Configuration"
                 ],
                 "summary": "List all configs",
                 "operationId": "GetAllConfig",
@@ -286,7 +287,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System environment"
+                    "[Admin] System Configuration"
                 ],
                 "summary": "Create or Update config",
                 "operationId": "PostConfig",
@@ -331,7 +332,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System environment"
+                    "[Admin] System Configuration"
                 ],
                 "summary": "Init all configs",
                 "operationId": "InitAllConfig",
@@ -361,7 +362,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System environment"
+                    "[Admin] System Configuration"
                 ],
                 "summary": "Get config",
                 "operationId": "GetConfig",
@@ -404,7 +405,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System environment"
+                    "[Admin] System Configuration"
                 ],
                 "summary": "Init config",
                 "operationId": "InitConfig",
@@ -638,7 +639,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System utility"
+                    "[Admin] API Request Management"
                 ],
                 "summary": "Forward any (GET) request to CB-Spider",
                 "operationId": "ForwardAnyReqToAny",
@@ -681,7 +682,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System management"
+                    "[Admin] API Request Management"
                 ],
                 "summary": "Check HTTP version of incoming request",
                 "operationId": "CheckHTTPVersion",
@@ -717,7 +718,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System management"
+                    "[Admin] System Management"
                 ],
                 "summary": "Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP",
                 "operationId": "InspectResources",
@@ -764,7 +765,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System management"
+                    "[Admin] System Management"
                 ],
                 "summary": "Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections",
                 "operationId": "InspectResourcesOverview",
@@ -800,7 +801,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Multi-Cloud environment configuration"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Get kubernetes cluster information",
                 "operationId": "GetK8sClusterInfo",
@@ -836,7 +837,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Multi-Cloud environment configuration"
+                    "[Admin] System Configuration"
                 ],
                 "summary": "Load Common Resources from internal asset files",
                 "operationId": "LoadCommonResource",
@@ -866,7 +867,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Common"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Lookup image",
                 "operationId": "LookupImage",
@@ -913,7 +914,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Common"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Lookup image list",
                 "operationId": "LookupImageList",
@@ -960,7 +961,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Common"
+                    "[Infra Resource] Spec Management"
                 ],
                 "summary": "Lookup spec",
                 "operationId": "LookupSpec",
@@ -1007,7 +1008,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Common"
+                    "[Infra Resource] Spec Management"
                 ],
                 "summary": "Lookup spec list",
                 "operationId": "LookupSpecList",
@@ -1054,7 +1055,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Check available ConnectionConfig list for creating MCI Dynamically",
                 "operationId": "PostMciDynamicCheckRequest",
@@ -1101,7 +1102,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Recommend MCI plan (filter and priority)",
                 "operationId": "RecommendVm",
@@ -1150,7 +1151,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Namespace] Namespace management"
+                    "[Admin] System Configuration"
                 ],
                 "summary": "List all namespaces or namespaces' ID",
                 "operationId": "GetAllNs",
@@ -1210,7 +1211,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Namespace] Namespace management"
+                    "[Admin] System Configuration"
                 ],
                 "summary": "Create namespace",
                 "operationId": "PostNs",
@@ -1255,7 +1256,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Namespace] Namespace management"
+                    "[Admin] System Configuration"
                 ],
                 "summary": "Delete all namespaces",
                 "operationId": "DelAllNs",
@@ -1285,7 +1286,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Namespace] Namespace management"
+                    "[Admin] System Configuration"
                 ],
                 "summary": "Get namespace",
                 "operationId": "GetNs",
@@ -1329,7 +1330,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Namespace] Namespace management"
+                    "[Admin] System Configuration"
                 ],
                 "summary": "Update namespace",
                 "operationId": "PutNs",
@@ -1382,7 +1383,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Namespace] Namespace management"
+                    "[Admin] System Configuration"
                 ],
                 "summary": "Delete namespace",
                 "operationId": "DelNs",
@@ -1422,7 +1423,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Performance benchmarking (WIP)"
+                    "[MC-Infra] MCI Performance Benchmarking (WIP)"
                 ],
                 "summary": "Run MCI benchmark for a single performance metric and return results",
                 "operationId": "GetBenchmark",
@@ -1507,7 +1508,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Performance benchmarking (WIP)"
+                    "[MC-Infra] MCI Performance Benchmarking (WIP)"
                 ],
                 "summary": "Run MCI benchmark for all performance metrics and return results",
                 "operationId": "GetAllBenchmark",
@@ -1570,7 +1571,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Performance benchmarking (WIP)"
+                    "[MC-Infra] MCI Performance Benchmarking (WIP)"
                 ],
                 "summary": "Run MCI benchmark for network latency",
                 "operationId": "GetLatencyBenchmark",
@@ -1624,7 +1625,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Common"
+                    "[Infra Resource] Common Utility"
                 ],
                 "summary": "Check resources' existence",
                 "operationId": "CheckResource",
@@ -1678,7 +1679,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Remote command"
+                    "[MC-Infra] MCI Remote Command"
                 ],
                 "summary": "Send a command to specified MCI",
                 "operationId": "PostCmdMci",
@@ -1761,7 +1762,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Control lifecycle"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)",
                 "operationId": "GetControlMci",
@@ -1841,7 +1842,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Control lifecycle"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Control the lifecycle of VM (suspend, resume, reboot, terminate)",
                 "operationId": "GetControlMciVm",
@@ -1926,7 +1927,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Performance benchmarking (WIP)"
+                    "[MC-Infra] MCI Performance Benchmarking (WIP)"
                 ],
                 "summary": "Install the benchmark agent to specified MCI",
                 "operationId": "PostInstallBenchmarkAgentToMci",
@@ -1998,7 +1999,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] K8sCluster management"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "List all K8sClusters or K8sClusters' ID",
                 "operationId": "GetAllK8sCluster",
@@ -2078,7 +2079,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] K8sCluster management"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Create K8sCluster",
                 "operationId": "PostK8sCluster",
@@ -2140,7 +2141,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] K8sCluster management"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Delete all K8sClusters",
                 "operationId": "DeleteAllK8sCluster",
@@ -2187,7 +2188,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] K8sCluster management"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Get K8sCluster",
                 "operationId": "GetK8sCluster",
@@ -2239,7 +2240,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] K8sCluster management"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Delete K8sCluster",
                 "operationId": "DeleteK8sCluster",
@@ -2287,7 +2288,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] K8sCluster management"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Add a K8sNodeGroup",
                 "operationId": "PostK8sNodeGroup",
@@ -2350,7 +2351,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] K8sCluster management"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Remove a K8sNodeGroup",
                 "operationId": "DeleteK8sNodeGroup",
@@ -2406,7 +2407,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] K8sCluster management"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Change a K8sNodeGroup's Autoscale Size",
                 "operationId": "PutChangeK8sNodeGroupAutoscaleSize",
@@ -2477,7 +2478,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] K8sCluster management"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Set a K8sNodeGroup's Autoscaling On/Off",
                 "operationId": "PutSetK8sNodeGroupAutoscaling",
@@ -2548,7 +2549,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] K8sCluster management"
+                    "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Upgrade a K8sCluster's version",
                 "operationId": "PutUpgradeK8sCluster",
@@ -2611,7 +2612,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Common"
+                    "[Infra Resource] Common Utility"
                 ],
                 "summary": "Load Default Resource from internal asset file",
                 "operationId": "LoadSharedResource",
@@ -2671,7 +2672,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "List all MCIs or MCIs' ID",
                 "operationId": "GetAllMci",
@@ -2747,7 +2748,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Create MCI",
                 "operationId": "PostMci",
@@ -2800,7 +2801,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Delete all MCIs",
                 "operationId": "DelAllMci",
@@ -2849,7 +2850,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Get MCI object (option: status, accessInfo, vmId)",
                 "operationId": "GetMci",
@@ -2952,7 +2953,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Delete MCI",
                 "operationId": "DelMci",
@@ -3010,7 +3011,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Remote command"
+                    "[MC-Infra] MCI Remote Command"
                 ],
                 "summary": "Remove a bastion VM from all vNets",
                 "operationId": "RemoveBastionNodes",
@@ -3072,7 +3073,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] NLB management"
+                    "[Infra Resource] NLB Management"
                 ],
                 "summary": "Create a special purpose MCI for NLB and depoly and setting SW NLB",
                 "operationId": "PostMcNLB",
@@ -3135,7 +3136,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] NLB management"
+                    "[Infra Resource] NLB Management"
                 ],
                 "summary": "List all NLBs or NLBs' ID",
                 "operationId": "GetAllNLB",
@@ -3223,7 +3224,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] NLB management"
+                    "[Infra Resource] NLB Management"
                 ],
                 "summary": "Create NLB",
                 "operationId": "PostNLB",
@@ -3293,7 +3294,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] NLB management"
+                    "[Infra Resource] NLB Management"
                 ],
                 "summary": "Delete all NLBs",
                 "operationId": "DelAllNLB",
@@ -3348,7 +3349,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] NLB management"
+                    "[Infra Resource] NLB Management"
                 ],
                 "summary": "Get NLB",
                 "operationId": "GetNLB",
@@ -3408,7 +3409,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] NLB management"
+                    "[Infra Resource] NLB Management"
                 ],
                 "summary": "Delete NLB",
                 "operationId": "DelNLB",
@@ -3463,7 +3464,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] NLB management"
+                    "[Infra Resource] NLB Management"
                 ],
                 "summary": "Get NLB Health",
                 "operationId": "GetNLBHealth",
@@ -3525,7 +3526,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] NLB management (for developer)"
+                    "[Infra Resource] NLB Management (for developer)"
                 ],
                 "summary": "Add VMs to NLB",
                 "operationId": "AddNLBVMs",
@@ -3594,7 +3595,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] NLB management (for developer)"
+                    "[Infra Resource] NLB Management (for developer)"
                 ],
                 "summary": "Delete VMs from NLB",
                 "operationId": "RemoveNLBVMs",
@@ -3659,7 +3660,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[VPN] Sites in MCI"
+                    "[Infra Resource] Network Management"
                 ],
                 "summary": "Get sites in MCI",
                 "operationId": "GetSitesInMci",
@@ -3719,7 +3720,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "List SubGroup IDs in a specified MCI",
                 "operationId": "GetMciGroupIds",
@@ -3773,7 +3774,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "List VMs with a SubGroup label in a specified MCI",
                 "operationId": "GetMciGroupVms",
@@ -3842,7 +3843,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "ScaleOut subGroup in specified MCI",
                 "operationId": "PostMciSubGroupScaleOut",
@@ -3913,7 +3914,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize for multiple VMs)",
                 "operationId": "PostMciVm",
@@ -3976,7 +3977,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Remote command"
+                    "[MC-Infra] MCI Remote Command"
                 ],
                 "summary": "Get bastion nodes for a VM",
                 "operationId": "GetBastionNodes",
@@ -4041,7 +4042,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Remote command"
+                    "[MC-Infra] MCI Remote Command"
                 ],
                 "summary": "Set bastion nodes for a VM",
                 "operationId": "SetBastionNodes",
@@ -4111,7 +4112,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Get VM in specified MCI",
                 "operationId": "GetMciVm",
@@ -4200,7 +4201,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Delete VM in specified MCI",
                 "operationId": "DelMciVm",
@@ -4265,7 +4266,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Data Disk management"
+                    "[Infra Resource] Data Disk Management"
                 ],
                 "summary": "Get available dataDisks for a VM",
                 "operationId": "GetVmDataDisk",
@@ -4340,7 +4341,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Data Disk management"
+                    "[Infra Resource] Data Disk Management"
                 ],
                 "summary": "Attach/Detach available dataDisk",
                 "operationId": "PutVmDataDisk",
@@ -4429,7 +4430,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Data Disk management"
+                    "[Infra Resource] Data Disk Management"
                 ],
                 "summary": "Provisioning (Create and attach) dataDisk",
                 "operationId": "PostVmDataDisk",
@@ -4494,7 +4495,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] Snapshot and Custom Image Management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Snapshot VM and create a Custom Image Object using the Snapshot",
                 "operationId": "PostMciVmSnapshot",
@@ -4565,7 +4566,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Create VM Dynamically and add it to MCI",
                 "operationId": "PostMciVmDynamic",
@@ -4628,7 +4629,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[VPN] Site-to-site VPN (under development)"
+                    "[Infra Resource] Site-to-site VPN Management (under development)"
                 ],
                 "summary": "Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)",
                 "operationId": "GetSiteToSiteVpn",
@@ -4703,7 +4704,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[VPN] Site-to-site VPN (under development)"
+                    "[Infra Resource] Site-to-site VPN Management (under development)"
                 ],
                 "summary": "Check the status of a specific request by its ID",
                 "operationId": "GetRequestStatusOfSiteToSiteVpn",
@@ -4778,7 +4779,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Create MCI Dynamically",
                 "operationId": "PostMciDynamic",
@@ -4848,7 +4849,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Resource monitor (for developer)"
+                    "[MC-Infra] MCI Resource Monitor (for developer)"
                 ],
                 "summary": "Install monitoring agent (CB-Dragonfly agent) to MCI",
                 "operationId": "PostInstallMonitorAgentToMci",
@@ -4911,7 +4912,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Resource monitor (for developer)"
+                    "[MC-Infra] MCI Resource Monitor (for developer)"
                 ],
                 "summary": "Get monitoring data of specified MCI for specified monitoring metric (cpu, memory, disk, network)",
                 "operationId": "GetMonitorData",
@@ -4972,7 +4973,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Resource monitor (for developer)"
+                    "[MC-Infra] MCI Resource Monitor (for developer)"
                 ],
                 "summary": "Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)",
                 "operationId": "PutMonitorAgentStatusInstalled",
@@ -5034,7 +5035,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Auto control policy management (WIP)"
+                    "[MC-Infra] MCI Orchestration Management (WIP)"
                 ],
                 "summary": "List all MCI policies",
                 "operationId": "GetAllMciPolicy",
@@ -5078,7 +5079,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Auto control policy management (WIP)"
+                    "[MC-Infra] MCI Orchestration Management (WIP)"
                 ],
                 "summary": "Delete all MCI policies",
                 "operationId": "DelAllMciPolicy",
@@ -5118,7 +5119,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Auto control policy management (WIP)"
+                    "[MC-Infra] MCI Orchestration Management (WIP)"
                 ],
                 "summary": "Get MCI Policy",
                 "operationId": "GetMciPolicy",
@@ -5170,7 +5171,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Auto control policy management (WIP)"
+                    "[MC-Infra] MCI Orchestration Management (WIP)"
                 ],
                 "summary": "Create MCI Automation policy",
                 "operationId": "PostMciPolicy",
@@ -5231,7 +5232,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Auto control policy management (WIP)"
+                    "[MC-Infra] MCI Orchestration Management (WIP)"
                 ],
                 "summary": "Delete MCI Policy",
                 "operationId": "DelMciPolicy",
@@ -5279,7 +5280,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Register existing VM in a CSP to Cloud-Barista MCI",
                 "operationId": "PostRegisterCSPNativeVM",
@@ -5334,7 +5335,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] Snapshot and Custom Image Management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "List all customImages or customImages' ID",
                 "operationId": "GetAllCustomImage",
@@ -5414,7 +5415,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] Snapshot and Custom Image Management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Register existing Custom Image in a CSP",
                 "operationId": "PostCustomImage",
@@ -5477,7 +5478,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] Snapshot and Custom Image Management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Delete all customImages",
                 "operationId": "DelAllCustomImage",
@@ -5524,7 +5525,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] Snapshot and Custom Image Management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Get customImage",
                 "operationId": "GetCustomImage",
@@ -5575,7 +5576,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] Snapshot and Custom Image Management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Delete customImage",
                 "operationId": "DelCustomImage",
@@ -5622,7 +5623,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Data Disk management"
+                    "[Infra Resource] Data Disk Management"
                 ],
                 "summary": "List all Data Disks or Data Disks' ID",
                 "operationId": "GetAllDataDisk",
@@ -5702,7 +5703,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Data Disk management"
+                    "[Infra Resource] Data Disk Management"
                 ],
                 "summary": "Create Data Disk",
                 "operationId": "PostDataDisk",
@@ -5764,7 +5765,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Data Disk management"
+                    "[Infra Resource] Data Disk Management"
                 ],
                 "summary": "Delete all Data Disks",
                 "operationId": "DelAllDataDisk",
@@ -5811,7 +5812,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Data Disk management"
+                    "[Infra Resource] Data Disk Management"
                 ],
                 "summary": "Get Data Disk",
                 "operationId": "GetDataDisk",
@@ -5862,7 +5863,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Data Disk management"
+                    "[Infra Resource] Data Disk Management"
                 ],
                 "summary": "Upsize Data Disk",
                 "operationId": "PutDataDisk",
@@ -5922,7 +5923,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Data Disk management"
+                    "[Infra Resource] Data Disk Management"
                 ],
                 "summary": "Delete Data Disk",
                 "operationId": "DelDataDisk",
@@ -5969,7 +5970,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Image management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Fetch images",
                 "operationId": "FetchImages",
@@ -6015,7 +6016,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Spec management"
+                    "[Infra Resource] Spec Management"
                 ],
                 "summary": "Fetch specs",
                 "operationId": "FetchSpecs",
@@ -6061,7 +6062,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Spec management"
+                    "[Infra Resource] Spec Management"
                 ],
                 "summary": "Filter specs by range",
                 "operationId": "FilterSpecsByRange",
@@ -6115,7 +6116,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Image management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "List all images or images' ID",
                 "operationId": "GetAllImage",
@@ -6195,7 +6196,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Image management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Register image",
                 "operationId": "PostImage",
@@ -6273,7 +6274,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Image management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Delete all images",
                 "operationId": "DelAllImage",
@@ -6320,7 +6321,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Image management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Get image",
                 "operationId": "GetImage",
@@ -6371,7 +6372,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Image management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Update image",
                 "operationId": "PutImage",
@@ -6431,7 +6432,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Image management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Delete image",
                 "operationId": "DelImage",
@@ -6478,7 +6479,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Image management"
+                    "[Infra Resource] Image Management"
                 ],
                 "summary": "Search image",
                 "operationId": "SearchImage",
@@ -6533,7 +6534,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Security group management"
+                    "[Infra Resource] Security Group Management"
                 ],
                 "summary": "List all Security Groups or Security Groups' ID",
                 "operationId": "GetAllSecurityGroup",
@@ -6613,7 +6614,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Security group management"
+                    "[Infra Resource] Security Group Management"
                 ],
                 "summary": "Create Security Group",
                 "operationId": "PostSecurityGroup",
@@ -6675,7 +6676,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Security group management"
+                    "[Infra Resource] Security Group Management"
                 ],
                 "summary": "Delete all Security Groups",
                 "operationId": "DelAllSecurityGroup",
@@ -6722,7 +6723,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Security group management"
+                    "[Infra Resource] Security Group Management"
                 ],
                 "summary": "Get Security Group",
                 "operationId": "GetSecurityGroup",
@@ -6773,7 +6774,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Security group management"
+                    "[Infra Resource] Security Group Management"
                 ],
                 "summary": "Delete Security Group",
                 "operationId": "DelSecurityGroup",
@@ -6820,7 +6821,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Security group management"
+                    "[Infra Resource] Security Group Management"
                 ],
                 "summary": "Create FirewallRules",
                 "operationId": "PostFirewallRules",
@@ -6873,7 +6874,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Security group management"
+                    "[Infra Resource] Security Group Management"
                 ],
                 "summary": "Delete FirewallRules",
                 "operationId": "DelFirewallRules",
@@ -6922,7 +6923,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Spec management"
+                    "[Infra Resource] Spec Management"
                 ],
                 "summary": "Register spec",
                 "operationId": "PostSpec",
@@ -7002,7 +7003,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Spec management"
+                    "[Infra Resource] Spec Management"
                 ],
                 "summary": "Get spec",
                 "operationId": "GetSpec",
@@ -7053,7 +7054,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Spec management"
+                    "[Infra Resource] Spec Management"
                 ],
                 "summary": "Update spec",
                 "operationId": "PutSpec",
@@ -7113,7 +7114,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Spec management"
+                    "[Infra Resource] Spec Management"
                 ],
                 "summary": "Delete spec",
                 "operationId": "DelSpec",
@@ -7160,7 +7161,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Access key management"
+                    "[Infra Resource] Access Key Management"
                 ],
                 "summary": "List all SSH Keys or SSH Keys' ID",
                 "operationId": "GetAllSshKey",
@@ -7240,7 +7241,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Access key management"
+                    "[Infra Resource] Access Key Management"
                 ],
                 "summary": "Create SSH Key",
                 "operationId": "PostSshKey",
@@ -7302,7 +7303,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Access key management"
+                    "[Infra Resource] Access Key Management"
                 ],
                 "summary": "Delete all SSH Keys",
                 "operationId": "DelAllSshKey",
@@ -7349,7 +7350,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Access key management"
+                    "[Infra Resource] Access Key Management"
                 ],
                 "summary": "Get SSH Key",
                 "operationId": "GetSshKey",
@@ -7400,7 +7401,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Access key management"
+                    "[Infra Resource] Access Key Management"
                 ],
                 "summary": "Update SSH Key",
                 "operationId": "PutSshKey",
@@ -7460,7 +7461,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Access key management"
+                    "[Infra Resource] Access Key Management"
                 ],
                 "summary": "Delete SSH Key",
                 "operationId": "DelSshKey",
@@ -7507,7 +7508,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Network management"
+                    "[Infra Resource] Network Management"
                 ],
                 "summary": "List all VNets or VNets' ID",
                 "operationId": "GetAllVNet",
@@ -7587,7 +7588,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Network management"
+                    "[Infra Resource] Network Management"
                 ],
                 "summary": "Create VNet",
                 "operationId": "PostVNet",
@@ -7649,7 +7650,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Network management"
+                    "[Infra Resource] Network Management"
                 ],
                 "summary": "Delete all VNets",
                 "operationId": "DelAllVNet",
@@ -7696,7 +7697,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Network management"
+                    "[Infra Resource] Network Management"
                 ],
                 "summary": "Get VNet",
                 "operationId": "GetVNet",
@@ -7747,7 +7748,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Network management"
+                    "[Infra Resource] Network Management"
                 ],
                 "summary": "Delete VNet",
                 "operationId": "DelVNet",
@@ -7794,7 +7795,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Network management"
+                    "[Infra Resource] Network Management"
                 ],
                 "summary": "Create Subnet",
                 "operationId": "PostSubnet",
@@ -7856,7 +7857,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Network management"
+                    "[Infra Resource] Network Management"
                 ],
                 "summary": "Delete Subnet",
                 "operationId": "DelSubnet",
@@ -7910,7 +7911,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Common"
+                    "[Infra Resource] Common Utility"
                 ],
                 "summary": "Delete all Default Resource Objects in the given namespace",
                 "operationId": "DelAllSharedResources",
@@ -7950,7 +7951,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System management"
+                    "[Admin] System Management"
                 ],
                 "summary": "Get value of an object",
                 "operationId": "GetObject",
@@ -7993,7 +7994,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System management"
+                    "[Admin] System Management"
                 ],
                 "summary": "Delete an object",
                 "operationId": "DeleteObject",
@@ -8038,7 +8039,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System management"
+                    "[Admin] System Management"
                 ],
                 "summary": "List all objects for a given key",
                 "operationId": "GetObjects",
@@ -8081,7 +8082,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System management"
+                    "[Admin] System Management"
                 ],
                 "summary": "Delete child objects along with the given object",
                 "operationId": "DeleteObjects",
@@ -8126,7 +8127,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Multi-Cloud environment configuration"
+                    "[Admin] Multi-Cloud Information"
                 ],
                 "summary": "List all registered Providers",
                 "operationId": "GetProviderList",
@@ -8162,7 +8163,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Multi-Cloud environment configuration"
+                    "[Admin] Multi-Cloud Information"
                 ],
                 "summary": "Get registered region info",
                 "operationId": "GetRegion",
@@ -8214,7 +8215,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System management"
+                    "[Admin] System Management"
                 ],
                 "summary": "Check Tumblebug is ready",
                 "operationId": "GetReadyz",
@@ -8244,7 +8245,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Multi-Cloud environment configuration"
+                    "[Admin] Multi-Cloud Information"
                 ],
                 "summary": "List all registered regions",
                 "operationId": "GetRegionList",
@@ -8280,7 +8281,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System management"
+                    "[Admin] System Management"
                 ],
                 "summary": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug",
                 "operationId": "RegisterCspNativeResources",
@@ -8348,7 +8349,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System management"
+                    "[Admin] System Management"
                 ],
                 "summary": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug",
                 "operationId": "RegisterCspNativeResourcesAll",
@@ -8416,7 +8417,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Request tracking"
+                    "[Admin] API Request Management"
                 ],
                 "summary": "Get request details",
                 "operationId": "GetRequest",
@@ -8459,7 +8460,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Request tracking"
+                    "[Admin] API Request Management"
                 ],
                 "summary": "Delete a specific request's details",
                 "operationId": "DeleteRequest",
@@ -8492,7 +8493,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Request tracking"
+                    "[Admin] API Request Management"
                 ],
                 "summary": "Get all requests",
                 "operationId": "GetAllRequests",
@@ -8552,7 +8553,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Request tracking"
+                    "[Admin] API Request Management"
                 ],
                 "summary": "Delete all requests' details",
                 "operationId": "DeleteAllRequests",
@@ -8576,7 +8577,7 @@ const docTemplate = `{
                     "application/x-json-stream"
                 ],
                 "tags": [
-                    "[VPN] Site-to-site VPN (under development)"
+                    "[Infra Resource] Site-to-site VPN Management (under development)"
                 ],
                 "summary": "(To be provided) Update a site-to-site VPN",
                 "operationId": "PutSiteToSiteVpn",
@@ -8651,7 +8652,7 @@ const docTemplate = `{
                     "application/x-json-stream"
                 ],
                 "tags": [
-                    "[VPN] Site-to-site VPN (under development)"
+                    "[Infra Resource] Site-to-site VPN Management (under development)"
                 ],
                 "summary": "Create a site-to-site VPN (Currently, GCP-AWS is supported)",
                 "operationId": "PostSiteToSiteVpn",
@@ -8726,7 +8727,7 @@ const docTemplate = `{
                     "application/x-json-stream"
                 ],
                 "tags": [
-                    "[VPN] Site-to-site VPN (under development)"
+                    "[Infra Resource] Site-to-site VPN Management (under development)"
                 ],
                 "summary": "Delete a site-to-site VPN (Currently, GCP-AWS is supported)",
                 "operationId": "DeleteSiteToSiteVpn",
@@ -8794,7 +8795,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Provisioning management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Create System MCI Dynamically for Special Purpose in NS:system",
                 "operationId": "PostSystemMci",
@@ -8841,7 +8842,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Utility] Multi-cloud network design"
+                    "[Infra Resource] Network Management"
                 ],
                 "summary": "Design a multi-cloud network configuration",
                 "operationId": "PostUtilToDesignNetwork",
@@ -8888,7 +8889,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Utility] Multi-cloud network design"
+                    "[Infra Resource] Network Management"
                 ],
                 "summary": "Validate a multi-cloud network configuration",
                 "operationId": "PostUtilToValidateNetwork",

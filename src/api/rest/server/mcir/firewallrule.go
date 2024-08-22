@@ -30,7 +30,7 @@ type TbFirewallRulesWrapper struct {
 // @ID PostFirewallRules
 // @Summary Create FirewallRules
 // @Description Create FirewallRules
-// @Tags [Infra resource] MCIR Security group management
+// @Tags [Infra Resource] Security Group Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -61,7 +61,7 @@ func RestPostFirewallRules(c echo.Context) error {
 // @ID PutFirewallRules
 // @Summary Update FirewallRules
 // @Description Update FirewallRules
-// @Tags [Infra resource] MCIR Security group management
+// @Tags [Infra Resource] Security Group Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -82,7 +82,7 @@ func RestPutFirewallRules(c echo.Context) error {
 // @ID GetFirewallRules
 // @Summary Get FirewallRules
 // @Description Get FirewallRules
-// @Tags [Infra resource] MCIR Security group management
+// @Tags [Infra Resource] Security Group Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -106,7 +106,7 @@ type RestGetAllFirewallRulesResponse struct {
 // @ID DelFirewallRules
 // @Summary Delete FirewallRules
 // @Description Delete FirewallRules
-// @Tags [Infra resource] MCIR Security group management
+// @Tags [Infra Resource] Security Group Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

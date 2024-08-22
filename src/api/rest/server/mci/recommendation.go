@@ -26,7 +26,7 @@ import (
 // @ID RecommendVm
 // @Summary Recommend MCI plan (filter and priority)
 // @Description Recommend MCI plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
-// @Tags [MC-Infra] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param deploymentPlan body mci.DeploymentPlan false "Recommend MCI plan (filter and priority)"
@@ -62,7 +62,7 @@ type RestPostMciRecommendResponse struct {
 // func RestPostMciRecommend(c echo.Context) error {
 // 	// @Summary Get MCI recommendation
 // 	// @Description Get MCI recommendation
-// 	// @Tags [MC-Infra] MCI Provisioning management
+// 	// @Tags [MC-Infra] MCI Provisioning and Management
 // 	// @Accept  json
 // 	// @Produce  json
 // 	// @Param nsId path string true "Namespace ID" default(default)

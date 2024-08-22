@@ -26,7 +26,7 @@ import (
 // @ID PostInstallMonitorAgentToMci
 // @Summary Install monitoring agent (CB-Dragonfly agent) to MCI
 // @Description Install monitoring agent (CB-Dragonfly agent) to MCI
-// @Tags [MC-Infra] MCI Resource monitor (for developer)
+// @Tags [MC-Infra] MCI Resource Monitor (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -57,7 +57,7 @@ func RestPostInstallMonitorAgentToMci(c echo.Context) error {
 // @ID PutMonitorAgentStatusInstalled
 // @Summary Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)
 // @Description Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)
-// @Tags [MC-Infra] MCI Resource monitor (for developer)
+// @Tags [MC-Infra] MCI Resource Monitor (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -90,7 +90,7 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 // @ID GetMonitorData
 // @Summary Get monitoring data of specified MCI for specified monitoring metric (cpu, memory, disk, network)
 // @Description Get monitoring data of specified MCI for specified monitoring metric (cpu, memory, disk, network)
-// @Tags [MC-Infra] MCI Resource monitor (for developer)
+// @Tags [MC-Infra] MCI Resource Monitor (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

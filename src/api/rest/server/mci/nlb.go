@@ -26,7 +26,7 @@ import (
 // @ID PostNLB
 // @Summary Create NLB
 // @Description Create NLB
-// @Tags [Infra resource] NLB management
+// @Tags [Infra Resource] NLB Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -60,7 +60,7 @@ func RestPostNLB(c echo.Context) error {
 // @ID PostMcNLB
 // @Summary Create a special purpose MCI for NLB and depoly and setting SW NLB
 // @Description Create a special purpose MCI for NLB and depoly and setting SW NLB
-// @Tags [Infra resource] NLB management
+// @Tags [Infra Resource] NLB Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -94,7 +94,7 @@ func RestPostMcNLB(c echo.Context) error {
 // @ID PutNLB
 // @Summary Update NLB
 // @Description Update NLB
-// @Tags [Infra resource] NLB management
+// @Tags [Infra Resource] NLB Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -117,7 +117,7 @@ func RestPutNLB(c echo.Context) error {
 // @ID GetNLB
 // @Summary Get NLB
 // @Description Get NLB
-// @Tags [Infra resource] NLB management
+// @Tags [Infra Resource] NLB Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -149,7 +149,7 @@ type RestGetAllNLBResponse struct {
 // @ID GetAllNLB
 // @Summary List all NLBs or NLBs' ID
 // @Description List all NLBs or NLBs' ID
-// @Tags [Infra resource] NLB management
+// @Tags [Infra Resource] NLB Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -198,7 +198,7 @@ func RestGetAllNLB(c echo.Context) error {
 // @ID DelNLB
 // @Summary Delete NLB
 // @Description Delete NLB
-// @Tags [Infra resource] NLB management
+// @Tags [Infra Resource] NLB Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -227,7 +227,7 @@ func RestDelNLB(c echo.Context) error {
 // @ID DelAllNLB
 // @Summary Delete all NLBs
 // @Description Delete all NLBs
-// @Tags [Infra resource] NLB management
+// @Tags [Infra Resource] NLB Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -255,7 +255,7 @@ func RestDelAllNLB(c echo.Context) error {
 // @ID GetNLBHealth
 // @Summary Get NLB Health
 // @Description Get NLB Health
-// @Tags [Infra resource] NLB management
+// @Tags [Infra Resource] NLB Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -284,7 +284,7 @@ func RestGetNLBHealth(c echo.Context) error {
 // @ID AddNLBVMs
 // @Summary Add VMs to NLB
 // @Description Add VMs to NLB
-// @Tags [Infra resource] NLB management (for developer)
+// @Tags [Infra Resource] NLB Management (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -316,7 +316,7 @@ func RestAddNLBVMs(c echo.Context) error {
 // @ID RemoveNLBVMs
 // @Summary Delete VMs from NLB
 // @Description Delete VMs from NLB
-// @Tags [Infra resource] NLB management (for developer)
+// @Tags [Infra Resource] NLB Management (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

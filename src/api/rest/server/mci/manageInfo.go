@@ -38,7 +38,7 @@ type JSONResult struct {
 // @ID GetMci
 // @Summary Get MCI object (option: status, accessInfo, vmId)
 // @Description Get MCI object (option: status, accessInfo, vmId)
-// @Tags [MC-Infra] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -111,7 +111,7 @@ type RestGetAllMciStatusResponse struct {
 // @ID GetAllMci
 // @Summary List all MCIs or MCIs' ID
 // @Description List all MCIs or MCIs' ID
-// @Tags [MC-Infra] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -171,7 +171,7 @@ func RestGetAllMci(c echo.Context) error {
 // @ID PutMci
 // @Summary Update MCI
 // @Description Update MCI
-// @Tags [MC-Infra] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param mciInfo body TbMciInfo true "Details for an MCI object"
@@ -188,7 +188,7 @@ func RestPutMci(c echo.Context) error {
 // @ID DelMci
 // @Summary Delete MCI
 // @Description Delete MCI
-// @Tags [MC-Infra] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -214,7 +214,7 @@ func RestDelMci(c echo.Context) error {
 // @ID DelAllMci
 // @Summary Delete all MCIs
 // @Description Delete all MCIs
-// @Tags [MC-Infra] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -241,7 +241,7 @@ func RestDelAllMci(c echo.Context) error {
 // @ID GetMciVm
 // @Summary Get VM in specified MCI
 // @Description Get VM in specified MCI
-// @Tags [MC-Infra] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -283,7 +283,7 @@ func RestGetMciVm(c echo.Context) error {
 // @ID PutSshKey
 // @Summary Update MCI
 // @Description Update MCI
-// @Tags [MC-Infra] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -303,7 +303,7 @@ func RestPutMciVm(c echo.Context) error {
 // @ID DelMciVm
 // @Summary Delete VM in specified MCI
 // @Description Delete VM in specified MCI
-// @Tags [MC-Infra] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -338,7 +338,7 @@ func RestDelMciVm(c echo.Context) error {
 // @ID GetMciGroupVms
 // @Summary List VMs with a SubGroup label in a specified MCI
 // @Description List VMs with a SubGroup label in a specified MCI
-// @Tags [MC-Infra] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -369,7 +369,7 @@ func RestGetMciGroupVms(c echo.Context) error {
 // @ID GetMciGroupIds
 // @Summary List SubGroup IDs in a specified MCI
 // @Description List SubGroup IDs in a specified MCI
-// @Tags [MC-Infra] MCI Provisioning management
+// @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

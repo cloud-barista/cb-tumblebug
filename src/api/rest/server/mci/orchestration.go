@@ -28,7 +28,7 @@ import (
 // @ID PostMciPolicy
 // @Summary Create MCI Automation policy
 // @Description Create MCI Automation policy
-// @Tags [MC-Infra] MCI Auto control policy management (WIP)
+// @Tags [MC-Infra] MCI Orchestration Management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -59,7 +59,7 @@ func RestPostMciPolicy(c echo.Context) error {
 // @ID GetMciPolicy
 // @Summary Get MCI Policy
 // @Description Get MCI Policy
-// @Tags [MC-Infra] MCI Auto control policy management (WIP)
+// @Tags [MC-Infra] MCI Orchestration Management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -99,7 +99,7 @@ type RestGetAllMciPolicyResponse struct {
 // @ID GetAllMciPolicy
 // @Summary List all MCI policies
 // @Description List all MCI policies
-// @Tags [MC-Infra] MCI Auto control policy management (WIP)
+// @Tags [MC-Infra] MCI Orchestration Management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -132,7 +132,7 @@ func RestGetAllMciPolicy(c echo.Context) error {
 // @ID PutMciPolicy
 // @Summary Update MCI Policy
 // @Description Update MCI Policy
-// @Tags [MC-Infra] MCI Auto control policy management (WIP)
+// @Tags [MC-Infra] MCI Orchestration Management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param mciInfo body MciPolicyInfo true "Details for an MCI Policy object"
@@ -149,7 +149,7 @@ func RestPutMciPolicy(c echo.Context) error {
 // @ID DelMciPolicy
 // @Summary Delete MCI Policy
 // @Description Delete MCI Policy
-// @Tags [MC-Infra] MCI Auto control policy management (WIP)
+// @Tags [MC-Infra] MCI Orchestration Management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -174,7 +174,7 @@ func RestDelMciPolicy(c echo.Context) error {
 // @ID DelAllMciPolicy
 // @Summary Delete all MCI policies
 // @Description Delete all MCI policies
-// @Tags [MC-Infra] MCI Auto control policy management (WIP)
+// @Tags [MC-Infra] MCI Orchestration Management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

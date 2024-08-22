@@ -30,7 +30,7 @@ import (
 // @ID PostImage
 // @Summary Register image
 // @Description Register image
-// @Tags [Infra resource] MCIR Image management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithId)
@@ -91,7 +91,7 @@ func RestPostImage(c echo.Context) error {
 // @ID PutImage
 // @Summary Update image
 // @Description Update image
-// @Tags [Infra resource] MCIR Image management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param imageInfo body mcir.TbImageInfo true "Details for an image object"
@@ -130,7 +130,7 @@ type RestLookupImageRequest struct {
 // @ID LookupImage
 // @Summary Lookup image
 // @Description Lookup image
-// @Tags [Infra resource] MCIR Common
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param lookupImageReq body RestLookupImageRequest true "Specify connectionName & cspImageId"
@@ -158,7 +158,7 @@ func RestLookupImage(c echo.Context) error {
 // @ID LookupImageList
 // @Summary Lookup image list
 // @Description Lookup image list
-// @Tags [Infra resource] MCIR Common
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param lookupImagesReq body common.TbConnectionName true "Specify connectionName"
@@ -186,7 +186,7 @@ func RestLookupImageList(c echo.Context) error {
 // @ID FetchImages
 // @Summary Fetch images
 // @Description Fetch images
-// @Tags [Infra resource] MCIR Image management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -231,7 +231,7 @@ func RestFetchImages(c echo.Context) error {
 // @ID GetImage
 // @Summary Get image
 // @Description Get image
-// @Tags [Infra resource] MCIR Image management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -254,7 +254,7 @@ type RestGetAllImageResponse struct {
 // @ID GetAllImage
 // @Summary List all images or images' ID
 // @Description List all images or images' ID
-// @Tags [Infra resource] MCIR Image management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -274,7 +274,7 @@ func RestGetAllImage(c echo.Context) error {
 // @ID DelImage
 // @Summary Delete image
 // @Description Delete image
-// @Tags [Infra resource] MCIR Image management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -291,7 +291,7 @@ func RestDelImage(c echo.Context) error {
 // @ID DelAllImage
 // @Summary Delete all images
 // @Description Delete all images
-// @Tags [Infra resource] MCIR Image management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -313,7 +313,7 @@ type RestSearchImageRequest struct {
 // @ID SearchImage
 // @Summary Search image
 // @Description Search image
-// @Tags [Infra resource] MCIR Image management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

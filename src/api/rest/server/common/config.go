@@ -34,7 +34,7 @@ import (
 // @ID InitConfig
 // @Summary Init config
 // @Description Init config
-// @Tags [Admin] System environment
+// @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
 // @Param configId path string true "Config ID"
@@ -67,7 +67,7 @@ func RestInitConfig(c echo.Context) error {
 // @ID GetConfig
 // @Summary Get config
 // @Description Get config
-// @Tags [Admin] System environment
+// @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
 // @Param configId path string true "Config ID"
@@ -104,7 +104,7 @@ type RestGetAllConfigResponse struct {
 // @ID GetAllConfig
 // @Summary List all configs
 // @Description List all configs
-// @Tags [Admin] System environment
+// @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} RestGetAllConfigResponse
@@ -127,7 +127,7 @@ func RestGetAllConfig(c echo.Context) error {
 // @ID PostConfig
 // @Summary Create or Update config
 // @Description Create or Update config (TB_SPIDER_REST_URL, TB_DRAGONFLY_REST_URL, ...)
-// @Tags [Admin] System environment
+// @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
 // @Param config body common.ConfigReq true "Key and Value for configuration"
@@ -155,7 +155,7 @@ func RestPostConfig(c echo.Context) error {
 // @ID InitAllConfig
 // @Summary Init all configs
 // @Description Init all configs
-// @Tags [Admin] System environment
+// @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.SimpleMsg
@@ -176,7 +176,7 @@ func RestInitAllConfig(c echo.Context) error {
 // @ID GetRequest
 // @Summary Get request details
 // @Description Get details of a specific request
-// @Tags [Admin] Request tracking
+// @Tags [Admin] API Request Management
 // @Accept  json
 // @Produce  json
 // @Param reqId path string true "Request ID acquired from X-Request-ID header"
@@ -198,7 +198,7 @@ func RestGetRequest(c echo.Context) error {
 // @ID GetAllRequests
 // @Summary Get all requests
 // @Description Get details of all requests with optional filters.
-// @Tags [Admin] Request tracking
+// @Tags [Admin] API Request Management
 // @Accept  json
 // @Produce  json
 // @Param status query string false "Filter by request status (Handling, Error, Success)"
@@ -260,7 +260,7 @@ func RestGetAllRequests(c echo.Context) error {
 // @ID DeleteRequest
 // @Summary Delete a specific request's details
 // @Description Delete details of a specific request
-// @Tags [Admin] Request tracking
+// @Tags [Admin] API Request Management
 // @Accept  json
 // @Produce  json
 // @Param reqId path string true "Request ID to delete"
@@ -281,7 +281,7 @@ func RestDeleteRequest(c echo.Context) error {
 // @ID DeleteAllRequests
 // @Summary Delete all requests' details
 // @Description Delete details of all requests
-// @Tags [Admin] Request tracking
+// @Tags [Admin] API Request Management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} SimpleMsg

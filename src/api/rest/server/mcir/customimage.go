@@ -27,7 +27,7 @@ import (
 // @ID PostCustomImage
 // @Summary Register existing Custom Image in a CSP
 // @Description Register existing Custom Image in a CSP (option=register)
-// @Tags [Infra resource] Snapshot and Custom Image Management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -64,7 +64,7 @@ func RestPostCustomImage(c echo.Context) error {
 // @ID GetCustomImage
 // @Summary Get customImage
 // @Description Get customImage
-// @Tags [Infra resource] Snapshot and Custom Image Management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -87,7 +87,7 @@ type RestGetAllCustomImageResponse struct {
 // @ID GetAllCustomImage
 // @Summary List all customImages or customImages' ID
 // @Description List all customImages or customImages' ID
-// @Tags [Infra resource] Snapshot and Custom Image Management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -107,7 +107,7 @@ func RestGetAllCustomImage(c echo.Context) error {
 // @ID DelCustomImage
 // @Summary Delete customImage
 // @Description Delete customImage
-// @Tags [Infra resource] Snapshot and Custom Image Management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -124,7 +124,7 @@ func RestDelCustomImage(c echo.Context) error {
 // @ID DelAllCustomImage
 // @Summary Delete all customImages
 // @Description Delete all customImages
-// @Tags [Infra resource] Snapshot and Custom Image Management
+// @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

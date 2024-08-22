@@ -44,7 +44,7 @@ func RestCheckNs(c echo.Context) error {
 // @ID DelAllNs
 // @Summary Delete all namespaces
 // @Description Delete all namespaces
-// @Tags [Namespace] Namespace management
+// @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.SimpleMsg
@@ -64,7 +64,7 @@ func RestDelAllNs(c echo.Context) error {
 // @ID DelNs
 // @Summary Delete namespace
 // @Description Delete namespace
-// @Tags [Namespace] Namespace management
+// @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -102,7 +102,7 @@ type RestGetAllNsResponse struct {
 // @ID GetAllNs
 // @Summary List all namespaces or namespaces' ID
 // @Description List all namespaces or namespaces' ID
-// @Tags [Namespace] Namespace management
+// @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
 // @Param option query string false "Option" Enums(id)
@@ -134,7 +134,7 @@ func RestGetAllNs(c echo.Context) error {
 // @ID GetNs
 // @Summary Get namespace
 // @Description Get namespace
-// @Tags [Namespace] Namespace management
+// @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -160,7 +160,7 @@ func RestGetNs(c echo.Context) error {
 // @ID PostNs
 // @Summary Create namespace
 // @Description Create namespace
-// @Tags [Namespace] Namespace management
+// @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
 // @Param nsReq body common.NsReq true "Details for a new namespace"
@@ -187,7 +187,7 @@ func RestPostNs(c echo.Context) error {
 // @ID PutNs
 // @Summary Update namespace
 // @Description Update namespace
-// @Tags [Namespace] Namespace management
+// @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

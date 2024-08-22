@@ -20,7 +20,7 @@ type RestPostUtilToDesignNetworkReponse struct {
 // @ID PostUtilToDesignNetwork
 // @Summary Design a multi-cloud network configuration
 // @Description Design a hierarchical network configuration of a VPC network or multi-cloud network consisting of multiple VPC networks
-// @Tags [Utility] Multi-cloud network design
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param subnettingReq body RestPostUtilToDesignNetworkRequest true "A root/main network CIDR block and subnetting rules"
@@ -59,7 +59,7 @@ type RestPostUtilToValidateNetworkRequest struct {
 // @ID PostUtilToValidateNetwork
 // @Summary Validate a multi-cloud network configuration
 // @Description Validate a hierarchical configuration of a VPC network or multi-cloud network consisting of multiple VPC networks
-// @Tags [Utility] Multi-cloud network design
+// @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param subnettingReq body RestPostUtilToValidateNetworkRequest true "A hierarchical network configuration"

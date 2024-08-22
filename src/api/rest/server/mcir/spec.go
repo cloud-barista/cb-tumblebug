@@ -30,7 +30,7 @@ import (
 // @ID PostSpec
 // @Summary Register spec
 // @Description Register spec
-// @Tags [Infra resource] MCIR Spec management
+// @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
 // @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithCspSpecName)
@@ -86,7 +86,7 @@ func RestPostSpec(c echo.Context) error {
 // @ID PutSpec
 // @Summary Update spec
 // @Description Update spec
-// @Tags [Infra resource] MCIR Spec management
+// @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
 // @Param specInfo body mcir.TbSpecInfo true "Details for an spec object"
@@ -125,7 +125,7 @@ type RestLookupSpecRequest struct {
 // @ID LookupSpec
 // @Summary Lookup spec
 // @Description Lookup spec
-// @Tags [Infra resource] MCIR Common
+// @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
 // @Param lookupSpecReq body RestLookupSpecRequest true "Specify connectionName & cspSpecName"
@@ -153,7 +153,7 @@ func RestLookupSpec(c echo.Context) error {
 // @ID LookupSpecList
 // @Summary Lookup spec list
 // @Description Lookup spec list
-// @Tags [Infra resource] MCIR Common
+// @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
 // @Param lookupSpecsReq body common.TbConnectionName true "Specify connectionName"
@@ -181,7 +181,7 @@ func RestLookupSpecList(c echo.Context) error {
 // @ID FetchSpecs
 // @Summary Fetch specs
 // @Description Fetch specs
-// @Tags [Infra resource] MCIR Spec management
+// @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
@@ -231,7 +231,7 @@ type RestFilterSpecsResponse struct {
 // @ID FilterSpecsByRange
 // @Summary Filter specs by range
 // @Description Filter specs by range
-// @Tags [Infra resource] MCIR Spec management
+// @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
@@ -263,7 +263,7 @@ func RestFilterSpecsByRange(c echo.Context) error {
 // @ID GetSpec
 // @Summary Get spec
 // @Description Get spec
-// @Tags [Infra resource] MCIR Spec management
+// @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
@@ -292,7 +292,7 @@ func RestGetSpec(c echo.Context) error {
 // @ID DelSpec
 // @Summary Delete spec
 // @Description Delete spec
-// @Tags [Infra resource] MCIR Spec management
+// @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)

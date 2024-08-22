@@ -76,7 +76,7 @@ func Validate(c echo.Context, params []string) error {
 // RestGetReadyz godoc
 // @Summary Check Tumblebug is ready
 // @Description Check Tumblebug is ready
-// @Tags [Admin] System management
+// @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.SimpleMsg
@@ -96,7 +96,7 @@ func RestGetReadyz(c echo.Context) error {
 // @ID CheckHTTPVersion
 // @Summary Check HTTP version of incoming request
 // @Description Checks and logs the HTTP version of the incoming request to the server console.
-// @Tags [Admin] System management
+// @Tags [Admin] API Request Management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.SimpleMsg
@@ -229,7 +229,7 @@ func RestGetConnConfigList(c echo.Context) error {
 // @ID GetProviderList
 // @Summary List all registered Providers
 // @Description List all registered Providers
-// @Tags [Admin] Multi-Cloud environment configuration
+// @Tags [Admin] Multi-Cloud Information
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.IdList
@@ -251,7 +251,7 @@ func RestGetProviderList(c echo.Context) error {
 // @ID GetRegion
 // @Summary Get registered region info
 // @Description Get registered region info
-// @Tags [Admin] Multi-Cloud environment configuration
+// @Tags [Admin] Multi-Cloud Information
 // @Accept  json
 // @Produce  json
 // @Param providerName path string true "Name of the CSP to retrieve"
@@ -278,7 +278,7 @@ func RestGetRegion(c echo.Context) error {
 // @ID GetRegionList
 // @Summary List all registered regions
 // @Description List all registered regions
-// @Tags [Admin] Multi-Cloud environment configuration
+// @Tags [Admin] Multi-Cloud Information
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.RegionList
@@ -300,7 +300,7 @@ func RestGetRegionList(c echo.Context) error {
 // @ID GetCloudInfo
 // @Summary Get cloud information
 // @Description Get cloud information
-// @Tags [Admin] Multi-Cloud environment configuration
+// @Tags [Admin] Multi-Cloud Information
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.CloudInfo
@@ -321,7 +321,7 @@ func RestGetCloudInfo(c echo.Context) error {
 // @ID GetK8sClusterInfo
 // @Summary Get kubernetes cluster information
 // @Description Get kubernetes cluster information
-// @Tags [Admin] Multi-Cloud environment configuration
+// @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.K8sClusterInfo
@@ -347,7 +347,7 @@ type ObjectList struct {
 // @ID GetObjects
 // @Summary List all objects for a given key
 // @Description List all objects for a given key
-// @Tags [Admin] System management
+// @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
 // @Param key query string true "retrieve objects by key"
@@ -371,7 +371,7 @@ func RestGetObjects(c echo.Context) error {
 // @ID GetObject
 // @Summary Get value of an object
 // @Description Get value of an object
-// @Tags [Admin] System management
+// @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
 // @Param key query string true "get object value by key"
@@ -399,7 +399,7 @@ func RestGetObject(c echo.Context) error {
 // @ID DeleteObject
 // @Summary Delete an object
 // @Description Delete an object
-// @Tags [Admin] System management
+// @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
 // @Param key query string true "delete object value by key"
@@ -429,7 +429,7 @@ func RestDeleteObject(c echo.Context) error {
 // @ID DeleteObjects
 // @Summary Delete child objects along with the given object
 // @Description Delete child objects along with the given object
-// @Tags [Admin] System management
+// @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
 // @Param key query string true "Delete child objects based on the given key string"
@@ -459,7 +459,7 @@ type RestInspectResourcesRequest struct {
 // @ID InspectResources
 // @Summary Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP
 // @Description Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP
-// @Tags [Admin] System management
+// @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestInspectResourcesRequest true "Specify connectionName and resource type"
@@ -495,7 +495,7 @@ func RestInspectResources(c echo.Context) error {
 // @ID InspectResourcesOverview
 // @Summary Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections
 // @Description Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections
-// @Tags [Admin] System management
+// @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} mci.InspectResourceAllResult
@@ -522,7 +522,7 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @ID RegisterCspNativeResources
 // @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug
 // @Description Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug
-// @Tags [Admin] System management
+// @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
 // @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName, NS Id, and MCI Name""
@@ -559,7 +559,7 @@ type RestRegisterCspNativeResourcesRequestAll struct {
 // @ID RegisterCspNativeResourcesAll
 // @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug
 // @Description Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug
-// @Tags [Admin] System management
+// @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
 // @Param Request body RestRegisterCspNativeResourcesRequestAll true "Specify NS Id and MCI Name"
@@ -589,7 +589,7 @@ func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 // @ID ForwardAnyReqToAny
 // @Summary Forward any (GET) request to CB-Spider
 // @Description Forward any (GET) request to CB-Spider
-// @Tags [Admin] System utility
+// @Tags [Admin] API Request Management
 // @Accept  json
 // @Produce  json
 // @Param path path string true "Internal call path to CB-Spider (path without /spider/ prefix) - see [https://documenter.getpostman.com/view/24786935/2s9Ykq8Lpf#231eec23-b0ab-4966-83ce-a0ef92ead7bc] for more details"" default(vmspec)

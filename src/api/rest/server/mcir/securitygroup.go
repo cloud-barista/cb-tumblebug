@@ -26,7 +26,7 @@ import (
 // @ID PostSecurityGroup
 // @Summary Create Security Group
 // @Description Create Security Group
-// @Tags [Infra resource] MCIR Security group management
+// @Tags [Infra Resource] Security Group Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -61,7 +61,7 @@ func RestPostSecurityGroup(c echo.Context) error {
 // @ID PutSecurityGroup
 // @Summary Update Security Group
 // @Description Update Security Group
-// @Tags [Infra resource] MCIR Security group management
+// @Tags [Infra Resource] Security Group Management
 // @Accept  json
 // @Produce  json
 // @Param securityGroupInfo body mcir.TbSecurityGroupInfo true "Details for an securityGroup object"
@@ -80,7 +80,7 @@ func RestPutSecurityGroup(c echo.Context) error {
 // @ID GetSecurityGroup
 // @Summary Get Security Group
 // @Description Get Security Group
-// @Tags [Infra resource] MCIR Security group management
+// @Tags [Infra Resource] Security Group Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -103,7 +103,7 @@ type RestGetAllSecurityGroupResponse struct {
 // @ID GetAllSecurityGroup
 // @Summary List all Security Groups or Security Groups' ID
 // @Description List all Security Groups or Security Groups' ID
-// @Tags [Infra resource] MCIR Security group management
+// @Tags [Infra Resource] Security Group Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -123,7 +123,7 @@ func RestGetAllSecurityGroup(c echo.Context) error {
 // @ID DelSecurityGroup
 // @Summary Delete Security Group
 // @Description Delete Security Group
-// @Tags [Infra resource] MCIR Security group management
+// @Tags [Infra Resource] Security Group Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -140,7 +140,7 @@ func RestDelSecurityGroup(c echo.Context) error {
 // @ID DelAllSecurityGroup
 // @Summary Delete all Security Groups
 // @Description Delete all Security Groups
-// @Tags [Infra resource] MCIR Security group management
+// @Tags [Infra Resource] Security Group Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

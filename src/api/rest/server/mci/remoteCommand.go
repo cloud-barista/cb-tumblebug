@@ -26,7 +26,7 @@ import (
 // @ID PostCmdMci
 // @Summary Send a command to specified MCI
 // @Description Send a command to specified MCI
-// @Tags [MC-Infra] MCI Remote command
+// @Tags [MC-Infra] MCI Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -79,7 +79,7 @@ func RestPostCmdMci(c echo.Context) error {
 // @ID SetBastionNodes
 // @Summary Set bastion nodes for a VM
 // @Description Set bastion nodes for a VM
-// @Tags [MC-Infra] MCI Remote command
+// @Tags [MC-Infra] MCI Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -108,7 +108,7 @@ func RestSetBastionNodes(c echo.Context) error {
 // @ID GetBastionNodes
 // @Summary Get bastion nodes for a VM
 // @Description Get bastion nodes for a VM
-// @Tags [MC-Infra] MCI Remote command
+// @Tags [MC-Infra] MCI Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -135,7 +135,7 @@ func RestGetBastionNodes(c echo.Context) error {
 // @ID RemoveBastionNodes
 // @Summary Remove a bastion VM from all vNets
 // @Description Remove a bastion VM from all vNets
-// @Tags [MC-Infra] MCI Remote command
+// @Tags [MC-Infra] MCI Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
