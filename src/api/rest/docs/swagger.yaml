@@ -88,6 +88,8 @@ definitions:
     type: object
   common.CredentialInfo:
     properties:
+      allConnections:
+        $ref: '#/definitions/common.ConnConfigList'
       credentialHolder:
         type: string
       credentialName:
@@ -98,6 +100,10 @@ definitions:
         type: array
       providerName:
         type: string
+      regionRepresentativeConnections:
+        $ref: '#/definitions/common.ConnConfigList'
+      verifiedConnections:
+        $ref: '#/definitions/common.ConnConfigList'
     type: object
   common.CredentialReq:
     description: CredentialReq contains the necessary information to register a credential.

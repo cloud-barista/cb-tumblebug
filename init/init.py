@@ -11,7 +11,8 @@ import subprocess
 import requests
 import yaml
 from tqdm import tqdm
-from colorama import Fore, init
+from tabulate import tabulate
+from colorama import Fore, Style, init
 from getpass import getpass
 from Crypto.PublicKey import RSA
 from Crypto.Hash import SHA256
@@ -39,7 +40,7 @@ CRED_PATH = os.path.join(os.path.expanduser('~'), '.cloud-barista')
 ENC_FILE_PATH = os.path.join(CRED_PATH, CRED_FILE_NAME_ENC)
 KEY_FILE = os.path.join(CRED_PATH, ".tmp_enc_key")
 
-expected_completion_time_seconds = 400
+expected_completion_time_seconds = 600
 
 # Check for credential path
 if not os.path.exists(CRED_PATH):
@@ -146,7 +147,6 @@ def encrypt_credential_value_with_publickey(public_key_pem, credentials):
 
     return encrypted_credentials, encrypted_aes_key
 
-# Function to register credentials using encrypted values and encrypted AES key
 def register_credential(provider, credentials):
     try:
         if all(credentials.values()):
@@ -168,24 +168,71 @@ def register_credential(provider, credentials):
                 "credentialKeyValueList": [{"key": k, "value": v} for k, v in encrypted_credentials.items()],
                 "providerName": provider,
                 "publicKeyTokenId": public_key_token_id,
-                "encryptedAesKey": encrypted_aes_key
+                "encryptedClientAesKeyByPublicKey": encrypted_aes_key
             }
 
             # Step 4: Register the encrypted credentials
             response = requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/credential", json=credential_payload, headers=HEADERS)
-            return provider, response.json(), Fore.GREEN
+
+            if response.status_code == 200:
+                # Extract relevant data for message
+                result_data = response.json()
+                message = print_credential_info(result_data)
+                return provider, message, Fore.GREEN
+            else:
+                message = response.json().get('message', response.text)
+                return provider, message, Fore.RED
         else:
-            return provider, "Incomplete credential data, Skip", Fore.RED
+            message = "Incomplete credential data, Skip"
+            return provider, message, Fore.RED
     except Exception as e:
-        return provider, f"Error registering credentials: {str(e)}", Fore.RED
+        message = "Error registering credentials: " + str(e)
+        return provider, message, Fore.RED
+
+
+# Function to print formatted credential information
+def print_credential_info(response):
+    if 'credentialName' in response and 'credentialHolder' in response:
+        # Print credential name and holder in bold
+        print(Fore.YELLOW + f"\n{response['credentialName'].upper()} (holder: {response['credentialHolder']})" + Style.RESET_ALL)
+        
+    if 'allConnections' in response and 'connectionconfig' in response['allConnections']:
+        # Print the explanation line in yellow
+        print(Style.BRIGHT + "Registered Connections" + Fore.GREEN + " [verified]" + Fore.MAGENTA + "[region representative]" + Style.RESET_ALL)
+
+        # Prepare table headers and rows
+        headers = ["Config Name", "Assigned Region", "Assigned Zone"]
+        table_rows = []
+        for conn in response['allConnections']['connectionconfig']:
+            if conn['providerName'] == response['providerName']:
+                # Config name with green color if verified
+                config_name_display = Fore.GREEN + conn['configName'] + Style.RESET_ALL if conn['verified'] else conn['configName']
+
+                # Assigned Zone with pink color if region representative
+                assigned_zone_display = Fore.MAGENTA + conn['regionZoneInfo']['assignedZone'] + Style.RESET_ALL if conn['regionRepresentative'] else conn['regionZoneInfo']['assignedZone']
+
+                # Add row to the table
+                table_rows.append([
+                    config_name_display,
+                    conn['regionZoneInfo']['assignedRegion'],
+                    assigned_zone_display
+                ])
+
+        # Print table
+        print(tabulate(table_rows, headers, tablefmt="grid"))
 
 
 # Register credentials to TumblebugServer using ThreadPoolExecutor
 with ThreadPoolExecutor(max_workers=5) as executor:
     future_to_provider = {executor.submit(register_credential, provider, credentials): provider for provider, credentials in cred_data.items()}
     for future in as_completed(future_to_provider):
-        provider, response, color = future.result()
-        print(color + f"- {provider}: {response}")
+        provider, message, color = future.result()
+        if message is None:
+            message = ""  # Handle NoneType message
+        else:
+            print("")
+            print(color + f"- {provider.upper()}: {message}")
+            print_credential_info(message)
 
 print(Fore.YELLOW + "\nLoading common Specs and Images...")
 print(Fore.RESET)

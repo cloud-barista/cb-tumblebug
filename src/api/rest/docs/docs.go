@@ -9060,6 +9060,9 @@ const docTemplate = `{
         "common.CredentialInfo": {
             "type": "object",
             "properties": {
+                "allConnections": {
+                    "$ref": "#/definitions/common.ConnConfigList"
+                },
                 "credentialHolder": {
                     "type": "string"
                 },
@@ -9074,6 +9077,12 @@ const docTemplate = `{
                 },
                 "providerName": {
                     "type": "string"
+                },
+                "regionRepresentativeConnections": {
+                    "$ref": "#/definitions/common.ConnConfigList"
+                },
+                "verifiedConnections": {
+                    "$ref": "#/definitions/common.ConnConfigList"
                 }
             }
         },
