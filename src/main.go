@@ -367,11 +367,11 @@ func setConfig() {
 
 // @title CB-Tumblebug REST API
 // @version latest
-// @description CB-Tumblebug REST API
+// @description CB-Tumblebug is an open source system for managing multi-cloud infrastructure consisting of resources from multiple cloud service providers. (Cloud-Barista)
+// @termsOfService  https://github.com/cloud-barista/cb-tumblebug/blob/main/README.md
 
 // @contact.name API Support
-// @contact.url http://cloud-barista.github.io
-// @contact.email contact-to-cloud-barista@googlegroups.com
+// @contact.url https://github.com/cloud-barista/cb-tumblebug/issues/new/choose
 
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
