@@ -75,7 +75,6 @@ if [ "${INDEX}" == "0" ]; then
 			LOCALPORT=$((4000+$cspi*64+$cspj))
 			echo "LOCALPORT="$LOCALPORT
 			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG port-forward --address=0.0.0.0 pod/nginx $LOCALPORT:80 &
-			dozing 1 
 
 			echo "[K8sCluster Nginx for PV/PVC Test: complete to create a k8scluster in $CSP[$REGION]]"
 			echo "You can access to http://"$LOCALIP":"$LOCALPORT "until exiting by Ctrl+C"

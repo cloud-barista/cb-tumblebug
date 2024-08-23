@@ -69,7 +69,7 @@ if [ "${INDEX}" == "0" ]; then
 			echo "TMP_FILE_KUBECONFIG="$TMP_FILE_KUBECONFIG
 			jq -r '.AccessInfo.kubeconfig' <<<"$K8SCLUSTERINFO" > $TMP_FILE_KUBECONFIG
 			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG delete -f ./nginx-with-pvc.yaml
-			dozing 10
+			dozing 1
 
 			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG get pv,pvc &
 		 done
