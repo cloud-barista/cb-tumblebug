@@ -3625,7 +3625,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "VMs to add to NLB",
+                        "description": "Select VMs to remove from NLB",
                         "name": "nlbAddRemoveVMReq",
                         "in": "body",
                         "required": true,
@@ -6831,6 +6831,13 @@ const docTemplate = `{
                         "default": "default",
                         "description": "Namespace ID",
                         "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Security Group ID",
+                        "name": "securityGroupId",
                         "in": "path",
                         "required": true
                     },

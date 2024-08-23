@@ -34,6 +34,7 @@ type TbFirewallRulesWrapper struct {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
+// @Param securityGroupId path string true "Security Group ID"
 // @Param firewallRuleReq body TbFirewallRulesWrapper true "FirewallRules to create"
 // @Success 200 {object} resource.TbSecurityGroupInfo
 // @Failure 404 {object} common.SimpleMsg

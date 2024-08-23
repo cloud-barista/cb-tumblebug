@@ -5641,7 +5641,7 @@ paths:
         name: nlbId
         required: true
         type: string
-      - description: VMs to add to NLB
+      - description: Select VMs to remove from NLB
         in: body
         name: nlbAddRemoveVMReq
         required: true
@@ -7911,6 +7911,11 @@ paths:
         description: Namespace ID
         in: path
         name: nsId
+        required: true
+        type: string
+      - description: Security Group ID
+        in: path
+        name: securityGroupId
         required: true
         type: string
       - description: FirewallRules to create
