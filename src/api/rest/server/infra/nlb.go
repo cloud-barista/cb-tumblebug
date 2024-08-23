@@ -322,7 +322,7 @@ func RestAddNLBVMs(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param nlbId path string true "NLB ID" default(g1)
-// @Param nlbAddRemoveVMReq body infra.TbNLBAddRemoveVMReq true "VMs to add to NLB"
+// @Param nlbAddRemoveVMReq body infra.TbNLBAddRemoveVMReq true "Select VMs to remove from NLB"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/vm [delete]
