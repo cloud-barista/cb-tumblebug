@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function CallSpider() {
-    echo "- Get vNet in ${MCIRRegionNativeName}"
+    echo "- Get vNet in ${ResourceRegionNativeName}"
 
     resp=$(
         curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/vpc/$NSID-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"}' 
@@ -27,7 +27,7 @@ function CallSpider() {
 			for ((cspj = 1; cspj <= INDEXY; cspj++)); do
 				echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
 
-				MCIRRegionNativeName=${RegionNativeName[$cspi,$cspj]}
+				ResourceRegionNativeName=${RegionNativeName[$cspi,$cspj]}
 
 				INDEX=$cspi
 				REGION=$cspj
@@ -39,7 +39,7 @@ function CallSpider() {
 	else
 		echo ""
 		
-		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
+		ResourceRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallSpider
 

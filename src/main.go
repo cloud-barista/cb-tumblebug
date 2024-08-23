@@ -38,8 +38,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mci"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 
 	restServer "github.com/cloud-barista/cb-tumblebug/src/api/rest/server"
 
@@ -123,7 +123,7 @@ func init() {
 
 	// "CREATE Table IF NOT EXISTS spec(...)"
 	//err = common.CreateSpecTable() // commented out to move to use XORM
-	err = common.ORM.Sync2(new(mcir.TbSpecInfo))
+	err = common.ORM.Sync2(new(resource.TbSpecInfo))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
@@ -132,14 +132,14 @@ func init() {
 
 	// "CREATE Table IF NOT EXISTS image(...)"
 	//err = common.CreateImageTable() // commented out to move to use XORM
-	err = common.ORM.Sync2(new(mcir.TbImageInfo))
+	err = common.ORM.Sync2(new(resource.TbImageInfo))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
 		log.Info().Msg("Table image set successfully..")
 	}
 
-	err = common.ORM.Sync2(new(mcir.TbCustomImageInfo))
+	err = common.ORM.Sync2(new(resource.TbCustomImageInfo))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
@@ -418,7 +418,7 @@ func main() {
 			//display ticker if you need (remove '_ = t')
 			_ = t
 			//fmt.Println("- Orchestration Controller ", t.Format("2006-01-02 15:04:05"))
-			mci.OrchestrationController()
+			infra.OrchestrationController()
 		}
 	}()
 	defer ticker.Stop()

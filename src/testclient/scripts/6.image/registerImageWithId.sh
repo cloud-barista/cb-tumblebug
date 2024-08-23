@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Register image in ${MCIRRegionNativeName}"
+	echo "- Register image in ${ResourceRegionNativeName}"
 
 	resp=$(
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/image?action=registerWithId -H 'Content-Type: application/json' -d @- <<EOF
@@ -17,7 +17,7 @@ EOF
 	echo ""
 
 	if [ -n "${CONTAINER_IMAGE_NAME[$INDEX,$REGION]}" ]; then
-	    echo "- Register K8s node image in ${MCIRRegionNativeName}"
+	    echo "- Register K8s node image in ${ResourceRegionNativeName}"
 
 	    resp=$(
 	    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/image?action=registerWithId -H 'Content-Type: application/json' -d @- <<EOF
@@ -52,7 +52,7 @@ EOF
 			for ((cspj = 1; cspj <= INDEXY; cspj++)); do
 				echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
 
-				MCIRRegionNativeName=${CONN_CONFIG[$cspi,$cspj]}
+				ResourceRegionNativeName=${CONN_CONFIG[$cspi,$cspj]}
 
 				INDEX=$cspi
 				REGION=$cspj
@@ -64,7 +64,7 @@ EOF
 	else
 		echo ""
 		
-		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
+		ResourceRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallTB
 

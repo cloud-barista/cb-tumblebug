@@ -11,7 +11,7 @@ if [ "${INDEX}" == "0" ]; then
 	MCIID=${POSTFIX}
 fi
 
-# curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey/$MCIRID -H 'Content-Type: application/json' | jq '.privateKey' | sed -e 's/\\n/\n/g' -e 's/\"//g' > ./sshkey-tmp/$MCIID.pem
+# curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey/$ResourceID -H 'Content-Type: application/json' | jq '.privateKey' | sed -e 's/\\n/\n/g' -e 's/\"//g' > ./sshkey-tmp/$MCIID.pem
 # chmod 600 ./sshkey-tmp/$MCIID.pem
 # puttygen ./sshkey-tmp/$MCIID.pem -o ./sshkey-tmp/$MCIID.ppk -O private
 

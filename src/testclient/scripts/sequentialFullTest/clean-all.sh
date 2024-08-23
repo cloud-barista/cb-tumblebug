@@ -30,7 +30,7 @@ done
 
 ./clean-mci-only.sh "$@"
 
-./clean-mcir-ns-cloud.sh "$@"
+./clean-resource-ns-cloud.sh "$@"
 
 duration=$SECONDS
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Get region in ${MCIRRegionNativeName}"
+	echo "- Get region in ${ResourceRegionNativeName}"
 
 	# for Cloud Region Info
     curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/region/${RegionNativeName[$INDEX,$REGION]} | jq ''
@@ -32,7 +32,7 @@ function CallTB() {
 				echo $CSP
 				echo $REGION
 				echo ${RegionNativeName[$cspi,$cspj]}
-				MCIRRegionNativeName=${RegionNativeName[$cspi,$cspj]}
+				ResourceRegionNativeName=${RegionNativeName[$cspi,$cspj]}
 
 				CallTB
 
@@ -44,7 +44,7 @@ function CallTB() {
 	else
 		echo ""
 		
-		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
+		ResourceRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallTB
 

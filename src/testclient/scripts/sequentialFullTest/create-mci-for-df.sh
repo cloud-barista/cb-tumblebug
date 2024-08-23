@@ -30,7 +30,7 @@ function test_sequence()
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[CMD] (MCIRS(${SECONDS}s)) ${_self} (MCI) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[CMD] (ResourceS(${SECONDS}s)) ${_self} (MCI) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat  ./executionStatus

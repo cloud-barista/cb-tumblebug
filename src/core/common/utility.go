@@ -241,8 +241,8 @@ func GenChildResourceKey(nsId string, resourceType string, parentResourceId stri
 	}
 }
 
-// mcirIds is struct for containing id and name of each MCIR type
-type mcirIds struct { // Tumblebug
+// resourceIds is struct for containing id and name of each Resource type
+type resourceIds struct { // Tumblebug
 	CspImageId           string
 	CspImageName         string
 	CspCustomImageId     string
@@ -1495,7 +1495,7 @@ func CheckNodeGroupsOnK8sCreation(providerName string) (*K8sClusterNodeGroupsOnC
 }
 
 /*
-func isValidSpecForK8sCluster(spec *mcir.TbSpecInfo) bool {
+func isValidSpecForK8sCluster(spec *resource.TbSpecInfo) bool {
 	//
 	// Check for Provider
 	//

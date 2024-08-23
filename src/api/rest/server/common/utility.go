@@ -26,7 +26,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mci"
+	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/rs/zerolog/log"
 )
 
@@ -463,7 +463,7 @@ type RestInspectResourcesRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestInspectResourcesRequest true "Specify connectionName and resource type"
-// @Success 200 {object} mci.InspectResource
+// @Success 200 {object} infra.InspectResource
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /inspectResources [post]
@@ -482,11 +482,11 @@ func RestInspectResources(c echo.Context) error {
 	var content interface{}
 	var err error
 	// if u.Type == common.StrVNet || u.Type == common.StrSecurityGroup || u.Type == common.StrSSHKey {
-	// 	content, err = mci.InspectResources(u.ConnectionName, u.Type)
+	// 	content, err = infra.InspectResources(u.ConnectionName, u.Type)
 	// } else if u.Type == "vm" {
-	// 	content, err = mci.InspectVMs(u.ConnectionName)
+	// 	content, err = infra.InspectVMs(u.ConnectionName)
 	// }
-	content, err = mci.InspectResources(u.ConnectionName, u.ResourceType)
+	content, err = infra.InspectResources(u.ConnectionName, u.ResourceType)
 	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
@@ -498,7 +498,7 @@ func RestInspectResources(c echo.Context) error {
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} mci.InspectResourceAllResult
+// @Success 200 {object} infra.InspectResourceAllResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /inspectResourcesOverview [get]
@@ -507,7 +507,7 @@ func RestInspectResourcesOverview(c echo.Context) error {
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
-	content, err := mci.InspectResourcesOverview()
+	content, err := infra.InspectResourcesOverview()
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
@@ -528,7 +528,7 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName, NS Id, and MCI Name""
 // @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
 // @Param mciFlag query string false "Flag to show VMs in a collective MCI form (y,n)" Enums(y, n) default(y)
-// @Success 200 {object} mci.RegisterResourceResult
+// @Success 200 {object} infra.RegisterResourceResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /registerCspResources [post]
@@ -544,7 +544,7 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 	option := c.QueryParam("option")
 	mciFlag := c.QueryParam("mciFlag")
 
-	content, err := mci.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.MciName, option, mciFlag)
+	content, err := infra.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.MciName, option, mciFlag)
 	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
@@ -565,7 +565,7 @@ type RestRegisterCspNativeResourcesRequestAll struct {
 // @Param Request body RestRegisterCspNativeResourcesRequestAll true "Specify NS Id and MCI Name"
 // @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
 // @Param mciFlag query string false "Flag to show VMs in a collective MCI form (y,n)" Enums(y, n) default(y)
-// @Success 200 {object} mci.RegisterResourceAllResult
+// @Success 200 {object} infra.RegisterResourceAllResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /registerCspResourcesAll [post]
@@ -581,7 +581,7 @@ func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 	option := c.QueryParam("option")
 	mciFlag := c.QueryParam("mciFlag")
 
-	content, err := mci.RegisterCspNativeResourcesAll(u.NsId, u.MciName, option, mciFlag)
+	content, err := infra.RegisterCspNativeResourcesAll(u.NsId, u.MciName, option, mciFlag)
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 

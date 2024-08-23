@@ -28,7 +28,7 @@ while true; do
     esac
 done
 
-./create-mcir-ns-cloud-domestic.sh "$@"
+./create-resource-ns-cloud-domestic.sh "$@"
 
 ./create-mci-only.sh "$@"
 
