@@ -27,6 +27,7 @@ source ../init.sh
 
 KEEP_PREV_KUBECONFIG=${OPTION02:-n}
 K8SCLUSTERID_ADD=${OPTION03:-1}
+LOCALIP=`hostname -I | cut -d' ' -f1`
 
 KUBECTL=kubectl
 if ! kubectl > /dev/null 2>&1; then
@@ -77,12 +78,12 @@ if [ "${INDEX}" == "0" ]; then
 			dozing 1
 
 			echo "[K8sCluster Weavescope: complete to create a k8scluster in $CSP[$REGION]]"
-			echo "You can access to http://localhost:"$LOCALPORT "until exiting by Ctrl+C"
+			echo "You can access to http://"$LOCALIP":"$LOCALPORT "until exiting by Ctrl+C"
 
 			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG patch svc -n weave weave-scope-app -p '{"spec": {"type": "LoadBalancer"}}' &
 			dozing 1
 
-			echo "You can access to EXTERNAL-IP(LoadBalancer)until exiting by Ctrl+C"
+			echo "You can access to EXTERNAL-IP(LoadBalancer) until exiting by Ctrl+C"
 			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG get svc -n weave weave-scope-app &
 		 done
 	done

@@ -17,7 +17,12 @@ spec:
   initContainers:
   - name: init-nginx
     image: busybox
-    command: ['sh', '-c', 'echo "<html><body><h1>Welcome to Nginx for PV/PVC Test</h1></body></html>" > /usr/share/nginx/html/index.html']
+    env:
+    - name: HOST_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    command: ['sh', '-c', 'echo "<html><body><h1>Welcome to Nginx for PV/PVC Test</h1><br><h1>From $HOST_IP</h1></body></html>" > /usr/share/nginx/html/index.html']
     volumeMounts:
     - name: html-volume
       mountPath: /usr/share/nginx/html
