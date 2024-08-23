@@ -7881,6 +7881,11 @@ paths:
         name: nsId
         required: true
         type: string
+      - description: Security Group ID
+        in: path
+        name: securityGroupId
+        required: true
+        type: string
       - description: FirewallRules to delete
         in: body
         name: firewallRuleReq
