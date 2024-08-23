@@ -6895,6 +6895,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "Security Group ID",
+                        "name": "securityGroupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "FirewallRules to delete",
                         "name": "firewallRuleReq",
                         "in": "body",
