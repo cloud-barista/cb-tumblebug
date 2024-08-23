@@ -1,12 +1,12 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Lookup specs in ${MCIRRegionNativeName}"
+	echo "- Lookup specs in ${ResourceRegionNativeName}"
 
 	resp=$(
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/lookupSpecs -H 'Content-Type: application/json' -d @- <<EOF
 		{ 
-			"connectionName": "${MCIRRegionNativeName}"
+			"connectionName": "${ResourceRegionNativeName}"
 		}
 EOF
 	)
@@ -34,7 +34,7 @@ SECONDS=0
 			for ((cspj = 1; cspj <= INDEXY; cspj++)); do
 				echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
 
-				MCIRRegionNativeName=${CSP}-${RegionNativeName[$cspi,$cspj]}
+				ResourceRegionNativeName=${CSP}-${RegionNativeName[$cspi,$cspj]}
 
 				INDEX=$cspi
 				REGION=$cspj
@@ -46,7 +46,7 @@ SECONDS=0
 	else
 		echo ""
 		
-		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
+		ResourceRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallTB
 

@@ -737,7 +737,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.InspectResource"
+                            "$ref": "#/definitions/infra.InspectResource"
                         }
                     },
                     "404": {
@@ -773,7 +773,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.InspectResourceAllResult"
+                            "$ref": "#/definitions/infra.InspectResourceAllResult"
                         }
                     },
                     "404": {
@@ -878,7 +878,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestLookupImageRequest"
+                            "$ref": "#/definitions/resource.RestLookupImageRequest"
                         }
                     }
                 ],
@@ -886,7 +886,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.SpiderImageInfo"
+                            "$ref": "#/definitions/resource.SpiderImageInfo"
                         }
                     },
                     "404": {
@@ -933,7 +933,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.SpiderImageList"
+                            "$ref": "#/definitions/resource.SpiderImageList"
                         }
                     },
                     "404": {
@@ -972,7 +972,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestLookupSpecRequest"
+                            "$ref": "#/definitions/resource.RestLookupSpecRequest"
                         }
                     }
                 ],
@@ -980,7 +980,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.SpiderSpecInfo"
+                            "$ref": "#/definitions/resource.SpiderSpecInfo"
                         }
                     },
                     "404": {
@@ -1027,7 +1027,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.SpiderSpecList"
+                            "$ref": "#/definitions/resource.SpiderSpecList"
                         }
                     },
                     "404": {
@@ -1066,7 +1066,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.MciConnectionConfigCandidatesReq"
+                            "$ref": "#/definitions/infra.MciConnectionConfigCandidatesReq"
                         }
                     }
                 ],
@@ -1074,7 +1074,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.CheckMciDynamicReqInfo"
+                            "$ref": "#/definitions/infra.CheckMciDynamicReqInfo"
                         }
                     },
                     "404": {
@@ -1112,7 +1112,7 @@ const docTemplate = `{
                         "name": "deploymentPlan",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/mci.DeploymentPlan"
+                            "$ref": "#/definitions/infra.DeploymentPlan"
                         }
                     }
                 ],
@@ -1122,7 +1122,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/mcir.TbSpecInfo"
+                                "$ref": "#/definitions/resource.TbSpecInfo"
                             }
                         }
                     },
@@ -1450,7 +1450,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.RestGetBenchmarkRequest"
+                            "$ref": "#/definitions/infra.RestGetBenchmarkRequest"
                         }
                     },
                     {
@@ -1480,7 +1480,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.BenchmarkInfoArray"
+                            "$ref": "#/definitions/infra.BenchmarkInfoArray"
                         }
                     },
                     "404": {
@@ -1535,7 +1535,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.RestGetAllBenchmarkRequest"
+                            "$ref": "#/definitions/infra.RestGetAllBenchmarkRequest"
                         }
                     }
                 ],
@@ -1543,7 +1543,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.BenchmarkInfoArray"
+                            "$ref": "#/definitions/infra.BenchmarkInfoArray"
                         }
                     },
                     "404": {
@@ -1597,7 +1597,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.BenchmarkInfoArray"
+                            "$ref": "#/definitions/infra.BenchmarkInfoArray"
                         }
                     },
                     "404": {
@@ -1706,7 +1706,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.MciCmdReq"
+                            "$ref": "#/definitions/infra.MciCmdReq"
                         }
                     },
                     {
@@ -1734,7 +1734,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.MciSshCmdResult"
+                            "$ref": "#/definitions/infra.MciSshCmdResult"
                         }
                     },
                     "404": {
@@ -1954,7 +1954,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.MciCmdReq"
+                            "$ref": "#/definitions/infra.MciCmdReq"
                         }
                     },
                     {
@@ -1971,7 +1971,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.MciSshCmdResult"
+                            "$ref": "#/definitions/infra.MciSshCmdResult"
                         }
                     },
                     "404": {
@@ -2040,13 +2040,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mci.JSONResult"
+                                    "$ref": "#/definitions/infra.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mci.RestGetAllK8sClusterResponse"
+                                            "$ref": "#/definitions/infra.RestGetAllK8sClusterResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
@@ -2107,7 +2107,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbK8sClusterReq"
+                            "$ref": "#/definitions/infra.TbK8sClusterReq"
                         }
                     }
                 ],
@@ -2115,7 +2115,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbK8sClusterInfo"
+                            "$ref": "#/definitions/infra.TbK8sClusterInfo"
                         }
                     },
                     "404": {
@@ -2214,7 +2214,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbK8sClusterInfo"
+                            "$ref": "#/definitions/infra.TbK8sClusterInfo"
                         }
                     },
                     "404": {
@@ -2315,7 +2315,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbK8sNodeGroupReq"
+                            "$ref": "#/definitions/infra.TbK8sNodeGroupReq"
                         }
                     }
                 ],
@@ -2323,7 +2323,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbK8sClusterInfo"
+                            "$ref": "#/definitions/infra.TbK8sClusterInfo"
                         }
                     },
                     "404": {
@@ -2442,7 +2442,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbChangeK8sNodeGroupAutoscaleSizeReq"
+                            "$ref": "#/definitions/infra.TbChangeK8sNodeGroupAutoscaleSizeReq"
                         }
                     }
                 ],
@@ -2450,7 +2450,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbChangeK8sNodeGroupAutoscaleSizeRes"
+                            "$ref": "#/definitions/infra.TbChangeK8sNodeGroupAutoscaleSizeRes"
                         }
                     },
                     "404": {
@@ -2513,7 +2513,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbSetK8sNodeGroupAutoscalingReq"
+                            "$ref": "#/definitions/infra.TbSetK8sNodeGroupAutoscalingReq"
                         }
                     }
                 ],
@@ -2521,7 +2521,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbSetK8sNodeGroupAutoscalingRes"
+                            "$ref": "#/definitions/infra.TbSetK8sNodeGroupAutoscalingRes"
                         }
                     },
                     "404": {
@@ -2576,7 +2576,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbUpgradeK8sClusterReq"
+                            "$ref": "#/definitions/infra.TbUpgradeK8sClusterReq"
                         }
                     }
                 ],
@@ -2703,22 +2703,22 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mci.JSONResult"
+                                    "$ref": "#/definitions/infra.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mci.RestGetAllMciResponse"
+                                            "$ref": "#/definitions/infra.RestGetAllMciResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
                                         },
                                         "[SIMPLE]": {
-                                            "$ref": "#/definitions/mci.RestGetAllMciResponse"
+                                            "$ref": "#/definitions/infra.RestGetAllMciResponse"
                                         },
                                         "[STATUS]": {
-                                            "$ref": "#/definitions/mci.RestGetAllMciStatusResponse"
+                                            "$ref": "#/definitions/infra.RestGetAllMciStatusResponse"
                                         }
                                     }
                                 }
@@ -2767,7 +2767,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbMciReq"
+                            "$ref": "#/definitions/infra.TbMciReq"
                         }
                     }
                 ],
@@ -2775,7 +2775,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbMciInfo"
+                            "$ref": "#/definitions/infra.TbMciInfo"
                         }
                     },
                     "404": {
@@ -2908,22 +2908,22 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mci.JSONResult"
+                                    "$ref": "#/definitions/infra.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[AccessInfo]": {
-                                            "$ref": "#/definitions/mci.MciAccessInfo"
+                                            "$ref": "#/definitions/infra.MciAccessInfo"
                                         },
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mci.TbMciInfo"
+                                            "$ref": "#/definitions/infra.TbMciInfo"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
                                         },
                                         "[STATUS]": {
-                                            "$ref": "#/definitions/mci.MciStatusInfo"
+                                            "$ref": "#/definitions/infra.MciStatusInfo"
                                         }
                                     }
                                 }
@@ -3100,7 +3100,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbNLBReq"
+                            "$ref": "#/definitions/infra.TbNLBReq"
                         }
                     }
                 ],
@@ -3108,7 +3108,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.McNlbInfo"
+                            "$ref": "#/definitions/infra.McNlbInfo"
                         }
                     },
                     "404": {
@@ -3185,13 +3185,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mci.JSONResult"
+                                    "$ref": "#/definitions/infra.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mci.RestGetAllNLBResponse"
+                                            "$ref": "#/definitions/infra.RestGetAllNLBResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
@@ -3260,7 +3260,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbNLBReq"
+                            "$ref": "#/definitions/infra.TbNLBReq"
                         }
                     }
                 ],
@@ -3268,7 +3268,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbNLBInfo"
+                            "$ref": "#/definitions/infra.TbNLBInfo"
                         }
                     },
                     "404": {
@@ -3383,7 +3383,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbNLBInfo"
+                            "$ref": "#/definitions/infra.TbNLBInfo"
                         }
                     },
                     "404": {
@@ -3498,7 +3498,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbNLBInfo"
+                            "$ref": "#/definitions/infra.TbNLBInfo"
                         }
                     },
                     "404": {
@@ -3561,7 +3561,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbNLBAddRemoveVMReq"
+                            "$ref": "#/definitions/infra.TbNLBAddRemoveVMReq"
                         }
                     }
                 ],
@@ -3569,7 +3569,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbNLBInfo"
+                            "$ref": "#/definitions/infra.TbNLBInfo"
                         }
                     },
                     "404": {
@@ -3630,7 +3630,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbNLBAddRemoveVMReq"
+                            "$ref": "#/definitions/infra.TbNLBAddRemoveVMReq"
                         }
                     }
                 ],
@@ -3878,7 +3878,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbScaleOutSubGroupReq"
+                            "$ref": "#/definitions/infra.TbScaleOutSubGroupReq"
                         }
                     }
                 ],
@@ -3886,7 +3886,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbMciInfo"
+                            "$ref": "#/definitions/infra.TbMciInfo"
                         }
                     },
                     "404": {
@@ -3941,7 +3941,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbVmReq"
+                            "$ref": "#/definitions/infra.TbVmReq"
                         }
                     }
                 ],
@@ -3949,7 +3949,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbMciInfo"
+                            "$ref": "#/definitions/infra.TbMciInfo"
                         }
                     },
                     "404": {
@@ -4013,7 +4013,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/mcir.BastionNode"
+                                "$ref": "#/definitions/resource.BastionNode"
                             }
                         }
                     },
@@ -4159,19 +4159,19 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mci.JSONResult"
+                                    "$ref": "#/definitions/infra.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mci.TbVmInfo"
+                                            "$ref": "#/definitions/infra.TbVmInfo"
                                         },
                                         "[IDNAME]": {
-                                            "$ref": "#/definitions/mci.TbIdNameInDetailInfo"
+                                            "$ref": "#/definitions/infra.TbIdNameInDetailInfo"
                                         },
                                         "[STATUS]": {
-                                            "$ref": "#/definitions/mci.TbVmStatusInfo"
+                                            "$ref": "#/definitions/infra.TbVmStatusInfo"
                                         }
                                     }
                                 }
@@ -4302,13 +4302,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mcir.JSONResult"
+                                    "$ref": "#/definitions/resource.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mcir.RestGetAllDataDiskResponse"
+                                            "$ref": "#/definitions/resource.RestGetAllDataDiskResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
@@ -4351,7 +4351,7 @@ const docTemplate = `{
                         "name": "attachDetachDataDiskReq",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbAttachDetachDataDiskReq"
+                            "$ref": "#/definitions/resource.TbAttachDetachDataDiskReq"
                         }
                     },
                     {
@@ -4404,7 +4404,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbVmInfo"
+                            "$ref": "#/definitions/infra.TbVmInfo"
                         }
                     },
                     "404": {
@@ -4441,7 +4441,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbDataDiskVmReq"
+                            "$ref": "#/definitions/resource.TbDataDiskVmReq"
                         }
                     },
                     {
@@ -4473,7 +4473,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbVmInfo"
+                            "$ref": "#/definitions/infra.TbVmInfo"
                         }
                     },
                     "404": {
@@ -4506,7 +4506,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbVmSnapshotReq"
+                            "$ref": "#/definitions/infra.TbVmSnapshotReq"
                         }
                     },
                     {
@@ -4538,7 +4538,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbCustomImageInfo"
+                            "$ref": "#/definitions/resource.TbCustomImageInfo"
                         }
                     },
                     "404": {
@@ -4593,7 +4593,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbVmDynamicReq"
+                            "$ref": "#/definitions/infra.TbVmDynamicReq"
                         }
                     }
                 ],
@@ -4601,7 +4601,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbMciInfo"
+                            "$ref": "#/definitions/infra.TbMciInfo"
                         }
                     },
                     "404": {
@@ -4798,7 +4798,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbMciDynamicReq"
+                            "$ref": "#/definitions/infra.TbMciDynamicReq"
                         }
                     },
                     {
@@ -4821,7 +4821,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbMciInfo"
+                            "$ref": "#/definitions/infra.TbMciInfo"
                         }
                     },
                     "404": {
@@ -4876,7 +4876,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.MciCmdReq"
+                            "$ref": "#/definitions/infra.MciCmdReq"
                         }
                     }
                 ],
@@ -4884,7 +4884,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.AgentInstallContentWrapper"
+                            "$ref": "#/definitions/infra.AgentInstallContentWrapper"
                         }
                     },
                     "404": {
@@ -4945,7 +4945,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.MonResultSimpleResponse"
+                            "$ref": "#/definitions/infra.MonResultSimpleResponse"
                         }
                     },
                     "404": {
@@ -5007,7 +5007,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbVmInfo"
+                            "$ref": "#/definitions/infra.TbVmInfo"
                         }
                     },
                     "404": {
@@ -5053,7 +5053,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.RestGetAllMciPolicyResponse"
+                            "$ref": "#/definitions/infra.RestGetAllMciPolicyResponse"
                         }
                     },
                     "404": {
@@ -5145,7 +5145,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.MciPolicyInfo"
+                            "$ref": "#/definitions/infra.MciPolicyInfo"
                         }
                     },
                     "404": {
@@ -5198,7 +5198,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.MciPolicyReq"
+                            "$ref": "#/definitions/infra.MciPolicyReq"
                         }
                     }
                 ],
@@ -5206,7 +5206,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.MciPolicyInfo"
+                            "$ref": "#/definitions/infra.MciPolicyInfo"
                         }
                     },
                     "404": {
@@ -5299,7 +5299,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mci.TbMciReq"
+                            "$ref": "#/definitions/infra.TbMciReq"
                         }
                     }
                 ],
@@ -5307,7 +5307,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbMciInfo"
+                            "$ref": "#/definitions/infra.TbMciInfo"
                         }
                     },
                     "404": {
@@ -5376,13 +5376,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mcir.JSONResult"
+                                    "$ref": "#/definitions/resource.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mcir.RestGetAllCustomImageResponse"
+                                            "$ref": "#/definitions/resource.RestGetAllCustomImageResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
@@ -5444,7 +5444,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbCustomImageReq"
+                            "$ref": "#/definitions/resource.TbCustomImageReq"
                         }
                     }
                 ],
@@ -5452,7 +5452,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbCustomImageInfo"
+                            "$ref": "#/definitions/resource.TbCustomImageInfo"
                         }
                     },
                     "404": {
@@ -5550,7 +5550,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbCustomImageInfo"
+                            "$ref": "#/definitions/resource.TbCustomImageInfo"
                         }
                     },
                     "404": {
@@ -5664,13 +5664,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mcir.JSONResult"
+                                    "$ref": "#/definitions/resource.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mcir.RestGetAllDataDiskResponse"
+                                            "$ref": "#/definitions/resource.RestGetAllDataDiskResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
@@ -5731,7 +5731,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbDataDiskReq"
+                            "$ref": "#/definitions/resource.TbDataDiskReq"
                         }
                     }
                 ],
@@ -5739,7 +5739,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbDataDiskInfo"
+                            "$ref": "#/definitions/resource.TbDataDiskInfo"
                         }
                     },
                     "404": {
@@ -5837,7 +5837,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbDataDiskInfo"
+                            "$ref": "#/definitions/resource.TbDataDiskInfo"
                         }
                     },
                     "404": {
@@ -5874,7 +5874,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbDataDiskUpsizeReq"
+                            "$ref": "#/definitions/resource.TbDataDiskUpsizeReq"
                         }
                     },
                     {
@@ -5897,7 +5897,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbDataDiskInfo"
+                            "$ref": "#/definitions/resource.TbDataDiskInfo"
                         }
                     },
                     "404": {
@@ -6080,7 +6080,7 @@ const docTemplate = `{
                         "name": "specRangeFilter",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/mcir.FilterSpecsByRangeRequest"
+                            "$ref": "#/definitions/resource.FilterSpecsByRangeRequest"
                         }
                     }
                 ],
@@ -6088,7 +6088,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestFilterSpecsResponse"
+                            "$ref": "#/definitions/resource.RestFilterSpecsResponse"
                         }
                     },
                     "404": {
@@ -6157,13 +6157,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mcir.JSONResult"
+                                    "$ref": "#/definitions/resource.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mcir.RestGetAllImageResponse"
+                                            "$ref": "#/definitions/resource.RestGetAllImageResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
@@ -6225,7 +6225,7 @@ const docTemplate = `{
                         "name": "imageInfo",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbImageInfo"
+                            "$ref": "#/definitions/resource.TbImageInfo"
                         }
                     },
                     {
@@ -6233,7 +6233,7 @@ const docTemplate = `{
                         "name": "imageId",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbImageReq"
+                            "$ref": "#/definitions/resource.TbImageReq"
                         }
                     },
                     {
@@ -6248,7 +6248,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbImageInfo"
+                            "$ref": "#/definitions/resource.TbImageInfo"
                         }
                     },
                     "404": {
@@ -6346,7 +6346,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbImageInfo"
+                            "$ref": "#/definitions/resource.TbImageInfo"
                         }
                     },
                     "404": {
@@ -6383,7 +6383,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbImageInfo"
+                            "$ref": "#/definitions/resource.TbImageInfo"
                         }
                     },
                     {
@@ -6406,7 +6406,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbImageInfo"
+                            "$ref": "#/definitions/resource.TbImageInfo"
                         }
                     },
                     "404": {
@@ -6498,7 +6498,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestSearchImageRequest"
+                            "$ref": "#/definitions/resource.RestSearchImageRequest"
                         }
                     }
                 ],
@@ -6506,7 +6506,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestGetAllImageResponse"
+                            "$ref": "#/definitions/resource.RestGetAllImageResponse"
                         }
                     },
                     "404": {
@@ -6575,13 +6575,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mcir.JSONResult"
+                                    "$ref": "#/definitions/resource.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mcir.RestGetAllSecurityGroupResponse"
+                                            "$ref": "#/definitions/resource.RestGetAllSecurityGroupResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
@@ -6642,7 +6642,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSecurityGroupReq"
+                            "$ref": "#/definitions/resource.TbSecurityGroupReq"
                         }
                     }
                 ],
@@ -6650,7 +6650,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSecurityGroupInfo"
+                            "$ref": "#/definitions/resource.TbSecurityGroupInfo"
                         }
                     },
                     "404": {
@@ -6748,7 +6748,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSecurityGroupInfo"
+                            "$ref": "#/definitions/resource.TbSecurityGroupInfo"
                         }
                     },
                     "404": {
@@ -6840,7 +6840,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbFirewallRulesWrapper"
+                            "$ref": "#/definitions/resource.TbFirewallRulesWrapper"
                         }
                     }
                 ],
@@ -6848,7 +6848,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSecurityGroupInfo"
+                            "$ref": "#/definitions/resource.TbSecurityGroupInfo"
                         }
                     },
                     "404": {
@@ -6893,7 +6893,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbFirewallRulesWrapper"
+                            "$ref": "#/definitions/resource.TbFirewallRulesWrapper"
                         }
                     }
                 ],
@@ -6901,7 +6901,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSecurityGroupInfo"
+                            "$ref": "#/definitions/resource.TbSecurityGroupInfo"
                         }
                     },
                     "404": {
@@ -6952,7 +6952,7 @@ const docTemplate = `{
                         "name": "specInfo",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSpecInfo"
+                            "$ref": "#/definitions/resource.TbSpecInfo"
                         }
                     },
                     {
@@ -6960,7 +6960,7 @@ const docTemplate = `{
                         "name": "specName",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSpecReq"
+                            "$ref": "#/definitions/resource.TbSpecReq"
                         }
                     },
                     {
@@ -6975,7 +6975,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSpecInfo"
+                            "$ref": "#/definitions/resource.TbSpecInfo"
                         }
                     },
                     "404": {
@@ -7028,7 +7028,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSpecInfo"
+                            "$ref": "#/definitions/resource.TbSpecInfo"
                         }
                     },
                     "404": {
@@ -7065,7 +7065,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSpecInfo"
+                            "$ref": "#/definitions/resource.TbSpecInfo"
                         }
                     },
                     {
@@ -7088,7 +7088,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSpecInfo"
+                            "$ref": "#/definitions/resource.TbSpecInfo"
                         }
                     },
                     "404": {
@@ -7202,13 +7202,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mcir.JSONResult"
+                                    "$ref": "#/definitions/resource.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mcir.RestGetAllSshKeyResponse"
+                                            "$ref": "#/definitions/resource.RestGetAllSshKeyResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
@@ -7269,7 +7269,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyReq"
+                            "$ref": "#/definitions/resource.TbSshKeyReq"
                         }
                     }
                 ],
@@ -7277,7 +7277,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/resource.TbSshKeyInfo"
                         }
                     },
                     "404": {
@@ -7375,7 +7375,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/resource.TbSshKeyInfo"
                         }
                     },
                     "404": {
@@ -7412,7 +7412,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/resource.TbSshKeyInfo"
                         }
                     },
                     {
@@ -7435,7 +7435,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/resource.TbSshKeyInfo"
                         }
                     },
                     "404": {
@@ -7549,13 +7549,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/mcir.JSONResult"
+                                    "$ref": "#/definitions/resource.JSONResult"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/mcir.RestGetAllVNetResponse"
+                                            "$ref": "#/definitions/resource.RestGetAllVNetResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
@@ -7616,7 +7616,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbVNetReq"
+                            "$ref": "#/definitions/resource.TbVNetReq"
                         }
                     }
                 ],
@@ -7624,7 +7624,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbVNetInfo"
+                            "$ref": "#/definitions/resource.TbVNetInfo"
                         }
                     },
                     "404": {
@@ -7722,7 +7722,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbVNetInfo"
+                            "$ref": "#/definitions/resource.TbVNetInfo"
                         }
                     },
                     "404": {
@@ -7821,7 +7821,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSubnetReq"
+                            "$ref": "#/definitions/resource.TbSubnetReq"
                         }
                     }
                 ],
@@ -7829,7 +7829,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSubnetInfo"
+                            "$ref": "#/definitions/resource.TbSubnetInfo"
                         }
                     },
                     "404": {
@@ -8321,7 +8321,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.RegisterResourceResult"
+                            "$ref": "#/definitions/infra.RegisterResourceResult"
                         }
                     },
                     "404": {
@@ -8389,7 +8389,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.RegisterResourceAllResult"
+                            "$ref": "#/definitions/infra.RegisterResourceAllResult"
                         }
                     },
                     "404": {
@@ -8814,7 +8814,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mci.TbMciInfo"
+                            "$ref": "#/definitions/infra.TbMciInfo"
                         }
                     },
                     "404": {
@@ -9582,7 +9582,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.AgentInstallContent": {
+        "infra.AgentInstallContent": {
             "type": "object",
             "properties": {
                 "mciId": {
@@ -9599,18 +9599,18 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.AgentInstallContentWrapper": {
+        "infra.AgentInstallContentWrapper": {
             "type": "object",
             "properties": {
                 "resultArray": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.AgentInstallContent"
+                        "$ref": "#/definitions/infra.AgentInstallContent"
                     }
                 }
             }
         },
-        "mci.AutoAction": {
+        "infra.AutoAction": {
             "type": "object",
             "properties": {
                 "actionType": {
@@ -9629,16 +9629,16 @@ const docTemplate = `{
                     "description": "PostCommand is field for providing command to VMs after its creation. example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/mci.MciCmdReq"
+                            "$ref": "#/definitions/infra.MciCmdReq"
                         }
                     ]
                 },
                 "vmDynamicReq": {
-                    "$ref": "#/definitions/mci.TbVmDynamicReq"
+                    "$ref": "#/definitions/infra.TbVmDynamicReq"
                 }
             }
         },
-        "mci.AutoCondition": {
+        "infra.AutoCondition": {
             "type": "object",
             "properties": {
                 "evaluationPeriod": {
@@ -9671,7 +9671,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.BenchmarkInfo": {
+        "infra.BenchmarkInfo": {
             "type": "object",
             "properties": {
                 "desc": {
@@ -9690,7 +9690,7 @@ const docTemplate = `{
                     "description": "struct-element cycle ?",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.BenchmarkInfo"
+                        "$ref": "#/definitions/infra.BenchmarkInfo"
                     }
                 },
                 "specid": {
@@ -9701,18 +9701,18 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.BenchmarkInfoArray": {
+        "infra.BenchmarkInfoArray": {
             "type": "object",
             "properties": {
                 "resultarray": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.BenchmarkInfo"
+                        "$ref": "#/definitions/infra.BenchmarkInfo"
                     }
                 }
             }
         },
-        "mci.CheckMciDynamicReqInfo": {
+        "infra.CheckMciDynamicReqInfo": {
             "type": "object",
             "required": [
                 "reqCheck"
@@ -9721,12 +9721,12 @@ const docTemplate = `{
                 "reqCheck": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.CheckVmDynamicReqInfo"
+                        "$ref": "#/definitions/infra.CheckVmDynamicReqInfo"
                     }
                 }
             }
         },
-        "mci.CheckVmDynamicReqInfo": {
+        "infra.CheckVmDynamicReqInfo": {
             "type": "object",
             "properties": {
                 "connectionConfigCandidates": {
@@ -9739,14 +9739,14 @@ const docTemplate = `{
                 "image": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mcir.TbImageInfo"
+                        "$ref": "#/definitions/resource.TbImageInfo"
                     }
                 },
                 "region": {
                     "$ref": "#/definitions/common.RegionDetail"
                 },
                 "spec": {
-                    "$ref": "#/definitions/mcir.TbSpecInfo"
+                    "$ref": "#/definitions/resource.TbSpecInfo"
                 },
                 "systemMessage": {
                     "description": "Latest system message such as error message",
@@ -9755,11 +9755,11 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.DeploymentPlan": {
+        "infra.DeploymentPlan": {
             "type": "object",
             "properties": {
                 "filter": {
-                    "$ref": "#/definitions/mci.FilterInfo"
+                    "$ref": "#/definitions/infra.FilterInfo"
                 },
                 "limit": {
                     "type": "string",
@@ -9771,17 +9771,17 @@ const docTemplate = `{
                     "example": "5"
                 },
                 "priority": {
-                    "$ref": "#/definitions/mci.PriorityInfo"
+                    "$ref": "#/definitions/infra.PriorityInfo"
                 }
             }
         },
-        "mci.FilterCondition": {
+        "infra.FilterCondition": {
             "type": "object",
             "properties": {
                 "condition": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.Operation"
+                        "$ref": "#/definitions/infra.Operation"
                     }
                 },
                 "metric": {
@@ -9795,45 +9795,45 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.FilterInfo": {
+        "infra.FilterInfo": {
             "type": "object",
             "properties": {
                 "policy": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.FilterCondition"
+                        "$ref": "#/definitions/infra.FilterCondition"
                     }
                 }
             }
         },
-        "mci.InspectResource": {
+        "infra.InspectResource": {
             "type": "object",
             "properties": {
                 "connectionName": {
                     "type": "string"
                 },
                 "resourceOverview": {
-                    "$ref": "#/definitions/mci.resourceCountOverview"
+                    "$ref": "#/definitions/infra.resourceCountOverview"
                 },
                 "resourceType": {
                     "type": "string"
                 },
                 "resources": {
-                    "$ref": "#/definitions/mci.resourcesByManageType"
+                    "$ref": "#/definitions/infra.resourcesByManageType"
                 },
                 "systemMessage": {
                     "type": "string"
                 }
             }
         },
-        "mci.InspectResourceAllResult": {
+        "infra.InspectResourceAllResult": {
             "type": "object",
             "properties": {
                 "availableConnection": {
                     "type": "integer"
                 },
                 "cspOnlyOverview": {
-                    "$ref": "#/definitions/mci.inspectOverview"
+                    "$ref": "#/definitions/infra.inspectOverview"
                 },
                 "elapsedTime": {
                     "type": "integer"
@@ -9841,25 +9841,25 @@ const docTemplate = `{
                 "inspectResult": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.InspectResourceResult"
+                        "$ref": "#/definitions/infra.InspectResourceResult"
                     }
                 },
                 "registeredConnection": {
                     "type": "integer"
                 },
                 "tumblebugOverview": {
-                    "$ref": "#/definitions/mci.inspectOverview"
+                    "$ref": "#/definitions/infra.inspectOverview"
                 }
             }
         },
-        "mci.InspectResourceResult": {
+        "infra.InspectResourceResult": {
             "type": "object",
             "properties": {
                 "connectionName": {
                     "type": "string"
                 },
                 "cspOnlyOverview": {
-                    "$ref": "#/definitions/mci.inspectOverview"
+                    "$ref": "#/definitions/infra.inspectOverview"
                 },
                 "elapsedTime": {
                     "type": "integer"
@@ -9868,45 +9868,45 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tumblebugOverview": {
-                    "$ref": "#/definitions/mci.inspectOverview"
+                    "$ref": "#/definitions/infra.inspectOverview"
                 }
             }
         },
-        "mci.JSONResult": {
+        "infra.JSONResult": {
             "type": "object"
         },
-        "mci.McNlbInfo": {
+        "infra.McNlbInfo": {
             "type": "object",
             "properties": {
                 "deploymentLog": {
-                    "$ref": "#/definitions/mci.MciSshCmdResult"
+                    "$ref": "#/definitions/infra.MciSshCmdResult"
                 },
                 "mcNlbHostInfo": {
-                    "$ref": "#/definitions/mci.TbMciInfo"
+                    "$ref": "#/definitions/infra.TbMciInfo"
                 },
                 "mciAccessInfo": {
-                    "$ref": "#/definitions/mci.MciAccessInfo"
+                    "$ref": "#/definitions/infra.MciAccessInfo"
                 }
             }
         },
-        "mci.MciAccessInfo": {
+        "infra.MciAccessInfo": {
             "type": "object",
             "properties": {
                 "mciId": {
                     "type": "string"
                 },
                 "mciNlbListener": {
-                    "$ref": "#/definitions/mci.MciAccessInfo"
+                    "$ref": "#/definitions/infra.MciAccessInfo"
                 },
                 "mciSubGroupAccessInfo": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.MciSubGroupAccessInfo"
+                        "$ref": "#/definitions/infra.MciSubGroupAccessInfo"
                     }
                 }
             }
         },
-        "mci.MciCmdReq": {
+        "infra.MciCmdReq": {
             "type": "object",
             "required": [
                 "command"
@@ -9927,7 +9927,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.MciConnectionConfigCandidatesReq": {
+        "infra.MciConnectionConfigCandidatesReq": {
             "type": "object",
             "required": [
                 "commonSpec"
@@ -9946,7 +9946,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.MciPolicyInfo": {
+        "infra.MciPolicyInfo": {
             "type": "object",
             "properties": {
                 "Id": {
@@ -9967,12 +9967,12 @@ const docTemplate = `{
                 "policy": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.Policy"
+                        "$ref": "#/definitions/infra.Policy"
                     }
                 }
             }
         },
-        "mci.MciPolicyReq": {
+        "infra.MciPolicyReq": {
             "type": "object",
             "properties": {
                 "description": {
@@ -9982,23 +9982,23 @@ const docTemplate = `{
                 "policy": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.Policy"
+                        "$ref": "#/definitions/infra.Policy"
                     }
                 }
             }
         },
-        "mci.MciSshCmdResult": {
+        "infra.MciSshCmdResult": {
             "type": "object",
             "properties": {
                 "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.SshCmdResult"
+                        "$ref": "#/definitions/infra.SshCmdResult"
                     }
                 }
             }
         },
-        "mci.MciStatusInfo": {
+        "infra.MciStatusInfo": {
             "type": "object",
             "properties": {
                 "id": {
@@ -10032,7 +10032,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "statusCount": {
-                    "$ref": "#/definitions/mci.StatusCountInfo"
+                    "$ref": "#/definitions/infra.StatusCountInfo"
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
@@ -10048,12 +10048,12 @@ const docTemplate = `{
                 "vm": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.TbVmStatusInfo"
+                        "$ref": "#/definitions/infra.TbVmStatusInfo"
                     }
                 }
             }
         },
-        "mci.MciSubGroupAccessInfo": {
+        "infra.MciSubGroupAccessInfo": {
             "type": "object",
             "properties": {
                 "bastionVmId": {
@@ -10062,18 +10062,18 @@ const docTemplate = `{
                 "mciVmAccessInfo": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.MciVmAccessInfo"
+                        "$ref": "#/definitions/infra.MciVmAccessInfo"
                     }
                 },
                 "nlbListener": {
-                    "$ref": "#/definitions/mci.TbNLBListenerInfo"
+                    "$ref": "#/definitions/infra.TbNLBListenerInfo"
                 },
                 "subGroupId": {
                     "type": "string"
                 }
             }
         },
-        "mci.MciVmAccessInfo": {
+        "infra.MciVmAccessInfo": {
             "type": "object",
             "properties": {
                 "privateIP": {
@@ -10099,7 +10099,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.MonResultSimple": {
+        "infra.MonResultSimple": {
             "type": "object",
             "properties": {
                 "err": {
@@ -10116,7 +10116,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.MonResultSimpleResponse": {
+        "infra.MonResultSimpleResponse": {
             "type": "object",
             "properties": {
                 "mciId": {
@@ -10125,7 +10125,7 @@ const docTemplate = `{
                 "mciMonitoring": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.MonResultSimple"
+                        "$ref": "#/definitions/infra.MonResultSimple"
                     }
                 },
                 "nsId": {
@@ -10133,7 +10133,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.NLBListenerReq": {
+        "infra.NLBListenerReq": {
             "type": "object",
             "properties": {
                 "port": {
@@ -10148,7 +10148,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.Operation": {
+        "infra.Operation": {
             "type": "object",
             "properties": {
                 "operand": {
@@ -10173,7 +10173,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.ParameterKeyVal": {
+        "infra.ParameterKeyVal": {
             "type": "object",
             "properties": {
                 "key": {
@@ -10198,21 +10198,21 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.Policy": {
+        "infra.Policy": {
             "type": "object",
             "properties": {
                 "autoAction": {
-                    "$ref": "#/definitions/mci.AutoAction"
+                    "$ref": "#/definitions/infra.AutoAction"
                 },
                 "autoCondition": {
-                    "$ref": "#/definitions/mci.AutoCondition"
+                    "$ref": "#/definitions/infra.AutoCondition"
                 },
                 "status": {
                     "type": "string"
                 }
             }
         },
-        "mci.PriorityCondition": {
+        "infra.PriorityCondition": {
             "type": "object",
             "properties": {
                 "metric": {
@@ -10229,7 +10229,7 @@ const docTemplate = `{
                 "parameter": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.ParameterKeyVal"
+                        "$ref": "#/definitions/infra.ParameterKeyVal"
                     }
                 },
                 "weight": {
@@ -10243,18 +10243,18 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.PriorityInfo": {
+        "infra.PriorityInfo": {
             "type": "object",
             "properties": {
                 "policy": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.PriorityCondition"
+                        "$ref": "#/definitions/infra.PriorityCondition"
                     }
                 }
             }
         },
-        "mci.RegionInfo": {
+        "infra.RegionInfo": {
             "type": "object",
             "properties": {
                 "region": {
@@ -10265,7 +10265,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.RegisterResourceAllResult": {
+        "infra.RegisterResourceAllResult": {
             "type": "object",
             "properties": {
                 "availableConnection": {
@@ -10275,12 +10275,12 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "registerationOverview": {
-                    "$ref": "#/definitions/mci.registerationOverview"
+                    "$ref": "#/definitions/infra.registerationOverview"
                 },
                 "registerationResult": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.RegisterResourceResult"
+                        "$ref": "#/definitions/infra.RegisterResourceResult"
                     }
                 },
                 "registeredConnection": {
@@ -10288,7 +10288,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.RegisterResourceResult": {
+        "infra.RegisterResourceResult": {
             "type": "object",
             "properties": {
                 "connectionName": {
@@ -10301,14 +10301,14 @@ const docTemplate = `{
                     "$ref": "#/definitions/common.IdList"
                 },
                 "registerationOverview": {
-                    "$ref": "#/definitions/mci.registerationOverview"
+                    "$ref": "#/definitions/infra.registerationOverview"
                 },
                 "systemMessage": {
                     "type": "string"
                 }
             }
         },
-        "mci.RestGetAllBenchmarkRequest": {
+        "infra.RestGetAllBenchmarkRequest": {
             "type": "object",
             "properties": {
                 "host": {
@@ -10316,62 +10316,62 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.RestGetAllK8sClusterResponse": {
+        "infra.RestGetAllK8sClusterResponse": {
             "type": "object",
             "properties": {
                 "cluster": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.TbK8sClusterInfo"
+                        "$ref": "#/definitions/infra.TbK8sClusterInfo"
                     }
                 }
             }
         },
-        "mci.RestGetAllMciPolicyResponse": {
+        "infra.RestGetAllMciPolicyResponse": {
             "type": "object",
             "properties": {
                 "mciPolicy": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.MciPolicyInfo"
+                        "$ref": "#/definitions/infra.MciPolicyInfo"
                     }
                 }
             }
         },
-        "mci.RestGetAllMciResponse": {
+        "infra.RestGetAllMciResponse": {
             "type": "object",
             "properties": {
                 "mci": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.TbMciInfo"
+                        "$ref": "#/definitions/infra.TbMciInfo"
                     }
                 }
             }
         },
-        "mci.RestGetAllMciStatusResponse": {
+        "infra.RestGetAllMciStatusResponse": {
             "type": "object",
             "properties": {
                 "mci": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.MciStatusInfo"
+                        "$ref": "#/definitions/infra.MciStatusInfo"
                     }
                 }
             }
         },
-        "mci.RestGetAllNLBResponse": {
+        "infra.RestGetAllNLBResponse": {
             "type": "object",
             "properties": {
                 "nlb": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.TbNLBInfo"
+                        "$ref": "#/definitions/infra.TbNLBInfo"
                     }
                 }
             }
         },
-        "mci.RestGetBenchmarkRequest": {
+        "infra.RestGetBenchmarkRequest": {
             "type": "object",
             "properties": {
                 "host": {
@@ -10379,7 +10379,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.SpiderImageType": {
+        "infra.SpiderImageType": {
             "type": "string",
             "enum": [
                 "PublicImage",
@@ -10390,7 +10390,7 @@ const docTemplate = `{
                 "MyImage"
             ]
         },
-        "mci.SpiderVMInfo": {
+        "infra.SpiderVMInfo": {
             "type": "object",
             "properties": {
                 "cspid": {
@@ -10424,7 +10424,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "imageType": {
-                    "$ref": "#/definitions/mci.SpiderImageType"
+                    "$ref": "#/definitions/infra.SpiderImageType"
                 },
                 "keyPairIId": {
                     "$ref": "#/definitions/common.IID"
@@ -10462,7 +10462,7 @@ const docTemplate = `{
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/mci.RegionInfo"
+                            "$ref": "#/definitions/infra.RegionInfo"
                         }
                     ]
                 },
@@ -10527,7 +10527,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.SshCmdResult": {
+        "infra.SshCmdResult": {
             "type": "object",
             "properties": {
                 "command": {
@@ -10560,7 +10560,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.StatusCountInfo": {
+        "infra.StatusCountInfo": {
             "type": "object",
             "properties": {
                 "countCreating": {
@@ -10609,7 +10609,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbChangeK8sNodeGroupAutoscaleSizeReq": {
+        "infra.TbChangeK8sNodeGroupAutoscaleSizeReq": {
             "type": "object",
             "properties": {
                 "desiredNodeSize": {
@@ -10626,7 +10626,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbChangeK8sNodeGroupAutoscaleSizeRes": {
+        "infra.TbChangeK8sNodeGroupAutoscaleSizeRes": {
             "type": "object",
             "properties": {
                 "desiredNodeSize": {
@@ -10691,14 +10691,14 @@ const docTemplate = `{
                     "description": "---",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/mci.TbK8sNodeGroupStatus"
+                            "$ref": "#/definitions/infra.TbK8sNodeGroupStatus"
                         }
                     ],
                     "example": "Creating"
                 }
             }
         },
-        "mci.TbIdNameInDetailInfo": {
+        "infra.TbIdNameInDetailInfo": {
             "type": "object",
             "properties": {
                 "idInCsp": {
@@ -10715,7 +10715,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbK8sAccessInfo": {
+        "infra.TbK8sAccessInfo": {
             "type": "object",
             "properties": {
                 "endpoint": {
@@ -10728,7 +10728,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbK8sAddonsInfo": {
+        "infra.TbK8sAddonsInfo": {
             "type": "object",
             "properties": {
                 "keyValueList": {
@@ -10739,14 +10739,14 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbK8sClusterInfo": {
+        "infra.TbK8sClusterInfo": {
             "type": "object",
             "properties": {
                 "accessInfo": {
-                    "$ref": "#/definitions/mci.TbK8sAccessInfo"
+                    "$ref": "#/definitions/infra.TbK8sAccessInfo"
                 },
                 "addons": {
-                    "$ref": "#/definitions/mci.TbK8sAddonsInfo"
+                    "$ref": "#/definitions/infra.TbK8sAddonsInfo"
                 },
                 "connectionName": {
                     "type": "string",
@@ -10775,7 +10775,7 @@ const docTemplate = `{
                 "k8sNodeGroupList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.TbK8sNodeGroupInfo"
+                        "$ref": "#/definitions/infra.TbK8sNodeGroupInfo"
                     }
                 },
                 "keyValueList": {
@@ -10789,19 +10789,19 @@ const docTemplate = `{
                     "example": "k8scluster-01"
                 },
                 "network": {
-                    "$ref": "#/definitions/mci.TbK8sClusterNetworkInfo"
+                    "$ref": "#/definitions/infra.TbK8sClusterNetworkInfo"
                 },
                 "status": {
                     "description": "Creating, Active, Inactive, Updating, Deleting",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/mci.TbK8sClusterStatus"
+                            "$ref": "#/definitions/infra.TbK8sClusterStatus"
                         }
                     ],
                     "example": "Creating"
                 },
                 "systemLabel": {
-                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
+                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
@@ -10817,7 +10817,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbK8sClusterNetworkInfo": {
+        "infra.TbK8sClusterNetworkInfo": {
             "type": "object",
             "properties": {
                 "keyValueList": {
@@ -10850,7 +10850,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbK8sClusterReq": {
+        "infra.TbK8sClusterReq": {
             "type": "object",
             "required": [
                 "connectionName",
@@ -10883,7 +10883,7 @@ const docTemplate = `{
                     "description": "(3) NodeGroupInfo List",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.TbK8sNodeGroupReq"
+                        "$ref": "#/definitions/infra.TbK8sNodeGroupReq"
                     }
                 },
                 "securityGroupIds": {
@@ -10915,7 +10915,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbK8sClusterStatus": {
+        "infra.TbK8sClusterStatus": {
             "type": "string",
             "enum": [
                 "Creating",
@@ -10932,7 +10932,7 @@ const docTemplate = `{
                 "TbK8sClusterDeleting"
             ]
         },
-        "mci.TbK8sNodeGroupInfo": {
+        "infra.TbK8sNodeGroupInfo": {
             "type": "object",
             "properties": {
                 "desiredNodeSize": {
@@ -10997,14 +10997,14 @@ const docTemplate = `{
                     "description": "---",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/mci.TbK8sNodeGroupStatus"
+                            "$ref": "#/definitions/infra.TbK8sNodeGroupStatus"
                         }
                     ],
                     "example": "Creating"
                 }
             }
         },
-        "mci.TbK8sNodeGroupReq": {
+        "infra.TbK8sNodeGroupReq": {
             "type": "object",
             "properties": {
                 "desiredNodeSize": {
@@ -11052,7 +11052,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbK8sNodeGroupStatus": {
+        "infra.TbK8sNodeGroupStatus": {
             "type": "string",
             "enum": [
                 "Creating",
@@ -11069,7 +11069,7 @@ const docTemplate = `{
                 "TbK8sNodeGroupDeleting"
             ]
         },
-        "mci.TbMciDynamicReq": {
+        "infra.TbMciDynamicReq": {
             "type": "object",
             "required": [
                 "name",
@@ -11107,12 +11107,12 @@ const docTemplate = `{
                 "vm": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.TbVmDynamicReq"
+                        "$ref": "#/definitions/infra.TbVmDynamicReq"
                     }
                 }
             }
         },
-        "mci.TbMciInfo": {
+        "infra.TbMciInfo": {
             "type": "object",
             "properties": {
                 "configureCloudAdaptiveNetwork": {
@@ -11163,7 +11163,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "statusCount": {
-                    "$ref": "#/definitions/mci.StatusCountInfo"
+                    "$ref": "#/definitions/infra.StatusCountInfo"
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
@@ -11184,12 +11184,12 @@ const docTemplate = `{
                 "vm": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.TbVmInfo"
+                        "$ref": "#/definitions/infra.TbVmInfo"
                     }
                 }
             }
         },
-        "mci.TbMciReq": {
+        "infra.TbMciReq": {
             "type": "object",
             "required": [
                 "name",
@@ -11230,20 +11230,20 @@ const docTemplate = `{
                 "vm": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.TbVmReq"
+                        "$ref": "#/definitions/infra.TbVmReq"
                     }
                 }
             }
         },
-        "mci.TbNLBAddRemoveVMReq": {
+        "infra.TbNLBAddRemoveVMReq": {
             "type": "object",
             "properties": {
                 "targetGroup": {
-                    "$ref": "#/definitions/mci.TbNLBTargetGroupInfo"
+                    "$ref": "#/definitions/infra.TbNLBTargetGroupInfo"
                 }
             }
         },
-        "mci.TbNLBHealthCheckerInfo": {
+        "infra.TbNLBHealthCheckerInfo": {
             "type": "object",
             "properties": {
                 "interval": {
@@ -11279,7 +11279,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbNLBHealthCheckerReq": {
+        "infra.TbNLBHealthCheckerReq": {
             "type": "object",
             "properties": {
                 "interval": {
@@ -11299,7 +11299,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbNLBInfo": {
+        "infra.TbNLBInfo": {
             "type": "object",
             "properties": {
                 "associatedObjectList": {
@@ -11324,7 +11324,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "healthChecker": {
-                    "$ref": "#/definitions/mci.TbNLBHealthCheckerInfo"
+                    "$ref": "#/definitions/infra.TbNLBHealthCheckerInfo"
                 },
                 "id": {
                     "type": "string"
@@ -11339,7 +11339,7 @@ const docTemplate = `{
                     }
                 },
                 "listener": {
-                    "$ref": "#/definitions/mci.TbNLBListenerInfo"
+                    "$ref": "#/definitions/infra.TbNLBListenerInfo"
                 },
                 "location": {
                     "$ref": "#/definitions/common.Location"
@@ -11355,12 +11355,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "systemLabel": {
-                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
+                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
                 "targetGroup": {
-                    "$ref": "#/definitions/mci.TbNLBTargetGroupInfo"
+                    "$ref": "#/definitions/infra.TbNLBTargetGroupInfo"
                 },
                 "type": {
                     "description": "PUBLIC(V) | INTERNAL",
@@ -11368,7 +11368,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbNLBListenerInfo": {
+        "infra.TbNLBListenerInfo": {
             "type": "object",
             "properties": {
                 "dnsName": {
@@ -11399,7 +11399,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbNLBReq": {
+        "infra.TbNLBReq": {
             "type": "object",
             "required": [
                 "healthChecker",
@@ -11420,7 +11420,7 @@ const docTemplate = `{
                     "description": "HealthChecker",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/mci.TbNLBHealthCheckerReq"
+                            "$ref": "#/definitions/infra.TbNLBHealthCheckerReq"
                         }
                     ]
                 },
@@ -11428,7 +11428,7 @@ const docTemplate = `{
                     "description": "Frontend",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/mci.NLBListenerReq"
+                            "$ref": "#/definitions/infra.NLBListenerReq"
                         }
                     ]
                 },
@@ -11445,7 +11445,7 @@ const docTemplate = `{
                     "description": "Backend",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/mci.TbNLBTargetGroupReq"
+                            "$ref": "#/definitions/infra.TbNLBTargetGroupReq"
                         }
                     ]
                 },
@@ -11460,7 +11460,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbNLBTargetGroupInfo": {
+        "infra.TbNLBTargetGroupInfo": {
             "type": "object",
             "properties": {
                 "keyValueList": {
@@ -11491,7 +11491,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbNLBTargetGroupReq": {
+        "infra.TbNLBTargetGroupReq": {
             "type": "object",
             "properties": {
                 "port": {
@@ -11510,7 +11510,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbScaleOutSubGroupReq": {
+        "infra.TbScaleOutSubGroupReq": {
             "type": "object",
             "required": [
                 "numVMsToAdd"
@@ -11523,7 +11523,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbSetK8sNodeGroupAutoscalingReq": {
+        "infra.TbSetK8sNodeGroupAutoscalingReq": {
             "type": "object",
             "properties": {
                 "onAutoScaling": {
@@ -11532,7 +11532,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbSetK8sNodeGroupAutoscalingRes": {
+        "infra.TbSetK8sNodeGroupAutoscalingRes": {
             "type": "object",
             "properties": {
                 "result": {
@@ -11541,7 +11541,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbUpgradeK8sClusterReq": {
+        "infra.TbUpgradeK8sClusterReq": {
             "type": "object",
             "properties": {
                 "version": {
@@ -11550,7 +11550,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbVmDynamicReq": {
+        "infra.TbVmDynamicReq": {
             "type": "object",
             "required": [
                 "commonImage",
@@ -11607,7 +11607,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbVmInfo": {
+        "infra.TbVmInfo": {
             "type": "object",
             "properties": {
                 "connectionConfig": {
@@ -11622,7 +11622,7 @@ const docTemplate = `{
                     "example": "2022-11-10 23:00:00"
                 },
                 "cspViewVmDetail": {
-                    "$ref": "#/definitions/mci.SpiderVMInfo"
+                    "$ref": "#/definitions/infra.SpiderVMInfo"
                 },
                 "dataDiskIds": {
                     "type": "array",
@@ -11678,7 +11678,7 @@ const docTemplate = `{
                     "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/mci.RegionInfo"
+                            "$ref": "#/definitions/infra.RegionInfo"
                         }
                     ]
                 },
@@ -11739,7 +11739,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbVmReq": {
+        "infra.TbVmReq": {
             "type": "object",
             "required": [
                 "connectionName",
@@ -11824,7 +11824,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbVmSnapshotReq": {
+        "infra.TbVmSnapshotReq": {
             "type": "object",
             "properties": {
                 "name": {
@@ -11833,7 +11833,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.TbVmStatusInfo": {
+        "infra.TbVmStatusInfo": {
             "type": "object",
             "properties": {
                 "createdTime": {
@@ -11886,7 +11886,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.inspectOverview": {
+        "infra.inspectOverview": {
             "type": "object",
             "properties": {
                 "customImage": {
@@ -11912,7 +11912,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.registerationOverview": {
+        "infra.registerationOverview": {
             "type": "object",
             "properties": {
                 "customImage": {
@@ -11941,7 +11941,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.resourceCountOverview": {
+        "infra.resourceCountOverview": {
             "type": "object",
             "properties": {
                 "onCspOnly": {
@@ -11958,7 +11958,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.resourceOnCsp": {
+        "infra.resourceOnCsp": {
             "type": "object",
             "properties": {
                 "count": {
@@ -11967,12 +11967,12 @@ const docTemplate = `{
                 "info": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.resourceOnCspInfo"
+                        "$ref": "#/definitions/infra.resourceOnCspInfo"
                     }
                 }
             }
         },
-        "mci.resourceOnCspInfo": {
+        "infra.resourceOnCspInfo": {
             "type": "object",
             "properties": {
                 "idByCsp": {
@@ -11983,7 +11983,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.resourceOnSpider": {
+        "infra.resourceOnSpider": {
             "type": "object",
             "properties": {
                 "count": {
@@ -11992,12 +11992,12 @@ const docTemplate = `{
                 "info": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.resourceOnSpiderInfo"
+                        "$ref": "#/definitions/infra.resourceOnSpiderInfo"
                     }
                 }
             }
         },
-        "mci.resourceOnSpiderInfo": {
+        "infra.resourceOnSpiderInfo": {
             "type": "object",
             "properties": {
                 "idByCsp": {
@@ -12008,7 +12008,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.resourceOnTumblebug": {
+        "infra.resourceOnTumblebug": {
             "type": "object",
             "properties": {
                 "count": {
@@ -12017,12 +12017,12 @@ const docTemplate = `{
                 "info": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mci.resourceOnTumblebugInfo"
+                        "$ref": "#/definitions/infra.resourceOnTumblebugInfo"
                     }
                 }
             }
         },
-        "mci.resourceOnTumblebugInfo": {
+        "infra.resourceOnTumblebugInfo": {
             "type": "object",
             "properties": {
                 "idByCsp": {
@@ -12042,1246 +12042,20 @@ const docTemplate = `{
                 }
             }
         },
-        "mci.resourcesByManageType": {
+        "infra.resourcesByManageType": {
             "type": "object",
             "properties": {
                 "onCspOnly": {
-                    "$ref": "#/definitions/mci.resourceOnCsp"
+                    "$ref": "#/definitions/infra.resourceOnCsp"
                 },
                 "onCspTotal": {
-                    "$ref": "#/definitions/mci.resourceOnCsp"
+                    "$ref": "#/definitions/infra.resourceOnCsp"
                 },
                 "onSpider": {
-                    "$ref": "#/definitions/mci.resourceOnSpider"
+                    "$ref": "#/definitions/infra.resourceOnSpider"
                 },
                 "onTumblebug": {
-                    "$ref": "#/definitions/mci.resourceOnTumblebug"
-                }
-            }
-        },
-        "mcir.BastionNode": {
-            "type": "object",
-            "properties": {
-                "mciId": {
-                    "type": "string"
-                },
-                "vmId": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.CustomImageStatus": {
-            "type": "string",
-            "enum": [
-                "Available",
-                "Unavailable"
-            ],
-            "x-enum-varnames": [
-                "MyImageAvailable",
-                "MyImageUnavailable"
-            ]
-        },
-        "mcir.DiskStatus": {
-            "type": "string",
-            "enum": [
-                "Creating",
-                "Available",
-                "Attached",
-                "Deleting",
-                "Error"
-            ],
-            "x-enum-varnames": [
-                "DiskCreating",
-                "DiskAvailable",
-                "DiskAttached",
-                "DiskDeleting",
-                "DiskError"
-            ]
-        },
-        "mcir.FilterSpecsByRangeRequest": {
-            "type": "object",
-            "properties": {
-                "acceleratorCount": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "acceleratorMemoryGB": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "acceleratorModel": {
-                    "type": "string"
-                },
-                "acceleratorType": {
-                    "type": "string"
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "costPerHour": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "cspSpecName": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "evaluationScore01": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "evaluationScore02": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "evaluationScore03": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "evaluationScore04": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "evaluationScore05": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "evaluationScore06": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "evaluationScore07": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "evaluationScore08": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "evaluationScore09": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "evaluationScore10": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "evaluationStatus": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "infraType": {
-                    "type": "string"
-                },
-                "maxTotalStorageTiB": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "memoryGiB": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "netBwGbps": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "osType": {
-                    "type": "string"
-                },
-                "providerName": {
-                    "type": "string"
-                },
-                "regionName": {
-                    "type": "string"
-                },
-                "storageGiB": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "vCPU": {
-                    "$ref": "#/definitions/mcir.Range"
-                }
-            }
-        },
-        "mcir.JSONResult": {
-            "type": "object"
-        },
-        "mcir.Range": {
-            "type": "object",
-            "properties": {
-                "max": {
-                    "type": "number"
-                },
-                "min": {
-                    "type": "number"
-                }
-            }
-        },
-        "mcir.RestFilterSpecsResponse": {
-            "type": "object",
-            "properties": {
-                "spec": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbSpecInfo"
-                    }
-                }
-            }
-        },
-        "mcir.RestGetAllCustomImageResponse": {
-            "type": "object",
-            "properties": {
-                "customImage": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbCustomImageInfo"
-                    }
-                }
-            }
-        },
-        "mcir.RestGetAllDataDiskResponse": {
-            "type": "object",
-            "properties": {
-                "dataDisk": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbDataDiskInfo"
-                    }
-                }
-            }
-        },
-        "mcir.RestGetAllImageResponse": {
-            "type": "object",
-            "properties": {
-                "image": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbImageInfo"
-                    }
-                }
-            }
-        },
-        "mcir.RestGetAllSecurityGroupResponse": {
-            "type": "object",
-            "properties": {
-                "securityGroup": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbSecurityGroupInfo"
-                    }
-                }
-            }
-        },
-        "mcir.RestGetAllSshKeyResponse": {
-            "type": "object",
-            "properties": {
-                "sshKey": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbSshKeyInfo"
-                    }
-                }
-            }
-        },
-        "mcir.RestGetAllVNetResponse": {
-            "type": "object",
-            "properties": {
-                "vNet": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbVNetInfo"
-                    }
-                }
-            }
-        },
-        "mcir.RestLookupImageRequest": {
-            "type": "object",
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspImageId": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.RestLookupSpecRequest": {
-            "type": "object",
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspSpecName": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.RestSearchImageRequest": {
-            "type": "object",
-            "properties": {
-                "keywords": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "mcir.SpiderGpuInfo": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "string"
-                },
-                "mem": {
-                    "type": "string"
-                },
-                "mfr": {
-                    "type": "string"
-                },
-                "model": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.SpiderImageInfo": {
-            "type": "object",
-            "properties": {
-                "guestOS": {
-                    "description": "Windows7, Ubuntu etc.",
-                    "type": "string"
-                },
-                "iid": {
-                    "description": "Fields for response",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "description": "Fields for request",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "available, unavailable",
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.SpiderImageList": {
-            "type": "object",
-            "properties": {
-                "image": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.SpiderImageInfo"
-                    }
-                }
-            }
-        },
-        "mcir.SpiderSpecInfo": {
-            "type": "object",
-            "properties": {
-                "gpu": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.SpiderGpuInfo"
-                    }
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "mem": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "region": {
-                    "type": "string"
-                },
-                "vcpu": {
-                    "$ref": "#/definitions/mcir.SpiderVCpuInfo"
-                }
-            }
-        },
-        "mcir.SpiderSpecList": {
-            "type": "object",
-            "properties": {
-                "vmspec": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.SpiderSpecInfo"
-                    }
-                }
-            }
-        },
-        "mcir.SpiderVCpuInfo": {
-            "type": "object",
-            "properties": {
-                "clock": {
-                    "description": "GHz",
-                    "type": "string"
-                },
-                "count": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.TbAttachDetachDataDiskReq": {
-            "type": "object",
-            "required": [
-                "dataDiskId"
-            ],
-            "properties": {
-                "dataDiskId": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.TbCustomImageInfo": {
-            "type": "object",
-            "properties": {
-                "associatedObjectList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "connectionName": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1"
-                },
-                "creationDate": {
-                    "type": "string",
-                    "example": "2022-10-18T08:12:48Z"
-                },
-                "cspCustomImageId": {
-                    "type": "string",
-                    "example": "ami-06eb41e14121c550a"
-                },
-                "cspCustomImageName": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1-snapshot"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "guestOS": {
-                    "description": "Windows7, Ubuntu etc.",
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1-snapshot"
-                },
-                "isAutoGenerated": {
-                    "type": "boolean"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1-snapshot"
-                },
-                "namespace": {
-                    "description": "required to save in RDB",
-                    "type": "string",
-                    "example": "default"
-                },
-                "sourceVmId": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1-1"
-                },
-                "status": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcir.CustomImageStatus"
-                        }
-                    ],
-                    "example": "Available"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                }
-            }
-        },
-        "mcir.TbCustomImageReq": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspCustomImageId": {
-                    "description": "This field is for 'Register existing custom image'",
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "sourceVmId": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.TbDataDiskInfo": {
-            "type": "object",
-            "properties": {
-                "associatedObjectList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "connectionName": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1"
-                },
-                "createdTime": {
-                    "type": "string",
-                    "example": "2022-10-12T05:09:51.05Z"
-                },
-                "cspDataDiskId": {
-                    "type": "string",
-                    "example": "vol-0d397c3239629bd43"
-                },
-                "cspDataDiskName": {
-                    "type": "string",
-                    "example": "default-aws-ap-southeast-1-datadisk"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "Available"
-                },
-                "diskSize": {
-                    "type": "string",
-                    "example": "77"
-                },
-                "diskType": {
-                    "type": "string",
-                    "example": "standard"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1-datadisk"
-                },
-                "isAutoGenerated": {
-                    "type": "boolean"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1-datadisk"
-                },
-                "status": {
-                    "description": "Available, Unavailable, Attached, ...",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcir.DiskStatus"
-                        }
-                    ],
-                    "example": "Available"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                },
-                "systemMessage": {
-                    "description": "Latest system message such as error message",
-                    "type": "string",
-                    "example": "Failed because ..."
-                }
-            }
-        },
-        "mcir.TbDataDiskReq": {
-            "type": "object",
-            "required": [
-                "connectionName",
-                "diskSize",
-                "name"
-            ],
-            "properties": {
-                "connectionName": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1"
-                },
-                "cspDataDiskId": {
-                    "description": "Fields for \"Register existing dataDisk\" feature\nCspDataDiskId is required to register object from CSP (option=register)",
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "diskSize": {
-                    "type": "string",
-                    "default": "100",
-                    "example": "77"
-                },
-                "diskType": {
-                    "type": "string",
-                    "example": "default"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1-datadisk"
-                }
-            }
-        },
-        "mcir.TbDataDiskUpsizeReq": {
-            "type": "object",
-            "required": [
-                "diskSize"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "diskSize": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.TbDataDiskVmReq": {
-            "type": "object",
-            "required": [
-                "diskSize",
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "diskSize": {
-                    "type": "string",
-                    "default": "100",
-                    "example": "77"
-                },
-                "diskType": {
-                    "type": "string",
-                    "example": "default"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1-datadisk"
-                }
-            }
-        },
-        "mcir.TbFirewallRuleInfo": {
-            "type": "object",
-            "required": [
-                "direction",
-                "fromPort",
-                "ipprotocol",
-                "toPort"
-            ],
-            "properties": {
-                "cidr": {
-                    "type": "string"
-                },
-                "direction": {
-                    "description": "` + "`" + `json:\"direction\"` + "`" + `",
-                    "type": "string"
-                },
-                "fromPort": {
-                    "description": "` + "`" + `json:\"fromPort\"` + "`" + `",
-                    "type": "string"
-                },
-                "ipprotocol": {
-                    "description": "` + "`" + `json:\"ipProtocol\"` + "`" + `",
-                    "type": "string"
-                },
-                "toPort": {
-                    "description": "` + "`" + `json:\"toPort\"` + "`" + `",
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.TbFirewallRulesWrapper": {
-            "type": "object",
-            "properties": {
-                "firewallRules": {
-                    "description": "validate:\"required\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbFirewallRuleInfo"
-                    }
-                }
-            }
-        },
-        "mcir.TbImageInfo": {
-            "type": "object",
-            "properties": {
-                "associatedObjectList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "creationDate": {
-                    "type": "string"
-                },
-                "cspImageId": {
-                    "type": "string"
-                },
-                "cspImageName": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "guestOS": {
-                    "description": "Windows7, Ubuntu etc.",
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "infraType": {
-                    "description": "vm|k8s|kubernetes|container, etc.",
-                    "type": "string"
-                },
-                "isAutoGenerated": {
-                    "type": "boolean"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "namespace": {
-                    "description": "required to save in RDB",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "available, unavailable",
-                    "type": "string"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                }
-            }
-        },
-        "mcir.TbImageReq": {
-            "type": "object",
-            "required": [
-                "connectionName",
-                "cspImageId",
-                "name"
-            ],
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspImageId": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.TbSecurityGroupInfo": {
-            "type": "object",
-            "properties": {
-                "associatedObjectList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspSecurityGroupId": {
-                    "type": "string"
-                },
-                "cspSecurityGroupName": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "firewallRules": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbFirewallRuleInfo"
-                    }
-                },
-                "id": {
-                    "type": "string"
-                },
-                "isAutoGenerated": {
-                    "type": "boolean"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                },
-                "vNetId": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.TbSecurityGroupReq": {
-            "type": "object",
-            "required": [
-                "connectionName",
-                "name",
-                "vNetId"
-            ],
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspSecurityGroupId": {
-                    "description": "CspSecurityGroupId is required to register object from CSP (option=register)",
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "firewallRules": {
-                    "description": "validate:\"required\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbFirewallRuleInfo"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "vNetId": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.TbSpecInfo": {
-            "type": "object",
-            "properties": {
-                "acceleratorCount": {
-                    "type": "integer"
-                },
-                "acceleratorMemoryGB": {
-                    "type": "number"
-                },
-                "acceleratorModel": {
-                    "type": "string"
-                },
-                "acceleratorType": {
-                    "type": "string"
-                },
-                "associatedObjectList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "costPerHour": {
-                    "type": "number"
-                },
-                "cspSpecName": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "evaluationScore01": {
-                    "type": "number"
-                },
-                "evaluationScore02": {
-                    "type": "number"
-                },
-                "evaluationScore03": {
-                    "type": "number"
-                },
-                "evaluationScore04": {
-                    "type": "number"
-                },
-                "evaluationScore05": {
-                    "type": "number"
-                },
-                "evaluationScore06": {
-                    "type": "number"
-                },
-                "evaluationScore07": {
-                    "type": "number"
-                },
-                "evaluationScore08": {
-                    "type": "number"
-                },
-                "evaluationScore09": {
-                    "type": "number"
-                },
-                "evaluationScore10": {
-                    "type": "number"
-                },
-                "evaluationStatus": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "infraType": {
-                    "description": "vm|k8s|kubernetes|container, etc.",
-                    "type": "string"
-                },
-                "isAutoGenerated": {
-                    "type": "boolean"
-                },
-                "maxTotalStorageTiB": {
-                    "type": "integer"
-                },
-                "memoryGiB": {
-                    "type": "number"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "namespace": {
-                    "description": "required to save in RDB",
-                    "type": "string"
-                },
-                "netBwGbps": {
-                    "type": "integer"
-                },
-                "orderInFilteredResult": {
-                    "type": "integer"
-                },
-                "osType": {
-                    "type": "string"
-                },
-                "providerName": {
-                    "type": "string"
-                },
-                "regionName": {
-                    "type": "string"
-                },
-                "rootDiskSize": {
-                    "type": "string"
-                },
-                "rootDiskType": {
-                    "type": "string"
-                },
-                "storageGiB": {
-                    "type": "integer"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                },
-                "vCPU": {
-                    "type": "integer"
-                }
-            }
-        },
-        "mcir.TbSpecReq": {
-            "type": "object",
-            "required": [
-                "connectionName",
-                "cspSpecName",
-                "name"
-            ],
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspSpecName": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.TbSshKeyInfo": {
-            "type": "object",
-            "properties": {
-                "associatedObjectList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspSshKeyId": {
-                    "description": "CspSshKeyId used for CSP-native identifier (either Name or ID)",
-                    "type": "string"
-                },
-                "cspSshKeyName": {
-                    "description": "CspSshKeyName used for CB-Spider identifier",
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "fingerprint": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "isAutoGenerated": {
-                    "type": "boolean"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "privateKey": {
-                    "type": "string"
-                },
-                "publicKey": {
-                    "type": "string"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                },
-                "username": {
-                    "type": "string"
-                },
-                "verifiedUsername": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.TbSshKeyReq": {
-            "type": "object",
-            "required": [
-                "connectionName",
-                "name"
-            ],
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspSshKeyId": {
-                    "description": "Fields for \"Register existing SSH keys\" feature\nCspSshKeyId is required to register object from CSP (option=register)",
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "fingerprint": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "privateKey": {
-                    "type": "string"
-                },
-                "publicKey": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                },
-                "verifiedUsername": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.TbSubnetInfo": {
-            "type": "object",
-            "required": [
-                "ipv4_CIDR",
-                "name"
-            ],
-            "properties": {
-                "bastionNodes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.BastionNode"
-                    }
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "idFromCsp": {
-                    "type": "string"
-                },
-                "ipv4_CIDR": {
-                    "type": "string"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.TbSubnetReq": {
-            "type": "object",
-            "required": [
-                "ipv4_CIDR",
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "idFromCsp": {
-                    "type": "string"
-                },
-                "ipv4_CIDR": {
-                    "type": "string"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.TbVNetInfo": {
-            "type": "object",
-            "properties": {
-                "associatedObjectList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "cidrBlock": {
-                    "type": "string"
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspVNetId": {
-                    "type": "string"
-                },
-                "cspVNetName": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "isAutoGenerated": {
-                    "type": "boolean"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "subnetInfoList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbSubnetInfo"
-                    }
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                }
-            }
-        },
-        "mcir.TbVNetReq": {
-            "type": "object",
-            "required": [
-                "connectionName",
-                "name"
-            ],
-            "properties": {
-                "cidrBlock": {
-                    "type": "string"
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspVNetId": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "subnetInfoList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.TbSubnetReq"
-                    }
+                    "$ref": "#/definitions/infra.resourceOnTumblebug"
                 }
             }
         },
@@ -13532,6 +12306,1232 @@ const docTemplate = `{
                 "SubnettingRuleTypeMinSubnets",
                 "SubnettingRuleTypeMinHosts"
             ]
+        },
+        "resource.BastionNode": {
+            "type": "object",
+            "properties": {
+                "mciId": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.CustomImageStatus": {
+            "type": "string",
+            "enum": [
+                "Available",
+                "Unavailable"
+            ],
+            "x-enum-varnames": [
+                "MyImageAvailable",
+                "MyImageUnavailable"
+            ]
+        },
+        "resource.DiskStatus": {
+            "type": "string",
+            "enum": [
+                "Creating",
+                "Available",
+                "Attached",
+                "Deleting",
+                "Error"
+            ],
+            "x-enum-varnames": [
+                "DiskCreating",
+                "DiskAvailable",
+                "DiskAttached",
+                "DiskDeleting",
+                "DiskError"
+            ]
+        },
+        "resource.FilterSpecsByRangeRequest": {
+            "type": "object",
+            "properties": {
+                "acceleratorCount": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "acceleratorMemoryGB": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "acceleratorModel": {
+                    "type": "string"
+                },
+                "acceleratorType": {
+                    "type": "string"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "costPerHour": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "cspSpecName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "evaluationScore01": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "evaluationScore02": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "evaluationScore03": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "evaluationScore04": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "evaluationScore05": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "evaluationScore06": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "evaluationScore07": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "evaluationScore08": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "evaluationScore09": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "evaluationScore10": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "evaluationStatus": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "infraType": {
+                    "type": "string"
+                },
+                "maxTotalStorageTiB": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "memoryGiB": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "netBwGbps": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "osType": {
+                    "type": "string"
+                },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                },
+                "storageGiB": {
+                    "$ref": "#/definitions/resource.Range"
+                },
+                "vCPU": {
+                    "$ref": "#/definitions/resource.Range"
+                }
+            }
+        },
+        "resource.JSONResult": {
+            "type": "object"
+        },
+        "resource.Range": {
+            "type": "object",
+            "properties": {
+                "max": {
+                    "type": "number"
+                },
+                "min": {
+                    "type": "number"
+                }
+            }
+        },
+        "resource.RestFilterSpecsResponse": {
+            "type": "object",
+            "properties": {
+                "spec": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.TbSpecInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestGetAllCustomImageResponse": {
+            "type": "object",
+            "properties": {
+                "customImage": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.TbCustomImageInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestGetAllDataDiskResponse": {
+            "type": "object",
+            "properties": {
+                "dataDisk": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.TbDataDiskInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestGetAllImageResponse": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.TbImageInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestGetAllSecurityGroupResponse": {
+            "type": "object",
+            "properties": {
+                "securityGroup": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.TbSecurityGroupInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestGetAllSshKeyResponse": {
+            "type": "object",
+            "properties": {
+                "sshKey": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.TbSshKeyInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestGetAllVNetResponse": {
+            "type": "object",
+            "properties": {
+                "vNet": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.TbVNetInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestLookupImageRequest": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspImageId": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.RestLookupSpecRequest": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspSpecName": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.RestSearchImageRequest": {
+            "type": "object",
+            "properties": {
+                "keywords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "resource.SpiderGpuInfo": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "string"
+                },
+                "mem": {
+                    "type": "string"
+                },
+                "mfr": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.SpiderImageInfo": {
+            "type": "object",
+            "properties": {
+                "guestOS": {
+                    "description": "Windows7, Ubuntu etc.",
+                    "type": "string"
+                },
+                "iid": {
+                    "description": "Fields for response",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.IID"
+                        }
+                    ]
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "description": "Fields for request",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "available, unavailable",
+                    "type": "string"
+                }
+            }
+        },
+        "resource.SpiderImageList": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.SpiderImageInfo"
+                    }
+                }
+            }
+        },
+        "resource.SpiderSpecInfo": {
+            "type": "object",
+            "properties": {
+                "gpu": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.SpiderGpuInfo"
+                    }
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "mem": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "vcpu": {
+                    "$ref": "#/definitions/resource.SpiderVCpuInfo"
+                }
+            }
+        },
+        "resource.SpiderSpecList": {
+            "type": "object",
+            "properties": {
+                "vmspec": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.SpiderSpecInfo"
+                    }
+                }
+            }
+        },
+        "resource.SpiderVCpuInfo": {
+            "type": "object",
+            "properties": {
+                "clock": {
+                    "description": "GHz",
+                    "type": "string"
+                },
+                "count": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.TbAttachDetachDataDiskReq": {
+            "type": "object",
+            "required": [
+                "dataDiskId"
+            ],
+            "properties": {
+                "dataDiskId": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.TbCustomImageInfo": {
+            "type": "object",
+            "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connectionName": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "creationDate": {
+                    "type": "string",
+                    "example": "2022-10-18T08:12:48Z"
+                },
+                "cspCustomImageId": {
+                    "type": "string",
+                    "example": "ami-06eb41e14121c550a"
+                },
+                "cspCustomImageName": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-snapshot"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "guestOS": {
+                    "description": "Windows7, Ubuntu etc.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-snapshot"
+                },
+                "isAutoGenerated": {
+                    "type": "boolean"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-snapshot"
+                },
+                "namespace": {
+                    "description": "required to save in RDB",
+                    "type": "string",
+                    "example": "default"
+                },
+                "sourceVmId": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-1"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/resource.CustomImageStatus"
+                        }
+                    ],
+                    "example": "Available"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                }
+            }
+        },
+        "resource.TbCustomImageReq": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspCustomImageId": {
+                    "description": "This field is for 'Register existing custom image'",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sourceVmId": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.TbDataDiskInfo": {
+            "type": "object",
+            "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connectionName": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "createdTime": {
+                    "type": "string",
+                    "example": "2022-10-12T05:09:51.05Z"
+                },
+                "cspDataDiskId": {
+                    "type": "string",
+                    "example": "vol-0d397c3239629bd43"
+                },
+                "cspDataDiskName": {
+                    "type": "string",
+                    "example": "default-aws-ap-southeast-1-datadisk"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Available"
+                },
+                "diskSize": {
+                    "type": "string",
+                    "example": "77"
+                },
+                "diskType": {
+                    "type": "string",
+                    "example": "standard"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-datadisk"
+                },
+                "isAutoGenerated": {
+                    "type": "boolean"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-datadisk"
+                },
+                "status": {
+                    "description": "Available, Unavailable, Attached, ...",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/resource.DiskStatus"
+                        }
+                    ],
+                    "example": "Available"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                }
+            }
+        },
+        "resource.TbDataDiskReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "diskSize",
+                "name"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "cspDataDiskId": {
+                    "description": "Fields for \"Register existing dataDisk\" feature\nCspDataDiskId is required to register object from CSP (option=register)",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "diskSize": {
+                    "type": "string",
+                    "default": "100",
+                    "example": "77"
+                },
+                "diskType": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-datadisk"
+                }
+            }
+        },
+        "resource.TbDataDiskUpsizeReq": {
+            "type": "object",
+            "required": [
+                "diskSize"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "diskSize": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.TbDataDiskVmReq": {
+            "type": "object",
+            "required": [
+                "diskSize",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "diskSize": {
+                    "type": "string",
+                    "default": "100",
+                    "example": "77"
+                },
+                "diskType": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-datadisk"
+                }
+            }
+        },
+        "resource.TbFirewallRuleInfo": {
+            "type": "object",
+            "required": [
+                "direction",
+                "fromPort",
+                "ipprotocol",
+                "toPort"
+            ],
+            "properties": {
+                "cidr": {
+                    "type": "string"
+                },
+                "direction": {
+                    "description": "` + "`" + `json:\"direction\"` + "`" + `",
+                    "type": "string"
+                },
+                "fromPort": {
+                    "description": "` + "`" + `json:\"fromPort\"` + "`" + `",
+                    "type": "string"
+                },
+                "ipprotocol": {
+                    "description": "` + "`" + `json:\"ipProtocol\"` + "`" + `",
+                    "type": "string"
+                },
+                "toPort": {
+                    "description": "` + "`" + `json:\"toPort\"` + "`" + `",
+                    "type": "string"
+                }
+            }
+        },
+        "resource.TbFirewallRulesWrapper": {
+            "type": "object",
+            "properties": {
+                "firewallRules": {
+                    "description": "validate:\"required\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.TbFirewallRuleInfo"
+                    }
+                }
+            }
+        },
+        "resource.TbImageInfo": {
+            "type": "object",
+            "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "creationDate": {
+                    "type": "string"
+                },
+                "cspImageId": {
+                    "type": "string"
+                },
+                "cspImageName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "guestOS": {
+                    "description": "Windows7, Ubuntu etc.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "infraType": {
+                    "description": "vm|k8s|kubernetes|container, etc.",
+                    "type": "string"
+                },
+                "isAutoGenerated": {
+                    "type": "boolean"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "description": "required to save in RDB",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "available, unavailable",
+                    "type": "string"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                }
+            }
+        },
+        "resource.TbImageReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "cspImageId",
+                "name"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspImageId": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.TbSecurityGroupInfo": {
+            "type": "object",
+            "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspSecurityGroupId": {
+                    "type": "string"
+                },
+                "cspSecurityGroupName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "firewallRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.TbFirewallRuleInfo"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isAutoGenerated": {
+                    "type": "boolean"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "vNetId": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.TbSecurityGroupReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "name",
+                "vNetId"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspSecurityGroupId": {
+                    "description": "CspSecurityGroupId is required to register object from CSP (option=register)",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "firewallRules": {
+                    "description": "validate:\"required\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.TbFirewallRuleInfo"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "vNetId": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.TbSpecInfo": {
+            "type": "object",
+            "properties": {
+                "acceleratorCount": {
+                    "type": "integer"
+                },
+                "acceleratorMemoryGB": {
+                    "type": "number"
+                },
+                "acceleratorModel": {
+                    "type": "string"
+                },
+                "acceleratorType": {
+                    "type": "string"
+                },
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "costPerHour": {
+                    "type": "number"
+                },
+                "cspSpecName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "evaluationScore01": {
+                    "type": "number"
+                },
+                "evaluationScore02": {
+                    "type": "number"
+                },
+                "evaluationScore03": {
+                    "type": "number"
+                },
+                "evaluationScore04": {
+                    "type": "number"
+                },
+                "evaluationScore05": {
+                    "type": "number"
+                },
+                "evaluationScore06": {
+                    "type": "number"
+                },
+                "evaluationScore07": {
+                    "type": "number"
+                },
+                "evaluationScore08": {
+                    "type": "number"
+                },
+                "evaluationScore09": {
+                    "type": "number"
+                },
+                "evaluationScore10": {
+                    "type": "number"
+                },
+                "evaluationStatus": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "infraType": {
+                    "description": "vm|k8s|kubernetes|container, etc.",
+                    "type": "string"
+                },
+                "isAutoGenerated": {
+                    "type": "boolean"
+                },
+                "maxTotalStorageTiB": {
+                    "type": "integer"
+                },
+                "memoryGiB": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "description": "required to save in RDB",
+                    "type": "string"
+                },
+                "netBwGbps": {
+                    "type": "integer"
+                },
+                "orderInFilteredResult": {
+                    "type": "integer"
+                },
+                "osType": {
+                    "type": "string"
+                },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                },
+                "rootDiskSize": {
+                    "type": "string"
+                },
+                "rootDiskType": {
+                    "type": "string"
+                },
+                "storageGiB": {
+                    "type": "integer"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "vCPU": {
+                    "type": "integer"
+                }
+            }
+        },
+        "resource.TbSpecReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "cspSpecName",
+                "name"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspSpecName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.TbSshKeyInfo": {
+            "type": "object",
+            "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspSshKeyId": {
+                    "description": "CspSshKeyId used for CSP-native identifier (either Name or ID)",
+                    "type": "string"
+                },
+                "cspSshKeyName": {
+                    "description": "CspSshKeyName used for CB-Spider identifier",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "fingerprint": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isAutoGenerated": {
+                    "type": "boolean"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "privateKey": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "type": "string"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "verifiedUsername": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.TbSshKeyReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "name"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspSshKeyId": {
+                    "description": "Fields for \"Register existing SSH keys\" feature\nCspSshKeyId is required to register object from CSP (option=register)",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "fingerprint": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "privateKey": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "verifiedUsername": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.TbSubnetInfo": {
+            "type": "object",
+            "required": [
+                "ipv4_CIDR",
+                "name"
+            ],
+            "properties": {
+                "bastionNodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.BastionNode"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "idFromCsp": {
+                    "type": "string"
+                },
+                "ipv4_CIDR": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.TbSubnetReq": {
+            "type": "object",
+            "required": [
+                "ipv4_CIDR",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "idFromCsp": {
+                    "type": "string"
+                },
+                "ipv4_CIDR": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.TbVNetInfo": {
+            "type": "object",
+            "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cidrBlock": {
+                    "type": "string"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspVNetId": {
+                    "type": "string"
+                },
+                "cspVNetName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isAutoGenerated": {
+                    "type": "boolean"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "subnetInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.TbSubnetInfo"
+                    }
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                }
+            }
+        },
+        "resource.TbVNetReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "name"
+            ],
+            "properties": {
+                "cidrBlock": {
+                    "type": "string"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspVNetId": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subnetInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.TbSubnetReq"
+                    }
+                }
+            }
         }
     },
     "securityDefinitions": {

@@ -28,11 +28,12 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/auth"
+
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
-	rest_mci "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mci"
-	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcir"
+	rest_infra "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares/authmw"
 	middlewares "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares/custom-middleware"
+	rest_resource "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/resource"
 	rest_netutil "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/util"
 
 	"crypto/subtle"
@@ -219,11 +220,11 @@ func RunServer(port string) {
 	e.GET("/tumblebug/credential/publicKey", rest_common.RestGetPublicKeyForCredentialEncryption)
 	e.POST("/tumblebug/credential", rest_common.RestRegisterCredential)
 
-	e.POST("/tumblebug/lookupSpecs", rest_mcir.RestLookupSpecList)
-	e.POST("/tumblebug/lookupSpec", rest_mcir.RestLookupSpec)
+	e.POST("/tumblebug/lookupSpecs", rest_resource.RestLookupSpecList)
+	e.POST("/tumblebug/lookupSpec", rest_resource.RestLookupSpec)
 
-	e.POST("/tumblebug/lookupImages", rest_mcir.RestLookupImageList)
-	e.POST("/tumblebug/lookupImage", rest_mcir.RestLookupImage)
+	e.POST("/tumblebug/lookupImages", rest_resource.RestLookupImageList)
+	e.POST("/tumblebug/lookupImage", rest_resource.RestLookupImage)
 
 	e.POST("/tumblebug/inspectResources", rest_common.RestInspectResources)
 	e.GET("/tumblebug/inspectResourcesOverview", rest_common.RestInspectResourcesOverview)
@@ -248,9 +249,9 @@ func RunServer(port string) {
 	e.DELETE("/tumblebug/object", rest_common.RestDeleteObject)
 	e.DELETE("/tumblebug/objects", rest_common.RestDeleteObjects)
 
-	e.GET("/tumblebug/loadCommonResource", rest_mcir.RestLoadCommonResource)
-	e.GET("/tumblebug/ns/:nsId/loadSharedResource", rest_mcir.RestLoadSharedResource)
-	e.DELETE("/tumblebug/ns/:nsId/sharedResources", rest_mcir.RestDelAllSharedResources)
+	e.GET("/tumblebug/loadCommonResource", rest_resource.RestLoadCommonResource)
+	e.GET("/tumblebug/ns/:nsId/loadSharedResource", rest_resource.RestLoadSharedResource)
+	e.DELETE("/tumblebug/ns/:nsId/sharedResources", rest_resource.RestDelAllSharedResources)
 
 	e.POST("/tumblebug/forward/*", rest_common.RestForwardAnyReqToAny)
 
@@ -273,18 +274,18 @@ func RunServer(port string) {
 	g.DELETE("", rest_common.RestDelAllNs)
 
 	//MCI Management
-	g.POST("/:nsId/mci", rest_mci.RestPostMci)
-	g.POST("/:nsId/registerCspVm", rest_mci.RestPostRegisterCSPNativeVM)
+	g.POST("/:nsId/mci", rest_infra.RestPostMci)
+	g.POST("/:nsId/registerCspVm", rest_infra.RestPostRegisterCSPNativeVM)
 
-	e.POST("/tumblebug/mciRecommendVm", rest_mci.RestRecommendVm)
-	e.POST("/tumblebug/mciDynamicCheckRequest", rest_mci.RestPostMciDynamicCheckRequest)
-	e.POST("/tumblebug/systemMci", rest_mci.RestPostSystemMci)
+	e.POST("/tumblebug/mciRecommendVm", rest_infra.RestRecommendVm)
+	e.POST("/tumblebug/mciDynamicCheckRequest", rest_infra.RestPostMciDynamicCheckRequest)
+	e.POST("/tumblebug/systemMci", rest_infra.RestPostSystemMci)
 
-	g.POST("/:nsId/mciDynamic", rest_mci.RestPostMciDynamic)
-	g.POST("/:nsId/mci/:mciId/vmDynamic", rest_mci.RestPostMciVmDynamic)
+	g.POST("/:nsId/mciDynamic", rest_infra.RestPostMciDynamic)
+	g.POST("/:nsId/mci/:mciId/vmDynamic", rest_infra.RestPostMciVmDynamic)
 
-	//g.GET("/:nsId/mci/:mciId", rest_mci.RestGetMci, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
-	//g.GET("/:nsId/mci", rest_mci.RestGetAllMci, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
+	//g.GET("/:nsId/mci/:mciId", rest_infra.RestGetMci, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
+	//g.GET("/:nsId/mci", rest_infra.RestGetAllMci, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
 	// path specific timeout and ratelimit
 	// timeout middleware
 	timeoutConfig := middleware.TimeoutConfig{
@@ -293,199 +294,199 @@ func RunServer(port string) {
 		ErrorMessage: "Error: request time out (60s)",
 	}
 
-	g.GET("/:nsId/mci/:mciId", rest_mci.RestGetMci, middleware.TimeoutWithConfig(timeoutConfig),
+	g.GET("/:nsId/mci/:mciId", rest_infra.RestGetMci, middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
-	g.GET("/:nsId/mci", rest_mci.RestGetAllMci, middleware.TimeoutWithConfig(timeoutConfig),
+	g.GET("/:nsId/mci", rest_infra.RestGetAllMci, middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
 
-	// g.PUT("/:nsId/mci/:mciId", rest_mci.RestPutMci)
-	g.DELETE("/:nsId/mci/:mciId", rest_mci.RestDelMci)
-	g.DELETE("/:nsId/mci", rest_mci.RestDelAllMci)
+	// g.PUT("/:nsId/mci/:mciId", rest_infra.RestPutMci)
+	g.DELETE("/:nsId/mci/:mciId", rest_infra.RestDelMci)
+	g.DELETE("/:nsId/mci", rest_infra.RestDelAllMci)
 
-	g.POST("/:nsId/mci/:mciId/vm", rest_mci.RestPostMciVm)
-	g.GET("/:nsId/mci/:mciId/vm/:vmId", rest_mci.RestGetMciVm)
-	g.GET("/:nsId/mci/:mciId/subgroup", rest_mci.RestGetMciGroupIds)
-	g.GET("/:nsId/mci/:mciId/subgroup/:subgroupId", rest_mci.RestGetMciGroupVms)
-	g.POST("/:nsId/mci/:mciId/subgroup/:subgroupId", rest_mci.RestPostMciSubGroupScaleOut)
+	g.POST("/:nsId/mci/:mciId/vm", rest_infra.RestPostMciVm)
+	g.GET("/:nsId/mci/:mciId/vm/:vmId", rest_infra.RestGetMciVm)
+	g.GET("/:nsId/mci/:mciId/subgroup", rest_infra.RestGetMciGroupIds)
+	g.GET("/:nsId/mci/:mciId/subgroup/:subgroupId", rest_infra.RestGetMciGroupVms)
+	g.POST("/:nsId/mci/:mciId/subgroup/:subgroupId", rest_infra.RestPostMciSubGroupScaleOut)
 
-	//g.GET("/:nsId/mci/:mciId/vm", rest_mci.RestGetAllMciVm)
-	// g.PUT("/:nsId/mci/:mciId/vm/:vmId", rest_mci.RestPutMciVm)
-	g.DELETE("/:nsId/mci/:mciId/vm/:vmId", rest_mci.RestDelMciVm)
-	//g.DELETE("/:nsId/mci/:mciId/vm", rest_mci.RestDelAllMciVm)
+	//g.GET("/:nsId/mci/:mciId/vm", rest_infra.RestGetAllMciVm)
+	// g.PUT("/:nsId/mci/:mciId/vm/:vmId", rest_infra.RestPutMciVm)
+	g.DELETE("/:nsId/mci/:mciId/vm/:vmId", rest_infra.RestDelMciVm)
+	//g.DELETE("/:nsId/mci/:mciId/vm", rest_infra.RestDelAllMciVm)
 
-	//g.POST("/:nsId/mci/recommend", rest_mci.RestPostMciRecommend)
+	//g.POST("/:nsId/mci/recommend", rest_infra.RestPostMciRecommend)
 
-	g.GET("/:nsId/control/mci/:mciId", rest_mci.RestGetControlMci)
-	g.GET("/:nsId/control/mci/:mciId/vm/:vmId", rest_mci.RestGetControlMciVm)
+	g.GET("/:nsId/control/mci/:mciId", rest_infra.RestGetControlMci)
+	g.GET("/:nsId/control/mci/:mciId/vm/:vmId", rest_infra.RestGetControlMciVm)
 
-	g.POST("/:nsId/cmd/mci/:mciId", rest_mci.RestPostCmdMci)
-	g.PUT("/:nsId/mci/:mciId/vm/:targetVmId/bastion/:bastionVmId", rest_mci.RestSetBastionNodes)
-	g.DELETE("/:nsId/mci/:mciId/bastion/:bastionVmId", rest_mci.RestRemoveBastionNodes)
-	g.GET("/:nsId/mci/:mciId/vm/:targetVmId/bastion", rest_mci.RestGetBastionNodes)
+	g.POST("/:nsId/cmd/mci/:mciId", rest_infra.RestPostCmdMci)
+	g.PUT("/:nsId/mci/:mciId/vm/:targetVmId/bastion/:bastionVmId", rest_infra.RestSetBastionNodes)
+	g.DELETE("/:nsId/mci/:mciId/bastion/:bastionVmId", rest_infra.RestRemoveBastionNodes)
+	g.GET("/:nsId/mci/:mciId/vm/:targetVmId/bastion", rest_infra.RestGetBastionNodes)
 
-	g.POST("/:nsId/installBenchmarkAgent/mci/:mciId", rest_mci.RestPostInstallBenchmarkAgentToMci)
-	g.POST("/:nsId/benchmark/mci/:mciId", rest_mci.RestGetBenchmark)
-	g.POST("/:nsId/benchmarkAll/mci/:mciId", rest_mci.RestGetAllBenchmark)
-	g.GET("/:nsId/benchmarkLatency/mci/:mciId", rest_mci.RestGetBenchmarkLatency)
+	g.POST("/:nsId/installBenchmarkAgent/mci/:mciId", rest_infra.RestPostInstallBenchmarkAgentToMci)
+	g.POST("/:nsId/benchmark/mci/:mciId", rest_infra.RestGetBenchmark)
+	g.POST("/:nsId/benchmarkAll/mci/:mciId", rest_infra.RestGetAllBenchmark)
+	g.GET("/:nsId/benchmarkLatency/mci/:mciId", rest_infra.RestGetBenchmarkLatency)
 
 	// VPN Sites info
-	g.GET("/:nsId/mci/:mciId/site", rest_mci.RestGetSitesInMci)
+	g.GET("/:nsId/mci/:mciId/site", rest_infra.RestGetSitesInMci)
 
 	// Site-to-stie VPN management
-	streamResponseGroup.POST("/:nsId/mci/:mciId/vpn/:vpnId", rest_mci.RestPostSiteToSiteVpn)
-	g.GET("/:nsId/mci/:mciId/vpn/:vpnId", rest_mci.RestGetSiteToSiteVpn)
-	streamResponseGroup.PUT("/:nsId/mci/:mciId/vpn/:vpnId", rest_mci.RestPutSiteToSiteVpn)
-	streamResponseGroup.DELETE("/:nsId/mci/:mciId/vpn/:vpnId", rest_mci.RestDeleteSiteToSiteVpn)
-	g.GET("/:nsId/mci/:mciId/vpn/:vpnId/request/:requestId", rest_mci.RestGetRequestStatusOfSiteToSiteVpn)
+	streamResponseGroup.POST("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestPostSiteToSiteVpn)
+	g.GET("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestGetSiteToSiteVpn)
+	streamResponseGroup.PUT("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestPutSiteToSiteVpn)
+	streamResponseGroup.DELETE("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestDeleteSiteToSiteVpn)
+	g.GET("/:nsId/mci/:mciId/vpn/:vpnId/request/:requestId", rest_infra.RestGetRequestStatusOfSiteToSiteVpn)
 	// TBD
-	// g.POST("/:nsId/mci/:mciId/vpn/:vpnId", rest_mci.RestPostVpnGcpToAws)
-	// g.PUT("/:nsId/mci/:mciId/vpn/:vpnId", rest_mci.RestPutVpnGcpToAws)
-	// g.DELETE("/:nsId/mci/:mciId/vpn/:vpnId", rest_mci.RestDeleteVpnGcpToAws)
+	// g.POST("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestPostVpnGcpToAws)
+	// g.PUT("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestPutVpnGcpToAws)
+	// g.DELETE("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestDeleteVpnGcpToAws)
 
 	//MCI AUTO Policy
-	g.POST("/:nsId/policy/mci/:mciId", rest_mci.RestPostMciPolicy)
-	g.GET("/:nsId/policy/mci/:mciId", rest_mci.RestGetMciPolicy)
-	g.GET("/:nsId/policy/mci", rest_mci.RestGetAllMciPolicy)
-	g.PUT("/:nsId/policy/mci/:mciId", rest_mci.RestPutMciPolicy)
-	g.DELETE("/:nsId/policy/mci/:mciId", rest_mci.RestDelMciPolicy)
-	g.DELETE("/:nsId/policy/mci", rest_mci.RestDelAllMciPolicy)
+	g.POST("/:nsId/policy/mci/:mciId", rest_infra.RestPostMciPolicy)
+	g.GET("/:nsId/policy/mci/:mciId", rest_infra.RestGetMciPolicy)
+	g.GET("/:nsId/policy/mci", rest_infra.RestGetAllMciPolicy)
+	g.PUT("/:nsId/policy/mci/:mciId", rest_infra.RestPutMciPolicy)
+	g.DELETE("/:nsId/policy/mci/:mciId", rest_infra.RestDelMciPolicy)
+	g.DELETE("/:nsId/policy/mci", rest_infra.RestDelAllMciPolicy)
 
-	g.POST("/:nsId/monitoring/install/mci/:mciId", rest_mci.RestPostInstallMonitorAgentToMci)
-	g.GET("/:nsId/monitoring/mci/:mciId/metric/:metric", rest_mci.RestGetMonitorData)
-	g.PUT("/:nsId/monitoring/status/mci/:mciId/vm/:vmId", rest_mci.RestPutMonitorAgentStatusInstalled)
+	g.POST("/:nsId/monitoring/install/mci/:mciId", rest_infra.RestPostInstallMonitorAgentToMci)
+	g.GET("/:nsId/monitoring/mci/:mciId/metric/:metric", rest_infra.RestGetMonitorData)
+	g.PUT("/:nsId/monitoring/status/mci/:mciId/vm/:vmId", rest_infra.RestPutMonitorAgentStatusInstalled)
 
 	// K8sCluster
-	e.GET("/tumblebug/availableK8sClusterVersion", rest_mci.RestGetAvailableK8sClusterVersion)
-	e.GET("/tumblebug/availableK8sClusterNodeImage", rest_mci.RestGetAvailableK8sClusterNodeImage)
-	e.GET("/tumblebug/checkNodeGroupsOnK8sCreation", rest_mci.RestCheckNodeGroupsOnK8sCreation)
-	g.POST("/:nsId/k8scluster", rest_mci.RestPostK8sCluster)
-	g.POST("/:nsId/k8scluster/:k8sClusterId/k8snodegroup", rest_mci.RestPostK8sNodeGroup)
-	g.DELETE("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName", rest_mci.RestDeleteK8sNodeGroup)
-	g.PUT("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName/onautoscaling", rest_mci.RestPutSetK8sNodeGroupAutoscaling)
-	g.PUT("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName/autoscalesize", rest_mci.RestPutChangeK8sNodeGroupAutoscaleSize)
-	g.GET("/:nsId/k8scluster/:k8sClusterId", rest_mci.RestGetK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
+	e.GET("/tumblebug/availableK8sClusterVersion", rest_infra.RestGetAvailableK8sClusterVersion)
+	e.GET("/tumblebug/availableK8sClusterNodeImage", rest_infra.RestGetAvailableK8sClusterNodeImage)
+	e.GET("/tumblebug/checkNodeGroupsOnK8sCreation", rest_infra.RestCheckNodeGroupsOnK8sCreation)
+	g.POST("/:nsId/k8scluster", rest_infra.RestPostK8sCluster)
+	g.POST("/:nsId/k8scluster/:k8sClusterId/k8snodegroup", rest_infra.RestPostK8sNodeGroup)
+	g.DELETE("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName", rest_infra.RestDeleteK8sNodeGroup)
+	g.PUT("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName/onautoscaling", rest_infra.RestPutSetK8sNodeGroupAutoscaling)
+	g.PUT("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName/autoscalesize", rest_infra.RestPutChangeK8sNodeGroupAutoscaleSize)
+	g.GET("/:nsId/k8scluster/:k8sClusterId", rest_infra.RestGetK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
-	g.GET("/:nsId/k8scluster", rest_mci.RestGetAllK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
+	g.GET("/:nsId/k8scluster", rest_infra.RestGetAllK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
-	g.DELETE("/:nsId/k8scluster/:k8sClusterId", rest_mci.RestDeleteK8sCluster)
-	g.DELETE("/:nsId/k8scluster", rest_mci.RestDeleteAllK8sCluster)
-	g.PUT("/:nsId/k8scluster/:k8sClusterId/upgrade", rest_mci.RestPutUpgradeK8sCluster)
+	g.DELETE("/:nsId/k8scluster/:k8sClusterId", rest_infra.RestDeleteK8sCluster)
+	g.DELETE("/:nsId/k8scluster", rest_infra.RestDeleteAllK8sCluster)
+	g.PUT("/:nsId/k8scluster/:k8sClusterId/upgrade", rest_infra.RestPutUpgradeK8sCluster)
 
 	// Network Load Balancer
-	g.POST("/:nsId/mci/:mciId/mcSwNlb", rest_mci.RestPostMcNLB)
-	g.POST("/:nsId/mci/:mciId/nlb", rest_mci.RestPostNLB)
-	g.GET("/:nsId/mci/:mciId/nlb/:resourceId", rest_mci.RestGetNLB)
-	g.GET("/:nsId/mci/:mciId/nlb", rest_mci.RestGetAllNLB)
-	// g.PUT("/:nsId/mci/:mciId/nlb/:resourceId", rest_mci.RestPutNLB)
-	g.DELETE("/:nsId/mci/:mciId/nlb/:resourceId", rest_mci.RestDelNLB)
-	g.DELETE("/:nsId/mci/:mciId/nlb", rest_mci.RestDelAllNLB)
-	g.GET("/:nsId/mci/:mciId/nlb/:resourceId/healthz", rest_mci.RestGetNLBHealth)
+	g.POST("/:nsId/mci/:mciId/mcSwNlb", rest_infra.RestPostMcNLB)
+	g.POST("/:nsId/mci/:mciId/nlb", rest_infra.RestPostNLB)
+	g.GET("/:nsId/mci/:mciId/nlb/:resourceId", rest_infra.RestGetNLB)
+	g.GET("/:nsId/mci/:mciId/nlb", rest_infra.RestGetAllNLB)
+	// g.PUT("/:nsId/mci/:mciId/nlb/:resourceId", rest_infra.RestPutNLB)
+	g.DELETE("/:nsId/mci/:mciId/nlb/:resourceId", rest_infra.RestDelNLB)
+	g.DELETE("/:nsId/mci/:mciId/nlb", rest_infra.RestDelAllNLB)
+	g.GET("/:nsId/mci/:mciId/nlb/:resourceId/healthz", rest_infra.RestGetNLBHealth)
 
 	// VM snapshot -> creates one customImage and 'n' dataDisks
-	g.POST("/:nsId/mci/:mciId/vm/:vmId/snapshot", rest_mci.RestPostMciVmSnapshot)
+	g.POST("/:nsId/mci/:mciId/vm/:vmId/snapshot", rest_infra.RestPostMciVmSnapshot)
 
 	// These REST APIs are for dev/test only
-	g.POST("/:nsId/mci/:mciId/nlb/:resourceId/vm", rest_mci.RestAddNLBVMs)
-	g.DELETE("/:nsId/mci/:mciId/nlb/:resourceId/vm", rest_mci.RestRemoveNLBVMs)
+	g.POST("/:nsId/mci/:mciId/nlb/:resourceId/vm", rest_infra.RestAddNLBVMs)
+	g.DELETE("/:nsId/mci/:mciId/nlb/:resourceId/vm", rest_infra.RestRemoveNLBVMs)
 
-	//MCIR Management
-	g.POST("/:nsId/resources/dataDisk", rest_mcir.RestPostDataDisk)
-	g.GET("/:nsId/resources/dataDisk/:resourceId", rest_mcir.RestGetResource)
-	g.GET("/:nsId/resources/dataDisk", rest_mcir.RestGetAllResources)
-	g.PUT("/:nsId/resources/dataDisk/:resourceId", rest_mcir.RestPutDataDisk)
-	g.DELETE("/:nsId/resources/dataDisk/:resourceId", rest_mcir.RestDelResource)
-	g.DELETE("/:nsId/resources/dataDisk", rest_mcir.RestDelAllResources)
-	g.GET("/:nsId/mci/:mciId/vm/:vmId/dataDisk", rest_mcir.RestGetVmDataDisk)
-	g.POST("/:nsId/mci/:mciId/vm/:vmId/dataDisk", rest_mcir.RestPostVmDataDisk)
-	g.PUT("/:nsId/mci/:mciId/vm/:vmId/dataDisk", rest_mcir.RestPutVmDataDisk)
+	//Resource Management
+	g.POST("/:nsId/resources/dataDisk", rest_resource.RestPostDataDisk)
+	g.GET("/:nsId/resources/dataDisk/:resourceId", rest_resource.RestGetResource)
+	g.GET("/:nsId/resources/dataDisk", rest_resource.RestGetAllResources)
+	g.PUT("/:nsId/resources/dataDisk/:resourceId", rest_resource.RestPutDataDisk)
+	g.DELETE("/:nsId/resources/dataDisk/:resourceId", rest_resource.RestDelResource)
+	g.DELETE("/:nsId/resources/dataDisk", rest_resource.RestDelAllResources)
+	g.GET("/:nsId/mci/:mciId/vm/:vmId/dataDisk", rest_resource.RestGetVmDataDisk)
+	g.POST("/:nsId/mci/:mciId/vm/:vmId/dataDisk", rest_resource.RestPostVmDataDisk)
+	g.PUT("/:nsId/mci/:mciId/vm/:vmId/dataDisk", rest_resource.RestPutVmDataDisk)
 
-	g.POST("/:nsId/resources/image", rest_mcir.RestPostImage)
-	g.GET("/:nsId/resources/image/:resourceId", rest_mcir.RestGetResource)
-	g.GET("/:nsId/resources/image", rest_mcir.RestGetAllResources)
-	g.PUT("/:nsId/resources/image/:resourceId", rest_mcir.RestPutImage)
-	g.DELETE("/:nsId/resources/image/:resourceId", rest_mcir.RestDelResource)
-	g.DELETE("/:nsId/resources/image", rest_mcir.RestDelAllResources)
+	g.POST("/:nsId/resources/image", rest_resource.RestPostImage)
+	g.GET("/:nsId/resources/image/:resourceId", rest_resource.RestGetResource)
+	g.GET("/:nsId/resources/image", rest_resource.RestGetAllResources)
+	g.PUT("/:nsId/resources/image/:resourceId", rest_resource.RestPutImage)
+	g.DELETE("/:nsId/resources/image/:resourceId", rest_resource.RestDelResource)
+	g.DELETE("/:nsId/resources/image", rest_resource.RestDelAllResources)
 
-	g.POST("/:nsId/resources/customImage", rest_mcir.RestPostCustomImage)
-	g.GET("/:nsId/resources/customImage/:resourceId", rest_mcir.RestGetResource)
-	g.GET("/:nsId/resources/customImage", rest_mcir.RestGetAllResources)
-	// g.PUT("/:nsId/resources/customImage/:resourceId", rest_mcir.RestPutCustomImage)
-	g.DELETE("/:nsId/resources/customImage/:resourceId", rest_mcir.RestDelResource)
-	g.DELETE("/:nsId/resources/customImage", rest_mcir.RestDelAllResources)
+	g.POST("/:nsId/resources/customImage", rest_resource.RestPostCustomImage)
+	g.GET("/:nsId/resources/customImage/:resourceId", rest_resource.RestGetResource)
+	g.GET("/:nsId/resources/customImage", rest_resource.RestGetAllResources)
+	// g.PUT("/:nsId/resources/customImage/:resourceId", rest_resource.RestPutCustomImage)
+	g.DELETE("/:nsId/resources/customImage/:resourceId", rest_resource.RestDelResource)
+	g.DELETE("/:nsId/resources/customImage", rest_resource.RestDelAllResources)
 
-	g.POST("/:nsId/resources/sshKey", rest_mcir.RestPostSshKey)
-	g.GET("/:nsId/resources/sshKey/:resourceId", rest_mcir.RestGetResource)
-	g.GET("/:nsId/resources/sshKey", rest_mcir.RestGetAllResources)
-	g.PUT("/:nsId/resources/sshKey/:resourceId", rest_mcir.RestPutSshKey)
-	g.DELETE("/:nsId/resources/sshKey/:resourceId", rest_mcir.RestDelResource)
-	g.DELETE("/:nsId/resources/sshKey", rest_mcir.RestDelAllResources)
+	g.POST("/:nsId/resources/sshKey", rest_resource.RestPostSshKey)
+	g.GET("/:nsId/resources/sshKey/:resourceId", rest_resource.RestGetResource)
+	g.GET("/:nsId/resources/sshKey", rest_resource.RestGetAllResources)
+	g.PUT("/:nsId/resources/sshKey/:resourceId", rest_resource.RestPutSshKey)
+	g.DELETE("/:nsId/resources/sshKey/:resourceId", rest_resource.RestDelResource)
+	g.DELETE("/:nsId/resources/sshKey", rest_resource.RestDelAllResources)
 
-	g.POST("/:nsId/resources/spec", rest_mcir.RestPostSpec)
-	g.GET("/:nsId/resources/spec/:resourceId", rest_mcir.RestGetSpec)
-	g.PUT("/:nsId/resources/spec/:resourceId", rest_mcir.RestPutSpec)
-	g.DELETE("/:nsId/resources/spec/:resourceId", rest_mcir.RestDelResource)
+	g.POST("/:nsId/resources/spec", rest_resource.RestPostSpec)
+	g.GET("/:nsId/resources/spec/:resourceId", rest_resource.RestGetSpec)
+	g.PUT("/:nsId/resources/spec/:resourceId", rest_resource.RestPutSpec)
+	g.DELETE("/:nsId/resources/spec/:resourceId", rest_resource.RestDelResource)
 
-	g.POST("/:nsId/resources/fetchSpecs", rest_mcir.RestFetchSpecs)
-	g.POST("/:nsId/resources/filterSpecsByRange", rest_mcir.RestFilterSpecsByRange)
+	g.POST("/:nsId/resources/fetchSpecs", rest_resource.RestFetchSpecs)
+	g.POST("/:nsId/resources/filterSpecsByRange", rest_resource.RestFilterSpecsByRange)
 
-	g.POST("/:nsId/resources/fetchImages", rest_mcir.RestFetchImages)
-	g.POST("/:nsId/resources/searchImage", rest_mcir.RestSearchImage)
+	g.POST("/:nsId/resources/fetchImages", rest_resource.RestFetchImages)
+	g.POST("/:nsId/resources/searchImage", rest_resource.RestSearchImage)
 
-	g.POST("/:nsId/resources/securityGroup", rest_mcir.RestPostSecurityGroup)
-	g.GET("/:nsId/resources/securityGroup/:resourceId", rest_mcir.RestGetResource)
-	g.GET("/:nsId/resources/securityGroup", rest_mcir.RestGetAllResources)
-	g.PUT("/:nsId/resources/securityGroup/:resourceId", rest_mcir.RestPutSecurityGroup)
-	g.DELETE("/:nsId/resources/securityGroup/:resourceId", rest_mcir.RestDelResource)
-	g.DELETE("/:nsId/resources/securityGroup", rest_mcir.RestDelAllResources)
+	g.POST("/:nsId/resources/securityGroup", rest_resource.RestPostSecurityGroup)
+	g.GET("/:nsId/resources/securityGroup/:resourceId", rest_resource.RestGetResource)
+	g.GET("/:nsId/resources/securityGroup", rest_resource.RestGetAllResources)
+	g.PUT("/:nsId/resources/securityGroup/:resourceId", rest_resource.RestPutSecurityGroup)
+	g.DELETE("/:nsId/resources/securityGroup/:resourceId", rest_resource.RestDelResource)
+	g.DELETE("/:nsId/resources/securityGroup", rest_resource.RestDelAllResources)
 
-	g.POST("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_mcir.RestPostFirewallRules)
-	g.DELETE("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_mcir.RestDelFirewallRules)
+	g.POST("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_resource.RestPostFirewallRules)
+	g.DELETE("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_resource.RestDelFirewallRules)
 
-	g.POST("/:nsId/resources/vNet", rest_mcir.RestPostVNet)
-	g.GET("/:nsId/resources/vNet/:resourceId", rest_mcir.RestGetResource)
-	g.GET("/:nsId/resources/vNet", rest_mcir.RestGetAllResources)
-	g.PUT("/:nsId/resources/vNet/:resourceId", rest_mcir.RestPutVNet)
-	g.DELETE("/:nsId/resources/vNet/:resourceId", rest_mcir.RestDelResource)
-	g.DELETE("/:nsId/resources/vNet", rest_mcir.RestDelAllResources)
+	g.POST("/:nsId/resources/vNet", rest_resource.RestPostVNet)
+	g.GET("/:nsId/resources/vNet/:resourceId", rest_resource.RestGetResource)
+	g.GET("/:nsId/resources/vNet", rest_resource.RestGetAllResources)
+	g.PUT("/:nsId/resources/vNet/:resourceId", rest_resource.RestPutVNet)
+	g.DELETE("/:nsId/resources/vNet/:resourceId", rest_resource.RestDelResource)
+	g.DELETE("/:nsId/resources/vNet", rest_resource.RestDelAllResources)
 
-	g.POST("/:nsId/resources/vNet/:vNetId/subnet", rest_mcir.RestPostSubnet)
-	// g.GET("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_mcir.RestGetSubnet)
-	// g.GET("/:nsId/resources/vNet/:vNetId/subnet", rest_mcir.RestGetAllSubnet)
-	// g.PUT("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_mcir.RestPutSubnet)
-	// g.DELETE("/:nsId/resources/vNet/:parentResourceId/subnet/:childResourceId", rest_mcir.RestDelChildResource)
-	// g.DELETE("/:nsId/resources/vNet/:vNetId/subnet", rest_mcir.RestDelAllSubnet)
+	g.POST("/:nsId/resources/vNet/:vNetId/subnet", rest_resource.RestPostSubnet)
+	// g.GET("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_resource.RestGetSubnet)
+	// g.GET("/:nsId/resources/vNet/:vNetId/subnet", rest_resource.RestGetAllSubnet)
+	// g.PUT("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_resource.RestPutSubnet)
+	// g.DELETE("/:nsId/resources/vNet/:parentResourceId/subnet/:childResourceId", rest_resource.RestDelChildResource)
+	// g.DELETE("/:nsId/resources/vNet/:vNetId/subnet", rest_resource.RestDelAllSubnet)
 
 	/*
-		g.POST("/:nsId/resources/publicIp", mcir.RestPostPublicIp)
-		g.GET("/:nsId/resources/publicIp/:publicIpId", mcir.RestGetPublicIp)
-		g.GET("/:nsId/resources/publicIp", mcir.RestGetAllPublicIp)
-		g.PUT("/:nsId/resources/publicIp/:publicIpId", mcir.RestPutPublicIp)
-		g.DELETE("/:nsId/resources/publicIp/:publicIpId", mcir.RestDelPublicIp)
-		g.DELETE("/:nsId/resources/publicIp", mcir.RestDelAllPublicIp)
+		g.POST("/:nsId/resources/publicIp", resource.RestPostPublicIp)
+		g.GET("/:nsId/resources/publicIp/:publicIpId", resource.RestGetPublicIp)
+		g.GET("/:nsId/resources/publicIp", resource.RestGetAllPublicIp)
+		g.PUT("/:nsId/resources/publicIp/:publicIpId", resource.RestPutPublicIp)
+		g.DELETE("/:nsId/resources/publicIp/:publicIpId", resource.RestDelPublicIp)
+		g.DELETE("/:nsId/resources/publicIp", resource.RestDelAllPublicIp)
 
-		g.POST("/:nsId/resources/vNic", mcir.RestPostVNic)
-		g.GET("/:nsId/resources/vNic/:vNicId", mcir.RestGetVNic)
-		g.GET("/:nsId/resources/vNic", mcir.RestGetAllVNic)
-		g.PUT("/:nsId/resources/vNic/:vNicId", mcir.RestPutVNic)
-		g.DELETE("/:nsId/resources/vNic/:vNicId", mcir.RestDelVNic)
-		g.DELETE("/:nsId/resources/vNic", mcir.RestDelAllVNic)
+		g.POST("/:nsId/resources/vNic", resource.RestPostVNic)
+		g.GET("/:nsId/resources/vNic/:vNicId", resource.RestGetVNic)
+		g.GET("/:nsId/resources/vNic", resource.RestGetAllVNic)
+		g.PUT("/:nsId/resources/vNic/:vNicId", resource.RestPutVNic)
+		g.DELETE("/:nsId/resources/vNic/:vNicId", resource.RestDelVNic)
+		g.DELETE("/:nsId/resources/vNic", resource.RestDelAllVNic)
 	*/
 
 	// We cannot use these wildcard method below.
 	// https://github.com/labstack/echo/issues/382
-	//g.DELETE("/:nsId/resources/:resourceType/:resourceId", mcir.RestDelResource)
-	//g.DELETE("/:nsId/resources/:resourceType", mcir.RestDelAllResources)
+	//g.DELETE("/:nsId/resources/:resourceType/:resourceId", resource.RestDelResource)
+	//g.DELETE("/:nsId/resources/:resourceType", resource.RestDelAllResources)
 
-	g.GET("/:nsId/checkResource/:resourceType/:resourceId", rest_mcir.RestCheckResource)
-	g.GET("/:nsId/checkMci/:mciId", rest_mci.RestCheckMci)
-	g.GET("/:nsId/mci/:mciId/checkVm/:vmId", rest_mci.RestCheckVm)
+	g.GET("/:nsId/checkResource/:resourceType/:resourceId", rest_resource.RestCheckResource)
+	g.GET("/:nsId/checkMci/:mciId", rest_infra.RestCheckMci)
+	g.GET("/:nsId/mci/:mciId/checkVm/:vmId", rest_infra.RestCheckVm)
 
-	// g.POST("/:nsId/registerExistingResources", rest_mcir.RestRegisterExistingResources)
+	// g.POST("/:nsId/registerExistingResources", rest_resource.RestRegisterExistingResources)
 
 	// Temporal test API for development of UpdateAssociatedObjectList
-	g.PUT("/:nsId/testAddObjectAssociation/:resourceType/:resourceId", rest_mcir.RestTestAddObjectAssociation)
-	g.PUT("/:nsId/testDeleteObjectAssociation/:resourceType/:resourceId", rest_mcir.RestTestDeleteObjectAssociation)
-	g.GET("/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId", rest_mcir.RestTestGetAssociatedObjectCount)
+	g.PUT("/:nsId/testAddObjectAssociation/:resourceType/:resourceId", rest_resource.RestTestAddObjectAssociation)
+	g.PUT("/:nsId/testDeleteObjectAssociation/:resourceType/:resourceId", rest_resource.RestTestDeleteObjectAssociation)
+	g.GET("/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId", rest_resource.RestTestGetAssociatedObjectCount)
 
 	selfEndpoint := os.Getenv("TB_SELF_ENDPOINT")
 	apidashboard := " http://" + selfEndpoint + "/tumblebug/api"

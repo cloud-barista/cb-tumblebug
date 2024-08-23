@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function CallSpider() {
-    echo "- Create vNet in ${MCIRRegionNativeName}"
+    echo "- Create vNet in ${ResourceRegionNativeName}"
     
     resp=$(
             curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/vpc -H 'Content-Type: application/json' -d @- <<EOF
@@ -41,7 +41,7 @@ EOF
 			for ((cspj = 1; cspj <= INDEXY; cspj++)); do
 				echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
 
-				MCIRRegionNativeName=${RegionNativeName[$cspi,$cspj]}
+				ResourceRegionNativeName=${RegionNativeName[$cspi,$cspj]}
 
 				INDEX=$cspi
 				REGION=$cspj
@@ -53,7 +53,7 @@ EOF
 	else
 		echo ""
 		
-		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
+		ResourceRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallSpider
 

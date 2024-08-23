@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Create dataDisk in ${MCIRRegionNativeName}"
+	echo "- Create dataDisk in ${ResourceRegionNativeName}"
 
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/dataDisk -H 'Content-Type: application/json' -d \
 		'{ 
@@ -30,7 +30,7 @@ function CallTB() {
 			for ((cspj = 1; cspj <= INDEXY; cspj++)); do
 				echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
 
-				MCIRRegionNativeName=${RegionNativeName[$cspi,$cspj]}
+				ResourceRegionNativeName=${RegionNativeName[$cspi,$cspj]}
 
 				INDEX=$cspi
 				REGION=$cspj
@@ -42,7 +42,7 @@ function CallTB() {
 	else
 		echo ""
 		
-		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
+		ResourceRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallTB
 

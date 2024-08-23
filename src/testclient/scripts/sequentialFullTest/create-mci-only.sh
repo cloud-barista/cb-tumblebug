@@ -64,7 +64,7 @@ function test_sequence_allcsp_mci_vm() {
 SECONDS=0
 
 echo "####################################################################"
-echo "## Create mcir-ns-cloud from Zero Base"
+echo "## Create resource-ns-cloud from Zero Base"
 echo "####################################################################"
 
 source ../init.sh

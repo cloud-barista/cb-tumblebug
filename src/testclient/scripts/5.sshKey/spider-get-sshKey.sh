@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function CallSpider() {
-    echo "- Get sshKey in ${MCIRRegionNativeName}"
+    echo "- Get sshKey in ${ResourceRegionNativeName}"
 
     resp=$(
         curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/keypair/${NSID}-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true -H 'Content-Type: application/json' -d @- <<EOF
@@ -31,7 +31,7 @@ EOF
             for ((cspj = 1; cspj <= INDEXY; cspj++)); do
                 echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
 
-				MCIRRegionNativeName=${RegionNativeName[$cspi,$cspj]}
+				ResourceRegionNativeName=${RegionNativeName[$cspi,$cspj]}
 
 				CallSpider
 
@@ -43,7 +43,7 @@ EOF
 	else
 		echo ""
 		
-		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
+		ResourceRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallSpider
 

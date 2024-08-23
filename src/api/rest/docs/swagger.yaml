@@ -446,7 +446,7 @@ definitions:
       connectionName:
         type: string
     type: object
-  mci.AgentInstallContent:
+  infra.AgentInstallContent:
     properties:
       mciId:
         type: string
@@ -457,14 +457,14 @@ definitions:
       vmIp:
         type: string
     type: object
-  mci.AgentInstallContentWrapper:
+  infra.AgentInstallContentWrapper:
     properties:
       resultArray:
         items:
-          $ref: '#/definitions/mci.AgentInstallContent'
+          $ref: '#/definitions/infra.AgentInstallContent'
         type: array
     type: object
-  mci.AutoAction:
+  infra.AutoAction:
     properties:
       actionType:
         enum:
@@ -477,14 +477,14 @@ definitions:
         type: string
       postCommand:
         allOf:
-        - $ref: '#/definitions/mci.MciCmdReq'
+        - $ref: '#/definitions/infra.MciCmdReq'
         description: PostCommand is field for providing command to VMs after its creation.
           example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh
           -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
       vmDynamicReq:
-        $ref: '#/definitions/mci.TbVmDynamicReq'
+        $ref: '#/definitions/infra.TbVmDynamicReq'
     type: object
-  mci.AutoCondition:
+  infra.AutoCondition:
     properties:
       evaluationPeriod:
         example: "10"
@@ -508,7 +508,7 @@ definitions:
         example: '>='
         type: string
     type: object
-  mci.BenchmarkInfo:
+  infra.BenchmarkInfo:
     properties:
       desc:
         type: string
@@ -521,30 +521,30 @@ definitions:
       resultarray:
         description: struct-element cycle ?
         items:
-          $ref: '#/definitions/mci.BenchmarkInfo'
+          $ref: '#/definitions/infra.BenchmarkInfo'
         type: array
       specid:
         type: string
       unit:
         type: string
     type: object
-  mci.BenchmarkInfoArray:
+  infra.BenchmarkInfoArray:
     properties:
       resultarray:
         items:
-          $ref: '#/definitions/mci.BenchmarkInfo'
+          $ref: '#/definitions/infra.BenchmarkInfo'
         type: array
     type: object
-  mci.CheckMciDynamicReqInfo:
+  infra.CheckMciDynamicReqInfo:
     properties:
       reqCheck:
         items:
-          $ref: '#/definitions/mci.CheckVmDynamicReqInfo'
+          $ref: '#/definitions/infra.CheckVmDynamicReqInfo'
         type: array
     required:
     - reqCheck
     type: object
-  mci.CheckVmDynamicReqInfo:
+  infra.CheckVmDynamicReqInfo:
     properties:
       connectionConfigCandidates:
         description: ConnectionConfigCandidates will provide ConnectionConfig options
@@ -553,21 +553,21 @@ definitions:
         type: array
       image:
         items:
-          $ref: '#/definitions/mcir.TbImageInfo'
+          $ref: '#/definitions/resource.TbImageInfo'
         type: array
       region:
         $ref: '#/definitions/common.RegionDetail'
       spec:
-        $ref: '#/definitions/mcir.TbSpecInfo'
+        $ref: '#/definitions/resource.TbSpecInfo'
       systemMessage:
         description: Latest system message such as error message
         example: Failed because ...
         type: string
     type: object
-  mci.DeploymentPlan:
+  infra.DeploymentPlan:
     properties:
       filter:
-        $ref: '#/definitions/mci.FilterInfo'
+        $ref: '#/definitions/infra.FilterInfo'
       limit:
         enum:
         - "1"
@@ -576,13 +576,13 @@ definitions:
         example: "5"
         type: string
       priority:
-        $ref: '#/definitions/mci.PriorityInfo'
+        $ref: '#/definitions/infra.PriorityInfo'
     type: object
-  mci.FilterCondition:
+  infra.FilterCondition:
     properties:
       condition:
         items:
-          $ref: '#/definitions/mci.Operation'
+          $ref: '#/definitions/infra.Operation'
         type: array
       metric:
         enum:
@@ -592,79 +592,79 @@ definitions:
         example: vCPU
         type: string
     type: object
-  mci.FilterInfo:
+  infra.FilterInfo:
     properties:
       policy:
         items:
-          $ref: '#/definitions/mci.FilterCondition'
+          $ref: '#/definitions/infra.FilterCondition'
         type: array
     type: object
-  mci.InspectResource:
+  infra.InspectResource:
     properties:
       connectionName:
         type: string
       resourceOverview:
-        $ref: '#/definitions/mci.resourceCountOverview'
+        $ref: '#/definitions/infra.resourceCountOverview'
       resourceType:
         type: string
       resources:
-        $ref: '#/definitions/mci.resourcesByManageType'
+        $ref: '#/definitions/infra.resourcesByManageType'
       systemMessage:
         type: string
     type: object
-  mci.InspectResourceAllResult:
+  infra.InspectResourceAllResult:
     properties:
       availableConnection:
         type: integer
       cspOnlyOverview:
-        $ref: '#/definitions/mci.inspectOverview'
+        $ref: '#/definitions/infra.inspectOverview'
       elapsedTime:
         type: integer
       inspectResult:
         items:
-          $ref: '#/definitions/mci.InspectResourceResult'
+          $ref: '#/definitions/infra.InspectResourceResult'
         type: array
       registeredConnection:
         type: integer
       tumblebugOverview:
-        $ref: '#/definitions/mci.inspectOverview'
+        $ref: '#/definitions/infra.inspectOverview'
     type: object
-  mci.InspectResourceResult:
+  infra.InspectResourceResult:
     properties:
       connectionName:
         type: string
       cspOnlyOverview:
-        $ref: '#/definitions/mci.inspectOverview'
+        $ref: '#/definitions/infra.inspectOverview'
       elapsedTime:
         type: integer
       systemMessage:
         type: string
       tumblebugOverview:
-        $ref: '#/definitions/mci.inspectOverview'
+        $ref: '#/definitions/infra.inspectOverview'
     type: object
-  mci.JSONResult:
+  infra.JSONResult:
     type: object
-  mci.McNlbInfo:
+  infra.McNlbInfo:
     properties:
       deploymentLog:
-        $ref: '#/definitions/mci.MciSshCmdResult'
+        $ref: '#/definitions/infra.MciSshCmdResult'
       mcNlbHostInfo:
-        $ref: '#/definitions/mci.TbMciInfo'
+        $ref: '#/definitions/infra.TbMciInfo'
       mciAccessInfo:
-        $ref: '#/definitions/mci.MciAccessInfo'
+        $ref: '#/definitions/infra.MciAccessInfo'
     type: object
-  mci.MciAccessInfo:
+  infra.MciAccessInfo:
     properties:
       mciId:
         type: string
       mciNlbListener:
-        $ref: '#/definitions/mci.MciAccessInfo'
+        $ref: '#/definitions/infra.MciAccessInfo'
       mciSubGroupAccessInfo:
         items:
-          $ref: '#/definitions/mci.MciSubGroupAccessInfo'
+          $ref: '#/definitions/infra.MciSubGroupAccessInfo'
         type: array
     type: object
-  mci.MciCmdReq:
+  infra.MciCmdReq:
     properties:
       command:
         example:
@@ -679,7 +679,7 @@ definitions:
     required:
     - command
     type: object
-  mci.MciConnectionConfigCandidatesReq:
+  infra.MciConnectionConfigCandidatesReq:
     properties:
       commonSpec:
         description: CommonSpec is field for id of a spec in common namespace
@@ -692,7 +692,7 @@ definitions:
     required:
     - commonSpec
     type: object
-  mci.MciPolicyInfo:
+  infra.MciPolicyInfo:
     properties:
       Id:
         description: MCI Id (generated ID by the Name)
@@ -707,27 +707,27 @@ definitions:
         type: string
       policy:
         items:
-          $ref: '#/definitions/mci.Policy'
+          $ref: '#/definitions/infra.Policy'
         type: array
     type: object
-  mci.MciPolicyReq:
+  infra.MciPolicyReq:
     properties:
       description:
         example: Description
         type: string
       policy:
         items:
-          $ref: '#/definitions/mci.Policy'
+          $ref: '#/definitions/infra.Policy'
         type: array
     type: object
-  mci.MciSshCmdResult:
+  infra.MciSshCmdResult:
     properties:
       results:
         items:
-          $ref: '#/definitions/mci.SshCmdResult'
+          $ref: '#/definitions/infra.SshCmdResult'
         type: array
     type: object
-  mci.MciStatusInfo:
+  infra.MciStatusInfo:
     properties:
       id:
         type: string
@@ -754,7 +754,7 @@ definitions:
       status:
         type: string
       statusCount:
-        $ref: '#/definitions/mci.StatusCountInfo'
+        $ref: '#/definitions/infra.StatusCountInfo'
       systemLabel:
         description: SystemLabel is for describing the mci in a keyword (any string
           can be used) for special System purpose
@@ -766,23 +766,23 @@ definitions:
         type: string
       vm:
         items:
-          $ref: '#/definitions/mci.TbVmStatusInfo'
+          $ref: '#/definitions/infra.TbVmStatusInfo'
         type: array
     type: object
-  mci.MciSubGroupAccessInfo:
+  infra.MciSubGroupAccessInfo:
     properties:
       bastionVmId:
         type: string
       mciVmAccessInfo:
         items:
-          $ref: '#/definitions/mci.MciVmAccessInfo'
+          $ref: '#/definitions/infra.MciVmAccessInfo'
         type: array
       nlbListener:
-        $ref: '#/definitions/mci.TbNLBListenerInfo'
+        $ref: '#/definitions/infra.TbNLBListenerInfo'
       subGroupId:
         type: string
     type: object
-  mci.MciVmAccessInfo:
+  infra.MciVmAccessInfo:
     properties:
       privateIP:
         type: string
@@ -799,7 +799,7 @@ definitions:
       vmUserPassword:
         type: string
     type: object
-  mci.MonResultSimple:
+  infra.MonResultSimple:
     properties:
       err:
         type: string
@@ -810,18 +810,18 @@ definitions:
       vmId:
         type: string
     type: object
-  mci.MonResultSimpleResponse:
+  infra.MonResultSimpleResponse:
     properties:
       mciId:
         type: string
       mciMonitoring:
         items:
-          $ref: '#/definitions/mci.MonResultSimple'
+          $ref: '#/definitions/infra.MonResultSimple'
         type: array
       nsId:
         type: string
     type: object
-  mci.NLBListenerReq:
+  infra.NLBListenerReq:
     properties:
       port:
         description: 1-65535
@@ -832,7 +832,7 @@ definitions:
         example: TCP
         type: string
     type: object
-  mci.Operation:
+  infra.Operation:
     properties:
       operand:
         description: 10, 70, 80, 98, ...
@@ -851,7 +851,7 @@ definitions:
         example: <=
         type: string
     type: object
-  mci.ParameterKeyVal:
+  infra.ParameterKeyVal:
     properties:
       key:
         description: coordinate
@@ -869,16 +869,16 @@ definitions:
           type: string
         type: array
     type: object
-  mci.Policy:
+  infra.Policy:
     properties:
       autoAction:
-        $ref: '#/definitions/mci.AutoAction'
+        $ref: '#/definitions/infra.AutoAction'
       autoCondition:
-        $ref: '#/definitions/mci.AutoCondition'
+        $ref: '#/definitions/infra.AutoCondition'
       status:
         type: string
     type: object
-  mci.PriorityCondition:
+  infra.PriorityCondition:
     properties:
       metric:
         enum:
@@ -891,7 +891,7 @@ definitions:
         type: string
       parameter:
         items:
-          $ref: '#/definitions/mci.ParameterKeyVal'
+          $ref: '#/definitions/infra.ParameterKeyVal'
         type: array
       weight:
         enum:
@@ -901,36 +901,36 @@ definitions:
         example: "0.3"
         type: string
     type: object
-  mci.PriorityInfo:
+  infra.PriorityInfo:
     properties:
       policy:
         items:
-          $ref: '#/definitions/mci.PriorityCondition'
+          $ref: '#/definitions/infra.PriorityCondition'
         type: array
     type: object
-  mci.RegionInfo:
+  infra.RegionInfo:
     properties:
       region:
         type: string
       zone:
         type: string
     type: object
-  mci.RegisterResourceAllResult:
+  infra.RegisterResourceAllResult:
     properties:
       availableConnection:
         type: integer
       elapsedTime:
         type: integer
       registerationOverview:
-        $ref: '#/definitions/mci.registerationOverview'
+        $ref: '#/definitions/infra.registerationOverview'
       registerationResult:
         items:
-          $ref: '#/definitions/mci.RegisterResourceResult'
+          $ref: '#/definitions/infra.RegisterResourceResult'
         type: array
       registeredConnection:
         type: integer
     type: object
-  mci.RegisterResourceResult:
+  infra.RegisterResourceResult:
     properties:
       connectionName:
         type: string
@@ -939,56 +939,56 @@ definitions:
       registerationOutputs:
         $ref: '#/definitions/common.IdList'
       registerationOverview:
-        $ref: '#/definitions/mci.registerationOverview'
+        $ref: '#/definitions/infra.registerationOverview'
       systemMessage:
         type: string
     type: object
-  mci.RestGetAllBenchmarkRequest:
+  infra.RestGetAllBenchmarkRequest:
     properties:
       host:
         type: string
     type: object
-  mci.RestGetAllK8sClusterResponse:
+  infra.RestGetAllK8sClusterResponse:
     properties:
       cluster:
         items:
-          $ref: '#/definitions/mci.TbK8sClusterInfo'
+          $ref: '#/definitions/infra.TbK8sClusterInfo'
         type: array
     type: object
-  mci.RestGetAllMciPolicyResponse:
+  infra.RestGetAllMciPolicyResponse:
     properties:
       mciPolicy:
         items:
-          $ref: '#/definitions/mci.MciPolicyInfo'
+          $ref: '#/definitions/infra.MciPolicyInfo'
         type: array
     type: object
-  mci.RestGetAllMciResponse:
+  infra.RestGetAllMciResponse:
     properties:
       mci:
         items:
-          $ref: '#/definitions/mci.TbMciInfo'
+          $ref: '#/definitions/infra.TbMciInfo'
         type: array
     type: object
-  mci.RestGetAllMciStatusResponse:
+  infra.RestGetAllMciStatusResponse:
     properties:
       mci:
         items:
-          $ref: '#/definitions/mci.MciStatusInfo'
+          $ref: '#/definitions/infra.MciStatusInfo'
         type: array
     type: object
-  mci.RestGetAllNLBResponse:
+  infra.RestGetAllNLBResponse:
     properties:
       nlb:
         items:
-          $ref: '#/definitions/mci.TbNLBInfo'
+          $ref: '#/definitions/infra.TbNLBInfo'
         type: array
     type: object
-  mci.RestGetBenchmarkRequest:
+  infra.RestGetBenchmarkRequest:
     properties:
       host:
         type: string
     type: object
-  mci.SpiderImageType:
+  infra.SpiderImageType:
     enum:
     - PublicImage
     - MyImage
@@ -996,7 +996,7 @@ definitions:
     x-enum-varnames:
     - PublicImage
     - MyImage
-  mci.SpiderVMInfo:
+  infra.SpiderVMInfo:
     properties:
       cspid:
         description: VM ID given by CSP (required for registering VM)
@@ -1018,7 +1018,7 @@ definitions:
       imageName:
         type: string
       imageType:
-        $ref: '#/definitions/mci.SpiderImageType'
+        $ref: '#/definitions/infra.SpiderImageType'
       keyPairIId:
         $ref: '#/definitions/common.IID'
       keyPairName:
@@ -1043,7 +1043,7 @@ definitions:
         type: string
       region:
         allOf:
-        - $ref: '#/definitions/mci.RegionInfo'
+        - $ref: '#/definitions/infra.RegionInfo'
         description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
       rootDeviceName:
         description: '"/dev/sda1", ...'
@@ -1086,7 +1086,7 @@ definitions:
       vpcname:
         type: string
     type: object
-  mci.SshCmdResult:
+  infra.SshCmdResult:
     properties:
       command:
         additionalProperties:
@@ -1108,7 +1108,7 @@ definitions:
       vmIp:
         type: string
     type: object
-  mci.StatusCountInfo:
+  infra.StatusCountInfo:
     properties:
       countCreating:
         description: CountCreating is for counting Creating
@@ -1144,7 +1144,7 @@ definitions:
         description: CountUndefined is for counting Undefined
         type: integer
     type: object
-  mci.TbChangeK8sNodeGroupAutoscaleSizeReq:
+  infra.TbChangeK8sNodeGroupAutoscaleSizeReq:
     properties:
       desiredNodeSize:
         example: "1"
@@ -1156,7 +1156,7 @@ definitions:
         example: "1"
         type: string
     type: object
-  mci.TbChangeK8sNodeGroupAutoscaleSizeRes:
+  infra.TbChangeK8sNodeGroupAutoscaleSizeRes:
     properties:
       desiredNodeSize:
         example: 1
@@ -1203,11 +1203,11 @@ definitions:
         type: string
       status:
         allOf:
-        - $ref: '#/definitions/mci.TbK8sNodeGroupStatus'
+        - $ref: '#/definitions/infra.TbK8sNodeGroupStatus'
         description: '---'
         example: Creating
     type: object
-  mci.TbIdNameInDetailInfo:
+  infra.TbIdNameInDetailInfo:
     properties:
       idInCsp:
         type: string
@@ -1218,7 +1218,7 @@ definitions:
       nameInCsp:
         type: string
     type: object
-  mci.TbK8sAccessInfo:
+  infra.TbK8sAccessInfo:
     properties:
       endpoint:
         example: http://1.2.3.4:6443
@@ -1231,19 +1231,19 @@ definitions:
            certificate-authority-data: LS0...
         type: string
     type: object
-  mci.TbK8sAddonsInfo:
+  infra.TbK8sAddonsInfo:
     properties:
       keyValueList:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
     type: object
-  mci.TbK8sClusterInfo:
+  infra.TbK8sClusterInfo:
     properties:
       accessInfo:
-        $ref: '#/definitions/mci.TbK8sAccessInfo'
+        $ref: '#/definitions/infra.TbK8sAccessInfo'
       addons:
-        $ref: '#/definitions/mci.TbK8sAddonsInfo'
+        $ref: '#/definitions/infra.TbK8sAddonsInfo'
       connectionName:
         example: alibaba-ap-northeast-2
         type: string
@@ -1264,7 +1264,7 @@ definitions:
         type: string
       k8sNodeGroupList:
         items:
-          $ref: '#/definitions/mci.TbK8sNodeGroupInfo'
+          $ref: '#/definitions/infra.TbK8sNodeGroupInfo'
         type: array
       keyValueList:
         items:
@@ -1274,15 +1274,15 @@ definitions:
         example: k8scluster-01
         type: string
       network:
-        $ref: '#/definitions/mci.TbK8sClusterNetworkInfo'
+        $ref: '#/definitions/infra.TbK8sClusterNetworkInfo'
       status:
         allOf:
-        - $ref: '#/definitions/mci.TbK8sClusterStatus'
+        - $ref: '#/definitions/infra.TbK8sClusterStatus'
         description: Creating, Active, Inactive, Updating, Deleting
         example: Creating
       systemLabel:
-        description: SystemLabel is for describing the MCIR in a keyword (any string
-          can be used) for special System purpose
+        description: SystemLabel is for describing the Resource in a keyword (any
+          string can be used) for special System purpose
         example: Managed by CB-Tumblebug
         type: string
       systemMessage:
@@ -1294,7 +1294,7 @@ definitions:
         example: 1.30.1-aliyun.1
         type: string
     type: object
-  mci.TbK8sClusterNetworkInfo:
+  infra.TbK8sClusterNetworkInfo:
     properties:
       keyValueList:
         items:
@@ -1316,7 +1316,7 @@ definitions:
         example: vpc-01
         type: string
     type: object
-  mci.TbK8sClusterReq:
+  infra.TbK8sClusterReq:
     properties:
       connectionName:
         description: Namespace      string `json:"namespace" validate:"required" example:"default"`
@@ -1338,7 +1338,7 @@ definitions:
       k8sNodeGroupList:
         description: (3) NodeGroupInfo List
         items:
-          $ref: '#/definitions/mci.TbK8sNodeGroupReq'
+          $ref: '#/definitions/infra.TbK8sNodeGroupReq'
         type: array
       securityGroupIds:
         example:
@@ -1366,7 +1366,7 @@ definitions:
     - subnetIds
     - vNetId
     type: object
-  mci.TbK8sClusterStatus:
+  infra.TbK8sClusterStatus:
     enum:
     - Creating
     - Active
@@ -1380,7 +1380,7 @@ definitions:
     - TbK8sClusterInactive
     - TbK8sClusterUpdating
     - TbK8sClusterDeleting
-  mci.TbK8sNodeGroupInfo:
+  infra.TbK8sNodeGroupInfo:
     properties:
       desiredNodeSize:
         example: 1
@@ -1427,11 +1427,11 @@ definitions:
         type: string
       status:
         allOf:
-        - $ref: '#/definitions/mci.TbK8sNodeGroupStatus'
+        - $ref: '#/definitions/infra.TbK8sNodeGroupStatus'
         description: '---'
         example: Creating
     type: object
-  mci.TbK8sNodeGroupReq:
+  infra.TbK8sNodeGroupReq:
     properties:
       desiredNodeSize:
         example: "1"
@@ -1471,7 +1471,7 @@ definitions:
         example: sshkey-01
         type: string
     type: object
-  mci.TbK8sNodeGroupStatus:
+  infra.TbK8sNodeGroupStatus:
     enum:
     - Creating
     - Active
@@ -1485,7 +1485,7 @@ definitions:
     - TbK8sNodeGroupInactive
     - TbK8sNodeGroupUpdating
     - TbK8sNodeGroupDeleting
-  mci.TbMciDynamicReq:
+  infra.TbMciDynamicReq:
     properties:
       description:
         example: Made in CB-TB
@@ -1514,13 +1514,13 @@ definitions:
         type: string
       vm:
         items:
-          $ref: '#/definitions/mci.TbVmDynamicReq'
+          $ref: '#/definitions/infra.TbVmDynamicReq'
         type: array
     required:
     - name
     - vm
     type: object
-  mci.TbMciInfo:
+  infra.TbMciInfo:
     properties:
       configureCloudAdaptiveNetwork:
         default: "no"
@@ -1562,7 +1562,7 @@ definitions:
       status:
         type: string
       statusCount:
-        $ref: '#/definitions/mci.StatusCountInfo'
+        $ref: '#/definitions/infra.StatusCountInfo'
       systemLabel:
         description: SystemLabel is for describing the mci in a keyword (any string
           can be used) for special System purpose
@@ -1578,10 +1578,10 @@ definitions:
         type: string
       vm:
         items:
-          $ref: '#/definitions/mci.TbVmInfo'
+          $ref: '#/definitions/infra.TbVmInfo'
         type: array
     type: object
-  mci.TbMciReq:
+  infra.TbMciReq:
     properties:
       description:
         example: Made in CB-TB
@@ -1612,18 +1612,18 @@ definitions:
         type: string
       vm:
         items:
-          $ref: '#/definitions/mci.TbVmReq'
+          $ref: '#/definitions/infra.TbVmReq'
         type: array
     required:
     - name
     - vm
     type: object
-  mci.TbNLBAddRemoveVMReq:
+  infra.TbNLBAddRemoveVMReq:
     properties:
       targetGroup:
-        $ref: '#/definitions/mci.TbNLBTargetGroupInfo'
+        $ref: '#/definitions/infra.TbNLBTargetGroupInfo'
     type: object
-  mci.TbNLBHealthCheckerInfo:
+  infra.TbNLBHealthCheckerInfo:
     properties:
       interval:
         description: secs, Interval time between health checks.
@@ -1651,7 +1651,7 @@ definitions:
         example: 10
         type: integer
     type: object
-  mci.TbNLBHealthCheckerReq:
+  infra.TbNLBHealthCheckerReq:
     properties:
       interval:
         description: secs, Interval time between health checks.
@@ -1667,7 +1667,7 @@ definitions:
         example: default
         type: string
     type: object
-  mci.TbNLBInfo:
+  infra.TbNLBInfo:
     properties:
       associatedObjectList:
         items:
@@ -1684,7 +1684,7 @@ definitions:
       description:
         type: string
       healthChecker:
-        $ref: '#/definitions/mci.TbNLBHealthCheckerInfo'
+        $ref: '#/definitions/infra.TbNLBHealthCheckerInfo'
       id:
         type: string
       isAutoGenerated:
@@ -1694,7 +1694,7 @@ definitions:
           $ref: '#/definitions/common.KeyValue'
         type: array
       listener:
-        $ref: '#/definitions/mci.TbNLBListenerInfo'
+        $ref: '#/definitions/infra.TbNLBListenerInfo'
       location:
         $ref: '#/definitions/common.Location'
       name:
@@ -1705,17 +1705,17 @@ definitions:
       status:
         type: string
       systemLabel:
-        description: SystemLabel is for describing the MCIR in a keyword (any string
-          can be used) for special System purpose
+        description: SystemLabel is for describing the Resource in a keyword (any
+          string can be used) for special System purpose
         example: Managed by CB-Tumblebug
         type: string
       targetGroup:
-        $ref: '#/definitions/mci.TbNLBTargetGroupInfo'
+        $ref: '#/definitions/infra.TbNLBTargetGroupInfo'
       type:
         description: PUBLIC(V) | INTERNAL
         type: string
     type: object
-  mci.TbNLBListenerInfo:
+  infra.TbNLBListenerInfo:
     properties:
       dnsName:
         description: Optional, Auto Generated and attached
@@ -1738,7 +1738,7 @@ definitions:
         example: TCP
         type: string
     type: object
-  mci.TbNLBReq:
+  infra.TbNLBReq:
     properties:
       cspNLBId:
         description: Existing NLB (used only for option=register)
@@ -1747,11 +1747,11 @@ definitions:
         type: string
       healthChecker:
         allOf:
-        - $ref: '#/definitions/mci.TbNLBHealthCheckerReq'
+        - $ref: '#/definitions/infra.TbNLBHealthCheckerReq'
         description: HealthChecker
       listener:
         allOf:
-        - $ref: '#/definitions/mci.NLBListenerReq'
+        - $ref: '#/definitions/infra.NLBListenerReq'
         description: Frontend
       scope:
         description: REGION(V) | GLOBAL
@@ -1762,7 +1762,7 @@ definitions:
         type: string
       targetGroup:
         allOf:
-        - $ref: '#/definitions/mci.TbNLBTargetGroupReq'
+        - $ref: '#/definitions/infra.TbNLBTargetGroupReq'
         description: Backend
       type:
         description: PUBLIC(V) | INTERNAL
@@ -1778,7 +1778,7 @@ definitions:
     - targetGroup
     - type
     type: object
-  mci.TbNLBTargetGroupInfo:
+  infra.TbNLBTargetGroupInfo:
     properties:
       keyValueList:
         items:
@@ -1800,7 +1800,7 @@ definitions:
           type: string
         type: array
     type: object
-  mci.TbNLBTargetGroupReq:
+  infra.TbNLBTargetGroupReq:
     properties:
       port:
         description: Listener Port or 1-65535
@@ -1814,7 +1814,7 @@ definitions:
         example: g1
         type: string
     type: object
-  mci.TbScaleOutSubGroupReq:
+  infra.TbScaleOutSubGroupReq:
     properties:
       numVMsToAdd:
         description: Define addtional VMs to scaleOut
@@ -1823,25 +1823,25 @@ definitions:
     required:
     - numVMsToAdd
     type: object
-  mci.TbSetK8sNodeGroupAutoscalingReq:
+  infra.TbSetK8sNodeGroupAutoscalingReq:
     properties:
       onAutoScaling:
         example: "true"
         type: string
     type: object
-  mci.TbSetK8sNodeGroupAutoscalingRes:
+  infra.TbSetK8sNodeGroupAutoscalingRes:
     properties:
       result:
         example: "true"
         type: string
     type: object
-  mci.TbUpgradeK8sClusterReq:
+  infra.TbUpgradeK8sClusterReq:
     properties:
       version:
         example: 1.30.1-alyun.1
         type: string
     type: object
-  mci.TbVmDynamicReq:
+  infra.TbVmDynamicReq:
     properties:
       commonImage:
         description: CommonImage is field for id of a image in common namespace
@@ -1892,7 +1892,7 @@ definitions:
     - commonImage
     - commonSpec
     type: object
-  mci.TbVmInfo:
+  infra.TbVmInfo:
     properties:
       connectionConfig:
         $ref: '#/definitions/common.ConnConfig'
@@ -1903,7 +1903,7 @@ definitions:
         example: "2022-11-10 23:00:00"
         type: string
       cspViewVmDetail:
-        $ref: '#/definitions/mci.SpiderVMInfo'
+        $ref: '#/definitions/infra.SpiderVMInfo'
       dataDiskIds:
         items:
           type: string
@@ -1941,7 +1941,7 @@ definitions:
         type: string
       region:
         allOf:
-        - $ref: '#/definitions/mci.RegionInfo'
+        - $ref: '#/definitions/infra.RegionInfo'
         description: AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
       rootDeviceName:
         type: string
@@ -1982,7 +1982,7 @@ definitions:
       vmUserPassword:
         type: string
     type: object
-  mci.TbVmReq:
+  infra.TbVmReq:
     properties:
       connectionName:
         example: testcloud01-seoul
@@ -2050,13 +2050,13 @@ definitions:
     - subnetId
     - vNetId
     type: object
-  mci.TbVmSnapshotReq:
+  infra.TbVmSnapshotReq:
     properties:
       name:
         example: aws-ap-southeast-1-snapshot
         type: string
     type: object
-  mci.TbVmStatusInfo:
+  infra.TbVmStatusInfo:
     properties:
       createdTime:
         description: Created time
@@ -2093,7 +2093,7 @@ definitions:
       targetStatus:
         type: string
     type: object
-  mci.inspectOverview:
+  infra.inspectOverview:
     properties:
       customImage:
         type: integer
@@ -2110,7 +2110,7 @@ definitions:
       vm:
         type: integer
     type: object
-  mci.registerationOverview:
+  infra.registerationOverview:
     properties:
       customImage:
         type: integer
@@ -2129,7 +2129,7 @@ definitions:
       vm:
         type: integer
     type: object
-  mci.resourceCountOverview:
+  infra.resourceCountOverview:
     properties:
       onCspOnly:
         type: integer
@@ -2140,48 +2140,48 @@ definitions:
       onTumblebug:
         type: integer
     type: object
-  mci.resourceOnCsp:
+  infra.resourceOnCsp:
     properties:
       count:
         type: integer
       info:
         items:
-          $ref: '#/definitions/mci.resourceOnCspInfo'
+          $ref: '#/definitions/infra.resourceOnCspInfo'
         type: array
     type: object
-  mci.resourceOnCspInfo:
+  infra.resourceOnCspInfo:
     properties:
       idByCsp:
         type: string
       refNameOrId:
         type: string
     type: object
-  mci.resourceOnSpider:
+  infra.resourceOnSpider:
     properties:
       count:
         type: integer
       info:
         items:
-          $ref: '#/definitions/mci.resourceOnSpiderInfo'
+          $ref: '#/definitions/infra.resourceOnSpiderInfo'
         type: array
     type: object
-  mci.resourceOnSpiderInfo:
+  infra.resourceOnSpiderInfo:
     properties:
       idByCsp:
         type: string
       idBySp:
         type: string
     type: object
-  mci.resourceOnTumblebug:
+  infra.resourceOnTumblebug:
     properties:
       count:
         type: integer
       info:
         items:
-          $ref: '#/definitions/mci.resourceOnTumblebugInfo'
+          $ref: '#/definitions/infra.resourceOnTumblebugInfo'
         type: array
     type: object
-  mci.resourceOnTumblebugInfo:
+  infra.resourceOnTumblebugInfo:
     properties:
       idByCsp:
         type: string
@@ -2194,858 +2194,16 @@ definitions:
       objectKey:
         type: string
     type: object
-  mci.resourcesByManageType:
+  infra.resourcesByManageType:
     properties:
       onCspOnly:
-        $ref: '#/definitions/mci.resourceOnCsp'
+        $ref: '#/definitions/infra.resourceOnCsp'
       onCspTotal:
-        $ref: '#/definitions/mci.resourceOnCsp'
+        $ref: '#/definitions/infra.resourceOnCsp'
       onSpider:
-        $ref: '#/definitions/mci.resourceOnSpider'
+        $ref: '#/definitions/infra.resourceOnSpider'
       onTumblebug:
-        $ref: '#/definitions/mci.resourceOnTumblebug'
-    type: object
-  mcir.BastionNode:
-    properties:
-      mciId:
-        type: string
-      vmId:
-        type: string
-    type: object
-  mcir.CustomImageStatus:
-    enum:
-    - Available
-    - Unavailable
-    type: string
-    x-enum-varnames:
-    - MyImageAvailable
-    - MyImageUnavailable
-  mcir.DiskStatus:
-    enum:
-    - Creating
-    - Available
-    - Attached
-    - Deleting
-    - Error
-    type: string
-    x-enum-varnames:
-    - DiskCreating
-    - DiskAvailable
-    - DiskAttached
-    - DiskDeleting
-    - DiskError
-  mcir.FilterSpecsByRangeRequest:
-    properties:
-      acceleratorCount:
-        $ref: '#/definitions/mcir.Range'
-      acceleratorMemoryGB:
-        $ref: '#/definitions/mcir.Range'
-      acceleratorModel:
-        type: string
-      acceleratorType:
-        type: string
-      connectionName:
-        type: string
-      costPerHour:
-        $ref: '#/definitions/mcir.Range'
-      cspSpecName:
-        type: string
-      description:
-        type: string
-      evaluationScore01:
-        $ref: '#/definitions/mcir.Range'
-      evaluationScore02:
-        $ref: '#/definitions/mcir.Range'
-      evaluationScore03:
-        $ref: '#/definitions/mcir.Range'
-      evaluationScore04:
-        $ref: '#/definitions/mcir.Range'
-      evaluationScore05:
-        $ref: '#/definitions/mcir.Range'
-      evaluationScore06:
-        $ref: '#/definitions/mcir.Range'
-      evaluationScore07:
-        $ref: '#/definitions/mcir.Range'
-      evaluationScore08:
-        $ref: '#/definitions/mcir.Range'
-      evaluationScore09:
-        $ref: '#/definitions/mcir.Range'
-      evaluationScore10:
-        $ref: '#/definitions/mcir.Range'
-      evaluationStatus:
-        type: string
-      id:
-        type: string
-      infraType:
-        type: string
-      maxTotalStorageTiB:
-        $ref: '#/definitions/mcir.Range'
-      memoryGiB:
-        $ref: '#/definitions/mcir.Range'
-      name:
-        type: string
-      netBwGbps:
-        $ref: '#/definitions/mcir.Range'
-      osType:
-        type: string
-      providerName:
-        type: string
-      regionName:
-        type: string
-      storageGiB:
-        $ref: '#/definitions/mcir.Range'
-      vCPU:
-        $ref: '#/definitions/mcir.Range'
-    type: object
-  mcir.JSONResult:
-    type: object
-  mcir.Range:
-    properties:
-      max:
-        type: number
-      min:
-        type: number
-    type: object
-  mcir.RestFilterSpecsResponse:
-    properties:
-      spec:
-        items:
-          $ref: '#/definitions/mcir.TbSpecInfo'
-        type: array
-    type: object
-  mcir.RestGetAllCustomImageResponse:
-    properties:
-      customImage:
-        items:
-          $ref: '#/definitions/mcir.TbCustomImageInfo'
-        type: array
-    type: object
-  mcir.RestGetAllDataDiskResponse:
-    properties:
-      dataDisk:
-        items:
-          $ref: '#/definitions/mcir.TbDataDiskInfo'
-        type: array
-    type: object
-  mcir.RestGetAllImageResponse:
-    properties:
-      image:
-        items:
-          $ref: '#/definitions/mcir.TbImageInfo'
-        type: array
-    type: object
-  mcir.RestGetAllSecurityGroupResponse:
-    properties:
-      securityGroup:
-        items:
-          $ref: '#/definitions/mcir.TbSecurityGroupInfo'
-        type: array
-    type: object
-  mcir.RestGetAllSshKeyResponse:
-    properties:
-      sshKey:
-        items:
-          $ref: '#/definitions/mcir.TbSshKeyInfo'
-        type: array
-    type: object
-  mcir.RestGetAllVNetResponse:
-    properties:
-      vNet:
-        items:
-          $ref: '#/definitions/mcir.TbVNetInfo'
-        type: array
-    type: object
-  mcir.RestLookupImageRequest:
-    properties:
-      connectionName:
-        type: string
-      cspImageId:
-        type: string
-    type: object
-  mcir.RestLookupSpecRequest:
-    properties:
-      connectionName:
-        type: string
-      cspSpecName:
-        type: string
-    type: object
-  mcir.RestSearchImageRequest:
-    properties:
-      keywords:
-        items:
-          type: string
-        type: array
-    type: object
-  mcir.SpiderGpuInfo:
-    properties:
-      count:
-        type: string
-      mem:
-        type: string
-      mfr:
-        type: string
-      model:
-        type: string
-    type: object
-  mcir.SpiderImageInfo:
-    properties:
-      guestOS:
-        description: Windows7, Ubuntu etc.
-        type: string
-      iid:
-        allOf:
-        - $ref: '#/definitions/common.IID'
-        description: Fields for response
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      name:
-        description: Fields for request
-        type: string
-      status:
-        description: available, unavailable
-        type: string
-    type: object
-  mcir.SpiderImageList:
-    properties:
-      image:
-        items:
-          $ref: '#/definitions/mcir.SpiderImageInfo'
-        type: array
-    type: object
-  mcir.SpiderSpecInfo:
-    properties:
-      gpu:
-        items:
-          $ref: '#/definitions/mcir.SpiderGpuInfo'
-        type: array
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      mem:
-        type: string
-      name:
-        type: string
-      region:
-        type: string
-      vcpu:
-        $ref: '#/definitions/mcir.SpiderVCpuInfo'
-    type: object
-  mcir.SpiderSpecList:
-    properties:
-      vmspec:
-        items:
-          $ref: '#/definitions/mcir.SpiderSpecInfo'
-        type: array
-    type: object
-  mcir.SpiderVCpuInfo:
-    properties:
-      clock:
-        description: GHz
-        type: string
-      count:
-        type: string
-    type: object
-  mcir.TbAttachDetachDataDiskReq:
-    properties:
-      dataDiskId:
-        type: string
-    required:
-    - dataDiskId
-    type: object
-  mcir.TbCustomImageInfo:
-    properties:
-      associatedObjectList:
-        items:
-          type: string
-        type: array
-      connectionName:
-        example: aws-ap-southeast-1
-        type: string
-      creationDate:
-        example: "2022-10-18T08:12:48Z"
-        type: string
-      cspCustomImageId:
-        example: ami-06eb41e14121c550a
-        type: string
-      cspCustomImageName:
-        example: aws-ap-southeast-1-snapshot
-        type: string
-      description:
-        type: string
-      guestOS:
-        description: Windows7, Ubuntu etc.
-        type: string
-      id:
-        example: aws-ap-southeast-1-snapshot
-        type: string
-      isAutoGenerated:
-        type: boolean
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      name:
-        example: aws-ap-southeast-1-snapshot
-        type: string
-      namespace:
-        description: required to save in RDB
-        example: default
-        type: string
-      sourceVmId:
-        example: aws-ap-southeast-1-1
-        type: string
-      status:
-        allOf:
-        - $ref: '#/definitions/mcir.CustomImageStatus'
-        example: Available
-      systemLabel:
-        description: SystemLabel is for describing the MCIR in a keyword (any string
-          can be used) for special System purpose
-        example: Managed by CB-Tumblebug
-        type: string
-    type: object
-  mcir.TbCustomImageReq:
-    properties:
-      connectionName:
-        type: string
-      cspCustomImageId:
-        description: This field is for 'Register existing custom image'
-        type: string
-      description:
-        type: string
-      name:
-        type: string
-      sourceVmId:
-        type: string
-    required:
-    - name
-    type: object
-  mcir.TbDataDiskInfo:
-    properties:
-      associatedObjectList:
-        items:
-          type: string
-        type: array
-      connectionName:
-        example: aws-ap-southeast-1
-        type: string
-      createdTime:
-        example: "2022-10-12T05:09:51.05Z"
-        type: string
-      cspDataDiskId:
-        example: vol-0d397c3239629bd43
-        type: string
-      cspDataDiskName:
-        example: default-aws-ap-southeast-1-datadisk
-        type: string
-      description:
-        example: Available
-        type: string
-      diskSize:
-        example: "77"
-        type: string
-      diskType:
-        example: standard
-        type: string
-      id:
-        example: aws-ap-southeast-1-datadisk
-        type: string
-      isAutoGenerated:
-        type: boolean
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      name:
-        example: aws-ap-southeast-1-datadisk
-        type: string
-      status:
-        allOf:
-        - $ref: '#/definitions/mcir.DiskStatus'
-        description: Available, Unavailable, Attached, ...
-        example: Available
-      systemLabel:
-        description: SystemLabel is for describing the MCIR in a keyword (any string
-          can be used) for special System purpose
-        example: Managed by CB-Tumblebug
-        type: string
-      systemMessage:
-        description: Latest system message such as error message
-        example: Failed because ...
-        type: string
-    type: object
-  mcir.TbDataDiskReq:
-    properties:
-      connectionName:
-        example: aws-ap-southeast-1
-        type: string
-      cspDataDiskId:
-        description: |-
-          Fields for "Register existing dataDisk" feature
-          CspDataDiskId is required to register object from CSP (option=register)
-        type: string
-      description:
-        type: string
-      diskSize:
-        default: "100"
-        example: "77"
-        type: string
-      diskType:
-        example: default
-        type: string
-      name:
-        example: aws-ap-southeast-1-datadisk
-        type: string
-    required:
-    - connectionName
-    - diskSize
-    - name
-    type: object
-  mcir.TbDataDiskUpsizeReq:
-    properties:
-      description:
-        type: string
-      diskSize:
-        type: string
-    required:
-    - diskSize
-    type: object
-  mcir.TbDataDiskVmReq:
-    properties:
-      description:
-        type: string
-      diskSize:
-        default: "100"
-        example: "77"
-        type: string
-      diskType:
-        example: default
-        type: string
-      name:
-        example: aws-ap-southeast-1-datadisk
-        type: string
-    required:
-    - diskSize
-    - name
-    type: object
-  mcir.TbFirewallRuleInfo:
-    properties:
-      cidr:
-        type: string
-      direction:
-        description: '`json:"direction"`'
-        type: string
-      fromPort:
-        description: '`json:"fromPort"`'
-        type: string
-      ipprotocol:
-        description: '`json:"ipProtocol"`'
-        type: string
-      toPort:
-        description: '`json:"toPort"`'
-        type: string
-    required:
-    - direction
-    - fromPort
-    - ipprotocol
-    - toPort
-    type: object
-  mcir.TbFirewallRulesWrapper:
-    properties:
-      firewallRules:
-        description: validate:"required"`
-        items:
-          $ref: '#/definitions/mcir.TbFirewallRuleInfo'
-        type: array
-    type: object
-  mcir.TbImageInfo:
-    properties:
-      associatedObjectList:
-        items:
-          type: string
-        type: array
-      connectionName:
-        type: string
-      creationDate:
-        type: string
-      cspImageId:
-        type: string
-      cspImageName:
-        type: string
-      description:
-        type: string
-      guestOS:
-        description: Windows7, Ubuntu etc.
-        type: string
-      id:
-        type: string
-      infraType:
-        description: vm|k8s|kubernetes|container, etc.
-        type: string
-      isAutoGenerated:
-        type: boolean
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      name:
-        type: string
-      namespace:
-        description: required to save in RDB
-        type: string
-      status:
-        description: available, unavailable
-        type: string
-      systemLabel:
-        description: SystemLabel is for describing the MCIR in a keyword (any string
-          can be used) for special System purpose
-        example: Managed by CB-Tumblebug
-        type: string
-    type: object
-  mcir.TbImageReq:
-    properties:
-      connectionName:
-        type: string
-      cspImageId:
-        type: string
-      description:
-        type: string
-      name:
-        type: string
-    required:
-    - connectionName
-    - cspImageId
-    - name
-    type: object
-  mcir.TbSecurityGroupInfo:
-    properties:
-      associatedObjectList:
-        items:
-          type: string
-        type: array
-      connectionName:
-        type: string
-      cspSecurityGroupId:
-        type: string
-      cspSecurityGroupName:
-        type: string
-      description:
-        type: string
-      firewallRules:
-        items:
-          $ref: '#/definitions/mcir.TbFirewallRuleInfo'
-        type: array
-      id:
-        type: string
-      isAutoGenerated:
-        type: boolean
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      name:
-        type: string
-      systemLabel:
-        description: SystemLabel is for describing the MCIR in a keyword (any string
-          can be used) for special System purpose
-        example: Managed by CB-Tumblebug
-        type: string
-      vNetId:
-        type: string
-    type: object
-  mcir.TbSecurityGroupReq:
-    properties:
-      connectionName:
-        type: string
-      cspSecurityGroupId:
-        description: CspSecurityGroupId is required to register object from CSP (option=register)
-        type: string
-      description:
-        type: string
-      firewallRules:
-        description: validate:"required"`
-        items:
-          $ref: '#/definitions/mcir.TbFirewallRuleInfo'
-        type: array
-      name:
-        type: string
-      vNetId:
-        type: string
-    required:
-    - connectionName
-    - name
-    - vNetId
-    type: object
-  mcir.TbSpecInfo:
-    properties:
-      acceleratorCount:
-        type: integer
-      acceleratorMemoryGB:
-        type: number
-      acceleratorModel:
-        type: string
-      acceleratorType:
-        type: string
-      associatedObjectList:
-        items:
-          type: string
-        type: array
-      connectionName:
-        type: string
-      costPerHour:
-        type: number
-      cspSpecName:
-        type: string
-      description:
-        type: string
-      evaluationScore01:
-        type: number
-      evaluationScore02:
-        type: number
-      evaluationScore03:
-        type: number
-      evaluationScore04:
-        type: number
-      evaluationScore05:
-        type: number
-      evaluationScore06:
-        type: number
-      evaluationScore07:
-        type: number
-      evaluationScore08:
-        type: number
-      evaluationScore09:
-        type: number
-      evaluationScore10:
-        type: number
-      evaluationStatus:
-        type: string
-      id:
-        type: string
-      infraType:
-        description: vm|k8s|kubernetes|container, etc.
-        type: string
-      isAutoGenerated:
-        type: boolean
-      maxTotalStorageTiB:
-        type: integer
-      memoryGiB:
-        type: number
-      name:
-        type: string
-      namespace:
-        description: required to save in RDB
-        type: string
-      netBwGbps:
-        type: integer
-      orderInFilteredResult:
-        type: integer
-      osType:
-        type: string
-      providerName:
-        type: string
-      regionName:
-        type: string
-      rootDiskSize:
-        type: string
-      rootDiskType:
-        type: string
-      storageGiB:
-        type: integer
-      systemLabel:
-        description: SystemLabel is for describing the MCIR in a keyword (any string
-          can be used) for special System purpose
-        example: Managed by CB-Tumblebug
-        type: string
-      vCPU:
-        type: integer
-    type: object
-  mcir.TbSpecReq:
-    properties:
-      connectionName:
-        type: string
-      cspSpecName:
-        type: string
-      description:
-        type: string
-      name:
-        type: string
-    required:
-    - connectionName
-    - cspSpecName
-    - name
-    type: object
-  mcir.TbSshKeyInfo:
-    properties:
-      associatedObjectList:
-        items:
-          type: string
-        type: array
-      connectionName:
-        type: string
-      cspSshKeyId:
-        description: CspSshKeyId used for CSP-native identifier (either Name or ID)
-        type: string
-      cspSshKeyName:
-        description: CspSshKeyName used for CB-Spider identifier
-        type: string
-      description:
-        type: string
-      fingerprint:
-        type: string
-      id:
-        type: string
-      isAutoGenerated:
-        type: boolean
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      name:
-        type: string
-      privateKey:
-        type: string
-      publicKey:
-        type: string
-      systemLabel:
-        description: SystemLabel is for describing the MCIR in a keyword (any string
-          can be used) for special System purpose
-        example: Managed by CB-Tumblebug
-        type: string
-      username:
-        type: string
-      verifiedUsername:
-        type: string
-    type: object
-  mcir.TbSshKeyReq:
-    properties:
-      connectionName:
-        type: string
-      cspSshKeyId:
-        description: |-
-          Fields for "Register existing SSH keys" feature
-          CspSshKeyId is required to register object from CSP (option=register)
-        type: string
-      description:
-        type: string
-      fingerprint:
-        type: string
-      name:
-        type: string
-      privateKey:
-        type: string
-      publicKey:
-        type: string
-      username:
-        type: string
-      verifiedUsername:
-        type: string
-    required:
-    - connectionName
-    - name
-    type: object
-  mcir.TbSubnetInfo:
-    properties:
-      bastionNodes:
-        items:
-          $ref: '#/definitions/mcir.BastionNode'
-        type: array
-      description:
-        type: string
-      id:
-        type: string
-      idFromCsp:
-        type: string
-      ipv4_CIDR:
-        type: string
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      name:
-        type: string
-    required:
-    - ipv4_CIDR
-    - name
-    type: object
-  mcir.TbSubnetReq:
-    properties:
-      description:
-        type: string
-      idFromCsp:
-        type: string
-      ipv4_CIDR:
-        type: string
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      name:
-        type: string
-    required:
-    - ipv4_CIDR
-    - name
-    type: object
-  mcir.TbVNetInfo:
-    properties:
-      associatedObjectList:
-        items:
-          type: string
-        type: array
-      cidrBlock:
-        type: string
-      connectionName:
-        type: string
-      cspVNetId:
-        type: string
-      cspVNetName:
-        type: string
-      description:
-        type: string
-      id:
-        type: string
-      isAutoGenerated:
-        type: boolean
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      name:
-        type: string
-      status:
-        type: string
-      subnetInfoList:
-        items:
-          $ref: '#/definitions/mcir.TbSubnetInfo'
-        type: array
-      systemLabel:
-        description: SystemLabel is for describing the MCIR in a keyword (any string
-          can be used) for special System purpose
-        example: Managed by CB-Tumblebug
-        type: string
-    type: object
-  mcir.TbVNetReq:
-    properties:
-      cidrBlock:
-        type: string
-      connectionName:
-        type: string
-      cspVNetId:
-        type: string
-      description:
-        type: string
-      name:
-        type: string
-      subnetInfoList:
-        items:
-          $ref: '#/definitions/mcir.TbSubnetReq'
-        type: array
-    required:
-    - connectionName
-    - name
+        $ref: '#/definitions/infra.resourceOnTumblebug'
     type: object
   model.Response:
     properties:
@@ -3218,6 +2376,848 @@ definitions:
     x-enum-varnames:
     - SubnettingRuleTypeMinSubnets
     - SubnettingRuleTypeMinHosts
+  resource.BastionNode:
+    properties:
+      mciId:
+        type: string
+      vmId:
+        type: string
+    type: object
+  resource.CustomImageStatus:
+    enum:
+    - Available
+    - Unavailable
+    type: string
+    x-enum-varnames:
+    - MyImageAvailable
+    - MyImageUnavailable
+  resource.DiskStatus:
+    enum:
+    - Creating
+    - Available
+    - Attached
+    - Deleting
+    - Error
+    type: string
+    x-enum-varnames:
+    - DiskCreating
+    - DiskAvailable
+    - DiskAttached
+    - DiskDeleting
+    - DiskError
+  resource.FilterSpecsByRangeRequest:
+    properties:
+      acceleratorCount:
+        $ref: '#/definitions/resource.Range'
+      acceleratorMemoryGB:
+        $ref: '#/definitions/resource.Range'
+      acceleratorModel:
+        type: string
+      acceleratorType:
+        type: string
+      connectionName:
+        type: string
+      costPerHour:
+        $ref: '#/definitions/resource.Range'
+      cspSpecName:
+        type: string
+      description:
+        type: string
+      evaluationScore01:
+        $ref: '#/definitions/resource.Range'
+      evaluationScore02:
+        $ref: '#/definitions/resource.Range'
+      evaluationScore03:
+        $ref: '#/definitions/resource.Range'
+      evaluationScore04:
+        $ref: '#/definitions/resource.Range'
+      evaluationScore05:
+        $ref: '#/definitions/resource.Range'
+      evaluationScore06:
+        $ref: '#/definitions/resource.Range'
+      evaluationScore07:
+        $ref: '#/definitions/resource.Range'
+      evaluationScore08:
+        $ref: '#/definitions/resource.Range'
+      evaluationScore09:
+        $ref: '#/definitions/resource.Range'
+      evaluationScore10:
+        $ref: '#/definitions/resource.Range'
+      evaluationStatus:
+        type: string
+      id:
+        type: string
+      infraType:
+        type: string
+      maxTotalStorageTiB:
+        $ref: '#/definitions/resource.Range'
+      memoryGiB:
+        $ref: '#/definitions/resource.Range'
+      name:
+        type: string
+      netBwGbps:
+        $ref: '#/definitions/resource.Range'
+      osType:
+        type: string
+      providerName:
+        type: string
+      regionName:
+        type: string
+      storageGiB:
+        $ref: '#/definitions/resource.Range'
+      vCPU:
+        $ref: '#/definitions/resource.Range'
+    type: object
+  resource.JSONResult:
+    type: object
+  resource.Range:
+    properties:
+      max:
+        type: number
+      min:
+        type: number
+    type: object
+  resource.RestFilterSpecsResponse:
+    properties:
+      spec:
+        items:
+          $ref: '#/definitions/resource.TbSpecInfo'
+        type: array
+    type: object
+  resource.RestGetAllCustomImageResponse:
+    properties:
+      customImage:
+        items:
+          $ref: '#/definitions/resource.TbCustomImageInfo'
+        type: array
+    type: object
+  resource.RestGetAllDataDiskResponse:
+    properties:
+      dataDisk:
+        items:
+          $ref: '#/definitions/resource.TbDataDiskInfo'
+        type: array
+    type: object
+  resource.RestGetAllImageResponse:
+    properties:
+      image:
+        items:
+          $ref: '#/definitions/resource.TbImageInfo'
+        type: array
+    type: object
+  resource.RestGetAllSecurityGroupResponse:
+    properties:
+      securityGroup:
+        items:
+          $ref: '#/definitions/resource.TbSecurityGroupInfo'
+        type: array
+    type: object
+  resource.RestGetAllSshKeyResponse:
+    properties:
+      sshKey:
+        items:
+          $ref: '#/definitions/resource.TbSshKeyInfo'
+        type: array
+    type: object
+  resource.RestGetAllVNetResponse:
+    properties:
+      vNet:
+        items:
+          $ref: '#/definitions/resource.TbVNetInfo'
+        type: array
+    type: object
+  resource.RestLookupImageRequest:
+    properties:
+      connectionName:
+        type: string
+      cspImageId:
+        type: string
+    type: object
+  resource.RestLookupSpecRequest:
+    properties:
+      connectionName:
+        type: string
+      cspSpecName:
+        type: string
+    type: object
+  resource.RestSearchImageRequest:
+    properties:
+      keywords:
+        items:
+          type: string
+        type: array
+    type: object
+  resource.SpiderGpuInfo:
+    properties:
+      count:
+        type: string
+      mem:
+        type: string
+      mfr:
+        type: string
+      model:
+        type: string
+    type: object
+  resource.SpiderImageInfo:
+    properties:
+      guestOS:
+        description: Windows7, Ubuntu etc.
+        type: string
+      iid:
+        allOf:
+        - $ref: '#/definitions/common.IID'
+        description: Fields for response
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        description: Fields for request
+        type: string
+      status:
+        description: available, unavailable
+        type: string
+    type: object
+  resource.SpiderImageList:
+    properties:
+      image:
+        items:
+          $ref: '#/definitions/resource.SpiderImageInfo'
+        type: array
+    type: object
+  resource.SpiderSpecInfo:
+    properties:
+      gpu:
+        items:
+          $ref: '#/definitions/resource.SpiderGpuInfo'
+        type: array
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      mem:
+        type: string
+      name:
+        type: string
+      region:
+        type: string
+      vcpu:
+        $ref: '#/definitions/resource.SpiderVCpuInfo'
+    type: object
+  resource.SpiderSpecList:
+    properties:
+      vmspec:
+        items:
+          $ref: '#/definitions/resource.SpiderSpecInfo'
+        type: array
+    type: object
+  resource.SpiderVCpuInfo:
+    properties:
+      clock:
+        description: GHz
+        type: string
+      count:
+        type: string
+    type: object
+  resource.TbAttachDetachDataDiskReq:
+    properties:
+      dataDiskId:
+        type: string
+    required:
+    - dataDiskId
+    type: object
+  resource.TbCustomImageInfo:
+    properties:
+      associatedObjectList:
+        items:
+          type: string
+        type: array
+      connectionName:
+        example: aws-ap-southeast-1
+        type: string
+      creationDate:
+        example: "2022-10-18T08:12:48Z"
+        type: string
+      cspCustomImageId:
+        example: ami-06eb41e14121c550a
+        type: string
+      cspCustomImageName:
+        example: aws-ap-southeast-1-snapshot
+        type: string
+      description:
+        type: string
+      guestOS:
+        description: Windows7, Ubuntu etc.
+        type: string
+      id:
+        example: aws-ap-southeast-1-snapshot
+        type: string
+      isAutoGenerated:
+        type: boolean
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        example: aws-ap-southeast-1-snapshot
+        type: string
+      namespace:
+        description: required to save in RDB
+        example: default
+        type: string
+      sourceVmId:
+        example: aws-ap-southeast-1-1
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/resource.CustomImageStatus'
+        example: Available
+      systemLabel:
+        description: SystemLabel is for describing the Resource in a keyword (any
+          string can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
+    type: object
+  resource.TbCustomImageReq:
+    properties:
+      connectionName:
+        type: string
+      cspCustomImageId:
+        description: This field is for 'Register existing custom image'
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      sourceVmId:
+        type: string
+    required:
+    - name
+    type: object
+  resource.TbDataDiskInfo:
+    properties:
+      associatedObjectList:
+        items:
+          type: string
+        type: array
+      connectionName:
+        example: aws-ap-southeast-1
+        type: string
+      createdTime:
+        example: "2022-10-12T05:09:51.05Z"
+        type: string
+      cspDataDiskId:
+        example: vol-0d397c3239629bd43
+        type: string
+      cspDataDiskName:
+        example: default-aws-ap-southeast-1-datadisk
+        type: string
+      description:
+        example: Available
+        type: string
+      diskSize:
+        example: "77"
+        type: string
+      diskType:
+        example: standard
+        type: string
+      id:
+        example: aws-ap-southeast-1-datadisk
+        type: string
+      isAutoGenerated:
+        type: boolean
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        example: aws-ap-southeast-1-datadisk
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/resource.DiskStatus'
+        description: Available, Unavailable, Attached, ...
+        example: Available
+      systemLabel:
+        description: SystemLabel is for describing the Resource in a keyword (any
+          string can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
+      systemMessage:
+        description: Latest system message such as error message
+        example: Failed because ...
+        type: string
+    type: object
+  resource.TbDataDiskReq:
+    properties:
+      connectionName:
+        example: aws-ap-southeast-1
+        type: string
+      cspDataDiskId:
+        description: |-
+          Fields for "Register existing dataDisk" feature
+          CspDataDiskId is required to register object from CSP (option=register)
+        type: string
+      description:
+        type: string
+      diskSize:
+        default: "100"
+        example: "77"
+        type: string
+      diskType:
+        example: default
+        type: string
+      name:
+        example: aws-ap-southeast-1-datadisk
+        type: string
+    required:
+    - connectionName
+    - diskSize
+    - name
+    type: object
+  resource.TbDataDiskUpsizeReq:
+    properties:
+      description:
+        type: string
+      diskSize:
+        type: string
+    required:
+    - diskSize
+    type: object
+  resource.TbDataDiskVmReq:
+    properties:
+      description:
+        type: string
+      diskSize:
+        default: "100"
+        example: "77"
+        type: string
+      diskType:
+        example: default
+        type: string
+      name:
+        example: aws-ap-southeast-1-datadisk
+        type: string
+    required:
+    - diskSize
+    - name
+    type: object
+  resource.TbFirewallRuleInfo:
+    properties:
+      cidr:
+        type: string
+      direction:
+        description: '`json:"direction"`'
+        type: string
+      fromPort:
+        description: '`json:"fromPort"`'
+        type: string
+      ipprotocol:
+        description: '`json:"ipProtocol"`'
+        type: string
+      toPort:
+        description: '`json:"toPort"`'
+        type: string
+    required:
+    - direction
+    - fromPort
+    - ipprotocol
+    - toPort
+    type: object
+  resource.TbFirewallRulesWrapper:
+    properties:
+      firewallRules:
+        description: validate:"required"`
+        items:
+          $ref: '#/definitions/resource.TbFirewallRuleInfo'
+        type: array
+    type: object
+  resource.TbImageInfo:
+    properties:
+      associatedObjectList:
+        items:
+          type: string
+        type: array
+      connectionName:
+        type: string
+      creationDate:
+        type: string
+      cspImageId:
+        type: string
+      cspImageName:
+        type: string
+      description:
+        type: string
+      guestOS:
+        description: Windows7, Ubuntu etc.
+        type: string
+      id:
+        type: string
+      infraType:
+        description: vm|k8s|kubernetes|container, etc.
+        type: string
+      isAutoGenerated:
+        type: boolean
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+      namespace:
+        description: required to save in RDB
+        type: string
+      status:
+        description: available, unavailable
+        type: string
+      systemLabel:
+        description: SystemLabel is for describing the Resource in a keyword (any
+          string can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
+    type: object
+  resource.TbImageReq:
+    properties:
+      connectionName:
+        type: string
+      cspImageId:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - connectionName
+    - cspImageId
+    - name
+    type: object
+  resource.TbSecurityGroupInfo:
+    properties:
+      associatedObjectList:
+        items:
+          type: string
+        type: array
+      connectionName:
+        type: string
+      cspSecurityGroupId:
+        type: string
+      cspSecurityGroupName:
+        type: string
+      description:
+        type: string
+      firewallRules:
+        items:
+          $ref: '#/definitions/resource.TbFirewallRuleInfo'
+        type: array
+      id:
+        type: string
+      isAutoGenerated:
+        type: boolean
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+      systemLabel:
+        description: SystemLabel is for describing the Resource in a keyword (any
+          string can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
+      vNetId:
+        type: string
+    type: object
+  resource.TbSecurityGroupReq:
+    properties:
+      connectionName:
+        type: string
+      cspSecurityGroupId:
+        description: CspSecurityGroupId is required to register object from CSP (option=register)
+        type: string
+      description:
+        type: string
+      firewallRules:
+        description: validate:"required"`
+        items:
+          $ref: '#/definitions/resource.TbFirewallRuleInfo'
+        type: array
+      name:
+        type: string
+      vNetId:
+        type: string
+    required:
+    - connectionName
+    - name
+    - vNetId
+    type: object
+  resource.TbSpecInfo:
+    properties:
+      acceleratorCount:
+        type: integer
+      acceleratorMemoryGB:
+        type: number
+      acceleratorModel:
+        type: string
+      acceleratorType:
+        type: string
+      associatedObjectList:
+        items:
+          type: string
+        type: array
+      connectionName:
+        type: string
+      costPerHour:
+        type: number
+      cspSpecName:
+        type: string
+      description:
+        type: string
+      evaluationScore01:
+        type: number
+      evaluationScore02:
+        type: number
+      evaluationScore03:
+        type: number
+      evaluationScore04:
+        type: number
+      evaluationScore05:
+        type: number
+      evaluationScore06:
+        type: number
+      evaluationScore07:
+        type: number
+      evaluationScore08:
+        type: number
+      evaluationScore09:
+        type: number
+      evaluationScore10:
+        type: number
+      evaluationStatus:
+        type: string
+      id:
+        type: string
+      infraType:
+        description: vm|k8s|kubernetes|container, etc.
+        type: string
+      isAutoGenerated:
+        type: boolean
+      maxTotalStorageTiB:
+        type: integer
+      memoryGiB:
+        type: number
+      name:
+        type: string
+      namespace:
+        description: required to save in RDB
+        type: string
+      netBwGbps:
+        type: integer
+      orderInFilteredResult:
+        type: integer
+      osType:
+        type: string
+      providerName:
+        type: string
+      regionName:
+        type: string
+      rootDiskSize:
+        type: string
+      rootDiskType:
+        type: string
+      storageGiB:
+        type: integer
+      systemLabel:
+        description: SystemLabel is for describing the Resource in a keyword (any
+          string can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
+      vCPU:
+        type: integer
+    type: object
+  resource.TbSpecReq:
+    properties:
+      connectionName:
+        type: string
+      cspSpecName:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - connectionName
+    - cspSpecName
+    - name
+    type: object
+  resource.TbSshKeyInfo:
+    properties:
+      associatedObjectList:
+        items:
+          type: string
+        type: array
+      connectionName:
+        type: string
+      cspSshKeyId:
+        description: CspSshKeyId used for CSP-native identifier (either Name or ID)
+        type: string
+      cspSshKeyName:
+        description: CspSshKeyName used for CB-Spider identifier
+        type: string
+      description:
+        type: string
+      fingerprint:
+        type: string
+      id:
+        type: string
+      isAutoGenerated:
+        type: boolean
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+      privateKey:
+        type: string
+      publicKey:
+        type: string
+      systemLabel:
+        description: SystemLabel is for describing the Resource in a keyword (any
+          string can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
+      username:
+        type: string
+      verifiedUsername:
+        type: string
+    type: object
+  resource.TbSshKeyReq:
+    properties:
+      connectionName:
+        type: string
+      cspSshKeyId:
+        description: |-
+          Fields for "Register existing SSH keys" feature
+          CspSshKeyId is required to register object from CSP (option=register)
+        type: string
+      description:
+        type: string
+      fingerprint:
+        type: string
+      name:
+        type: string
+      privateKey:
+        type: string
+      publicKey:
+        type: string
+      username:
+        type: string
+      verifiedUsername:
+        type: string
+    required:
+    - connectionName
+    - name
+    type: object
+  resource.TbSubnetInfo:
+    properties:
+      bastionNodes:
+        items:
+          $ref: '#/definitions/resource.BastionNode'
+        type: array
+      description:
+        type: string
+      id:
+        type: string
+      idFromCsp:
+        type: string
+      ipv4_CIDR:
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+    required:
+    - ipv4_CIDR
+    - name
+    type: object
+  resource.TbSubnetReq:
+    properties:
+      description:
+        type: string
+      idFromCsp:
+        type: string
+      ipv4_CIDR:
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+    required:
+    - ipv4_CIDR
+    - name
+    type: object
+  resource.TbVNetInfo:
+    properties:
+      associatedObjectList:
+        items:
+          type: string
+        type: array
+      cidrBlock:
+        type: string
+      connectionName:
+        type: string
+      cspVNetId:
+        type: string
+      cspVNetName:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      isAutoGenerated:
+        type: boolean
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+      status:
+        type: string
+      subnetInfoList:
+        items:
+          $ref: '#/definitions/resource.TbSubnetInfo'
+        type: array
+      systemLabel:
+        description: SystemLabel is for describing the Resource in a keyword (any
+          string can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
+    type: object
+  resource.TbVNetReq:
+    properties:
+      cidrBlock:
+        type: string
+      connectionName:
+        type: string
+      cspVNetId:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      subnetInfoList:
+        items:
+          $ref: '#/definitions/resource.TbSubnetReq'
+        type: array
+    required:
+    - connectionName
+    - name
+    type: object
 info:
   contact:
     email: contact-to-cloud-barista@googlegroups.com
@@ -3722,7 +3722,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.InspectResource'
+            $ref: '#/definitions/infra.InspectResource'
         "404":
           description: Not Found
           schema:
@@ -3748,7 +3748,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.InspectResourceAllResult'
+            $ref: '#/definitions/infra.InspectResourceAllResult'
         "404":
           description: Not Found
           schema:
@@ -3817,14 +3817,14 @@ paths:
         name: lookupImageReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.RestLookupImageRequest'
+          $ref: '#/definitions/resource.RestLookupImageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.SpiderImageInfo'
+            $ref: '#/definitions/resource.SpiderImageInfo'
         "404":
           description: Not Found
           schema:
@@ -3855,7 +3855,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.SpiderImageList'
+            $ref: '#/definitions/resource.SpiderImageList'
         "404":
           description: Not Found
           schema:
@@ -3879,14 +3879,14 @@ paths:
         name: lookupSpecReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.RestLookupSpecRequest'
+          $ref: '#/definitions/resource.RestLookupSpecRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.SpiderSpecInfo'
+            $ref: '#/definitions/resource.SpiderSpecInfo'
         "404":
           description: Not Found
           schema:
@@ -3917,7 +3917,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.SpiderSpecList'
+            $ref: '#/definitions/resource.SpiderSpecList'
         "404":
           description: Not Found
           schema:
@@ -3942,14 +3942,14 @@ paths:
         name: mciReq
         required: true
         schema:
-          $ref: '#/definitions/mci.MciConnectionConfigCandidatesReq'
+          $ref: '#/definitions/infra.MciConnectionConfigCandidatesReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.CheckMciDynamicReqInfo'
+            $ref: '#/definitions/infra.CheckMciDynamicReqInfo'
         "404":
           description: Not Found
           schema:
@@ -3972,7 +3972,7 @@ paths:
         in: body
         name: deploymentPlan
         schema:
-          $ref: '#/definitions/mci.DeploymentPlan'
+          $ref: '#/definitions/infra.DeploymentPlan'
       produces:
       - application/json
       responses:
@@ -3980,7 +3980,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/mcir.TbSpecInfo'
+              $ref: '#/definitions/resource.TbSpecInfo'
             type: array
         "404":
           description: Not Found
@@ -4197,7 +4197,7 @@ paths:
         name: hostIP
         required: true
         schema:
-          $ref: '#/definitions/mci.RestGetBenchmarkRequest'
+          $ref: '#/definitions/infra.RestGetBenchmarkRequest'
       - description: Benchmark Action to MCI
         enum:
         - install
@@ -4223,7 +4223,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.BenchmarkInfoArray'
+            $ref: '#/definitions/infra.BenchmarkInfoArray'
         "404":
           description: Not Found
           schema:
@@ -4259,14 +4259,14 @@ paths:
         name: hostIP
         required: true
         schema:
-          $ref: '#/definitions/mci.RestGetAllBenchmarkRequest'
+          $ref: '#/definitions/infra.RestGetAllBenchmarkRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.BenchmarkInfoArray'
+            $ref: '#/definitions/infra.BenchmarkInfoArray'
         "404":
           description: Not Found
           schema:
@@ -4303,7 +4303,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.BenchmarkInfoArray'
+            $ref: '#/definitions/infra.BenchmarkInfoArray'
         "404":
           description: Not Found
           schema:
@@ -4376,7 +4376,7 @@ paths:
         name: mciCmdReq
         required: true
         schema:
-          $ref: '#/definitions/mci.MciCmdReq'
+          $ref: '#/definitions/infra.MciCmdReq'
       - default: g1
         description: subGroupId to apply the command only for VMs in subGroup of MCI
         in: query
@@ -4397,7 +4397,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.MciSshCmdResult'
+            $ref: '#/definitions/infra.MciSshCmdResult'
         "404":
           description: Not Found
           schema:
@@ -4551,7 +4551,7 @@ paths:
         name: mciCmdReq
         required: true
         schema:
-          $ref: '#/definitions/mci.MciCmdReq'
+          $ref: '#/definitions/infra.MciCmdReq'
       - description: Option for checking update
         enum:
         - update
@@ -4564,7 +4564,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.MciSshCmdResult'
+            $ref: '#/definitions/infra.MciSshCmdResult'
         "404":
           description: Not Found
           schema:
@@ -4641,10 +4641,10 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mci.JSONResult'
+            - $ref: '#/definitions/infra.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mci.RestGetAllK8sClusterResponse'
+                  $ref: '#/definitions/infra.RestGetAllK8sClusterResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
               type: object
@@ -4683,14 +4683,14 @@ paths:
         name: k8sClusterReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbK8sClusterReq'
+          $ref: '#/definitions/infra.TbK8sClusterReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbK8sClusterInfo'
+            $ref: '#/definitions/infra.TbK8sClusterInfo'
         "404":
           description: Not Found
           schema:
@@ -4759,7 +4759,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbK8sClusterInfo'
+            $ref: '#/definitions/infra.TbK8sClusterInfo'
         "404":
           description: Not Found
           schema:
@@ -4795,14 +4795,14 @@ paths:
         name: k8sNodeGroupReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbK8sNodeGroupReq'
+          $ref: '#/definitions/infra.TbK8sNodeGroupReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbK8sClusterInfo'
+            $ref: '#/definitions/infra.TbK8sClusterInfo'
         "404":
           description: Not Found
           schema:
@@ -4883,14 +4883,14 @@ paths:
         name: changeK8sNodeGroupAutoscaleSizeReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbChangeK8sNodeGroupAutoscaleSizeReq'
+          $ref: '#/definitions/infra.TbChangeK8sNodeGroupAutoscaleSizeReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbChangeK8sNodeGroupAutoscaleSizeRes'
+            $ref: '#/definitions/infra.TbChangeK8sNodeGroupAutoscaleSizeRes'
         "404":
           description: Not Found
           schema:
@@ -4932,14 +4932,14 @@ paths:
         name: setK8sNodeGroupAutoscalingReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbSetK8sNodeGroupAutoscalingReq'
+          $ref: '#/definitions/infra.TbSetK8sNodeGroupAutoscalingReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbSetK8sNodeGroupAutoscalingRes'
+            $ref: '#/definitions/infra.TbSetK8sNodeGroupAutoscalingRes'
         "404":
           description: Not Found
           schema:
@@ -4975,7 +4975,7 @@ paths:
         name: upgradeK8sClusterReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbUpgradeK8sClusterReq'
+          $ref: '#/definitions/infra.TbUpgradeK8sClusterReq'
       produces:
       - application/json
       responses:
@@ -5096,16 +5096,16 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mci.JSONResult'
+            - $ref: '#/definitions/infra.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mci.RestGetAllMciResponse'
+                  $ref: '#/definitions/infra.RestGetAllMciResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
                 '[SIMPLE]':
-                  $ref: '#/definitions/mci.RestGetAllMciResponse'
+                  $ref: '#/definitions/infra.RestGetAllMciResponse'
                 '[STATUS]':
-                  $ref: '#/definitions/mci.RestGetAllMciStatusResponse'
+                  $ref: '#/definitions/infra.RestGetAllMciStatusResponse'
               type: object
         "404":
           description: Not Found
@@ -5135,14 +5135,14 @@ paths:
         name: mciReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbMciReq'
+          $ref: '#/definitions/infra.TbMciReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbMciInfo'
+            $ref: '#/definitions/infra.TbMciInfo'
         "404":
           description: Not Found
           schema:
@@ -5240,16 +5240,16 @@ paths:
           description: Different return structures by the given action param
           schema:
             allOf:
-            - $ref: '#/definitions/mci.JSONResult'
+            - $ref: '#/definitions/infra.JSONResult'
             - properties:
                 '[AccessInfo]':
-                  $ref: '#/definitions/mci.MciAccessInfo'
+                  $ref: '#/definitions/infra.MciAccessInfo'
                 '[DEFAULT]':
-                  $ref: '#/definitions/mci.TbMciInfo'
+                  $ref: '#/definitions/infra.TbMciInfo'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
                 '[STATUS]':
-                  $ref: '#/definitions/mci.MciStatusInfo'
+                  $ref: '#/definitions/infra.MciStatusInfo'
               type: object
         "404":
           description: Not Found
@@ -5330,14 +5330,14 @@ paths:
         name: nlbReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbNLBReq'
+          $ref: '#/definitions/infra.TbNLBReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.McNlbInfo'
+            $ref: '#/definitions/infra.McNlbInfo'
         "404":
           description: Not Found
           schema:
@@ -5426,10 +5426,10 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mci.JSONResult'
+            - $ref: '#/definitions/infra.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mci.RestGetAllNLBResponse'
+                  $ref: '#/definitions/infra.RestGetAllNLBResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
               type: object
@@ -5474,14 +5474,14 @@ paths:
         name: nlbReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbNLBReq'
+          $ref: '#/definitions/infra.TbNLBReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbNLBInfo'
+            $ref: '#/definitions/infra.TbNLBInfo'
         "404":
           description: Not Found
           schema:
@@ -5561,7 +5561,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbNLBInfo'
+            $ref: '#/definitions/infra.TbNLBInfo'
         "404":
           description: Not Found
           schema:
@@ -5604,7 +5604,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbNLBInfo'
+            $ref: '#/definitions/infra.TbNLBInfo'
         "404":
           description: Not Found
           schema:
@@ -5646,7 +5646,7 @@ paths:
         name: nlbAddRemoveVMReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbNLBAddRemoveVMReq'
+          $ref: '#/definitions/infra.TbNLBAddRemoveVMReq'
       produces:
       - application/json
       responses:
@@ -5690,14 +5690,14 @@ paths:
         name: nlbAddRemoveVMReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbNLBAddRemoveVMReq'
+          $ref: '#/definitions/infra.TbNLBAddRemoveVMReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbNLBInfo'
+            $ref: '#/definitions/infra.TbNLBInfo'
         "404":
           description: Not Found
           schema:
@@ -5865,14 +5865,14 @@ paths:
         name: vmReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbScaleOutSubGroupReq'
+          $ref: '#/definitions/infra.TbScaleOutSubGroupReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbMciInfo'
+            $ref: '#/definitions/infra.TbMciInfo'
         "404":
           description: Not Found
           schema:
@@ -5909,14 +5909,14 @@ paths:
         name: vmReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbVmReq'
+          $ref: '#/definitions/infra.TbVmReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbMciInfo'
+            $ref: '#/definitions/infra.TbMciInfo'
         "404":
           description: Not Found
           schema:
@@ -5961,7 +5961,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/mcir.BastionNode'
+              $ref: '#/definitions/resource.BastionNode'
             type: array
         "404":
           description: Not Found
@@ -6107,14 +6107,14 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mci.JSONResult'
+            - $ref: '#/definitions/infra.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mci.TbVmInfo'
+                  $ref: '#/definitions/infra.TbVmInfo'
                 '[IDNAME]':
-                  $ref: '#/definitions/mci.TbIdNameInDetailInfo'
+                  $ref: '#/definitions/infra.TbIdNameInDetailInfo'
                 '[STATUS]':
-                  $ref: '#/definitions/mci.TbVmStatusInfo'
+                  $ref: '#/definitions/infra.TbVmStatusInfo'
               type: object
         "404":
           description: Not Found
@@ -6159,10 +6159,10 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mcir.JSONResult'
+            - $ref: '#/definitions/resource.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mcir.RestGetAllDataDiskResponse'
+                  $ref: '#/definitions/resource.RestGetAllDataDiskResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
               type: object
@@ -6188,7 +6188,7 @@ paths:
         name: dataDiskInfo
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbDataDiskVmReq'
+          $ref: '#/definitions/resource.TbDataDiskVmReq'
       - default: default
         description: Namespace ID
         in: path
@@ -6213,7 +6213,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbVmInfo'
+            $ref: '#/definitions/infra.TbVmInfo'
         "404":
           description: Not Found
           schema:
@@ -6231,7 +6231,7 @@ paths:
         in: body
         name: attachDetachDataDiskReq
         schema:
-          $ref: '#/definitions/mcir.TbAttachDetachDataDiskReq'
+          $ref: '#/definitions/resource.TbAttachDetachDataDiskReq'
       - default: default
         description: Namespace ID
         in: path
@@ -6271,7 +6271,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbVmInfo'
+            $ref: '#/definitions/infra.TbVmInfo'
         "404":
           description: Not Found
           schema:
@@ -6295,7 +6295,7 @@ paths:
         name: vmSnapshotReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbVmSnapshotReq'
+          $ref: '#/definitions/infra.TbVmSnapshotReq'
       - default: default
         description: Namespace ID
         in: path
@@ -6320,7 +6320,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbCustomImageInfo'
+            $ref: '#/definitions/resource.TbCustomImageInfo'
         "404":
           description: Not Found
           schema:
@@ -6356,14 +6356,14 @@ paths:
         name: vmReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbVmDynamicReq'
+          $ref: '#/definitions/infra.TbVmDynamicReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbMciInfo'
+            $ref: '#/definitions/infra.TbMciInfo'
         "404":
           description: Not Found
           schema:
@@ -6502,7 +6502,7 @@ paths:
         name: mciReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbMciDynamicReq'
+          $ref: '#/definitions/infra.TbMciDynamicReq'
       - description: Option for MCI creation
         enum:
         - hold
@@ -6519,7 +6519,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbMciInfo'
+            $ref: '#/definitions/infra.TbMciInfo'
         "404":
           description: Not Found
           schema:
@@ -6555,14 +6555,14 @@ paths:
         name: mciInfo
         required: true
         schema:
-          $ref: '#/definitions/mci.MciCmdReq'
+          $ref: '#/definitions/infra.MciCmdReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.AgentInstallContentWrapper'
+            $ref: '#/definitions/infra.AgentInstallContentWrapper'
         "404":
           description: Not Found
           schema:
@@ -6605,7 +6605,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.MonResultSimpleResponse'
+            $ref: '#/definitions/infra.MonResultSimpleResponse'
         "404":
           description: Not Found
           schema:
@@ -6650,7 +6650,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbVmInfo'
+            $ref: '#/definitions/infra.TbVmInfo'
         "404":
           description: Not Found
           schema:
@@ -6708,7 +6708,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.RestGetAllMciPolicyResponse'
+            $ref: '#/definitions/infra.RestGetAllMciPolicyResponse'
         "404":
           description: Not Found
           schema:
@@ -6777,7 +6777,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.MciPolicyInfo'
+            $ref: '#/definitions/infra.MciPolicyInfo'
         "404":
           description: Not Found
           schema:
@@ -6812,14 +6812,14 @@ paths:
         name: mciPolicyReq
         required: true
         schema:
-          $ref: '#/definitions/mci.MciPolicyReq'
+          $ref: '#/definitions/infra.MciPolicyReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.MciPolicyInfo'
+            $ref: '#/definitions/infra.MciPolicyInfo'
         "404":
           description: Not Found
           schema:
@@ -6849,14 +6849,14 @@ paths:
         name: mciReq
         required: true
         schema:
-          $ref: '#/definitions/mci.TbMciReq'
+          $ref: '#/definitions/infra.TbMciReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbMciInfo'
+            $ref: '#/definitions/infra.TbMciInfo'
         "404":
           description: Not Found
           schema:
@@ -6933,10 +6933,10 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mcir.JSONResult'
+            - $ref: '#/definitions/resource.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mcir.RestGetAllCustomImageResponse'
+                  $ref: '#/definitions/resource.RestGetAllCustomImageResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
               type: object
@@ -6975,14 +6975,14 @@ paths:
         name: customImageRegisterReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbCustomImageReq'
+          $ref: '#/definitions/resource.TbCustomImageReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbCustomImageInfo'
+            $ref: '#/definitions/resource.TbCustomImageInfo'
         "404":
           description: Not Found
           schema:
@@ -7049,7 +7049,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbCustomImageInfo'
+            $ref: '#/definitions/resource.TbCustomImageInfo'
         "404":
           description: Not Found
           schema:
@@ -7126,10 +7126,10 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mcir.JSONResult'
+            - $ref: '#/definitions/resource.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mcir.RestGetAllDataDiskResponse'
+                  $ref: '#/definitions/resource.RestGetAllDataDiskResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
               type: object
@@ -7167,14 +7167,14 @@ paths:
         name: dataDiskInfo
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbDataDiskReq'
+          $ref: '#/definitions/resource.TbDataDiskReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbDataDiskInfo'
+            $ref: '#/definitions/resource.TbDataDiskInfo'
         "404":
           description: Not Found
           schema:
@@ -7241,7 +7241,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbDataDiskInfo'
+            $ref: '#/definitions/resource.TbDataDiskInfo'
         "404":
           description: Not Found
           schema:
@@ -7264,7 +7264,7 @@ paths:
         name: dataDiskUpsizeReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbDataDiskUpsizeReq'
+          $ref: '#/definitions/resource.TbDataDiskUpsizeReq'
       - default: default
         description: Namespace ID
         in: path
@@ -7282,7 +7282,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbDataDiskInfo'
+            $ref: '#/definitions/resource.TbDataDiskInfo'
         "404":
           description: Not Found
           schema:
@@ -7373,14 +7373,14 @@ paths:
         in: body
         name: specRangeFilter
         schema:
-          $ref: '#/definitions/mcir.FilterSpecsByRangeRequest'
+          $ref: '#/definitions/resource.FilterSpecsByRangeRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.RestFilterSpecsResponse'
+            $ref: '#/definitions/resource.RestFilterSpecsResponse'
         "404":
           description: Not Found
           schema:
@@ -7457,10 +7457,10 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mcir.JSONResult'
+            - $ref: '#/definitions/resource.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mcir.RestGetAllImageResponse'
+                  $ref: '#/definitions/resource.RestGetAllImageResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
               type: object
@@ -7500,13 +7500,13 @@ paths:
         in: body
         name: imageInfo
         schema:
-          $ref: '#/definitions/mcir.TbImageInfo'
+          $ref: '#/definitions/resource.TbImageInfo'
       - description: Specify name, connectionName and cspImageId to register an image
           object automatically
         in: body
         name: imageId
         schema:
-          $ref: '#/definitions/mcir.TbImageReq'
+          $ref: '#/definitions/resource.TbImageReq'
       - default: false
         description: Force update to existing image object
         in: query
@@ -7518,7 +7518,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbImageInfo'
+            $ref: '#/definitions/resource.TbImageInfo'
         "404":
           description: Not Found
           schema:
@@ -7585,7 +7585,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbImageInfo'
+            $ref: '#/definitions/resource.TbImageInfo'
         "404":
           description: Not Found
           schema:
@@ -7608,7 +7608,7 @@ paths:
         name: imageInfo
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbImageInfo'
+          $ref: '#/definitions/resource.TbImageInfo'
       - default: default
         description: Namespace ID
         in: path
@@ -7626,7 +7626,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbImageInfo'
+            $ref: '#/definitions/resource.TbImageInfo'
         "404":
           description: Not Found
           schema:
@@ -7656,14 +7656,14 @@ paths:
         name: keywords
         required: true
         schema:
-          $ref: '#/definitions/mcir.RestSearchImageRequest'
+          $ref: '#/definitions/resource.RestSearchImageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.RestGetAllImageResponse'
+            $ref: '#/definitions/resource.RestGetAllImageResponse'
         "404":
           description: Not Found
           schema:
@@ -7740,10 +7740,10 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mcir.JSONResult'
+            - $ref: '#/definitions/resource.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mcir.RestGetAllSecurityGroupResponse'
+                  $ref: '#/definitions/resource.RestGetAllSecurityGroupResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
               type: object
@@ -7782,14 +7782,14 @@ paths:
         name: securityGroupReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbSecurityGroupReq'
+          $ref: '#/definitions/resource.TbSecurityGroupReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSecurityGroupInfo'
+            $ref: '#/definitions/resource.TbSecurityGroupInfo'
         "404":
           description: Not Found
           schema:
@@ -7856,7 +7856,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSecurityGroupInfo'
+            $ref: '#/definitions/resource.TbSecurityGroupInfo'
         "404":
           description: Not Found
           schema:
@@ -7886,14 +7886,14 @@ paths:
         name: firewallRuleReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbFirewallRulesWrapper'
+          $ref: '#/definitions/resource.TbFirewallRulesWrapper'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSecurityGroupInfo'
+            $ref: '#/definitions/resource.TbSecurityGroupInfo'
         "404":
           description: Not Found
           schema:
@@ -7918,14 +7918,14 @@ paths:
         name: firewallRuleReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbFirewallRulesWrapper'
+          $ref: '#/definitions/resource.TbFirewallRulesWrapper'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSecurityGroupInfo'
+            $ref: '#/definitions/resource.TbSecurityGroupInfo'
         "404":
           description: Not Found
           schema:
@@ -7962,13 +7962,13 @@ paths:
         in: body
         name: specInfo
         schema:
-          $ref: '#/definitions/mcir.TbSpecInfo'
+          $ref: '#/definitions/resource.TbSpecInfo'
       - description: Specify name, connectionName and cspSpecName to register a spec
           object automatically
         in: body
         name: specName
         schema:
-          $ref: '#/definitions/mcir.TbSpecReq'
+          $ref: '#/definitions/resource.TbSpecReq'
       - default: false
         description: Force update to existing spec object
         in: query
@@ -7980,7 +7980,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSpecInfo'
+            $ref: '#/definitions/resource.TbSpecInfo'
         "404":
           description: Not Found
           schema:
@@ -8047,7 +8047,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSpecInfo'
+            $ref: '#/definitions/resource.TbSpecInfo'
         "404":
           description: Not Found
           schema:
@@ -8070,7 +8070,7 @@ paths:
         name: specInfo
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbSpecInfo'
+          $ref: '#/definitions/resource.TbSpecInfo'
       - default: system
         description: Namespace ID
         in: path
@@ -8088,7 +8088,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSpecInfo'
+            $ref: '#/definitions/resource.TbSpecInfo'
         "404":
           description: Not Found
           schema:
@@ -8165,10 +8165,10 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mcir.JSONResult'
+            - $ref: '#/definitions/resource.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mcir.RestGetAllSshKeyResponse'
+                  $ref: '#/definitions/resource.RestGetAllSshKeyResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
               type: object
@@ -8207,14 +8207,14 @@ paths:
         name: sshKeyInfo
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbSshKeyReq'
+          $ref: '#/definitions/resource.TbSshKeyReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/resource.TbSshKeyInfo'
         "404":
           description: Not Found
           schema:
@@ -8281,7 +8281,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/resource.TbSshKeyInfo'
         "404":
           description: Not Found
           schema:
@@ -8304,7 +8304,7 @@ paths:
         name: sshKeyInfo
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbSshKeyInfo'
+          $ref: '#/definitions/resource.TbSshKeyInfo'
       - default: default
         description: Namespace ID
         in: path
@@ -8322,7 +8322,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/resource.TbSshKeyInfo'
         "404":
           description: Not Found
           schema:
@@ -8399,10 +8399,10 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/mcir.JSONResult'
+            - $ref: '#/definitions/resource.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/mcir.RestGetAllVNetResponse'
+                  $ref: '#/definitions/resource.RestGetAllVNetResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
               type: object
@@ -8441,14 +8441,14 @@ paths:
         name: vNetReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbVNetReq'
+          $ref: '#/definitions/resource.TbVNetReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbVNetInfo'
+            $ref: '#/definitions/resource.TbVNetInfo'
         "404":
           description: Not Found
           schema:
@@ -8515,7 +8515,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbVNetInfo'
+            $ref: '#/definitions/resource.TbVNetInfo'
         "404":
           description: Not Found
           schema:
@@ -8550,14 +8550,14 @@ paths:
         name: subnetReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbSubnetReq'
+          $ref: '#/definitions/resource.TbSubnetReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSubnetInfo'
+            $ref: '#/definitions/resource.TbSubnetInfo'
         "404":
           description: Not Found
           schema:
@@ -8889,7 +8889,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.RegisterResourceResult'
+            $ref: '#/definitions/infra.RegisterResourceResult'
         "404":
           description: Not Found
           schema:
@@ -8937,7 +8937,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.RegisterResourceAllResult'
+            $ref: '#/definitions/infra.RegisterResourceAllResult'
         "404":
           description: Not Found
           schema:
@@ -9227,7 +9227,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mci.TbMciInfo'
+            $ref: '#/definitions/infra.TbMciInfo'
         "404":
           description: Not Found
           schema:

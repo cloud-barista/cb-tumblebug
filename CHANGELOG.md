@@ -163,7 +163,7 @@
 * Update `testclient/scripts/conf.env` by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1067
 * Hotfix cb-larva package by @yunkon-kim in https://github.com/cloud-barista/cb-tumblebug/pull/1068
 * Support credential selection for dynamic MCI creation by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1069
-* Merge duplicated inspect functions for vm and mcir by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1071
+* Merge duplicated inspect functions for vm and resource by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1071
 * Update InspecResource struct with csp only and cleanup by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1073
 * Fix misspelled word (#1057) by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1075
 * Register all CSP resources to CB-TB objs by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1076
@@ -321,7 +321,7 @@ Ref) [Supported cloud service providers](https://github.com/cloud-barista/cb-tum
 - MCI 자동 제어 기능 추가
 - MCI 시나리오 테스트 스크립트 추가
 - MCI 마스터 VM 및 VM IP 정보 제공 기능 추가
-- MCIR VM 사양 패치 및 등록 기능 추가
+- RESOURCE VM 사양 패치 및 등록 기능 추가
 - 동적 시스템 환경 설정 변경 기능 추가
 
 ### Bug Fix
@@ -334,9 +334,9 @@ Ref) [Supported cloud service providers](https://github.com/cloud-barista/cb-tum
 ### API Change
 - MCI 통합 원격 커맨드 기능 API 추가
 - 개별 VM 원격 커맨드 기능 API 추가
-- MCIR Subnet 관리 API 제거
-- MCIR VNic 관리 API 제거
-- MCIR PublicIP 관리 API 제거
+- RESOURCE Subnet 관리 API 제거
+- RESOURCE VNic 관리 API 제거
+- RESOURCE PublicIP 관리 API 제거
 - 전체 Request 및 Response Body의 상세 항목 변경 (API 예시 참고)
 
 ### Feature
@@ -354,4 +354,4 @@ Ref) [Supported cloud service providers](https://github.com/cloud-barista/cb-tum
 # v0.1.0-americano (2019.12.23.)
 
 ### Feature
-- Namespace, MCIR, MCI 관리 기본 기능 제공
+- Namespace, RESOURCE, MCI 관리 기본 기능 제공

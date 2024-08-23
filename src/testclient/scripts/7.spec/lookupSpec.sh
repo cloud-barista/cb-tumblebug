@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Lookup spec in ${MCIRRegionNativeName}"
+	echo "- Lookup spec in ${ResourceRegionNativeName}"
 
 	resp=$(
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/lookupSpec -H 'Content-Type: application/json' -d @- <<EOF
@@ -34,7 +34,7 @@ EOF
 
 				INDEX=$cspi
 				REGION=$cspj
-				MCIRRegionNativeName=${RegionNativeName[$cspi,$cspj]}
+				ResourceRegionNativeName=${RegionNativeName[$cspi,$cspj]}
 
 				CallTB
 			done
@@ -44,7 +44,7 @@ EOF
 	else
 		echo ""
 		
-		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
+		ResourceRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallTB
 

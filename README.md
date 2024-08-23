@@ -304,12 +304,12 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 - [A guide to quickly create a Multi-Cloud Infra](https://github.com/cloud-barista/cb-tumblebug/discussions/1570)
 
 - Using individual APIs
-  - Create resources required for VM provisioning by using MCIR(multi-cloud infrastructure resources) management APIs
-    - [Create VM spec object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Spec%20management/post_ns__nsId__resources_spec)
-    - [Create VM image object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Image%20management/post_ns__nsId__resources_image)
-    - [Create network object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Network%20management/post_ns__nsId__resources_vNet)
-    - [Create security group object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Security%20group%20management/post_ns__nsId__resources_securityGroup)
-    - [Create access key object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Access%20key%20management/post_ns__nsId__resources_sshKey)
+  - Create resources required for VM provisioning by using Resource(multi-cloud infrastructure resources) management APIs
+    - [Create VM spec object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Spec%20management/post_ns__nsId__resources_spec)
+    - [Create VM image object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Image%20management/post_ns__nsId__resources_image)
+    - [Create network object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Network%20management/post_ns__nsId__resources_vNet)
+    - [Create security group object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Security%20group%20management/post_ns__nsId__resources_securityGroup)
+    - [Create access key object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Access%20key%20management/post_ns__nsId__resources_sshKey)
   - Create, view, control, execute remote commands, shut down, and delete MCI using the MCI(multi-cloud infrastructure service) management APIs
     - [Create MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/post_ns__nsId__mci)
     - [MCI remote command](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Remote%20command/post_ns__nsId__cmd_mci__mciId_)
@@ -360,9 +360,9 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 - You can test the entire process at once by executing `create-all.sh` and `clean-all.sh` included in `src/testclient/scripts/sequentialFullTest/`
 
   ```bash
-  └── sequentialFullTest # Automatic testing from cloud information registration to NS creation, MCIR creation, and MCI creation
+  └── sequentialFullTest # Automatic testing from cloud information registration to NS creation, Resource creation, and MCI creation
       ├── check-test-config.sh # Check the multi-cloud infrastructure configuration specified in the current testSet
-      ├── create-all.sh # Automatic testing from cloud information registration to NS creation, MCIR creation, and MCI creation
+      ├── create-all.sh # Automatic testing from cloud information registration to NS creation, Resource creation, and MCI creation
       ├── gen-sshKey.sh # Generate SSH key files to access MCI
       ├── command-mci.sh # Execute remote commands on the created MCI (multiple VMs)
       ├── deploy-nginx-mci.sh # Automatically deploy Nginx on the created MCI (multiple VMs)
@@ -399,9 +399,9 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     [DATE: 17/09/2021 15:00:00] [ElapsedTime: 49s (0m:49s)] [Command: ./create-mci-only.sh all 1 shson ../testSetCustom.env 1]
 
     [Executed Command List]
-    [MCIR:aws-ap-southeast-1(28s)] create-mcir-ns-cloud.sh (MCIR) aws 1 shson ../testSetCustom.env
-    [MCIR:aws-ca-central-1(34s)] create-mcir-ns-cloud.sh (MCIR) aws 2 shson ../testSetCustom.env
-    [MCIR:gcp-asia-east1(93s)] create-mcir-ns-cloud.sh (MCIR) gcp 1 shson ../testSetCustom.env
+    [Resource:aws-ap-southeast-1(28s)] create-resource-ns-cloud.sh (Resource) aws 1 shson ../testSetCustom.env
+    [Resource:aws-ca-central-1(34s)] create-resource-ns-cloud.sh (Resource) aws 2 shson ../testSetCustom.env
+    [Resource:gcp-asia-east1(93s)] create-resource-ns-cloud.sh (Resource) gcp 1 shson ../testSetCustom.env
     [MCI:cb-shsonvm4(19s+More)] create-mci-only.sh (MCI) all 1 shson ../testSetCustom.env
 
     [DATE: 17/09/2021 15:00:00] [ElapsedTime: 149s (2m:29s)] [Command: ./create-all.sh -n shson -f ../testSetCustom.env -x 1]
@@ -444,7 +444,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 - K8s Cluster Test (WIP: Stability work in progress for each CSP)
 
   ```bash
-  ./create-mcir-ns-cloud.sh -n tb -f ../testSet.env` # Create MCIR required for K8s cluster creation
+  ./create-resource-ns-cloud.sh -n tb -f ../testSet.env` # Create Resource required for K8s cluster creation
   ./create-k8scluster-only.sh -n tb -f ../testSet.env -x 1 -z 1` # Create K8s cluster (-x maximum number of nodes, -z additional name for K8s node group and K8s cluster)
   ./get-k8scluster.sh -n tb -f ../testSet.env -z 1` # Get K8s cluster information
   ./add-k8snodegroup.sh -n tb -f ../testSet.env -x 1 -z 1` # Add a new K8s node group to the K8s cluster
@@ -454,7 +454,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   ./remove-k8snodegroup.sh -n tb -f ../testSet.env -z 1` # Delete the newly created K8s node group
   ./clean-k8scluster-only.sh -n tb -f ../testSet.env -z 1` # Delete the created K8s cluster
   ./force-clean-k8scluster-only.sh -n tb -f ../testSet.env -z 1` # Force delete the created K8s cluster if deletion fails
-  ./clean-mcir-ns-cloud.h -n tb -f ../testSet.env` # Delete the created MCIR
+  ./clean-resource-ns-cloud.h -n tb -f ../testSet.env` # Delete the created Resource
   ```
 
 
