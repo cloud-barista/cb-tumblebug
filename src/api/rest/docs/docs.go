@@ -9,10 +9,10 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
+        "termsOfService": "https://github.com/cloud-barista/cb-tumblebug/blob/main/README.md",
         "contact": {
             "name": "API Support",
-            "url": "http://cloud-barista.github.io",
-            "email": "contact-to-cloud-barista@googlegroups.com"
+            "url": "https://github.com/cloud-barista/cb-tumblebug/issues/new/choose"
         },
         "license": {
             "name": "Apache 2.0",
@@ -554,7 +554,7 @@ const docTemplate = `{
         },
         "/credential": {
             "post": {
-                "description": "This API registers credential information using hybrid encryption. 1. First, compress and encrypt sensitive data using a client generated AES with a 256-bit key. 2. Then, encrypt the AES key using an RSA public key obtained from ` + "`" + `GET /credential/publicKey` + "`" + `. 3. RSA encryption uses a 4096-bit key with OAEP padding and SHA-256 as the hash function. Ensure that all values are base64 encoded before sending them in the request. The public key token ID must be included in the request to allow the server to decrypt the data.",
+                "description": "This API registers credential information using hybrid encryption. The process involves compressing and encrypting sensitive data with AES-256, encrypting the AES key with a 4096-bit RSA public key (retrieved via ` + "`" + `GET /credential/publicKey` + "`" + `), and using OAEP padding with SHA-256. All values, including the AES key, must be base64 encoded before sending, and the public key token ID must be included in the request.",
                 "consumes": [
                     "application/json"
                 ],
@@ -13568,7 +13568,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/tumblebug",
 	Schemes:          []string{},
 	Title:            "CB-Tumblebug REST API",
-	Description:      "CB-Tumblebug REST API",
+	Description:      "CB-Tumblebug is an open source system for managing multi-cloud infrastructure consisting of resources from multiple cloud service providers. (Cloud-Barista)",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
