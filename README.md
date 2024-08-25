@@ -233,6 +233,13 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     - The credentials in `~/.cloud-barista/credentials.yaml.enc` (encrypted file from the `credentials.yaml`) will be automatically registered (all CSP and region information recorded in [`cloudinfo.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudinfo.yaml) will be automatically registered in the system)
       - Note: You can check the latest regions and zones of CSP using [`update-cloudinfo.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/misc/update-cloudinfo.py) and review the file for updates. (contributions to updates are welcome)
     - Common images and specifications recorded in the [`cloudimage.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudimage.csv) and [`cloudspec.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudspec.csv) files in the [`assets`](https://github.com/cloud-barista/cb-tumblebug/tree/main/assets) directory will be automatically registered.
+   
+    - **`init.py` will apply the hybrid encryption for secure transmission of credentials**
+      1. Retrieve RSA Public Key: Use the `/credential/publicKey` API to get the public key.
+      2. Encrypt Credentials: Encrypt credentials with a randomly generated `AES` key, then encrypt the `AES` key with the `RSA public key`.
+      3. Transmit Encrypted Data: Send `the encrypted credentials` and `AES key` to the server. The server decrypts the AES key and uses it to decrypt the credentials.
+
+      This method ensures your credentials are securely transmitted and protected during registration. See [init.py](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/init.py#L150) for a Python implementation.
 
 ---
 
