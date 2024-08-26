@@ -240,6 +240,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
       3. Transmit Encrypted Data: Send `the encrypted credentials` and `AES key` to the server. The server decrypts the AES key and uses it to decrypt the credentials.
 
       This method ensures your credentials are securely transmitted and protected during registration. See [init.py](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/init.py#L150) for a Python implementation.
+      In detail, check out [Secure Credential Registration Guide (How to use the credential APIs)](https://github.com/cloud-barista/cb-tumblebug/discussions/1773)
 
 ---
 
