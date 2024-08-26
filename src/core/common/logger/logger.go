@@ -57,7 +57,7 @@ func NewLogger(config Config) *zerolog.Logger {
 		config.LogFilePath = "./log/app.log"
 	}
 	if config.MaxSize == 0 {
-		config.MaxSize = 10 // in MB
+		config.MaxSize = 100 // in MB
 	}
 	if config.MaxBackups == 0 {
 		config.MaxBackups = 3
