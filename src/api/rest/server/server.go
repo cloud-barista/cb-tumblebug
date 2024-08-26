@@ -24,12 +24,14 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 
 	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/auth"
 
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
+	rest_label "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common/label"
 	rest_infra "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares/authmw"
 	middlewares "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares/custom-middleware"
@@ -273,6 +275,12 @@ func RunServer(port string) {
 	g.DELETE("/:nsId", rest_common.RestDelNs)
 	g.DELETE("", rest_common.RestDelAllNs)
 
+	// Resource Label
+	e.PUT("/tumblebug/label/:labelType/:uuid", rest_label.RestCreateOrUpdateLabel)
+	e.DELETE("/tumblebug/label/:labelType/:uuid/:key", rest_label.RestRemoveLabel)
+	e.GET("/tumblebug/label/:labelType/:uuid", rest_label.RestGetLabels)
+	e.GET("/tumblebug/resources/:labelType", rest_label.RestGetResourcesByLabelSelector)
+
 	//MCI Management
 	g.POST("/:nsId/mci", rest_infra.RestPostMci)
 	g.POST("/:nsId/registerCspVm", rest_infra.RestPostRegisterCSPNativeVM)
@@ -389,7 +397,7 @@ func RunServer(port string) {
 	g.POST("/:nsId/mci/:mciId/nlb/:resourceId/vm", rest_infra.RestAddNLBVMs)
 	g.DELETE("/:nsId/mci/:mciId/nlb/:resourceId/vm", rest_infra.RestRemoveNLBVMs)
 
-	//Resource Management
+	// Resource Management
 	g.POST("/:nsId/resources/dataDisk", rest_resource.RestPostDataDisk)
 	g.GET("/:nsId/resources/dataDisk/:resourceId", rest_resource.RestGetResource)
 	g.GET("/:nsId/resources/dataDisk", rest_resource.RestGetAllResources)
@@ -491,8 +499,8 @@ func RunServer(port string) {
 	selfEndpoint := os.Getenv("TB_SELF_ENDPOINT")
 	apidashboard := " http://" + selfEndpoint + "/tumblebug/api"
 
-	fmt.Println(" Default Namespace: " + common.DefaultNamespace)
-	fmt.Println(" Default CredentialHolder: " + common.DefaultCredentialHolder + "\n")
+	fmt.Println(" Default Namespace: " + model.DefaultNamespace)
+	fmt.Println(" Default CredentialHolder: " + model.DefaultCredentialHolder + "\n")
 
 	if authEnabled {
 		fmt.Println(" Access to API dashboard" + " (username: " + apiUser + " / password: " + apiPass + ")")
@@ -533,7 +541,7 @@ func RunServer(port string) {
 	}(&wg)
 
 	port = fmt.Sprintf(":%s", port)
-	common.SystemReady = true
+	model.SystemReady = true
 	if err := e.Start(port); err != nil && err != http.ErrServerClosed {
 		log.Error().Err(err).Msg("Error in Starting CB-Tumblebug API Server")
 		e.Logger.Panic("Shuttig down the server: ", err)

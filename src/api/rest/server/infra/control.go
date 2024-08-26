@@ -20,6 +20,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
 )
 
@@ -34,9 +35,9 @@ import (
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param action query string true "Action to MCI" Enums(suspend, resume, reboot, terminate, refine, continue, withdraw)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/control/mci/{mciId} [get]
 func RestGetControlMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -52,7 +53,7 @@ func RestGetControlMci(c echo.Context) error {
 	if force == "true" {
 		forceOption = true
 	}
-	returnObj := common.SimpleMsg{}
+	returnObj := model.SimpleMsg{}
 
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" || action == "continue" || action == "withdraw" {
 
@@ -81,9 +82,9 @@ func RestGetControlMci(c echo.Context) error {
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Param action query string true "Action to MCI" Enums(suspend, resume, reboot, terminate)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/control/mci/{mciId}/vm/{vmId} [get]
 func RestGetControlMciVm(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -101,7 +102,7 @@ func RestGetControlMciVm(c echo.Context) error {
 		forceOption = true
 	}
 
-	returnObj := common.SimpleMsg{}
+	returnObj := model.SimpleMsg{}
 
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" {
 
@@ -125,13 +126,13 @@ func RestGetControlMciVm(c echo.Context) error {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param vmSnapshotReq body infra.TbVmSnapshotReq true "Request body to create VM snapshot"
+// @Param vmSnapshotReq body model.TbVmSnapshotReq true "Request body to create VM snapshot"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
-// @Success 200 {object} resource.TbCustomImageInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbCustomImageInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/snapshot [post]
 func RestPostMciVmSnapshot(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -142,14 +143,14 @@ func RestPostMciVmSnapshot(c echo.Context) error {
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
 
-	u := &infra.TbVmSnapshotReq{}
+	u := &model.TbVmSnapshotReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
 	result, err := infra.CreateVmSnapshot(nsId, mciId, vmId, u.Name)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, common.SimpleMsg{Message: "Failed to create a snapshot"})
+		return common.EndRequestWithLog(c, reqID, err, model.SimpleMsg{Message: "Failed to create a snapshot"})
 	}
 	return common.EndRequestWithLog(c, reqID, err, result)
 }

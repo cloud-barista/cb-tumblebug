@@ -20,6 +20,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
@@ -33,10 +34,10 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Param mciPolicyReq body infra.MciPolicyReq true "Details for an MCI automation policy request"
-// @Success 200 {object} infra.MciPolicyInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param mciPolicyReq body model.MciPolicyReq true "Details for an MCI automation policy request"
+// @Success 200 {object} model.MciPolicyInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/policy/mci/{mciId} [post]
 func RestPostMciPolicy(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -46,7 +47,7 @@ func RestPostMciPolicy(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
-	req := &infra.MciPolicyReq{}
+	req := &model.MciPolicyReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -64,9 +65,9 @@ func RestPostMciPolicy(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Success 200 {object} infra.MciPolicyInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.MciPolicyInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/policy/mci/{mciId} [get]
 func RestGetMciPolicy(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -92,7 +93,7 @@ func RestGetMciPolicy(c echo.Context) error {
 
 // Response structure for RestGetAllMciPolicy
 type RestGetAllMciPolicyResponse struct {
-	MciPolicy []infra.MciPolicyInfo `json:"mciPolicy"`
+	MciPolicy []model.MciPolicyInfo `json:"mciPolicy"`
 }
 
 // RestGetAllMciPolicy godoc
@@ -104,8 +105,8 @@ type RestGetAllMciPolicyResponse struct {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Success 200 {object} RestGetAllMciPolicyResponse
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/policy/mci [get]
 func RestGetAllMciPolicy(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -137,8 +138,8 @@ func RestGetAllMciPolicy(c echo.Context) error {
 // @Produce  json
 // @Param mciInfo body MciPolicyInfo true "Details for an MCI Policy object"
 // @Success 200 {object} MciPolicyInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/policy/mci/{mciId} [put]
 */
 func RestPutMciPolicy(c echo.Context) error {
@@ -154,8 +155,8 @@ func RestPutMciPolicy(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/policy/mci/{mciId} [delete]
 func RestDelMciPolicy(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -178,8 +179,8 @@ func RestDelMciPolicy(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/policy/mci [delete]
 func RestDelAllMciPolicy(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)

@@ -29,34 +29,12 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 )
-
-const (
-	monMetricAll     string = "all"
-	monMetricCpu     string = "cpu"
-	monMetricCpufreq string = "cpufreq"
-	monMetricMem     string = "mem"
-	monMetricNet     string = "net"
-	monMetricSwap    string = "swap"
-	monMetricDisk    string = "disk"
-	monMetricDiskio  string = "diskio"
-)
-
-// MonAgentInstallReq struct
-type MonAgentInstallReq struct {
-	NsId     string `json:"nsId,omitempty"`
-	MciId    string `json:"mciId,omitempty"`
-	VmId     string `json:"vmId,omitempty"`
-	PublicIp string `json:"publicIp,omitempty"`
-	Port     string `json:"port,omitempty"`
-	UserName string `json:"userName,omitempty"`
-	SshKey   string `json:"sshKey,omitempty"`
-	CspType  string `json:"cspType,omitempty"`
-}
 
 func DFMonAgentInstallReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(MonAgentInstallReq)
+	u := sl.Current().Interface().(model.MonAgentInstallReq)
 
 	err := common.CheckString(u.NsId)
 	if err != nil {
@@ -77,37 +55,12 @@ func DFMonAgentInstallReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
-/*
-type DfTelegrafMetric struct {
-	Name      string                 `json:"name"`
-	Tags      map[string]interface{} `json:"tags"`
-	Fields    map[string]interface{} `json:"fields"`
-	Timestamp int64                  `json:"timestamp"`
-	TagInfo   map[string]interface{} `json:"tagInfo"`
-}
-*/
-
-// MonResultSimple struct is for containing vm monitoring results
-type MonResultSimple struct {
-	Metric string `json:"metric"`
-	VmId   string `json:"vmId"`
-	Value  string `json:"value"`
-	Err    string `json:"err"`
-}
-
-// MonResultSimpleResponse struct is for containing Mci monitoring results
-type MonResultSimpleResponse struct {
-	NsId          string            `json:"nsId"`
-	MciId         string            `json:"mciId"`
-	MciMonitoring []MonResultSimple `json:"mciMonitoring"`
-}
-
 // Module for checking CB-Dragonfly endpoint (call get config)
 func CheckDragonflyEndpoint() error {
 
 	cmd := "/config"
 
-	url := common.DragonflyRestUrl + cmd
+	url := model.DragonflyRestUrl + cmd
 	method := "GET"
 
 	client := &http.Client{}
@@ -135,21 +88,8 @@ func CheckDragonflyEndpoint() error {
 
 }
 
-// monAgentInstallReq is struct for CB-Dragonfly monitoring agent installation request
-type monAgentInstallReq struct {
-	NsId        string `json:"ns_id"`
-	MciId       string `json:"mci_id"`
-	VmId        string `json:"vm_id"`
-	PublicIp    string `json:"public_ip"`
-	UserName    string `json:"user_name"`
-	SshKey      string `json:"ssh_key"`
-	CspType     string `json:"cspType"`
-	ServiceType string `json:"service_type"`
-	Port        string `json:"port"`
-}
-
 // CallMonitoringAsync is func to call CB-Dragonfly monitoring framework
-func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, mciServiceType string, vmID string, givenUserName string, method string, cmd string, returnResult *[]SshCmdResult) {
+func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, mciServiceType string, vmID string, givenUserName string, method string, cmd string, returnResult *[]model.SshCmdResult) {
 
 	defer wg.Done() //goroutin sync done
 
@@ -172,14 +112,14 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, mciServi
 	UpdateVmInfo(nsID, mciID, vmInfoTmp)
 
 	if mciServiceType == "" {
-		mciServiceType = common.StrMCI
+		mciServiceType = model.StrMCI
 	}
 
-	url := common.DragonflyRestUrl + cmd
+	url := model.DragonflyRestUrl + cmd
 	log.Debug().Msg("\n[Calling DRAGONFLY] START")
 	log.Debug().Msg("VM:" + nsID + "/" + mciID + "/" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.ConnectionConfig.ProviderName + ", service_type:" + mciServiceType)
 
-	requestBody := monAgentInstallReq{
+	requestBody := model.DfAgentInstallReq{
 		NsId:        nsID,
 		MciId:       mciID,
 		VmId:        vmID,
@@ -251,7 +191,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, mciServi
 
 	//vmInfoTmp, _ := GetVmObject(nsID, mciID, vmID)
 
-	sshResultTmp := SshCmdResult{}
+	sshResultTmp := model.SshCmdResult{}
 	sshResultTmp.MciId = mciID
 	sshResultTmp.VmId = vmID
 	sshResultTmp.VmIp = vmIP
@@ -277,30 +217,30 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, mciServi
 
 }
 
-func InstallMonitorAgentToMci(nsId string, mciId string, mciServiceType string, req *MciCmdReq) (AgentInstallContentWrapper, error) {
+func InstallMonitorAgentToMci(nsId string, mciId string, mciServiceType string, req *model.MciCmdReq) (model.AgentInstallContentWrapper, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := AgentInstallContentWrapper{}
+		temp := model.AgentInstallContentWrapper{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mciId)
 	if err != nil {
-		temp := AgentInstallContentWrapper{}
+		temp := model.AgentInstallContentWrapper{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	check, _ := CheckMci(nsId, mciId)
 
 	if !check {
-		temp := AgentInstallContentWrapper{}
+		temp := model.AgentInstallContentWrapper{}
 		err := fmt.Errorf("The mci " + mciId + " does not exist.")
 		return temp, err
 	}
 
-	content := AgentInstallContentWrapper{}
+	content := model.AgentInstallContentWrapper{}
 
 	//install script
 	cmd := "/agent"
@@ -316,7 +256,7 @@ func InstallMonitorAgentToMci(nsId string, mciId string, mciServiceType string, 
 	//goroutin sync wg
 	var wg sync.WaitGroup
 
-	var resultArray []SshCmdResult
+	var resultArray []model.SshCmdResult
 
 	method := "POST"
 
@@ -341,7 +281,7 @@ func InstallMonitorAgentToMci(nsId string, mciId string, mciServiceType string, 
 
 	for _, v := range resultArray {
 
-		resultTmp := AgentInstallContent{}
+		resultTmp := model.AgentInstallContent{}
 		resultTmp.MciId = mciId
 		resultTmp.VmId = v.VmId
 		resultTmp.VmIp = v.VmIp
@@ -380,30 +320,30 @@ func UpdateMonitoringAgentStatusManually(nsId string, mciId string, vmId string,
 }
 
 // GetMonitoringData func retrieves monitoring data from cb-dragonfly
-func GetMonitoringData(nsId string, mciId string, metric string) (MonResultSimpleResponse, error) {
+func GetMonitoringData(nsId string, mciId string, metric string) (model.MonResultSimpleResponse, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := MonResultSimpleResponse{}
+		temp := model.MonResultSimpleResponse{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mciId)
 	if err != nil {
-		temp := MonResultSimpleResponse{}
+		temp := model.MonResultSimpleResponse{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	check, _ := CheckMci(nsId, mciId)
 
 	if !check {
-		temp := MonResultSimpleResponse{}
+		temp := model.MonResultSimpleResponse{}
 		err := fmt.Errorf("The mci " + mciId + " does not exist.")
 		return temp, err
 	}
 
-	content := MonResultSimpleResponse{}
+	content := model.MonResultSimpleResponse{}
 
 	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
@@ -414,7 +354,7 @@ func GetMonitoringData(nsId string, mciId string, metric string) (MonResultSimpl
 	//goroutin sync wg
 	var wg sync.WaitGroup
 
-	var resultArray []MonResultSimple
+	var resultArray []model.MonResultSimple
 
 	method := "GET"
 
@@ -447,7 +387,7 @@ func GetMonitoringData(nsId string, mciId string, metric string) (MonResultSimpl
 
 }
 
-func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, vmID string, vmIP string, method string, metric string, cmd string, returnResult *[]MonResultSimple) {
+func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, vmID string, vmIP string, method string, metric string, cmd string, returnResult *[]model.MonResultSimple) {
 
 	defer wg.Done() //goroutin sync done
 
@@ -458,7 +398,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, vmID 
 	var result string
 	var err error
 
-	url := common.DragonflyRestUrl + cmd
+	url := model.DragonflyRestUrl + cmd
 	log.Debug().Msg("URL: " + url)
 
 	responseLimit := 8
@@ -503,16 +443,16 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, vmID 
 	}
 
 	switch metric {
-	case monMetricCpu:
+	case model.MonMetricCpu:
 		value := gjson.Get(response, "values.cpu_utilization")
 		result = value.String()
-	case monMetricMem:
+	case model.MonMetricMem:
 		value := gjson.Get(response, "values.mem_utilization")
 		result = value.String()
-	case monMetricDisk:
+	case model.MonMetricDisk:
 		value := gjson.Get(response, "values.disk_utilization")
 		result = value.String()
-	case monMetricNet:
+	case model.MonMetricNet:
 		value := gjson.Get(response, "values.bytes_out")
 		result = value.String()
 	default:
@@ -521,7 +461,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, vmID 
 
 	//wg.Done() //goroutin sync done
 
-	ResultTmp := MonResultSimple{}
+	ResultTmp := model.MonResultSimple{}
 	ResultTmp.VmId = vmID
 	ResultTmp.Metric = metric
 

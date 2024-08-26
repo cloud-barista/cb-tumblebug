@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -35,12 +36,12 @@ import (
 // @Produce  json
 // @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithCspSpecName)
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param specInfo body resource.TbSpecInfo false "Specify details of a spec object (vCPU, memoryGiB, ...) manually"
-// @Param specName body resource.TbSpecReq false "Specify name, connectionName and cspSpecName to register a spec object automatically"
+// @Param specInfo body model.TbSpecInfo false "Specify details of a spec object (vCPU, memoryGiB, ...) manually"
+// @Param specName body model.TbSpecReq false "Specify name, connectionName and cspSpecName to register a spec object automatically"
 // @Param update query boolean false "Force update to existing spec object" default(false)
-// @Success 200 {object} resource.TbSpecInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbSpecInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/spec [post]
 func RestPostSpec(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -59,7 +60,7 @@ func RestPostSpec(c echo.Context) error {
 
 	if action == "registerWithInfo" { // `RegisterSpecWithInfo` will be deprecated in Cappuccino.
 		log.Debug().Msg("[Registering Spec with info]")
-		u := &resource.TbSpecInfo{}
+		u := &model.TbSpecInfo{}
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
@@ -68,7 +69,7 @@ func RestPostSpec(c echo.Context) error {
 
 	} else { // if action == "registerWithCspSpecName" { // The default mode.
 		log.Debug().Msg("[Registering Spec with CspSpecName]")
-		u := &resource.TbSpecReq{}
+		u := &model.TbSpecReq{}
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
@@ -89,12 +90,12 @@ func RestPostSpec(c echo.Context) error {
 // @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
-// @Param specInfo body resource.TbSpecInfo true "Details for an spec object"
+// @Param specInfo body model.TbSpecInfo true "Details for an spec object"
 // @Param nsId path string true "Namespace ID" default(system)
 // @Param specId path string true "Spec ID ({providerName}+{regionName}+{specName})"
-// @Success 200 {object} resource.TbSpecInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbSpecInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/spec/{specId} [put]
 func RestPutSpec(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -106,7 +107,7 @@ func RestPutSpec(c echo.Context) error {
 	specId = strings.ReplaceAll(specId, " ", "+")
 	specId = strings.ReplaceAll(specId, "%2B", "+")
 
-	u := &resource.TbSpecInfo{}
+	u := &model.TbSpecInfo{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -129,9 +130,9 @@ type RestLookupSpecRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param lookupSpecReq body RestLookupSpecRequest true "Specify connectionName & cspSpecName"
-// @Success 200 {object} resource.SpiderSpecInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SpiderSpecInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /lookupSpec [post]
 func RestLookupSpec(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -157,9 +158,9 @@ func RestLookupSpec(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param lookupSpecsReq body common.TbConnectionName true "Specify connectionName"
-// @Success 200 {object} resource.SpiderSpecList
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SpiderSpecList
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /lookupSpecs [post]
 func RestLookupSpecList(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -185,9 +186,9 @@ func RestLookupSpecList(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/fetchSpecs [post]
 func RestFetchSpecs(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -224,7 +225,7 @@ func RestFetchSpecs(c echo.Context) error {
 
 // RestFilterSpecsResponse is Response structure for RestFilterSpecs
 type RestFilterSpecsResponse struct {
-	Spec []resource.TbSpecInfo `json:"spec"`
+	Spec []model.TbSpecInfo `json:"spec"`
 }
 
 // RestFilterSpecsByRange godoc
@@ -235,10 +236,10 @@ type RestFilterSpecsResponse struct {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param specRangeFilter body resource.FilterSpecsByRangeRequest false "Filter for range-filtering specs"
+// @Param specRangeFilter body model.FilterSpecsByRangeRequest false "Filter for range-filtering specs"
 // @Success 200 {object} RestFilterSpecsResponse
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/filterSpecsByRange [post]
 func RestFilterSpecsByRange(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -247,7 +248,7 @@ func RestFilterSpecsByRange(c echo.Context) error {
 	}
 	nsId := c.Param("nsId")
 
-	u := &resource.FilterSpecsByRangeRequest{}
+	u := &model.FilterSpecsByRangeRequest{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -268,9 +269,9 @@ func RestFilterSpecsByRange(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
 // @Param specId path string true "Spec ID ({providerName}+{regionName}+{specName})"
-// @Success 200 {object} resource.TbSpecInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbSpecInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/spec/{specId} [get]
 func RestGetSpec(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -297,8 +298,8 @@ func RestGetSpec(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
 // @Param specId path string true "Spec ID ({providerName}+{regionName}+{specName})"
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/spec/{specId} [delete]
 func RestDelSpec(c echo.Context) error {
 	// This is a dummy function for Swagger.

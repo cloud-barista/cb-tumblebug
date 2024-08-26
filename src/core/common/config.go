@@ -22,119 +22,35 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 
 	"github.com/rs/zerolog/log"
 )
 
-// CloudInfo is structure for cloud information
-type CloudInfo struct {
-	CSPs map[string]CSPDetail `mapstructure:"cloud" json:"csps"`
-}
+// RuntimeCloudInfo is global variable for model.CloudInfo
+var RuntimeCloudInfo = model.CloudInfo{}
+var RuntimeCredential = model.Credential{}
 
-// CSPDetail is structure for CSP information
-type CSPDetail struct {
-	Description string                  `mapstructure:"description" json:"description"`
-	Driver      string                  `mapstructure:"driver" json:"driver"`
-	Links       []string                `mapstructure:"link" json:"links"`
-	Regions     map[string]RegionDetail `mapstructure:"region" json:"regions"`
-}
+// RuntimeK8sClusterInfo is global variable for model.K8sClusterInfo
+var RuntimeK8sClusterInfo = model.K8sClusterInfo{}
 
-// RegionDetail is structure for region information
-type RegionDetail struct {
-	RegionId    string   `mapstructure:"id" json:"regionId"`
-	RegionName  string   `mapstructure:"regionName" json:"regionName"`
-	Description string   `mapstructure:"description" json:"description"`
-	Location    Location `mapstructure:"location" json:"location"`
-	Zones       []string `mapstructure:"zone" json:"zones"`
-}
+// RuntimeLatancyMap is global variable for LatancyMap
+var RuntimeLatancyMap = [][]string{}
 
-// Location is structure for location information
-type Location struct {
-	Display   string  `mapstructure:"display" json:"display"`
-	Latitude  float64 `mapstructure:"latitude" json:"latitude"`
-	Longitude float64 `mapstructure:"longitude" json:"longitude"`
-}
+// RuntimeLatancyMapIndex is global variable for LatancyMap (index)
+var RuntimeLatancyMapIndex = make(map[string]int)
 
-// RuntimeCloudInfo is global variable for CloudInfo
-var RuntimeCloudInfo = CloudInfo{}
-
-type Credential struct {
-	Credentialholder map[string]map[string]map[string]string `yaml:"credentialholder"`
-}
-
-var RuntimeCredential = Credential{}
-
-// K8sClusterInfo is structure for kubernetes cluster information
-type K8sClusterInfo struct {
-	CSPs map[string]K8sClusterDetail `mapstructure:"k8scluster" json:"k8s_cluster"`
-}
-
-type K8sClusterNodeGroupsOnCreation struct {
-	Result string `json:"result" example:"true"`
-}
-
-// K8sClusterDetail is structure for kubernetes cluster detail information
-type K8sClusterDetail struct {
-	NodeGroupsOnCreation bool                        `mapstructure:"nodeGroupsOnCreation" json:"nodegroups_on_creation"`
-	Version              []K8sClusterVersionDetail   `mapstructure:"version" json:"versions"`
-	NodeImage            []K8sClusterNodeImageDetail `mapstructure:"nodeImage" json:"node_images"`
-	RootDisk             []K8sClusterRootDiskDetail  `mapstructure:"rootDisk" json:"root_disks"`
-}
-
-// K8sClusterVersionDetail is structure for kubernetes cluster version detail information
-type K8sClusterVersionDetail struct {
-	Region    []string                           `mapstructure:"region" json:"region"`
-	Available []K8sClusterVersionDetailAvailable `mapstructure:"available" json:"availables"`
-}
-
-// K8sClusterVersionDetailAvailable is structure for kubernetes cluster version detail's available information
-type K8sClusterVersionDetailAvailable struct {
-	Name string `mapstructure:"name" json:"name" example:"1.30"`
-	Id   string `mapstructure:"id" json:"id" example:"1.30.1-aliyun.1"`
-}
-
-// K8sClusterNodeImageDetail is structure for kubernetes cluster node image detail information
-type K8sClusterNodeImageDetail struct {
-	Region    []string                             `mapstructure:"region" json:"region"`
-	Available []K8sClusterNodeImageDetailAvailable `mapstructure:"available" json:"availables"`
-}
-
-// K8sClusterNodeImageDetailAvailable is structure for kubernetes cluster node image detail's available information
-type K8sClusterNodeImageDetailAvailable struct {
-	Name string `mapstructure:"name" json:"name"`
-	Id   string `mapstructure:"id" json:"id"`
-}
-
-// K8sClusterRootDiskDetail is structure for kubernetes cluster root disk detail information
-type K8sClusterRootDiskDetail struct {
-	Region []string                       `mapstructure:"region" json:"region"`
-	Type   []K8sClusterRootDiskDetailType `mapstructure:"type" json:"type"`
-	Size   K8sClusterRootDiskDetailSize   `mapstructure:"size" json:"size"`
-}
-
-// K8sClusterRootDiskDetailType is structure for kubernetes cluster root disk detail's type information
-type K8sClusterRootDiskDetailType struct {
-	Name string `mapstructure:"name" json:"name"`
-	Id   string `mapstructure:"id" json:"id"`
-}
-
-// K8sClusterRootDiskDetailSize is structure for kubernetes cluster root disk detail's size information
-type K8sClusterRootDiskDetailSize struct {
-	Min uint `mapstructure:"min" json:"min"`
-	Max uint `mapstructure:"max" json:"max"`
-}
-
-// RuntimeK8sClusterInfo is global variable for K8sClusterInfo
-var RuntimeK8sClusterInfo = K8sClusterInfo{}
+// RuntimeConf is global variable for cloud config
+var RuntimeConf = model.RuntimeConfig{}
 
 // AdjustKeysToLowercase adjusts the keys of nested maps to lowercase.
-func AdjustKeysToLowercase(cloudInfo *CloudInfo) {
-	newCSPs := make(map[string]CSPDetail)
+func AdjustKeysToLowercase(cloudInfo *model.CloudInfo) {
+	newCSPs := make(map[string]model.CSPDetail)
 	for cspKey, cspDetail := range cloudInfo.CSPs {
 		lowerCSPKey := strings.ToLower(cspKey)
-		newRegions := make(map[string]RegionDetail)
+		newRegions := make(map[string]model.RegionDetail)
 		for regionKey, regionDetail := range cspDetail.Regions {
 			lowerRegionKey := strings.ToLower(regionKey)
 			regionDetail.RegionName = lowerRegionKey
@@ -150,8 +66,8 @@ func AdjustKeysToLowercase(cloudInfo *CloudInfo) {
 	cloudInfo.CSPs = newCSPs
 }
 
-// PrintCloudInfoTable prints CloudInfo in table format
-func PrintCloudInfoTable(cloudInfo CloudInfo) {
+// PrintCloudInfoTable prints model.CloudInfo in table format
+func PrintCloudInfoTable(cloudInfo model.CloudInfo) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"CSP", "Region", "Location", "(Lati:Long)", "Zones"})
@@ -170,11 +86,11 @@ func PrintCloudInfoTable(cloudInfo CloudInfo) {
 	t.Render()
 }
 
-// PrintCredentialInfo prints Credential information in table format
-func PrintCredentialInfo(credential Credential) {
+// PrintCredentialInfo prints model.Credential information in table format
+func PrintCredentialInfo(credential model.Credential) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"Credentialholder", "Cloud Service Provider", "Credential Key", "Credential Value"})
+	t.AppendHeader(table.Row{"Credentialholder", "Cloud Service Provider", "model.Credential Key", "model.Credential Value"})
 
 	for credentialholder, providers := range credential.Credentialholder {
 		for provider, credentials := range providers {
@@ -186,7 +102,7 @@ func PrintCredentialInfo(credential Credential) {
 	t.SortBy([]table.SortBy{
 		{Name: "Credentialholder", Mode: table.Asc},
 		{Name: "Cloud Service Provider", Mode: table.Asc},
-		{Name: "Credential Key", Mode: table.Asc},
+		{Name: "model.Credential Key", Mode: table.Asc},
 	})
 	t.Render()
 }
@@ -212,95 +128,13 @@ func formatZones(zones []string) string {
 	return formattedZones
 }
 
-// RuntimeLatancyMap is global variable for LatancyMap
-var RuntimeLatancyMap = [][]string{}
-
-// RuntimeLatancyMapIndex is global variable for LatancyMap (index)
-var RuntimeLatancyMapIndex = make(map[string]int)
-
-// RuntimeConf is global variable for cloud config
-var RuntimeConf = RuntimeConfig{}
-
-// RuntimeConfig is structure for global variable for cloud config
-type RuntimeConfig struct {
-	Cloud Cloud `yaml:"cloud"`
-	Nlbsw Nlbsw `yaml:"nlbsw"`
-}
-
-// Cloud is structure for cloud settings per CSP
-type Cloud struct {
-	Common    CloudSetting `yaml:"common"`
-	Aws       CloudSetting `yaml:"aws"`
-	Azure     CloudSetting `yaml:"azure"`
-	Gcp       CloudSetting `yaml:"gcp"`
-	Alibaba   CloudSetting `yaml:"alibaba"`
-	Tencent   CloudSetting `yaml:"tencent"`
-	Ibm       CloudSetting `yaml:"ibm"`
-	Nhncloud  CloudSetting `yaml:"nhncloud"`
-	Openstack CloudSetting `yaml:"openstack"`
-	Cloudit   CloudSetting `yaml:"cloudit"`
-}
-
-// CloudSetting is structure for cloud settings per CSP in details
-type CloudSetting struct {
-	Enable     string            `yaml:"enable"`
-	Nlb        NlbSetting        `yaml:"nlb"`
-	K8sCluster K8sClusterSetting `yaml:"k8scluster"`
-}
-
-// NlbSetting is structure for NLB setting
-type NlbSetting struct {
-	Enable    string `yaml:"enable"`
-	Interval  string `yaml:"interval"`
-	Timeout   string `yaml:"timeout"`
-	Threshold string `yaml:"threshold"`
-}
-
-// Nlbsw is structure for NLB setting
-type Nlbsw struct {
-	Sw                      string `yaml:"sw"`
-	Version                 string `yaml:"version"`
-	CommandNlbPrepare       string `yaml:"commandNlbPrepare"`
-	CommandNlbDeploy        string `yaml:"commandNlbDeploy"`
-	CommandNlbAddTargetNode string `yaml:"commandNlbAddTargetNode"`
-	CommandNlbApplyConfig   string `yaml:"commandNlbApplyConfig"`
-	NlbMciCommonSpec        string `yaml:"nlbMciCommonSpec"`
-	NlbMciCommonImage       string `yaml:"nlbMciCommonImage"`
-	NlbMciSubGroupSize      string `yaml:"nlbMciSubGroupSize"`
-}
-
-// K8sClusterSetting is structure for K8sCluster setting
-type K8sClusterSetting struct {
-	Enable string `yaml:"enable"`
-}
-
-// type DataDiskCmd string
-const (
-	AttachDataDisk    string = "attach"
-	DetachDataDisk    string = "detach"
-	AvailableDataDisk string = "available"
-)
-
-// swagger:request ConfigReq
-type ConfigReq struct {
-	Name  string `json:"name" example:"TB_SPIDER_REST_URL"`
-	Value string `json:"value" example:"http://localhost:1024/spider"`
-}
-
-// swagger:response ConfigInfo
-type ConfigInfo struct {
-	Id    string `json:"id" example:"TB_SPIDER_REST_URL"`
-	Name  string `json:"name" example:"TB_SPIDER_REST_URL"`
-	Value string `json:"value" example:"http://localhost:1024/spider"`
-}
-
-func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
+func UpdateConfig(u *model.ConfigReq) (model.ConfigInfo, error) {
 
 	if u.Name == "" {
-		return ConfigInfo{}, fmt.Errorf("The provided name is empty.")
+		return model.ConfigInfo{}, fmt.Errorf("The provided name is empty.")
 	}
 
-	content := ConfigInfo{}
+	content := model.ConfigInfo{}
 	content.Id = u.Name
 	content.Name = u.Name
 	content.Value = u.Value
@@ -333,33 +167,33 @@ func UpdateGlobalVariable(id string) error {
 	}
 
 	switch id {
-	case StrSpiderRestUrl:
-		SpiderRestUrl = configInfo.Value
-		log.Debug().Msg("<TB_SPIDER_REST_URL> " + SpiderRestUrl)
-	case StrDragonflyRestUrl:
-		DragonflyRestUrl = configInfo.Value
-		log.Debug().Msg("<TB_DRAGONFLY_REST_URL> " + DragonflyRestUrl)
-	case StrTerrariumRestUrl:
-		TerrariumRestUrl = configInfo.Value
-		log.Debug().Msg("<TB_TERRARIUM_REST_URL> " + TerrariumRestUrl)
-	case StrDBUrl:
-		DBUrl = configInfo.Value
-		log.Debug().Msg("<TB_SQLITE_URL> " + DBUrl)
-	case StrDBDatabase:
-		DBDatabase = configInfo.Value
-		log.Debug().Msg("<TB_SQLITE_DATABASE> " + DBDatabase)
-	case StrDBUser:
-		DBUser = configInfo.Value
-		log.Debug().Msg("<TB_SQLITE_USER> " + DBUser)
-	case StrDBPassword:
-		DBPassword = configInfo.Value
-		log.Debug().Msg("<TB_SQLITE_PASSWORD> " + DBPassword)
-	case StrAutocontrolDurationMs:
-		AutocontrolDurationMs = configInfo.Value
-		log.Debug().Msg("<TB_AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
-	case StrEtcdEndpoints:
-		EtcdEndpoints = configInfo.Value
-		log.Debug().Msg("<TB_ETCD_ENDPOINTS> " + EtcdEndpoints)
+	case model.StrSpiderRestUrl:
+		model.SpiderRestUrl = configInfo.Value
+		log.Debug().Msg("<TB_SPIDER_REST_URL> " + model.SpiderRestUrl)
+	case model.StrDragonflyRestUrl:
+		model.DragonflyRestUrl = configInfo.Value
+		log.Debug().Msg("<TB_DRAGONFLY_REST_URL> " + model.DragonflyRestUrl)
+	case model.StrTerrariumRestUrl:
+		model.TerrariumRestUrl = configInfo.Value
+		log.Debug().Msg("<TB_TERRARIUM_REST_URL> " + model.TerrariumRestUrl)
+	case model.StrDBUrl:
+		model.DBUrl = configInfo.Value
+		log.Debug().Msg("<TB_SQLITE_URL> " + model.DBUrl)
+	case model.StrDBDatabase:
+		model.DBDatabase = configInfo.Value
+		log.Debug().Msg("<TB_SQLITE_DATABASE> " + model.DBDatabase)
+	case model.StrDBUser:
+		model.DBUser = configInfo.Value
+		log.Debug().Msg("<TB_SQLITE_USER> " + model.DBUser)
+	case model.StrDBPassword:
+		model.DBPassword = configInfo.Value
+		log.Debug().Msg("<TB_SQLITE_PASSWORD> " + model.DBPassword)
+	case model.StrAutocontrolDurationMs:
+		model.AutocontrolDurationMs = configInfo.Value
+		log.Debug().Msg("<TB_AUTOCONTROL_DURATION_MS> " + model.AutocontrolDurationMs)
+	case model.StrEtcdEndpoints:
+		model.EtcdEndpoints = configInfo.Value
+		log.Debug().Msg("<TB_ETCD_ENDPOINTS> " + model.EtcdEndpoints)
 	default:
 
 	}
@@ -370,30 +204,30 @@ func UpdateGlobalVariable(id string) error {
 func InitConfig(id string) error {
 
 	switch id {
-	case StrSpiderRestUrl:
-		SpiderRestUrl = NVL(os.Getenv("TB_SPIDER_REST_URL"), "http://localhost:1024/spider")
-		log.Debug().Msg("<TB_SPIDER_REST_URL> " + SpiderRestUrl)
-	case StrDragonflyRestUrl:
-		DragonflyRestUrl = NVL(os.Getenv("TB_DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
-		log.Debug().Msg("<TB_DRAGONFLY_REST_URL> " + DragonflyRestUrl)
-	case StrTerrariumRestUrl:
-		TerrariumRestUrl = NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8888/terrarium")
-		log.Debug().Msg("<TB_TERRARIUM_REST_URL> " + TerrariumRestUrl)
-	case StrDBUrl:
-		DBUrl = NVL(os.Getenv("TB_SQLITE_URL"), "localhost:3306")
-		log.Debug().Msg("<TB_SQLITE_URL> " + DBUrl)
-	case StrDBDatabase:
-		DBDatabase = NVL(os.Getenv("TB_SQLITE_DATABASE"), "cb_tumblebug")
-		log.Debug().Msg("<TB_SQLITE_DATABASE> " + DBDatabase)
-	case StrDBUser:
-		DBUser = NVL(os.Getenv("TB_SQLITE_USER"), "cb_tumblebug")
-		log.Debug().Msg("<TB_SQLITE_USER> " + DBUser)
-	case StrDBPassword:
-		DBPassword = NVL(os.Getenv("TB_SQLITE_PASSWORD"), "cb_tumblebug")
-		log.Debug().Msg("<TB_SQLITE_PASSWORD> " + DBPassword)
-	case StrAutocontrolDurationMs:
-		AutocontrolDurationMs = NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
-		log.Debug().Msg("<TB_AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
+	case model.StrSpiderRestUrl:
+		model.SpiderRestUrl = NVL(os.Getenv("TB_SPIDER_REST_URL"), "http://localhost:1024/spider")
+		log.Debug().Msg("<TB_SPIDER_REST_URL> " + model.SpiderRestUrl)
+	case model.StrDragonflyRestUrl:
+		model.DragonflyRestUrl = NVL(os.Getenv("TB_DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
+		log.Debug().Msg("<TB_DRAGONFLY_REST_URL> " + model.DragonflyRestUrl)
+	case model.StrTerrariumRestUrl:
+		model.TerrariumRestUrl = NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8888/terrarium")
+		log.Debug().Msg("<TB_TERRARIUM_REST_URL> " + model.TerrariumRestUrl)
+	case model.StrDBUrl:
+		model.DBUrl = NVL(os.Getenv("TB_SQLITE_URL"), "localhost:3306")
+		log.Debug().Msg("<TB_SQLITE_URL> " + model.DBUrl)
+	case model.StrDBDatabase:
+		model.DBDatabase = NVL(os.Getenv("TB_SQLITE_DATABASE"), "cb_tumblebug")
+		log.Debug().Msg("<TB_SQLITE_DATABASE> " + model.DBDatabase)
+	case model.StrDBUser:
+		model.DBUser = NVL(os.Getenv("TB_SQLITE_USER"), "cb_tumblebug")
+		log.Debug().Msg("<TB_SQLITE_USER> " + model.DBUser)
+	case model.StrDBPassword:
+		model.DBPassword = NVL(os.Getenv("TB_SQLITE_PASSWORD"), "cb_tumblebug")
+		log.Debug().Msg("<TB_SQLITE_PASSWORD> " + model.DBPassword)
+	case model.StrAutocontrolDurationMs:
+		model.AutocontrolDurationMs = NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
+		log.Debug().Msg("<TB_AUTOCONTROL_DURATION_MS> " + model.AutocontrolDurationMs)
 	default:
 
 	}
@@ -414,9 +248,9 @@ func InitConfig(id string) error {
 	return nil
 }
 
-func GetConfig(id string) (ConfigInfo, error) {
+func GetConfig(id string) (model.ConfigInfo, error) {
 
-	res := ConfigInfo{}
+	res := model.ConfigInfo{}
 
 	check, err := CheckConfig(id)
 	errString := id + " config is not found from Key-value store. Envirionment variable will be used."
@@ -449,7 +283,7 @@ func GetConfig(id string) (ConfigInfo, error) {
 	return res, nil
 }
 
-func ListConfig() ([]ConfigInfo, error) {
+func ListConfig() ([]model.ConfigInfo, error) {
 	log.Debug().Msg("[List config]")
 	key := "/config"
 	log.Debug().Msg(key)
@@ -462,9 +296,9 @@ func ListConfig() ([]ConfigInfo, error) {
 		return nil, err
 	}
 	if keyValue != nil {
-		res := []ConfigInfo{}
+		res := []model.ConfigInfo{}
 		for _, v := range keyValue {
-			tempObj := ConfigInfo{}
+			tempObj := model.ConfigInfo{}
 			err = json.Unmarshal([]byte(v.Value), &tempObj)
 			if err != nil {
 				log.Error().Err(err).Msg("")

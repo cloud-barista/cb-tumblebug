@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
@@ -57,15 +58,15 @@ func init() {
 	// NOTE: only have to register a non-pointer type for 'Tb*Req', validator
 	// internally dereferences during it's type checks.
 
-	validate.RegisterStructValidation(TbMciReqStructLevelValidation, TbMciReq{})
-	validate.RegisterStructValidation(TbVmReqStructLevelValidation, TbVmReq{})
-	validate.RegisterStructValidation(TbMciCmdReqStructLevelValidation, MciCmdReq{})
+	validate.RegisterStructValidation(TbMciReqStructLevelValidation, model.TbMciReq{})
+	validate.RegisterStructValidation(TbVmReqStructLevelValidation, model.TbVmReq{})
+	validate.RegisterStructValidation(TbMciCmdReqStructLevelValidation, model.MciCmdReq{})
 	// validate.RegisterStructValidation(TbMciRecommendReqStructLevelValidation, MciRecommendReq{})
 	// validate.RegisterStructValidation(TbVmRecommendReqStructLevelValidation, TbVmRecommendReq{})
 	// validate.RegisterStructValidation(TbBenchmarkReqStructLevelValidation, BenchmarkReq{})
 	// validate.RegisterStructValidation(TbMultihostBenchmarkReqStructLevelValidation, MultihostBenchmarkReq{})
 
-	validate.RegisterStructValidation(DFMonAgentInstallReqStructLevelValidation, MonAgentInstallReq{})
+	validate.RegisterStructValidation(DFMonAgentInstallReqStructLevelValidation, model.MonAgentInstallReq{})
 
 }
 
@@ -272,102 +273,22 @@ func TrimIP(sshAccessPoint string) (string, error) {
 	}
 }
 
-type SpiderNameIdSystemId struct {
-	NameId   string
-	SystemId string
-}
-
-type SpiderAllListWrapper struct {
-	AllList SpiderAllList
-}
-
-type SpiderAllList struct {
-	MappedList     []SpiderNameIdSystemId
-	OnlySpiderList []SpiderNameIdSystemId
-	OnlyCSPList    []SpiderNameIdSystemId
-}
-
-// TbInspectResourcesResponse is struct for response of InspectResources request
-type TbInspectResourcesResponse struct {
-	InspectResources []InspectResource `json:"inspectResources"`
-}
-
-// InspectResource is struct for InspectResource per Cloud Connection
-type InspectResource struct {
-	// ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
-	// ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
-	// ResourcesOnTumblebug interface{} `json:"resourcesOnTumblebug"`
-
-	ConnectionName   string                `json:"connectionName"`
-	ResourceType     string                `json:"resourceType"`
-	SystemMessage    string                `json:"systemMessage"`
-	ResourceOverview resourceCountOverview `json:"resourceOverview"`
-	Resources        resourcesByManageType `json:"resources"`
-}
-
-type resourceCountOverview struct {
-	OnTumblebug int `json:"onTumblebug"`
-	OnSpider    int `json:"onSpider"`
-	OnCspTotal  int `json:"onCspTotal"`
-	OnCspOnly   int `json:"onCspOnly"`
-}
-
-type resourcesByManageType struct {
-	OnTumblebug resourceOnTumblebug `json:"onTumblebug"`
-	OnSpider    resourceOnSpider    `json:"onSpider"`
-	OnCspTotal  resourceOnCsp       `json:"onCspTotal"`
-	OnCspOnly   resourceOnCsp       `json:"onCspOnly"`
-}
-
-type resourceOnSpider struct {
-	Count int                    `json:"count"`
-	Info  []resourceOnSpiderInfo `json:"info"`
-}
-
-type resourceOnSpiderInfo struct {
-	IdBySp  string `json:"idBySp"`
-	IdByCsp string `json:"idByCsp"`
-}
-
-type resourceOnCsp struct {
-	Count int                 `json:"count"`
-	Info  []resourceOnCspInfo `json:"info"`
-}
-
-type resourceOnCspInfo struct {
-	IdByCsp     string `json:"idByCsp"`
-	RefNameOrId string `json:"refNameOrId"`
-}
-
-type resourceOnTumblebug struct {
-	Count int                       `json:"count"`
-	Info  []resourceOnTumblebugInfo `json:"info"`
-}
-
-type resourceOnTumblebugInfo struct {
-	IdByTb    string `json:"idByTb"`
-	IdByCsp   string `json:"idByCsp"`
-	NsId      string `json:"nsId"`
-	MciId     string `json:"mciId,omitempty"`
-	ObjectKey string `json:"objectKey"`
-}
-
 // InspectResources returns the state list of TB Resource objects of given connConfig and resourceType
-func InspectResources(connConfig string, resourceType string) (InspectResource, error) {
+func InspectResources(connConfig string, resourceType string) (model.InspectResource, error) {
 
 	nsList, err := common.ListNsId()
-	nullObj := InspectResource{}
+	nullObj := model.InspectResource{}
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("an error occurred while getting namespaces' list: " + err.Error())
 		return nullObj, err
 	}
-	TbResourceList := resourceOnTumblebug{}
+	TbResourceList := model.ResourceOnTumblebug{}
 	for _, ns := range nsList {
 
 		// Bring TB resources
 		switch resourceType {
-		case common.StrNLB:
+		case model.StrNLB:
 			mciListinNs, _ := ListMciId(ns)
 			if mciListinNs == nil {
 				continue
@@ -392,7 +313,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 					}
 
 					if nlb.ConnectionName == connConfig { // filtering
-						temp := resourceOnTumblebugInfo{}
+						temp := model.ResourceOnTumblebugInfo{}
 						temp.IdByTb = nlb.Id
 						temp.IdByCsp = nlb.CspNLBId
 						temp.NsId = ns
@@ -403,7 +324,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 					}
 				}
 			}
-		case common.StrVM:
+		case model.StrVM:
 			mciListinNs, _ := ListMciId(ns)
 			if mciListinNs == nil {
 				continue
@@ -428,7 +349,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 					}
 
 					if vm.ConnectionName == connConfig { // filtering
-						temp := resourceOnTumblebugInfo{}
+						temp := model.ResourceOnTumblebugInfo{}
 						temp.IdByTb = vm.Id
 						temp.IdByCsp = vm.CspViewVmDetail.IId.SystemId
 						temp.NsId = ns
@@ -439,20 +360,20 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 					}
 				}
 			}
-		case common.StrVNet:
+		case model.StrVNet:
 			resourceListInNs, err := resource.ListResource(ns, resourceType, "", "")
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			resourcesInNs := resourceListInNs.([]resource.TbVNetInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.TbVNetInfo) // type assertion
 			if len(resourcesInNs) == 0 {
 				continue
 			}
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == connConfig { // filtering
-					temp := resourceOnTumblebugInfo{}
+					temp := model.ResourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
 					temp.IdByCsp = resource.CspVNetId
 					temp.NsId = ns
@@ -461,20 +382,20 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 					TbResourceList.Info = append(TbResourceList.Info, temp)
 				}
 			}
-		case common.StrSecurityGroup:
+		case model.StrSecurityGroup:
 			resourceListInNs, err := resource.ListResource(ns, resourceType, "", "")
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			resourcesInNs := resourceListInNs.([]resource.TbSecurityGroupInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.TbSecurityGroupInfo) // type assertion
 			if len(resourcesInNs) == 0 {
 				continue
 			}
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == connConfig { // filtering
-					temp := resourceOnTumblebugInfo{}
+					temp := model.ResourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
 					temp.IdByCsp = resource.CspSecurityGroupId
 					temp.NsId = ns
@@ -483,20 +404,20 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 					TbResourceList.Info = append(TbResourceList.Info, temp)
 				}
 			}
-		case common.StrSSHKey:
+		case model.StrSSHKey:
 			resourceListInNs, err := resource.ListResource(ns, resourceType, "", "")
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			resourcesInNs := resourceListInNs.([]resource.TbSshKeyInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.TbSshKeyInfo) // type assertion
 			if len(resourcesInNs) == 0 {
 				continue
 			}
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == connConfig { // filtering
-					temp := resourceOnTumblebugInfo{}
+					temp := model.ResourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
 					temp.IdByCsp = resource.CspSshKeyId
 					temp.NsId = ns
@@ -505,20 +426,20 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 					TbResourceList.Info = append(TbResourceList.Info, temp)
 				}
 			}
-		case common.StrDataDisk:
+		case model.StrDataDisk:
 			resourceListInNs, err := resource.ListResource(ns, resourceType, "", "")
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			resourcesInNs := resourceListInNs.([]resource.TbDataDiskInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.TbDataDiskInfo) // type assertion
 			if len(resourcesInNs) == 0 {
 				continue
 			}
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == connConfig { // filtering
-					temp := resourceOnTumblebugInfo{}
+					temp := model.ResourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
 					temp.IdByCsp = resource.CspDataDiskId
 					temp.NsId = ns
@@ -527,20 +448,20 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 					TbResourceList.Info = append(TbResourceList.Info, temp)
 				}
 			}
-		case common.StrCustomImage:
+		case model.StrCustomImage:
 			resourceListInNs, err := resource.ListResource(ns, resourceType, "", "")
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			resourcesInNs := resourceListInNs.([]resource.TbCustomImageInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.TbCustomImageInfo) // type assertion
 			if len(resourcesInNs) == 0 {
 				continue
 			}
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == connConfig { // filtering
-					temp := resourceOnTumblebugInfo{}
+					temp := model.ResourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
 					temp.IdByCsp = resource.CspCustomImageId
 					temp.NsId = ns
@@ -567,20 +488,20 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 
 	var spiderRequestURL string
 	switch resourceType {
-	case common.StrNLB:
-		spiderRequestURL = common.SpiderRestUrl + "/allnlb"
-	case common.StrVM:
-		spiderRequestURL = common.SpiderRestUrl + "/allvm"
-	case common.StrVNet:
-		spiderRequestURL = common.SpiderRestUrl + "/allvpc"
-	case common.StrSecurityGroup:
-		spiderRequestURL = common.SpiderRestUrl + "/allsecuritygroup"
-	case common.StrSSHKey:
-		spiderRequestURL = common.SpiderRestUrl + "/allkeypair"
-	case common.StrDataDisk:
-		spiderRequestURL = common.SpiderRestUrl + "/alldisk"
-	case common.StrCustomImage:
-		spiderRequestURL = common.SpiderRestUrl + "/allmyimage"
+	case model.StrNLB:
+		spiderRequestURL = model.SpiderRestUrl + "/allnlb"
+	case model.StrVM:
+		spiderRequestURL = model.SpiderRestUrl + "/allvm"
+	case model.StrVNet:
+		spiderRequestURL = model.SpiderRestUrl + "/allvpc"
+	case model.StrSecurityGroup:
+		spiderRequestURL = model.SpiderRestUrl + "/allsecuritygroup"
+	case model.StrSSHKey:
+		spiderRequestURL = model.SpiderRestUrl + "/allkeypair"
+	case model.StrDataDisk:
+		spiderRequestURL = model.SpiderRestUrl + "/alldisk"
+	case model.StrCustomImage:
+		spiderRequestURL = model.SpiderRestUrl + "/allmyimage"
 	default:
 		err = fmt.Errorf("Invalid resourceType: " + resourceType)
 		return nullObj, err
@@ -589,7 +510,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(requestBody).
-		SetResult(&SpiderAllListWrapper{}). // or SetResult(AuthSuccess{}).
+		SetResult(&model.SpiderAllListWrapper{}). // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 		Get(spiderRequestURL)
 
@@ -608,9 +529,9 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 	default:
 	}
 
-	temp, _ := resp.Result().(*SpiderAllListWrapper) // type assertion
+	temp, _ := resp.Result().(*model.SpiderAllListWrapper) // type assertion
 
-	result := InspectResource{}
+	result := model.InspectResource{}
 
 	/*
 		// Implementation style 1
@@ -629,12 +550,12 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 
 	// result.ResourcesOnCsp = append((*temp).AllList.MappedList, (*temp).AllList.OnlyCSPList...)
 	// result.ResourcesOnSpider = append((*temp).AllList.MappedList, (*temp).AllList.OnlySpiderList...)
-	result.Resources.OnSpider = resourceOnSpider{}
-	result.Resources.OnCspTotal = resourceOnCsp{}
-	result.Resources.OnCspOnly = resourceOnCsp{}
+	result.Resources.OnSpider = model.ResourceOnSpider{}
+	result.Resources.OnCspTotal = model.ResourceOnCsp{}
+	result.Resources.OnCspOnly = model.ResourceOnCsp{}
 
-	tmpResourceOnSpider := resourceOnSpiderInfo{}
-	tmpResourceOnCsp := resourceOnCspInfo{}
+	tmpResourceOnSpider := model.ResourceOnSpiderInfo{}
+	tmpResourceOnCsp := model.ResourceOnCspInfo{}
 
 	for _, v := range (*temp).AllList.MappedList {
 		tmpResourceOnSpider.IdBySp = v.NameId
@@ -673,60 +594,31 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 	return result, nil
 }
 
-// InspectResourceAllResult is struct for Inspect Resource Result for All Clouds
-type InspectResourceAllResult struct {
-	ElapsedTime          int                     `json:"elapsedTime"`
-	RegisteredConnection int                     `json:"registeredConnection"`
-	AvailableConnection  int                     `json:"availableConnection"`
-	TumblebugOverview    inspectOverview         `json:"tumblebugOverview"`
-	CspOnlyOverview      inspectOverview         `json:"cspOnlyOverview"`
-	InspectResult        []InspectResourceResult `json:"inspectResult"`
-}
-
-// InspectResourceResult is struct for Inspect Resource Result
-type InspectResourceResult struct {
-	ConnectionName    string          `json:"connectionName"`
-	SystemMessage     string          `json:"systemMessage"`
-	ElapsedTime       int             `json:"elapsedTime"`
-	TumblebugOverview inspectOverview `json:"tumblebugOverview"`
-	CspOnlyOverview   inspectOverview `json:"cspOnlyOverview"`
-}
-
-type inspectOverview struct {
-	VNet          int `json:"vNet"`
-	SecurityGroup int `json:"securityGroup"`
-	SshKey        int `json:"sshKey"`
-	DataDisk      int `json:"dataDisk"`
-	CustomImage   int `json:"customImage"`
-	Vm            int `json:"vm"`
-	NLB           int `json:"nlb"`
-}
-
 // InspectResourcesOverview func is to check all resources in CB-TB and CSPs
-func InspectResourcesOverview() (InspectResourceAllResult, error) {
+func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 	startTime := time.Now()
 
-	connectionConfigList, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
+	connectionConfigList, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
 	if err != nil {
 		err := fmt.Errorf("Cannot load ConnectionConfigList")
 		log.Error().Err(err).Msg("")
-		return InspectResourceAllResult{}, err
+		return model.InspectResourceAllResult{}, err
 	}
 
-	output := InspectResourceAllResult{}
+	output := model.InspectResourceAllResult{}
 
 	var wait sync.WaitGroup
 	for _, k := range connectionConfigList.Connectionconfig {
 		wait.Add(1)
-		go func(k common.ConnConfig) {
+		go func(k model.ConnConfig) {
 			defer wait.Done()
 
 			common.RandomSleep(0, 60)
-			temp := InspectResourceResult{}
+			temp := model.InspectResourceResult{}
 			temp.ConnectionName = k.ConfigName
 			startTimeForConnection := time.Now()
 
-			inspectResult, err := InspectResources(k.ConfigName, common.StrVNet)
+			inspectResult, err := InspectResources(k.ConfigName, model.StrVNet)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				temp.SystemMessage = err.Error()
@@ -737,7 +629,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 			if strings.Contains(temp.SystemMessage, rateLimitMessage) {
 				for i := 0; i < maxTrials; i++ {
 					common.RandomSleep(40, 80)
-					inspectResult, err = InspectResources(k.ConfigName, common.StrVNet)
+					inspectResult, err = InspectResources(k.ConfigName, model.StrVNet)
 					if err != nil {
 						log.Error().Err(err).Msg("")
 						temp.SystemMessage = err.Error()
@@ -750,7 +642,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 			temp.TumblebugOverview.VNet = inspectResult.ResourceOverview.OnTumblebug
 			temp.CspOnlyOverview.VNet = inspectResult.ResourceOverview.OnCspOnly
 
-			inspectResult, err = InspectResources(k.ConfigName, common.StrSecurityGroup)
+			inspectResult, err = InspectResources(k.ConfigName, model.StrSecurityGroup)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				temp.SystemMessage += err.Error()
@@ -758,7 +650,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 			temp.TumblebugOverview.SecurityGroup = inspectResult.ResourceOverview.OnTumblebug
 			temp.CspOnlyOverview.SecurityGroup = inspectResult.ResourceOverview.OnCspOnly
 
-			inspectResult, err = InspectResources(k.ConfigName, common.StrSSHKey)
+			inspectResult, err = InspectResources(k.ConfigName, model.StrSSHKey)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				temp.SystemMessage += err.Error()
@@ -766,7 +658,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 			temp.TumblebugOverview.SshKey = inspectResult.ResourceOverview.OnTumblebug
 			temp.CspOnlyOverview.SshKey = inspectResult.ResourceOverview.OnCspOnly
 
-			inspectResult, err = InspectResources(k.ConfigName, common.StrDataDisk)
+			inspectResult, err = InspectResources(k.ConfigName, model.StrDataDisk)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				temp.SystemMessage += err.Error()
@@ -774,7 +666,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 			temp.TumblebugOverview.DataDisk = inspectResult.ResourceOverview.OnTumblebug
 			temp.CspOnlyOverview.DataDisk = inspectResult.ResourceOverview.OnCspOnly
 
-			inspectResult, err = InspectResources(k.ConfigName, common.StrCustomImage)
+			inspectResult, err = InspectResources(k.ConfigName, model.StrCustomImage)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				temp.SystemMessage += err.Error()
@@ -782,7 +674,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 			temp.TumblebugOverview.CustomImage = inspectResult.ResourceOverview.OnTumblebug
 			temp.CspOnlyOverview.CustomImage = inspectResult.ResourceOverview.OnCspOnly
 
-			inspectResult, err = InspectResources(k.ConfigName, common.StrVM)
+			inspectResult, err = InspectResources(k.ConfigName, model.StrVM)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				temp.SystemMessage += err.Error()
@@ -790,7 +682,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 			temp.TumblebugOverview.Vm = inspectResult.ResourceOverview.OnTumblebug
 			temp.CspOnlyOverview.Vm = inspectResult.ResourceOverview.OnCspOnly
 
-			inspectResult, err = InspectResources(k.ConfigName, common.StrNLB)
+			inspectResult, err = InspectResources(k.ConfigName, model.StrNLB)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				temp.SystemMessage += err.Error()
@@ -840,52 +732,23 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 	return output, err
 }
 
-// RegisterResourceAllResult is struct for Register Csp Native Resource Result for All Clouds
-type RegisterResourceAllResult struct {
-	ElapsedTime           int                      `json:"elapsedTime"`
-	RegisteredConnection  int                      `json:"registeredConnection"`
-	AvailableConnection   int                      `json:"availableConnection"`
-	RegisterationOverview registerationOverview    `json:"registerationOverview"`
-	RegisterationResult   []RegisterResourceResult `json:"registerationResult"`
-}
-
-// RegisterResourceResult is struct for Register Csp Native Resource Result
-type RegisterResourceResult struct {
-	ConnectionName        string                `json:"connectionName"`
-	SystemMessage         string                `json:"systemMessage"`
-	ElapsedTime           int                   `json:"elapsedTime"`
-	RegisterationOverview registerationOverview `json:"registerationOverview"`
-	RegisterationOutputs  common.IdList         `json:"registerationOutputs"`
-}
-
-type registerationOverview struct {
-	VNet          int `json:"vNet"`
-	SecurityGroup int `json:"securityGroup"`
-	SshKey        int `json:"sshKey"`
-	DataDisk      int `json:"dataDisk"`
-	CustomImage   int `json:"customImage"`
-	Vm            int `json:"vm"`
-	NLB           int `json:"nlb"`
-	Failed        int `json:"failed"`
-}
-
 // RegisterCspNativeResourcesAll func registers all CSP-native resources into CB-TB
-func RegisterCspNativeResourcesAll(nsId string, mciId string, option string, mciFlag string) (RegisterResourceAllResult, error) {
+func RegisterCspNativeResourcesAll(nsId string, mciId string, option string, mciFlag string) (model.RegisterResourceAllResult, error) {
 	startTime := time.Now()
 
-	connectionConfigList, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
+	connectionConfigList, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
 	if err != nil {
 		err := fmt.Errorf("Cannot load ConnectionConfigList")
 		log.Error().Err(err).Msg("")
-		return RegisterResourceAllResult{}, err
+		return model.RegisterResourceAllResult{}, err
 	}
 
-	output := RegisterResourceAllResult{}
+	output := model.RegisterResourceAllResult{}
 
 	var wait sync.WaitGroup
 	for _, k := range connectionConfigList.Connectionconfig {
 		wait.Add(1)
-		go func(k common.ConnConfig) {
+		go func(k model.ConnConfig) {
 			defer wait.Done()
 
 			mciNameForRegister := mciId + "-" + k.ConfigName
@@ -944,25 +807,25 @@ func RegisterCspNativeResourcesAll(nsId string, mciId string, option string, mci
 }
 
 // RegisterCspNativeResources func registers all CSP-native resources into CB-TB
-func RegisterCspNativeResources(nsId string, connConfig string, mciId string, option string, mciFlag string) (RegisterResourceResult, error) {
+func RegisterCspNativeResources(nsId string, connConfig string, mciId string, option string, mciFlag string) (model.RegisterResourceResult, error) {
 	startTime := time.Now()
 
 	optionFlag := "register"
 	registeredStatus := ""
-	result := RegisterResourceResult{}
+	result := model.RegisterResourceResult{}
 
 	startTime01 := time.Now() //tmp
 	var err error
 
 	if option != "onlyVm" {
 		// bring vNet list and register all
-		inspectedResources, err := InspectResources(connConfig, common.StrVNet)
+		inspectedResources, err := InspectResources(connConfig, model.StrVNet)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			result.SystemMessage = err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := resource.TbVNetReq{}
+			req := model.TbVNetReq{}
 			req.ConnectionName = connConfig
 			req.CspVNetId = r.IdByCsp
 			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
@@ -978,21 +841,21 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 				result.RegisterationOverview.VNet--
 				result.RegisterationOverview.Failed++
 			}
-			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrVNet+": "+req.Name+registeredStatus)
+			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrVNet+": "+req.Name+registeredStatus)
 			result.RegisterationOverview.VNet++
 		}
 
-		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrVNet, int(math.Round(time.Now().Sub(startTime01).Seconds()))) //tmp
-		startTime02 := time.Now()                                                                                                    //tmp
+		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, model.StrVNet, int(math.Round(time.Now().Sub(startTime01).Seconds()))) //tmp
+		startTime02 := time.Now()                                                                                                   //tmp
 
 		// bring SecurityGroup list and register all
-		inspectedResources, err = InspectResources(connConfig, common.StrSecurityGroup)
+		inspectedResources, err = InspectResources(connConfig, model.StrSecurityGroup)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := resource.TbSecurityGroupReq{}
+			req := model.TbSecurityGroupReq{}
 			req.ConnectionName = connConfig
 			req.VNetId = "not defined"
 			req.CspSecurityGroupId = r.IdByCsp
@@ -1009,21 +872,21 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 				result.RegisterationOverview.SecurityGroup--
 				result.RegisterationOverview.Failed++
 			}
-			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrSecurityGroup+": "+req.Name+registeredStatus)
+			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrSecurityGroup+": "+req.Name+registeredStatus)
 			result.RegisterationOverview.SecurityGroup++
 		}
 
-		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrSecurityGroup, int(math.Round(time.Now().Sub(startTime02).Seconds()))) //tmp
-		startTime03 := time.Now()                                                                                                             //tmp
+		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, model.StrSecurityGroup, int(math.Round(time.Now().Sub(startTime02).Seconds()))) //tmp
+		startTime03 := time.Now()                                                                                                            //tmp
 
 		// bring SSHKey list and register all
-		inspectedResources, err = InspectResources(connConfig, common.StrSSHKey)
+		inspectedResources, err = InspectResources(connConfig, model.StrSSHKey)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := resource.TbSshKeyReq{}
+			req := model.TbSshKeyReq{}
 			req.ConnectionName = connConfig
 			req.CspSshKeyId = r.IdByCsp
 			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
@@ -1044,22 +907,22 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 				result.RegisterationOverview.SshKey--
 				result.RegisterationOverview.Failed++
 			}
-			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrSSHKey+": "+req.Name+registeredStatus)
+			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrSSHKey+": "+req.Name+registeredStatus)
 			result.RegisterationOverview.SshKey++
 		}
 
-		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrSSHKey, int(math.Round(time.Now().Sub(startTime03).Seconds()))) //tmp
+		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, model.StrSSHKey, int(math.Round(time.Now().Sub(startTime03).Seconds()))) //tmp
 
 		startTime04 := time.Now() //tmp
 
 		// bring DataDisk list and register all
-		inspectedResources, err = InspectResources(connConfig, common.StrDataDisk)
+		inspectedResources, err = InspectResources(connConfig, model.StrDataDisk)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := resource.TbDataDiskReq{
+			req := model.TbDataDiskReq{
 				Name:           fmt.Sprintf("%s-%s", connConfig, r.IdByCsp),
 				ConnectionName: connConfig,
 				CspDataDiskId:  r.IdByCsp,
@@ -1075,22 +938,22 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 				result.RegisterationOverview.DataDisk--
 				result.RegisterationOverview.Failed++
 			}
-			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrDataDisk+": "+req.Name+registeredStatus)
+			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrDataDisk+": "+req.Name+registeredStatus)
 			result.RegisterationOverview.DataDisk++
 		}
 
-		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrDataDisk, int(math.Round(time.Now().Sub(startTime04).Seconds()))) //tmp
+		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, model.StrDataDisk, int(math.Round(time.Now().Sub(startTime04).Seconds()))) //tmp
 
 		startTime05 := time.Now() //tmp
 
 		// bring CustomImage list and register all
-		inspectedResources, err = InspectResources(connConfig, common.StrCustomImage)
+		inspectedResources, err = InspectResources(connConfig, model.StrCustomImage)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := resource.TbCustomImageReq{
+			req := model.TbCustomImageReq{
 				Name:             fmt.Sprintf("%s-%s", connConfig, r.IdByCsp),
 				ConnectionName:   connConfig,
 				CspCustomImageId: r.IdByCsp,
@@ -1106,11 +969,11 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 				result.RegisterationOverview.CustomImage--
 				result.RegisterationOverview.Failed++
 			}
-			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrCustomImage+": "+req.Name+registeredStatus)
+			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrCustomImage+": "+req.Name+registeredStatus)
 			result.RegisterationOverview.CustomImage++
 		}
 
-		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrCustomImage, int(math.Round(time.Now().Sub(startTime05).Seconds()))) //tmp
+		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, model.StrCustomImage, int(math.Round(time.Now().Sub(startTime05).Seconds()))) //tmp
 	}
 
 	startTime06 := time.Now() //tmp
@@ -1118,19 +981,19 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 	if option != "exceptVm" {
 
 		// bring VM list and register all
-		inspectedResourcesVm, err := InspectResources(connConfig, common.StrVM)
+		inspectedResourcesVm, err := InspectResources(connConfig, model.StrVM)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResourcesVm.Resources.OnCspOnly.Info {
-			req := TbMciReq{}
+			req := model.TbMciReq{}
 			req.Description = "MCI for CSP managed VMs (registered to CB-TB)"
 			req.InstallMonAgent = "no"
 			req.Name = mciId
 			req.Name = common.ChangeIdString(req.Name)
 
-			vm := TbVmReq{}
+			vm := model.TbVmReq{}
 			vm.ConnectionName = connConfig
 			vm.IdByCSP = r.IdByCsp
 			vm.Description = "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)"
@@ -1160,7 +1023,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 				result.RegisterationOverview.Vm--
 				result.RegisterationOverview.Failed++
 			}
-			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrVM+": "+vm.Name+registeredStatus)
+			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrVM+": "+vm.Name+registeredStatus)
 			result.RegisterationOverview.Vm++
 		}
 	}
@@ -1168,7 +1031,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 	result.ConnectionName = connConfig
 	result.ElapsedTime = int(math.Round(time.Now().Sub(startTime).Seconds()))
 
-	fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrVM, int(math.Round(time.Now().Sub(startTime06).Seconds()))) //tmp
+	fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, model.StrVM, int(math.Round(time.Now().Sub(startTime06).Seconds()))) //tmp
 
 	fmt.Printf("\n\n%s [Elapsed]Total %d \n\n", connConfig, int(math.Round(time.Now().Sub(startTime).Seconds())))
 
@@ -1176,42 +1039,42 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 
 }
 
-func FindTbVmByCspId(nsId string, mciId string, vmIdByCsp string) (TbVmInfo, error) {
+func FindTbVmByCspId(nsId string, mciId string, vmIdByCsp string) (model.TbVmInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return TbVmInfo{}, err
+		return model.TbVmInfo{}, err
 	}
 
 	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return TbVmInfo{}, err
+		return model.TbVmInfo{}, err
 	}
 
 	err = common.CheckString(vmIdByCsp)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return TbVmInfo{}, err
+		return model.TbVmInfo{}, err
 	}
 
 	check, err := CheckMci(nsId, mciId)
 
 	if !check {
 		err := fmt.Errorf("The MCI " + mciId + " does not exist.")
-		return TbVmInfo{}, err
+		return model.TbVmInfo{}, err
 	}
 
 	if err != nil {
 		err := fmt.Errorf("Failed to check the existence of the MCI " + mciId + ".")
-		return TbVmInfo{}, err
+		return model.TbVmInfo{}, err
 	}
 
 	mci, err := GetMciObject(nsId, mciId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the MCI " + mciId + ".")
-		return TbVmInfo{}, err
+		return model.TbVmInfo{}, err
 	}
 
 	vms := mci.Vm
@@ -1222,5 +1085,5 @@ func FindTbVmByCspId(nsId string, mciId string, vmIdByCsp string) (TbVmInfo, err
 	}
 
 	err = fmt.Errorf("Cannot find the VM %s in %s/%s", vmIdByCsp, nsId, mciId)
-	return TbVmInfo{}, err
+	return model.TbVmInfo{}, err
 }

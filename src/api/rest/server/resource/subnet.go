@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 )
@@ -31,10 +32,10 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
-// @Param subnetReq body resource.TbSubnetReq true "Details for an Subnet object"
-// @Success 200 {object} resource.TbSubnetInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param subnetReq body model.TbSubnetReq true "Details for an Subnet object"
+// @Success 200 {object} model.TbSubnetInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet [post]
 func RestPostSubnet(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -44,7 +45,7 @@ func RestPostSubnet(c echo.Context) error {
 	nsId := c.Param("nsId")
 	vNetId := c.Param("vNetId")
 
-	u := &resource.TbSubnetReq{}
+	u := &model.TbSubnetReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -61,10 +62,10 @@ func RestPostSubnet(c echo.Context) error {
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
-// @Param subnetInfo body resource.TbSubnetInfo true "Details for an Subnet object"
-// @Success 200 {object} resource.TbSubnetInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param subnetInfo body model.TbSubnetInfo true "Details for an Subnet object"
+// @Success 200 {object} model.TbSubnetInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId} [put]
 func RestPutSubnet(c echo.Context) error {
 	//nsId := c.Param("nsId")
@@ -83,9 +84,9 @@ func RestPutSubnet(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param subnetId path string true "Subnet ID"
-// @Success 200 {object} resource.TbSubnetInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbSubnetInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId} [get]
 func RestGetSubnet(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -94,7 +95,7 @@ func RestGetSubnet(c echo.Context) error {
 
 // Response structure for RestGetAllSubnet
 type RestGetAllSubnetResponse struct {
-	Subnet []resource.TbSubnetInfo `json:"subnet"`
+	Subnet []model.TbSubnetInfo `json:"subnet"`
 }
 
 // RestGetAllSubnet godoc
@@ -106,9 +107,9 @@ type RestGetAllSubnetResponse struct {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option" Enums(id)
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSubnetResponse,[ID]=common.IdList} "Different return structures by the given option param"
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSubnetResponse,[ID]=model.IdList} "Different return structures by the given option param"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet [get]
 func RestGetAllSubnet(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -126,8 +127,8 @@ func RestGetAllSubnet(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
 // @Param subnetId path string true "Subnet ID"
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId} [delete]
 func RestDelSubnet(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -143,8 +144,8 @@ func RestDelSubnet(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet [delete]
 func RestDelAllSubnet(c echo.Context) error {
 	// This is a dummy function for Swagger.

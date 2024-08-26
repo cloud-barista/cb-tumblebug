@@ -20,6 +20,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
@@ -47,9 +48,9 @@ type JSONResult struct {
 // @Param filterKey query string false "(For option=id) Field key for filtering (ex: connectionName)"
 // @Param filterVal query string false "(For option=id) Field value for filtering (ex: aws-ap-northeast-2)"
 // @Param accessInfoOption query string false "(For option=accessinfo) accessInfoOption (showSshKey)"
-// @success 200 {object} JSONResult{[DEFAULT]=infra.TbMciInfo,[ID]=common.IdList,[STATUS]=infra.MciStatusInfo,[AccessInfo]=infra.MciAccessInfo} "Different return structures by the given action param"
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @success 200 {object} JSONResult{[DEFAULT]=model.TbMciInfo,[ID]=model.IdList,[STATUS]=model.MciStatusInfo,[AccessInfo]=model.MciAccessInfo} "Different return structures by the given action param"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId} [get]
 func RestGetMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -66,7 +67,7 @@ func RestGetMci(c echo.Context) error {
 	accessInfoOption := c.QueryParam("accessInfoOption")
 
 	if option == "id" {
-		content := common.IdList{}
+		content := model.IdList{}
 		var err error
 		content.IdList, err = infra.ListVmByFilter(nsId, mciId, filterKey, filterVal)
 		return common.EndRequestWithLog(c, reqID, err, content)
@@ -78,7 +79,7 @@ func RestGetMci(c echo.Context) error {
 		}
 
 		var content struct {
-			Result *infra.MciStatusInfo `json:"status"`
+			Result *model.MciStatusInfo `json:"status"`
 		}
 		content.Result = result
 
@@ -99,12 +100,12 @@ func RestGetMci(c echo.Context) error {
 
 // RestGetAllMciResponse is a response structure for RestGetAllMci
 type RestGetAllMciResponse struct {
-	Mci []infra.TbMciInfo `json:"mci"`
+	Mci []model.TbMciInfo `json:"mci"`
 }
 
 // RestGetAllMciStatusResponse is a response structure for RestGetAllMciStatus
 type RestGetAllMciStatusResponse struct {
-	Mci []infra.MciStatusInfo `json:"mci"`
+	Mci []model.MciStatusInfo `json:"mci"`
 }
 
 // RestGetAllMci godoc
@@ -116,9 +117,9 @@ type RestGetAllMciStatusResponse struct {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option" Enums(id, simple, status)
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllMciResponse,[SIMPLE]=RestGetAllMciResponse,[ID]=common.IdList,[STATUS]=RestGetAllMciStatusResponse} "Different return structures by the given option param"
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllMciResponse,[SIMPLE]=RestGetAllMciResponse,[ID]=model.IdList,[STATUS]=RestGetAllMciStatusResponse} "Different return structures by the given option param"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci [get]
 func RestGetAllMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -130,7 +131,7 @@ func RestGetAllMci(c echo.Context) error {
 
 	if option == "id" {
 		// return MCI IDs
-		content := common.IdList{}
+		content := model.IdList{}
 		var err error
 		content.IdList, err = infra.ListMciId(nsId)
 		return common.EndRequestWithLog(c, reqID, err, content)
@@ -176,8 +177,8 @@ func RestGetAllMci(c echo.Context) error {
 // @Produce  json
 // @Param mciInfo body TbMciInfo true "Details for an MCI object"
 // @Success 200 {object} TbMciInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId} [put]
 func RestPutMci(c echo.Context) error {
 	return nil
@@ -194,8 +195,8 @@ func RestPutMci(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param option query string false "Option for delete MCI (support force delete)" Enums(terminate,force)
-// @Success 200 {object} common.IdList
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.IdList
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId} [delete]
 func RestDelMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -219,8 +220,8 @@ func RestDelMci(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option for delete MCI (support force delete)" Enums(force)
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci [delete]
 func RestDelAllMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -248,9 +249,9 @@ func RestDelAllMci(c echo.Context) error {
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Param option query string false "Option for MCI" Enums(default, status, idsInDetail)
-// @success 200 {object} JSONResult{[DEFAULT]=infra.TbVmInfo,[STATUS]=infra.TbVmStatusInfo,[IDNAME]=infra.TbIdNameInDetailInfo} "Different return structures by the given option param"
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @success 200 {object} JSONResult{[DEFAULT]=model.TbVmInfo,[STATUS]=model.TbVmStatusInfo,[IDNAME]=model.TbIdNameInDetailInfo} "Different return structures by the given option param"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId} [get]
 func RestGetMciVm(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -289,10 +290,10 @@ func RestGetMciVm(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
-// @Param vmInfo body infra.TbVmInfo true "Details for an VM object"
-// @Success 200 {object} infra.TbVmInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param vmInfo body model.TbVmInfo true "Details for an VM object"
+// @Success 200 {object} model.TbVmInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId} [put]
 func RestPutMciVm(c echo.Context) error {
 	return nil
@@ -310,8 +311,8 @@ func RestPutMciVm(c echo.Context) error {
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Param option query string false "Option for delete VM (support force delete)" Enums(force)
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId} [delete]
 func RestDelMciVm(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -345,9 +346,9 @@ func RestDelMciVm(c echo.Context) error {
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param subgroupId path string true "subGroup ID" default(g1)
 // @Param option query string false "Option" Enums(id)
-// @Success 200 {object} common.IdList
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.IdList
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/subgroup/{subgroupId} [get]
 func RestGetMciGroupVms(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -359,7 +360,7 @@ func RestGetMciGroupVms(c echo.Context) error {
 	subgroupId := c.Param("subgroupId")
 	//option := c.QueryParam("option")
 
-	content := common.IdList{}
+	content := model.IdList{}
 	var err error
 	content.IdList, err = infra.ListVmBySubGroup(nsId, mciId, subgroupId)
 	return common.EndRequestWithLog(c, reqID, err, content)
@@ -374,9 +375,9 @@ func RestGetMciGroupVms(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Success 200 {object} common.IdList
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.IdList
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/subgroup [get]
 func RestGetMciGroupIds(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -387,7 +388,7 @@ func RestGetMciGroupIds(c echo.Context) error {
 	mciId := c.Param("mciId")
 	//option := c.QueryParam("option")
 
-	content := common.IdList{}
+	content := model.IdList{}
 	var err error
 	content.IdList, err = infra.ListSubGroupId(nsId, mciId)
 	return common.EndRequestWithLog(c, reqID, err, content)

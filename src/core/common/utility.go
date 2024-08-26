@@ -32,6 +32,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	uid "github.com/rs/xid"
@@ -46,11 +47,6 @@ import (
 )
 
 // MCI utilities
-
-// SimpleMsg is struct for JSON Simple message
-type SimpleMsg struct {
-	Message string `json:"message" example:"Any message"`
-}
 
 // GenUid is func to return a UUID string
 func GenUid() string {
@@ -190,8 +186,8 @@ func GenCredentialHolderKey(holderId string) string {
 	return "/credentialHolder/" + holderId
 }
 
-// LookupKeyValueList is func to lookup KeyValue list
-func LookupKeyValueList(kvl []KeyValue, key string) string {
+// LookupKeyValueList is func to lookup model.KeyValue list
+func LookupKeyValueList(kvl []model.KeyValue, key string) string {
 	for _, v := range kvl {
 		if v.Key == key {
 			return v.Value
@@ -213,13 +209,13 @@ func PrintJsonPretty(v interface{}) {
 // GenResourceKey is func to generate a key from resource type and id
 func GenResourceKey(nsId string, resourceType string, resourceId string) string {
 
-	if resourceType == StrImage ||
-		resourceType == StrCustomImage ||
-		resourceType == StrSSHKey ||
-		resourceType == StrSpec ||
-		resourceType == StrVNet ||
-		resourceType == StrSecurityGroup ||
-		resourceType == StrDataDisk {
+	if resourceType == model.StrImage ||
+		resourceType == model.StrCustomImage ||
+		resourceType == model.StrSSHKey ||
+		resourceType == model.StrSpec ||
+		resourceType == model.StrVNet ||
+		resourceType == model.StrSecurityGroup ||
+		resourceType == model.StrDataDisk {
 		//resourceType == "subnet" ||
 		//resourceType == "publicIp" ||
 		//resourceType == "vNic" {
@@ -232,8 +228,8 @@ func GenResourceKey(nsId string, resourceType string, resourceId string) string 
 // GenChildResourceKey is func to generate a key from resource type and id
 func GenChildResourceKey(nsId string, resourceType string, parentResourceId string, resourceId string) string {
 
-	if resourceType == StrSubnet {
-		parentResourceType := StrVNet
+	if resourceType == model.StrSubnet {
+		parentResourceType := model.StrVNet
 		// return "/ns/" + nsId + "/resources/" + resourceType + "/" + resourceId
 		return fmt.Sprintf("/ns/%s/resources/%s/%s/%s/%s", nsId, parentResourceType, parentResourceId, resourceType, resourceId)
 	} else {
@@ -241,114 +237,27 @@ func GenChildResourceKey(nsId string, resourceType string, parentResourceId stri
 	}
 }
 
-// resourceIds is struct for containing id and name of each Resource type
-type resourceIds struct { // Tumblebug
-	CspImageId           string
-	CspImageName         string
-	CspCustomImageId     string
-	CspCustomImageName   string
-	CspSshKeyName        string
-	CspSpecName          string
-	CspVNetId            string
-	CspVNetName          string
-	CspSecurityGroupId   string
-	CspSecurityGroupName string
-	CspPublicIpId        string
-	CspPublicIpName      string
-	CspVNicId            string
-	CspVNicName          string
-	CspDataDiskId        string
-	CspDataDiskName      string
-
-	ConnectionName string
-}
-
-// ConnConfig is struct for containing modified CB-Spider struct for connection config
-type ConnConfig struct {
-	ConfigName           string         `json:"configName"`
-	ProviderName         string         `json:"providerName"`
-	DriverName           string         `json:"driverName"`
-	CredentialName       string         `json:"credentialName"`
-	CredentialHolder     string         `json:"credentialHolder"`
-	RegionZoneInfoName   string         `json:"regionZoneInfoName"`
-	RegionZoneInfo       RegionZoneInfo `json:"regionZoneInfo"`
-	RegionDetail         RegionDetail   `json:"regionDetail"`
-	RegionRepresentative bool           `json:"regionRepresentative"`
-	Verified             bool           `json:"verified"`
-}
-
-// SpiderConnConfig is struct for containing a CB-Spider struct for connection config
-type SpiderConnConfig struct {
-	ConfigName     string
-	ProviderName   string
-	DriverName     string
-	CredentialName string
-	RegionName     string
-}
-
-// CloudDriverInfo is struct for containing a CB-Spider struct for cloud driver info
-type CloudDriverInfo struct {
-	DriverName        string
-	ProviderName      string
-	DriverLibFileName string
-}
-
-// CredentialReq is struct for containing a struct for credential request
-// @Description CredentialReq contains the necessary information to register a credential.
-// @Description This includes the AES key encrypted with the RSA public key, which is then used to decrypt the AES key on the server side.
-type CredentialReq struct {
-
-	// ProviderName specifies the cloud provider associated with the credential (e.g., AWS, GCP).
-	ProviderName string `json:"providerName" example:"aws"`
-
-	// CredentialHolder is the entity or user that holds the credential.
-	CredentialHolder string `json:"credentialHolder" example:"admin"`
-
-	// PublicKeyTokenId is the unique token ID used to retrieve the corresponding private key for decryption.
-	PublicKeyTokenId string `json:"publicKeyTokenId" example:"cr31av30uphc738d7h0g"`
-
-	// EncryptedClientAesKeyByPublicKey is the client temporary AES key encrypted with the RSA public key.
-	EncryptedClientAesKeyByPublicKey string `json:"encryptedClientAesKeyByPublicKey" example:"ZzXL27hbAUDT0ohglf2Gwr60sAqdPw3+CnCsn0RJXeiZxXnHfW03mFx5RaSfbwtPYCq1h6wwv7XsiWzfFmr02..."`
-
-	// CredentialKeyValueList contains key-(encrypted)value pairs that include the sensitive credential data.
-	CredentialKeyValueList []KeyWithEncryptedValue `json:"credentialKeyValueList"`
-}
-
-// CredentialInfo is struct for containing a struct for credential info
-type CredentialInfo struct {
-	CredentialName   string         `json:"credentialName"`
-	CredentialHolder string         `json:"credentialHolder"`
-	ProviderName     string         `json:"providerName"`
-	KeyValueInfoList []KeyValue     `json:"keyValueInfoList"`
-	AllConnections   ConnConfigList `json:"allConnections"`
-}
-
 // GetConnConfig is func to get connection config
-func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
+func GetConnConfig(ConnConfigName string) (model.ConnConfig, error) {
 
-	connConfig := ConnConfig{}
+	connConfig := model.ConnConfig{}
 
 	key := GenConnectionKey(ConnConfigName)
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return ConnConfig{}, err
+		return model.ConnConfig{}, err
 	}
 	if keyValue == (kvstore.KeyValue{}) {
-		return ConnConfig{}, fmt.Errorf("Cannot find the ConnConfig " + key)
+		return model.ConnConfig{}, fmt.Errorf("Cannot find the model.ConnConfig " + key)
 	}
 	err = json.Unmarshal([]byte(keyValue.Value), &connConfig)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return ConnConfig{}, err
+		return model.ConnConfig{}, err
 	}
 
 	return connConfig, nil
-}
-
-// ConnConfigList is struct for containing a CB-Spider struct for connection config list
-type ConnConfigList struct { // Spider
-	Connectionconfig []ConnConfig `json:"connectionconfig"`
 }
 
 // CheckConnConfigAvailable is func to check if connection config is available by checking allkeypair list
@@ -356,9 +265,9 @@ func CheckConnConfigAvailable(connConfigName string) (bool, error) {
 
 	var callResult interface{}
 	client := resty.New()
-	url := SpiderRestUrl + "/allkeypair"
+	url := model.SpiderRestUrl + "/allkeypair"
 	method := "GET"
-	requestBody := SpiderConnectionName{}
+	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = connConfigName
 
 	err := ExecuteHttpRequest(
@@ -385,7 +294,7 @@ func CheckSpiderReady() error {
 
 	var callResult interface{}
 	client := resty.New()
-	url := SpiderRestUrl + "/readyz"
+	url := model.SpiderRestUrl + "/readyz"
 	method := "GET"
 	requestBody := NoBody
 
@@ -409,9 +318,9 @@ func CheckSpiderReady() error {
 }
 
 // GetConnConfigList is func to list filtered connection configs
-func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filterRegionRepresentative bool) (ConnConfigList, error) {
-	var filteredConnections ConnConfigList
-	var tmpConnections ConnConfigList
+func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filterRegionRepresentative bool) (model.ConnConfigList, error) {
+	var filteredConnections model.ConnConfigList
+	var tmpConnections model.ConnConfigList
 
 	key := "/connection"
 	keyValue, err := kvstore.GetKvList(key)
@@ -419,11 +328,11 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return ConnConfigList{}, err
+		return model.ConnConfigList{}, err
 	}
 	if keyValue != nil {
 		for _, v := range keyValue {
-			tempObj := ConnConfig{}
+			tempObj := model.ConnConfig{}
 			err = json.Unmarshal([]byte(v.Value), &tempObj)
 			if err != nil {
 				log.Error().Err(err).Msg("")
@@ -432,7 +341,7 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 			filteredConnections.Connectionconfig = append(filteredConnections.Connectionconfig, tempObj)
 		}
 	} else {
-		return ConnConfigList{}, nil
+		return model.ConnConfigList{}, nil
 	}
 
 	// filter by credential holder
@@ -443,7 +352,7 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 			}
 		}
 		filteredConnections = tmpConnections
-		tmpConnections = ConnConfigList{}
+		tmpConnections = model.ConnConfigList{}
 	}
 
 	// filter only verified
@@ -454,7 +363,7 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 			}
 		}
 		filteredConnections = tmpConnections
-		tmpConnections = ConnConfigList{}
+		tmpConnections = model.ConnConfigList{}
 	}
 
 	// filter only region representative
@@ -465,24 +374,10 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 			}
 		}
 		filteredConnections = tmpConnections
-		tmpConnections = ConnConfigList{}
+		tmpConnections = model.ConnConfigList{}
 	}
 	//log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 	return filteredConnections, nil
-}
-
-// SpiderRegionZoneInfo is struct for containing region struct of CB-Spider
-type SpiderRegionZoneInfo struct {
-	RegionName        string     // ex) "region01"
-	ProviderName      string     // ex) "GCP"
-	KeyValueInfoList  []KeyValue // ex) { {region, us-east1}, {zone, us-east1-c} }
-	AvailableZoneList []string
-}
-
-// RegionZoneInfo is struct for containing region struct
-type RegionZoneInfo struct {
-	AssignedRegion string `json:"assignedRegion"`
-	AssignedZone   string `json:"assignedZone"`
 }
 
 // RegisterAllCloudInfo is func to register all cloud info from asset to CB-Spider
@@ -497,8 +392,8 @@ func RegisterAllCloudInfo() error {
 }
 
 // GetProviderList is func to list all cloud providers
-func GetProviderList() (*IdList, error) {
-	providers := IdList{}
+func GetProviderList() (*model.IdList, error) {
+	providers := model.IdList{}
 	for providerName := range RuntimeCloudInfo.CSPs {
 		providers.IdList = append(providers.IdList, providerName)
 	}
@@ -511,10 +406,10 @@ func RegisterCloudInfo(providerName string) error {
 	driverName := RuntimeCloudInfo.CSPs[providerName].Driver
 
 	client := resty.New()
-	url := SpiderRestUrl + "/driver"
+	url := model.SpiderRestUrl + "/driver"
 	method := "POST"
-	var callResult CloudDriverInfo
-	requestBody := CloudDriverInfo{ProviderName: strings.ToUpper(providerName), DriverName: driverName, DriverLibFileName: driverName}
+	var callResult model.CloudDriverInfo
+	requestBody := model.CloudDriverInfo{ProviderName: strings.ToUpper(providerName), DriverName: driverName, DriverLibFileName: driverName}
 
 	err := ExecuteHttpRequest(
 		client,
@@ -546,22 +441,22 @@ func RegisterCloudInfo(providerName string) error {
 // RegisterRegionZone is func to register all regions to CB-Spider
 func RegisterRegionZone(providerName string, regionName string) error {
 	client := resty.New()
-	url := SpiderRestUrl + "/region"
+	url := model.SpiderRestUrl + "/region"
 	method := "POST"
-	var callResult SpiderRegionZoneInfo
-	requestBody := SpiderRegionZoneInfo{ProviderName: strings.ToUpper(providerName), RegionName: regionName}
+	var callResult model.SpiderRegionZoneInfo
+	requestBody := model.SpiderRegionZoneInfo{ProviderName: strings.ToUpper(providerName), RegionName: regionName}
 
 	// register representative regionZone (region only)
 	requestBody.RegionName = providerName + "-" + regionName
-	keyValueInfoList := []KeyValue{}
+	keyValueInfoList := []model.KeyValue{}
 
 	if len(RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones) > 0 {
-		keyValueInfoList = []KeyValue{
+		keyValueInfoList = []model.KeyValue{
 			{Key: "Region", Value: RuntimeCloudInfo.CSPs[providerName].Regions[regionName].RegionId},
 			{Key: "Zone", Value: RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones[0]},
 		}
 	} else {
-		keyValueInfoList = []KeyValue{
+		keyValueInfoList = []model.KeyValue{
 			{Key: "Region", Value: RuntimeCloudInfo.CSPs[providerName].Regions[regionName].RegionId},
 			{Key: "Zone", Value: "N/A"},
 		}
@@ -587,7 +482,7 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	// register all regionZones
 	for _, zoneName := range RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones {
 		requestBody.RegionName = providerName + "-" + regionName + "-" + zoneName
-		keyValueInfoList := []KeyValue{
+		keyValueInfoList := []model.KeyValue{
 			{Key: "Region", Value: RuntimeCloudInfo.CSPs[providerName].Regions[regionName].RegionId},
 			{Key: "Zone", Value: zoneName},
 		}
@@ -615,22 +510,16 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	return nil
 }
 
-// PublicKeyResponse is struct for containing the public key response
-type PublicKeyResponse struct {
-	PublicKeyTokenId string `json:"publicKeyTokenId"`
-	PublicKey        string `json:"publicKey"`
-}
-
 var privateKeyStore = make(map[string]*rsa.PrivateKey)
 var mu sync.Mutex // Concurrency safety
 
 // GetPublicKeyForCredentialEncryption generates an RSA key pair,
 // stores the private key in memory, and returns the public key along with its token ID.
-func GetPublicKeyForCredentialEncryption() (PublicKeyResponse, error) {
+func GetPublicKeyForCredentialEncryption() (model.PublicKeyResponse, error) {
 
 	privateKey, err := rsa.GenerateKey(crand.Reader, 4096)
 	if err != nil {
-		return PublicKeyResponse{}, fmt.Errorf("failed to generate RSA key: %w", err)
+		return model.PublicKeyResponse{}, fmt.Errorf("failed to generate RSA key: %w", err)
 	}
 
 	uid := GenUid()
@@ -644,7 +533,7 @@ func GetPublicKeyForCredentialEncryption() (PublicKeyResponse, error) {
 		Bytes: x509.MarshalPKCS1PublicKey(&privateKey.PublicKey),
 	})
 
-	return PublicKeyResponse{
+	return model.PublicKeyResponse{
 		PublicKeyTokenId: uid,
 		PublicKey:        string(publicKeyPEM),
 	}, nil
@@ -664,14 +553,14 @@ func unpad(data []byte, blockSize int) ([]byte, error) {
 }
 
 // RegisterCredential is func to register credential and all related connection configs
-func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
+func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 
 	mu.Lock()
 	privateKey, exists := privateKeyStore[req.PublicKeyTokenId]
 	mu.Unlock()
 
 	if !exists {
-		return CredentialInfo{}, fmt.Errorf("private key not found for token ID: %s", req.PublicKeyTokenId)
+		return model.CredentialInfo{}, fmt.Errorf("private key not found for token ID: %s", req.PublicKeyTokenId)
 	}
 
 	// PrintJsonPretty(req)
@@ -679,14 +568,14 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 	// Decrypt the AES key
 	encryptedAesKey, err := base64.StdEncoding.DecodeString(req.EncryptedClientAesKeyByPublicKey)
 	if err != nil {
-		return CredentialInfo{}, fmt.Errorf("failed to decode encrypted AES key: %w", err)
+		return model.CredentialInfo{}, fmt.Errorf("failed to decode encrypted AES key: %w", err)
 	}
 
 	aesKey, err := rsa.DecryptOAEP(
 		sha256.New(), crand.Reader, privateKey, encryptedAesKey, nil,
 	)
 	if err != nil {
-		return CredentialInfo{}, fmt.Errorf("failed to decrypt AES key: %w", err)
+		return model.CredentialInfo{}, fmt.Errorf("failed to decrypt AES key: %w", err)
 	}
 
 	// Clear AES key from memory after use
@@ -696,19 +585,19 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 		}
 	}()
 
-	decryptedKeyValueList := make([]KeyValue, len(req.CredentialKeyValueList))
+	decryptedKeyValueList := make([]model.KeyValue, len(req.CredentialKeyValueList))
 
 	// Decrypt all encrypted values and populate the new list
 	for i, keyValue := range req.CredentialKeyValueList {
 		encryptedBytes, err := base64.StdEncoding.DecodeString(keyValue.Value)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return CredentialInfo{}, fmt.Errorf("failed to decode encrypted value: %w", err)
+			return model.CredentialInfo{}, fmt.Errorf("failed to decode encrypted value: %w", err)
 		}
 
 		aesCipher, err := aes.NewCipher(aesKey)
 		if err != nil {
-			return CredentialInfo{}, fmt.Errorf("failed to create AES cipher: %w", err)
+			return model.CredentialInfo{}, fmt.Errorf("failed to create AES cipher: %w", err)
 		}
 
 		iv := encryptedBytes[:aes.BlockSize]
@@ -720,10 +609,10 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 		// Remove padding
 		decryptedValue, err = unpad(decryptedValue, aes.BlockSize)
 		if err != nil {
-			return CredentialInfo{}, fmt.Errorf("failed to unpad decrypted value: %w", err)
+			return model.CredentialInfo{}, fmt.Errorf("failed to unpad decrypted value: %w", err)
 		}
 
-		decryptedKeyValueList[i] = KeyValue{
+		decryptedKeyValueList[i] = model.KeyValue{
 			Key:   keyValue.Key,
 			Value: string(decryptedValue),
 		}
@@ -737,7 +626,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 	req.CredentialHolder = strings.ToLower(req.CredentialHolder)
 	req.ProviderName = strings.ToLower(req.ProviderName)
 	genneratedCredentialName := req.CredentialHolder + "-" + req.ProviderName
-	if req.CredentialHolder == DefaultCredentialHolder {
+	if req.CredentialHolder == model.DefaultCredentialHolder {
 		// credential with default credential holder (e.g., admin) has no prefix
 		genneratedCredentialName = req.ProviderName
 	}
@@ -747,16 +636,16 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 		decryptedKeyValueList[i].Value = strings.ReplaceAll(keyValue.Value, "\\n", "\n")
 	}
 
-	reqToSpider := CredentialInfo{
+	reqToSpider := model.CredentialInfo{
 		CredentialName:   genneratedCredentialName,
 		ProviderName:     strings.ToUpper(req.ProviderName),
 		KeyValueInfoList: decryptedKeyValueList,
 	}
 
 	client := resty.New()
-	url := SpiderRestUrl + "/credential"
+	url := model.SpiderRestUrl + "/credential"
 	method := "POST"
-	var callResult CredentialInfo
+	var callResult model.CredentialInfo
 	requestBody := reqToSpider
 
 	//PrintJsonPretty(requestBody)
@@ -774,7 +663,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return CredentialInfo{}, err
+		return model.CredentialInfo{}, err
 	}
 	//PrintJsonPretty(callResult)
 
@@ -803,10 +692,10 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 	for _, region := range allRegisteredRegions.Region {
 		if strings.ToLower(region.ProviderName) == callResult.ProviderName {
 			configName := callResult.CredentialHolder + "-" + region.RegionName
-			if callResult.CredentialHolder == DefaultCredentialHolder {
+			if callResult.CredentialHolder == model.DefaultCredentialHolder {
 				configName = region.RegionName
 			}
-			connConfig := ConnConfig{
+			connConfig := model.ConnConfig{
 				ConfigName:         configName,
 				ProviderName:       strings.ToUpper(callResult.ProviderName),
 				DriverName:         cspDetail.Driver,
@@ -831,7 +720,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 			return callResult, err
 		}
 
-		filteredConnections := ConnConfigList{}
+		filteredConnections := model.ConnConfigList{}
 		for _, connConfig := range allConnections.Connectionconfig {
 			if strings.EqualFold(callResult.ProviderName, connConfig.ProviderName) {
 				connConfig.ProviderName = strings.ToLower(connConfig.ProviderName)
@@ -840,16 +729,16 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 		}
 
 		var wg sync.WaitGroup
-		results := make(chan ConnConfig, len(filteredConnections.Connectionconfig))
+		results := make(chan model.ConnConfig, len(filteredConnections.Connectionconfig))
 
 		for _, connConfig := range filteredConnections.Connectionconfig {
 			wg.Add(1)
-			go func(connConfig ConnConfig) {
+			go func(connConfig model.ConnConfig) {
 				defer wg.Done()
 				RandomSleep(0, 30)
 				verified, err := CheckConnConfigAvailable(connConfig.ConfigName)
 				if err != nil {
-					log.Error().Err(err).Msgf("Cannot check ConnConfig %s is available", connConfig.ConfigName)
+					log.Error().Err(err).Msgf("Cannot check model.ConnConfig %s is available", connConfig.ConfigName)
 				}
 				connConfig.Verified = verified
 				if verified {
@@ -875,7 +764,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 				key := GenConnectionKey(result.ConfigName)
 				val, err := json.Marshal(result)
 				if err != nil {
-					return CredentialInfo{}, err
+					return model.CredentialInfo{}, err
 				}
 				err = kvstore.Put(string(key), string(val))
 				if err != nil {
@@ -893,14 +782,14 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 			return callResult, err
 		}
 
-		filteredConnections := ConnConfigList{}
+		filteredConnections := model.ConnConfigList{}
 		for _, connConfig := range allConnections.Connectionconfig {
 			if strings.EqualFold(req.ProviderName, connConfig.ProviderName) {
 				filteredConnections.Connectionconfig = append(filteredConnections.Connectionconfig, connConfig)
 			}
 		}
 		log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
-		regionRepresentative := make(map[string]ConnConfig)
+		regionRepresentative := make(map[string]model.ConnConfig)
 		for _, connConfig := range allConnections.Connectionconfig {
 			prefix := req.ProviderName + "-" + connConfig.RegionDetail.RegionName
 			if strings.EqualFold(connConfig.RegionZoneInfoName, prefix) {
@@ -973,12 +862,12 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 }
 
 // RegisterConnectionConfig is func to register connection config to CB-Spider
-func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
+func RegisterConnectionConfig(connConfig model.ConnConfig) (model.ConnConfig, error) {
 	client := resty.New()
-	url := SpiderRestUrl + "/connectionconfig"
+	url := model.SpiderRestUrl + "/connectionconfig"
 	method := "POST"
-	var callResult SpiderConnConfig
-	requestBody := SpiderConnConfig{}
+	var callResult model.SpiderConnConfig
+	requestBody := model.SpiderConnConfig{}
 	requestBody.ConfigName = connConfig.ConfigName
 	requestBody.ProviderName = connConfig.ProviderName
 	requestBody.DriverName = connConfig.DriverName
@@ -998,13 +887,13 @@ func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return ConnConfig{}, err
+		return model.ConnConfig{}, err
 	}
 
 	// Register connection to cb-tumblebug with availability check
 	// verified, err := CheckConnConfigAvailable(callResult.ConfigName)
 	// if err != nil {
-	// 	log.Error().Err(err).Msgf("Cannot check ConnConfig %s is available", connConfig.ConfigName)
+	// 	log.Error().Err(err).Msgf("Cannot check model.ConnConfig %s is available", connConfig.ConfigName)
 	// }
 	// callResult.ProviderName = strings.ToLower(callResult.ProviderName)
 	// if verified {
@@ -1021,7 +910,7 @@ func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
 	// 	}
 	// }
 
-	connection := ConnConfig{}
+	connection := model.ConnConfig{}
 	connection.ConfigName = callResult.ConfigName
 	connection.ProviderName = strings.ToLower(callResult.ProviderName)
 	connection.DriverName = callResult.DriverName
@@ -1030,9 +919,9 @@ func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
 	connection.CredentialHolder = connConfig.CredentialHolder
 
 	// load region info
-	url = SpiderRestUrl + "/region/" + connection.RegionZoneInfoName
+	url = model.SpiderRestUrl + "/region/" + connection.RegionZoneInfoName
 	method = "GET"
-	var callResultRegion SpiderRegionZoneInfo
+	var callResultRegion model.SpiderRegionZoneInfo
 	requestNoBody := NoBody
 
 	err = ExecuteHttpRequest(
@@ -1047,9 +936,9 @@ func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
 	)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return ConnConfig{}, err
+		return model.ConnConfig{}, err
 	}
-	regionZoneInfo := RegionZoneInfo{}
+	regionZoneInfo := model.RegionZoneInfo{}
 	for _, keyVal := range callResultRegion.KeyValueInfoList {
 		if keyVal.Key == "Region" {
 			regionZoneInfo.AssignedRegion = keyVal.Value
@@ -1063,44 +952,44 @@ func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
 	regionDetail, err := GetRegion(connection.ProviderName, connection.RegionZoneInfo.AssignedRegion)
 	if err != nil {
 		log.Error().Err(err).Msgf("Cannot get region for %s", connection.RegionZoneInfo.AssignedRegion)
-		return ConnConfig{}, err
+		return model.ConnConfig{}, err
 	}
 	connection.RegionDetail = regionDetail
 
 	key := GenConnectionKey(connection.ConfigName)
 	val, err := json.Marshal(connection)
 	if err != nil {
-		return ConnConfig{}, err
+		return model.ConnConfig{}, err
 	}
 	err = kvstore.Put(string(key), string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return ConnConfig{}, err
+		return model.ConnConfig{}, err
 	}
 
 	return connection, nil
 }
 
 // GetRegion is func to get regionInfo with the native region name
-func GetRegion(ProviderName, RegionName string) (RegionDetail, error) {
+func GetRegion(ProviderName, RegionName string) (model.RegionDetail, error) {
 
 	ProviderName = strings.ToLower(ProviderName)
 	RegionName = strings.ToLower(RegionName)
 
 	cloudInfo, err := GetCloudInfo()
 	if err != nil {
-		return RegionDetail{}, err
+		return model.RegionDetail{}, err
 	}
 
 	cspDetail, ok := cloudInfo.CSPs[ProviderName]
 	if !ok {
-		return RegionDetail{}, fmt.Errorf("cloudType '%s' not found", ProviderName)
+		return model.RegionDetail{}, fmt.Errorf("cloudType '%s' not found", ProviderName)
 	}
 
 	// directly getting value from the map is disabled because of some possible case mismatches (enhancement needed)
 	// regionDetail, ok := cspDetail.Regions[nativeRegion]
 	// if !ok {
-	// 	RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in Provider '%s'", RegionName, ProviderName)
+	// 	model.RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in Provider '%s'", RegionName, ProviderName)
 	// }
 	for key, regionDetail := range cspDetail.Regions {
 		if strings.EqualFold(RegionName, key) {
@@ -1108,29 +997,24 @@ func GetRegion(ProviderName, RegionName string) (RegionDetail, error) {
 		}
 	}
 
-	return RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in Provider '%s'", RegionName, ProviderName)
-}
-
-// RegionList is array struct for Region
-type RegionList struct {
-	Region []SpiderRegionZoneInfo `json:"region"`
+	return model.RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in Provider '%s'", RegionName, ProviderName)
 }
 
 // GetRegionList is func to retrieve region list
-func GetRegionList() (RegionList, error) {
+func GetRegionList() (model.RegionList, error) {
 
-	url := SpiderRestUrl + "/region"
+	url := model.SpiderRestUrl + "/region"
 
 	client := resty.New().SetCloseConnection(true)
 
 	resp, err := client.R().
-		SetResult(&RegionList{}).
+		SetResult(&model.RegionList{}).
 		//SetError(&SimpleMsg{}).
 		Get(url)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		content := RegionList{}
+		content := model.RegionList{}
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
 	}
@@ -1140,17 +1024,17 @@ func GetRegionList() (RegionList, error) {
 		fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
 		err := fmt.Errorf(string(resp.Body()))
 		log.Error().Err(err).Msg("")
-		content := RegionList{}
+		content := model.RegionList{}
 		return content, err
 	}
 
-	temp, _ := resp.Result().(*RegionList)
+	temp, _ := resp.Result().(*model.RegionList)
 	return *temp, nil
 
 }
 
 // GetCloudInfo is func to get all cloud info from the asset
-func GetCloudInfo() (CloudInfo, error) {
+func GetCloudInfo() (model.CloudInfo, error) {
 	return RuntimeCloudInfo, nil
 }
 
@@ -1357,13 +1241,13 @@ func GenerateNewRandomString(n int) string {
 }
 
 // GetK8sClusterInfo is func to get all kubernetes cluster info from the asset
-func GetK8sClusterInfo() (K8sClusterInfo, error) {
+func GetK8sClusterInfo() (model.K8sClusterInfo, error) {
 	return RuntimeK8sClusterInfo, nil
 }
 
-func getK8sClusterDetail(providerName string) *K8sClusterDetail {
-	// Get K8sClusterDetail for providerName
-	var k8sClusterDetail *K8sClusterDetail = nil
+func getK8sClusterDetail(providerName string) *model.K8sClusterDetail {
+	// Get model.K8sClusterDetail for providerName
+	var k8sClusterDetail *model.K8sClusterDetail = nil
 	for provider, detail := range RuntimeK8sClusterInfo.CSPs {
 		provider = strings.ToLower(provider)
 		if provider == providerName {
@@ -1375,8 +1259,8 @@ func getK8sClusterDetail(providerName string) *K8sClusterDetail {
 	return k8sClusterDetail
 }
 
-// GetAvailableK8sClusterVersion is func to get available kubernetes cluster versions for provider and region from K8sClusterInfo
-func GetAvailableK8sClusterVersion(providerName string, regionName string) (*[]K8sClusterVersionDetailAvailable, error) {
+// GetAvailableK8sClusterVersion is func to get available kubernetes cluster versions for provider and region from model.K8sClusterInfo
+func GetAvailableK8sClusterVersion(providerName string, regionName string) (*[]model.K8sClusterVersionDetailAvailable, error) {
 	//
 	// Check available K8sCluster version in k8sclusterinfo.yaml
 	//
@@ -1384,20 +1268,20 @@ func GetAvailableK8sClusterVersion(providerName string, regionName string) (*[]K
 	providerName = strings.ToLower(providerName)
 	regionName = strings.ToLower(regionName)
 
-	// Get K8sClusterDetail for providerName
+	// Get model.K8sClusterDetail for providerName
 	k8sClusterDetail := getK8sClusterDetail(providerName)
 	if k8sClusterDetail == nil {
 		return nil, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
 	}
 
 	// Check if 'regionName' exists
-	var availableVersion *[]K8sClusterVersionDetailAvailable = nil
+	var availableVersion *[]model.K8sClusterVersionDetailAvailable = nil
 	for _, versionDetail := range k8sClusterDetail.Version {
 		for _, region := range versionDetail.Region {
 			region = strings.ToLower(region)
 			if strings.EqualFold(region, regionName) {
 				if len(versionDetail.Available) == 0 {
-					availableVersion = &[]K8sClusterVersionDetailAvailable{{StrEmpty, StrEmpty}}
+					availableVersion = &[]model.K8sClusterVersionDetailAvailable{{model.StrEmpty, model.StrEmpty}}
 				} else {
 					availableVersion = &versionDetail.Available
 				}
@@ -1410,9 +1294,9 @@ func GetAvailableK8sClusterVersion(providerName string, regionName string) (*[]K
 	for _, versionDetail := range k8sClusterDetail.Version {
 		for _, region := range versionDetail.Region {
 			region = strings.ToLower(region)
-			if strings.EqualFold(region, StrCommon) {
+			if strings.EqualFold(region, model.StrCommon) {
 				if len(versionDetail.Available) == 0 {
-					availableVersion = &[]K8sClusterVersionDetailAvailable{{StrEmpty, StrEmpty}}
+					availableVersion = &[]model.K8sClusterVersionDetailAvailable{{model.StrEmpty, model.StrEmpty}}
 				} else {
 					availableVersion = &versionDetail.Available
 				}
@@ -1424,8 +1308,8 @@ func GetAvailableK8sClusterVersion(providerName string, regionName string) (*[]K
 	return nil, fmt.Errorf("no entry for provider(%s):region(%s)", providerName, regionName)
 }
 
-// GetAvailableK8sClusterNodeImage is func to get available kubernetes cluster node images for provider and region from K8sClusterInfo
-func GetAvailableK8sClusterNodeImage(providerName string, regionName string) (*[]K8sClusterNodeImageDetailAvailable, error) {
+// GetAvailableK8sClusterNodeImage is func to get available kubernetes cluster node images for provider and region from model.K8sClusterInfo
+func GetAvailableK8sClusterNodeImage(providerName string, regionName string) (*[]model.K8sClusterNodeImageDetailAvailable, error) {
 	//
 	// Check available K8sCluster node image in k8sclusterinfo.yaml
 	//
@@ -1433,20 +1317,20 @@ func GetAvailableK8sClusterNodeImage(providerName string, regionName string) (*[
 	providerName = strings.ToLower(providerName)
 	regionName = strings.ToLower(regionName)
 
-	// Get K8sClusterDetail for providerName
+	// Get model.K8sClusterDetail for providerName
 	k8sClusterDetail := getK8sClusterDetail(providerName)
 	if k8sClusterDetail == nil {
 		return nil, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
 	}
 
 	// Check if 'regionName' exists
-	var availableNodeImage *[]K8sClusterNodeImageDetailAvailable = nil
+	var availableNodeImage *[]model.K8sClusterNodeImageDetailAvailable = nil
 	for _, nodeImageDetail := range k8sClusterDetail.NodeImage {
 		for _, region := range nodeImageDetail.Region {
 			region = strings.ToLower(region)
 			if strings.EqualFold(region, regionName) {
 				if len(nodeImageDetail.Available) == 0 {
-					availableNodeImage = &[]K8sClusterNodeImageDetailAvailable{{StrEmpty, StrEmpty}}
+					availableNodeImage = &[]model.K8sClusterNodeImageDetailAvailable{{model.StrEmpty, model.StrEmpty}}
 					break
 				} else {
 					availableNodeImage = &nodeImageDetail.Available
@@ -1460,9 +1344,9 @@ func GetAvailableK8sClusterNodeImage(providerName string, regionName string) (*[
 	for _, nodeImageDetail := range k8sClusterDetail.NodeImage {
 		for _, region := range nodeImageDetail.Region {
 			region = strings.ToLower(region)
-			if strings.EqualFold(region, StrCommon) {
+			if strings.EqualFold(region, model.StrCommon) {
 				if len(nodeImageDetail.Available) == 0 {
-					availableNodeImage = &[]K8sClusterNodeImageDetailAvailable{{StrEmpty, StrEmpty}}
+					availableNodeImage = &[]model.K8sClusterNodeImageDetailAvailable{{model.StrEmpty, model.StrEmpty}}
 					break
 				} else {
 					availableNodeImage = &nodeImageDetail.Available
@@ -1476,20 +1360,20 @@ func GetAvailableK8sClusterNodeImage(providerName string, regionName string) (*[
 }
 
 // CheckNodeGroupsOnK8sCreation is func to check whether nodegroups are required during the k8scluster creation
-func CheckNodeGroupsOnK8sCreation(providerName string) (*K8sClusterNodeGroupsOnCreation, error) {
+func CheckNodeGroupsOnK8sCreation(providerName string) (*model.K8sClusterNodeGroupsOnCreation, error) {
 	//
 	// Check nodeGroupsOnCreation field in k8sclusterinfo.yaml
 	//
 
 	providerName = strings.ToLower(providerName)
 
-	// Get K8sClusterDetail for providerName
+	// Get model.K8sClusterDetail for providerName
 	k8sClusterDetail := getK8sClusterDetail(providerName)
 	if k8sClusterDetail == nil {
 		return nil, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
 	}
 
-	return &K8sClusterNodeGroupsOnCreation{
+	return &model.K8sClusterNodeGroupsOnCreation{
 		Result: strconv.FormatBool(k8sClusterDetail.NodeGroupsOnCreation),
 	}, nil
 }
@@ -1502,7 +1386,7 @@ func isValidSpecForK8sCluster(spec *resource.TbSpecInfo) bool {
 
 	providerName := strings.ToLower(spec.ProviderName)
 
-	var k8sClusterDetail *common.K8sClusterDetail = nil
+	var k8sClusterDetail *common.model.K8sClusterDetail = nil
 	for provider, detail := range common.RuntimeK8sClusterInfo.CSPs {
 		provider = strings.ToLower(provider)
 		if provider == providerName {

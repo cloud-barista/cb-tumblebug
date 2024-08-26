@@ -23,6 +23,8 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
@@ -30,97 +32,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	// ActionCreate is const for Create
-	ActionCreate string = "Create"
-
-	// ActionTerminate is const for Terminate
-	ActionTerminate string = "Terminate"
-
-	// ActionSuspend is const for Suspend
-	ActionSuspend string = "Suspend"
-
-	// ActionResume is const for Resume
-	ActionResume string = "Resume"
-
-	// ActionReboot is const for Reboot
-	ActionReboot string = "Reboot"
-
-	// ActionRefine is const for Refine
-	ActionRefine string = "Refine"
-
-	// ActionComplete is const for Complete
-	ActionComplete string = "None"
-)
-const (
-	// StatusRunning is const for Running
-	StatusRunning string = "Running"
-
-	// StatusSuspended is const for Suspended
-	StatusSuspended string = "Suspended"
-
-	// StatusFailed is const for Failed
-	StatusFailed string = "Failed"
-
-	// StatusTerminated is const for Terminated
-	StatusTerminated string = "Terminated"
-
-	// StatusCreating is const for Creating
-	StatusCreating string = "Creating"
-
-	// StatusSuspending is const for Suspending
-	StatusSuspending string = "Suspending"
-
-	// StatusResuming is const for Resuming
-	StatusResuming string = "Resuming"
-
-	// StatusRebooting is const for Rebooting
-	StatusRebooting string = "Rebooting"
-
-	// StatusTerminating is const for Terminating
-	StatusTerminating string = "Terminating"
-
-	// StatusUndefined is const for Undefined
-	StatusUndefined string = "Undefined"
-
-	// StatusComplete is const for Complete
-	StatusComplete string = "None"
-)
-
-const labelAutoGen string = "AutoGen"
-
-// DefaultSystemLabel is const for string to specify the Default System Label
-const DefaultSystemLabel string = "Managed by CB-Tumblebug"
-
-// RegionInfo is struct for region information
-type RegionInfo struct {
-	Region string
-	Zone   string
-}
-
-// TbMciReq is struct for requirements to create MCI
-type TbMciReq struct {
-	Name string `json:"name" validate:"required" example:"mci01"`
-
-	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"no" default:"yes" enums:"yes,no"` // yes or no
-
-	// Label is for describing the mci in a keyword (any string can be used)
-	Label string `json:"label" example:"custom tag" default:""`
-
-	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
-	SystemLabel string `json:"systemLabel" example:"" default:""`
-
-	PlacementAlgo string `json:"placementAlgo,omitempty"`
-	Description   string `json:"description" example:"Made in CB-TB"`
-
-	Vm []TbVmReq `json:"vm" validate:"required"`
-}
-
 // TbMciReqStructLevelValidation is func to validate fields in TbMciReqStruct
 func TbMciReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(TbMciReq)
+	u := sl.Current().Interface().(model.TbMciReq)
 
 	err := common.CheckString(u.Name)
 	if err != nil {
@@ -129,385 +44,16 @@ func TbMciReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
-// TbMciInfo is struct for MCI info
-type TbMciInfo struct {
-	Id           string          `json:"id"`
-	Name         string          `json:"name"`
-	Status       string          `json:"status"`
-	StatusCount  StatusCountInfo `json:"statusCount"`
-	TargetStatus string          `json:"targetStatus"`
-	TargetAction string          `json:"targetAction"`
-
-	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
-
-	// ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)
-	ConfigureCloudAdaptiveNetwork string `json:"configureCloudAdaptiveNetwork" example:"yes" default:"no" enums:"yes,no"` // yes or no
-
-	// Label is for describing the mci in a keyword (any string can be used)
-	Label string `json:"label" example:"User custom label"`
-
-	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
-	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
-
-	// Latest system message such as error message
-	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
-
-	PlacementAlgo string     `json:"placementAlgo,omitempty"`
-	Description   string     `json:"description"`
-	Vm            []TbVmInfo `json:"vm"`
-
-	// List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.
-	NewVmList []string `json:"newVmList"`
-}
-
-// TbVmReq is struct to get requirements to create a new server instance
-type TbVmReq struct {
-	// VM name or subGroup name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
-	Name string `json:"name" validate:"required" example:"g1-1"`
-
-	// CSP managed ID or Name (required for option=register)
-	IdByCSP string `json:"idByCsp,omitempty" example:"i-014fa6ede6ada0b2c"`
-
-	// if subGroupSize is (not empty) && (> 0), subGroup will be generated. VMs will be created accordingly.
-	SubGroupSize string `json:"subGroupSize" example:"3" default:""`
-
-	Label string `json:"label"`
-
-	Description string `json:"description" example:"Description"`
-
-	ConnectionName string `json:"connectionName" validate:"required" example:"testcloud01-seoul"`
-	SpecId         string `json:"specId" validate:"required"`
-	// ImageType        string   `json:"imageType"`
-	ImageId          string   `json:"imageId" validate:"required"`
-	VNetId           string   `json:"vNetId" validate:"required"`
-	SubnetId         string   `json:"subnetId" validate:"required"`
-	SecurityGroupIds []string `json:"securityGroupIds" validate:"required"`
-	SshKeyId         string   `json:"sshKeyId" validate:"required"`
-	VmUserAccount    string   `json:"vmUserAccount,omitempty"`
-	VmUserPassword   string   `json:"vmUserPassword,omitempty"`
-	RootDiskType     string   `json:"rootDiskType,omitempty" example:"default, TYPE1, ..."`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize     string   `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
-	DataDiskIds      []string `json:"dataDiskIds"`
-}
-
-// TbVmReq is struct to get requirements to create a new server instance
-type TbScaleOutSubGroupReq struct {
-	// Define addtional VMs to scaleOut
-	NumVMsToAdd string `json:"numVMsToAdd" validate:"required" example:"2"`
-
-	//tobe added accoring to new future capability
-}
-
-// TbMciDynamicReq is struct for requirements to create MCI dynamically (with default resource option)
-type TbMciDynamicReq struct {
-	Name string `json:"name" validate:"required" example:"mci01"`
-
-	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
-
-	// Label is for describing the mci in a keyword (any string can be used)
-	Label string `json:"label" example:"DynamicVM" default:""`
-
-	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
-	SystemLabel string `json:"systemLabel" example:"" default:""`
-
-	Description string `json:"description" example:"Made in CB-TB"`
-
-	Vm []TbVmDynamicReq `json:"vm" validate:"required"`
-}
-
-// TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
-type TbVmDynamicReq struct {
-	// VM name or subGroup name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
-	Name string `json:"name" example:"g1-1"`
-
-	// if subGroupSize is (not empty) && (> 0), subGroup will be generated. VMs will be created accordingly.
-	SubGroupSize string `json:"subGroupSize" example:"3" default:"1"`
-
-	Label string `json:"label" example:"DynamicVM"`
-
-	Description string `json:"description" example:"Description"`
-
-	// CommonSpec is field for id of a spec in common namespace
-	CommonSpec string `json:"commonSpec" validate:"required" example:"aws+ap-northeast-2+t2.small"`
-	// CommonImage is field for id of a image in common namespace
-	CommonImage string `json:"commonImage" validate:"required" example:"ubuntu18.04"`
-
-	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..." default:"default"` // "default", Integer (GB): ["50", ..., "1000"]
-
-	VmUserPassword string `json:"vmUserPassword,omitempty" default:""`
-	// if ConnectionName is given, the VM tries to use associtated credential.
-	// if not, it will use predefined ConnectionName in Spec objects
-	ConnectionName string `json:"connectionName,omitempty" default:""`
-}
-
-// MciConnectionConfigCandidatesReq is struct for a request to check requirements to create a new MCI instance dynamically (with default resource option)
-type MciConnectionConfigCandidatesReq struct {
-	// CommonSpec is field for id of a spec in common namespace
-	CommonSpecs []string `json:"commonSpec" validate:"required" example:"aws+ap-northeast-2+t2.small,gcp+us-west1+g1-small"`
-}
-
-// CheckMciDynamicReqInfo is struct to check requirements to create a new MCI instance dynamically (with default resource option)
-type CheckMciDynamicReqInfo struct {
-	ReqCheck []CheckVmDynamicReqInfo `json:"reqCheck" validate:"required"`
-}
-
-// CheckVmDynamicReqInfo is struct to check requirements to create a new server instance dynamically (with default resource option)
-type CheckVmDynamicReqInfo struct {
-
-	// ConnectionConfigCandidates will provide ConnectionConfig options
-	ConnectionConfigCandidates []string `json:"connectionConfigCandidates" default:""`
-
-	//RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
-
-	Spec   resource.TbSpecInfo    `json:"spec" default:""`
-	Image  []resource.TbImageInfo `json:"image" default:""`
-	Region common.RegionDetail    `json:"region" default:""`
-
-	// Latest system message such as error message
-	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
-
-}
-
-//
-
-// SpiderVMReqInfoWrapper is struct from CB-Spider (VMHandler.go) for wrapping SpiderVMInfo
-type SpiderVMReqInfoWrapper struct {
-	ConnectionName string
-	ReqInfo        SpiderVMInfo
-}
-
-type SpiderImageType string
-
-const (
-	PublicImage SpiderImageType = "PublicImage"
-	MyImage     SpiderImageType = "MyImage"
-)
-
-// Ref: cb-spider/cloud-control-manager/cloud-driver/interfaces/resources/VMHandler.go
-// SpiderVMInfo is struct from CB-Spider for VM information
-type SpiderVMInfo struct {
-	// Fields for request
-	Name               string
-	ImageName          string
-	VPCName            string
-	SubnetName         string
-	SecurityGroupNames []string
-	KeyPairName        string
-	CSPid              string // VM ID given by CSP (required for registering VM)
-	DataDiskNames      []string
-
-	// Fields for both request and response
-	VMSpecName   string // instance type or flavour, etc... ex) t2.micro or f1.micro
-	VMUserId     string // ex) user1
-	VMUserPasswd string
-	RootDiskType string // "SSD(gp2)", "Premium SSD", ...
-	RootDiskSize string // "default", "50", "1000" (GB)
-	ImageType    SpiderImageType
-
-	// Fields for response
-	IId               common.IID // {NameId, SystemId}
-	ImageIId          common.IID
-	VpcIID            common.IID
-	SubnetIID         common.IID   // AWS, ex) subnet-8c4a53e4
-	SecurityGroupIIds []common.IID // AWS, ex) sg-0b7452563e1121bb6
-	KeyPairIId        common.IID
-	DataDiskIIDs      []common.IID
-	StartTime         time.Time
-	Region            RegionInfo //  ex) {us-east1, us-east1-c} or {ap-northeast-2}
-	NetworkInterface  string     // ex) eth0
-	PublicIP          string
-	PublicDNS         string
-	PrivateIP         string
-	PrivateDNS        string
-	RootDeviceName    string // "/dev/sda1", ...
-	SSHAccessPoint    string
-	KeyValueList      []common.KeyValue
-}
-
-// TbVmReqStructLevelValidation is func to validate fields in TbVmReqStruct
+// TbVmReqStructLevelValidation is func to validate fields in model.TbVmReqStruct
 func TbVmReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(TbVmReq)
+	u := sl.Current().Interface().(model.TbVmReq)
 
 	err := common.CheckString(u.Name)
 	if err != nil {
 		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
 		sl.ReportError(u.Name, "name", "Name", err.Error(), "")
 	}
-}
-
-// TbSubGroupInfo is struct to define an object that includes homogeneous VMs
-type TbSubGroupInfo struct {
-	Id           string   `json:"id"`
-	Name         string   `json:"name"`
-	VmId         []string `json:"vmId"`
-	SubGroupSize string   `json:"subGroupSize"`
-}
-
-// TbVmInfo is struct to define a server instance object
-type TbVmInfo struct {
-	Id      string `json:"id"`
-	Name    string `json:"name"`
-	IdByCSP string `json:"idByCSP"` // CSP managed ID or Name
-
-	// defined if the VM is in a group
-	SubGroupId string `json:"subGroupId"`
-
-	Location common.Location `json:"location"`
-
-	// Required by CB-Tumblebug
-	Status       string `json:"status"`
-	TargetStatus string `json:"targetStatus"`
-	TargetAction string `json:"targetAction"`
-
-	// Montoring agent status
-	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
-
-	// NetworkAgent status
-	NetworkAgentStatus string `json:"networkAgentStatus" example:"[notInstalled, installing, installed, failed]"` // notInstalled, installing, installed, failed
-
-	// Latest system message such as error message
-	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
-
-	// Created time
-	CreatedTime string `json:"createdTime" example:"2022-11-10 23:00:00" default:""`
-
-	Label       string `json:"label"`
-	Description string `json:"description"`
-
-	Region         RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-	PublicIP       string     `json:"publicIP"`
-	SSHPort        string     `json:"sshPort"`
-	PublicDNS      string     `json:"publicDNS"`
-	PrivateIP      string     `json:"privateIP"`
-	PrivateDNS     string     `json:"privateDNS"`
-	RootDiskType   string     `json:"rootDiskType"`
-	RootDiskSize   string     `json:"rootDiskSize"`
-	RootDeviceName string     `json:"rootDeviceName"`
-
-	ConnectionName   string            `json:"connectionName"`
-	ConnectionConfig common.ConnConfig `json:"connectionConfig"`
-	SpecId           string            `json:"specId"`
-	ImageId          string            `json:"imageId"`
-	VNetId           string            `json:"vNetId"`
-	SubnetId         string            `json:"subnetId"`
-	SecurityGroupIds []string          `json:"securityGroupIds"`
-	DataDiskIds      []string          `json:"dataDiskIds"`
-	SshKeyId         string            `json:"sshKeyId"`
-	VmUserAccount    string            `json:"vmUserAccount,omitempty"`
-	VmUserPassword   string            `json:"vmUserPassword,omitempty"`
-
-	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail,omitempty"`
-}
-
-// MciAccessInfo is struct to retrieve overall access information of a MCI
-type MciAccessInfo struct {
-	MciId                 string
-	MciNlbListener        *MciAccessInfo `json:"mciNlbListener,omitempty"`
-	MciSubGroupAccessInfo []MciSubGroupAccessInfo
-}
-
-// MciSubGroupAccessInfo is struct for MciSubGroupAccessInfo
-type MciSubGroupAccessInfo struct {
-	SubGroupId      string
-	NlbListener     *TbNLBListenerInfo `json:"nlbListener,omitempty"`
-	BastionVmId     string
-	MciVmAccessInfo []MciVmAccessInfo
-}
-
-// MciVmAccessInfo is struct for MciVmAccessInfo
-type MciVmAccessInfo struct {
-	VmId           string `json:"vmId"`
-	PublicIP       string `json:"publicIP"`
-	PrivateIP      string `json:"privateIP"`
-	SSHPort        string `json:"sshPort"`
-	PrivateKey     string `json:"privateKey,omitempty"`
-	VmUserAccount  string `json:"vmUserAccount,omitempty"`
-	VmUserPassword string `json:"vmUserPassword,omitempty"`
-}
-
-// TbVmIdNameInDetailInfo is struct for details related with ID and Name
-type TbIdNameInDetailInfo struct {
-	IdInTb    string `json:"idInTb"`
-	IdInSp    string `json:"idInSp"`
-	IdInCsp   string `json:"idInCsp"`
-	NameInCsp string `json:"nameInCsp"`
-}
-
-// StatusCountInfo is struct to count the number of VMs in each status. ex: Running=4, Suspended=8.
-type StatusCountInfo struct {
-
-	// CountTotal is for Total VMs
-	CountTotal int `json:"countTotal"`
-
-	// CountCreating is for counting Creating
-	CountCreating int `json:"countCreating"`
-
-	// CountRunning is for counting Running
-	CountRunning int `json:"countRunning"`
-
-	// CountFailed is for counting Failed
-	CountFailed int `json:"countFailed"`
-
-	// CountSuspended is for counting Suspended
-	CountSuspended int `json:"countSuspended"`
-
-	// CountRebooting is for counting Rebooting
-	CountRebooting int `json:"countRebooting"`
-
-	// CountTerminated is for counting Terminated
-	CountTerminated int `json:"countTerminated"`
-
-	// CountSuspending is for counting Suspending
-	CountSuspending int `json:"countSuspending"`
-
-	// CountResuming is for counting Resuming
-	CountResuming int `json:"countResuming"`
-
-	// CountTerminating is for counting Terminating
-	CountTerminating int `json:"countTerminating"`
-
-	// CountUndefined is for counting Undefined
-	CountUndefined int `json:"countUndefined"`
-}
-
-// MciRecommendReq is struct for MciRecommendReq
-type MciRecommendReq struct {
-	VmReq          []TbVmRecommendReq `json:"vmReq"`
-	PlacementAlgo  string             `json:"placementAlgo"`
-	PlacementParam []common.KeyValue  `json:"placementParam"`
-	MaxResultNum   string             `json:"maxResultNum"`
-}
-
-// TbVmRecommendReq is struct for TbVmRecommendReq
-type TbVmRecommendReq struct {
-	RequestName  string `json:"requestName"`
-	MaxResultNum string `json:"maxResultNum"`
-
-	VcpuSize   string `json:"vcpuSize"`
-	MemorySize string `json:"memorySize"`
-	DiskSize   string `json:"diskSize"`
-	//Disk_type   string `json:"disk_type"`
-
-	PlacementAlgo  string            `json:"placementAlgo"`
-	PlacementParam []common.KeyValue `json:"placementParam"`
-}
-
-// TbVmPriority is struct for TbVmPriority
-type TbVmPriority struct {
-	Priority string              `json:"priority"`
-	VmSpec   resource.TbSpecInfo `json:"vmSpec"`
-}
-
-// TbVmRecommendInfo is struct for TbVmRecommendInfo
-type TbVmRecommendInfo struct {
-	VmReq          TbVmRecommendReq  `json:"vmReq"`
-	VmPriority     []TbVmPriority    `json:"vmPriority"`
-	PlacementAlgo  string            `json:"placementAlgo"`
-	PlacementParam []common.KeyValue `json:"placementParam"`
 }
 
 var holdingMciMap sync.Map
@@ -515,31 +61,31 @@ var holdingMciMap sync.Map
 // MCI and VM Provisioning
 
 // CreateMciVm is func to post (create) MciVm
-func CreateMciVm(nsId string, mciId string, vmInfoData *TbVmInfo) (*TbVmInfo, error) {
+func CreateMciVm(nsId string, mciId string, vmInfoData *model.TbVmInfo) (*model.TbVmInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := &TbVmInfo{}
+		temp := &model.TbVmInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mciId)
 	if err != nil {
-		temp := &TbVmInfo{}
+		temp := &model.TbVmInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	err = common.CheckString(vmInfoData.Name)
 	if err != nil {
-		temp := &TbVmInfo{}
+		temp := &model.TbVmInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	check, _ := CheckVm(nsId, mciId, vmInfoData.Name)
 
 	if check {
-		temp := &TbVmInfo{}
+		temp := &model.TbVmInfo{}
 		err := fmt.Errorf("The vm " + vmInfoData.Name + " already exists.")
 		return temp, err
 	}
@@ -547,9 +93,9 @@ func CreateMciVm(nsId string, mciId string, vmInfoData *TbVmInfo) (*TbVmInfo, er
 	vmInfoData.Id = vmInfoData.Name
 	vmInfoData.PublicIP = "empty"
 	vmInfoData.PublicDNS = "empty"
-	vmInfoData.TargetAction = ActionCreate
-	vmInfoData.TargetStatus = StatusRunning
-	vmInfoData.Status = StatusCreating
+	vmInfoData.TargetAction = model.ActionCreate
+	vmInfoData.TargetStatus = model.StatusRunning
+	vmInfoData.Status = model.StatusCreating
 
 	//goroutin
 	var wg sync.WaitGroup
@@ -585,11 +131,11 @@ func CreateMciVm(nsId string, mciId string, vmInfoData *TbVmInfo) (*TbVmInfo, er
 		if check != nil {
 			fmt.Printf("\n\n[Warning] CB-Dragonfly is not available\n\n")
 		} else {
-			reqToMon := &MciCmdReq{}
+			reqToMon := &model.MciCmdReq{}
 			reqToMon.UserName = "cb-user" // this MCI user name is temporal code. Need to improve.
 
 			fmt.Printf("\n[InstallMonitorAgentToMci]\n\n")
-			content, err := InstallMonitorAgentToMci(nsId, mciId, common.StrMCI, reqToMon)
+			content, err := InstallMonitorAgentToMci(nsId, mciId, model.StrMCI, reqToMon)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				//mciTmp.InstallMonAgent = "no"
@@ -603,15 +149,15 @@ func CreateMciVm(nsId string, mciId string, vmInfoData *TbVmInfo) (*TbVmInfo, er
 }
 
 // ScaleOutMciSubGroup is func to create MCI groupVM
-func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToAdd string) (*TbMciInfo, error) {
+func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToAdd string) (*model.TbMciInfo, error) {
 	vmIdList, err := ListVmBySubGroup(nsId, mciId, subGroupId)
 	if err != nil {
-		temp := &TbMciInfo{}
+		temp := &model.TbMciInfo{}
 		return temp, err
 	}
 	vmObj, err := GetVmObject(nsId, mciId, vmIdList[0])
 
-	vmTemplate := &TbVmReq{}
+	vmTemplate := &model.TbVmReq{}
 
 	// only take template required to create VM
 	vmTemplate.Name = vmObj.SubGroupId
@@ -632,7 +178,7 @@ func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToA
 
 	result, err := CreateMciGroupVm(nsId, mciId, vmTemplate, true)
 	if err != nil {
-		temp := &TbMciInfo{}
+		temp := &model.TbMciInfo{}
 		return temp, err
 	}
 	return result, nil
@@ -640,18 +186,18 @@ func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToA
 }
 
 // CreateMciGroupVm is func to create MCI groupVM
-func CreateMciGroupVm(nsId string, mciId string, vmRequest *TbVmReq, newSubGroup bool) (*TbMciInfo, error) {
+func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbVmReq, newSubGroup bool) (*model.TbMciInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := &TbMciInfo{}
+		temp := &model.TbMciInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mciId)
 	if err != nil {
-		temp := &TbMciInfo{}
+		temp := &model.TbMciInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
@@ -689,14 +235,14 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *TbVmReq, newSubGroup
 	mciTmp, err := GetMciObject(nsId, mciId)
 
 	if err != nil {
-		temp := &TbMciInfo{}
+		temp := &model.TbMciInfo{}
 		return temp, err
 	}
 
 	//vmRequest := req
 
-	targetAction := ActionCreate
-	targetStatus := StatusRunning
+	targetAction := model.ActionCreate
+	targetStatus := model.StatusRunning
 
 	//goroutin
 	var wg sync.WaitGroup
@@ -717,14 +263,14 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *TbVmReq, newSubGroup
 	err = common.CheckString(tentativeVmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &TbMciInfo{}, err
+		return &model.TbMciInfo{}, err
 	}
 
 	if subGroupSize > 0 {
 
 		log.Info().Msg("Create MCI subGroup object")
 
-		subGroupInfoData := TbSubGroupInfo{}
+		subGroupInfoData := model.TbSubGroupInfo{}
 		subGroupInfoData.Id = tentativeVmId
 		subGroupInfoData.Name = tentativeVmId
 		subGroupInfoData.SubGroupSize = vmRequest.SubGroupSize
@@ -773,7 +319,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *TbVmReq, newSubGroup
 	}
 
 	for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
-		vmInfoData := TbVmInfo{}
+		vmInfoData := model.TbVmInfo{}
 
 		if subGroupSize == 0 { // for VM (not in a group)
 			vmInfoData.Name = vmRequest.Name
@@ -794,7 +340,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *TbVmReq, newSubGroup
 		vmInfoData.PublicIP = "empty"
 		vmInfoData.PublicDNS = "empty"
 
-		vmInfoData.Status = StatusCreating
+		vmInfoData.Status = model.StatusCreating
 		vmInfoData.TargetAction = targetAction
 		vmInfoData.TargetStatus = targetStatus
 
@@ -833,7 +379,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *TbVmReq, newSubGroup
 
 	mciTmp, err = GetMciObject(nsId, mciId)
 	if err != nil {
-		temp := &TbMciInfo{}
+		temp := &model.TbMciInfo{}
 		return temp, err
 	}
 
@@ -842,8 +388,8 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *TbVmReq, newSubGroup
 	mciTmp.Status = mciStatusTmp.Status
 
 	if mciTmp.TargetStatus == mciTmp.Status {
-		mciTmp.TargetStatus = StatusComplete
-		mciTmp.TargetAction = ActionComplete
+		mciTmp.TargetStatus = model.StatusComplete
+		mciTmp.TargetAction = model.ActionComplete
 	}
 	UpdateMciInfo(nsId, mciTmp)
 
@@ -859,11 +405,11 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *TbVmReq, newSubGroup
 		if check != nil {
 			fmt.Printf("\n\n[Warning] CB-Dragonfly is not available\n\n")
 		} else {
-			reqToMon := &MciCmdReq{}
+			reqToMon := &model.MciCmdReq{}
 			reqToMon.UserName = "cb-user" // this MCI user name is temporal code. Need to improve.
 
 			fmt.Printf("\n[InstallMonitorAgentToMci]\n\n")
-			content, err := InstallMonitorAgentToMci(nsId, mciId, common.StrMCI, reqToMon)
+			content, err := InstallMonitorAgentToMci(nsId, mciId, model.StrMCI, reqToMon)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				//mciTmp.InstallMonAgent = "no"
@@ -887,11 +433,11 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *TbVmReq, newSubGroup
 }
 
 // CreateMci is func to create MCI obeject and deploy requested VMs (register CSP native VM with option=register)
-func CreateMci(nsId string, req *TbMciReq, option string) (*TbMciInfo, error) {
+func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := &TbMciInfo{}
+		temp := &model.TbMciInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
@@ -917,8 +463,10 @@ func CreateMci(nsId string, req *TbMciReq, option string) (*TbMciInfo, error) {
 		req.SystemLabel = "Registered from CSP resource"
 	}
 
-	targetAction := ActionCreate
-	targetStatus := StatusRunning
+	uuid := common.GenUid()
+
+	targetAction := model.ActionCreate
+	targetStatus := model.StatusRunning
 
 	mciId := req.Name
 	vmRequest := req.Vm
@@ -928,8 +476,9 @@ func CreateMci(nsId string, req *TbMciReq, option string) (*TbMciInfo, error) {
 	mapA := map[string]string{
 		"id":              mciId,
 		"name":            mciId,
+		"uuid":            uuid,
 		"description":     req.Description,
-		"status":          StatusCreating,
+		"status":          model.StatusCreating,
 		"targetAction":    targetAction,
 		"targetStatus":    targetStatus,
 		"installMonAgent": req.InstallMonAgent,
@@ -950,12 +499,23 @@ func CreateMci(nsId string, req *TbMciReq, option string) (*TbMciInfo, error) {
 		return nil, err
 	}
 
+	// Store label info using CreateOrUpdateLabel
+	labels := map[string]string{
+		"provider":  "cb-tumblebug",
+		"namespace": nsId,
+	}
+	err = label.CreateOrUpdateLabel(model.StrMCI, uuid, key, labels)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
 	// Check whether VM names meet requirement.
 	for _, k := range vmRequest {
 		err = common.CheckString(k.Name)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return &TbMciInfo{}, err
+			return &model.TbMciInfo{}, err
 		}
 	}
 
@@ -1004,9 +564,12 @@ func CreateMci(nsId string, req *TbMciReq, option string) (*TbMciInfo, error) {
 			log.Info().Msg("Create MCI subGroup object")
 			key := common.GenMciSubGroupKey(nsId, mciId, k.Name)
 
-			subGroupInfoData := TbSubGroupInfo{}
+			uuidSubGroup := common.GenUid()
+
+			subGroupInfoData := model.TbSubGroupInfo{}
 			subGroupInfoData.Id = common.ToLower(k.Name)
 			subGroupInfoData.Name = common.ToLower(k.Name)
+			subGroupInfoData.Uuid = uuidSubGroup
 			subGroupInfoData.SubGroupSize = k.SubGroupSize
 
 			for i := vmStartIndex; i < subGroupSize+vmStartIndex; i++ {
@@ -1019,10 +582,21 @@ func CreateMci(nsId string, req *TbMciReq, option string) (*TbMciInfo, error) {
 				log.Error().Err(err).Msg("")
 			}
 
+			// Store label info using CreateOrUpdateLabel
+			labels := map[string]string{
+				"provider":  "cb-tumblebug",
+				"namespace": nsId,
+			}
+			err = label.CreateOrUpdateLabel(model.StrSubGroup, uuid, key, labels)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				return nil, err
+			}
+
 		}
 
 		for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
-			vmInfoData := TbVmInfo{}
+			vmInfoData := model.TbVmInfo{}
 
 			if subGroupSize == 0 { // for VM (not in a group)
 				vmInfoData.Name = common.ToLower(k.Name)
@@ -1036,12 +610,15 @@ func CreateMci(nsId string, req *TbMciReq, option string) (*TbMciInfo, error) {
 				log.Debug().Msg("vmInfoData.Name: " + vmInfoData.Name)
 
 			}
+			uuidVm := common.GenUid()
+
 			vmInfoData.Id = vmInfoData.Name
+			vmInfoData.Uuid = uuidVm
 
 			vmInfoData.PublicIP = "empty"
 			vmInfoData.PublicDNS = "empty"
 
-			vmInfoData.Status = StatusCreating
+			vmInfoData.Status = model.StatusCreating
 			vmInfoData.TargetAction = targetAction
 			vmInfoData.TargetStatus = targetStatus
 
@@ -1094,8 +671,8 @@ func CreateMci(nsId string, req *TbMciReq, option string) (*TbMciInfo, error) {
 	mciTmp.Status = mciStatusTmp.Status
 
 	if mciTmp.TargetStatus == mciTmp.Status {
-		mciTmp.TargetStatus = StatusComplete
-		mciTmp.TargetAction = ActionComplete
+		mciTmp.TargetStatus = model.StatusComplete
+		mciTmp.TargetAction = model.ActionComplete
 	}
 	UpdateMciInfo(nsId, mciTmp)
 
@@ -1112,7 +689,7 @@ func CreateMci(nsId string, req *TbMciReq, option string) (*TbMciInfo, error) {
 		if check != nil {
 			fmt.Printf("\n\n[Warning] CB-Dragonfly is not available\n\n")
 		} else {
-			reqToMon := &MciCmdReq{}
+			reqToMon := &model.MciCmdReq{}
 			reqToMon.UserName = "cb-user" // this MCI user name is temporal code. Need to improve.
 
 			fmt.Printf("\n===========================\n")
@@ -1121,7 +698,7 @@ func CreateMci(nsId string, req *TbMciReq, option string) (*TbMciInfo, error) {
 			time.Sleep(60 * time.Second)
 
 			fmt.Printf("\n[InstallMonitorAgentToMci]\n\n")
-			content, err := InstallMonitorAgentToMci(nsId, mciId, common.StrMCI, reqToMon)
+			content, err := InstallMonitorAgentToMci(nsId, mciId, model.StrMCI, reqToMon)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				//mciTmp.InstallMonAgent = "no"
@@ -1140,11 +717,11 @@ func CreateMci(nsId string, req *TbMciReq, option string) (*TbMciInfo, error) {
 }
 
 // CheckMciDynamicReq is func to check request info to create MCI obeject and deploy requested VMs in a dynamic way
-func CheckMciDynamicReq(req *MciConnectionConfigCandidatesReq) (*CheckMciDynamicReqInfo, error) {
+func CheckMciDynamicReq(req *model.MciConnectionConfigCandidatesReq) (*model.CheckMciDynamicReqInfo, error) {
 
-	mciReqInfo := CheckMciDynamicReqInfo{}
+	mciReqInfo := model.CheckMciDynamicReqInfo{}
 
-	connectionConfigList, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
+	connectionConfigList, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
 	if err != nil {
 		err := fmt.Errorf("Cannot load ConnectionConfigList in MCI dynamic request check.")
 		log.Error().Err(err).Msg("")
@@ -1155,9 +732,9 @@ func CheckMciDynamicReq(req *MciConnectionConfigCandidatesReq) (*CheckMciDynamic
 	for _, k := range req.CommonSpecs {
 		errMessage := ""
 
-		vmReqInfo := CheckVmDynamicReqInfo{}
+		vmReqInfo := model.CheckVmDynamicReqInfo{}
 
-		specInfo, err := resource.GetSpec(common.SystemCommonNs, k)
+		specInfo, err := resource.GetSpec(model.SystemCommonNs, k)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			errMessage += "//Failed to get Spec (" + k + ")."
@@ -1176,7 +753,7 @@ func CheckMciDynamicReq(req *MciConnectionConfigCandidatesReq) (*CheckMciDynamic
 
 		vmReqInfo.Spec = specInfo
 		imageSearchKey := specInfo.ProviderName + "+" + specInfo.RegionName
-		availableImageList, err := resource.SearchImage(common.SystemCommonNs, imageSearchKey)
+		availableImageList, err := resource.SearchImage(model.SystemCommonNs, imageSearchKey)
 		if err != nil {
 			errMessage += "//Failed to search images for Spec (" + k + ")"
 		}
@@ -1190,9 +767,9 @@ func CheckMciDynamicReq(req *MciConnectionConfigCandidatesReq) (*CheckMciDynamic
 }
 
 // CreateSystemMciDynamic is func to create MCI obeject and deploy requested VMs in a dynamic way
-func CreateSystemMciDynamic(option string) (*TbMciInfo, error) {
-	nsId := common.SystemCommonNs
-	req := &TbMciDynamicReq{}
+func CreateSystemMciDynamic(option string) (*model.TbMciInfo, error) {
+	nsId := model.SystemCommonNs
+	req := &model.TbMciDynamicReq{}
 
 	// special purpose MCI
 	req.Name = option
@@ -1203,28 +780,28 @@ func CreateSystemMciDynamic(option string) (*TbMciInfo, error) {
 
 	switch option {
 	case "probe":
-		connections, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
+		connections, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
 		}
 		for _, v := range connections.Connectionconfig {
 
-			vmReq := &TbVmDynamicReq{}
+			vmReq := &model.TbVmDynamicReq{}
 			vmReq.CommonImage = "ubuntu18.04"                // temporal default value. will be changed
 			vmReq.CommonSpec = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
 
-			deploymentPlan := DeploymentPlan{}
-			condition := []Operation{}
-			condition = append(condition, Operation{Operand: v.RegionZoneInfoName})
+			deploymentPlan := model.DeploymentPlan{}
+			condition := []model.Operation{}
+			condition = append(condition, model.Operation{Operand: v.RegionZoneInfoName})
 
 			log.Debug().Msg(" - v.RegionName: " + v.RegionZoneInfoName)
 
-			deploymentPlan.Filter.Policy = append(deploymentPlan.Filter.Policy, FilterCondition{Metric: "region", Condition: condition})
+			deploymentPlan.Filter.Policy = append(deploymentPlan.Filter.Policy, model.FilterCondition{Metric: "region", Condition: condition})
 			deploymentPlan.Limit = "1"
 			common.PrintJsonPretty(deploymentPlan)
 
-			specList, err := RecommendVm(common.SystemCommonNs, deploymentPlan)
+			specList, err := RecommendVm(model.SystemCommonNs, deploymentPlan)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return nil, err
@@ -1255,16 +832,16 @@ func CreateSystemMciDynamic(option string) (*TbMciInfo, error) {
 }
 
 // CreateMciDynamic is func to create MCI obeject and deploy requested VMs in a dynamic way
-func CreateMciDynamic(reqID string, nsId string, req *TbMciDynamicReq, deployOption string) (*TbMciInfo, error) {
+func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, deployOption string) (*model.TbMciInfo, error) {
 
-	mciReq := TbMciReq{}
+	mciReq := model.TbMciReq{}
 	mciReq.Name = req.Name
 	mciReq.Label = req.Label
 	mciReq.SystemLabel = req.SystemLabel
 	mciReq.InstallMonAgent = req.InstallMonAgent
 	mciReq.Description = req.Description
 
-	emptyMci := &TbMciInfo{}
+	emptyMci := &model.TbMciInfo{}
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1328,9 +905,9 @@ func CreateMciDynamic(reqID string, nsId string, req *TbMciDynamicReq, deployOpt
 }
 
 // CreateMciVmDynamic is func to create requested VM in a dynamic way and add it to MCI
-func CreateMciVmDynamic(nsId string, mciId string, req *TbVmDynamicReq) (*TbMciInfo, error) {
+func CreateMciVmDynamic(nsId string, mciId string, req *model.TbVmDynamicReq) (*model.TbMciInfo, error) {
 
-	emptyMci := &TbMciInfo{}
+	emptyMci := &model.TbMciInfo{}
 	subGroupId := req.Name
 	check, err := CheckSubGroup(nsId, mciId, subGroupId)
 	if err != nil {
@@ -1352,15 +929,15 @@ func CreateMciVmDynamic(nsId string, mciId string, req *TbVmDynamicReq) (*TbMciI
 }
 
 // checkCommonResAvailable is func to check common resources availability
-func checkCommonResAvailable(req *TbVmDynamicReq) error {
+func checkCommonResAvailable(req *model.TbVmDynamicReq) error {
 
 	vmRequest := req
 	// Check whether VM names meet requirement.
 	k := vmRequest
 
-	vmReq := &TbVmReq{}
+	vmReq := &model.TbVmReq{}
 
-	specInfo, err := resource.GetSpec(common.SystemCommonNs, req.CommonSpec)
+	specInfo, err := resource.GetSpec(model.SystemCommonNs, req.CommonSpec)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -1388,7 +965,7 @@ func checkCommonResAvailable(req *TbVmDynamicReq) error {
 	if strings.Contains(k.CommonImage, "+") {
 		vmReq.ImageId = k.CommonImage
 	}
-	_, err = resource.GetImage(common.SystemCommonNs, vmReq.ImageId)
+	_, err = resource.GetImage(model.SystemCommonNs, vmReq.ImageId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get Image " + k.CommonImage + " from " + vmReq.ConnectionName)
 		log.Error().Err(err).Msg("")
@@ -1399,7 +976,7 @@ func checkCommonResAvailable(req *TbVmDynamicReq) error {
 }
 
 // getVmReqForDynamicMci is func to getVmReqFromDynamicReq
-func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*TbVmReq, error) {
+func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq) (*model.TbVmReq, error) {
 
 	onDemand := true
 
@@ -1407,12 +984,12 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 	// Check whether VM names meet requirement.
 	k := vmRequest
 
-	vmReq := &TbVmReq{}
+	vmReq := &model.TbVmReq{}
 
-	specInfo, err := resource.GetSpec(common.SystemCommonNs, req.CommonSpec)
+	specInfo, err := resource.GetSpec(model.SystemCommonNs, req.CommonSpec)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &TbVmReq{}, err
+		return &model.TbVmReq{}, err
 	}
 
 	// remake vmReqest from given input and check resource availability
@@ -1428,11 +1005,11 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 	if err != nil {
 		err := fmt.Errorf("Failed to get ConnectionName (" + vmReq.ConnectionName + ") for Spec (" + k.CommonSpec + ") is not found.")
 		log.Error().Err(err).Msg("")
-		return &TbVmReq{}, err
+		return &model.TbVmReq{}, err
 	}
 
 	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
-	resourceName := nsId + common.StrSharedResourceName + vmReq.ConnectionName
+	resourceName := nsId + model.StrSharedResourceName + vmReq.ConnectionName
 
 	vmReq.SpecId = specInfo.Id
 	osType := strings.ReplaceAll(k.CommonImage, " ", "")
@@ -1441,28 +1018,28 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 	if strings.Contains(k.CommonImage, "+") {
 		vmReq.ImageId = k.CommonImage
 	}
-	_, err = resource.GetImage(common.SystemCommonNs, vmReq.ImageId)
+	_, err = resource.GetImage(model.SystemCommonNs, vmReq.ImageId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the Image " + vmReq.ImageId + " from " + vmReq.ConnectionName)
 		log.Error().Err(err).Msg("")
-		return &TbVmReq{}, err
+		return &model.TbVmReq{}, err
 	}
 
 	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
 
 	vmReq.VNetId = resourceName
-	_, err = resource.GetResource(nsId, common.StrVNet, vmReq.VNetId)
+	_, err = resource.GetResource(nsId, model.StrVNet, vmReq.VNetId)
 	if err != nil {
 		if !onDemand {
 			err := fmt.Errorf("Failed to get the vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
 			log.Error().Err(err).Msg("Failed to get the vNet")
-			return &TbVmReq{}, err
+			return &model.TbVmReq{}, err
 		}
 		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
-		err2 := resource.LoadSharedResource(nsId, common.StrVNet, vmReq.ConnectionName)
+		err2 := resource.LoadSharedResource(nsId, model.StrVNet, vmReq.ConnectionName)
 		if err2 != nil {
 			log.Error().Err(err2).Msg("Failed to create new default vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
-			return &TbVmReq{}, err2
+			return &model.TbVmReq{}, err2
 		} else {
 			log.Info().Msg("Created new default vNet: " + vmReq.VNetId)
 		}
@@ -1473,18 +1050,18 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 
 	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
 	vmReq.SshKeyId = resourceName
-	_, err = resource.GetResource(nsId, common.StrSSHKey, vmReq.SshKeyId)
+	_, err = resource.GetResource(nsId, model.StrSSHKey, vmReq.SshKeyId)
 	if err != nil {
 		if !onDemand {
 			err := fmt.Errorf("Failed to get the SSHKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
 			log.Error().Err(err).Msg("Failed to get the SSHKey")
-			return &TbVmReq{}, err
+			return &model.TbVmReq{}, err
 		}
 		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
-		err2 := resource.LoadSharedResource(nsId, common.StrSSHKey, vmReq.ConnectionName)
+		err2 := resource.LoadSharedResource(nsId, model.StrSSHKey, vmReq.ConnectionName)
 		if err2 != nil {
 			log.Error().Err(err2).Msg("Failed to create new default SSHKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
-			return &TbVmReq{}, err2
+			return &model.TbVmReq{}, err2
 		} else {
 			log.Info().Msg("Created new default SSHKey: " + vmReq.VNetId)
 		}
@@ -1495,18 +1072,18 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
 	securityGroup := resourceName
 	vmReq.SecurityGroupIds = append(vmReq.SecurityGroupIds, securityGroup)
-	_, err = resource.GetResource(nsId, common.StrSecurityGroup, securityGroup)
+	_, err = resource.GetResource(nsId, model.StrSecurityGroup, securityGroup)
 	if err != nil {
 		if !onDemand {
 			err := fmt.Errorf("Failed to get the securityGroup " + securityGroup + " from " + vmReq.ConnectionName)
 			log.Error().Err(err).Msg("Failed to get the securityGroup")
-			return &TbVmReq{}, err
+			return &model.TbVmReq{}, err
 		}
 		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
-		err2 := resource.LoadSharedResource(nsId, common.StrSecurityGroup, vmReq.ConnectionName)
+		err2 := resource.LoadSharedResource(nsId, model.StrSecurityGroup, vmReq.ConnectionName)
 		if err2 != nil {
 			log.Error().Err(err2).Msg("Failed to create new default securityGroup " + securityGroup + " from " + vmReq.ConnectionName)
-			return &TbVmReq{}, err2
+			return &model.TbVmReq{}, err2
 		} else {
 			log.Info().Msg("Created new default securityGroup: " + securityGroup)
 		}
@@ -1532,7 +1109,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 }
 
 // AddVmToMci is func to add VM to MCI
-func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *TbVmInfo, option string) error {
+func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.TbVmInfo, option string) error {
 	log.Debug().Msg("Start to add VM To MCI")
 	//goroutin
 	defer wg.Done()
@@ -1576,7 +1153,7 @@ func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *TbVmI
 	err = CreateVm(nsId, mciId, vmInfoData, option)
 
 	if err != nil {
-		vmInfoData.Status = StatusFailed
+		vmInfoData.Status = model.StatusFailed
 		vmInfoData.SystemMessage = err.Error()
 		UpdateVmInfo(nsId, mciId, *vmInfoData)
 		log.Error().Err(err).Msg("")
@@ -1584,8 +1161,8 @@ func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *TbVmI
 	}
 
 	// set initial TargetAction, TargetStatus
-	vmInfoData.TargetAction = ActionComplete
-	vmInfoData.TargetStatus = StatusComplete
+	vmInfoData.TargetAction = model.ActionComplete
+	vmInfoData.TargetStatus = model.StatusComplete
 
 	// get and set current vm status
 	vmStatusInfoTmp, err := FetchVmStatus(nsId, mciId, vmInfoData.Id)
@@ -1608,12 +1185,23 @@ func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *TbVmI
 
 	UpdateVmInfo(nsId, mciId, *vmInfoData)
 
+	// Store label info using CreateOrUpdateLabel
+	labels := map[string]string{
+		"provider":  "cb-tumblebug",
+		"namespace": nsId,
+	}
+	err = label.CreateOrUpdateLabel(model.StrVM, vmInfoData.Uuid, key, labels)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
 	return nil
 
 }
 
 // CreateVm is func to create VM (option = "register" for register existing VM)
-func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) error {
+func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option string) error {
 
 	var err error = nil
 	switch {
@@ -1650,14 +1238,14 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 		}
 	}
 
-	var callResult SpiderVMInfo
+	var callResult model.SpiderVMInfo
 
 	// Fill VM creation reqest (request to cb-spider)
-	requestBody := SpiderVMReqInfoWrapper{}
+	requestBody := model.SpiderVMReqInfoWrapper{}
 	requestBody.ConnectionName = vmInfoData.ConnectionName
 
 	//generate VM ID(Name) to request to CSP(Spider)
-	requestBody.ReqInfo.Name = common.GenUid()
+	requestBody.ReqInfo.Name = vmInfoData.Uuid
 
 	customImageFlag := false
 
@@ -1677,17 +1265,17 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 
 	} else {
 		// Try lookup customImage
-		requestBody.ReqInfo.ImageName, err = resource.GetCspResourceId(nsId, common.StrCustomImage, vmInfoData.ImageId)
+		requestBody.ReqInfo.ImageName, err = resource.GetCspResourceId(nsId, model.StrCustomImage, vmInfoData.ImageId)
 		if requestBody.ReqInfo.ImageName == "" || err != nil {
 			log.Warn().Msgf("Not found %s from CustomImage in ns: %s, find it from UserImage", vmInfoData.ImageId, nsId)
 			errAgg := err.Error()
 			// If customImage doesn't exist, then try lookup image
-			requestBody.ReqInfo.ImageName, err = resource.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
+			requestBody.ReqInfo.ImageName, err = resource.GetCspResourceId(nsId, model.StrImage, vmInfoData.ImageId)
 			if requestBody.ReqInfo.ImageName == "" || err != nil {
 				log.Warn().Msgf("Not found %s from UserImage in ns: %s, find CommonImage from SystemCommonNs", vmInfoData.ImageId, nsId)
 				errAgg += err.Error()
 				// If cannot find the resource, use common resource
-				requestBody.ReqInfo.ImageName, err = resource.GetCspResourceId(common.SystemCommonNs, common.StrImage, vmInfoData.ImageId)
+				requestBody.ReqInfo.ImageName, err = resource.GetCspResourceId(model.SystemCommonNs, model.StrImage, vmInfoData.ImageId)
 				if requestBody.ReqInfo.ImageName == "" || err != nil {
 					errAgg += err.Error()
 					err = fmt.Errorf(errAgg)
@@ -1701,19 +1289,19 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 			}
 		} else {
 			customImageFlag = true
-			requestBody.ReqInfo.ImageType = MyImage
+			requestBody.ReqInfo.ImageType = model.MyImage
 			// If the requested image is a custom image (generated by VM snapshot), RootDiskType should be empty.
 			// TB ignore inputs for RootDiskType, RootDiskSize
 			requestBody.ReqInfo.RootDiskType = ""
 			requestBody.ReqInfo.RootDiskSize = ""
 		}
 
-		requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
+		requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceId(nsId, model.StrSpec, vmInfoData.SpecId)
 		if requestBody.ReqInfo.VMSpecName == "" || err != nil {
 			log.Warn().Msgf("Not found the Spec: %s in nsId: %s, find it from SystemCommonNs", vmInfoData.SpecId, nsId)
 			errAgg := err.Error()
 			// If cannot find the resource, use common resource
-			requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceId(common.SystemCommonNs, common.StrSpec, vmInfoData.SpecId)
+			requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceId(model.SystemCommonNs, model.StrSpec, vmInfoData.SpecId)
 			log.Info().Msgf("Use the common VMSpecName: %s", requestBody.ReqInfo.VMSpecName)
 
 			if requestBody.ReqInfo.ImageName == "" || err != nil {
@@ -1724,14 +1312,14 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 			}
 		}
 
-		requestBody.ReqInfo.VPCName, err = resource.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
+		requestBody.ReqInfo.VPCName, err = resource.GetCspResourceId(nsId, model.StrVNet, vmInfoData.VNetId)
 		if requestBody.ReqInfo.VPCName == "" {
 			log.Error().Err(err).Msg("")
 			return err
 		}
 
 		// TODO: needs to be enhnaced to use GetCspResourceId (GetCspResourceId needs to be updated as well)
-		requestBody.ReqInfo.SubnetName = vmInfoData.SubnetId //resource.GetCspResourceId(nsId, common.StrVNet, vmInfoData.SubnetId)
+		requestBody.ReqInfo.SubnetName = vmInfoData.SubnetId //resource.GetCspResourceId(nsId, model.StrVNet, vmInfoData.SubnetId)
 		if requestBody.ReqInfo.SubnetName == "" {
 			log.Error().Err(err).Msg("")
 			return err
@@ -1739,7 +1327,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 
 		var SecurityGroupIdsTmp []string
 		for _, v := range vmInfoData.SecurityGroupIds {
-			CspSgId, err := resource.GetCspResourceId(nsId, common.StrSecurityGroup, v)
+			CspSgId, err := resource.GetCspResourceId(nsId, model.StrSecurityGroup, v)
 			if CspSgId == "" {
 				log.Error().Err(err).Msg("")
 				return err
@@ -1753,7 +1341,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 		for _, v := range vmInfoData.DataDiskIds {
 			// ignore DataDiskIds == "", assume it is ignorable mistake
 			if v != "" {
-				CspDataDiskId, err := resource.GetCspResourceId(nsId, common.StrDataDisk, v)
+				CspDataDiskId, err := resource.GetCspResourceId(nsId, model.StrDataDisk, v)
 				if err != nil || CspDataDiskId == "" {
 					log.Error().Err(err).Msg("")
 					return err
@@ -1763,7 +1351,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 		}
 		requestBody.ReqInfo.DataDiskNames = DataDiskIdsTmp
 
-		requestBody.ReqInfo.KeyPairName, err = resource.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
+		requestBody.ReqInfo.KeyPairName, err = resource.GetCspResourceId(nsId, model.StrSSHKey, vmInfoData.SshKeyId)
 		if requestBody.ReqInfo.KeyPairName == "" {
 			log.Error().Err(err).Msg("")
 			return err
@@ -1779,9 +1367,9 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 	method := "POST"
 	client.SetTimeout(20 * time.Minute)
 
-	url := common.SpiderRestUrl + "/vm"
+	url := model.SpiderRestUrl + "/vm"
 	if option == "register" {
-		url = common.SpiderRestUrl + "/regvm"
+		url = model.SpiderRestUrl + "/regvm"
 	}
 
 	err = common.ExecuteHttpRequest(
@@ -1822,11 +1410,11 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 
 		// Reconstuct resource IDs
 		// vNet
-		resourceListInNs, err := resource.ListResource(nsId, common.StrVNet, "cspVNetName", callResult.VpcIID.NameId)
+		resourceListInNs, err := resource.ListResource(nsId, model.StrVNet, "cspVNetName", callResult.VpcIID.NameId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		} else {
-			resourcesInNs := resourceListInNs.([]resource.TbVNetInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.TbVNetInfo) // type assertion
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == requestBody.ConnectionName {
 					vmInfoData.VNetId = resource.Id
@@ -1836,11 +1424,11 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 		}
 
 		// access Key
-		resourceListInNs, err = resource.ListResource(nsId, common.StrSSHKey, "cspSshKeyName", callResult.KeyPairIId.NameId)
+		resourceListInNs, err = resource.ListResource(nsId, model.StrSSHKey, "cspSshKeyName", callResult.KeyPairIId.NameId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		} else {
-			resourcesInNs := resourceListInNs.([]resource.TbSshKeyInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.TbSshKeyInfo) // type assertion
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == requestBody.ConnectionName {
 					vmInfoData.SshKeyId = resource.Id
@@ -1852,27 +1440,27 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 		vmKey := common.GenMciKey(nsId, mciId, vmInfoData.Id)
 
 		if customImageFlag == false {
-			resource.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfoData.ImageId, common.StrAdd, vmKey)
+			resource.UpdateAssociatedObjectList(nsId, model.StrImage, vmInfoData.ImageId, model.StrAdd, vmKey)
 		} else {
-			resource.UpdateAssociatedObjectList(nsId, common.StrCustomImage, vmInfoData.ImageId, common.StrAdd, vmKey)
+			resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, vmInfoData.ImageId, model.StrAdd, vmKey)
 		}
 
-		//resource.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfoData.SpecId, common.StrAdd, vmKey)
-		resource.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
-		resource.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfoData.VNetId, common.StrAdd, vmKey)
+		//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, vmInfoData.SpecId, model.StrAdd, vmKey)
+		resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, vmInfoData.SshKeyId, model.StrAdd, vmKey)
+		resource.UpdateAssociatedObjectList(nsId, model.StrVNet, vmInfoData.VNetId, model.StrAdd, vmKey)
 
 		for _, v := range vmInfoData.SecurityGroupIds {
-			resource.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v, common.StrAdd, vmKey)
+			resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v, model.StrAdd, vmKey)
 		}
 
 		for _, v := range vmInfoData.DataDiskIds {
-			resource.UpdateAssociatedObjectList(nsId, common.StrDataDisk, v, common.StrAdd, vmKey)
+			resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v, model.StrAdd, vmKey)
 		}
 	}
 
 	// Register dataDisks which are created with the creation of VM
 	for _, v := range callResult.DataDiskIIDs {
-		tbDataDiskReq := resource.TbDataDiskReq{
+		tbDataDiskReq := model.TbDataDiskReq{
 			Name:           v.NameId,
 			ConnectionName: vmInfoData.ConnectionName,
 			// CspDataDiskId:  v.NameId, // v.SystemId ? IdByCsp ?
@@ -1887,7 +1475,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *TbVmInfo, option string) er
 		vmInfoData.DataDiskIds = append(vmInfoData.DataDiskIds, dataDisk.Id)
 
 		vmKey := common.GenMciKey(nsId, mciId, vmInfoData.Id)
-		resource.UpdateAssociatedObjectList(nsId, common.StrDataDisk, dataDisk.Id, common.StrAdd, vmKey)
+		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDisk.Id, model.StrAdd, vmKey)
 	}
 
 	UpdateVmInfo(nsId, mciId, *vmInfoData)

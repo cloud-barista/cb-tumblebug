@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/go-resty/resty/v2"
@@ -32,17 +33,6 @@ import (
 )
 
 // MCI Control
-// ControlVmResult is struct for result of VM control
-type ControlVmResult struct {
-	VmId   string `json:"vmId"`
-	Status string `json:"Status"`
-	Error  error  `json:"Error"`
-}
-
-// ControlVmResultWrapper is struct for array of results of VM control
-type ControlVmResultWrapper struct {
-	ResultArray []ControlVmResult `json:"resultarray"`
-}
 
 // HandleMciAction is func to handle actions to MCI
 func HandleMciAction(nsId string, mciId string, action string, force bool) (string, error) {
@@ -70,7 +60,7 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 	if action == "suspend" {
 		log.Debug().Msg("[suspend MCI]")
 
-		err := ControlMciAsync(nsId, mciId, ActionSuspend, force)
+		err := ControlMciAsync(nsId, mciId, model.ActionSuspend, force)
 		if err != nil {
 			return "", err
 		}
@@ -80,7 +70,7 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 	} else if action == "resume" {
 		log.Debug().Msg("[resume MCI]")
 
-		err := ControlMciAsync(nsId, mciId, ActionResume, force)
+		err := ControlMciAsync(nsId, mciId, model.ActionResume, force)
 		if err != nil {
 			return "", err
 		}
@@ -90,7 +80,7 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 	} else if action == "reboot" {
 		log.Debug().Msg("[reboot MCI]")
 
-		err := ControlMciAsync(nsId, mciId, ActionReboot, force)
+		err := ControlMciAsync(nsId, mciId, model.ActionReboot, force)
 		if err != nil {
 			return "", err
 		}
@@ -110,7 +100,7 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 			return "No VM to terminate in the MCI", nil
 		}
 
-		err = ControlMciAsync(nsId, mciId, ActionTerminate, force)
+		err = ControlMciAsync(nsId, mciId, model.ActionTerminate, force)
 		if err != nil {
 			return "", err
 		}
@@ -131,7 +121,7 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 
 		return "Withdraw the holding MCI", nil
 
-	} else if action == "refine" { // refine delete VMs in StatusFailed or StatusUndefined
+	} else if action == "refine" { // refine delete VMs in model.StatusFailed or model.StatusUndefined
 		log.Debug().Msg("[refine MCI]")
 
 		vmList, err := ListVmId(nsId, mciId)
@@ -152,9 +142,9 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 
 		for _, v := range mciStatus.Vm {
 
-			// Remove VMs in StatusFailed or StatusUndefined
+			// Remove VMs in model.StatusFailed or model.StatusUndefined
 			log.Debug().Msgf("[vmInfo.Status] %v", v.Status)
-			if v.Status == StatusFailed || v.Status == StatusUndefined {
+			if v.Status == model.StatusFailed || v.Status == model.StatusUndefined {
 				// Delete VM sequentially for safety (for performance, need to use goroutine)
 				err := DelMciVm(nsId, mciId, v.Id, "force")
 				if err != nil {
@@ -207,7 +197,7 @@ func HandleMciVmAction(nsId string, mciId string, vmId string, action string, fo
 	}
 
 	// Check if MCI is under an action (individual VM action cannot be executed while MCI is under an action)
-	if mci.TargetAction != "" && mci.TargetAction != ActionComplete {
+	if mci.TargetAction != "" && mci.TargetAction != model.ActionComplete {
 		err = fmt.Errorf("MCI %s is under %s, please try later", mciId, mci.TargetAction)
 		if !force {
 			log.Info().Msg(err.Error())
@@ -215,7 +205,7 @@ func HandleMciVmAction(nsId string, mciId string, vmId string, action string, fo
 		}
 	}
 
-	err = CheckAllowedTransition(nsId, mciId, common.OptionalParameter{Set: true, Value: vmId}, action)
+	err = CheckAllowedTransition(nsId, mciId, model.OptionalParameter{Set: true, Value: vmId}, action)
 	if err != nil {
 		if !force {
 			log.Info().Msg(err.Error())
@@ -224,16 +214,16 @@ func HandleMciVmAction(nsId string, mciId string, vmId string, action string, fo
 	}
 
 	var wg sync.WaitGroup
-	results := make(chan ControlVmResult, 1)
+	results := make(chan model.ControlVmResult, 1)
 	wg.Add(1)
-	if strings.EqualFold(action, ActionSuspend) {
-		go ControlVmAsync(&wg, nsId, mciId, vmId, ActionSuspend, results)
-	} else if strings.EqualFold(action, ActionResume) {
-		go ControlVmAsync(&wg, nsId, mciId, vmId, ActionResume, results)
-	} else if strings.EqualFold(action, ActionReboot) {
-		go ControlVmAsync(&wg, nsId, mciId, vmId, ActionReboot, results)
-	} else if strings.EqualFold(action, ActionTerminate) {
-		go ControlVmAsync(&wg, nsId, mciId, vmId, ActionTerminate, results)
+	if strings.EqualFold(action, model.ActionSuspend) {
+		go ControlVmAsync(&wg, nsId, mciId, vmId, model.ActionSuspend, results)
+	} else if strings.EqualFold(action, model.ActionResume) {
+		go ControlVmAsync(&wg, nsId, mciId, vmId, model.ActionResume, results)
+	} else if strings.EqualFold(action, model.ActionReboot) {
+		go ControlVmAsync(&wg, nsId, mciId, vmId, model.ActionReboot, results)
+	} else if strings.EqualFold(action, model.ActionTerminate) {
+		go ControlVmAsync(&wg, nsId, mciId, vmId, model.ActionTerminate, results)
 	} else {
 		close(results)
 		wg.Done()
@@ -257,7 +247,7 @@ func ControlMciAsync(nsId string, mciId string, action string, force bool) error
 	}
 
 	// Check if MCI is under an action (new action cannot be executed while MCI is under an action)
-	if mci.TargetAction != "" && mci.TargetAction != ActionComplete {
+	if mci.TargetAction != "" && mci.TargetAction != model.ActionComplete {
 		err = fmt.Errorf("MCI %s is under %s, please try later", mciId, mci.TargetAction)
 		if !force {
 			log.Info().Msg(err.Error())
@@ -265,7 +255,7 @@ func ControlMciAsync(nsId string, mciId string, action string, force bool) error
 		}
 	}
 
-	err = CheckAllowedTransition(nsId, mciId, common.OptionalParameter{Set: false}, action)
+	err = CheckAllowedTransition(nsId, mciId, model.OptionalParameter{Set: false}, action)
 	if err != nil {
 		if !force {
 			return err
@@ -282,29 +272,29 @@ func ControlMciAsync(nsId string, mciId string, action string, force bool) error
 	}
 
 	switch action {
-	case ActionTerminate:
+	case model.ActionTerminate:
 
-		mci.TargetAction = ActionTerminate
-		mci.TargetStatus = StatusTerminated
-		mci.Status = StatusTerminating
+		mci.TargetAction = model.ActionTerminate
+		mci.TargetStatus = model.StatusTerminated
+		mci.Status = model.StatusTerminating
 
-	case ActionReboot:
+	case model.ActionReboot:
 
-		mci.TargetAction = ActionReboot
-		mci.TargetStatus = StatusRunning
-		mci.Status = StatusRebooting
+		mci.TargetAction = model.ActionReboot
+		mci.TargetStatus = model.StatusRunning
+		mci.Status = model.StatusRebooting
 
-	case ActionSuspend:
+	case model.ActionSuspend:
 
-		mci.TargetAction = ActionSuspend
-		mci.TargetStatus = StatusSuspended
-		mci.Status = StatusSuspending
+		mci.TargetAction = model.ActionSuspend
+		mci.TargetStatus = model.StatusSuspended
+		mci.Status = model.StatusSuspending
 
-	case ActionResume:
+	case model.ActionResume:
 
-		mci.TargetAction = ActionResume
-		mci.TargetStatus = StatusRunning
-		mci.Status = StatusResuming
+		mci.TargetAction = model.ActionResume
+		mci.TargetStatus = model.StatusRunning
+		mci.Status = model.StatusResuming
 
 	default:
 		return errors.New(action + " is invalid actionType")
@@ -313,11 +303,11 @@ func ControlMciAsync(nsId string, mciId string, action string, force bool) error
 
 	//goroutin sync wg
 	var wg sync.WaitGroup
-	results := make(chan ControlVmResult, len(vmList))
+	results := make(chan model.ControlVmResult, len(vmList))
 
 	for _, vmId := range vmList {
 		// skip if control is not needed
-		err = CheckAllowedTransition(nsId, mciId, common.OptionalParameter{Set: true, Value: vmId}, action)
+		err = CheckAllowedTransition(nsId, mciId, model.OptionalParameter{Set: true, Value: vmId}, action)
 		if err == nil || force {
 			wg.Add(1)
 
@@ -353,15 +343,15 @@ func ControlMciAsync(nsId string, mciId string, action string, force bool) error
 }
 
 // ControlVmAsync is func to control VM async
-func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, action string, results chan<- ControlVmResult) {
+func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, action string, results chan<- model.ControlVmResult) {
 	defer wg.Done() //goroutine sync done
 
 	var err error
 
-	callResult := ControlVmResult{}
+	callResult := model.ControlVmResult{}
 	callResult.VmId = vmId
 	callResult.Status = ""
-	temp := TbVmInfo{}
+	temp := model.TbVmInfo{}
 
 	key := common.GenMciKey(nsId, mciId, vmId)
 	log.Debug().Msg("[ControlVmAsync] " + key)
@@ -387,7 +377,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 		// Prevent malformed cspVmId
 		if cspVmId == "" || common.CheckString(cspVmId) != nil {
 			callResult.Error = fmt.Errorf("Not valid requested CSPNativeVmId: [" + cspVmId + "]")
-			temp.Status = StatusFailed
+			temp.Status = model.StatusFailed
 			temp.SystemMessage = callResult.Error.Error()
 			UpdateVmInfo(nsId, mciId, temp)
 			return
@@ -396,13 +386,13 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 			url := ""
 			method := ""
 			switch action {
-			case ActionTerminate:
+			case model.ActionTerminate:
 
-				temp.TargetAction = ActionTerminate
-				temp.TargetStatus = StatusTerminated
-				temp.Status = StatusTerminating
+				temp.TargetAction = model.ActionTerminate
+				temp.TargetStatus = model.StatusTerminated
+				temp.Status = model.StatusTerminating
 
-				url = common.SpiderRestUrl + "/vm/" + cspVmId
+				url = model.SpiderRestUrl + "/vm/" + cspVmId
 				method = "DELETE"
 
 				// Remove Bastion Info from all vNets if the terminating VM is a Bastion
@@ -411,29 +401,29 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 					log.Info().Msg(err.Error())
 				}
 
-			case ActionReboot:
+			case model.ActionReboot:
 
-				temp.TargetAction = ActionReboot
-				temp.TargetStatus = StatusRunning
-				temp.Status = StatusRebooting
+				temp.TargetAction = model.ActionReboot
+				temp.TargetStatus = model.StatusRunning
+				temp.Status = model.StatusRebooting
 
-				url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=reboot"
+				url = model.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=reboot"
 				method = "GET"
-			case ActionSuspend:
+			case model.ActionSuspend:
 
-				temp.TargetAction = ActionSuspend
-				temp.TargetStatus = StatusSuspended
-				temp.Status = StatusSuspending
+				temp.TargetAction = model.ActionSuspend
+				temp.TargetStatus = model.StatusSuspended
+				temp.Status = model.StatusSuspending
 
-				url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=suspend"
+				url = model.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=suspend"
 				method = "GET"
-			case ActionResume:
+			case model.ActionResume:
 
-				temp.TargetAction = ActionResume
-				temp.TargetStatus = StatusRunning
-				temp.Status = StatusResuming
+				temp.TargetAction = model.ActionResume
+				temp.TargetStatus = model.StatusRunning
+				temp.Status = model.StatusResuming
 
-				url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=resume"
+				url = model.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=resume"
 				method = "GET"
 			default:
 				callResult.Error = fmt.Errorf(action + " is invalid actionType")
@@ -446,7 +436,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 			client := resty.New()
 			client.SetTimeout(10 * time.Minute)
 
-			requestBody := common.SpiderConnectionName{}
+			requestBody := model.SpiderConnectionName{}
 			requestBody.ConnectionName = temp.ConnectionName
 
 			err = common.ExecuteHttpRequest(
@@ -461,7 +451,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 			)
 			if err != nil {
 				log.Error().Err(err).Msg("")
-				temp.Status = StatusFailed
+				temp.Status = model.StatusFailed
 				temp.SystemMessage = err.Error()
 				UpdateVmInfo(nsId, mciId, temp)
 
@@ -472,25 +462,25 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 
 			common.PrintJsonPretty(callResult)
 
-			if action != ActionTerminate {
+			if action != model.ActionTerminate {
 				//When VM is restared, temporal PublicIP will be chanaged. Need update.
 				UpdateVmPublicIp(nsId, mciId, temp)
-			} else { // if action == ActionTerminate
-				_, err = resource.UpdateAssociatedObjectList(nsId, common.StrImage, temp.ImageId, common.StrDelete, key)
+			} else { // if action == model.ActionTerminate
+				_, err = resource.UpdateAssociatedObjectList(nsId, model.StrImage, temp.ImageId, model.StrDelete, key)
 				if err != nil {
-					resource.UpdateAssociatedObjectList(nsId, common.StrCustomImage, temp.ImageId, common.StrDelete, key)
+					resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, temp.ImageId, model.StrDelete, key)
 				}
 
-				//resource.UpdateAssociatedObjectList(nsId, common.StrSpec, temp.SpecId, common.StrDelete, key)
-				resource.UpdateAssociatedObjectList(nsId, common.StrSSHKey, temp.SshKeyId, common.StrDelete, key)
-				resource.UpdateAssociatedObjectList(nsId, common.StrVNet, temp.VNetId, common.StrDelete, key)
+				//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, temp.SpecId, model.StrDelete, key)
+				resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, temp.SshKeyId, model.StrDelete, key)
+				resource.UpdateAssociatedObjectList(nsId, model.StrVNet, temp.VNetId, model.StrDelete, key)
 
 				for _, v := range temp.SecurityGroupIds {
-					resource.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v, common.StrDelete, key)
+					resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v, model.StrDelete, key)
 				}
 
 				for _, v := range temp.DataDiskIds {
-					resource.UpdateAssociatedObjectList(nsId, common.StrDataDisk, v, common.StrDelete, key)
+					resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v, model.StrDelete, key)
 				}
 			}
 
@@ -502,18 +492,18 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 }
 
 // CheckAllowedTransition is func to check status transition is acceptable
-func CheckAllowedTransition(nsId string, mciId string, vmId common.OptionalParameter, action string) error {
+func CheckAllowedTransition(nsId string, mciId string, vmId model.OptionalParameter, action string) error {
 
 	targetStatus := ""
 	switch {
-	case strings.EqualFold(action, ActionTerminate):
-		targetStatus = StatusTerminated
-	case strings.EqualFold(action, ActionReboot):
-		targetStatus = StatusRunning
-	case strings.EqualFold(action, ActionSuspend):
-		targetStatus = StatusSuspended
-	case strings.EqualFold(action, ActionResume):
-		targetStatus = StatusRunning
+	case strings.EqualFold(action, model.ActionTerminate):
+		targetStatus = model.StatusTerminated
+	case strings.EqualFold(action, model.ActionReboot):
+		targetStatus = model.StatusRunning
+	case strings.EqualFold(action, model.ActionSuspend):
+		targetStatus = model.StatusSuspended
+	case strings.EqualFold(action, model.ActionResume):
+		targetStatus = model.StatusRunning
 	default:
 		return fmt.Errorf("requested action %s is not matched with available actions", action)
 	}
@@ -530,21 +520,21 @@ func CheckAllowedTransition(nsId string, mciId string, vmId common.OptionalParam
 			return errors.New(action + " is not allowed for VM under " + vm.Status)
 		}
 		// redundant action
-		if strings.EqualFold(vm.Status, StatusTerminated) {
+		if strings.EqualFold(vm.Status, model.StatusTerminated) {
 			return errors.New(action + " is not allowed for VM under " + vm.Status)
 		}
 		// under transitional status
-		if strings.EqualFold(vm.Status, StatusCreating) ||
-			strings.EqualFold(vm.Status, StatusTerminating) ||
-			strings.EqualFold(vm.Status, StatusResuming) ||
-			strings.EqualFold(vm.Status, StatusSuspending) ||
-			strings.EqualFold(vm.Status, StatusRebooting) {
+		if strings.EqualFold(vm.Status, model.StatusCreating) ||
+			strings.EqualFold(vm.Status, model.StatusTerminating) ||
+			strings.EqualFold(vm.Status, model.StatusResuming) ||
+			strings.EqualFold(vm.Status, model.StatusSuspending) ||
+			strings.EqualFold(vm.Status, model.StatusRebooting) {
 
 			return errors.New(action + " is not allowed for VM under " + vm.Status)
 		}
 		// under conditional status
-		if strings.EqualFold(vm.Status, StatusSuspended) {
-			if strings.EqualFold(action, ActionResume) || strings.EqualFold(action, ActionTerminate) {
+		if strings.EqualFold(vm.Status, model.StatusSuspended) {
+			if strings.EqualFold(action, model.ActionResume) || strings.EqualFold(action, model.ActionTerminate) {
 				return nil
 			} else {
 				return errors.New(action + " is not allowed for VM under " + vm.Status)
@@ -562,21 +552,21 @@ func CheckAllowedTransition(nsId string, mciId string, vmId common.OptionalParam
 			return errors.New(action + " is not allowed for MCI under " + mci.Status)
 		}
 		// redundant action
-		if strings.EqualFold(mci.Status, StatusTerminated) {
+		if strings.EqualFold(mci.Status, model.StatusTerminated) {
 			return errors.New(action + " is not allowed for MCI under " + mci.Status)
 		}
 		// under transitional status
-		if strings.Contains(mci.Status, StatusCreating) ||
-			strings.Contains(mci.Status, StatusTerminating) ||
-			strings.Contains(mci.Status, StatusResuming) ||
-			strings.Contains(mci.Status, StatusSuspending) ||
-			strings.Contains(mci.Status, StatusRebooting) {
+		if strings.Contains(mci.Status, model.StatusCreating) ||
+			strings.Contains(mci.Status, model.StatusTerminating) ||
+			strings.Contains(mci.Status, model.StatusResuming) ||
+			strings.Contains(mci.Status, model.StatusSuspending) ||
+			strings.Contains(mci.Status, model.StatusRebooting) {
 
 			return errors.New(action + " is not allowed for MCI under " + mci.Status)
 		}
 		// under conditional status
-		if strings.EqualFold(mci.Status, StatusSuspended) {
-			if strings.EqualFold(action, ActionResume) || strings.EqualFold(action, ActionTerminate) {
+		if strings.EqualFold(mci.Status, model.StatusSuspended) {
+			if strings.EqualFold(action, model.ActionResume) || strings.EqualFold(action, model.ActionTerminate) {
 				return nil
 			} else {
 				return errors.New(action + " is not allowed for MCI under " + mci.Status)

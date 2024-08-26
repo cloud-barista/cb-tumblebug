@@ -19,6 +19,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
 )
 
@@ -29,19 +30,19 @@ import (
 // @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
-// @Param deploymentPlan body infra.DeploymentPlan false "Recommend MCI plan (filter and priority)"
-// @Success 200 {object} []resource.TbSpecInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param deploymentPlan body model.DeploymentPlan false "Recommend MCI plan (filter and priority)"
+// @Success 200 {object} []model.TbSpecInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /mciRecommendVm [post]
 func RestRecommendVm(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
-	nsId := common.SystemCommonNs
+	nsId := model.SystemCommonNs
 
-	u := &infra.DeploymentPlan{}
+	u := &model.DeploymentPlan{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -52,9 +53,9 @@ func RestRecommendVm(c echo.Context) error {
 
 type RestPostMciRecommendResponse struct {
 	//VmReq          []TbVmRecommendReq    `json:"vmReq"`
-	VmRecommend    []infra.TbVmRecommendInfo `json:"vmRecommend"`
+	VmRecommend    []model.TbVmRecommendInfo `json:"vmRecommend"`
 	PlacementAlgo  string                    `json:"placementAlgo"`
-	PlacementParam []common.KeyValue         `json:"placementParam"`
+	PlacementParam []model.KeyValue          `json:"placementParam"`
 }
 
 // RestPostMciRecommend godoc
@@ -66,19 +67,19 @@ type RestPostMciRecommendResponse struct {
 // 	// @Accept  json
 // 	// @Produce  json
 // 	// @Param nsId path string true "Namespace ID" default(default)
-// 	// @Param mciRecommendReq body infra.MciRecommendReq true "Details for an MCI object"
+// 	// @Param mciRecommendReq body model.MciRecommendReq true "Details for an MCI object"
 // 	// @Success 200 {object} RestPostMciRecommendResponse
-// 	// @Failure 404 {object} common.SimpleMsg
-// 	// @Failure 500 {object} common.SimpleMsg
+// 	// @Failure 404 {object} model.SimpleMsg
+// 	// @Failure 500 {object} model.SimpleMsg
 // 	// @Router /ns/{nsId}/mci/recommend [post]
 // 	nsId := c.Param("nsId")
 
-// 	req := &infra.MciRecommendReq{}
+// 	req := &model.MciRecommendReq{}
 // 	if err := c.Bind(req); err != nil {
 // 		return err
 // 	}
 
-// 	result, err := infra.CorePostMciRecommend(nsId, req)
+// 	result, err := model.CorePostMciRecommend(nsId, req)
 // 	if err != nil {
 // 		mapA := map[string]string{"message": err.Error()}
 // 		return c.JSON(http.StatusInternalServerError, &mapA)

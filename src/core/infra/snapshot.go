@@ -19,18 +19,15 @@ import (
 	"fmt"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
-type TbVmSnapshotReq struct {
-	Name string `json:"name" example:"aws-ap-southeast-1-snapshot"`
-}
-
 // CreateVmSnapshot is func to create VM snapshot
-func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName string) (resource.TbCustomImageInfo, error) {
+func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName string) (model.TbCustomImageInfo, error) {
 	vmKey := common.GenMciKey(nsId, mciId, vmId)
 
 	// Check existence of the key. If no key, no update.
@@ -38,17 +35,17 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
-		return resource.TbCustomImageInfo{}, err
+		return model.TbCustomImageInfo{}, err
 	}
 
-	vm := TbVmInfo{}
+	vm := model.TbVmInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &vm)
 
 	if snapshotName == "" {
 		snapshotName = common.GenUid()
 	}
 
-	requestBody := resource.SpiderMyImageReq{
+	requestBody := model.SpiderMyImageReq{
 		ConnectionName: vm.ConnectionName,
 		ReqInfo: struct {
 			Name     string
@@ -65,21 +62,21 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(requestBody).
-		SetResult(&resource.SpiderMyImageInfo{}) // or SetResult(AuthSuccess{}).
+		SetResult(&model.SpiderMyImageInfo{}) // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
 	// Inspect DataDisks before creating VM snapshot
 	// Disabled because: there is no difference in dataDisks before and after creating VM snapshot
-	// inspect_result_before_snapshot, err := InspectResources(vm.ConnectionName, common.StrDataDisk)
+	// inspect_result_before_snapshot, err := InspectResources(vm.ConnectionName, model.StrDataDisk)
 	// dataDisks_before_snapshot := inspect_result_before_snapshot.Resources.OnTumblebug.Info
 	// if err != nil {
 	// 	err := fmt.Errorf("Failed to get current datadisks' info. \n")
 	// 	log.Error().Err(err).Msg("")
-	// 	return resource.TbCustomImageInfo{}, err
+	// 	return model.TbCustomImageInfo{}, err
 	// }
 
 	// Create VM snapshot
-	url := fmt.Sprintf("%s/myimage", common.SpiderRestUrl)
+	url := fmt.Sprintf("%s/myimage", model.SpiderRestUrl)
 
 	resp, err := req.Post(url)
 
@@ -89,12 +86,12 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 		err := fmt.Errorf(string(resp.Body()))
 		fmt.Println("body: ", string(resp.Body()))
 		log.Error().Err(err).Msg("")
-		return resource.TbCustomImageInfo{}, err
+		return model.TbCustomImageInfo{}, err
 	}
 
 	// create one customImage
-	tempSpiderMyImageInfo := resp.Result().(*resource.SpiderMyImageInfo)
-	tempTbCustomImageInfo := resource.TbCustomImageInfo{
+	tempSpiderMyImageInfo := resp.Result().(*model.SpiderMyImageInfo)
+	tempTbCustomImageInfo := model.TbCustomImageInfo{
 		Namespace:            nsId,
 		Id:                   "", // This field will be assigned in RegisterCustomImageWithInfo()
 		Name:                 snapshotName,
@@ -116,24 +113,24 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 	if err != nil {
 		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
-		return resource.TbCustomImageInfo{}, err
+		return model.TbCustomImageInfo{}, err
 	}
 
 	// Inspect DataDisks after creating VM snapshot
 	// Disabled because: there is no difference in dataDisks before and after creating VM snapshot
-	// inspect_result_after_snapshot, err := InspectResources(vm.ConnectionName, common.StrDataDisk)
+	// inspect_result_after_snapshot, err := InspectResources(vm.ConnectionName, model.StrDataDisk)
 	// dataDisks_after_snapshot := inspect_result_after_snapshot.Resources.OnTumblebug.Info
 	// if err != nil {
 	// 	err := fmt.Errorf("Failed to get current datadisks' info. \n")
 	// 	log.Error().Err(err).Msg("")
-	// 	return resource.TbCustomImageInfo{}, err
+	// 	return model.TbCustomImageInfo{}, err
 	// }
 
 	// difference_dataDisks := Difference_dataDisks(dataDisks_before_snapshot, dataDisks_after_snapshot)
 
 	// // create 'n' dataDisks
 	// for _, v := range difference_dataDisks {
-	// 	tempTbDataDiskReq := resource.TbDataDiskReq{
+	// 	tempTbDataDiskReq := model.TbDataDiskReq{
 	// 		Name:           fmt.Sprintf("%s-%s", vm.Name, common.GenerateNewRandomString(5)),
 	// 		ConnectionName: vm.ConnectionName,
 	// 		CspDataDiskId:  v.IdByCsp,
@@ -150,12 +147,12 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 	return result, nil
 }
 
-func Difference_dataDisks(a, b []resourceOnTumblebugInfo) []resourceOnTumblebugInfo {
+func Difference_dataDisks(a, b []model.ResourceOnTumblebugInfo) []model.ResourceOnTumblebugInfo {
 	mb := make(map[interface{}]struct{}, len(b))
 	for _, x := range b {
 		mb[x] = struct{}{}
 	}
-	var diff []resourceOnTumblebugInfo
+	var diff []model.ResourceOnTumblebugInfo
 	for _, x := range a {
 		if _, found := mb[x]; !found {
 			diff = append(diff, x)

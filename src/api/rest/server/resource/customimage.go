@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 )
@@ -32,10 +33,10 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string true "Option: " Enums(register)
-// @Param customImageRegisterReq body resource.TbCustomImageReq true "Request to Register existing Custom Image in a CSP"
-// @Success 200 {object} resource.TbCustomImageInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param customImageRegisterReq body model.TbCustomImageReq true "Request to Register existing Custom Image in a CSP"
+// @Success 200 {object} model.TbCustomImageInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/customImage [post]
 func RestPostCustomImage(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -51,7 +52,7 @@ func RestPostCustomImage(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	u := &resource.TbCustomImageReq{}
+	u := &model.TbCustomImageReq{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -69,9 +70,9 @@ func RestPostCustomImage(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param customImageId path string true "customImage ID"
-// @Success 200 {object} resource.TbCustomImageInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbCustomImageInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/customImage/{customImageId} [get]
 func RestGetCustomImage(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -80,7 +81,7 @@ func RestGetCustomImage(c echo.Context) error {
 
 // Response structure for RestGetAllCustomImage
 type RestGetAllCustomImageResponse struct {
-	CustomImage []resource.TbCustomImageInfo `json:"customImage"`
+	CustomImage []model.TbCustomImageInfo `json:"customImage"`
 }
 
 // RestGetAllCustomImage godoc
@@ -94,9 +95,9 @@ type RestGetAllCustomImageResponse struct {
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex:guestOS)"
 // @Param filterVal query string false "Field value for filtering (ex: Ubuntu18.04)"
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllCustomImageResponse,[ID]=common.IdList} "Different return structures by the given option param"
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllCustomImageResponse,[ID]=model.IdList} "Different return structures by the given option param"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/customImage [get]
 func RestGetAllCustomImage(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -112,8 +113,8 @@ func RestGetAllCustomImage(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param customImageId path string true "customImage ID"
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/customImage/{customImageId} [delete]
 func RestDelCustomImage(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -129,8 +130,8 @@ func RestDelCustomImage(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
-// @Success 200 {object} common.IdList
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.IdList
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/customImage [delete]
 func RestDelAllCustomImage(c echo.Context) error {
 	// This is a dummy function for Swagger.

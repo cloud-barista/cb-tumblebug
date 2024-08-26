@@ -27,6 +27,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/rs/zerolog/log"
 )
 
@@ -79,13 +80,13 @@ func Validate(c echo.Context, params []string) error {
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} common.SimpleMsg
-// @Failure 503 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 503 {object} model.SimpleMsg
 // @Router /readyz [get]
 func RestGetReadyz(c echo.Context) error {
-	message := common.SimpleMsg{}
+	message := model.SimpleMsg{}
 	message.Message = "CB-Tumblebug is ready"
-	if !common.SystemReady {
+	if !model.SystemReady {
 		message.Message = "CB-Tumblebug is NOT ready"
 		return c.JSON(http.StatusServiceUnavailable, &message)
 	}
@@ -99,16 +100,16 @@ func RestGetReadyz(c echo.Context) error {
 // @Tags [Admin] API Request Management
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /httpVersion [get]
 func RestCheckHTTPVersion(c echo.Context) error {
 	// Access the *http.Request object from the echo.Context
 	req := c.Request()
 
 	// Determine the HTTP protocol version of the request
-	okMessage := common.SimpleMsg{}
+	okMessage := model.SimpleMsg{}
 	okMessage.Message = req.Proto
 
 	return c.JSON(http.StatusOK, &okMessage)
@@ -121,8 +122,8 @@ func RestCheckHTTPVersion(c echo.Context) error {
 // @Tags [Admin] Credential Management
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} common.PublicKeyResponse
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.PublicKeyResponse
+// @Failure 500 {object} model.SimpleMsg
 // @Router /credential/publicKey [get]
 func RestGetPublicKeyForCredentialEncryption(c echo.Context) error {
 
@@ -142,17 +143,17 @@ func RestGetPublicKeyForCredentialEncryption(c echo.Context) error {
 // @Tags [Admin] Credential Management
 // @Accept json
 // @Produce json
-// @Param CredentialReq body common.CredentialReq true "Credential request info"
-// @Success 200 {object} common.CredentialInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param CredentialReq body model.CredentialReq true "Credential request info"
+// @Success 200 {object} model.CredentialInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /credential [post]
 func RestRegisterCredential(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
-	u := &common.CredentialReq{}
+	u := &model.CredentialReq{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -171,9 +172,9 @@ func RestRegisterCredential(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param connConfigName path string true "Name of connection config (cloud config)"
-// @Success 200 {object} common.ConnConfig
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.ConnConfig
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /connConfig/{connConfigName} [get]
 func RestGetConnConfig(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -198,9 +199,9 @@ func RestGetConnConfig(c echo.Context) error {
 // @Param filterCredentialHolder query string false "filter objects by Credential Holder" default()
 // @Param filterVerified query boolean false "filter verified connections only" Enums(true, false) default(true)
 // @Param filterRegionRepresentative query boolean false "filter connections with the representative region only" Enums(true, false) default(false)
-// @Success 200 {object} common.ConnConfigList
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.ConnConfigList
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /connConfig [get]
 func RestGetConnConfigList(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -232,9 +233,9 @@ func RestGetConnConfigList(c echo.Context) error {
 // @Tags [Admin] Multi-Cloud Information
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} common.IdList
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.IdList
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /provider [get]
 func RestGetProviderList(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -256,9 +257,9 @@ func RestGetProviderList(c echo.Context) error {
 // @Produce  json
 // @Param providerName path string true "Name of the CSP to retrieve"
 // @Param regionName path string true "Name of region to retrieve"
-// @Success 200 {object} common.RegionDetail
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.RegionDetail
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /provider/{providerName}/region/{regionName} [get]
 func RestGetRegion(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -281,9 +282,9 @@ func RestGetRegion(c echo.Context) error {
 // @Tags [Admin] Multi-Cloud Information
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} common.RegionList
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.RegionList
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /region [get]
 func RestGetRegionList(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -303,9 +304,9 @@ func RestGetRegionList(c echo.Context) error {
 // @Tags [Admin] Multi-Cloud Information
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} common.CloudInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.CloudInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /cloudInfo [get]
 func RestGetCloudInfo(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -324,9 +325,9 @@ func RestGetCloudInfo(c echo.Context) error {
 // @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} common.K8sClusterInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.K8sClusterInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /k8sClusterInfo [get]
 func RestGetK8sClusterInfo(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -351,9 +352,9 @@ type ObjectList struct {
 // @Accept  json
 // @Produce  json
 // @Param key query string true "retrieve objects by key"
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /objects [get]
 func RestGetObjects(c echo.Context) error {
 	parentKey := c.QueryParam("key")
@@ -375,9 +376,9 @@ func RestGetObjects(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param key query string true "get object value by key"
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /object [get]
 func RestGetObject(c echo.Context) error {
 	parentKey := c.QueryParam("key")
@@ -403,9 +404,9 @@ func RestGetObject(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param key query string true "delete object value by key"
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /object [delete]
 func RestDeleteObject(c echo.Context) error {
 	parentKey := c.QueryParam("key")
@@ -433,9 +434,9 @@ func RestDeleteObject(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param key query string true "Delete child objects based on the given key string"
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /objects [delete]
 func RestDeleteObjects(c echo.Context) error {
 	parentKey := c.QueryParam("key")
@@ -463,9 +464,9 @@ type RestInspectResourcesRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestInspectResourcesRequest true "Specify connectionName and resource type"
-// @Success 200 {object} infra.InspectResource
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.InspectResource
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /inspectResources [post]
 func RestInspectResources(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -481,7 +482,7 @@ func RestInspectResources(c echo.Context) error {
 
 	var content interface{}
 	var err error
-	// if u.Type == common.StrVNet || u.Type == common.StrSecurityGroup || u.Type == common.StrSSHKey {
+	// if u.Type == model.StrVNet || u.Type == model.StrSecurityGroup || u.Type == model.StrSSHKey {
 	// 	content, err = infra.InspectResources(u.ConnectionName, u.Type)
 	// } else if u.Type == "vm" {
 	// 	content, err = infra.InspectVMs(u.ConnectionName)
@@ -498,9 +499,9 @@ func RestInspectResources(c echo.Context) error {
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} infra.InspectResourceAllResult
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.InspectResourceAllResult
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /inspectResourcesOverview [get]
 func RestInspectResourcesOverview(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -528,9 +529,9 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName, NS Id, and MCI Name""
 // @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
 // @Param mciFlag query string false "Flag to show VMs in a collective MCI form (y,n)" Enums(y, n) default(y)
-// @Success 200 {object} infra.RegisterResourceResult
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.RegisterResourceResult
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /registerCspResources [post]
 func RestRegisterCspNativeResources(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -565,9 +566,9 @@ type RestRegisterCspNativeResourcesRequestAll struct {
 // @Param Request body RestRegisterCspNativeResourcesRequestAll true "Specify NS Id and MCI Name"
 // @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
 // @Param mciFlag query string false "Flag to show VMs in a collective MCI form (y,n)" Enums(y, n) default(y)
-// @Success 200 {object} infra.RegisterResourceAllResult
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.RegisterResourceAllResult
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /registerCspResourcesAll [post]
 func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)

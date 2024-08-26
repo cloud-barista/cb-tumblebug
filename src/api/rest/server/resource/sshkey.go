@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 )
@@ -31,10 +32,10 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option: [required params for register] connectionName, name, cspSshKeyId, fingerprint, username, publicKey, privateKey" Enums(register)
-// @Param sshKeyInfo body resource.TbSshKeyReq true "Details for an SSH Key object"
-// @Success 200 {object} resource.TbSshKeyInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param sshKeyInfo body model.TbSshKeyReq true "Details for an SSH Key object"
+// @Success 200 {object} model.TbSshKeyInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey [post]
 func RestPostSshKey(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -46,7 +47,7 @@ func RestPostSshKey(c echo.Context) error {
 
 	optionFlag := c.QueryParam("option")
 
-	u := &resource.TbSshKeyReq{}
+	u := &model.TbSshKeyReq{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -62,12 +63,12 @@ func RestPostSshKey(c echo.Context) error {
 // @Tags [Infra Resource] Access Key Management
 // @Accept  json
 // @Produce  json
-// @Param sshKeyInfo body resource.TbSshKeyInfo true "Details for an SSH Key object"
+// @Param sshKeyInfo body model.TbSshKeyInfo true "Details for an SSH Key object"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param sshKeyId path string true "SshKey ID"
-// @Success 200 {object} resource.TbSshKeyInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbSshKeyInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [put]
 func RestPutSshKey(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -77,7 +78,7 @@ func RestPutSshKey(c echo.Context) error {
 	nsId := c.Param("nsId")
 	sshKeyId := c.Param("resourceId")
 
-	u := &resource.TbSshKeyInfo{}
+	u := &model.TbSshKeyInfo{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -95,9 +96,9 @@ func RestPutSshKey(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param sshKeyId path string true "SSH Key ID"
-// @Success 200 {object} resource.TbSshKeyInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbSshKeyInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [get]
 func RestGetSshKey(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -106,7 +107,7 @@ func RestGetSshKey(c echo.Context) error {
 
 // Response struct for RestGetAllSshKey
 type RestGetAllSshKeyResponse struct {
-	SshKey []resource.TbSshKeyInfo `json:"sshKey"`
+	SshKey []model.TbSshKeyInfo `json:"sshKey"`
 }
 
 // RestGetAllSshKey godoc
@@ -120,9 +121,9 @@ type RestGetAllSshKeyResponse struct {
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex: systemLabel)"
 // @Param filterVal query string false "Field value for filtering (ex: Registered from CSP resource)"
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSshKeyResponse,[ID]=common.IdList} "Different return structures by the given option param"
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSshKeyResponse,[ID]=model.IdList} "Different return structures by the given option param"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey [get]
 func RestGetAllSshKey(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -138,8 +139,8 @@ func RestGetAllSshKey(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param sshKeyId path string true "SSH Key ID"
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [delete]
 func RestDelSshKey(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -155,8 +156,8 @@ func RestDelSshKey(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
-// @Success 200 {object} common.IdList
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.IdList
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey [delete]
 func RestDelAllSshKey(c echo.Context) error {
 	// This is a dummy function for Swagger.
