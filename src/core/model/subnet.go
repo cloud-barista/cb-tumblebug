@@ -16,11 +16,13 @@ package model
 
 // TbSubnetReq is a struct that represents TB subnet object.
 type TbSubnetReq struct { // Tumblebug
-	Name         string `validate:"required"`
-	IdFromCsp    string
-	IPv4_CIDR    string `validate:"required"`
-	KeyValueList []KeyValue
-	Description  string
+	Name         string     `json:"name,omitempty" validate:"required"`
+	IdFromCsp    string     `json:"idFromCsp,omitempty"`
+	IPv4_CIDR    string     `json:"ipv4_CIDR" validate:"required"`
+	KeyValueList []KeyValue `json:"keyValueList,omitempty"`
+	Description  string     `json:"description,omitempty"`
+	Zone         string     `json:"zone,omitempty"`
+	TagList      []KeyValue `json:"tagList,omitempty"`
 }
 
 // TbSubnetInfo is a struct that represents TB subnet object.
@@ -28,30 +30,10 @@ type TbSubnetInfo struct { // Tumblebug
 	Id   string
 	Name string `validate:"required"`
 	// uuid is universally unique identifier for the resource
-	Uuid         string `json:"uuid,omitempty"`
+	Uuid         string
 	IdFromCsp    string
 	IPv4_CIDR    string `validate:"required"`
 	BastionNodes []BastionNode
 	KeyValueList []KeyValue
 	Description  string
-}
-
-// SpiderSubnetReqInfoWrapper is a wrapper struct to create JSON body of 'Create subnet request'
-type SpiderSubnetReqInfoWrapper struct {
-	ConnectionName string
-	ReqInfo        SpiderSubnetReqInfo
-}
-
-// SpiderSubnetReqInfo is a struct to create JSON body of 'Create subnet request'
-type SpiderSubnetReqInfo struct {
-	Name         string `validate:"required"`
-	IPv4_CIDR    string `validate:"required"`
-	KeyValueList []KeyValue
-}
-
-// SpiderSubnetInfo is a struct to handle subnet information from the CB-Spider's REST API response
-type SpiderSubnetInfo struct {
-	IId          IID // {NameId, SystemId}
-	IPv4_CIDR    string
-	KeyValueList []KeyValue
 }

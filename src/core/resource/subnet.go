@@ -28,6 +28,77 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// TbSubnetReqStructLevelValidation is a function to validate 'TbSubnetReq' object.
+func TbSubnetReqStructLevelValidation(sl validator.StructLevel) {
+
+	u := sl.Current().Interface().(model.TbSubnetReq)
+
+	err := common.CheckString(u.Name)
+	if err != nil {
+		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
+		sl.ReportError(u.Name, "name", "Name", err.Error(), "")
+	}
+}
+
+// The spiderXxx structs are used to call the Spider REST API
+// Ref:
+// 2024-08-22 https://github.com/cloud-barista/cb-spider/blob/master/api-runtime/rest-runtime/VPC-SubnetRest.go
+// 2024-08-22 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VPCHandler.go
+
+// Synchronized the request body with the Spider API
+type spiderSubnetRegisterReq struct {
+	ConnectionName string // Connection name for the cloud provider
+	ReqInfo        spiderSubnetRegisterReqInfo
+}
+
+type spiderSubnetRegisterReqInfo struct {
+	Name    string // Name of the Subnet
+	Zone    string // Zone of the Subnet
+	VPCName string // VPC Name
+	CSPId   string // CSP ID of the Subnet
+}
+
+type spiderSubnetUnregisterReq struct {
+	ConnectionName string // Connection name for the cloud provider
+	ReqInfo        spiderSubnetUnregisterReqInfo
+}
+
+type spiderSubnetUnregisterReqInfo struct {
+	VPCName string // VPC Name
+}
+
+type spiderSubnetAddReq struct {
+	ConnectionName  string // Connection name for the cloud provider
+	IDTransformMode string // ON | OFF, default is ON
+	ReqInfo         spiderSubnetAddReqInfo
+}
+
+type spiderSubnetAddReqInfo struct {
+	Name      string // Name of the Subnet
+	Zone      string // Zone of the Subnet
+	IPv4_CIDR string // CIDR block of the Subnet
+	TagList   []model.KeyValue
+}
+
+type spiderSubnetRemoveReq struct {
+	ConnectionName string // Connection name for the cloud provider
+}
+
+type spiderCspSubnetRemoveReq struct {
+	ConnectionName string // Connection name for the cloud provider
+}
+
+// The spiderSubnetInfo struct is a union of the properties in
+// Spider's 'subnetRegisterReq', 'req' in AddSubnet(), and 'SubnetInfo' structs.
+type spiderSubnetInfo struct {
+	IId          model.IID        // {NameId, SystemId}
+	Name         string           // Name of the Subnet
+	Zone         string           // Zone of the Subnet
+	IPv4_CIDR    string           // CIDR block of the Subnet
+	TagList      []model.KeyValue // List of key-value tags for the Subnet
+	KeyValueList []model.KeyValue // List of key-value pairs indicating CSP-side response
+}
+
 // CreateSubnet accepts subnet creation request, creates and returns an TB vNet object
 func CreateSubnet(nsId string, vNetId string, req model.TbSubnetReq, objectOnly bool) (model.TbVNetInfo, error) {
 
@@ -100,7 +171,7 @@ func CreateSubnet(nsId string, vNetId string, req model.TbSubnetReq, objectOnly 
 	}
 
 	if objectOnly == false { // then, call CB-Spider CreateSubnet API
-		requestBody := model.SpiderSubnetReqInfoWrapper{}
+		requestBody := spiderSubnetAddReq{}
 		requestBody.ConnectionName = oldVNet.ConnectionName
 		requestBody.ReqInfo.Name = uuid
 		requestBody.ReqInfo.IPv4_CIDR = req.IPv4_CIDR
@@ -112,7 +183,7 @@ func CreateSubnet(nsId string, vNetId string, req model.TbSubnetReq, objectOnly 
 		resp, err := client.R().
 			SetHeader("Content-Type", "application/json").
 			SetBody(requestBody).
-			SetResult(&model.SpiderVPCInfo{}). // or SetResult(AuthSuccess{}).
+			SetResult(&spiderVpcInfo{}). // or SetResult(AuthSuccess{}).
 			//SetError(&AuthError{}).       // or SetError(AuthError{}).
 			Post(url)
 

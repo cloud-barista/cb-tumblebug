@@ -31,25 +31,64 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param option query string false "Option: [required params for register] connectionName, name, cspVNetId" Enums(register)
+// @Param vNetReq body resource.TbVNetReq true "Details for an VNet object"
 // @Param vNetReq body model.TbVNetReq true "Details for an VNet object"
 // @Success 200 {object} model.TbVNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet [post]
 func RestPostVNet(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
+	// [Note] Input
+	// nsId and req will be checked inside of the CreateVNet function
 	nsId := c.Param("nsId")
-	optionFlag := c.QueryParam("option")
-	u := &model.TbVNetReq{}
-	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+	err := common.CheckString(nsId)
+	req := &model.TbVNetReq{}
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
-	content, err := resource.CreateVNet(nsId, u, optionFlag)
-	return common.EndRequestWithLog(c, reqID, err, content)
+
+	// [Note] Process
+	content, err := resource.CreateVNet(nsId, req)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Note] Output
+	return c.JSON(http.StatusCreated, content)
+}
+
+// RestPostVNetRegister godoc
+// @ID PostVNetRegister
+// @Summary Register the VNet created externally
+// @Description Register the VNet created externally
+// @Tags [Infra Resource] Network Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param vNetRegisterReq body model.TbRegisterVNetReq true "Inforamation required to register the VNet created externally"
+// @Success 200 {object} model.TbVNetInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/resources/vNet/register [post]
+func RestPostVNetRegister(c echo.Context) error {
+
+	// [Note] Input
+	// nsId and req will be checked inside of the RegisterVNet function
+	nsId := c.Param("nsId")
+	req := &model.TbRegisterVNetReq{}
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Note] Process
+	content, err := resource.RegisterVNet(nsId, req)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Note] Output
+	return c.JSON(http.StatusCreated, content)
 }
 
 /*
@@ -88,8 +127,19 @@ func RestPutVNet(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [get]
 func RestGetVNet(c echo.Context) error {
-	// This is a dummy function for Swagger.
-	return nil
+	// [Note] Input
+	// nsId and vNetId will be checked inside of the DeleteVNet function
+	nsId := c.Param("nsId")
+	vNetId := c.Param("vNetId")
+
+	// [Note] Process
+	content, err := resource.GetVNet(nsId, vNetId)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, common.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Note] Output
+	return c.JSON(http.StatusCreated, content)
 }
 
 // Response structure for RestGetAllVNet
@@ -130,8 +180,19 @@ func RestGetAllVNet(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [delete]
 func RestDelVNet(c echo.Context) error {
-	// This is a dummy function for Swagger.
-	return nil
+	// [Note] Input
+	// nsId and vNetId will be checked inside of the DeleteVNet function
+	nsId := c.Param("nsId")
+	vNetId := c.Param("vNetId")
+
+	// [Note] Process
+	content, err := resource.DeleteVNet(nsId, vNetId)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, common.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Note] Output
+	return c.JSON(http.StatusCreated, content)
 }
 
 // RestDelAllVNet godoc

@@ -1226,13 +1226,13 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 
 	// Check parameters' emptiness
 	if nsId == "" {
-		err := fmt.Errorf("CheckResource failed; nsId given is null.")
+		err := fmt.Errorf("failed to check resource, the given nsId is null")
 		return false, err
 	} else if resourceType == "" {
-		err := fmt.Errorf("CheckResource failed; resourceType given is null.")
+		err := fmt.Errorf("failed to check resource, the given resourceType is null")
 		return false, err
 	} else if resourceId == "" {
-		err := fmt.Errorf("CheckResource failed; resourceId given is null.")
+		err := fmt.Errorf("failed to check resource, the given resourceId is null")
 		return false, err
 	}
 
@@ -1907,7 +1907,7 @@ func LoadSharedResource(nsId string, resType string, connectionName string) erro
 
 			common.PrintJsonPretty(reqTmp)
 
-			resultInfo, err := CreateVNet(nsId, &reqTmp, "")
+			resultInfo, err := CreateVNet(nsId, &reqTmp)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to create vNet")
 				return err
