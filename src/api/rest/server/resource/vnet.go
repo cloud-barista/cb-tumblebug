@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 )
@@ -31,10 +32,10 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option: [required params for register] connectionName, name, cspVNetId" Enums(register)
-// @Param vNetReq body resource.TbVNetReq true "Details for an VNet object"
-// @Success 200 {object} resource.TbVNetInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param vNetReq body model.TbVNetReq true "Details for an VNet object"
+// @Success 200 {object} model.TbVNetInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet [post]
 func RestPostVNet(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -43,7 +44,7 @@ func RestPostVNet(c echo.Context) error {
 	}
 	nsId := c.Param("nsId")
 	optionFlag := c.QueryParam("option")
-	u := &resource.TbVNetReq{}
+	u := &model.TbVNetReq{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -61,10 +62,10 @@ func RestPostVNet(c echo.Context) error {
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
-// @Param vNetInfo body resource.TbVNetInfo true "Details for an VNet object"
-// @Success 200 {object} resource.TbVNetInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param vNetInfo body model.TbVNetInfo true "Details for an VNet object"
+// @Success 200 {object} model.TbVNetInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [put]
 */
 func RestPutVNet(c echo.Context) error {
@@ -82,9 +83,9 @@ func RestPutVNet(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
-// @Success 200 {object} resource.TbVNetInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbVNetInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [get]
 func RestGetVNet(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -93,7 +94,7 @@ func RestGetVNet(c echo.Context) error {
 
 // Response structure for RestGetAllVNet
 type RestGetAllVNetResponse struct {
-	VNet []resource.TbVNetInfo `json:"vNet"`
+	VNet []model.TbVNetInfo `json:"vNet"`
 }
 
 // RestGetAllVNet godoc
@@ -107,9 +108,9 @@ type RestGetAllVNetResponse struct {
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex: cspVNetName)"
 // @Param filterVal query string false "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllVNetResponse,[ID]=common.IdList} "Different return structures by the given option param"
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllVNetResponse,[ID]=model.IdList} "Different return structures by the given option param"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet [get]
 func RestGetAllVNet(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -125,8 +126,8 @@ func RestGetAllVNet(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [delete]
 func RestDelVNet(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -142,8 +143,8 @@ func RestDelVNet(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
-// @Success 200 {object} common.IdList
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.IdList
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet [delete]
 func RestDelAllVNet(c echo.Context) error {
 	// This is a dummy function for Swagger.

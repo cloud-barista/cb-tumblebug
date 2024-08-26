@@ -16,114 +16,14 @@ package common
 
 import (
 	"database/sql"
-	"sync"
 	"time"
 
-	"xorm.io/xorm"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 )
-
-// KeyValue is struct for key-value pair
-type KeyValue struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
-// KeyWithEncryptedValue is struct for key-(encrypted)value pair
-type KeyWithEncryptedValue struct {
-	// Key for the value
-	Key string `json:"key"`
-
-	// Should be encrypted by the public key issued by GET /credential/publicKey
-	Value string `json:"value"`
-}
-
-type IdList struct {
-	IdList []string `json:"output"`
-	mux    sync.Mutex
-}
-
-// AddItem adds a new item to the IdList
-func (list *IdList) AddItem(id string) {
-	list.mux.Lock()
-	defer list.mux.Unlock()
-	list.IdList = append(list.IdList, id)
-}
-
-// OptionalParameter is struct for optional parameter for function (ex. VmId)
-type OptionalParameter struct {
-	Value string
-	Set   bool
-}
-
-// SystemReady is global variable for checking SystemReady status
-var SystemReady bool
-
-var SpiderRestUrl string
-var DragonflyRestUrl string
-var TerrariumRestUrl string
-var DBUrl string
-var DBDatabase string
-var DBUser string
-var DBPassword string
-var AutocontrolDurationMs string
-var DefaultNamespace string
-var DefaultCredentialHolder string
-var EtcdEndpoints string
-var MyDB *sql.DB
-var err error
-var ORM *xorm.Engine
-
-const (
-	StrSpiderRestUrl         string = "TB_SPIDER_REST_URL"
-	StrDragonflyRestUrl      string = "TB_DRAGONFLY_REST_URL"
-	StrTerrariumRestUrl      string = "TB_TERRARIUM_REST_URL"
-	StrDBUrl                 string = "TB_SQLITE_URL"
-	StrDBDatabase            string = "TB_SQLITE_DATABASE"
-	StrDBUser                string = "TB_SQLITE_USER"
-	StrDBPassword            string = "TB_SQLITE_PASSWORD"
-	StrAutocontrolDurationMs string = "TB_AUTOCONTROL_DURATION_MS"
-	StrEtcdEndpoints         string = "TB_ETCD_ENDPOINTS"
-	ErrStrKeyNotFound        string = "key not found"
-	StrAdd                   string = "add"
-	StrDelete                string = "delete"
-	StrSSHKey                string = "sshKey"
-	StrImage                 string = "image"
-	StrCustomImage           string = "customImage"
-	StrSecurityGroup         string = "securityGroup"
-	StrSpec                  string = "spec"
-	StrVNet                  string = "vNet"
-	StrSubnet                string = "subnet"
-	StrDataDisk              string = "dataDisk"
-	StrNLB                   string = "nlb"
-	StrVM                    string = "vm"
-	StrMCI                   string = "mci"
-	StrK8s                   string = "k8s"
-	StrKubernetes            string = "kubernetes"
-	StrContainer             string = "container"
-	StrCommon                string = "common"
-	StrEmpty                 string = "empty"
-	StrSharedResourceName    string = "-shared-"
-	// StrFirewallRule               string = "firewallRule"
-
-	// SystemCommonNs is const for SystemCommon NameSpace ID
-	SystemCommonNs string = "system"
-)
-
-var StartTime string
 
 func init() {
 
-	StartTime = time.Now().Format("2006.01.02 15:04:05 Mon")
-}
-
-// Spider 2020-03-30 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/IId.go
-type IID struct {
-	NameId   string // NameID by user
-	SystemId string // SystemID by CloudOS
-}
-
-type SpiderConnectionName struct {
-	ConnectionName string `json:"ConnectionName"`
+	model.StartTime = time.Now().Format("2006.01.02 15:04:05 Mon")
 }
 
 func OpenSQL(path string) error {
@@ -134,14 +34,15 @@ func OpenSQL(path string) error {
 				common.TB_SQLITE_URL+")/"+
 				common.TB_SQLITE_DATABASE)
 	*/
+	err := error(nil)
 
 	fullPathString := "file:" + path
-	MyDB, err = sql.Open("sqlite3", fullPathString)
+	model.MyDB, err = sql.Open("sqlite3", fullPathString)
 	return err
 }
 
 func SelectDatabase(database string) error {
 	query := "USE " + database + ";"
-	_, err = MyDB.Exec(query)
+	_, err := model.MyDB.Exec(query)
 	return err
 }

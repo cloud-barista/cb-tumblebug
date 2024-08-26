@@ -22,6 +22,8 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
@@ -30,206 +32,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// 2023-11-13 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/cloud-control-manager/cloud-driver/interfaces/resources/ClusterHandler.go#L1
-
-/*
-TODO: Implement Register/Unregister
-
-// SpiderClusterRegisterReqInfoWrapper is a wrapper struct to create JSON body of 'Register Cluster request'
-type SpiderClusterRegisterReqInfoWrapper struct {
-	ConnectionName string
-	ReqInfo        SpiderClusterRegisterReqInfo
-}
-
-// 2023-11-13 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/api-runtime/rest-runtime/ClusterRest.go#L52
-
-// SpiderClusterRegisterReqInfo is a struct to create JSON body of 'Register Cluster request'
-type SpiderClusterRegisterReqInfo struct {
-	VPCName string
-	Name    string
-	CSPId   string
-}
-
-// 2023-11-13 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/api-runtime/rest-runtime/ClusterRest.go#L86
-
-// SpiderClusterUnregisterReqInfoWrapper is a wrapper struct to create JSON body of 'Unregister Cluster request'
-type SpiderClusterUnregisterReqInfoWrapper struct {
-	ConnectionName string
-}
-*/
-
-/*
- * K8sCluster Request
- */
-
-// 2023-11-13 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/cloud-control-manager/cloud-driver/interfaces/resources/ClusterHandler.go#L1
-
-// SpiderClusterReq is a wrapper struct to create JSON body of 'Create Cluster request'
-type SpiderClusterReq struct {
-	NameSpace      string // should be empty string from Tumblebug
-	ConnectionName string
-	ReqInfo        SpiderClusterReqInfo
-}
-
-// 2023-11-13 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/api-runtime/rest-runtime/ClusterRest.go#L110
-
-// SpiderClusterReqInfo is a struct to create JSON body of 'Create Cluster request'
-type SpiderClusterReqInfo struct {
-	// (1) Cluster Info
-	Name    string
-	Version string
-
-	// (2) Network Info
-	VPCName            string
-	SubnetNames        []string
-	SecurityGroupNames []string
-
-	// (3) NodeGroupInfo List
-	NodeGroupList []SpiderNodeGroupReqInfo
-}
-
-// TbK8sClusterReq is a struct to handle 'Create K8sCluster' request toward CB-Tumblebug.
-type TbK8sClusterReq struct { // Tumblebug
-	//Namespace      string `json:"namespace" validate:"required" example:"default"`
-	ConnectionName string `json:"connectionName" validate:"required" example:"alibaba-ap-northeast-2"`
-	Description    string `json:"description" example:"My K8sCluster"`
-
-	// (1) K8sCluster Info
-	Id      string `json:"id" validate:"required" example:"k8scluster-01"`
-	Version string `json:"version" example:"1.30.1-aliyun.1"`
-
-	// (2) Network Info
-	VNetId           string   `json:"vNetId" validate:"required" example:"vpc-01"`
-	SubnetIds        []string `json:"subnetIds" validate:"required" example:"subnet-01"`
-	SecurityGroupIds []string `json:"securityGroupIds" validate:"required" example:"sg-01"`
-
-	// (3) NodeGroupInfo List
-	K8sNodeGroupList []TbK8sNodeGroupReq `json:"k8sNodeGroupList"`
-
-	// Fields for "Register existing K8sCluster" feature
-	// @description CspK8sClusterId is required to register a k8s cluster from CSP (option=register)
-	CspK8sClusterId string `json:"cspK8sClusterId" example:"required when option is register"`
-}
-
-// 2023-11-13 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/api-runtime/rest-runtime/ClusterRest.go#L441
-
-// SpiderNodeGroupReq is a wrapper struct to create JSON body of 'Add NodeGroup' request
-type SpiderNodeGroupReq struct {
-	NameSpace      string // should be empty string from Tumblebug
-	ConnectionName string
-	ReqInfo        SpiderNodeGroupReqInfo
-}
-
-// SpiderNodeGroupReqInfo is a wrapper struct to create JSON body of 'Add NodeGroup' request
-type SpiderNodeGroupReqInfo struct {
-	Name         string
-	ImageName    string
-	VMSpecName   string
-	RootDiskType string
-	RootDiskSize string
-	KeyPairName  string
-
-	// autoscale config.
-	OnAutoScaling   string
-	DesiredNodeSize string
-	MinNodeSize     string
-	MaxNodeSize     string
-}
-
-// TbK8sNodeGroupReq is a struct to handle requests related to K8sNodeGroup toward CB-Tumblebug.
-type TbK8sNodeGroupReq struct {
-	Name         string `json:"name" example:"ng-01"`
-	ImageId      string `json:"imageId" example:"image-01"`
-	SpecId       string `json:"specId" example:"Standard_B2s (temporarily, CSP's Spec Names are valid. It will be upgraded)"`
-	RootDiskType string `json:"rootDiskType" example:"cloud_essd" enum:"default, TYPE1, ..."` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize string `json:"rootDiskSize" example:"40" enum:"default, 30, 42, ..."`        // "default", Integer (GB): ["50", ..., "1000"]
-	SshKeyId     string `json:"sshKeyId" example:"sshkey-01"`
-
-	// autoscale config.
-	OnAutoScaling   string `json:"onAutoScaling" example:"true"`
-	DesiredNodeSize string `json:"desiredNodeSize" example:"1"`
-	MinNodeSize     string `json:"minNodeSize" example:"1"`
-	MaxNodeSize     string `json:"maxNodeSize" example:"3"`
-}
-
-// SpiderSetAutoscalingReq is a wrapper struct to create JSON body of 'Set Autoscaling On/Off' request.
-type SpiderSetAutoscalingReq struct {
-	ConnectionName string
-	ReqInfo        SpiderSetAutoscalingReqInfo
-}
-
-// SpiderSetAutoscalingReqInfo is a wrapper struct to create JSON body of 'Set Autoscaling On/Off' request.
-type SpiderSetAutoscalingReqInfo struct {
-	OnAutoScaling string
-}
-
-// SpiderSetAutoscalingRes is a wrapper struct to create JSON body of 'Set Autoscaling On/Off' response.
-type SpiderSetAutoscalingRes struct {
-	Result string
-}
-
-// TbSetK8sNodeGroupAutoscalingReq is a struct to handle 'Set K8sNodeGroup's Autoscaling' request toward CB-Tumblebug.
-type TbSetK8sNodeGroupAutoscalingReq struct {
-	OnAutoScaling string `json:"onAutoScaling" example:"true"`
-}
-
-// TbSetK8sNodeGroupAutoscalingRes is a struct to handle 'Set K8sNodeGroup's Autoscaling' response from CB-Tumblebug.
-type TbSetK8sNodeGroupAutoscalingRes struct {
-	Result string `json:"result" example:"true"`
-}
-
-// SpiderChangeAutoscaleSizeReq is a wrapper struct to create JSON body of 'Change Autoscale Size' request.
-type SpiderChangeAutoscaleSizeReq struct {
-	ConnectionName string
-	ReqInfo        SpiderChangeAutoscaleSizeReqInfo
-}
-
-// SpiderChangeAutoscaleSizeReqInfo is a wrapper struct to create JSON body of 'Change Autoscale Size' request.
-type SpiderChangeAutoscaleSizeReqInfo struct {
-	DesiredNodeSize string
-	MinNodeSize     string
-	MaxNodeSize     string
-}
-
-// TbChangeK8sNodeGroupAutoscaleSizeReq is a struct to handle 'Change K8sNodeGroup's Autoscale Size' request toward CB-Tumblebug.
-type TbChangeK8sNodeGroupAutoscaleSizeReq struct {
-	DesiredNodeSize string `json:"desiredNodeSize" example:"1"`
-	MinNodeSize     string `json:"minNodeSize" example:"1"`
-	MaxNodeSize     string `json:"maxNodeSize" example:"3"`
-}
-
-// SpiderChangeAutoscaleSizeRes is a wrapper struct to get JSON body of 'Change Autoscale Size' response
-type SpiderChangeAutoscaleSizeRes struct {
-	ConnectionName string
-	NodeGroupInfo  SpiderNodeGroupInfo
-}
-
-// TbChangeK8sNodeGroupAutoscaleSizeRes is a struct to handle 'Change K8sNodeGroup's Autoscale Size' response from CB-Tumblebug.
-type TbChangeK8sNodeGroupAutoscaleSizeRes struct {
-	TbK8sNodeGroupInfo
-}
-
-// SpiderUpgradeClusterReq is a wrapper struct to create JSON body of 'Upgrade Cluster' request
-type SpiderUpgradeClusterReq struct {
-	NameSpace      string // should be empty string from Tumblebug
-	ConnectionName string
-	ReqInfo        SpiderUpgradeClusterReqInfo
-}
-
-// SpiderUpgradeClusterReqInfo is a wrapper struct to create JSON body of 'Upgrade Cluster' request
-type SpiderUpgradeClusterReqInfo struct {
-	Version string
-}
-
-// TbUpgradeK8sClusterReq is a struct to handle 'Upgrade K8sCluster' request toward CB-Tumblebug.
-type TbUpgradeK8sClusterReq struct {
-	Version string `json:"version" example:"1.30.1-alyun.1"`
-}
-
-// TbK8sClusterReqStructLevelValidation is a function to validate 'TbK8sClusterReq' object.
+// TbK8sClusterReqStructLevelValidation is a function to validate 'model.TbK8sClusterReq' object.
 func TbK8sClusterReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(TbK8sClusterReq)
+	u := sl.Current().Interface().(model.TbK8sClusterReq)
 
 	err := common.CheckString(u.Id)
 	if err != nil {
@@ -238,215 +44,11 @@ func TbK8sClusterReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
-/*
- * Cluster Const
- */
-
-// 2023-11-14 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/cloud-control-manager/cloud-driver/interfaces/resources/ClusterHandler.go#L15
-
-type SpiderClusterStatus string
-
-const (
-	SpiderClusterCreating SpiderClusterStatus = "Creating"
-	SpiderClusterActive   SpiderClusterStatus = "Active"
-	SpiderClusterInactive SpiderClusterStatus = "Inactive"
-	SpiderClusterUpdating SpiderClusterStatus = "Updating"
-	SpiderClusterDeleting SpiderClusterStatus = "Deleting"
-)
-
-type SpiderNodeGroupStatus string
-
-const (
-	SpiderNodeGroupCreating SpiderNodeGroupStatus = "Creating"
-	SpiderNodeGroupActive   SpiderNodeGroupStatus = "Active"
-	SpiderNodeGroupInactive SpiderNodeGroupStatus = "Inactive"
-	SpiderNodeGroupUpdating SpiderNodeGroupStatus = "Updating"
-	SpiderNodeGroupDeleting SpiderNodeGroupStatus = "Deleting"
-)
-
-type TbK8sClusterStatus string
-
-const (
-	TbK8sClusterCreating TbK8sClusterStatus = "Creating"
-	TbK8sClusterActive   TbK8sClusterStatus = "Active"
-	TbK8sClusterInactive TbK8sClusterStatus = "Inactive"
-	TbK8sClusterUpdating TbK8sClusterStatus = "Updating"
-	TbK8sClusterDeleting TbK8sClusterStatus = "Deleting"
-)
-
-type TbK8sNodeGroupStatus string
-
-const (
-	TbK8sNodeGroupCreating TbK8sNodeGroupStatus = "Creating"
-	TbK8sNodeGroupActive   TbK8sNodeGroupStatus = "Active"
-	TbK8sNodeGroupInactive TbK8sNodeGroupStatus = "Inactive"
-	TbK8sNodeGroupUpdating TbK8sNodeGroupStatus = "Updating"
-	TbK8sNodeGroupDeleting TbK8sNodeGroupStatus = "Deleting"
-)
-
-/*
- * Cluster Info Structure
- */
-
-// 2023-11-14 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/cloud-control-manager/cloud-driver/interfaces/resources/ClusterHandler.go#L37
-
-// SpiderClusterRes is a wrapper struct to handle a Cluster information from the CB-Spider's REST API response
-type SpiderClusterRes struct {
-	ConnectionName string
-	ClusterInfo    SpiderClusterInfo
-}
-
-// SpiderClusterInfo is a struct to handle Cluster information from the CB-Spider's REST API response
-type SpiderClusterInfo struct {
-	IId common.IID // {NameId, SystemId}
-
-	Version string // Kubernetes Version, ex) 1.23.3
-	Network SpiderNetworkInfo
-
-	// ---
-
-	NodeGroupList []SpiderNodeGroupInfo
-	AccessInfo    SpiderAccessInfo
-	Addons        SpiderAddonsInfo
-
-	Status SpiderClusterStatus
-
-	CreatedTime  time.Time
-	KeyValueList []common.KeyValue
-}
-
-// TbK8sClusterInfo is a struct that represents TB K8sCluster object.
-type TbK8sClusterInfo struct { // Tumblebug
-	Id             string `json:"id" example:"k8scluster-01"`
-	Name           string `json:"name" example:"k8scluster-01"`
-	ConnectionName string `json:"connectionName" example:"alibaba-ap-northeast-2"`
-
-	Version string `json:"version" example:"1.30.1-aliyun.1"` // Kubernetes Version, ex) 1.23.3
-	Network TbK8sClusterNetworkInfo
-
-	// ---
-
-	K8sNodeGroupList []TbK8sNodeGroupInfo
-	AccessInfo       TbK8sAccessInfo
-	Addons           TbK8sAddonsInfo
-
-	Status TbK8sClusterStatus `json:"status" example:"Creating"` // Creating, Active, Inactive, Updating, Deleting
-
-	CreatedTime  time.Time         `json:"createdTime" example:"1970-01-01T00:00:00.00Z"`
-	KeyValueList []common.KeyValue `json:"keyValueList"`
-
-	Description       string `json:"description" example:"My K8sCluster"`
-	CspK8sClusterId   string `json:"cspK8sClusterId" example:"c123456789012345678901234567890"`
-	CspK8sClusterName string `json:"cspK8sClusterName" example:"default-k8scluster-01"`
-
-	// Latest system message such as error message
-	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
-
-	// SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose
-	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
-
-	//CspViewK8sClusterDetail SpiderClusterInfo `json:cspViewK8sClusterDetail,omitempty"`
-}
-
-// SpiderNetworkInfo is a struct to handle Cluster Network information from the CB-Spider's REST API response
-type SpiderNetworkInfo struct {
-	VpcIID            common.IID // {NameId, SystemId}
-	SubnetIIDs        []common.IID
-	SecurityGroupIIDs []common.IID
-
-	// ---
-
-	KeyValueList []common.KeyValue
-}
-
-// TbK8sClusterNetworkInfo is a struct to handle K8sCluster Network information from the CB-Tumblebug's REST API response
-type TbK8sClusterNetworkInfo struct {
-	VNetId           string   `json:"vNetId" example:"vpc-01"`
-	SubnetIds        []string `json:"subnetIds" example:"subnet-01"`
-	SecurityGroupIds []string `json:"securityGroupIds" example:"sg-01"`
-
-	// ---
-
-	KeyValueList []common.KeyValue `json:"keyValueList"`
-}
-
-// SpiderNodeGroupInfo is a struct to handle Cluster Node Group information from the CB-Spider's REST API response
-type SpiderNodeGroupInfo struct {
-	IId common.IID // {NameId, SystemId}
-
-	// VM config.
-	ImageIID     common.IID
-	VMSpecName   string
-	RootDiskType string // "SSD(gp2)", "Premium SSD", ...
-	RootDiskSize string // "", "default", "50", "1000" (GB)
-	KeyPairIID   common.IID
-
-	// Scaling config.
-	OnAutoScaling   bool // default: true
-	DesiredNodeSize int
-	MinNodeSize     int
-	MaxNodeSize     int
-
-	// ---
-
-	Status SpiderNodeGroupStatus
-	Nodes  []common.IID
-
-	KeyValueList []common.KeyValue
-}
-
-// TbK8sNodeGroupInfo is a struct to handle K8sCluster's Node Group information from the CB-Tumblebug's REST API response
-type TbK8sNodeGroupInfo struct {
-	Id string `json:"id" example:"ng-01"`
-	//Name string `json:"name"`
-
-	// VM config.
-	ImageId      string `json:"imageId" example:"image-01"`
-	SpecId       string `json:"specId" example:"spec-01"`
-	RootDiskType string `json:"rootDiskType" example:"cloud_essd"`
-	RootDiskSize string `json:"rootDiskSize" example:"40"`
-	SshKeyId     string `json:"sshKeyId" example:"sshkey-01"`
-
-	// Scaling config.
-	OnAutoScaling   bool `json:"onAutoScaling" example:"true"`
-	DesiredNodeSize int  `json:"desiredNodeSize" example:"1"`
-	MinNodeSize     int  `json:"minNodeSize" example:"1"`
-	MaxNodeSize     int  `json:"maxNodeSize" example:"3"`
-
-	// ---
-	Status   TbK8sNodeGroupStatus `json:"status" example:"Creating"`  // Creating, Active, Inactive, Updating, Deleting
-	K8sNodes []string             `json:"k8sNodes" example:"node-01"` // id for nodes
-
-	KeyValueList []common.KeyValue `json:"keyValueList"`
-}
-
-// SpiderAccessInfo is a struct to handle Cluster Access information from the CB-Spider's REST API response
-type SpiderAccessInfo struct {
-	Endpoint   string // ex) https://1.2.3.4:6443
-	Kubeconfig string
-}
-
-// TbK8sAccessInfo is a struct to handle K8sCluster Access information from the CB-Tumblebug's REST API response
-type TbK8sAccessInfo struct {
-	Endpoint   string `json:"endpoint" example:"http://1.2.3.4:6443"`
-	Kubeconfig string `json:"kubeconfig" example:"apiVersion: v1\nclusters:\n- cluster:\n certificate-authority-data: LS0..."`
-}
-
-// SpiderAddonsInfo is a struct to handle Cluster Addons information from the CB-Spider's REST API response
-type SpiderAddonsInfo struct {
-	KeyValueList []common.KeyValue
-}
-
-// TbK8sAddonsInfo is a struct to handle K8sCluster Addons information from the CB-Tumblebug's REST API response
-type TbK8sAddonsInfo struct {
-	KeyValueList []common.KeyValue `json:"keyValueList"`
-}
-
 // CreateK8sCluster create a k8s cluster
-func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClusterInfo, error) {
+func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (model.TbK8sClusterInfo, error) {
 	log.Info().Msg("CreateK8sCluster")
 
-	emptyObj := TbK8sClusterInfo{}
+	emptyObj := model.TbK8sClusterInfo{}
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
@@ -492,7 +94,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	}
 
 	/*
-	 * Build RequestBody for SpiderClusterReq{}
+	 * Build RequestBody for model.SpiderClusterReq{}
 	 */
 
 	// Validate
@@ -503,7 +105,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	}
 	spVersion := u.Version
 
-	spVPCName, err := resource.GetCspResourceId(nsId, common.StrVNet, u.VNetId)
+	spVPCName, err := resource.GetCspResourceId(nsId, model.StrVNet, u.VNetId)
 	if spVPCName == "" {
 		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
@@ -512,7 +114,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	/*
 		var spSubnetNames []string
 		for _, v := range u.SubnetIds {
-			spSnName, err := resource.GetCspResourceId(nsId, common.StrSubnet, v)
+			spSnName, err := resource.GetCspResourceId(nsId, model.StrSubnet, v)
 			if spSnName == "" {
 				log.Error().Err(err).Msg("")
 				return emptyObj, err
@@ -526,12 +128,12 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	var spSubnetNames []string
 	var found bool
 
-	tmpInf, err := resource.GetResource(nsId, common.StrVNet, u.VNetId)
+	tmpInf, err := resource.GetResource(nsId, model.StrVNet, u.VNetId)
 	if err != nil {
 		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
-	tbVNetInfo := resource.TbVNetInfo{}
+	tbVNetInfo := model.TbVNetInfo{}
 	err = common.CopySrcToDest(&tmpInf, &tbVNetInfo)
 	if err != nil {
 		log.Err(err).Msg("Failed to Create a K8sCluster")
@@ -560,7 +162,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 
 	var spSecurityGroupNames []string
 	for _, v := range u.SecurityGroupIds {
-		spSgName, err := resource.GetCspResourceId(nsId, common.StrSecurityGroup, v)
+		spSgName, err := resource.GetCspResourceId(nsId, model.StrSecurityGroup, v)
 		if spSgName == "" {
 			log.Err(err).Msg("Failed to Create a K8sCluster")
 			return emptyObj, err
@@ -569,7 +171,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 		spSecurityGroupNames = append(spSecurityGroupNames, spSgName)
 	}
 
-	var spNodeGroupList []SpiderNodeGroupReqInfo
+	var spNodeGroupList []model.SpiderNodeGroupReqInfo
 	for _, v := range u.K8sNodeGroupList {
 		err := common.CheckString(v.Name)
 		if err != nil {
@@ -581,14 +183,14 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 		if v.ImageId == "" || v.ImageId == "default" {
 			spImgName = ""
 		} else {
-			spImgName, err = resource.GetCspResourceId(nsId, common.StrImage, v.ImageId)
+			spImgName, err = resource.GetCspResourceId(nsId, model.StrImage, v.ImageId)
 			if spImgName == "" {
 				log.Err(err).Msg("Failed to Create a K8sCluster")
 				return emptyObj, err
 			}
 		}
 
-		// specInfo, err := resource.GetSpec(common.SystemCommonNs, v.SpecId)
+		// specInfo, err := resource.GetSpec(model.SystemCommonNs, v.SpecId)
 		// if err != nil {
 		// 	log.Err(err).Msg("Failed to Create a K8sCluster")
 		// 	return emptyObj, err
@@ -596,13 +198,13 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 		// spSpecName := specInfo.CspSpecName
 		spSpecName := v.SpecId
 
-		spKpName, err := resource.GetCspResourceId(nsId, common.StrSSHKey, v.SshKeyId)
+		spKpName, err := resource.GetCspResourceId(nsId, model.StrSSHKey, v.SshKeyId)
 		if spKpName == "" {
 			log.Err(err).Msg("Failed to Create a K8sCluster")
 			return emptyObj, err
 		}
 
-		spNodeGroupList = append(spNodeGroupList, SpiderNodeGroupReqInfo{
+		spNodeGroupList = append(spNodeGroupList, model.SpiderNodeGroupReqInfo{
 			Name:            common.GenUid(),
 			ImageName:       spImgName,
 			VMSpecName:      spSpecName,
@@ -616,11 +218,13 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 		})
 	}
 
-	requestBody := SpiderClusterReq{
+	uuid := common.GenUid()
+
+	requestBody := model.SpiderClusterReq{
 		NameSpace:      "", // should be empty string from Tumblebug
 		ConnectionName: u.ConnectionName,
-		ReqInfo: SpiderClusterReqInfo{
-			Name:               common.GenUid(),
+		ReqInfo: model.SpiderClusterReqInfo{
+			Name:               uuid,
 			Version:            spVersion,
 			VPCName:            spVPCName,
 			SubnetNames:        spSubnetNames,
@@ -635,7 +239,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	method := "POST"
 	client.SetTimeout(20 * time.Minute)
 
-	url := common.SpiderRestUrl
+	url := model.SpiderRestUrl
 
 	if option == "register" {
 		url = url + "/regcluster"
@@ -643,7 +247,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 		url = url + "/cluster"
 	}
 
-	var spClusterRes SpiderClusterRes
+	var spClusterRes model.SpiderClusterRes
 
 	err = common.ExecuteHttpRequest(
 		client,
@@ -662,10 +266,11 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	}
 
 	/*
-	 * Extract SpiderClusterInfo from Response & Build TbK8sClusterInfo object
+	 * Extract SpiderClusterInfo from Response & Build model.TbK8sClusterInfo object
 	 */
 
 	tbK8sCInfo := convertSpiderClusterInfoToTbK8sClusterInfo(&spClusterRes.ClusterInfo, u.Id, u.ConnectionName, u.Description)
+	tbK8sCInfo.Uuid = uuid
 
 	if option == "register" && u.CspK8sClusterId == "" {
 		tbK8sCInfo.SystemLabel = "Registered from CB-Spider resource"
@@ -675,7 +280,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	}
 
 	/*
-	 * Put/Get TbK8sClusterInfo to/from kvstore
+	 * Put/Get model.TbK8sClusterInfo to/from kvstore
 	 */
 	k := GenK8sClusterKey(nsId, tbK8sCInfo.Id)
 	Val, _ := json.Marshal(tbK8sCInfo)
@@ -694,19 +299,31 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 
 	log.Debug().Msg("<" + kv.Key + "> \n" + kv.Value)
 
-	storedTbK8sCInfo := TbK8sClusterInfo{}
+	storedTbK8sCInfo := model.TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &storedTbK8sCInfo)
 	if err != nil {
 		log.Err(err).Msg("")
 	}
+
+	// Store label info using CreateOrUpdateLabel
+	labels := map[string]string{
+		"provider":  "cb-tumblebug",
+		"namespace": nsId,
+	}
+	err = label.CreateOrUpdateLabel(model.StrK8s, uuid, k, labels)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return tbK8sCInfo, err
+	}
+
 	return storedTbK8sCInfo, nil
 }
 
 // AddK8sNodeGroup adds a NodeGroup
-func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (TbK8sClusterInfo, error) {
+func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupReq) (model.TbK8sClusterInfo, error) {
 	log.Info().Msg("AddK8sNodeGroup")
 
-	emptyObj := TbK8sClusterInfo{}
+	emptyObj := model.TbK8sClusterInfo{}
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
@@ -743,9 +360,9 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 	}
 
 	/*
-	 * Get TbK8sClusterInfo from kvstore
+	 * Get model.TbK8sClusterInfo from kvstore
 	 */
-	oldTbK8sCInfo := TbK8sClusterInfo{}
+	oldTbK8sCInfo := model.TbK8sClusterInfo{}
 	k := GenK8sClusterKey(nsId, k8sClusterId)
 	kv, err := kvstore.GetKv(k)
 	if err != nil {
@@ -785,14 +402,14 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 
 	spImgName := "" // Some CSPs do not require ImageName for creating a cluster
 	if u.ImageId != "" {
-		spImgName, err = resource.GetCspResourceId(nsId, common.StrImage, u.ImageId)
+		spImgName, err = resource.GetCspResourceId(nsId, model.StrImage, u.ImageId)
 		if spImgName == "" {
 			log.Err(err).Msg("Failed to Add K8sNodeGroup")
 			return emptyObj, err
 		}
 	}
 
-	// specInfo, err := resource.GetSpec(common.SystemCommonNs, u.SpecId)
+	// specInfo, err := resource.GetSpec(model.SystemCommonNs, u.SpecId)
 	// if err != nil {
 	// 	log.Err(err).Msg("Failed to Add K8sNodeGroup")
 	// 	return emptyObj, err
@@ -800,16 +417,16 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 	// spSpecName := specInfo.CspSpecName
 	spSpecName := u.SpecId
 
-	spKpName, err := resource.GetCspResourceId(nsId, common.StrSSHKey, u.SshKeyId)
+	spKpName, err := resource.GetCspResourceId(nsId, model.StrSSHKey, u.SshKeyId)
 	if spKpName == "" {
 		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err
 	}
 
-	requestBody := SpiderNodeGroupReq{
+	requestBody := model.SpiderNodeGroupReq{
 		NameSpace:      "", // should be empty string from Tumblebug
 		ConnectionName: oldTbK8sCInfo.ConnectionName,
-		ReqInfo: SpiderNodeGroupReqInfo{
+		ReqInfo: model.SpiderNodeGroupReqInfo{
 			Name:         spName,
 			ImageName:    spImgName,
 			VMSpecName:   spSpecName,
@@ -829,9 +446,9 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 	method := "POST"
 	client.SetTimeout(20 * time.Minute)
 
-	url := common.SpiderRestUrl + "/cluster/" + oldTbK8sCInfo.CspK8sClusterName + "/nodegroup"
+	url := model.SpiderRestUrl + "/cluster/" + oldTbK8sCInfo.CspK8sClusterName + "/nodegroup"
 
-	var spClusterRes SpiderClusterRes
+	var spClusterRes model.SpiderClusterRes
 
 	err = common.ExecuteHttpRequest(
 		client,
@@ -850,13 +467,13 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 	}
 
 	/*
-	 * Extract SpiderClusterInfo from Response & Build TbK8sClusterInfo object
+	 * Extract SpiderClusterInfo from Response & Build model.TbK8sClusterInfo object
 	 */
 
 	newTbK8sCInfo := convertSpiderClusterInfoToTbK8sClusterInfo(&spClusterRes.ClusterInfo, oldTbK8sCInfo.Id, oldTbK8sCInfo.ConnectionName, oldTbK8sCInfo.Description)
 
 	/*
-	 * Put/Get TbK8sClusterInfo to/from kvstore
+	 * Put/Get model.TbK8sClusterInfo to/from kvstore
 	 */
 	k = GenK8sClusterKey(nsId, newTbK8sCInfo.Id)
 	Val, _ := json.Marshal(newTbK8sCInfo)
@@ -876,7 +493,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 
 	log.Debug().Msg("<" + kv.Key + "> \n" + kv.Value)
 
-	storedTbK8sCInfo := TbK8sClusterInfo{}
+	storedTbK8sCInfo := model.TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &storedTbK8sCInfo)
 	if err != nil {
 		log.Err(err).Msg("")
@@ -925,7 +542,7 @@ func RemoveK8sNodeGroup(nsId string, k8sClusterId string, k8sNodeGroupName strin
 	}
 	requestBody := JsonTemplate{}
 
-	tbK8sCInfo := TbK8sClusterInfo{}
+	tbK8sCInfo := model.TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbK8sCInfo)
 	if err != nil {
 		log.Err(err).Msg("Failed to Remove K8sNodeGroup")
@@ -936,7 +553,7 @@ func RemoveK8sNodeGroup(nsId string, k8sClusterId string, k8sNodeGroupName strin
 	requestBody.ConnectionName = tbK8sCInfo.ConnectionName
 
 	client := resty.New()
-	url := common.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspK8sClusterName + "/nodegroup/" + k8sNodeGroupName
+	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspK8sClusterName + "/nodegroup/" + k8sNodeGroupName
 	if forceFlag == "true" {
 		url += "?force=true"
 	}
@@ -972,10 +589,10 @@ func RemoveK8sNodeGroup(nsId string, k8sClusterId string, k8sNodeGroupName strin
 }
 
 // SetK8sNodeGroupAutoscaling set NodeGroup's Autoscaling On/Off
-func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupName string, u *TbSetK8sNodeGroupAutoscalingReq) (TbSetK8sNodeGroupAutoscalingRes, error) {
+func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupName string, u *model.TbSetK8sNodeGroupAutoscalingReq) (model.TbSetK8sNodeGroupAutoscalingRes, error) {
 	log.Info().Msg("SetK8sNodeGroupAutoscaling")
 
-	emptyObj := TbSetK8sNodeGroupAutoscalingRes{}
+	emptyObj := model.TbSetK8sNodeGroupAutoscalingRes{}
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
@@ -1009,7 +626,7 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 	}
 
 	/*
-	 * Get TbK8sClusterInfo object from kvstore
+	 * Get model.TbK8sClusterInfo object from kvstore
 	 */
 
 	k := GenK8sClusterKey(nsId, k8sClusterId)
@@ -1017,25 +634,25 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 
 	kv, _ := kvstore.GetKv(k)
 
-	tbK8sCInfo := TbK8sClusterInfo{}
+	tbK8sCInfo := model.TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbK8sCInfo)
 	if err != nil {
 		log.Err(err).Msg("Failed to Set K8sNodeGroup Autoscaling")
 		return emptyObj, err
 	}
 
-	requestBody := SpiderSetAutoscalingReq{
+	requestBody := model.SpiderSetAutoscalingReq{
 		ConnectionName: tbK8sCInfo.ConnectionName,
-		ReqInfo: SpiderSetAutoscalingReqInfo{
+		ReqInfo: model.SpiderSetAutoscalingReqInfo{
 			OnAutoScaling: u.OnAutoScaling,
 		},
 	}
 
 	client := resty.New()
-	url := common.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspK8sClusterName + "/nodegroup/" + k8sNodeGroupName + "/onautoscaling"
+	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspK8sClusterName + "/nodegroup/" + k8sNodeGroupName + "/onautoscaling"
 	method := "PUT"
 
-	var spSetAutoscalingRes SpiderSetAutoscalingRes
+	var spSetAutoscalingRes model.SpiderSetAutoscalingRes
 	err = common.ExecuteHttpRequest(
 		client,
 		method,
@@ -1052,17 +669,17 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 		return emptyObj, err
 	}
 
-	var tbK8sSetAutoscalingRes TbSetK8sNodeGroupAutoscalingRes
+	var tbK8sSetAutoscalingRes model.TbSetK8sNodeGroupAutoscalingRes
 	tbK8sSetAutoscalingRes.Result = spSetAutoscalingRes.Result
 
 	return tbK8sSetAutoscalingRes, nil
 }
 
 // ChangeK8sNodeGroupAutoscaleSize change NodeGroup's Autoscaling Size
-func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGroupName string, u *TbChangeK8sNodeGroupAutoscaleSizeReq) (TbChangeK8sNodeGroupAutoscaleSizeRes, error) {
+func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGroupName string, u *model.TbChangeK8sNodeGroupAutoscaleSizeReq) (model.TbChangeK8sNodeGroupAutoscaleSizeRes, error) {
 	log.Info().Msg("ChangeK8sNodeGroupAutoscaleSize")
 
-	emptyObj := TbChangeK8sNodeGroupAutoscaleSizeRes{}
+	emptyObj := model.TbChangeK8sNodeGroupAutoscaleSizeRes{}
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
@@ -1096,7 +713,7 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 	}
 
 	/*
-	 * Get TbK8sClusterInfo object from kvstore
+	 * Get model.TbK8sClusterInfo object from kvstore
 	 */
 
 	k := GenK8sClusterKey(nsId, k8sClusterId)
@@ -1104,16 +721,16 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 
 	kv, _ := kvstore.GetKv(k)
 
-	tbK8sCInfo := TbK8sClusterInfo{}
+	tbK8sCInfo := model.TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbK8sCInfo)
 	if err != nil {
 		log.Err(err).Msg("Failed to Change K8sNodeGroup AutoscaleSize")
 		return emptyObj, err
 	}
 
-	requestBody := SpiderChangeAutoscaleSizeReq{
+	requestBody := model.SpiderChangeAutoscaleSizeReq{
 		ConnectionName: tbK8sCInfo.ConnectionName,
-		ReqInfo: SpiderChangeAutoscaleSizeReqInfo{
+		ReqInfo: model.SpiderChangeAutoscaleSizeReqInfo{
 			DesiredNodeSize: u.DesiredNodeSize,
 			MinNodeSize:     u.MinNodeSize,
 			MaxNodeSize:     u.MaxNodeSize,
@@ -1121,10 +738,10 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 	}
 
 	client := resty.New()
-	url := common.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspK8sClusterName + "/nodegroup/" + k8sNodeGroupName + "/autoscalesize"
+	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspK8sClusterName + "/nodegroup/" + k8sNodeGroupName + "/autoscalesize"
 	method := "PUT"
 
-	var spChangeAutoscaleSizeRes SpiderChangeAutoscaleSizeRes
+	var spChangeAutoscaleSizeRes model.SpiderChangeAutoscaleSizeRes
 	err = common.ExecuteHttpRequest(
 		client,
 		method,
@@ -1141,16 +758,16 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 		return emptyObj, err
 	}
 
-	var tbK8sCAutoscaleSizeRes TbChangeK8sNodeGroupAutoscaleSizeRes
+	var tbK8sCAutoscaleSizeRes model.TbChangeK8sNodeGroupAutoscaleSizeRes
 	tbK8sCAutoscaleSizeRes.TbK8sNodeGroupInfo = convertSpiderNodeGroupInfoToTbK8sNodeGroupInfo(&spChangeAutoscaleSizeRes.NodeGroupInfo)
 
 	return tbK8sCAutoscaleSizeRes, nil
 }
 
 // GetK8sCluster retrives a k8s cluster information
-func GetK8sCluster(nsId string, k8sClusterId string) (TbK8sClusterInfo, error) {
+func GetK8sCluster(nsId string, k8sClusterId string) (model.TbK8sClusterInfo, error) {
 
-	emptyObj := TbK8sClusterInfo{}
+	emptyObj := model.TbK8sClusterInfo{}
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
@@ -1179,7 +796,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (TbK8sClusterInfo, error) {
 	log.Debug().Msg("[Get K8sCluster] " + k8sClusterId)
 
 	/*
-	 * Get TbK8sClusterInfo object from kvstore
+	 * Get model.TbK8sClusterInfo object from kvstore
 	 */
 	k := GenK8sClusterKey(nsId, k8sClusterId)
 
@@ -1189,7 +806,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (TbK8sClusterInfo, error) {
 		return emptyObj, err
 	}
 
-	storedTbK8sCInfo := TbK8sClusterInfo{}
+	storedTbK8sCInfo := model.TbK8sClusterInfo{}
 	if kv == (kvstore.KeyValue{}) {
 		err = fmt.Errorf("Cannot get the k8s cluster " + k8sClusterId + ".")
 		log.Err(err).Msg("Failed to Get K8sCluster")
@@ -1203,12 +820,12 @@ func GetK8sCluster(nsId string, k8sClusterId string) (TbK8sClusterInfo, error) {
 	}
 
 	/*
-	 * Get TbK8sClusterInfo object from CB-Spider
+	 * Get model.TbK8sClusterInfo object from CB-Spider
 	 */
 
 	client := resty.New()
 	client.SetTimeout(10 * time.Minute)
-	url := common.SpiderRestUrl + "/cluster/" + storedTbK8sCInfo.CspK8sClusterName
+	url := model.SpiderRestUrl + "/cluster/" + storedTbK8sCInfo.CspK8sClusterName
 	method := "GET"
 
 	// Create Request body for GetK8sCluster of CB-Spider
@@ -1221,7 +838,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (TbK8sClusterInfo, error) {
 		ConnectionName: storedTbK8sCInfo.ConnectionName,
 	}
 
-	var spClusterRes SpiderClusterRes
+	var spClusterRes model.SpiderClusterRes
 	err = common.ExecuteHttpRequest(
 		client,
 		method,
@@ -1253,7 +870,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (TbK8sClusterInfo, error) {
 	return tbK8sCInfo, nil
 }
 
-func isEqualTbK8sClusterInfoExceptStatus(info1 TbK8sClusterInfo, info2 TbK8sClusterInfo) bool {
+func isEqualTbK8sClusterInfoExceptStatus(info1 model.TbK8sClusterInfo, info2 model.TbK8sClusterInfo) bool {
 
 	// FIX: now compare some fields only
 
@@ -1383,7 +1000,7 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{
 	log.Debug().Msg(k)
 
 	/*
-	 * Get TbK8sClusterInfo objects from kvstore
+	 * Get model.TbK8sClusterInfo objects from kvstore
 	 */
 
 	kv, err := kvstore.GetKvList(k)
@@ -1394,11 +1011,11 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{
 		return nil, err
 	}
 
-	tbK8sCInfoList := []TbK8sClusterInfo{}
+	tbK8sCInfoList := []model.TbK8sClusterInfo{}
 
 	if kv != nil {
 		for _, v := range kv {
-			tbK8sCInfo := TbK8sClusterInfo{}
+			tbK8sCInfo := model.TbK8sClusterInfo{}
 			err = json.Unmarshal([]byte(v.Value), &tbK8sCInfo)
 			if err != nil {
 				log.Err(err).Msg("Failed to List K8sCluster")
@@ -1450,7 +1067,7 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 	}
 
 	/*
-	 * Get TbK8sClusterInfo object from kvstore
+	 * Get model.TbK8sClusterInfo object from kvstore
 	 */
 
 	k := GenK8sClusterKey(nsId, k8sClusterId)
@@ -1465,7 +1082,7 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 	}
 	requestBody := JsonTemplate{}
 
-	tbK8sCInfo := TbK8sClusterInfo{}
+	tbK8sCInfo := model.TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbK8sCInfo)
 	if err != nil {
 		log.Err(err).Msg("Failed to Delete K8sCluster")
@@ -1476,7 +1093,7 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 	requestBody.ConnectionName = tbK8sCInfo.ConnectionName
 
 	client := resty.New()
-	url := common.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspK8sClusterName
+	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspK8sClusterName
 	if forceFlag == "true" {
 		url += "?force=true"
 	}
@@ -1528,10 +1145,10 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 }
 
 // DeleteAllK8sCluster deletes all clusters
-func DeleteAllK8sCluster(nsId string, subString string, forceFlag string) (common.IdList, error) {
+func DeleteAllK8sCluster(nsId string, subString string, forceFlag string) (model.IdList, error) {
 	log.Info().Msg("DeleteAllK8sCluster")
 
-	deletedK8sClusters := common.IdList{}
+	deletedK8sClusters := model.IdList{}
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1564,10 +1181,10 @@ func DeleteAllK8sCluster(nsId string, subString string, forceFlag string) (commo
 }
 
 // UpgradeK8sCluster upgrades an existing k8s cluster to the specified version
-func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterReq) (TbK8sClusterInfo, error) {
+func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.TbUpgradeK8sClusterReq) (model.TbK8sClusterInfo, error) {
 	log.Info().Msg("UpgradeK8sCluster")
 
-	emptyObj := TbK8sClusterInfo{}
+	emptyObj := model.TbK8sClusterInfo{}
 
 	err := validate.Struct(u)
 	if err != nil {
@@ -1592,9 +1209,9 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	}
 
 	/*
-	 * Get TbK8sClusterInfo from kvstore
+	 * Get model.TbK8sClusterInfo from kvstore
 	 */
-	oldTbK8sCInfo := TbK8sClusterInfo{}
+	oldTbK8sCInfo := model.TbK8sClusterInfo{}
 	k := GenK8sClusterKey(nsId, k8sClusterId)
 	kv, err := kvstore.GetKv(k)
 	if err != nil {
@@ -1622,7 +1239,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	}
 
 	/*
-	 * Build RequestBody for SpiderUpgradeClusterReq{}
+	 * Build RequestBody for model.SpiderUpgradeClusterReq{}
 	 */
 
 	// Validate
@@ -1633,19 +1250,19 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	}
 	spVersion := u.Version
 
-	requestBody := SpiderUpgradeClusterReq{
+	requestBody := model.SpiderUpgradeClusterReq{
 		NameSpace:      "", // should be empty string from Tumblebug
 		ConnectionName: oldTbK8sCInfo.ConnectionName,
-		ReqInfo: SpiderUpgradeClusterReqInfo{
+		ReqInfo: model.SpiderUpgradeClusterReqInfo{
 			Version: spVersion,
 		},
 	}
 
 	client := resty.New()
-	url := common.SpiderRestUrl + "/cluster/" + oldTbK8sCInfo.CspK8sClusterName + "/upgrade"
+	url := model.SpiderRestUrl + "/cluster/" + oldTbK8sCInfo.CspK8sClusterName + "/upgrade"
 	method := "PUT"
 
-	var spClusterRes SpiderClusterRes
+	var spClusterRes model.SpiderClusterRes
 	err = common.ExecuteHttpRequest(
 		client,
 		method,
@@ -1663,13 +1280,13 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	}
 
 	/*
-	 * Extract SpiderClusterInfo from Response & Build TbK8sClusterInfo object
+	 * Extract SpiderClusterInfo from Response & Build model.TbK8sClusterInfo object
 	 */
 
 	newTbK8sCInfo := convertSpiderClusterInfoToTbK8sClusterInfo(&spClusterRes.ClusterInfo, oldTbK8sCInfo.Id, oldTbK8sCInfo.ConnectionName, oldTbK8sCInfo.Description)
 
 	/*
-	 * Put/Get TbK8sClusterInfo to/from kvstore
+	 * Put/Get model.TbK8sClusterInfo to/from kvstore
 	 */
 	k = GenK8sClusterKey(nsId, newTbK8sCInfo.Id)
 	Val, _ := json.Marshal(newTbK8sCInfo)
@@ -1689,7 +1306,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 
 	log.Debug().Msg("<" + kv.Key + "> \n" + kv.Value)
 
-	storedTbK8sCInfo := TbK8sClusterInfo{}
+	storedTbK8sCInfo := model.TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &storedTbK8sCInfo)
 	if err != nil {
 		log.Err(err).Msg("")
@@ -1698,7 +1315,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	return storedTbK8sCInfo, nil
 }
 
-func convertSpiderNetworkInfoToTbK8sClusterNetworkInfo(spNetworkInfo SpiderNetworkInfo) TbK8sClusterNetworkInfo {
+func convertSpiderNetworkInfoToTbK8sClusterNetworkInfo(spNetworkInfo model.SpiderNetworkInfo) model.TbK8sClusterNetworkInfo {
 	tbVNetId := spNetworkInfo.VpcIID.SystemId
 
 	var tbSubnetIds []string
@@ -1713,7 +1330,7 @@ func convertSpiderNetworkInfoToTbK8sClusterNetworkInfo(spNetworkInfo SpiderNetwo
 
 	tbKeyValueList := convertSpiderKeyValueListToTbKeyValueList(spNetworkInfo.KeyValueList)
 
-	tbK8sClusterNetworkInfo := TbK8sClusterNetworkInfo{
+	tbK8sClusterNetworkInfo := model.TbK8sClusterNetworkInfo{
 		VNetId:           tbVNetId,
 		SubnetIds:        tbSubnetIds,
 		SecurityGroupIds: tbSecurityGroupIds,
@@ -1723,7 +1340,7 @@ func convertSpiderNetworkInfoToTbK8sClusterNetworkInfo(spNetworkInfo SpiderNetwo
 	return tbK8sClusterNetworkInfo
 }
 
-func convertSpiderNodeGroupInfoToTbK8sNodeGroupInfo(spNodeGroupInfo *SpiderNodeGroupInfo) TbK8sNodeGroupInfo {
+func convertSpiderNodeGroupInfoToTbK8sNodeGroupInfo(spNodeGroupInfo *model.SpiderNodeGroupInfo) model.TbK8sNodeGroupInfo {
 	tbNodeId := spNodeGroupInfo.IId.SystemId
 	tbImageId := spNodeGroupInfo.ImageIID.SystemId
 	tbSpecId := spNodeGroupInfo.VMSpecName
@@ -1742,7 +1359,7 @@ func convertSpiderNodeGroupInfoToTbK8sNodeGroupInfo(spNodeGroupInfo *SpiderNodeG
 	}
 
 	tbKeyValueList := convertSpiderKeyValueListToTbKeyValueList(spNodeGroupInfo.KeyValueList)
-	tbK8sNodeGroupInfo := TbK8sNodeGroupInfo{
+	tbK8sNodeGroupInfo := model.TbK8sNodeGroupInfo{
 		Id:              tbNodeId,
 		ImageId:         tbImageId,
 		SpecId:          tbSpecId,
@@ -1761,8 +1378,8 @@ func convertSpiderNodeGroupInfoToTbK8sNodeGroupInfo(spNodeGroupInfo *SpiderNodeG
 	return tbK8sNodeGroupInfo
 }
 
-func convertSpiderNodeGroupListToTbK8sNodeGroupList(spNodeGroupList []SpiderNodeGroupInfo) []TbK8sNodeGroupInfo {
-	var tbK8sNodeGroupList []TbK8sNodeGroupInfo
+func convertSpiderNodeGroupListToTbK8sNodeGroupList(spNodeGroupList []model.SpiderNodeGroupInfo) []model.TbK8sNodeGroupInfo {
+	var tbK8sNodeGroupList []model.TbK8sNodeGroupInfo
 	for _, v := range spNodeGroupList {
 		tbK8sNodeGroupInfo := convertSpiderNodeGroupInfoToTbK8sNodeGroupInfo(&v)
 		tbK8sNodeGroupList = append(tbK8sNodeGroupList, tbK8sNodeGroupInfo)
@@ -1771,31 +1388,31 @@ func convertSpiderNodeGroupListToTbK8sNodeGroupList(spNodeGroupList []SpiderNode
 	return tbK8sNodeGroupList
 }
 
-func convertSpiderClusterAccessInfoToTbK8sAccessInfo(spAccessInfo SpiderAccessInfo) TbK8sAccessInfo {
-	return TbK8sAccessInfo{spAccessInfo.Endpoint, spAccessInfo.Kubeconfig}
+func convertSpiderClusterAccessInfoToTbK8sAccessInfo(spAccessInfo model.SpiderAccessInfo) model.TbK8sAccessInfo {
+	return model.TbK8sAccessInfo{spAccessInfo.Endpoint, spAccessInfo.Kubeconfig}
 }
 
-func convertSpiderClusterAddonsInfoToTbK8sAddonsInfo(spAddonsInfo SpiderAddonsInfo) TbK8sAddonsInfo {
+func convertSpiderClusterAddonsInfoToTbK8sAddonsInfo(spAddonsInfo model.SpiderAddonsInfo) model.TbK8sAddonsInfo {
 	tbKeyValueList := convertSpiderKeyValueListToTbKeyValueList(spAddonsInfo.KeyValueList)
-	return TbK8sAddonsInfo{tbKeyValueList}
+	return model.TbK8sAddonsInfo{tbKeyValueList}
 }
 
-func convertSpiderKeyValueListToTbKeyValueList(spKeyValueList []common.KeyValue) []common.KeyValue {
-	var tbKeyValueList []common.KeyValue
+func convertSpiderKeyValueListToTbKeyValueList(spKeyValueList []model.KeyValue) []model.KeyValue {
+	var tbKeyValueList []model.KeyValue
 	for _, v := range spKeyValueList {
 		tbKeyValueList = append(tbKeyValueList, v)
 	}
 	return tbKeyValueList
 }
 
-func convertSpiderClusterInfoToTbK8sClusterInfo(spClusterInfo *SpiderClusterInfo, id string, connectionName string, description string) TbK8sClusterInfo {
+func convertSpiderClusterInfoToTbK8sClusterInfo(spClusterInfo *model.SpiderClusterInfo, id string, connectionName string, description string) model.TbK8sClusterInfo {
 	tbK8sCNInfo := convertSpiderNetworkInfoToTbK8sClusterNetworkInfo(spClusterInfo.Network)
 	tbK8sNGList := convertSpiderNodeGroupListToTbK8sNodeGroupList(spClusterInfo.NodeGroupList)
 	tbK8sCAccInfo := convertSpiderClusterAccessInfoToTbK8sAccessInfo(spClusterInfo.AccessInfo)
 	tbK8sCAddInfo := convertSpiderClusterAddonsInfoToTbK8sAddonsInfo(spClusterInfo.Addons)
 	tbK8sCStatus := convertSpiderClusterStatusToTbK8sClusterStatus(spClusterInfo.Status)
 	tbKVList := convertSpiderKeyValueListToTbKeyValueList(spClusterInfo.KeyValueList)
-	tbK8sCInfo := TbK8sClusterInfo{
+	tbK8sCInfo := model.TbK8sClusterInfo{
 		Id:                id,
 		Name:              id,
 		ConnectionName:    connectionName,
@@ -1815,36 +1432,36 @@ func convertSpiderClusterInfoToTbK8sClusterInfo(spClusterInfo *SpiderClusterInfo
 	return tbK8sCInfo
 }
 
-func convertSpiderClusterStatusToTbK8sClusterStatus(spClusterStatus SpiderClusterStatus) TbK8sClusterStatus {
-	if spClusterStatus == SpiderClusterCreating {
-		return TbK8sClusterCreating
-	} else if spClusterStatus == SpiderClusterActive {
-		return TbK8sClusterActive
-	} else if spClusterStatus == SpiderClusterInactive {
-		return TbK8sClusterInactive
-	} else if spClusterStatus == SpiderClusterUpdating {
-		return TbK8sClusterUpdating
-	} else if spClusterStatus == SpiderClusterDeleting {
-		return TbK8sClusterDeleting
+func convertSpiderClusterStatusToTbK8sClusterStatus(spClusterStatus model.SpiderClusterStatus) model.TbK8sClusterStatus {
+	if spClusterStatus == model.SpiderClusterCreating {
+		return model.TbK8sClusterCreating
+	} else if spClusterStatus == model.SpiderClusterActive {
+		return model.TbK8sClusterActive
+	} else if spClusterStatus == model.SpiderClusterInactive {
+		return model.TbK8sClusterInactive
+	} else if spClusterStatus == model.SpiderClusterUpdating {
+		return model.TbK8sClusterUpdating
+	} else if spClusterStatus == model.SpiderClusterDeleting {
+		return model.TbK8sClusterDeleting
 	}
 
-	return TbK8sClusterInactive
+	return model.TbK8sClusterInactive
 }
 
-func convertSpiderNodeGroupStatusToTbK8sNodeGroupStatus(spNodeGroupStatus SpiderNodeGroupStatus) TbK8sNodeGroupStatus {
-	if spNodeGroupStatus == SpiderNodeGroupCreating {
-		return TbK8sNodeGroupCreating
-	} else if spNodeGroupStatus == SpiderNodeGroupActive {
-		return TbK8sNodeGroupActive
-	} else if spNodeGroupStatus == SpiderNodeGroupInactive {
-		return TbK8sNodeGroupInactive
-	} else if spNodeGroupStatus == SpiderNodeGroupUpdating {
-		return TbK8sNodeGroupUpdating
-	} else if spNodeGroupStatus == SpiderNodeGroupDeleting {
-		return TbK8sNodeGroupDeleting
+func convertSpiderNodeGroupStatusToTbK8sNodeGroupStatus(spNodeGroupStatus model.SpiderNodeGroupStatus) model.TbK8sNodeGroupStatus {
+	if spNodeGroupStatus == model.SpiderNodeGroupCreating {
+		return model.TbK8sNodeGroupCreating
+	} else if spNodeGroupStatus == model.SpiderNodeGroupActive {
+		return model.TbK8sNodeGroupActive
+	} else if spNodeGroupStatus == model.SpiderNodeGroupInactive {
+		return model.TbK8sNodeGroupInactive
+	} else if spNodeGroupStatus == model.SpiderNodeGroupUpdating {
+		return model.TbK8sNodeGroupUpdating
+	} else if spNodeGroupStatus == model.SpiderNodeGroupDeleting {
+		return model.TbK8sNodeGroupDeleting
 	}
 
-	return TbK8sNodeGroupInactive
+	return model.TbK8sNodeGroupInactive
 }
 
 // checkK8sClusterEnablement returns the enablement status(nil or error) for K8sCluster related to Connection.
@@ -1862,17 +1479,17 @@ func checkK8sClusterEnablement(connectionName string) error {
 	fnCloudType := strings.ToUpper(string(lowercase[0])) + lowercase[1:]
 
 	// Get cloud setting with field name
-	cloudSetting := common.CloudSetting{}
+	cloudSetting := model.CloudSetting{}
 
 	getCloudSetting := func() {
 		defer func() {
 			if err := recover(); err != nil {
 				log.Error().Msgf("%v", err)
-				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(common.CloudSetting)
+				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(model.CloudSetting)
 			}
 		}()
 
-		cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName(fnCloudType).Interface().(common.CloudSetting)
+		cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName(fnCloudType).Interface().(model.CloudSetting)
 	}
 
 	getCloudSetting()
@@ -1885,7 +1502,7 @@ func checkK8sClusterEnablement(connectionName string) error {
 	return nil
 }
 
-func validateAtCreateK8sCluster(tbK8sClusterReq *TbK8sClusterReq) error {
+func validateAtCreateK8sCluster(tbK8sClusterReq *model.TbK8sClusterReq) error {
 	connConfig, err := common.GetConnConfig(tbK8sClusterReq.ConnectionName)
 
 	// Validate K8sCluster Version
@@ -1898,7 +1515,7 @@ func validateAtCreateK8sCluster(tbK8sClusterReq *TbK8sClusterReq) error {
 	return nil
 }
 
-func validateAtUpgradeK8sCluster(connectionName string, tbUpgradeK8sClusterReq *TbUpgradeK8sClusterReq) error {
+func validateAtUpgradeK8sCluster(connectionName string, tbUpgradeK8sClusterReq *model.TbUpgradeK8sClusterReq) error {
 	connConfig, err := common.GetConnConfig(connectionName)
 
 	// Validate K8sCluster Version

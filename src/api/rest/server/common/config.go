@@ -28,6 +28,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 )
 
 // RestInitConfig godoc
@@ -38,9 +39,9 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param configId path string true "Config ID"
-// @Success 200 {object} common.ConfigInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.ConfigInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /config/{configId} [delete]
 func RestInitConfig(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -71,9 +72,9 @@ func RestInitConfig(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param configId path string true "Config ID"
-// @Success 200 {object} common.ConfigInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.ConfigInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /config/{configId} [get]
 func RestGetConfig(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -97,7 +98,7 @@ func RestGetConfig(c echo.Context) error {
 // Response structure for RestGetAllConfig
 type RestGetAllConfigResponse struct {
 	//Name string     `json:"name"`
-	Config []common.ConfigInfo `json:"config"`
+	Config []model.ConfigInfo `json:"config"`
 }
 
 // RestGetAllConfig godoc
@@ -108,8 +109,8 @@ type RestGetAllConfigResponse struct {
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} RestGetAllConfigResponse
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /config [get]
 func RestGetAllConfig(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -130,17 +131,17 @@ func RestGetAllConfig(c echo.Context) error {
 // @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
-// @Param config body common.ConfigReq true "Key and Value for configuration"
-// @Success 200 {object} common.ConfigInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param config body model.ConfigReq true "Key and Value for configuration"
+// @Success 200 {object} model.ConfigInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /config [post]
 func RestPostConfig(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
-	u := &common.ConfigReq{}
+	u := &model.ConfigReq{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -158,8 +159,8 @@ func RestPostConfig(c echo.Context) error {
 // @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /config [delete]
 func RestInitAllConfig(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -181,8 +182,8 @@ func RestInitAllConfig(c echo.Context) error {
 // @Produce  json
 // @Param reqId path string true "Request ID acquired from X-Request-ID header"
 // @Success 200 {object} common.RequestDetails
-// @Failure 404 {object} SimpleMsg
-// @Failure 500 {object} SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /request/{reqId} [get]
 func RestGetRequest(c echo.Context) error {
 	reqId := c.Param("reqId")
@@ -264,7 +265,7 @@ func RestGetAllRequests(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param reqId path string true "Request ID to delete"
-// @Success 200 {object} SimpleMsg
+// @Success 200 {object} model.SimpleMsg
 // @Router /request/{reqId} [delete]
 func RestDeleteRequest(c echo.Context) error {
 	reqId := c.Param("reqId")
@@ -284,7 +285,7 @@ func RestDeleteRequest(c echo.Context) error {
 // @Tags [Admin] API Request Management
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} SimpleMsg
+// @Success 200 {object} model.SimpleMsg
 // @Router /requests [delete]
 func RestDeleteAllRequests(c echo.Context) error {
 	common.RequestMap.Range(func(key, value interface{}) bool {

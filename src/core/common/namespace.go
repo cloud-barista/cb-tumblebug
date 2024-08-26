@@ -24,21 +24,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 )
-
-type NsReq struct {
-	Name        string `json:"name" example:"default"`
-	Description string `json:"description" example:"Description for this namespace"`
-}
-
-// swagger:response NsInfo
-type NsInfo struct {
-	Id          string `json:"id" example:"default"`
-	Name        string `json:"name" example:"default"`
-	Description string `json:"description" example:"Description for this namespace"`
-}
 
 func NsValidation() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -63,10 +52,10 @@ func NsValidation() echo.MiddlewareFunc {
 	}
 }
 
-func CreateNs(u *NsReq) (NsInfo, error) {
+func CreateNs(u *model.NsReq) (model.NsInfo, error) {
 	err := CheckString(u.Name)
 	if err != nil {
-		temp := NsInfo{}
+		temp := model.NsInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
@@ -74,18 +63,18 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 	check, err := CheckNs(u.Name)
 
 	if check {
-		temp := NsInfo{}
+		temp := model.NsInfo{}
 		err := fmt.Errorf("CreateNs(); The namespace " + u.Name + " already exists.")
 		return temp, err
 	}
 
 	if err != nil {
-		temp := NsInfo{}
+		temp := model.NsInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
-	content := NsInfo{}
+	content := model.NsInfo{}
 	//content.Id = GenUid()
 	content.Id = u.Name
 	content.Name = u.Name
@@ -104,10 +93,10 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 }
 
 // UpdateNs is func to update namespace info
-func UpdateNs(id string, u *NsReq) (NsInfo, error) {
+func UpdateNs(id string, u *model.NsReq) (model.NsInfo, error) {
 
-	res := NsInfo{}
-	emptyInfo := NsInfo{}
+	res := model.NsInfo{}
+	emptyInfo := model.NsInfo{}
 
 	err := CheckString(id)
 	if err != nil {
@@ -169,13 +158,13 @@ func UpdateNs(id string, u *NsReq) (NsInfo, error) {
 	return res, nil
 }
 
-func GetNs(id string) (NsInfo, error) {
+func GetNs(id string) (model.NsInfo, error) {
 
-	res := NsInfo{}
+	res := model.NsInfo{}
 
 	err := CheckString(id)
 	if err != nil {
-		temp := NsInfo{}
+		temp := model.NsInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
@@ -190,7 +179,7 @@ func GetNs(id string) (NsInfo, error) {
 	}
 
 	if err != nil {
-		temp := NsInfo{}
+		temp := model.NsInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
@@ -213,7 +202,7 @@ func GetNs(id string) (NsInfo, error) {
 	return res, nil
 }
 
-func ListNs() ([]NsInfo, error) {
+func ListNs() ([]model.NsInfo, error) {
 	log.Debug().Msg("[List namespace]")
 	key := "/ns"
 	log.Debug().Msg(key)
@@ -226,9 +215,9 @@ func ListNs() ([]NsInfo, error) {
 		return nil, err
 	}
 	if keyValue != nil {
-		res := []NsInfo{}
+		res := []model.NsInfo{}
 		for _, v := range keyValue {
-			tempObj := NsInfo{}
+			tempObj := model.NsInfo{}
 			err = json.Unmarshal([]byte(v.Value), &tempObj)
 			if err != nil {
 				log.Error().Err(err).Msg("")

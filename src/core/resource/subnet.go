@@ -20,6 +20,8 @@ import (
 	"strconv"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
@@ -27,18 +29,18 @@ import (
 )
 
 // CreateSubnet accepts subnet creation request, creates and returns an TB vNet object
-func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) (TbVNetInfo, error) {
+func CreateSubnet(nsId string, vNetId string, req model.TbSubnetReq, objectOnly bool) (model.TbVNetInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := TbVNetInfo{}
+		temp := model.TbVNetInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(vNetId)
 	if err != nil {
-		temp := TbVNetInfo{}
+		temp := model.TbVNetInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
@@ -47,27 +49,27 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			log.Err(err).Msg("")
-			temp := TbVNetInfo{}
+			temp := model.TbVNetInfo{}
 			return temp, err
 		}
 
-		temp := TbVNetInfo{}
+		temp := model.TbVNetInfo{}
 		return temp, err
 	}
 
-	parentResourceType := common.StrVNet
-	resourceType := common.StrSubnet
+	parentResourceType := model.StrVNet
+	resourceType := model.StrSubnet
 
 	check, err := CheckResource(nsId, parentResourceType, vNetId)
 
 	if !check {
-		temp := TbVNetInfo{}
+		temp := model.TbVNetInfo{}
 		err := fmt.Errorf("The vNet " + vNetId + " does not exist.")
 		return temp, err
 	}
 
 	if err != nil {
-		temp := TbVNetInfo{}
+		temp := model.TbVNetInfo{}
 		err := fmt.Errorf("Failed to check the existence of the vNet " + vNetId + ".")
 		return temp, err
 	}
@@ -75,20 +77,22 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	check, err = CheckChildResource(nsId, resourceType, vNetId, req.Name)
 
 	if check {
-		temp := TbVNetInfo{}
+		temp := model.TbVNetInfo{}
 		err := fmt.Errorf("The subnet " + req.Name + " already exists.")
 		return temp, err
 	}
 
 	if err != nil {
-		temp := TbVNetInfo{}
+		temp := model.TbVNetInfo{}
 		err := fmt.Errorf("Failed to check the existence of the subnet " + req.Name + ".")
 		return temp, err
 	}
 
-	vNetKey := common.GenResourceKey(nsId, common.StrVNet, vNetId)
+	uuid := common.GenUid()
+
+	vNetKey := common.GenResourceKey(nsId, model.StrVNet, vNetId)
 	vNetKeyValue, _ := kvstore.GetKv(vNetKey)
-	oldVNet := TbVNetInfo{}
+	oldVNet := model.TbVNetInfo{}
 	err = json.Unmarshal([]byte(vNetKeyValue.Value), &oldVNet)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -96,25 +100,25 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	}
 
 	if objectOnly == false { // then, call CB-Spider CreateSubnet API
-		requestBody := SpiderSubnetReqInfoWrapper{}
+		requestBody := model.SpiderSubnetReqInfoWrapper{}
 		requestBody.ConnectionName = oldVNet.ConnectionName
-		requestBody.ReqInfo.Name = common.GenUid()
+		requestBody.ReqInfo.Name = uuid
 		requestBody.ReqInfo.IPv4_CIDR = req.IPv4_CIDR
 
-		url := fmt.Sprintf("%s/vpc/%s/subnet", common.SpiderRestUrl, oldVNet.CspVNetName)
+		url := fmt.Sprintf("%s/vpc/%s/subnet", model.SpiderRestUrl, oldVNet.CspVNetName)
 
 		client := resty.New().SetCloseConnection(true)
 
 		resp, err := client.R().
 			SetHeader("Content-Type", "application/json").
 			SetBody(requestBody).
-			SetResult(&SpiderVPCInfo{}). // or SetResult(AuthSuccess{}).
+			SetResult(&model.SpiderVPCInfo{}). // or SetResult(AuthSuccess{}).
 			//SetError(&AuthError{}).       // or SetError(AuthError{}).
 			Post(url)
 
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			content := TbVNetInfo{}
+			content := model.TbVNetInfo{}
 			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
 		}
@@ -124,24 +128,24 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
 			log.Error().Err(err).Msg("")
-			content := TbVNetInfo{}
+			content := model.TbVNetInfo{}
 			return content, err
 		}
 
 	}
 
 	log.Info().Msg("POST CreateSubnet")
-	SubnetKey := common.GenChildResourceKey(nsId, common.StrSubnet, vNetId, req.Name)
+	SubnetKey := common.GenChildResourceKey(nsId, model.StrSubnet, vNetId, req.Name)
 	Val, _ := json.Marshal(req)
 
 	err = kvstore.Put(SubnetKey, string(Val))
 	if err != nil {
-		temp := TbVNetInfo{}
+		temp := model.TbVNetInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
-	newVNet := TbVNetInfo{}
+	newVNet := model.TbVNetInfo{}
 	newVNet = oldVNet
 
 	jsonBody, err := json.Marshal(req)
@@ -149,13 +153,14 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 		log.Error().Err(err).Msg("")
 	}
 
-	tbSubnetInfo := TbSubnetInfo{}
+	tbSubnetInfo := model.TbSubnetInfo{}
 	err = json.Unmarshal(jsonBody, &tbSubnetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	}
 	tbSubnetInfo.Id = req.Name
 	tbSubnetInfo.Name = req.Name
+	tbSubnetInfo.Uuid = uuid
 	tbSubnetInfo.IdFromCsp = req.IdFromCsp
 
 	newVNet.SubnetInfoList = append(newVNet.SubnetInfoList, tbSubnetInfo)
@@ -165,6 +170,16 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return oldVNet, err
+	}
+	// Store label info using CreateOrUpdateLabel
+	labels := map[string]string{
+		"provider":  "cb-tumblebug",
+		"namespace": nsId,
+	}
+	err = label.CreateOrUpdateLabel(model.StrSubnet, uuid, vNetKey, labels)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return model.TbVNetInfo{}, err
 	}
 
 	return newVNet, nil

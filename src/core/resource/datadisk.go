@@ -18,105 +18,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 
 	validator "github.com/go-playground/validator/v10"
 )
 
-type DiskStatus string
-
-const (
-	DiskCreating  DiskStatus = "Creating"
-	DiskAvailable DiskStatus = "Available"
-	DiskAttached  DiskStatus = "Attached"
-	DiskDeleting  DiskStatus = "Deleting"
-	DiskError     DiskStatus = "Error"
-)
-
-// TbAttachDetachDataDiskReq is a wrapper struct to create JSON body of 'Attach/Detach disk request'
-type TbAttachDetachDataDiskReq struct {
-	DataDiskId string `json:"dataDiskId" validate:"required"`
-}
-
-// SpiderDiskAttachDetachReqWrapper is a wrapper struct to create JSON body of 'Attach/Detach disk request'
-type SpiderDiskAttachDetachReqWrapper struct {
-	ConnectionName string
-	ReqInfo        SpiderDiskAttachDetachReq
-}
-
-// SpiderDiskAttachDetachReq is a struct to create JSON body of 'Attach/Detach disk request'
-type SpiderDiskAttachDetachReq struct {
-	VMName string
-}
-
-// SpiderDiskUpsizeReqWrapper is a wrapper struct to create JSON body of 'Upsize disk request'
-type SpiderDiskUpsizeReqWrapper struct {
-	ConnectionName string
-	ReqInfo        SpiderDiskUpsizeReq
-}
-
-// SpiderDiskUpsizeReq is a struct to create JSON body of 'Upsize disk request'
-type SpiderDiskUpsizeReq struct {
-	Size string // "", "default", "50", "1000"  # (GB)
-}
-
-// SpiderDiskReqInfoWrapper is a wrapper struct to create JSON body of 'Get disk request'
-type SpiderDiskReqInfoWrapper struct {
-	ConnectionName string
-	ReqInfo        SpiderDiskInfo
-}
-
-// SpiderDiskInfo is a struct to create JSON body of 'Get disk request'
-type SpiderDiskInfo struct {
-	// Fields for request
-	Name  string
-	CSPid string
-
-	// Fields for both request and response
-	DiskType string // "", "SSD(gp2)", "Premium SSD", ...
-	DiskSize string // "", "default", "50", "1000"  # (GB)
-
-	// Fields for response
-	IId common.IID // {NameId, SystemId}
-
-	Status  DiskStatus // DiskCreating | DiskAvailable | DiskAttached | DiskDeleting | DiskError
-	OwnerVM common.IID // When the Status is DiskAttached
-
-	CreatedTime  time.Time
-	KeyValueList []common.KeyValue
-}
-
-// TbDataDiskReq is a struct to handle 'Register dataDisk' request toward CB-Tumblebug.
-type TbDataDiskReq struct {
-	Name           string `json:"name" validate:"required" example:"aws-ap-southeast-1-datadisk"`
-	ConnectionName string `json:"connectionName" validate:"required" example:"aws-ap-southeast-1"`
-	DiskType       string `json:"diskType" example:"default"`
-	DiskSize       string `json:"diskSize" validate:"required" example:"77" default:"100"`
-	Description    string `json:"description,omitempty"`
-
-	// Fields for "Register existing dataDisk" feature
-	// CspDataDiskId is required to register object from CSP (option=register)
-	CspDataDiskId string `json:"cspDataDiskId"`
-}
-
-// TbDataDiskVmReq is a struct to handle 'Provisioning dataDisk to VM' request toward CB-Tumblebug.
-type TbDataDiskVmReq struct {
-	Name        string `json:"name" validate:"required" example:"aws-ap-southeast-1-datadisk"`
-	DiskType    string `json:"diskType" example:"default"`
-	DiskSize    string `json:"diskSize" validate:"required" example:"77" default:"100"`
-	Description string `json:"description,omitempty"`
-}
-
 // TbDataDiskReqStructLevelValidation func is for Validation
 func TbDataDiskReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(TbDataDiskReq)
+	u := sl.Current().Interface().(model.TbDataDiskReq)
 
 	err := common.CheckString(u.Name)
 	if err != nil {
@@ -125,39 +42,15 @@ func TbDataDiskReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
-// TbDataDiskInfo is a struct that represents TB dataDisk object.
-type TbDataDiskInfo struct {
-	Id                   string            `json:"id,omitempty" example:"aws-ap-southeast-1-datadisk"`
-	Name                 string            `json:"name,omitempty" example:"aws-ap-southeast-1-datadisk"`
-	ConnectionName       string            `json:"connectionName,omitempty" example:"aws-ap-southeast-1"`
-	DiskType             string            `json:"diskType" example:"standard"`
-	DiskSize             string            `json:"diskSize" example:"77"`
-	CspDataDiskId        string            `json:"cspDataDiskId,omitempty" example:"vol-0d397c3239629bd43"`
-	CspDataDiskName      string            `json:"cspDataDiskName,omitempty" example:"default-aws-ap-southeast-1-datadisk"`
-	Status               DiskStatus        `json:"status" example:"Available"` // Available, Unavailable, Attached, ...
-	AssociatedObjectList []string          `json:"associatedObjectList" example:["/ns/default/mci/mci01/vm/aws-ap-southeast-1-1"]`
-	CreatedTime          time.Time         `json:"createdTime,omitempty" example:"2022-10-12T05:09:51.05Z"`
-	KeyValueList         []common.KeyValue `json:"keyValueList,omitempty"`
-	Description          string            `json:"description,omitempty" example:"Available"`
-
-	// Latest system message such as error message
-	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
-
-	IsAutoGenerated bool `json:"isAutoGenerated,omitempty"`
-
-	// SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose
-	SystemLabel string `json:"systemLabel,omitempty" example:"Managed by CB-Tumblebug" default:""`
-}
-
 // CreateDataDisk accepts DataDisk creation request, creates and returns an TB dataDisk object
-func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInfo, error) {
+func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.TbDataDiskInfo, error) {
 
-	resourceType := common.StrDataDisk
+	resourceType := model.StrDataDisk
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
 	if option != "register" { // fields validation
@@ -165,10 +58,10 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 		if err != nil {
 			if _, ok := err.(*validator.InvalidValidationError); ok {
 				log.Err(err).Msg("")
-				return TbDataDiskInfo{}, err
+				return model.TbDataDiskInfo{}, err
 			}
 
-			return TbDataDiskInfo{}, err
+			return model.TbDataDiskInfo{}, err
 		}
 	}
 
@@ -176,25 +69,27 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 
 	if check {
 		err := fmt.Errorf("The dataDisk %s already exists.", u.Name)
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
 	if err != nil {
 		err := fmt.Errorf("Failed to check the existence of the dataDisk %s.", u.Name)
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
-	requestBody := SpiderDiskReqInfoWrapper{
+	uuid := common.GenUid()
+
+	requestBody := model.SpiderDiskReqInfoWrapper{
 		ConnectionName: u.ConnectionName,
-		ReqInfo: SpiderDiskInfo{
-			Name:     common.GenUid(),
+		ReqInfo: model.SpiderDiskInfo{
+			Name:     uuid,
 			CSPid:    u.CspDataDiskId, // for option=register
 			DiskType: u.DiskType,
 			DiskSize: u.DiskSize,
 		},
 	}
 
-	var tempSpiderDiskInfo *SpiderDiskInfo
+	var tempSpiderDiskInfo *model.SpiderDiskInfo
 
 	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
@@ -202,7 +97,7 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(requestBody).
-		SetResult(&SpiderDiskInfo{}) // or SetResult(AuthSuccess{}).
+		SetResult(&model.SpiderDiskInfo{}) // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
 	var resp *resty.Response
@@ -210,20 +105,20 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 
 	var url string
 	if option == "register" && u.CspDataDiskId == "" {
-		url = fmt.Sprintf("%s/disk/%s", common.SpiderRestUrl, u.Name)
+		url = fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, u.Name)
 		resp, err = req.Get(url)
 	} else if option == "register" && u.CspDataDiskId != "" {
-		url = fmt.Sprintf("%s/regdisk", common.SpiderRestUrl)
+		url = fmt.Sprintf("%s/regdisk", model.SpiderRestUrl)
 		resp, err = req.Post(url)
 	} else { // option != "register"
-		url = fmt.Sprintf("%s/disk", common.SpiderRestUrl)
+		url = fmt.Sprintf("%s/disk", model.SpiderRestUrl)
 		resp, err = req.Post(url)
 	}
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
 	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
@@ -232,14 +127,15 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 		err := fmt.Errorf(string(resp.Body()))
 		fmt.Println("body: ", string(resp.Body()))
 		log.Error().Err(err).Msg("")
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
-	tempSpiderDiskInfo = resp.Result().(*SpiderDiskInfo)
+	tempSpiderDiskInfo = resp.Result().(*model.SpiderDiskInfo)
 
-	content := TbDataDiskInfo{
+	content := model.TbDataDiskInfo{
 		Id:                   u.Name,
 		Name:                 u.Name,
+		Uuid:                 uuid,
 		ConnectionName:       u.ConnectionName,
 		DiskType:             tempSpiderDiskInfo.DiskType,
 		DiskSize:             tempSpiderDiskInfo.DiskSize,
@@ -269,6 +165,18 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
+
+	// Store label info using CreateOrUpdateLabel
+	labels := map[string]string{
+		"provider":  "cb-tumblebug",
+		"namespace": nsId,
+	}
+	err = label.CreateOrUpdateLabel(model.StrDataDisk, uuid, Key, labels)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return content, err
+	}
+
 	return content, nil
 }
 
@@ -279,61 +187,61 @@ type TbDataDiskUpsizeReq struct {
 }
 
 // UpsizeDataDisk accepts DataDisk upsize request, creates and returns an TB dataDisk object
-func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbDataDiskInfo, error) {
+func UpsizeDataDisk(nsId string, resourceId string, u *model.TbDataDiskUpsizeReq) (model.TbDataDiskInfo, error) {
 
-	resourceType := common.StrDataDisk
+	resourceType := model.StrDataDisk
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
 	err = validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			log.Err(err).Msg("")
-			return TbDataDiskInfo{}, err
+			return model.TbDataDiskInfo{}, err
 		}
 
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
 	check, err := CheckResource(nsId, resourceType, resourceId)
 
 	if !check {
 		err := fmt.Errorf("The dataDisk %s does not exist.", resourceId)
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
 	if err != nil {
 		err := fmt.Errorf("Failed to check the existence of the dataDisk %s.", resourceId)
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
 	dataDiskInterface, err := GetResource(nsId, resourceType, resourceId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the dataDisk object %s.", resourceId)
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
-	dataDisk := dataDiskInterface.(TbDataDiskInfo)
+	dataDisk := dataDiskInterface.(model.TbDataDiskInfo)
 
 	diskSize_as_is, _ := strconv.Atoi(dataDisk.DiskSize)
 	diskSize_to_be, err := strconv.Atoi(u.DiskSize)
 	if err != nil {
 		err := fmt.Errorf("Failed to convert the desired disk size (%s) into int.", u.DiskSize)
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
 	if !(diskSize_as_is < diskSize_to_be) {
 		err := fmt.Errorf("Desired disk size (%s GB) should be > %s GB.", u.DiskSize, dataDisk.DiskSize)
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
-	requestBody := SpiderDiskUpsizeReqWrapper{
+	requestBody := model.SpiderDiskUpsizeReqWrapper{
 		ConnectionName: dataDisk.ConnectionName,
-		ReqInfo: SpiderDiskUpsizeReq{
+		ReqInfo: model.SpiderDiskUpsizeReq{
 			Size: u.DiskSize,
 		},
 	}
@@ -350,13 +258,13 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 	var resp *resty.Response
 	// var err error
 
-	url := fmt.Sprintf("%s/disk/%s/size", common.SpiderRestUrl, dataDisk.CspDataDiskName)
+	url := fmt.Sprintf("%s/disk/%s/size", model.SpiderRestUrl, dataDisk.CspDataDiskName)
 	resp, err = req.Put(url)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
 	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
@@ -365,14 +273,14 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 		err := fmt.Errorf(string(resp.Body()))
 		fmt.Println("body: ", string(resp.Body()))
 		log.Error().Err(err).Msg("")
-		return TbDataDiskInfo{}, err
+		return model.TbDataDiskInfo{}, err
 	}
 
 	/*
 		isSuccessful := resp.Result().(bool)
 		if isSuccessful == false {
 			err := fmt.Errorf("Failed to upsize the dataDisk %s", resourceId)
-			return TbDataDiskInfo{}, err
+			return model.TbDataDiskInfo{}, err
 		}
 	*/
 

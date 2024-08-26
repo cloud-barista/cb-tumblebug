@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
@@ -35,19 +36,10 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// sshDefaultUserName is array for temporal constants
-var sshDefaultUserName = []string{"cb-user", "ubuntu", "root", "ec2-user"}
-
-// MciCmdReq is struct for remote command
-type MciCmdReq struct {
-	UserName string   `json:"userName" example:"cb-user" default:""`
-	Command  []string `json:"command" validate:"required" example:"client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"`
-}
-
-// TbMciCmdReqStructLevelValidation is func to validate fields in MciCmdReq
+// TbMciCmdReqStructLevelValidation is func to validate fields in model.MciCmdReq
 func TbMciCmdReqStructLevelValidation(sl validator.StructLevel) {
 
-	// u := sl.Current().Interface().(MciCmdReq)
+	// u := sl.Current().Interface().(model.MciCmdReq)
 
 	// err := common.CheckString(u.Command)
 	// if err != nil {
@@ -56,24 +48,8 @@ func TbMciCmdReqStructLevelValidation(sl validator.StructLevel) {
 	// }
 }
 
-// SshCmdResult is struct for SshCmd Result
-type SshCmdResult struct { // Tumblebug
-	MciId   string         `json:"mciId"`
-	VmId    string         `json:"vmId"`
-	VmIp    string         `json:"vmIp"`
-	Command map[int]string `json:"command"`
-	Stdout  map[int]string `json:"stdout"`
-	Stderr  map[int]string `json:"stderr"`
-	Err     error          `json:"err"`
-}
-
-// MciSshCmdResult is struct for Set of SshCmd Results in terms of MCI
-type MciSshCmdResult struct {
-	Results []SshCmdResult `json:"results"`
-}
-
 // RemoteCommandToMci is func to command to all VMs in MCI by SSH
-func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId string, req *MciCmdReq) ([]SshCmdResult, error) {
+func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId string, req *model.MciCmdReq) ([]model.SshCmdResult, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -96,7 +72,7 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 		// value most including myself do not usually have code like this.
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			log.Err(err).Msg("")
-			temp := []SshCmdResult{}
+			temp := []model.SshCmdResult{}
 			return temp, err
 		}
 
@@ -115,14 +91,14 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 		// 	fmt.Println()
 		// }
 
-		temp := []SshCmdResult{}
+		temp := []model.SshCmdResult{}
 		return temp, err
 	}
 
 	check, _ := CheckMci(nsId, mciId)
 
 	if !check {
-		temp := []SshCmdResult{}
+		temp := []model.SshCmdResult{}
 		err := fmt.Errorf("The mci " + mciId + " does not exist.")
 		return temp, err
 	}
@@ -152,7 +128,7 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 	// goroutine sync wg
 	var wg sync.WaitGroup
 
-	var resultArray []SshCmdResult
+	var resultArray []model.SshCmdResult
 
 	// Preprocess commands for each VM
 	vmCommands := make(map[string][]string)
@@ -209,7 +185,7 @@ func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName stri
 	bastionUserName, bastionSshKey, err := VerifySshUserName(nsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, givenUserName)
 	bastionEndpoint := fmt.Sprintf("%s:%s", bastionIp, bastionSshPort)
 
-	bastionSshInfo := sshInfo{
+	bastionSshInfo := model.SshInfo{
 		EndPoint:   bastionEndpoint,
 		UserName:   bastionUserName,
 		PrivateKey: []byte(bastionSshKey),
@@ -222,7 +198,7 @@ func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName stri
 
 	// Set VM SSH config (targetEndpoint, userName, Private Key)
 	targetEndpoint := fmt.Sprintf("%s:%s", targetVmIP, targetSshPort)
-	targetSshInfo := sshInfo{
+	targetSshInfo := model.SshInfo{
 		EndPoint:   targetEndpoint,
 		UserName:   targetUserName,
 		PrivateKey: []byte(targetPrivateKey),
@@ -239,13 +215,13 @@ func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName stri
 }
 
 // RunRemoteCommandAsync is func to execute a SSH command to a VM (async call)
-func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, givenUserName string, cmd []string, returnResult *[]SshCmdResult) {
+func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, givenUserName string, cmd []string, returnResult *[]model.SshCmdResult) {
 
 	defer wg.Done() //goroutine sync done
 
 	vmIP, _, _, err := GetVmIp(nsId, mciId, vmId)
 
-	sshResultTmp := SshCmdResult{}
+	sshResultTmp := model.SshCmdResult{}
 	sshResultTmp.MciId = mciId
 	sshResultTmp.VmId = vmId
 	sshResultTmp.VmIp = vmIP
@@ -287,12 +263,12 @@ func VerifySshUserName(nsId string, mciId string, vmId string, vmIp string, sshP
 	// // find vaild username
 	// userName, verifiedUserName, privateKey := GetVmSshKey(nsId, mciId, vmId)
 	// userNames := []string{
-	// 	sshDefaultUserName[0],
+	// 	model.SshDefaultUserName[0],
 	// 	userName,
 	// 	givenUserName,
-	// 	sshDefaultUserName[1],
-	// 	sshDefaultUserName[2],
-	// 	sshDefaultUserName[3],
+	// 	model.SshDefaultUserName[1],
+	// 	model.SshDefaultUserName[2],
+	// 	model.SshDefaultUserName[3],
 	// }
 
 	// theUserName := ""
@@ -339,7 +315,7 @@ func VerifySshUserName(nsId string, mciId string, vmId string, vmIp string, sshP
 	} else if userName != "" {
 		theUserName = userName
 	} else {
-		theUserName = sshDefaultUserName[0] // default username: cb-user
+		theUserName = model.SshDefaultUserName[0] // default username: cb-user
 	}
 
 	if theUserName == "" {
@@ -408,7 +384,7 @@ func GetVmSshKey(nsId string, mciId string, vmId string) (string, string, string
 		return "", "", "", err
 	}
 
-	sshKey := common.GenResourceKey(nsId, common.StrSSHKey, content.SshKeyId)
+	sshKey := common.GenResourceKey(nsId, model.StrSSHKey, content.SshKeyId)
 	keyValue, err = kvstore.GetKv(sshKey)
 	if err != nil || keyValue == (kvstore.KeyValue{}) {
 		log.Error().Err(err).Msg("")
@@ -447,10 +423,10 @@ func UpdateVmSshKey(nsId string, mciId string, vmId string, verifiedUserName str
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
-	sshKey := common.GenResourceKey(nsId, common.StrSSHKey, content.SshKeyId)
+	sshKey := common.GenResourceKey(nsId, model.StrSSHKey, content.SshKeyId)
 	keyValue, _ = kvstore.GetKv(sshKey)
 
-	tmpSshKeyInfo := resource.TbSshKeyInfo{}
+	tmpSshKeyInfo := model.TbSshKeyInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &tmpSshKeyInfo)
 
 	tmpSshKeyInfo.VerifiedUsername = verifiedUserName
@@ -469,14 +445,8 @@ func init() {
 
 }
 
-type sshInfo struct {
-	UserName   string // ex) root
-	PrivateKey []byte // ex) -----BEGIN RSA PRIVATE KEY-----
-	EndPoint   string // ex) node12:22
-}
-
 // runSSH func execute a command by SSH
-func runSSH(bastionInfo sshInfo, targetInfo sshInfo, cmds []string) (map[int]string, map[int]string, error) {
+func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string) (map[int]string, map[int]string, error) {
 
 	stdoutMap := make(map[int]string)
 	stderrMap := make(map[int]string)
@@ -589,11 +559,6 @@ func runSSH(bastionInfo sshInfo, targetInfo sshInfo, cmds []string) (map[int]str
 	return stdoutMap, stderrMap, nil
 }
 
-// BastionInfo is struct for bastion info
-type BastionInfo struct {
-	VmId []string `json:"vmId"`
-}
-
 // SetBastionNodes func sets bastion nodes
 func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionVmId string) (string, error) {
 
@@ -614,13 +579,13 @@ func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionVmId s
 		return "", err
 	}
 
-	res, err := resource.GetResource(nsId, common.StrVNet, vmObj.VNetId)
+	res, err := resource.GetResource(nsId, model.StrVNet, vmObj.VNetId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
-	tempVNetInfo, ok := res.(resource.TbVNetInfo)
+	tempVNetInfo, ok := res.(model.TbVNetInfo)
 	if !ok {
 		log.Error().Err(err).Msg("")
 		return "", err
@@ -654,11 +619,11 @@ func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionVmId s
 				}
 			}
 
-			bastionCandidate := resource.BastionNode{MciId: mciId, VmId: bastionVmId}
+			bastionCandidate := model.BastionNode{MciId: mciId, VmId: bastionVmId}
 			// Append bastionVmId only if it doesn't already exist.
 			subnetInfo.BastionNodes = append(subnetInfo.BastionNodes, bastionCandidate)
 			tempVNetInfo.SubnetInfoList[i] = subnetInfo
-			resource.UpdateResourceObject(nsId, common.StrVNet, tempVNetInfo)
+			resource.UpdateResourceObject(nsId, model.StrVNet, tempVNetInfo)
 
 			return fmt.Sprintf("Successfully set the bastion (ID: %s) for subnet (ID: %s) in vNet (ID: %s) for VM (ID: %s) in MCI (ID: %s).",
 				bastionVmId, subnetInfo.Id, vmObj.VNetId, targetVmId, mciId), nil
@@ -670,12 +635,12 @@ func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionVmId s
 
 // RemoveBastionNodes func removes existing bastion nodes info
 func RemoveBastionNodes(nsId string, mciId string, bastionVmId string) (string, error) {
-	resourceListInNs, err := resource.ListResource(nsId, common.StrVNet, "mciId", mciId)
+	resourceListInNs, err := resource.ListResource(nsId, model.StrVNet, "mciId", mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	} else {
-		vNets := resourceListInNs.([]resource.TbVNetInfo) // type assertion
+		vNets := resourceListInNs.([]model.TbVNetInfo) // type assertion
 		for _, vNet := range vNets {
 			removed := false
 			for i, subnet := range vNet.SubnetInfoList {
@@ -688,7 +653,7 @@ func RemoveBastionNodes(nsId string, mciId string, bastionVmId string) (string, 
 				vNet.SubnetInfoList[i] = subnet
 			}
 			if removed {
-				resource.UpdateResourceObject(nsId, common.StrVNet, vNet)
+				resource.UpdateResourceObject(nsId, model.StrVNet, vNet)
 			}
 		}
 	}
@@ -696,8 +661,8 @@ func RemoveBastionNodes(nsId string, mciId string, bastionVmId string) (string, 
 }
 
 // GetBastionNodes func retrieves bastion nodes for a given VM
-func GetBastionNodes(nsId string, mciId string, targetVmId string) ([]resource.BastionNode, error) {
-	returnValue := []resource.BastionNode{}
+func GetBastionNodes(nsId string, mciId string, targetVmId string) ([]model.BastionNode, error) {
+	returnValue := []model.BastionNode{}
 	// Fetch VM object based on nsId, mciId, and targetVmId
 	vmObj, err := GetVmObject(nsId, mciId, targetVmId)
 	if err != nil {
@@ -706,14 +671,14 @@ func GetBastionNodes(nsId string, mciId string, targetVmId string) ([]resource.B
 	}
 
 	// Fetch VNet resource information
-	res, err := resource.GetResource(nsId, common.StrVNet, vmObj.VNetId)
+	res, err := resource.GetResource(nsId, model.StrVNet, vmObj.VNetId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return returnValue, err
 	}
 
 	// Type assertion for VNet information
-	tempVNetInfo, ok := res.(resource.TbVNetInfo)
+	tempVNetInfo, ok := res.(model.TbVNetInfo)
 	if !ok {
 		log.Error().Err(err).Msg("")
 		return returnValue, err

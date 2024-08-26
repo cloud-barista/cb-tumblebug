@@ -22,6 +22,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 )
 
@@ -96,7 +97,7 @@ func RestDelResource(c echo.Context) error {
 
 // 	forceFlag := c.QueryParam("force")
 
-// 	err := resource.DelChildResource(nsId, childResourceType, parentResourceId, childResourceId, forceFlag)
+// 	err := model.DelChildResource(nsId, childResourceType, parentResourceId, childResourceId, forceFlag)
 // 	content := map[string]string{"message": "The " + childResourceType + " " + childResourceId + " has been deleted"}
 // 	return common.EndRequestWithLog(c, reqID, err, content)
 // }
@@ -118,7 +119,7 @@ func RestGetAllResources(c echo.Context) error {
 	// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
 
 	if optionFlag == "id" {
-		content := common.IdList{}
+		content := model.IdList{}
 		var err error
 		content.IdList, err = resource.ListResourceId(nsId, resourceType)
 		return common.EndRequestWithLog(c, reqID, err, content)
@@ -131,54 +132,54 @@ func RestGetAllResources(c echo.Context) error {
 		}
 
 		switch resourceType {
-		case common.StrImage:
+		case model.StrImage:
 			var content struct {
-				Image []resource.TbImageInfo `json:"image"`
+				Image []model.TbImageInfo `json:"image"`
 			}
 
-			content.Image = resourceList.([]resource.TbImageInfo) // type assertion (interface{} -> array)
+			content.Image = resourceList.([]model.TbImageInfo) // type assertion (interface{} -> array)
 			return common.EndRequestWithLog(c, reqID, err, content)
-		case common.StrCustomImage:
+		case model.StrCustomImage:
 			var content struct {
-				Image []resource.TbCustomImageInfo `json:"customImage"`
+				Image []model.TbCustomImageInfo `json:"customImage"`
 			}
 
-			content.Image = resourceList.([]resource.TbCustomImageInfo) // type assertion (interface{} -> array)
+			content.Image = resourceList.([]model.TbCustomImageInfo) // type assertion (interface{} -> array)
 			return common.EndRequestWithLog(c, reqID, err, content)
-		case common.StrSecurityGroup:
+		case model.StrSecurityGroup:
 			var content struct {
-				SecurityGroup []resource.TbSecurityGroupInfo `json:"securityGroup"`
+				SecurityGroup []model.TbSecurityGroupInfo `json:"securityGroup"`
 			}
 
-			content.SecurityGroup = resourceList.([]resource.TbSecurityGroupInfo) // type assertion (interface{} -> array)
+			content.SecurityGroup = resourceList.([]model.TbSecurityGroupInfo) // type assertion (interface{} -> array)
 			return common.EndRequestWithLog(c, reqID, err, content)
-		case common.StrSpec:
+		case model.StrSpec:
 			var content struct {
-				Spec []resource.TbSpecInfo `json:"spec"`
+				Spec []model.TbSpecInfo `json:"spec"`
 			}
 
-			content.Spec = resourceList.([]resource.TbSpecInfo) // type assertion (interface{} -> array)
+			content.Spec = resourceList.([]model.TbSpecInfo) // type assertion (interface{} -> array)
 			return common.EndRequestWithLog(c, reqID, err, content)
-		case common.StrSSHKey:
+		case model.StrSSHKey:
 			var content struct {
-				SshKey []resource.TbSshKeyInfo `json:"sshKey"`
+				SshKey []model.TbSshKeyInfo `json:"sshKey"`
 			}
 
-			content.SshKey = resourceList.([]resource.TbSshKeyInfo) // type assertion (interface{} -> array)
+			content.SshKey = resourceList.([]model.TbSshKeyInfo) // type assertion (interface{} -> array)
 			return common.EndRequestWithLog(c, reqID, err, content)
-		case common.StrVNet:
+		case model.StrVNet:
 			var content struct {
-				VNet []resource.TbVNetInfo `json:"vNet"`
+				VNet []model.TbVNetInfo `json:"vNet"`
 			}
 
-			content.VNet = resourceList.([]resource.TbVNetInfo) // type assertion (interface{} -> array)
+			content.VNet = resourceList.([]model.TbVNetInfo) // type assertion (interface{} -> array)
 			return common.EndRequestWithLog(c, reqID, err, content)
-		case common.StrDataDisk:
+		case model.StrDataDisk:
 			var content struct {
-				DataDisk []resource.TbDataDiskInfo `json:"dataDisk"`
+				DataDisk []model.TbDataDiskInfo `json:"dataDisk"`
 			}
 
-			content.DataDisk = resourceList.([]resource.TbDataDiskInfo) // type assertion (interface{} -> array)
+			content.DataDisk = resourceList.([]model.TbDataDiskInfo) // type assertion (interface{} -> array)
 			return common.EndRequestWithLog(c, reqID, err, content)
 		default:
 			err := fmt.Errorf("Not accepatble resourceType: " + resourceType)
@@ -223,8 +224,8 @@ func RestGetResource(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param resourceType path string true "Resource Type"
 // @Param resourceId path string true "Resource ID"
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/checkResource/{resourceType}/{resourceId} [get]
 func RestCheckResource(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -249,7 +250,7 @@ func RestCheckResource(c echo.Context) error {
 }
 
 // RestTestAddObjectAssociation is a REST API call handling function
-// to test "resource.UpdateAssociatedObjectList" function with "add" argument.
+// to test "model.UpdateAssociatedObjectList" function with "add" argument.
 func RestTestAddObjectAssociation(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
@@ -263,13 +264,13 @@ func RestTestAddObjectAssociation(c echo.Context) error {
 	resourceId = strings.ReplaceAll(resourceId, " ", "+")
 	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
-	content, err := resource.UpdateAssociatedObjectList(nsId, resourceType, resourceId, common.StrAdd, "/test/vm/key")
+	content, err := resource.UpdateAssociatedObjectList(nsId, resourceType, resourceId, model.StrAdd, "/test/vm/key")
 
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestTestDeleteObjectAssociation is a REST API call handling function
-// to test "resource.UpdateAssociatedObjectList" function with "delete" argument.
+// to test "model.UpdateAssociatedObjectList" function with "delete" argument.
 func RestTestDeleteObjectAssociation(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
@@ -283,12 +284,12 @@ func RestTestDeleteObjectAssociation(c echo.Context) error {
 	resourceId = strings.ReplaceAll(resourceId, " ", "+")
 	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
-	content, err := resource.UpdateAssociatedObjectList(nsId, resourceType, resourceId, common.StrDelete, "/test/vm/key")
+	content, err := resource.UpdateAssociatedObjectList(nsId, resourceType, resourceId, model.StrDelete, "/test/vm/key")
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestTestGetAssociatedObjectCount is a REST API call handling function
-// to test "resource.GetAssociatedObjectCount" function.
+// to test "model.GetAssociatedObjectCount" function.
 func RestTestGetAssociatedObjectCount(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
@@ -315,8 +316,8 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 // @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} common.IdList
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.IdList
+// @Failure 404 {object} model.SimpleMsg
 // @Router /loadCommonResource [get]
 func RestLoadCommonResource(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -337,8 +338,8 @@ func RestLoadCommonResource(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string true "Option" Enums(all,vnet,sg,sshkey)
 // @Param connectionName query string false "connectionName of cloud for designated resource" default()
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/loadSharedResource [get]
 func RestLoadSharedResource(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -364,8 +365,8 @@ func RestLoadSharedResource(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Success 200 {object} common.IdList
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.IdList
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/sharedResources [delete]
 func RestDelAllSharedResources(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -391,8 +392,8 @@ type RestRegisterExistingResourcesRequest struct {
 // @Tags
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} common.IdList
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.IdList
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/registerExistingResources [post]
 func RestRegisterExistingResources(c echo.Context) error {
 
@@ -403,7 +404,7 @@ func RestRegisterExistingResources(c echo.Context) error {
 		return err
 	}
 
-	result, err := resource.RegisterExistingResources(nsId, u.ConnectionName)
+	result, err := model.RegisterExistingResources(nsId, u.ConnectionName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}

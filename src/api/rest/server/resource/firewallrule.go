@@ -18,12 +18,13 @@ import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 )
 
 type TbFirewallRulesWrapper struct {
-	FirewallRules []resource.TbFirewallRuleInfo `json:"firewallRules"` // validate:"required"`
+	FirewallRules []model.TbFirewallRuleInfo `json:"firewallRules"` // validate:"required"`
 }
 
 // RestPostFirewallRules godoc
@@ -36,9 +37,9 @@ type TbFirewallRulesWrapper struct {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param securityGroupId path string true "Security Group ID"
 // @Param firewallRuleReq body TbFirewallRulesWrapper true "FirewallRules to create"
-// @Success 200 {object} resource.TbSecurityGroupInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbSecurityGroupInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [post]
 func RestPostFirewallRules(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -66,10 +67,10 @@ func RestPostFirewallRules(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param firewallRuleInfo body resource.TbFirewallRulesInfo true "FirewallRules to update"
-// @Success 200 {object} resource.TbFirewallRulesInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param firewallRuleInfo body model.TbFirewallRulesInfo true "FirewallRules to update"
+// @Success 200 {object} model.TbFirewallRulesInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [put]
 func RestPutFirewallRules(c echo.Context) error {
 	//nsId := c.Param("nsId")
@@ -88,9 +89,9 @@ func RestPutFirewallRules(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param firewallRuleReq body TbFirewallRulesWrapper true "FirewallRules to lookup"
-// @Success 200 {object} resource.TbFirewallRulesInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbFirewallRulesInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [get]
 func RestGetFirewallRules(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -99,7 +100,7 @@ func RestGetFirewallRules(c echo.Context) error {
 
 // Response structure for RestGetAllFirewallRules
 type RestGetAllFirewallRulesResponse struct {
-	FirewallRules []resource.TbFirewallRulesInfo `json:"firewallRules"`
+	FirewallRules []model.TbFirewallRulesInfo `json:"firewallRules"`
 }
 */
 
@@ -113,8 +114,8 @@ type RestGetAllFirewallRulesResponse struct {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param securityGroupId path string true "Security Group ID"
 // @Param firewallRuleReq body TbFirewallRulesWrapper true "FirewallRules to delete"
-// @Success 200 {object} resource.TbSecurityGroupInfo
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.TbSecurityGroupInfo
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [delete]
 func RestDelFirewallRules(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)

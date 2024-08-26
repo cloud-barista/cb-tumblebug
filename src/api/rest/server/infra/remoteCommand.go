@@ -19,6 +19,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
 )
 
@@ -31,13 +32,13 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Param mciCmdReq body infra.MciCmdReq true "MCI Command Request"
+// @Param mciCmdReq body model.MciCmdReq true "MCI Command Request"
 // @Param subGroupId query string false "subGroupId to apply the command only for VMs in subGroup of MCI" default(g1)
 // @Param vmId query string false "vmId to apply the command only for a VM in MCI" default(g1-1)
 // @Param x-request-id header string false "Custom request ID"
-// @Success 200 {object} infra.MciSshCmdResult
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.MciSshCmdResult
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/cmd/mci/{mciId} [post]
 func RestPostCmdMci(c echo.Context) error {
 	// reqID, idErr := common.StartRequestWithLog(c)
@@ -51,7 +52,7 @@ func RestPostCmdMci(c echo.Context) error {
 	subGroupId := c.QueryParam("subGroupId")
 	vmId := c.QueryParam("vmId")
 
-	req := &infra.MciCmdReq{}
+	req := &model.MciCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -61,7 +62,7 @@ func RestPostCmdMci(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	result := infra.MciSshCmdResult{}
+	result := model.MciSshCmdResult{}
 
 	for _, v := range output {
 		result.Results = append(result.Results, v)
@@ -86,9 +87,9 @@ func RestPostCmdMci(c echo.Context) error {
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param targetVmId path string true "Target VM ID" default(g1-1)
 // @Param bastionVmId path string true "Bastion VM ID" default(g1-1)
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion/{bastionVmId} [put]
 func RestSetBastionNodes(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -114,9 +115,9 @@ func RestSetBastionNodes(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param targetVmId path string true "Target VM ID" default(g1-1)
-// @Success 200 {object} []resource.BastionNode
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} []model.BastionNode
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion [get]
 func RestGetBastionNodes(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -141,9 +142,9 @@ func RestGetBastionNodes(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param bastionVmId path string true "Bastion VM ID" default(g1-1)
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/bastion/{bastionVmId} [delete]
 func RestRemoveBastionNodes(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)

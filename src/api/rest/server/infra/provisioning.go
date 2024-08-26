@@ -19,6 +19,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
 )
 
@@ -30,10 +31,10 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciReq body TbMciReq true "Details for an MCI object"
-// @Success 200 {object} TbMciInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param mciReq body model.TbMciReq true "Details for an MCI object"
+// @Success 200 {object} model.TbMciInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci [post]
 func RestPostMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -42,7 +43,7 @@ func RestPostMci(c echo.Context) error {
 	}
 	nsId := c.Param("nsId")
 
-	req := &infra.TbMciReq{}
+	req := &model.TbMciReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -60,10 +61,10 @@ func RestPostMci(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciReq body TbMciReq true "Details for an MCI object with existing CSP VM ID"
-// @Success 200 {object} TbMciInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param mciReq body model.TbMciReq true "Details for an MCI object with existing CSP VM ID"
+// @Success 200 {object} model.TbMciInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/registerCspVm [post]
 func RestPostRegisterCSPNativeVM(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -72,7 +73,7 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 	}
 	nsId := c.Param("nsId")
 
-	req := &infra.TbMciReq{}
+	req := &model.TbMciReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -90,9 +91,9 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param option query string false "Option for the purpose of system MCI" Enums(probe)
-// @Success 200 {object} TbMciInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbMciInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /systemMci [post]
 func RestPostSystemMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -101,7 +102,7 @@ func RestPostSystemMci(c echo.Context) error {
 	}
 	option := c.QueryParam("option")
 
-	req := &infra.TbMciDynamicReq{}
+	req := &model.TbMciDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -118,12 +119,12 @@ func RestPostSystemMci(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciReq body TbMciDynamicReq true "Request body to provision MCI dynamically. Must include commonSpec and commonImage info of each VM request.(ex: {name: mci01,vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]} ) You can use /mciRecommendVm and /mciDynamicCheckRequest to get it) Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
+// @Param mciReq body model.TbMciDynamicReq true "Request body to provision MCI dynamically. Must include commonSpec and commonImage info of each VM request.(ex: {name: mci01,vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]} ) You can use /mciRecommendVm and /mciDynamicCheckRequest to get it) Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
 // @Param option query string false "Option for MCI creation" Enums(hold)
 // @Param x-request-id header string false "Custom request ID"
-// @Success 200 {object} TbMciInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbMciInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mciDynamic [post]
 func RestPostMciDynamic(c echo.Context) error {
 	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
@@ -131,7 +132,7 @@ func RestPostMciDynamic(c echo.Context) error {
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
 
-	req := &infra.TbMciDynamicReq{}
+	req := &model.TbMciDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -152,10 +153,10 @@ func RestPostMciDynamic(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Param vmReq body TbVmDynamicReq true "Details for Vm dynamic request"
-// @Success 200 {object} TbMciInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param vmReq body model.TbVmDynamicReq true "Details for Vm dynamic request"
+// @Success 200 {object} model.TbMciInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vmDynamic [post]
 func RestPostMciVmDynamic(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -165,7 +166,7 @@ func RestPostMciVmDynamic(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
-	req := &infra.TbVmDynamicReq{}
+	req := &model.TbVmDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -181,17 +182,17 @@ func RestPostMciVmDynamic(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
-// @Param mciReq body MciConnectionConfigCandidatesReq true "Details for MCI dynamic request information"
-// @Success 200 {object} CheckMciDynamicReqInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param mciReq body model.MciConnectionConfigCandidatesReq true "Details for MCI dynamic request information"
+// @Success 200 {object} model.CheckMciDynamicReqInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /mciDynamicCheckRequest [post]
 func RestPostMciDynamicCheckRequest(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
-	req := &infra.MciConnectionConfigCandidatesReq{}
+	req := &model.MciConnectionConfigCandidatesReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -209,10 +210,10 @@ func RestPostMciDynamicCheckRequest(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Param vmReq body infra.TbVmReq true "Details for VMs(subGroup)"
-// @Success 200 {object} infra.TbMciInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param vmReq body model.TbVmReq true "Details for VMs(subGroup)"
+// @Success 200 {object} model.TbMciInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm [post]
 func RestPostMciVm(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -222,7 +223,7 @@ func RestPostMciVm(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
-	vmInfoData := &infra.TbVmReq{}
+	vmInfoData := &model.TbVmReq{}
 	if err := c.Bind(vmInfoData); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -240,10 +241,10 @@ func RestPostMciVm(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param subgroupId path string true "subGroup ID" default(g1)
-// @Param vmReq body infra.TbScaleOutSubGroupReq true "subGroup scaleOut request"
-// @Success 200 {object} infra.TbMciInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param vmReq body model.TbScaleOutSubGroupReq true "subGroup scaleOut request"
+// @Success 200 {object} model.TbMciInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/subgroup/{subgroupId} [post]
 func RestPostMciSubGroupScaleOut(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -254,7 +255,7 @@ func RestPostMciSubGroupScaleOut(c echo.Context) error {
 	mciId := c.Param("mciId")
 	subgroupId := c.Param("subgroupId")
 
-	scaleOutReq := &infra.TbScaleOutSubGroupReq{}
+	scaleOutReq := &model.TbScaleOutSubGroupReq{}
 	if err := c.Bind(scaleOutReq); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}

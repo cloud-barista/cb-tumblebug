@@ -5,6 +5,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
 )
 
@@ -25,8 +26,8 @@ type RestPostUtilToDesignNetworkReponse struct {
 // @Produce  json
 // @Param subnettingReq body RestPostUtilToDesignNetworkRequest true "A root/main network CIDR block and subnetting rules"
 // @Success 201 {object} RestPostUtilToDesignNetworkReponse
-// @Failure 400 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Failure 400 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /util/net/design [post]
 func RestPostUtilToDesignNetwork(c echo.Context) error {
 
@@ -63,9 +64,9 @@ type RestPostUtilToValidateNetworkRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param subnettingReq body RestPostUtilToValidateNetworkRequest true "A hierarchical network configuration"
-// @Success 200 {object} common.SimpleMsg
-// @Failure 400 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 400 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /util/net/validate [post]
 func RestPostUtilToValidateNetwork(c echo.Context) error {
 
@@ -88,7 +89,7 @@ func RestPostUtilToValidateNetwork(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	okMessage := common.SimpleMsg{}
+	okMessage := model.SimpleMsg{}
 	okMessage.Message = "Network configuration is valid."
 
 	return common.EndRequestWithLog(c, reqID, err, okMessage)

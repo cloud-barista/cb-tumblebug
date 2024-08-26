@@ -92,19 +92,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.K8sClusterNodeImageDetailAvailable"
+                            "$ref": "#/definitions/model.K8sClusterNodeImageDetailAvailable"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -144,19 +144,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.K8sClusterVersionDetailAvailable"
+                            "$ref": "#/definitions/model.K8sClusterVersionDetailAvailable"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -189,19 +189,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.K8sClusterNodeGroupsOnCreation"
+                            "$ref": "#/definitions/model.K8sClusterNodeGroupsOnCreation"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -225,19 +225,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.CloudInfo"
+                            "$ref": "#/definitions/model.CloudInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -267,13 +267,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -298,7 +298,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/common.ConfigReq"
+                            "$ref": "#/definitions/model.ConfigReq"
                         }
                     }
                 ],
@@ -306,19 +306,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.ConfigInfo"
+                            "$ref": "#/definitions/model.ConfigInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -340,13 +340,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -379,19 +379,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.ConfigInfo"
+                            "$ref": "#/definitions/model.ConfigInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -422,19 +422,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.ConfigInfo"
+                            "$ref": "#/definitions/model.ConfigInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -489,19 +489,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.ConnConfigList"
+                            "$ref": "#/definitions/model.ConnConfigList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -534,19 +534,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.ConnConfig"
+                            "$ref": "#/definitions/model.ConnConfig"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -573,7 +573,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/common.CredentialReq"
+                            "$ref": "#/definitions/model.CredentialReq"
                         }
                     }
                 ],
@@ -581,19 +581,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.CredentialInfo"
+                            "$ref": "#/definitions/model.CredentialInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -617,13 +617,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.PublicKeyResponse"
+                            "$ref": "#/definitions/model.PublicKeyResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -690,19 +690,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -737,19 +737,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.InspectResource"
+                            "$ref": "#/definitions/model.InspectResource"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -773,19 +773,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.InspectResourceAllResult"
+                            "$ref": "#/definitions/model.InspectResourceAllResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -809,19 +809,195 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.K8sClusterInfo"
+                            "$ref": "#/definitions/model.K8sClusterInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/label/{labelType}/{uuid}": {
+            "get": {
+                "description": "Get labels for a resource identified by its UUID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Label] Label Management"
+                ],
+                "summary": "Get labels for a resource",
+                "operationId": "GetLabels",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Label Type (e.g., ns, vnet)",
+                        "name": "labelType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Labels for the resource",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Create or update a label for a resource identified by its UUID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Label] Label Management"
+                ],
+                "summary": "Create or update a label for a resource",
+                "operationId": "CreateOrUpdateLabel",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Label Type (e.g., ns, vnet)",
+                        "name": "labelType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Labels to create or update",
+                        "name": "labels",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Label created or updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/label/{labelType}/{uuid}/{key}": {
+            "delete": {
+                "description": "Remove a label from a resource identified by its UUID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Label] Label Management"
+                ],
+                "summary": "Remove a label from a resource",
+                "operationId": "RemoveLabel",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Label Type (e.g., ns, vnet)",
+                        "name": "labelType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Label key to remove",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Label removed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -845,13 +1021,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -886,19 +1062,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.SpiderImageInfo"
+                            "$ref": "#/definitions/model.SpiderImageInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -933,19 +1109,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.SpiderImageList"
+                            "$ref": "#/definitions/model.SpiderImageList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -980,19 +1156,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.SpiderSpecInfo"
+                            "$ref": "#/definitions/model.SpiderSpecInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1027,19 +1203,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.SpiderSpecList"
+                            "$ref": "#/definitions/model.SpiderSpecList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1066,7 +1242,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.MciConnectionConfigCandidatesReq"
+                            "$ref": "#/definitions/model.MciConnectionConfigCandidatesReq"
                         }
                     }
                 ],
@@ -1074,19 +1250,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.CheckMciDynamicReqInfo"
+                            "$ref": "#/definitions/model.CheckMciDynamicReqInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1112,7 +1288,7 @@ const docTemplate = `{
                         "name": "deploymentPlan",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/infra.DeploymentPlan"
+                            "$ref": "#/definitions/model.DeploymentPlan"
                         }
                     }
                 ],
@@ -1122,20 +1298,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/resource.TbSpecInfo"
+                                "$ref": "#/definitions/model.TbSpecInfo"
                             }
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1181,7 +1357,7 @@ const docTemplate = `{
                                             "$ref": "#/definitions/common.RestGetAllNsResponse"
                                         },
                                         "[ID]": {
-                                            "$ref": "#/definitions/common.IdList"
+                                            "$ref": "#/definitions/model.IdList"
                                         }
                                     }
                                 }
@@ -1191,13 +1367,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1222,7 +1398,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/common.NsReq"
+                            "$ref": "#/definitions/model.NsReq"
                         }
                     }
                 ],
@@ -1230,19 +1406,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.NsInfo"
+                            "$ref": "#/definitions/model.NsInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1264,13 +1440,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1304,19 +1480,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.NsInfo"
+                            "$ref": "#/definitions/model.NsInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1349,7 +1525,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/common.NsReq"
+                            "$ref": "#/definitions/model.NsReq"
                         }
                     }
                 ],
@@ -1357,19 +1533,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.NsInfo"
+                            "$ref": "#/definitions/model.NsInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1401,13 +1577,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1480,19 +1656,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.BenchmarkInfoArray"
+                            "$ref": "#/definitions/model.BenchmarkInfoArray"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1543,19 +1719,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.BenchmarkInfoArray"
+                            "$ref": "#/definitions/model.BenchmarkInfoArray"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1597,19 +1773,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.BenchmarkInfoArray"
+                            "$ref": "#/definitions/model.BenchmarkInfoArray"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1657,13 +1833,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1706,7 +1882,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.MciCmdReq"
+                            "$ref": "#/definitions/model.MciCmdReq"
                         }
                     },
                     {
@@ -1734,19 +1910,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.MciSshCmdResult"
+                            "$ref": "#/definitions/model.MciSshCmdResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1814,19 +1990,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1899,19 +2075,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -1954,7 +2130,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.MciCmdReq"
+                            "$ref": "#/definitions/model.MciCmdReq"
                         }
                     },
                     {
@@ -1971,19 +2147,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.MciSshCmdResult"
+                            "$ref": "#/definitions/model.MciSshCmdResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2049,7 +2225,7 @@ const docTemplate = `{
                                             "$ref": "#/definitions/infra.RestGetAllK8sClusterResponse"
                                         },
                                         "[ID]": {
-                                            "$ref": "#/definitions/common.IdList"
+                                            "$ref": "#/definitions/model.IdList"
                                         }
                                     }
                                 }
@@ -2059,13 +2235,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2107,7 +2283,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbK8sClusterReq"
+                            "$ref": "#/definitions/model.TbK8sClusterReq"
                         }
                     }
                 ],
@@ -2115,19 +2291,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbK8sClusterInfo"
+                            "$ref": "#/definitions/model.TbK8sClusterInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2166,13 +2342,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2214,19 +2390,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbK8sClusterInfo"
+                            "$ref": "#/definitions/model.TbK8sClusterInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2266,13 +2442,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2315,7 +2491,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbK8sNodeGroupReq"
+                            "$ref": "#/definitions/model.TbK8sNodeGroupReq"
                         }
                     }
                 ],
@@ -2323,19 +2499,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbK8sClusterInfo"
+                            "$ref": "#/definitions/model.TbK8sClusterInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2385,13 +2561,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2442,7 +2618,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbChangeK8sNodeGroupAutoscaleSizeReq"
+                            "$ref": "#/definitions/model.TbChangeK8sNodeGroupAutoscaleSizeReq"
                         }
                     }
                 ],
@@ -2450,19 +2626,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbChangeK8sNodeGroupAutoscaleSizeRes"
+                            "$ref": "#/definitions/model.TbChangeK8sNodeGroupAutoscaleSizeRes"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2513,7 +2689,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbSetK8sNodeGroupAutoscalingReq"
+                            "$ref": "#/definitions/model.TbSetK8sNodeGroupAutoscalingReq"
                         }
                     }
                 ],
@@ -2521,19 +2697,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbSetK8sNodeGroupAutoscalingRes"
+                            "$ref": "#/definitions/model.TbSetK8sNodeGroupAutoscalingRes"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2576,7 +2752,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbUpgradeK8sClusterReq"
+                            "$ref": "#/definitions/model.TbUpgradeK8sClusterReq"
                         }
                     }
                 ],
@@ -2584,19 +2760,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2650,13 +2826,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2712,7 +2888,7 @@ const docTemplate = `{
                                             "$ref": "#/definitions/infra.RestGetAllMciResponse"
                                         },
                                         "[ID]": {
-                                            "$ref": "#/definitions/common.IdList"
+                                            "$ref": "#/definitions/model.IdList"
                                         },
                                         "[SIMPLE]": {
                                             "$ref": "#/definitions/infra.RestGetAllMciResponse"
@@ -2728,13 +2904,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2767,7 +2943,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbMciReq"
+                            "$ref": "#/definitions/model.TbMciReq"
                         }
                     }
                 ],
@@ -2775,19 +2951,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbMciInfo"
+                            "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2828,13 +3004,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2914,16 +3090,16 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "[AccessInfo]": {
-                                            "$ref": "#/definitions/infra.MciAccessInfo"
+                                            "$ref": "#/definitions/model.MciAccessInfo"
                                         },
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/infra.TbMciInfo"
+                                            "$ref": "#/definitions/model.TbMciInfo"
                                         },
                                         "[ID]": {
-                                            "$ref": "#/definitions/common.IdList"
+                                            "$ref": "#/definitions/model.IdList"
                                         },
                                         "[STATUS]": {
-                                            "$ref": "#/definitions/infra.MciStatusInfo"
+                                            "$ref": "#/definitions/model.MciStatusInfo"
                                         }
                                     }
                                 }
@@ -2933,13 +3109,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -2989,13 +3165,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3045,19 +3221,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3100,7 +3276,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbNLBReq"
+                            "$ref": "#/definitions/model.TbNLBReq"
                         }
                     }
                 ],
@@ -3108,19 +3284,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.McNlbInfo"
+                            "$ref": "#/definitions/model.McNlbInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3194,7 +3370,7 @@ const docTemplate = `{
                                             "$ref": "#/definitions/infra.RestGetAllNLBResponse"
                                         },
                                         "[ID]": {
-                                            "$ref": "#/definitions/common.IdList"
+                                            "$ref": "#/definitions/model.IdList"
                                         }
                                     }
                                 }
@@ -3204,13 +3380,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3260,7 +3436,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbNLBReq"
+                            "$ref": "#/definitions/model.TbNLBReq"
                         }
                     }
                 ],
@@ -3268,19 +3444,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbNLBInfo"
+                            "$ref": "#/definitions/model.TbNLBInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3327,13 +3503,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3383,19 +3559,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbNLBInfo"
+                            "$ref": "#/definitions/model.TbNLBInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3442,13 +3618,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3498,19 +3674,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbNLBInfo"
+                            "$ref": "#/definitions/model.TbNLBInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3561,7 +3737,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbNLBAddRemoveVMReq"
+                            "$ref": "#/definitions/model.TbNLBAddRemoveVMReq"
                         }
                     }
                 ],
@@ -3569,19 +3745,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbNLBInfo"
+                            "$ref": "#/definitions/model.TbNLBInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3630,7 +3806,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbNLBAddRemoveVMReq"
+                            "$ref": "#/definitions/model.TbNLBAddRemoveVMReq"
                         }
                     }
                 ],
@@ -3638,13 +3814,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3692,19 +3868,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3746,19 +3922,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3817,19 +3993,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3878,7 +4054,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbScaleOutSubGroupReq"
+                            "$ref": "#/definitions/model.TbScaleOutSubGroupReq"
                         }
                     }
                 ],
@@ -3886,19 +4062,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbMciInfo"
+                            "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -3941,7 +4117,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbVmReq"
+                            "$ref": "#/definitions/model.TbVmReq"
                         }
                     }
                 ],
@@ -3949,19 +4125,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbMciInfo"
+                            "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -4013,20 +4189,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/resource.BastionNode"
+                                "$ref": "#/definitions/model.BastionNode"
                             }
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -4084,19 +4260,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -4165,13 +4341,13 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/infra.TbVmInfo"
+                                            "$ref": "#/definitions/model.TbVmInfo"
                                         },
                                         "[IDNAME]": {
-                                            "$ref": "#/definitions/infra.TbIdNameInDetailInfo"
+                                            "$ref": "#/definitions/model.TbIdNameInDetailInfo"
                                         },
                                         "[STATUS]": {
-                                            "$ref": "#/definitions/infra.TbVmStatusInfo"
+                                            "$ref": "#/definitions/model.TbVmStatusInfo"
                                         }
                                     }
                                 }
@@ -4181,13 +4357,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -4244,13 +4420,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -4311,7 +4487,7 @@ const docTemplate = `{
                                             "$ref": "#/definitions/resource.RestGetAllDataDiskResponse"
                                         },
                                         "[ID]": {
-                                            "$ref": "#/definitions/common.IdList"
+                                            "$ref": "#/definitions/model.IdList"
                                         }
                                     }
                                 }
@@ -4321,13 +4497,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -4351,7 +4527,7 @@ const docTemplate = `{
                         "name": "attachDetachDataDiskReq",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbAttachDetachDataDiskReq"
+                            "$ref": "#/definitions/model.TbAttachDetachDataDiskReq"
                         }
                     },
                     {
@@ -4404,19 +4580,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbVmInfo"
+                            "$ref": "#/definitions/model.TbVmInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -4441,7 +4617,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.TbDataDiskVmReq"
+                            "$ref": "#/definitions/model.TbDataDiskVmReq"
                         }
                     },
                     {
@@ -4473,13 +4649,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbVmInfo"
+                            "$ref": "#/definitions/model.TbVmInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -4506,7 +4682,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbVmSnapshotReq"
+                            "$ref": "#/definitions/model.TbVmSnapshotReq"
                         }
                     },
                     {
@@ -4538,19 +4714,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbCustomImageInfo"
+                            "$ref": "#/definitions/model.TbCustomImageInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -4593,7 +4769,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbVmDynamicReq"
+                            "$ref": "#/definitions/model.TbVmDynamicReq"
                         }
                     }
                 ],
@@ -4601,19 +4777,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbMciInfo"
+                            "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -4798,7 +4974,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbMciDynamicReq"
+                            "$ref": "#/definitions/model.TbMciDynamicReq"
                         }
                     },
                     {
@@ -4821,19 +4997,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbMciInfo"
+                            "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -4876,7 +5052,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.MciCmdReq"
+                            "$ref": "#/definitions/model.MciCmdReq"
                         }
                     }
                 ],
@@ -4884,19 +5060,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.AgentInstallContentWrapper"
+                            "$ref": "#/definitions/model.AgentInstallContentWrapper"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -4945,19 +5121,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.MonResultSimpleResponse"
+                            "$ref": "#/definitions/model.MonResultSimpleResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5007,19 +5183,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbVmInfo"
+                            "$ref": "#/definitions/model.TbVmInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5059,13 +5235,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5097,13 +5273,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5145,19 +5321,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.MciPolicyInfo"
+                            "$ref": "#/definitions/model.MciPolicyInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5198,7 +5374,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.MciPolicyReq"
+                            "$ref": "#/definitions/model.MciPolicyReq"
                         }
                     }
                 ],
@@ -5206,19 +5382,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.MciPolicyInfo"
+                            "$ref": "#/definitions/model.MciPolicyInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5258,13 +5434,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5299,7 +5475,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/infra.TbMciReq"
+                            "$ref": "#/definitions/model.TbMciReq"
                         }
                     }
                 ],
@@ -5307,19 +5483,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbMciInfo"
+                            "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5385,7 +5561,7 @@ const docTemplate = `{
                                             "$ref": "#/definitions/resource.RestGetAllCustomImageResponse"
                                         },
                                         "[ID]": {
-                                            "$ref": "#/definitions/common.IdList"
+                                            "$ref": "#/definitions/model.IdList"
                                         }
                                     }
                                 }
@@ -5395,13 +5571,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5444,7 +5620,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.TbCustomImageReq"
+                            "$ref": "#/definitions/model.TbCustomImageReq"
                         }
                     }
                 ],
@@ -5452,19 +5628,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbCustomImageInfo"
+                            "$ref": "#/definitions/model.TbCustomImageInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5503,13 +5679,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5550,19 +5726,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbCustomImageInfo"
+                            "$ref": "#/definitions/model.TbCustomImageInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5601,13 +5777,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5673,7 +5849,7 @@ const docTemplate = `{
                                             "$ref": "#/definitions/resource.RestGetAllDataDiskResponse"
                                         },
                                         "[ID]": {
-                                            "$ref": "#/definitions/common.IdList"
+                                            "$ref": "#/definitions/model.IdList"
                                         }
                                     }
                                 }
@@ -5683,13 +5859,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5731,7 +5907,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.TbDataDiskReq"
+                            "$ref": "#/definitions/model.TbDataDiskReq"
                         }
                     }
                 ],
@@ -5739,19 +5915,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbDataDiskInfo"
+                            "$ref": "#/definitions/model.TbDataDiskInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5790,13 +5966,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5837,19 +6013,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbDataDiskInfo"
+                            "$ref": "#/definitions/model.TbDataDiskInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5874,7 +6050,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.TbDataDiskUpsizeReq"
+                            "$ref": "#/definitions/model.TbDataDiskUpsizeReq"
                         }
                     },
                     {
@@ -5897,19 +6073,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbDataDiskInfo"
+                            "$ref": "#/definitions/model.TbDataDiskInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5948,13 +6124,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5988,19 +6164,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6034,19 +6210,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6080,7 +6256,7 @@ const docTemplate = `{
                         "name": "specRangeFilter",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/resource.FilterSpecsByRangeRequest"
+                            "$ref": "#/definitions/model.FilterSpecsByRangeRequest"
                         }
                     }
                 ],
@@ -6094,13 +6270,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6166,7 +6342,7 @@ const docTemplate = `{
                                             "$ref": "#/definitions/resource.RestGetAllImageResponse"
                                         },
                                         "[ID]": {
-                                            "$ref": "#/definitions/common.IdList"
+                                            "$ref": "#/definitions/model.IdList"
                                         }
                                     }
                                 }
@@ -6176,13 +6352,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6225,7 +6401,7 @@ const docTemplate = `{
                         "name": "imageInfo",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbImageInfo"
+                            "$ref": "#/definitions/model.TbImageInfo"
                         }
                     },
                     {
@@ -6233,7 +6409,7 @@ const docTemplate = `{
                         "name": "imageId",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbImageReq"
+                            "$ref": "#/definitions/model.TbImageReq"
                         }
                     },
                     {
@@ -6248,19 +6424,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbImageInfo"
+                            "$ref": "#/definitions/model.TbImageInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6299,13 +6475,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6346,19 +6522,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbImageInfo"
+                            "$ref": "#/definitions/model.TbImageInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6383,7 +6559,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.TbImageInfo"
+                            "$ref": "#/definitions/model.TbImageInfo"
                         }
                     },
                     {
@@ -6406,19 +6582,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbImageInfo"
+                            "$ref": "#/definitions/model.TbImageInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6457,13 +6633,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6512,13 +6688,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6584,7 +6760,7 @@ const docTemplate = `{
                                             "$ref": "#/definitions/resource.RestGetAllSecurityGroupResponse"
                                         },
                                         "[ID]": {
-                                            "$ref": "#/definitions/common.IdList"
+                                            "$ref": "#/definitions/model.IdList"
                                         }
                                     }
                                 }
@@ -6594,13 +6770,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6642,7 +6818,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSecurityGroupReq"
+                            "$ref": "#/definitions/model.TbSecurityGroupReq"
                         }
                     }
                 ],
@@ -6650,19 +6826,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSecurityGroupInfo"
+                            "$ref": "#/definitions/model.TbSecurityGroupInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6701,13 +6877,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6748,19 +6924,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSecurityGroupInfo"
+                            "$ref": "#/definitions/model.TbSecurityGroupInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6799,13 +6975,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6855,19 +7031,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSecurityGroupInfo"
+                            "$ref": "#/definitions/model.TbSecurityGroupInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6915,13 +7091,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSecurityGroupInfo"
+                            "$ref": "#/definitions/model.TbSecurityGroupInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -6966,7 +7142,7 @@ const docTemplate = `{
                         "name": "specInfo",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSpecInfo"
+                            "$ref": "#/definitions/model.TbSpecInfo"
                         }
                     },
                     {
@@ -6974,7 +7150,7 @@ const docTemplate = `{
                         "name": "specName",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSpecReq"
+                            "$ref": "#/definitions/model.TbSpecReq"
                         }
                     },
                     {
@@ -6989,19 +7165,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSpecInfo"
+                            "$ref": "#/definitions/model.TbSpecInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7042,19 +7218,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSpecInfo"
+                            "$ref": "#/definitions/model.TbSpecInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7079,7 +7255,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSpecInfo"
+                            "$ref": "#/definitions/model.TbSpecInfo"
                         }
                     },
                     {
@@ -7102,19 +7278,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSpecInfo"
+                            "$ref": "#/definitions/model.TbSpecInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7153,13 +7329,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7225,7 +7401,7 @@ const docTemplate = `{
                                             "$ref": "#/definitions/resource.RestGetAllSshKeyResponse"
                                         },
                                         "[ID]": {
-                                            "$ref": "#/definitions/common.IdList"
+                                            "$ref": "#/definitions/model.IdList"
                                         }
                                     }
                                 }
@@ -7235,13 +7411,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7283,7 +7459,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSshKeyReq"
+                            "$ref": "#/definitions/model.TbSshKeyReq"
                         }
                     }
                 ],
@@ -7291,19 +7467,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSshKeyInfo"
+                            "$ref": "#/definitions/model.TbSshKeyInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7342,13 +7518,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7389,19 +7565,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSshKeyInfo"
+                            "$ref": "#/definitions/model.TbSshKeyInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7426,7 +7602,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSshKeyInfo"
+                            "$ref": "#/definitions/model.TbSshKeyInfo"
                         }
                     },
                     {
@@ -7449,19 +7625,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSshKeyInfo"
+                            "$ref": "#/definitions/model.TbSshKeyInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7500,13 +7676,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7572,7 +7748,7 @@ const docTemplate = `{
                                             "$ref": "#/definitions/resource.RestGetAllVNetResponse"
                                         },
                                         "[ID]": {
-                                            "$ref": "#/definitions/common.IdList"
+                                            "$ref": "#/definitions/model.IdList"
                                         }
                                     }
                                 }
@@ -7582,13 +7758,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7630,7 +7806,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.TbVNetReq"
+                            "$ref": "#/definitions/model.TbVNetReq"
                         }
                     }
                 ],
@@ -7638,19 +7814,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbVNetInfo"
+                            "$ref": "#/definitions/model.TbVNetInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7689,13 +7865,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7736,19 +7912,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbVNetInfo"
+                            "$ref": "#/definitions/model.TbVNetInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7787,13 +7963,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7835,7 +8011,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSubnetReq"
+                            "$ref": "#/definitions/model.TbSubnetReq"
                         }
                     }
                 ],
@@ -7843,19 +8019,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.TbSubnetInfo"
+                            "$ref": "#/definitions/model.TbSubnetInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7903,13 +8079,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7943,13 +8119,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -7982,19 +8158,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8025,19 +8201,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8070,19 +8246,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8113,19 +8289,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8149,19 +8325,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/model.IdList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8201,19 +8377,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.RegionDetail"
+                            "$ref": "#/definitions/model.RegionDetail"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8237,13 +8413,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8267,19 +8443,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.RegionList"
+                            "$ref": "#/definitions/model.RegionList"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8335,19 +8511,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.RegisterResourceResult"
+                            "$ref": "#/definitions/model.RegisterResourceResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8403,19 +8579,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.RegisterResourceAllResult"
+                            "$ref": "#/definitions/model.RegisterResourceAllResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8454,13 +8630,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8491,7 +8667,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8575,7 +8751,59 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources/{labelType}": {
+            "get": {
+                "description": "Get resources based on a label selector. The label selector supports the following operators:\n- ` + "`" + `=` + "`" + ` : Selects resources where the label key equals the specified value (e.g., ` + "`" + `env=production` + "`" + `).\n- ` + "`" + `!=` + "`" + ` : Selects resources where the label key does not equal the specified value (e.g., ` + "`" + `tier!=frontend` + "`" + `).\n- ` + "`" + `in` + "`" + ` : Selects resources where the label key is in the specified set of values (e.g., ` + "`" + `region in (us-west, us-east)` + "`" + `).\n- ` + "`" + `notin` + "`" + ` : Selects resources where the label key is not in the specified set of values (e.g., ` + "`" + `env notin (production, staging)` + "`" + `).\n- ` + "`" + `exists` + "`" + ` : Selects resources where the label key exists (e.g., ` + "`" + `env exists` + "`" + `).\n- ` + "`" + `!exists` + "`" + ` : Selects resources where the label key does not exist (e.g., ` + "`" + `env !exists` + "`" + `).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Label] Label Management"
+                ],
+                "summary": "Get resources by label selector",
+                "operationId": "GetResourcesByLabelSelector",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Label Type (e.g., ns, sshKey, vNet, vm, mci, k8s, etc.)",
+                        "name": "labelType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Label selector query. Example: env=production,tier=backend",
+                        "name": "labelSelector",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Matched resources",
+                        "schema": {
+                            "$ref": "#/definitions/label.ResourcesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8634,25 +8862,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8709,25 +8937,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8775,25 +9003,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8828,19 +9056,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/infra.TbMciInfo"
+                            "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8881,13 +9109,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8922,19 +9150,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -8962,468 +9190,8 @@ const docTemplate = `{
                 }
             }
         },
-        "common.CSPDetail": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "driver": {
-                    "type": "string"
-                },
-                "links": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "regions": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/definitions/common.RegionDetail"
-                    }
-                }
-            }
-        },
-        "common.CloudInfo": {
-            "type": "object",
-            "properties": {
-                "csps": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/definitions/common.CSPDetail"
-                    }
-                }
-            }
-        },
-        "common.ConfigInfo": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string",
-                    "example": "TB_SPIDER_REST_URL"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "TB_SPIDER_REST_URL"
-                },
-                "value": {
-                    "type": "string",
-                    "example": "http://localhost:1024/spider"
-                }
-            }
-        },
-        "common.ConfigReq": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "TB_SPIDER_REST_URL"
-                },
-                "value": {
-                    "type": "string",
-                    "example": "http://localhost:1024/spider"
-                }
-            }
-        },
-        "common.ConnConfig": {
-            "type": "object",
-            "properties": {
-                "configName": {
-                    "type": "string"
-                },
-                "credentialHolder": {
-                    "type": "string"
-                },
-                "credentialName": {
-                    "type": "string"
-                },
-                "driverName": {
-                    "type": "string"
-                },
-                "providerName": {
-                    "type": "string"
-                },
-                "regionDetail": {
-                    "$ref": "#/definitions/common.RegionDetail"
-                },
-                "regionRepresentative": {
-                    "type": "boolean"
-                },
-                "regionZoneInfo": {
-                    "$ref": "#/definitions/common.RegionZoneInfo"
-                },
-                "regionZoneInfoName": {
-                    "type": "string"
-                },
-                "verified": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "common.ConnConfigList": {
-            "type": "object",
-            "properties": {
-                "connectionconfig": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.ConnConfig"
-                    }
-                }
-            }
-        },
-        "common.CredentialInfo": {
-            "type": "object",
-            "properties": {
-                "allConnections": {
-                    "$ref": "#/definitions/common.ConnConfigList"
-                },
-                "credentialHolder": {
-                    "type": "string"
-                },
-                "credentialName": {
-                    "type": "string"
-                },
-                "keyValueInfoList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "providerName": {
-                    "type": "string"
-                }
-            }
-        },
-        "common.CredentialReq": {
-            "description": "CredentialReq contains the necessary information to register a credential. This includes the AES key encrypted with the RSA public key, which is then used to decrypt the AES key on the server side.",
-            "type": "object",
-            "properties": {
-                "credentialHolder": {
-                    "description": "CredentialHolder is the entity or user that holds the credential.",
-                    "type": "string",
-                    "example": "admin"
-                },
-                "credentialKeyValueList": {
-                    "description": "CredentialKeyValueList contains key-(encrypted)value pairs that include the sensitive credential data.",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyWithEncryptedValue"
-                    }
-                },
-                "encryptedClientAesKeyByPublicKey": {
-                    "description": "EncryptedClientAesKeyByPublicKey is the client temporary AES key encrypted with the RSA public key.",
-                    "type": "string",
-                    "example": "ZzXL27hbAUDT0ohglf2Gwr60sAqdPw3+CnCsn0RJXeiZxXnHfW03mFx5RaSfbwtPYCq1h6wwv7XsiWzfFmr02..."
-                },
-                "providerName": {
-                    "description": "ProviderName specifies the cloud provider associated with the credential (e.g., AWS, GCP).",
-                    "type": "string",
-                    "example": "aws"
-                },
-                "publicKeyTokenId": {
-                    "description": "PublicKeyTokenId is the unique token ID used to retrieve the corresponding private key for decryption.",
-                    "type": "string",
-                    "example": "cr31av30uphc738d7h0g"
-                }
-            }
-        },
-        "common.IID": {
-            "type": "object",
-            "properties": {
-                "nameId": {
-                    "description": "NameID by user",
-                    "type": "string"
-                },
-                "systemId": {
-                    "description": "SystemID by CloudOS",
-                    "type": "string"
-                }
-            }
-        },
-        "common.IdList": {
-            "type": "object",
-            "properties": {
-                "output": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
         "common.JSONResult": {
             "type": "object"
-        },
-        "common.K8sClusterDetail": {
-            "type": "object",
-            "properties": {
-                "node_images": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.K8sClusterNodeImageDetail"
-                    }
-                },
-                "nodegroups_on_creation": {
-                    "type": "boolean"
-                },
-                "root_disks": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.K8sClusterRootDiskDetail"
-                    }
-                },
-                "versions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.K8sClusterVersionDetail"
-                    }
-                }
-            }
-        },
-        "common.K8sClusterInfo": {
-            "type": "object",
-            "properties": {
-                "k8s_cluster": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/definitions/common.K8sClusterDetail"
-                    }
-                }
-            }
-        },
-        "common.K8sClusterNodeGroupsOnCreation": {
-            "type": "object",
-            "properties": {
-                "result": {
-                    "type": "string",
-                    "example": "true"
-                }
-            }
-        },
-        "common.K8sClusterNodeImageDetail": {
-            "type": "object",
-            "properties": {
-                "availables": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.K8sClusterNodeImageDetailAvailable"
-                    }
-                },
-                "region": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "common.K8sClusterNodeImageDetailAvailable": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "common.K8sClusterRootDiskDetail": {
-            "type": "object",
-            "properties": {
-                "region": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "size": {
-                    "$ref": "#/definitions/common.K8sClusterRootDiskDetailSize"
-                },
-                "type": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.K8sClusterRootDiskDetailType"
-                    }
-                }
-            }
-        },
-        "common.K8sClusterRootDiskDetailSize": {
-            "type": "object",
-            "properties": {
-                "max": {
-                    "type": "integer"
-                },
-                "min": {
-                    "type": "integer"
-                }
-            }
-        },
-        "common.K8sClusterRootDiskDetailType": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "common.K8sClusterVersionDetail": {
-            "type": "object",
-            "properties": {
-                "availables": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.K8sClusterVersionDetailAvailable"
-                    }
-                },
-                "region": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "common.K8sClusterVersionDetailAvailable": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string",
-                    "example": "1.30.1-aliyun.1"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "1.30"
-                }
-            }
-        },
-        "common.KeyValue": {
-            "type": "object",
-            "properties": {
-                "key": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "common.KeyWithEncryptedValue": {
-            "type": "object",
-            "properties": {
-                "key": {
-                    "description": "Key for the value",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "Should be encrypted by the public key issued by GET /credential/publicKey",
-                    "type": "string"
-                }
-            }
-        },
-        "common.Location": {
-            "type": "object",
-            "properties": {
-                "display": {
-                    "type": "string"
-                },
-                "latitude": {
-                    "type": "number"
-                },
-                "longitude": {
-                    "type": "number"
-                }
-            }
-        },
-        "common.NsInfo": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Description for this namespace"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "default"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "default"
-                }
-            }
-        },
-        "common.NsReq": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Description for this namespace"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "default"
-                }
-            }
-        },
-        "common.PublicKeyResponse": {
-            "type": "object",
-            "properties": {
-                "publicKey": {
-                    "type": "string"
-                },
-                "publicKeyTokenId": {
-                    "type": "string"
-                }
-            }
-        },
-        "common.RegionDetail": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "location": {
-                    "$ref": "#/definitions/common.Location"
-                },
-                "regionId": {
-                    "type": "string"
-                },
-                "regionName": {
-                    "type": "string"
-                },
-                "zones": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "common.RegionList": {
-            "type": "object",
-            "properties": {
-                "region": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.SpiderRegionZoneInfo"
-                    }
-                }
-            }
-        },
-        "common.RegionZoneInfo": {
-            "type": "object",
-            "properties": {
-                "assignedRegion": {
-                    "type": "string"
-                },
-                "assignedZone": {
-                    "type": "string"
-                }
-            }
         },
         "common.RequestDetails": {
             "type": "object",
@@ -9487,7 +9255,7 @@ const docTemplate = `{
                     "description": "Name string     ` + "`" + `json:\"name\"` + "`" + `",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.ConfigInfo"
+                        "$ref": "#/definitions/model.ConfigInfo"
                     }
                 }
             }
@@ -9499,7 +9267,7 @@ const docTemplate = `{
                     "description": "Name string     ` + "`" + `json:\"name\"` + "`" + `",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.NsInfo"
+                        "$ref": "#/definitions/model.NsInfo"
                     }
                 }
             }
@@ -9553,41 +9321,6 @@ const docTemplate = `{
                 }
             }
         },
-        "common.SimpleMsg": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "Any message"
-                }
-            }
-        },
-        "common.SpiderRegionZoneInfo": {
-            "type": "object",
-            "properties": {
-                "availableZoneList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "keyValueInfoList": {
-                    "description": "ex) { {region, us-east1}, {zone, us-east1-c} }",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "providerName": {
-                    "description": "ex) \"GCP\"",
-                    "type": "string"
-                },
-                "regionName": {
-                    "description": "ex) \"region01\"",
-                    "type": "string"
-                }
-            }
-        },
         "common.TbConnectionName": {
             "type": "object",
             "properties": {
@@ -9596,7 +9329,90 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.AgentInstallContent": {
+        "infra.JSONResult": {
+            "type": "object"
+        },
+        "infra.RestGetAllBenchmarkRequest": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.RestGetAllK8sClusterResponse": {
+            "type": "object",
+            "properties": {
+                "cluster": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbK8sClusterInfo"
+                    }
+                }
+            }
+        },
+        "infra.RestGetAllMciPolicyResponse": {
+            "type": "object",
+            "properties": {
+                "mciPolicy": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.MciPolicyInfo"
+                    }
+                }
+            }
+        },
+        "infra.RestGetAllMciResponse": {
+            "type": "object",
+            "properties": {
+                "mci": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbMciInfo"
+                    }
+                }
+            }
+        },
+        "infra.RestGetAllMciStatusResponse": {
+            "type": "object",
+            "properties": {
+                "mci": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.MciStatusInfo"
+                    }
+                }
+            }
+        },
+        "infra.RestGetAllNLBResponse": {
+            "type": "object",
+            "properties": {
+                "nlb": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbNLBInfo"
+                    }
+                }
+            }
+        },
+        "infra.RestGetBenchmarkRequest": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                }
+            }
+        },
+        "label.ResourcesResponse": {
+            "type": "object",
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {}
+                }
+            }
+        },
+        "model.AgentInstallContent": {
             "type": "object",
             "properties": {
                 "mciId": {
@@ -9613,18 +9429,18 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.AgentInstallContentWrapper": {
+        "model.AgentInstallContentWrapper": {
             "type": "object",
             "properties": {
                 "resultArray": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.AgentInstallContent"
+                        "$ref": "#/definitions/model.AgentInstallContent"
                     }
                 }
             }
         },
-        "infra.AutoAction": {
+        "model.AutoAction": {
             "type": "object",
             "properties": {
                 "actionType": {
@@ -9643,16 +9459,16 @@ const docTemplate = `{
                     "description": "PostCommand is field for providing command to VMs after its creation. example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/infra.MciCmdReq"
+                            "$ref": "#/definitions/model.MciCmdReq"
                         }
                     ]
                 },
                 "vmDynamicReq": {
-                    "$ref": "#/definitions/infra.TbVmDynamicReq"
+                    "$ref": "#/definitions/model.TbVmDynamicReq"
                 }
             }
         },
-        "infra.AutoCondition": {
+        "model.AutoCondition": {
             "type": "object",
             "properties": {
                 "evaluationPeriod": {
@@ -9685,7 +9501,18 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.BenchmarkInfo": {
+        "model.BastionNode": {
+            "type": "object",
+            "properties": {
+                "mciId": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.BenchmarkInfo": {
             "type": "object",
             "properties": {
                 "desc": {
@@ -9704,7 +9531,7 @@ const docTemplate = `{
                     "description": "struct-element cycle ?",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.BenchmarkInfo"
+                        "$ref": "#/definitions/model.BenchmarkInfo"
                     }
                 },
                 "specid": {
@@ -9715,18 +9542,41 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.BenchmarkInfoArray": {
+        "model.BenchmarkInfoArray": {
             "type": "object",
             "properties": {
                 "resultarray": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.BenchmarkInfo"
+                        "$ref": "#/definitions/model.BenchmarkInfo"
                     }
                 }
             }
         },
-        "infra.CheckMciDynamicReqInfo": {
+        "model.CSPDetail": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "driver": {
+                    "type": "string"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "regions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/model.RegionDetail"
+                    }
+                }
+            }
+        },
+        "model.CheckMciDynamicReqInfo": {
             "type": "object",
             "required": [
                 "reqCheck"
@@ -9735,12 +9585,12 @@ const docTemplate = `{
                 "reqCheck": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.CheckVmDynamicReqInfo"
+                        "$ref": "#/definitions/model.CheckVmDynamicReqInfo"
                     }
                 }
             }
         },
-        "infra.CheckVmDynamicReqInfo": {
+        "model.CheckVmDynamicReqInfo": {
             "type": "object",
             "properties": {
                 "connectionConfigCandidates": {
@@ -9753,14 +9603,14 @@ const docTemplate = `{
                 "image": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/resource.TbImageInfo"
+                        "$ref": "#/definitions/model.TbImageInfo"
                     }
                 },
                 "region": {
-                    "$ref": "#/definitions/common.RegionDetail"
+                    "$ref": "#/definitions/model.RegionDetail"
                 },
                 "spec": {
-                    "$ref": "#/definitions/resource.TbSpecInfo"
+                    "$ref": "#/definitions/model.TbSpecInfo"
                 },
                 "systemMessage": {
                     "description": "Latest system message such as error message",
@@ -9769,11 +9619,165 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.DeploymentPlan": {
+        "model.CloudInfo": {
+            "type": "object",
+            "properties": {
+                "csps": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/model.CSPDetail"
+                    }
+                }
+            }
+        },
+        "model.ConfigInfo": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "TB_SPIDER_REST_URL"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "TB_SPIDER_REST_URL"
+                },
+                "value": {
+                    "type": "string",
+                    "example": "http://localhost:1024/spider"
+                }
+            }
+        },
+        "model.ConfigReq": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "TB_SPIDER_REST_URL"
+                },
+                "value": {
+                    "type": "string",
+                    "example": "http://localhost:1024/spider"
+                }
+            }
+        },
+        "model.ConnConfig": {
+            "type": "object",
+            "properties": {
+                "configName": {
+                    "type": "string"
+                },
+                "credentialHolder": {
+                    "type": "string"
+                },
+                "credentialName": {
+                    "type": "string"
+                },
+                "driverName": {
+                    "type": "string"
+                },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionDetail": {
+                    "$ref": "#/definitions/model.RegionDetail"
+                },
+                "regionRepresentative": {
+                    "type": "boolean"
+                },
+                "regionZoneInfo": {
+                    "$ref": "#/definitions/model.RegionZoneInfo"
+                },
+                "regionZoneInfoName": {
+                    "type": "string"
+                },
+                "verified": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "model.ConnConfigList": {
+            "type": "object",
+            "properties": {
+                "connectionconfig": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ConnConfig"
+                    }
+                }
+            }
+        },
+        "model.CredentialInfo": {
+            "type": "object",
+            "properties": {
+                "allConnections": {
+                    "$ref": "#/definitions/model.ConnConfigList"
+                },
+                "credentialHolder": {
+                    "type": "string"
+                },
+                "credentialName": {
+                    "type": "string"
+                },
+                "keyValueInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "providerName": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CredentialReq": {
+            "description": "CredentialReq contains the necessary information to register a credential. This includes the AES key encrypted with the RSA public key, which is then used to decrypt the AES key on the server side.",
+            "type": "object",
+            "properties": {
+                "credentialHolder": {
+                    "description": "CredentialHolder is the entity or user that holds the credential.",
+                    "type": "string",
+                    "example": "admin"
+                },
+                "credentialKeyValueList": {
+                    "description": "CredentialKeyValueList contains key-(encrypted)value pairs that include the sensitive credential data.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyWithEncryptedValue"
+                    }
+                },
+                "encryptedClientAesKeyByPublicKey": {
+                    "description": "EncryptedClientAesKeyByPublicKey is the client temporary AES key encrypted with the RSA public key.",
+                    "type": "string",
+                    "example": "ZzXL27hbAUDT0ohglf2Gwr60sAqdPw3+CnCsn0RJXeiZxXnHfW03mFx5RaSfbwtPYCq1h6wwv7XsiWzfFmr02..."
+                },
+                "providerName": {
+                    "description": "ProviderName specifies the cloud provider associated with the credential (e.g., AWS, GCP).",
+                    "type": "string",
+                    "example": "aws"
+                },
+                "publicKeyTokenId": {
+                    "description": "PublicKeyTokenId is the unique token ID used to retrieve the corresponding private key for decryption.",
+                    "type": "string",
+                    "example": "cr31av30uphc738d7h0g"
+                }
+            }
+        },
+        "model.CustomImageStatus": {
+            "type": "string",
+            "enum": [
+                "Available",
+                "Unavailable"
+            ],
+            "x-enum-varnames": [
+                "MyImageAvailable",
+                "MyImageUnavailable"
+            ]
+        },
+        "model.DeploymentPlan": {
             "type": "object",
             "properties": {
                 "filter": {
-                    "$ref": "#/definitions/infra.FilterInfo"
+                    "$ref": "#/definitions/model.FilterInfo"
                 },
                 "limit": {
                     "type": "string",
@@ -9785,17 +9789,34 @@ const docTemplate = `{
                     "example": "5"
                 },
                 "priority": {
-                    "$ref": "#/definitions/infra.PriorityInfo"
+                    "$ref": "#/definitions/model.PriorityInfo"
                 }
             }
         },
-        "infra.FilterCondition": {
+        "model.DiskStatus": {
+            "type": "string",
+            "enum": [
+                "Creating",
+                "Available",
+                "Attached",
+                "Deleting",
+                "Error"
+            ],
+            "x-enum-varnames": [
+                "DiskCreating",
+                "DiskAvailable",
+                "DiskAttached",
+                "DiskDeleting",
+                "DiskError"
+            ]
+        },
+        "model.FilterCondition": {
             "type": "object",
             "properties": {
                 "condition": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.Operation"
+                        "$ref": "#/definitions/model.Operation"
                     }
                 },
                 "metric": {
@@ -9809,45 +9830,164 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.FilterInfo": {
+        "model.FilterInfo": {
             "type": "object",
             "properties": {
                 "policy": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.FilterCondition"
+                        "$ref": "#/definitions/model.FilterCondition"
                     }
                 }
             }
         },
-        "infra.InspectResource": {
+        "model.FilterSpecsByRangeRequest": {
+            "type": "object",
+            "properties": {
+                "acceleratorCount": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "acceleratorMemoryGB": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "acceleratorModel": {
+                    "type": "string"
+                },
+                "acceleratorType": {
+                    "type": "string"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "costPerHour": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "cspSpecName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "evaluationScore01": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "evaluationScore02": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "evaluationScore03": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "evaluationScore04": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "evaluationScore05": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "evaluationScore06": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "evaluationScore07": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "evaluationScore08": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "evaluationScore09": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "evaluationScore10": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "evaluationStatus": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "infraType": {
+                    "type": "string"
+                },
+                "maxTotalStorageTiB": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "memoryGiB": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "netBwGbps": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "osType": {
+                    "type": "string"
+                },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                },
+                "storageGiB": {
+                    "$ref": "#/definitions/model.Range"
+                },
+                "vCPU": {
+                    "$ref": "#/definitions/model.Range"
+                }
+            }
+        },
+        "model.IID": {
+            "type": "object",
+            "properties": {
+                "nameId": {
+                    "description": "NameID by user",
+                    "type": "string"
+                },
+                "systemId": {
+                    "description": "SystemID by CloudOS",
+                    "type": "string"
+                }
+            }
+        },
+        "model.IdList": {
+            "type": "object",
+            "properties": {
+                "output": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.InspectResource": {
             "type": "object",
             "properties": {
                 "connectionName": {
                     "type": "string"
                 },
                 "resourceOverview": {
-                    "$ref": "#/definitions/infra.resourceCountOverview"
+                    "$ref": "#/definitions/model.ResourceCountOverview"
                 },
                 "resourceType": {
                     "type": "string"
                 },
                 "resources": {
-                    "$ref": "#/definitions/infra.resourcesByManageType"
+                    "$ref": "#/definitions/model.ResourcesByManageType"
                 },
                 "systemMessage": {
                     "type": "string"
                 }
             }
         },
-        "infra.InspectResourceAllResult": {
+        "model.InspectResourceAllResult": {
             "type": "object",
             "properties": {
                 "availableConnection": {
                     "type": "integer"
                 },
                 "cspOnlyOverview": {
-                    "$ref": "#/definitions/infra.inspectOverview"
+                    "$ref": "#/definitions/model.inspectOverview"
                 },
                 "elapsedTime": {
                     "type": "integer"
@@ -9855,25 +9995,25 @@ const docTemplate = `{
                 "inspectResult": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.InspectResourceResult"
+                        "$ref": "#/definitions/model.InspectResourceResult"
                     }
                 },
                 "registeredConnection": {
                     "type": "integer"
                 },
                 "tumblebugOverview": {
-                    "$ref": "#/definitions/infra.inspectOverview"
+                    "$ref": "#/definitions/model.inspectOverview"
                 }
             }
         },
-        "infra.InspectResourceResult": {
+        "model.InspectResourceResult": {
             "type": "object",
             "properties": {
                 "connectionName": {
                     "type": "string"
                 },
                 "cspOnlyOverview": {
-                    "$ref": "#/definitions/infra.inspectOverview"
+                    "$ref": "#/definitions/model.inspectOverview"
                 },
                 "elapsedTime": {
                     "type": "integer"
@@ -9882,45 +10022,226 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tumblebugOverview": {
-                    "$ref": "#/definitions/infra.inspectOverview"
+                    "$ref": "#/definitions/model.inspectOverview"
                 }
             }
         },
-        "infra.JSONResult": {
-            "type": "object"
+        "model.K8sClusterDetail": {
+            "type": "object",
+            "properties": {
+                "node_images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterNodeImageDetail"
+                    }
+                },
+                "nodegroups_on_creation": {
+                    "type": "boolean"
+                },
+                "root_disks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterRootDiskDetail"
+                    }
+                },
+                "versions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterVersionDetail"
+                    }
+                }
+            }
         },
-        "infra.McNlbInfo": {
+        "model.K8sClusterInfo": {
+            "type": "object",
+            "properties": {
+                "k8s_cluster": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/model.K8sClusterDetail"
+                    }
+                }
+            }
+        },
+        "model.K8sClusterNodeGroupsOnCreation": {
+            "type": "object",
+            "properties": {
+                "result": {
+                    "type": "string",
+                    "example": "true"
+                }
+            }
+        },
+        "model.K8sClusterNodeImageDetail": {
+            "type": "object",
+            "properties": {
+                "availables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterNodeImageDetailAvailable"
+                    }
+                },
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.K8sClusterNodeImageDetailAvailable": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.K8sClusterRootDiskDetail": {
+            "type": "object",
+            "properties": {
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "size": {
+                    "$ref": "#/definitions/model.K8sClusterRootDiskDetailSize"
+                },
+                "type": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterRootDiskDetailType"
+                    }
+                }
+            }
+        },
+        "model.K8sClusterRootDiskDetailSize": {
+            "type": "object",
+            "properties": {
+                "max": {
+                    "type": "integer"
+                },
+                "min": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.K8sClusterRootDiskDetailType": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.K8sClusterVersionDetail": {
+            "type": "object",
+            "properties": {
+                "availables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterVersionDetailAvailable"
+                    }
+                },
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.K8sClusterVersionDetailAvailable": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "1.30.1-aliyun.1"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "1.30"
+                }
+            }
+        },
+        "model.KeyValue": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.KeyWithEncryptedValue": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "description": "Key for the value",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "Should be encrypted by the public key issued by GET /credential/publicKey",
+                    "type": "string"
+                }
+            }
+        },
+        "model.Location": {
+            "type": "object",
+            "properties": {
+                "display": {
+                    "type": "string"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
+                }
+            }
+        },
+        "model.McNlbInfo": {
             "type": "object",
             "properties": {
                 "deploymentLog": {
-                    "$ref": "#/definitions/infra.MciSshCmdResult"
+                    "$ref": "#/definitions/model.MciSshCmdResult"
                 },
                 "mcNlbHostInfo": {
-                    "$ref": "#/definitions/infra.TbMciInfo"
+                    "$ref": "#/definitions/model.TbMciInfo"
                 },
                 "mciAccessInfo": {
-                    "$ref": "#/definitions/infra.MciAccessInfo"
+                    "$ref": "#/definitions/model.MciAccessInfo"
                 }
             }
         },
-        "infra.MciAccessInfo": {
+        "model.MciAccessInfo": {
             "type": "object",
             "properties": {
                 "mciId": {
                     "type": "string"
                 },
                 "mciNlbListener": {
-                    "$ref": "#/definitions/infra.MciAccessInfo"
+                    "$ref": "#/definitions/model.MciAccessInfo"
                 },
                 "mciSubGroupAccessInfo": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.MciSubGroupAccessInfo"
+                        "$ref": "#/definitions/model.MciSubGroupAccessInfo"
                     }
                 }
             }
         },
-        "infra.MciCmdReq": {
+        "model.MciCmdReq": {
             "type": "object",
             "required": [
                 "command"
@@ -9941,7 +10262,7 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.MciConnectionConfigCandidatesReq": {
+        "model.MciConnectionConfigCandidatesReq": {
             "type": "object",
             "required": [
                 "commonSpec"
@@ -9960,7 +10281,7 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.MciPolicyInfo": {
+        "model.MciPolicyInfo": {
             "type": "object",
             "properties": {
                 "Id": {
@@ -9981,12 +10302,12 @@ const docTemplate = `{
                 "policy": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.Policy"
+                        "$ref": "#/definitions/model.Policy"
                     }
                 }
             }
         },
-        "infra.MciPolicyReq": {
+        "model.MciPolicyReq": {
             "type": "object",
             "properties": {
                 "description": {
@@ -9996,23 +10317,23 @@ const docTemplate = `{
                 "policy": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.Policy"
+                        "$ref": "#/definitions/model.Policy"
                     }
                 }
             }
         },
-        "infra.MciSshCmdResult": {
+        "model.MciSshCmdResult": {
             "type": "object",
             "properties": {
                 "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.SshCmdResult"
+                        "$ref": "#/definitions/model.SshCmdResult"
                     }
                 }
             }
         },
-        "infra.MciStatusInfo": {
+        "model.MciStatusInfo": {
             "type": "object",
             "properties": {
                 "id": {
@@ -10046,7 +10367,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "statusCount": {
-                    "$ref": "#/definitions/infra.StatusCountInfo"
+                    "$ref": "#/definitions/model.StatusCountInfo"
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
@@ -10062,12 +10383,12 @@ const docTemplate = `{
                 "vm": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.TbVmStatusInfo"
+                        "$ref": "#/definitions/model.TbVmStatusInfo"
                     }
                 }
             }
         },
-        "infra.MciSubGroupAccessInfo": {
+        "model.MciSubGroupAccessInfo": {
             "type": "object",
             "properties": {
                 "bastionVmId": {
@@ -10076,18 +10397,18 @@ const docTemplate = `{
                 "mciVmAccessInfo": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.MciVmAccessInfo"
+                        "$ref": "#/definitions/model.MciVmAccessInfo"
                     }
                 },
                 "nlbListener": {
-                    "$ref": "#/definitions/infra.TbNLBListenerInfo"
+                    "$ref": "#/definitions/model.TbNLBListenerInfo"
                 },
                 "subGroupId": {
                     "type": "string"
                 }
             }
         },
-        "infra.MciVmAccessInfo": {
+        "model.MciVmAccessInfo": {
             "type": "object",
             "properties": {
                 "privateIP": {
@@ -10113,7 +10434,7 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.MonResultSimple": {
+        "model.MonResultSimple": {
             "type": "object",
             "properties": {
                 "err": {
@@ -10130,7 +10451,7 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.MonResultSimpleResponse": {
+        "model.MonResultSimpleResponse": {
             "type": "object",
             "properties": {
                 "mciId": {
@@ -10139,7 +10460,7 @@ const docTemplate = `{
                 "mciMonitoring": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.MonResultSimple"
+                        "$ref": "#/definitions/model.MonResultSimple"
                     }
                 },
                 "nsId": {
@@ -10147,7 +10468,7 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.NLBListenerReq": {
+        "model.NLBListenerReq": {
             "type": "object",
             "properties": {
                 "port": {
@@ -10162,7 +10483,41 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.Operation": {
+        "model.NsInfo": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Description for this namespace"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "uuid": {
+                    "description": "uuid is universally unique identifier for the resource",
+                    "type": "string"
+                }
+            }
+        },
+        "model.NsReq": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Description for this namespace"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "default"
+                }
+            }
+        },
+        "model.Operation": {
             "type": "object",
             "properties": {
                 "operand": {
@@ -10187,7 +10542,7 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.ParameterKeyVal": {
+        "model.ParameterKeyVal": {
             "type": "object",
             "properties": {
                 "key": {
@@ -10212,21 +10567,21 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.Policy": {
+        "model.Policy": {
             "type": "object",
             "properties": {
                 "autoAction": {
-                    "$ref": "#/definitions/infra.AutoAction"
+                    "$ref": "#/definitions/model.AutoAction"
                 },
                 "autoCondition": {
-                    "$ref": "#/definitions/infra.AutoCondition"
+                    "$ref": "#/definitions/model.AutoCondition"
                 },
                 "status": {
                     "type": "string"
                 }
             }
         },
-        "infra.PriorityCondition": {
+        "model.PriorityCondition": {
             "type": "object",
             "properties": {
                 "metric": {
@@ -10243,7 +10598,7 @@ const docTemplate = `{
                 "parameter": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.ParameterKeyVal"
+                        "$ref": "#/definitions/model.ParameterKeyVal"
                     }
                 },
                 "weight": {
@@ -10257,18 +10612,63 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.PriorityInfo": {
+        "model.PriorityInfo": {
             "type": "object",
             "properties": {
                 "policy": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.PriorityCondition"
+                        "$ref": "#/definitions/model.PriorityCondition"
                     }
                 }
             }
         },
-        "infra.RegionInfo": {
+        "model.PublicKeyResponse": {
+            "type": "object",
+            "properties": {
+                "publicKey": {
+                    "type": "string"
+                },
+                "publicKeyTokenId": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Range": {
+            "type": "object",
+            "properties": {
+                "max": {
+                    "type": "number"
+                },
+                "min": {
+                    "type": "number"
+                }
+            }
+        },
+        "model.RegionDetail": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/model.Location"
+                },
+                "regionId": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                },
+                "zones": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.RegionInfo": {
             "type": "object",
             "properties": {
                 "region": {
@@ -10279,7 +10679,29 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.RegisterResourceAllResult": {
+        "model.RegionList": {
+            "type": "object",
+            "properties": {
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SpiderRegionZoneInfo"
+                    }
+                }
+            }
+        },
+        "model.RegionZoneInfo": {
+            "type": "object",
+            "properties": {
+                "assignedRegion": {
+                    "type": "string"
+                },
+                "assignedZone": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.RegisterResourceAllResult": {
             "type": "object",
             "properties": {
                 "availableConnection": {
@@ -10289,12 +10711,12 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "registerationOverview": {
-                    "$ref": "#/definitions/infra.registerationOverview"
+                    "$ref": "#/definitions/model.RegisterationOverview"
                 },
                 "registerationResult": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.RegisterResourceResult"
+                        "$ref": "#/definitions/model.RegisterResourceResult"
                     }
                 },
                 "registeredConnection": {
@@ -10302,7 +10724,7 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.RegisterResourceResult": {
+        "model.RegisterResourceResult": {
             "type": "object",
             "properties": {
                 "connectionName": {
@@ -10312,1621 +10734,17 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "registerationOutputs": {
-                    "$ref": "#/definitions/common.IdList"
+                    "$ref": "#/definitions/model.IdList"
                 },
                 "registerationOverview": {
-                    "$ref": "#/definitions/infra.registerationOverview"
+                    "$ref": "#/definitions/model.RegisterationOverview"
                 },
                 "systemMessage": {
                     "type": "string"
                 }
             }
         },
-        "infra.RestGetAllBenchmarkRequest": {
-            "type": "object",
-            "properties": {
-                "host": {
-                    "type": "string"
-                }
-            }
-        },
-        "infra.RestGetAllK8sClusterResponse": {
-            "type": "object",
-            "properties": {
-                "cluster": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/infra.TbK8sClusterInfo"
-                    }
-                }
-            }
-        },
-        "infra.RestGetAllMciPolicyResponse": {
-            "type": "object",
-            "properties": {
-                "mciPolicy": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/infra.MciPolicyInfo"
-                    }
-                }
-            }
-        },
-        "infra.RestGetAllMciResponse": {
-            "type": "object",
-            "properties": {
-                "mci": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/infra.TbMciInfo"
-                    }
-                }
-            }
-        },
-        "infra.RestGetAllMciStatusResponse": {
-            "type": "object",
-            "properties": {
-                "mci": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/infra.MciStatusInfo"
-                    }
-                }
-            }
-        },
-        "infra.RestGetAllNLBResponse": {
-            "type": "object",
-            "properties": {
-                "nlb": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/infra.TbNLBInfo"
-                    }
-                }
-            }
-        },
-        "infra.RestGetBenchmarkRequest": {
-            "type": "object",
-            "properties": {
-                "host": {
-                    "type": "string"
-                }
-            }
-        },
-        "infra.SpiderImageType": {
-            "type": "string",
-            "enum": [
-                "PublicImage",
-                "MyImage"
-            ],
-            "x-enum-varnames": [
-                "PublicImage",
-                "MyImage"
-            ]
-        },
-        "infra.SpiderVMInfo": {
-            "type": "object",
-            "properties": {
-                "cspid": {
-                    "description": "VM ID given by CSP (required for registering VM)",
-                    "type": "string"
-                },
-                "dataDiskIIDs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.IID"
-                    }
-                },
-                "dataDiskNames": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "iid": {
-                    "description": "Fields for response",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
-                },
-                "imageIId": {
-                    "$ref": "#/definitions/common.IID"
-                },
-                "imageName": {
-                    "type": "string"
-                },
-                "imageType": {
-                    "$ref": "#/definitions/infra.SpiderImageType"
-                },
-                "keyPairIId": {
-                    "$ref": "#/definitions/common.IID"
-                },
-                "keyPairName": {
-                    "type": "string"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "description": "Fields for request",
-                    "type": "string"
-                },
-                "networkInterface": {
-                    "description": "ex) eth0",
-                    "type": "string"
-                },
-                "privateDNS": {
-                    "type": "string"
-                },
-                "privateIP": {
-                    "type": "string"
-                },
-                "publicDNS": {
-                    "type": "string"
-                },
-                "publicIP": {
-                    "type": "string"
-                },
-                "region": {
-                    "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/infra.RegionInfo"
-                        }
-                    ]
-                },
-                "rootDeviceName": {
-                    "description": "\"/dev/sda1\", ...",
-                    "type": "string"
-                },
-                "rootDiskSize": {
-                    "description": "\"default\", \"50\", \"1000\" (GB)",
-                    "type": "string"
-                },
-                "rootDiskType": {
-                    "description": "\"SSD(gp2)\", \"Premium SSD\", ...",
-                    "type": "string"
-                },
-                "securityGroupIIds": {
-                    "description": "AWS, ex) sg-0b7452563e1121bb6",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.IID"
-                    }
-                },
-                "securityGroupNames": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sshaccessPoint": {
-                    "type": "string"
-                },
-                "startTime": {
-                    "type": "string"
-                },
-                "subnetIID": {
-                    "description": "AWS, ex) subnet-8c4a53e4",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
-                },
-                "subnetName": {
-                    "type": "string"
-                },
-                "vmspecName": {
-                    "description": "Fields for both request and response",
-                    "type": "string"
-                },
-                "vmuserId": {
-                    "description": "ex) user1",
-                    "type": "string"
-                },
-                "vmuserPasswd": {
-                    "type": "string"
-                },
-                "vpcIID": {
-                    "$ref": "#/definitions/common.IID"
-                },
-                "vpcname": {
-                    "type": "string"
-                }
-            }
-        },
-        "infra.SshCmdResult": {
-            "type": "object",
-            "properties": {
-                "command": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "err": {},
-                "mciId": {
-                    "type": "string"
-                },
-                "stderr": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "stdout": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "vmId": {
-                    "type": "string"
-                },
-                "vmIp": {
-                    "type": "string"
-                }
-            }
-        },
-        "infra.StatusCountInfo": {
-            "type": "object",
-            "properties": {
-                "countCreating": {
-                    "description": "CountCreating is for counting Creating",
-                    "type": "integer"
-                },
-                "countFailed": {
-                    "description": "CountFailed is for counting Failed",
-                    "type": "integer"
-                },
-                "countRebooting": {
-                    "description": "CountRebooting is for counting Rebooting",
-                    "type": "integer"
-                },
-                "countResuming": {
-                    "description": "CountResuming is for counting Resuming",
-                    "type": "integer"
-                },
-                "countRunning": {
-                    "description": "CountRunning is for counting Running",
-                    "type": "integer"
-                },
-                "countSuspended": {
-                    "description": "CountSuspended is for counting Suspended",
-                    "type": "integer"
-                },
-                "countSuspending": {
-                    "description": "CountSuspending is for counting Suspending",
-                    "type": "integer"
-                },
-                "countTerminated": {
-                    "description": "CountTerminated is for counting Terminated",
-                    "type": "integer"
-                },
-                "countTerminating": {
-                    "description": "CountTerminating is for counting Terminating",
-                    "type": "integer"
-                },
-                "countTotal": {
-                    "description": "CountTotal is for Total VMs",
-                    "type": "integer"
-                },
-                "countUndefined": {
-                    "description": "CountUndefined is for counting Undefined",
-                    "type": "integer"
-                }
-            }
-        },
-        "infra.TbChangeK8sNodeGroupAutoscaleSizeReq": {
-            "type": "object",
-            "properties": {
-                "desiredNodeSize": {
-                    "type": "string",
-                    "example": "1"
-                },
-                "maxNodeSize": {
-                    "type": "string",
-                    "example": "3"
-                },
-                "minNodeSize": {
-                    "type": "string",
-                    "example": "1"
-                }
-            }
-        },
-        "infra.TbChangeK8sNodeGroupAutoscaleSizeRes": {
-            "type": "object",
-            "properties": {
-                "desiredNodeSize": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "id": {
-                    "type": "string",
-                    "example": "ng-01"
-                },
-                "imageId": {
-                    "description": "VM config.",
-                    "type": "string",
-                    "example": "image-01"
-                },
-                "k8sNodes": {
-                    "description": "id for nodes",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "node-01"
-                    ]
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "maxNodeSize": {
-                    "type": "integer",
-                    "example": 3
-                },
-                "minNodeSize": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "onAutoScaling": {
-                    "description": "Scaling config.",
-                    "type": "boolean",
-                    "example": true
-                },
-                "rootDiskSize": {
-                    "type": "string",
-                    "example": "40"
-                },
-                "rootDiskType": {
-                    "type": "string",
-                    "example": "cloud_essd"
-                },
-                "specId": {
-                    "type": "string",
-                    "example": "spec-01"
-                },
-                "sshKeyId": {
-                    "type": "string",
-                    "example": "sshkey-01"
-                },
-                "status": {
-                    "description": "---",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/infra.TbK8sNodeGroupStatus"
-                        }
-                    ],
-                    "example": "Creating"
-                }
-            }
-        },
-        "infra.TbIdNameInDetailInfo": {
-            "type": "object",
-            "properties": {
-                "idInCsp": {
-                    "type": "string"
-                },
-                "idInSp": {
-                    "type": "string"
-                },
-                "idInTb": {
-                    "type": "string"
-                },
-                "nameInCsp": {
-                    "type": "string"
-                }
-            }
-        },
-        "infra.TbK8sAccessInfo": {
-            "type": "object",
-            "properties": {
-                "endpoint": {
-                    "type": "string",
-                    "example": "http://1.2.3.4:6443"
-                },
-                "kubeconfig": {
-                    "type": "string",
-                    "example": "apiVersion: v1\nclusters:\n- cluster:\n certificate-authority-data: LS0..."
-                }
-            }
-        },
-        "infra.TbK8sAddonsInfo": {
-            "type": "object",
-            "properties": {
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                }
-            }
-        },
-        "infra.TbK8sClusterInfo": {
-            "type": "object",
-            "properties": {
-                "accessInfo": {
-                    "$ref": "#/definitions/infra.TbK8sAccessInfo"
-                },
-                "addons": {
-                    "$ref": "#/definitions/infra.TbK8sAddonsInfo"
-                },
-                "connectionName": {
-                    "type": "string",
-                    "example": "alibaba-ap-northeast-2"
-                },
-                "createdTime": {
-                    "type": "string",
-                    "example": "1970-01-01T00:00:00.00Z"
-                },
-                "cspK8sClusterId": {
-                    "type": "string",
-                    "example": "c123456789012345678901234567890"
-                },
-                "cspK8sClusterName": {
-                    "type": "string",
-                    "example": "default-k8scluster-01"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "My K8sCluster"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "k8scluster-01"
-                },
-                "k8sNodeGroupList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/infra.TbK8sNodeGroupInfo"
-                    }
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "type": "string",
-                    "example": "k8scluster-01"
-                },
-                "network": {
-                    "$ref": "#/definitions/infra.TbK8sClusterNetworkInfo"
-                },
-                "status": {
-                    "description": "Creating, Active, Inactive, Updating, Deleting",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/infra.TbK8sClusterStatus"
-                        }
-                    ],
-                    "example": "Creating"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                },
-                "systemMessage": {
-                    "description": "Latest system message such as error message",
-                    "type": "string",
-                    "example": "Failed because ..."
-                },
-                "version": {
-                    "description": "Kubernetes Version, ex) 1.23.3",
-                    "type": "string",
-                    "example": "1.30.1-aliyun.1"
-                }
-            }
-        },
-        "infra.TbK8sClusterNetworkInfo": {
-            "type": "object",
-            "properties": {
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "securityGroupIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "sg-01"
-                    ]
-                },
-                "subnetIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "subnet-01"
-                    ]
-                },
-                "vNetId": {
-                    "type": "string",
-                    "example": "vpc-01"
-                }
-            }
-        },
-        "infra.TbK8sClusterReq": {
-            "type": "object",
-            "required": [
-                "connectionName",
-                "id",
-                "securityGroupIds",
-                "subnetIds",
-                "vNetId"
-            ],
-            "properties": {
-                "connectionName": {
-                    "description": "Namespace      string ` + "`" + `json:\"namespace\" validate:\"required\" example:\"default\"` + "`" + `",
-                    "type": "string",
-                    "example": "alibaba-ap-northeast-2"
-                },
-                "cspK8sClusterId": {
-                    "description": "Fields for \"Register existing K8sCluster\" feature\n@description CspK8sClusterId is required to register a k8s cluster from CSP (option=register)",
-                    "type": "string",
-                    "example": "required when option is register"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "My K8sCluster"
-                },
-                "id": {
-                    "description": "(1) K8sCluster Info",
-                    "type": "string",
-                    "example": "k8scluster-01"
-                },
-                "k8sNodeGroupList": {
-                    "description": "(3) NodeGroupInfo List",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/infra.TbK8sNodeGroupReq"
-                    }
-                },
-                "securityGroupIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "sg-01"
-                    ]
-                },
-                "subnetIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "subnet-01"
-                    ]
-                },
-                "vNetId": {
-                    "description": "(2) Network Info",
-                    "type": "string",
-                    "example": "vpc-01"
-                },
-                "version": {
-                    "type": "string",
-                    "example": "1.30.1-aliyun.1"
-                }
-            }
-        },
-        "infra.TbK8sClusterStatus": {
-            "type": "string",
-            "enum": [
-                "Creating",
-                "Active",
-                "Inactive",
-                "Updating",
-                "Deleting"
-            ],
-            "x-enum-varnames": [
-                "TbK8sClusterCreating",
-                "TbK8sClusterActive",
-                "TbK8sClusterInactive",
-                "TbK8sClusterUpdating",
-                "TbK8sClusterDeleting"
-            ]
-        },
-        "infra.TbK8sNodeGroupInfo": {
-            "type": "object",
-            "properties": {
-                "desiredNodeSize": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "id": {
-                    "type": "string",
-                    "example": "ng-01"
-                },
-                "imageId": {
-                    "description": "VM config.",
-                    "type": "string",
-                    "example": "image-01"
-                },
-                "k8sNodes": {
-                    "description": "id for nodes",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "node-01"
-                    ]
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "maxNodeSize": {
-                    "type": "integer",
-                    "example": 3
-                },
-                "minNodeSize": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "onAutoScaling": {
-                    "description": "Scaling config.",
-                    "type": "boolean",
-                    "example": true
-                },
-                "rootDiskSize": {
-                    "type": "string",
-                    "example": "40"
-                },
-                "rootDiskType": {
-                    "type": "string",
-                    "example": "cloud_essd"
-                },
-                "specId": {
-                    "type": "string",
-                    "example": "spec-01"
-                },
-                "sshKeyId": {
-                    "type": "string",
-                    "example": "sshkey-01"
-                },
-                "status": {
-                    "description": "---",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/infra.TbK8sNodeGroupStatus"
-                        }
-                    ],
-                    "example": "Creating"
-                }
-            }
-        },
-        "infra.TbK8sNodeGroupReq": {
-            "type": "object",
-            "properties": {
-                "desiredNodeSize": {
-                    "type": "string",
-                    "example": "1"
-                },
-                "imageId": {
-                    "type": "string",
-                    "example": "image-01"
-                },
-                "maxNodeSize": {
-                    "type": "string",
-                    "example": "3"
-                },
-                "minNodeSize": {
-                    "type": "string",
-                    "example": "1"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "ng-01"
-                },
-                "onAutoScaling": {
-                    "description": "autoscale config.",
-                    "type": "string",
-                    "example": "true"
-                },
-                "rootDiskSize": {
-                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
-                    "type": "string",
-                    "example": "40"
-                },
-                "rootDiskType": {
-                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
-                    "type": "string",
-                    "example": "cloud_essd"
-                },
-                "specId": {
-                    "type": "string",
-                    "example": "Standard_B2s (temporarily, CSP's Spec Names are valid. It will be upgraded)"
-                },
-                "sshKeyId": {
-                    "type": "string",
-                    "example": "sshkey-01"
-                }
-            }
-        },
-        "infra.TbK8sNodeGroupStatus": {
-            "type": "string",
-            "enum": [
-                "Creating",
-                "Active",
-                "Inactive",
-                "Updating",
-                "Deleting"
-            ],
-            "x-enum-varnames": [
-                "TbK8sNodeGroupCreating",
-                "TbK8sNodeGroupActive",
-                "TbK8sNodeGroupInactive",
-                "TbK8sNodeGroupUpdating",
-                "TbK8sNodeGroupDeleting"
-            ]
-        },
-        "infra.TbMciDynamicReq": {
-            "type": "object",
-            "required": [
-                "name",
-                "vm"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Made in CB-TB"
-                },
-                "installMonAgent": {
-                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
-                    "type": "string",
-                    "default": "no",
-                    "enum": [
-                        "yes",
-                        "no"
-                    ],
-                    "example": "no"
-                },
-                "label": {
-                    "description": "Label is for describing the mci in a keyword (any string can be used)",
-                    "type": "string",
-                    "example": "DynamicVM"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "mci01"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": ""
-                },
-                "vm": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/infra.TbVmDynamicReq"
-                    }
-                }
-            }
-        },
-        "infra.TbMciInfo": {
-            "type": "object",
-            "properties": {
-                "configureCloudAdaptiveNetwork": {
-                    "description": "ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)",
-                    "type": "string",
-                    "default": "no",
-                    "enum": [
-                        "yes",
-                        "no"
-                    ],
-                    "example": "yes"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "installMonAgent": {
-                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
-                    "type": "string",
-                    "default": "yes",
-                    "enum": [
-                        "yes",
-                        "no"
-                    ],
-                    "example": "yes"
-                },
-                "label": {
-                    "description": "Label is for describing the mci in a keyword (any string can be used)",
-                    "type": "string",
-                    "example": "User custom label"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "newVmList": {
-                    "description": "List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "placementAlgo": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "statusCount": {
-                    "$ref": "#/definitions/infra.StatusCountInfo"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                },
-                "systemMessage": {
-                    "description": "Latest system message such as error message",
-                    "type": "string",
-                    "example": "Failed because ..."
-                },
-                "targetAction": {
-                    "type": "string"
-                },
-                "targetStatus": {
-                    "type": "string"
-                },
-                "vm": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/infra.TbVmInfo"
-                    }
-                }
-            }
-        },
-        "infra.TbMciReq": {
-            "type": "object",
-            "required": [
-                "name",
-                "vm"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Made in CB-TB"
-                },
-                "installMonAgent": {
-                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
-                    "type": "string",
-                    "default": "yes",
-                    "enum": [
-                        "yes",
-                        "no"
-                    ],
-                    "example": "no"
-                },
-                "label": {
-                    "description": "Label is for describing the mci in a keyword (any string can be used)",
-                    "type": "string",
-                    "example": "custom tag"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "mci01"
-                },
-                "placementAlgo": {
-                    "type": "string"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": ""
-                },
-                "vm": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/infra.TbVmReq"
-                    }
-                }
-            }
-        },
-        "infra.TbNLBAddRemoveVMReq": {
-            "type": "object",
-            "properties": {
-                "targetGroup": {
-                    "$ref": "#/definitions/infra.TbNLBTargetGroupInfo"
-                }
-            }
-        },
-        "infra.TbNLBHealthCheckerInfo": {
-            "type": "object",
-            "properties": {
-                "interval": {
-                    "description": "secs, Interval time between health checks.",
-                    "type": "integer",
-                    "example": 10
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "port": {
-                    "description": "Listener Port or 1-65535",
-                    "type": "string",
-                    "example": "22"
-                },
-                "protocol": {
-                    "description": "TCP|HTTP|HTTPS",
-                    "type": "string",
-                    "example": "TCP"
-                },
-                "threshold": {
-                    "description": "num, The number of continuous health checks to change the VM status.",
-                    "type": "integer",
-                    "example": 3
-                },
-                "timeout": {
-                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
-                    "type": "integer",
-                    "example": 10
-                }
-            }
-        },
-        "infra.TbNLBHealthCheckerReq": {
-            "type": "object",
-            "properties": {
-                "interval": {
-                    "description": "secs, Interval time between health checks.",
-                    "type": "string",
-                    "example": "default"
-                },
-                "threshold": {
-                    "description": "num, The number of continuous health checks to change the VM status.",
-                    "type": "string",
-                    "example": "default"
-                },
-                "timeout": {
-                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
-                    "type": "string",
-                    "example": "default"
-                }
-            }
-        },
-        "infra.TbNLBInfo": {
-            "type": "object",
-            "properties": {
-                "associatedObjectList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "createdTime": {
-                    "type": "string"
-                },
-                "cspNLBId": {
-                    "type": "string"
-                },
-                "cspNLBName": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "healthChecker": {
-                    "$ref": "#/definitions/infra.TbNLBHealthCheckerInfo"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "isAutoGenerated": {
-                    "type": "boolean"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "listener": {
-                    "$ref": "#/definitions/infra.TbNLBListenerInfo"
-                },
-                "location": {
-                    "$ref": "#/definitions/common.Location"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "scope": {
-                    "description": "REGION(V) | GLOBAL",
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                },
-                "targetGroup": {
-                    "$ref": "#/definitions/infra.TbNLBTargetGroupInfo"
-                },
-                "type": {
-                    "description": "PUBLIC(V) | INTERNAL",
-                    "type": "string"
-                }
-            }
-        },
-        "infra.TbNLBListenerInfo": {
-            "type": "object",
-            "properties": {
-                "dnsName": {
-                    "description": "Optional, Auto Generated and attached",
-                    "type": "string",
-                    "example": "default-group-cd3.elb.ap-northeast-2.amazonaws.com"
-                },
-                "ip": {
-                    "description": "Auto Generated and attached",
-                    "type": "string",
-                    "example": "x.x.x.x"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "port": {
-                    "description": "1-65535",
-                    "type": "string",
-                    "example": "80"
-                },
-                "protocol": {
-                    "description": "TCP|UDP",
-                    "type": "string",
-                    "example": "TCP"
-                }
-            }
-        },
-        "infra.TbNLBReq": {
-            "type": "object",
-            "required": [
-                "healthChecker",
-                "listener",
-                "scope",
-                "targetGroup",
-                "type"
-            ],
-            "properties": {
-                "cspNLBId": {
-                    "description": "Existing NLB (used only for option=register)",
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "healthChecker": {
-                    "description": "HealthChecker",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/infra.TbNLBHealthCheckerReq"
-                        }
-                    ]
-                },
-                "listener": {
-                    "description": "Frontend",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/infra.NLBListenerReq"
-                        }
-                    ]
-                },
-                "scope": {
-                    "description": "REGION(V) | GLOBAL",
-                    "type": "string",
-                    "enum": [
-                        "REGION",
-                        "GLOBAL"
-                    ],
-                    "example": "REGION"
-                },
-                "targetGroup": {
-                    "description": "Backend",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/infra.TbNLBTargetGroupReq"
-                        }
-                    ]
-                },
-                "type": {
-                    "description": "PUBLIC(V) | INTERNAL",
-                    "type": "string",
-                    "enum": [
-                        "PUBLIC",
-                        "INTERNAL"
-                    ],
-                    "example": "PUBLIC"
-                }
-            }
-        },
-        "infra.TbNLBTargetGroupInfo": {
-            "type": "object",
-            "properties": {
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "port": {
-                    "description": "Listener Port or 1-65535",
-                    "type": "string",
-                    "example": "80"
-                },
-                "protocol": {
-                    "description": "TCP|HTTP|HTTPS",
-                    "type": "string",
-                    "example": "TCP"
-                },
-                "subGroupId": {
-                    "type": "string",
-                    "example": "g1"
-                },
-                "vms": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "infra.TbNLBTargetGroupReq": {
-            "type": "object",
-            "properties": {
-                "port": {
-                    "description": "Listener Port or 1-65535",
-                    "type": "string",
-                    "example": "80"
-                },
-                "protocol": {
-                    "description": "TCP|HTTP|HTTPS",
-                    "type": "string",
-                    "example": "TCP"
-                },
-                "subGroupId": {
-                    "type": "string",
-                    "example": "g1"
-                }
-            }
-        },
-        "infra.TbScaleOutSubGroupReq": {
-            "type": "object",
-            "required": [
-                "numVMsToAdd"
-            ],
-            "properties": {
-                "numVMsToAdd": {
-                    "description": "Define addtional VMs to scaleOut",
-                    "type": "string",
-                    "example": "2"
-                }
-            }
-        },
-        "infra.TbSetK8sNodeGroupAutoscalingReq": {
-            "type": "object",
-            "properties": {
-                "onAutoScaling": {
-                    "type": "string",
-                    "example": "true"
-                }
-            }
-        },
-        "infra.TbSetK8sNodeGroupAutoscalingRes": {
-            "type": "object",
-            "properties": {
-                "result": {
-                    "type": "string",
-                    "example": "true"
-                }
-            }
-        },
-        "infra.TbUpgradeK8sClusterReq": {
-            "type": "object",
-            "properties": {
-                "version": {
-                    "type": "string",
-                    "example": "1.30.1-alyun.1"
-                }
-            }
-        },
-        "infra.TbVmDynamicReq": {
-            "type": "object",
-            "required": [
-                "commonImage",
-                "commonSpec"
-            ],
-            "properties": {
-                "commonImage": {
-                    "description": "CommonImage is field for id of a image in common namespace",
-                    "type": "string",
-                    "example": "ubuntu18.04"
-                },
-                "commonSpec": {
-                    "description": "CommonSpec is field for id of a spec in common namespace",
-                    "type": "string",
-                    "example": "aws+ap-northeast-2+t2.small"
-                },
-                "connectionName": {
-                    "description": "if ConnectionName is given, the VM tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "Description"
-                },
-                "label": {
-                    "type": "string",
-                    "example": "DynamicVM"
-                },
-                "name": {
-                    "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
-                    "type": "string",
-                    "example": "g1-1"
-                },
-                "rootDiskSize": {
-                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
-                    "type": "string",
-                    "default": "default",
-                    "example": "default, 30, 42, ..."
-                },
-                "rootDiskType": {
-                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
-                    "type": "string",
-                    "default": "default",
-                    "example": "default, TYPE1, ..."
-                },
-                "subGroupSize": {
-                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be generated. VMs will be created accordingly.",
-                    "type": "string",
-                    "default": "1",
-                    "example": "3"
-                },
-                "vmUserPassword": {
-                    "type": "string"
-                }
-            }
-        },
-        "infra.TbVmInfo": {
-            "type": "object",
-            "properties": {
-                "connectionConfig": {
-                    "$ref": "#/definitions/common.ConnConfig"
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "createdTime": {
-                    "description": "Created time",
-                    "type": "string",
-                    "example": "2022-11-10 23:00:00"
-                },
-                "cspViewVmDetail": {
-                    "$ref": "#/definitions/infra.SpiderVMInfo"
-                },
-                "dataDiskIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "idByCSP": {
-                    "description": "CSP managed ID or Name",
-                    "type": "string"
-                },
-                "imageId": {
-                    "type": "string"
-                },
-                "label": {
-                    "type": "string"
-                },
-                "location": {
-                    "$ref": "#/definitions/common.Location"
-                },
-                "monAgentStatus": {
-                    "description": "Montoring agent status",
-                    "type": "string",
-                    "example": "[installed, notInstalled, failed]"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "networkAgentStatus": {
-                    "description": "NetworkAgent status",
-                    "type": "string",
-                    "example": "[notInstalled, installing, installed, failed]"
-                },
-                "privateDNS": {
-                    "type": "string"
-                },
-                "privateIP": {
-                    "type": "string"
-                },
-                "publicDNS": {
-                    "type": "string"
-                },
-                "publicIP": {
-                    "type": "string"
-                },
-                "region": {
-                    "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/infra.RegionInfo"
-                        }
-                    ]
-                },
-                "rootDeviceName": {
-                    "type": "string"
-                },
-                "rootDiskSize": {
-                    "type": "string"
-                },
-                "rootDiskType": {
-                    "type": "string"
-                },
-                "securityGroupIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "specId": {
-                    "type": "string"
-                },
-                "sshKeyId": {
-                    "type": "string"
-                },
-                "sshPort": {
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Required by CB-Tumblebug",
-                    "type": "string"
-                },
-                "subGroupId": {
-                    "description": "defined if the VM is in a group",
-                    "type": "string"
-                },
-                "subnetId": {
-                    "type": "string"
-                },
-                "systemMessage": {
-                    "description": "Latest system message such as error message",
-                    "type": "string",
-                    "example": "Failed because ..."
-                },
-                "targetAction": {
-                    "type": "string"
-                },
-                "targetStatus": {
-                    "type": "string"
-                },
-                "vNetId": {
-                    "type": "string"
-                },
-                "vmUserAccount": {
-                    "type": "string"
-                },
-                "vmUserPassword": {
-                    "type": "string"
-                }
-            }
-        },
-        "infra.TbVmReq": {
-            "type": "object",
-            "required": [
-                "connectionName",
-                "imageId",
-                "name",
-                "securityGroupIds",
-                "specId",
-                "sshKeyId",
-                "subnetId",
-                "vNetId"
-            ],
-            "properties": {
-                "connectionName": {
-                    "type": "string",
-                    "example": "testcloud01-seoul"
-                },
-                "dataDiskIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "description": {
-                    "type": "string",
-                    "example": "Description"
-                },
-                "idByCsp": {
-                    "description": "CSP managed ID or Name (required for option=register)",
-                    "type": "string",
-                    "example": "i-014fa6ede6ada0b2c"
-                },
-                "imageId": {
-                    "description": "ImageType        string   ` + "`" + `json:\"imageType\"` + "`" + `",
-                    "type": "string"
-                },
-                "label": {
-                    "type": "string"
-                },
-                "name": {
-                    "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
-                    "type": "string",
-                    "example": "g1-1"
-                },
-                "rootDiskSize": {
-                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
-                    "type": "string",
-                    "example": "default, 30, 42, ..."
-                },
-                "rootDiskType": {
-                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
-                    "type": "string",
-                    "example": "default, TYPE1, ..."
-                },
-                "securityGroupIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "specId": {
-                    "type": "string"
-                },
-                "sshKeyId": {
-                    "type": "string"
-                },
-                "subGroupSize": {
-                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be generated. VMs will be created accordingly.",
-                    "type": "string",
-                    "example": "3"
-                },
-                "subnetId": {
-                    "type": "string"
-                },
-                "vNetId": {
-                    "type": "string"
-                },
-                "vmUserAccount": {
-                    "type": "string"
-                },
-                "vmUserPassword": {
-                    "type": "string"
-                }
-            }
-        },
-        "infra.TbVmSnapshotReq": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1-snapshot"
-                }
-            }
-        },
-        "infra.TbVmStatusInfo": {
-            "type": "object",
-            "properties": {
-                "createdTime": {
-                    "description": "Created time",
-                    "type": "string",
-                    "example": "2022-11-10 23:00:00"
-                },
-                "cspVmId": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "location": {
-                    "$ref": "#/definitions/common.Location"
-                },
-                "monAgentStatus": {
-                    "description": "Montoring agent status",
-                    "type": "string",
-                    "example": "[installed, notInstalled, failed]"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "nativeStatus": {
-                    "type": "string"
-                },
-                "privateIp": {
-                    "type": "string"
-                },
-                "publicIp": {
-                    "type": "string"
-                },
-                "sshPort": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "systemMessage": {
-                    "description": "Latest system message such as error message",
-                    "type": "string",
-                    "example": "Failed because ..."
-                },
-                "targetAction": {
-                    "type": "string"
-                },
-                "targetStatus": {
-                    "type": "string"
-                }
-            }
-        },
-        "infra.inspectOverview": {
-            "type": "object",
-            "properties": {
-                "customImage": {
-                    "type": "integer"
-                },
-                "dataDisk": {
-                    "type": "integer"
-                },
-                "nlb": {
-                    "type": "integer"
-                },
-                "securityGroup": {
-                    "type": "integer"
-                },
-                "sshKey": {
-                    "type": "integer"
-                },
-                "vNet": {
-                    "type": "integer"
-                },
-                "vm": {
-                    "type": "integer"
-                }
-            }
-        },
-        "infra.registerationOverview": {
+        "model.RegisterationOverview": {
             "type": "object",
             "properties": {
                 "customImage": {
@@ -11955,7 +10773,7 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.resourceCountOverview": {
+        "model.ResourceCountOverview": {
             "type": "object",
             "properties": {
                 "onCspOnly": {
@@ -11972,7 +10790,7 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.resourceOnCsp": {
+        "model.ResourceOnCsp": {
             "type": "object",
             "properties": {
                 "count": {
@@ -11981,12 +10799,12 @@ const docTemplate = `{
                 "info": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.resourceOnCspInfo"
+                        "$ref": "#/definitions/model.ResourceOnCspInfo"
                     }
                 }
             }
         },
-        "infra.resourceOnCspInfo": {
+        "model.ResourceOnCspInfo": {
             "type": "object",
             "properties": {
                 "idByCsp": {
@@ -11997,7 +10815,7 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.resourceOnSpider": {
+        "model.ResourceOnSpider": {
             "type": "object",
             "properties": {
                 "count": {
@@ -12006,12 +10824,12 @@ const docTemplate = `{
                 "info": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.resourceOnSpiderInfo"
+                        "$ref": "#/definitions/model.ResourceOnSpiderInfo"
                     }
                 }
             }
         },
-        "infra.resourceOnSpiderInfo": {
+        "model.ResourceOnSpiderInfo": {
             "type": "object",
             "properties": {
                 "idByCsp": {
@@ -12022,7 +10840,7 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.resourceOnTumblebug": {
+        "model.ResourceOnTumblebug": {
             "type": "object",
             "properties": {
                 "count": {
@@ -12031,12 +10849,12 @@ const docTemplate = `{
                 "info": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/infra.resourceOnTumblebugInfo"
+                        "$ref": "#/definitions/model.ResourceOnTumblebugInfo"
                     }
                 }
             }
         },
-        "infra.resourceOnTumblebugInfo": {
+        "model.ResourceOnTumblebugInfo": {
             "type": "object",
             "properties": {
                 "idByCsp": {
@@ -12056,20 +10874,20 @@ const docTemplate = `{
                 }
             }
         },
-        "infra.resourcesByManageType": {
+        "model.ResourcesByManageType": {
             "type": "object",
             "properties": {
                 "onCspOnly": {
-                    "$ref": "#/definitions/infra.resourceOnCsp"
+                    "$ref": "#/definitions/model.ResourceOnCsp"
                 },
                 "onCspTotal": {
-                    "$ref": "#/definitions/infra.resourceOnCsp"
+                    "$ref": "#/definitions/model.ResourceOnCsp"
                 },
                 "onSpider": {
-                    "$ref": "#/definitions/infra.resourceOnSpider"
+                    "$ref": "#/definitions/model.ResourceOnSpider"
                 },
                 "onTumblebug": {
-                    "$ref": "#/definitions/infra.resourceOnTumblebug"
+                    "$ref": "#/definitions/model.ResourceOnTumblebug"
                 }
             }
         },
@@ -12118,6 +10936,15 @@ const docTemplate = `{
                 },
                 "site2": {
                     "$ref": "#/definitions/model.SiteDetail"
+                }
+            }
+        },
+        "model.SimpleMsg": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Any message"
                 }
             }
         },
@@ -12174,412 +11001,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.TfVarsGcpAwsVpnTunnel": {
-            "type": "object",
-            "required": [
-                "aws-region",
-                "aws-subnet-id",
-                "aws-vpc-id",
-                "gcp-region",
-                "gcp-vpc-network-name"
-            ],
-            "properties": {
-                "aws-region": {
-                    "type": "string",
-                    "default": "ap-northeast-2",
-                    "example": "ap-northeast-2"
-                },
-                "aws-subnet-id": {
-                    "type": "string",
-                    "example": "subnet-xxxxx"
-                },
-                "aws-vpc-id": {
-                    "type": "string",
-                    "example": "vpc-xxxxx"
-                },
-                "gcp-region": {
-                    "type": "string",
-                    "default": "asia-northeast3",
-                    "example": "asia-northeast3"
-                },
-                "gcp-vpc-network-name": {
-                    "type": "string",
-                    "default": "vpc01",
-                    "example": "vpc01"
-                },
-                "resource-group-id": {
-                    "type": "string",
-                    "example": ""
-                }
-            }
-        },
-        "model.sites": {
-            "type": "object",
-            "properties": {
-                "aws": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.SiteDetail"
-                    }
-                },
-                "azure": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.SiteDetail"
-                    }
-                },
-                "gcp": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.SiteDetail"
-                    }
-                }
-            }
-        },
-        "netutil.Network": {
-            "type": "object",
-            "properties": {
-                "cidrBlock": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "subnets": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/netutil.Network"
-                    }
-                }
-            }
-        },
-        "netutil.RestPostUtilToDesignNetworkReponse": {
-            "type": "object",
-            "properties": {
-                "cidrBlock": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "subnets": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/netutil.Network"
-                    }
-                }
-            }
-        },
-        "netutil.RestPostUtilToDesignNetworkRequest": {
-            "type": "object",
-            "properties": {
-                "cidrBlock": {
-                    "type": "string",
-                    "example": "192.168.0.0/16"
-                },
-                "subnettingRules": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/netutil.SubnettingRule"
-                    }
-                }
-            }
-        },
-        "netutil.RestPostUtilToValidateNetworkRequest": {
-            "type": "object",
-            "properties": {
-                "networkConfiguration": {
-                    "$ref": "#/definitions/netutil.Network"
-                }
-            }
-        },
-        "netutil.SubnettingRule": {
-            "type": "object",
-            "properties": {
-                "type": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/netutil.SubnettingRuleType"
-                        }
-                    ],
-                    "example": "minSubnets"
-                },
-                "value": {
-                    "type": "integer",
-                    "example": 2
-                }
-            }
-        },
-        "netutil.SubnettingRuleType": {
-            "type": "string",
-            "enum": [
-                "minSubnets",
-                "minHosts"
-            ],
-            "x-enum-varnames": [
-                "SubnettingRuleTypeMinSubnets",
-                "SubnettingRuleTypeMinHosts"
-            ]
-        },
-        "resource.BastionNode": {
-            "type": "object",
-            "properties": {
-                "mciId": {
-                    "type": "string"
-                },
-                "vmId": {
-                    "type": "string"
-                }
-            }
-        },
-        "resource.CustomImageStatus": {
-            "type": "string",
-            "enum": [
-                "Available",
-                "Unavailable"
-            ],
-            "x-enum-varnames": [
-                "MyImageAvailable",
-                "MyImageUnavailable"
-            ]
-        },
-        "resource.DiskStatus": {
-            "type": "string",
-            "enum": [
-                "Creating",
-                "Available",
-                "Attached",
-                "Deleting",
-                "Error"
-            ],
-            "x-enum-varnames": [
-                "DiskCreating",
-                "DiskAvailable",
-                "DiskAttached",
-                "DiskDeleting",
-                "DiskError"
-            ]
-        },
-        "resource.FilterSpecsByRangeRequest": {
-            "type": "object",
-            "properties": {
-                "acceleratorCount": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "acceleratorMemoryGB": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "acceleratorModel": {
-                    "type": "string"
-                },
-                "acceleratorType": {
-                    "type": "string"
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "costPerHour": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "cspSpecName": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "evaluationScore01": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "evaluationScore02": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "evaluationScore03": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "evaluationScore04": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "evaluationScore05": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "evaluationScore06": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "evaluationScore07": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "evaluationScore08": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "evaluationScore09": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "evaluationScore10": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "evaluationStatus": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "infraType": {
-                    "type": "string"
-                },
-                "maxTotalStorageTiB": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "memoryGiB": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "netBwGbps": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "osType": {
-                    "type": "string"
-                },
-                "providerName": {
-                    "type": "string"
-                },
-                "regionName": {
-                    "type": "string"
-                },
-                "storageGiB": {
-                    "$ref": "#/definitions/resource.Range"
-                },
-                "vCPU": {
-                    "$ref": "#/definitions/resource.Range"
-                }
-            }
-        },
-        "resource.JSONResult": {
-            "type": "object"
-        },
-        "resource.Range": {
-            "type": "object",
-            "properties": {
-                "max": {
-                    "type": "number"
-                },
-                "min": {
-                    "type": "number"
-                }
-            }
-        },
-        "resource.RestFilterSpecsResponse": {
-            "type": "object",
-            "properties": {
-                "spec": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/resource.TbSpecInfo"
-                    }
-                }
-            }
-        },
-        "resource.RestGetAllCustomImageResponse": {
-            "type": "object",
-            "properties": {
-                "customImage": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/resource.TbCustomImageInfo"
-                    }
-                }
-            }
-        },
-        "resource.RestGetAllDataDiskResponse": {
-            "type": "object",
-            "properties": {
-                "dataDisk": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/resource.TbDataDiskInfo"
-                    }
-                }
-            }
-        },
-        "resource.RestGetAllImageResponse": {
-            "type": "object",
-            "properties": {
-                "image": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/resource.TbImageInfo"
-                    }
-                }
-            }
-        },
-        "resource.RestGetAllSecurityGroupResponse": {
-            "type": "object",
-            "properties": {
-                "securityGroup": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/resource.TbSecurityGroupInfo"
-                    }
-                }
-            }
-        },
-        "resource.RestGetAllSshKeyResponse": {
-            "type": "object",
-            "properties": {
-                "sshKey": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/resource.TbSshKeyInfo"
-                    }
-                }
-            }
-        },
-        "resource.RestGetAllVNetResponse": {
-            "type": "object",
-            "properties": {
-                "vNet": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/resource.TbVNetInfo"
-                    }
-                }
-            }
-        },
-        "resource.RestLookupImageRequest": {
-            "type": "object",
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspImageId": {
-                    "type": "string"
-                }
-            }
-        },
-        "resource.RestLookupSpecRequest": {
-            "type": "object",
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspSpecName": {
-                    "type": "string"
-                }
-            }
-        },
-        "resource.RestSearchImageRequest": {
-            "type": "object",
-            "properties": {
-                "keywords": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "resource.SpiderGpuInfo": {
+        "model.SpiderGpuInfo": {
             "type": "object",
             "properties": {
                 "count": {
@@ -12596,7 +11018,7 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.SpiderImageInfo": {
+        "model.SpiderImageInfo": {
             "type": "object",
             "properties": {
                 "guestOS": {
@@ -12607,14 +11029,14 @@ const docTemplate = `{
                     "description": "Fields for response",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/common.IID"
+                            "$ref": "#/definitions/model.IID"
                         }
                     ]
                 },
                 "keyValueList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.KeyValue"
+                        "$ref": "#/definitions/model.KeyValue"
                     }
                 },
                 "name": {
@@ -12627,30 +11049,67 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.SpiderImageList": {
+        "model.SpiderImageList": {
             "type": "object",
             "properties": {
                 "image": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/resource.SpiderImageInfo"
+                        "$ref": "#/definitions/model.SpiderImageInfo"
                     }
                 }
             }
         },
-        "resource.SpiderSpecInfo": {
+        "model.SpiderImageType": {
+            "type": "string",
+            "enum": [
+                "PublicImage",
+                "MyImage"
+            ],
+            "x-enum-varnames": [
+                "PublicImage",
+                "MyImage"
+            ]
+        },
+        "model.SpiderRegionZoneInfo": {
+            "type": "object",
+            "properties": {
+                "availableZoneList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "keyValueInfoList": {
+                    "description": "ex) { {region, us-east1}, {zone, us-east1-c} }",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "providerName": {
+                    "description": "ex) \"GCP\"",
+                    "type": "string"
+                },
+                "regionName": {
+                    "description": "ex) \"region01\"",
+                    "type": "string"
+                }
+            }
+        },
+        "model.SpiderSpecInfo": {
             "type": "object",
             "properties": {
                 "gpu": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/resource.SpiderGpuInfo"
+                        "$ref": "#/definitions/model.SpiderGpuInfo"
                     }
                 },
                 "keyValueList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.KeyValue"
+                        "$ref": "#/definitions/model.KeyValue"
                     }
                 },
                 "mem": {
@@ -12663,22 +11122,22 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "vcpu": {
-                    "$ref": "#/definitions/resource.SpiderVCpuInfo"
+                    "$ref": "#/definitions/model.SpiderVCpuInfo"
                 }
             }
         },
-        "resource.SpiderSpecList": {
+        "model.SpiderSpecList": {
             "type": "object",
             "properties": {
                 "vmspec": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/resource.SpiderSpecInfo"
+                        "$ref": "#/definitions/model.SpiderSpecInfo"
                     }
                 }
             }
         },
-        "resource.SpiderVCpuInfo": {
+        "model.SpiderVCpuInfo": {
             "type": "object",
             "properties": {
                 "clock": {
@@ -12690,7 +11149,226 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.TbAttachDetachDataDiskReq": {
+        "model.SpiderVMInfo": {
+            "type": "object",
+            "properties": {
+                "cspid": {
+                    "description": "VM ID given by CSP (required for registering VM)",
+                    "type": "string"
+                },
+                "dataDiskIIDs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.IID"
+                    }
+                },
+                "dataDiskNames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "iid": {
+                    "description": "Fields for response",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.IID"
+                        }
+                    ]
+                },
+                "imageIId": {
+                    "$ref": "#/definitions/model.IID"
+                },
+                "imageName": {
+                    "type": "string"
+                },
+                "imageType": {
+                    "$ref": "#/definitions/model.SpiderImageType"
+                },
+                "keyPairIId": {
+                    "$ref": "#/definitions/model.IID"
+                },
+                "keyPairName": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "name": {
+                    "description": "Fields for request",
+                    "type": "string"
+                },
+                "networkInterface": {
+                    "description": "ex) eth0",
+                    "type": "string"
+                },
+                "privateDNS": {
+                    "type": "string"
+                },
+                "privateIP": {
+                    "type": "string"
+                },
+                "publicDNS": {
+                    "type": "string"
+                },
+                "publicIP": {
+                    "type": "string"
+                },
+                "region": {
+                    "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.RegionInfo"
+                        }
+                    ]
+                },
+                "rootDeviceName": {
+                    "description": "\"/dev/sda1\", ...",
+                    "type": "string"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", \"50\", \"1000\" (GB)",
+                    "type": "string"
+                },
+                "rootDiskType": {
+                    "description": "\"SSD(gp2)\", \"Premium SSD\", ...",
+                    "type": "string"
+                },
+                "securityGroupIIds": {
+                    "description": "AWS, ex) sg-0b7452563e1121bb6",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.IID"
+                    }
+                },
+                "securityGroupNames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sshaccessPoint": {
+                    "type": "string"
+                },
+                "startTime": {
+                    "type": "string"
+                },
+                "subnetIID": {
+                    "description": "AWS, ex) subnet-8c4a53e4",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.IID"
+                        }
+                    ]
+                },
+                "subnetName": {
+                    "type": "string"
+                },
+                "vmspecName": {
+                    "description": "Fields for both request and response",
+                    "type": "string"
+                },
+                "vmuserId": {
+                    "description": "ex) user1",
+                    "type": "string"
+                },
+                "vmuserPasswd": {
+                    "type": "string"
+                },
+                "vpcIID": {
+                    "$ref": "#/definitions/model.IID"
+                },
+                "vpcname": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SshCmdResult": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "err": {},
+                "mciId": {
+                    "type": "string"
+                },
+                "stderr": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "stdout": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "vmId": {
+                    "type": "string"
+                },
+                "vmIp": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.StatusCountInfo": {
+            "type": "object",
+            "properties": {
+                "countCreating": {
+                    "description": "CountCreating is for counting Creating",
+                    "type": "integer"
+                },
+                "countFailed": {
+                    "description": "CountFailed is for counting Failed",
+                    "type": "integer"
+                },
+                "countRebooting": {
+                    "description": "CountRebooting is for counting Rebooting",
+                    "type": "integer"
+                },
+                "countResuming": {
+                    "description": "CountResuming is for counting Resuming",
+                    "type": "integer"
+                },
+                "countRunning": {
+                    "description": "CountRunning is for counting Running",
+                    "type": "integer"
+                },
+                "countSuspended": {
+                    "description": "CountSuspended is for counting Suspended",
+                    "type": "integer"
+                },
+                "countSuspending": {
+                    "description": "CountSuspending is for counting Suspending",
+                    "type": "integer"
+                },
+                "countTerminated": {
+                    "description": "CountTerminated is for counting Terminated",
+                    "type": "integer"
+                },
+                "countTerminating": {
+                    "description": "CountTerminating is for counting Terminating",
+                    "type": "integer"
+                },
+                "countTotal": {
+                    "description": "CountTotal is for Total VMs",
+                    "type": "integer"
+                },
+                "countUndefined": {
+                    "description": "CountUndefined is for counting Undefined",
+                    "type": "integer"
+                }
+            }
+        },
+        "model.TbAttachDetachDataDiskReq": {
             "type": "object",
             "required": [
                 "dataDiskId"
@@ -12701,7 +11379,96 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.TbCustomImageInfo": {
+        "model.TbChangeK8sNodeGroupAutoscaleSizeReq": {
+            "type": "object",
+            "properties": {
+                "desiredNodeSize": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "maxNodeSize": {
+                    "type": "string",
+                    "example": "3"
+                },
+                "minNodeSize": {
+                    "type": "string",
+                    "example": "1"
+                }
+            }
+        },
+        "model.TbChangeK8sNodeGroupAutoscaleSizeRes": {
+            "type": "object",
+            "properties": {
+                "desiredNodeSize": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "id": {
+                    "type": "string",
+                    "example": "ng-01"
+                },
+                "imageId": {
+                    "description": "VM config.",
+                    "type": "string",
+                    "example": "image-01"
+                },
+                "k8sNodes": {
+                    "description": "id for nodes",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "node-01"
+                    ]
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "maxNodeSize": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "minNodeSize": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "onAutoScaling": {
+                    "description": "Scaling config.",
+                    "type": "boolean",
+                    "example": true
+                },
+                "rootDiskSize": {
+                    "type": "string",
+                    "example": "40"
+                },
+                "rootDiskType": {
+                    "type": "string",
+                    "example": "cloud_essd"
+                },
+                "specId": {
+                    "type": "string",
+                    "example": "spec-01"
+                },
+                "sshKeyId": {
+                    "type": "string",
+                    "example": "sshkey-01"
+                },
+                "status": {
+                    "description": "---",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.TbK8sNodeGroupStatus"
+                        }
+                    ],
+                    "example": "Creating"
+                }
+            }
+        },
+        "model.TbCustomImageInfo": {
             "type": "object",
             "properties": {
                 "associatedObjectList": {
@@ -12743,7 +11510,7 @@ const docTemplate = `{
                 "keyValueList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.KeyValue"
+                        "$ref": "#/definitions/model.KeyValue"
                     }
                 },
                 "name": {
@@ -12762,7 +11529,7 @@ const docTemplate = `{
                 "status": {
                     "allOf": [
                         {
-                            "$ref": "#/definitions/resource.CustomImageStatus"
+                            "$ref": "#/definitions/model.CustomImageStatus"
                         }
                     ],
                     "example": "Available"
@@ -12771,10 +11538,14 @@ const docTemplate = `{
                     "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
+                },
+                "uuid": {
+                    "description": "uuid is universally unique identifier for the resource",
+                    "type": "string"
                 }
             }
         },
-        "resource.TbCustomImageReq": {
+        "model.TbCustomImageReq": {
             "type": "object",
             "required": [
                 "name"
@@ -12798,7 +11569,7 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.TbDataDiskInfo": {
+        "model.TbDataDiskInfo": {
             "type": "object",
             "properties": {
                 "associatedObjectList": {
@@ -12845,7 +11616,7 @@ const docTemplate = `{
                 "keyValueList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.KeyValue"
+                        "$ref": "#/definitions/model.KeyValue"
                     }
                 },
                 "name": {
@@ -12856,7 +11627,7 @@ const docTemplate = `{
                     "description": "Available, Unavailable, Attached, ...",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/resource.DiskStatus"
+                            "$ref": "#/definitions/model.DiskStatus"
                         }
                     ],
                     "example": "Available"
@@ -12870,10 +11641,14 @@ const docTemplate = `{
                     "description": "Latest system message such as error message",
                     "type": "string",
                     "example": "Failed because ..."
+                },
+                "uuid": {
+                    "description": "uuid is universally unique identifier for the resource",
+                    "type": "string"
                 }
             }
         },
-        "resource.TbDataDiskReq": {
+        "model.TbDataDiskReq": {
             "type": "object",
             "required": [
                 "connectionName",
@@ -12907,7 +11682,7 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.TbDataDiskUpsizeReq": {
+        "model.TbDataDiskUpsizeReq": {
             "type": "object",
             "required": [
                 "diskSize"
@@ -12921,7 +11696,7 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.TbDataDiskVmReq": {
+        "model.TbDataDiskVmReq": {
             "type": "object",
             "required": [
                 "diskSize",
@@ -12946,7 +11721,7 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.TbFirewallRuleInfo": {
+        "model.TbFirewallRuleInfo": {
             "type": "object",
             "required": [
                 "direction",
@@ -12976,19 +11751,24 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.TbFirewallRulesWrapper": {
+        "model.TbIdNameInDetailInfo": {
             "type": "object",
             "properties": {
-                "firewallRules": {
-                    "description": "validate:\"required\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/resource.TbFirewallRuleInfo"
-                    }
+                "idInCsp": {
+                    "type": "string"
+                },
+                "idInSp": {
+                    "type": "string"
+                },
+                "idInTb": {
+                    "type": "string"
+                },
+                "nameInCsp": {
+                    "type": "string"
                 }
             }
         },
-        "resource.TbImageInfo": {
+        "model.TbImageInfo": {
             "type": "object",
             "properties": {
                 "associatedObjectList": {
@@ -13029,7 +11809,7 @@ const docTemplate = `{
                 "keyValueList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.KeyValue"
+                        "$ref": "#/definitions/model.KeyValue"
                     }
                 },
                 "name": {
@@ -13047,10 +11827,14 @@ const docTemplate = `{
                     "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
+                },
+                "uuid": {
+                    "description": "uuid is universally unique identifier for the resource",
+                    "type": "string"
                 }
             }
         },
-        "resource.TbImageReq": {
+        "model.TbImageReq": {
             "type": "object",
             "required": [
                 "connectionName",
@@ -13072,7 +11856,827 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.TbSecurityGroupInfo": {
+        "model.TbK8sAccessInfo": {
+            "type": "object",
+            "properties": {
+                "endpoint": {
+                    "type": "string",
+                    "example": "http://1.2.3.4:6443"
+                },
+                "kubeconfig": {
+                    "type": "string",
+                    "example": "apiVersion: v1\nclusters:\n- cluster:\n certificate-authority-data: LS0..."
+                }
+            }
+        },
+        "model.TbK8sAddonsInfo": {
+            "type": "object",
+            "properties": {
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                }
+            }
+        },
+        "model.TbK8sClusterInfo": {
+            "type": "object",
+            "properties": {
+                "accessInfo": {
+                    "$ref": "#/definitions/model.TbK8sAccessInfo"
+                },
+                "addons": {
+                    "$ref": "#/definitions/model.TbK8sAddonsInfo"
+                },
+                "connectionName": {
+                    "type": "string",
+                    "example": "alibaba-ap-northeast-2"
+                },
+                "createdTime": {
+                    "type": "string",
+                    "example": "1970-01-01T00:00:00.00Z"
+                },
+                "cspK8sClusterId": {
+                    "type": "string",
+                    "example": "c123456789012345678901234567890"
+                },
+                "cspK8sClusterName": {
+                    "type": "string",
+                    "example": "default-k8scluster-01"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "My K8sCluster"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "k8scluster-01"
+                },
+                "k8sNodeGroupList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbK8sNodeGroupInfo"
+                    }
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "example": "k8scluster-01"
+                },
+                "network": {
+                    "$ref": "#/definitions/model.TbK8sClusterNetworkInfo"
+                },
+                "status": {
+                    "description": "Creating, Active, Inactive, Updating, Deleting",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.TbK8sClusterStatus"
+                        }
+                    ],
+                    "example": "Creating"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                },
+                "uuid": {
+                    "description": "uuid is universally unique identifier for the resource",
+                    "type": "string"
+                },
+                "version": {
+                    "description": "Kubernetes Version, ex) 1.23.3",
+                    "type": "string",
+                    "example": "1.30.1-aliyun.1"
+                }
+            }
+        },
+        "model.TbK8sClusterNetworkInfo": {
+            "type": "object",
+            "properties": {
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "sg-01"
+                    ]
+                },
+                "subnetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "subnet-01"
+                    ]
+                },
+                "vNetId": {
+                    "type": "string",
+                    "example": "vpc-01"
+                }
+            }
+        },
+        "model.TbK8sClusterReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "id",
+                "securityGroupIds",
+                "subnetIds",
+                "vNetId"
+            ],
+            "properties": {
+                "connectionName": {
+                    "description": "Namespace      string ` + "`" + `json:\"namespace\" validate:\"required\" example:\"default\"` + "`" + `",
+                    "type": "string",
+                    "example": "alibaba-ap-northeast-2"
+                },
+                "cspK8sClusterId": {
+                    "description": "Fields for \"Register existing K8sCluster\" feature\n@description CspK8sClusterId is required to register a k8s cluster from CSP (option=register)",
+                    "type": "string",
+                    "example": "required when option is register"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "My K8sCluster"
+                },
+                "id": {
+                    "description": "(1) K8sCluster Info",
+                    "type": "string",
+                    "example": "k8scluster-01"
+                },
+                "k8sNodeGroupList": {
+                    "description": "(3) NodeGroupInfo List",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbK8sNodeGroupReq"
+                    }
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "sg-01"
+                    ]
+                },
+                "subnetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "subnet-01"
+                    ]
+                },
+                "vNetId": {
+                    "description": "(2) Network Info",
+                    "type": "string",
+                    "example": "vpc-01"
+                },
+                "version": {
+                    "type": "string",
+                    "example": "1.30.1-aliyun.1"
+                }
+            }
+        },
+        "model.TbK8sClusterStatus": {
+            "type": "string",
+            "enum": [
+                "Creating",
+                "Active",
+                "Inactive",
+                "Updating",
+                "Deleting"
+            ],
+            "x-enum-varnames": [
+                "TbK8sClusterCreating",
+                "TbK8sClusterActive",
+                "TbK8sClusterInactive",
+                "TbK8sClusterUpdating",
+                "TbK8sClusterDeleting"
+            ]
+        },
+        "model.TbK8sNodeGroupInfo": {
+            "type": "object",
+            "properties": {
+                "desiredNodeSize": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "id": {
+                    "type": "string",
+                    "example": "ng-01"
+                },
+                "imageId": {
+                    "description": "VM config.",
+                    "type": "string",
+                    "example": "image-01"
+                },
+                "k8sNodes": {
+                    "description": "id for nodes",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "node-01"
+                    ]
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "maxNodeSize": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "minNodeSize": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "onAutoScaling": {
+                    "description": "Scaling config.",
+                    "type": "boolean",
+                    "example": true
+                },
+                "rootDiskSize": {
+                    "type": "string",
+                    "example": "40"
+                },
+                "rootDiskType": {
+                    "type": "string",
+                    "example": "cloud_essd"
+                },
+                "specId": {
+                    "type": "string",
+                    "example": "spec-01"
+                },
+                "sshKeyId": {
+                    "type": "string",
+                    "example": "sshkey-01"
+                },
+                "status": {
+                    "description": "---",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.TbK8sNodeGroupStatus"
+                        }
+                    ],
+                    "example": "Creating"
+                }
+            }
+        },
+        "model.TbK8sNodeGroupReq": {
+            "type": "object",
+            "properties": {
+                "desiredNodeSize": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "imageId": {
+                    "type": "string",
+                    "example": "image-01"
+                },
+                "maxNodeSize": {
+                    "type": "string",
+                    "example": "3"
+                },
+                "minNodeSize": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "ng-01"
+                },
+                "onAutoScaling": {
+                    "description": "autoscale config.",
+                    "type": "string",
+                    "example": "true"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
+                    "type": "string",
+                    "example": "40"
+                },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
+                    "type": "string",
+                    "example": "cloud_essd"
+                },
+                "specId": {
+                    "type": "string",
+                    "example": "Standard_B2s (temporarily, CSP's Spec Names are valid. It will be upgraded)"
+                },
+                "sshKeyId": {
+                    "type": "string",
+                    "example": "sshkey-01"
+                }
+            }
+        },
+        "model.TbK8sNodeGroupStatus": {
+            "type": "string",
+            "enum": [
+                "Creating",
+                "Active",
+                "Inactive",
+                "Updating",
+                "Deleting"
+            ],
+            "x-enum-varnames": [
+                "TbK8sNodeGroupCreating",
+                "TbK8sNodeGroupActive",
+                "TbK8sNodeGroupInactive",
+                "TbK8sNodeGroupUpdating",
+                "TbK8sNodeGroupDeleting"
+            ]
+        },
+        "model.TbMciDynamicReq": {
+            "type": "object",
+            "required": [
+                "name",
+                "vm"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Made in CB-TB"
+                },
+                "installMonAgent": {
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
+                    "type": "string",
+                    "default": "no",
+                    "enum": [
+                        "yes",
+                        "no"
+                    ],
+                    "example": "no"
+                },
+                "label": {
+                    "description": "Label is for describing the mci in a keyword (any string can be used)",
+                    "type": "string",
+                    "example": "DynamicVM"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "mci01"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": ""
+                },
+                "vm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbVmDynamicReq"
+                    }
+                }
+            }
+        },
+        "model.TbMciInfo": {
+            "type": "object",
+            "properties": {
+                "configureCloudAdaptiveNetwork": {
+                    "description": "ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)",
+                    "type": "string",
+                    "default": "no",
+                    "enum": [
+                        "yes",
+                        "no"
+                    ],
+                    "example": "yes"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "installMonAgent": {
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
+                    "type": "string",
+                    "default": "yes",
+                    "enum": [
+                        "yes",
+                        "no"
+                    ],
+                    "example": "yes"
+                },
+                "label": {
+                    "description": "Label is for describing the mci in a keyword (any string can be used)",
+                    "type": "string",
+                    "example": "User custom label"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "newVmList": {
+                    "description": "List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "placementAlgo": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "statusCount": {
+                    "$ref": "#/definitions/model.StatusCountInfo"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid is universally unique identifier for the resource",
+                    "type": "string"
+                },
+                "vm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbVmInfo"
+                    }
+                }
+            }
+        },
+        "model.TbMciReq": {
+            "type": "object",
+            "required": [
+                "name",
+                "vm"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Made in CB-TB"
+                },
+                "installMonAgent": {
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
+                    "type": "string",
+                    "default": "yes",
+                    "enum": [
+                        "yes",
+                        "no"
+                    ],
+                    "example": "no"
+                },
+                "label": {
+                    "description": "Label is for describing the mci in a keyword (any string can be used)",
+                    "type": "string",
+                    "example": "custom tag"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "mci01"
+                },
+                "placementAlgo": {
+                    "type": "string"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": ""
+                },
+                "vm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbVmReq"
+                    }
+                }
+            }
+        },
+        "model.TbNLBAddRemoveVMReq": {
+            "type": "object",
+            "properties": {
+                "targetGroup": {
+                    "$ref": "#/definitions/model.TbNLBTargetGroupInfo"
+                }
+            }
+        },
+        "model.TbNLBHealthCheckerInfo": {
+            "type": "object",
+            "properties": {
+                "interval": {
+                    "description": "secs, Interval time between health checks.",
+                    "type": "integer",
+                    "example": 10
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "port": {
+                    "description": "Listener Port or 1-65535",
+                    "type": "string",
+                    "example": "22"
+                },
+                "protocol": {
+                    "description": "TCP|HTTP|HTTPS",
+                    "type": "string",
+                    "example": "TCP"
+                },
+                "threshold": {
+                    "description": "num, The number of continuous health checks to change the VM status.",
+                    "type": "integer",
+                    "example": 3
+                },
+                "timeout": {
+                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "model.TbNLBHealthCheckerReq": {
+            "type": "object",
+            "properties": {
+                "interval": {
+                    "description": "secs, Interval time between health checks.",
+                    "type": "string",
+                    "example": "default"
+                },
+                "threshold": {
+                    "description": "num, The number of continuous health checks to change the VM status.",
+                    "type": "string",
+                    "example": "default"
+                },
+                "timeout": {
+                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
+                    "type": "string",
+                    "example": "default"
+                }
+            }
+        },
+        "model.TbNLBInfo": {
+            "type": "object",
+            "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "createdTime": {
+                    "type": "string"
+                },
+                "cspNLBId": {
+                    "type": "string"
+                },
+                "cspNLBName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "healthChecker": {
+                    "$ref": "#/definitions/model.TbNLBHealthCheckerInfo"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isAutoGenerated": {
+                    "type": "boolean"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "listener": {
+                    "$ref": "#/definitions/model.TbNLBListenerInfo"
+                },
+                "location": {
+                    "$ref": "#/definitions/model.Location"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "scope": {
+                    "description": "REGION(V) | GLOBAL",
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "targetGroup": {
+                    "$ref": "#/definitions/model.TbNLBTargetGroupInfo"
+                },
+                "type": {
+                    "description": "PUBLIC(V) | INTERNAL",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid is universally unique identifier for the resource",
+                    "type": "string"
+                }
+            }
+        },
+        "model.TbNLBListenerInfo": {
+            "type": "object",
+            "properties": {
+                "dnsName": {
+                    "description": "Optional, Auto Generated and attached",
+                    "type": "string",
+                    "example": "default-group-cd3.elb.ap-northeast-2.amazonaws.com"
+                },
+                "ip": {
+                    "description": "Auto Generated and attached",
+                    "type": "string",
+                    "example": "x.x.x.x"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "port": {
+                    "description": "1-65535",
+                    "type": "string",
+                    "example": "80"
+                },
+                "protocol": {
+                    "description": "TCP|UDP",
+                    "type": "string",
+                    "example": "TCP"
+                }
+            }
+        },
+        "model.TbNLBReq": {
+            "type": "object",
+            "required": [
+                "healthChecker",
+                "listener",
+                "scope",
+                "targetGroup",
+                "type"
+            ],
+            "properties": {
+                "cspNLBId": {
+                    "description": "Existing NLB (used only for option=register)",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "healthChecker": {
+                    "description": "HealthChecker",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.TbNLBHealthCheckerReq"
+                        }
+                    ]
+                },
+                "listener": {
+                    "description": "Frontend",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.NLBListenerReq"
+                        }
+                    ]
+                },
+                "scope": {
+                    "description": "REGION(V) | GLOBAL",
+                    "type": "string",
+                    "enum": [
+                        "REGION",
+                        "GLOBAL"
+                    ],
+                    "example": "REGION"
+                },
+                "targetGroup": {
+                    "description": "Backend",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.TbNLBTargetGroupReq"
+                        }
+                    ]
+                },
+                "type": {
+                    "description": "PUBLIC(V) | INTERNAL",
+                    "type": "string",
+                    "enum": [
+                        "PUBLIC",
+                        "INTERNAL"
+                    ],
+                    "example": "PUBLIC"
+                }
+            }
+        },
+        "model.TbNLBTargetGroupInfo": {
+            "type": "object",
+            "properties": {
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "port": {
+                    "description": "Listener Port or 1-65535",
+                    "type": "string",
+                    "example": "80"
+                },
+                "protocol": {
+                    "description": "TCP|HTTP|HTTPS",
+                    "type": "string",
+                    "example": "TCP"
+                },
+                "subGroupId": {
+                    "type": "string",
+                    "example": "g1"
+                },
+                "vms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.TbNLBTargetGroupReq": {
+            "type": "object",
+            "properties": {
+                "port": {
+                    "description": "Listener Port or 1-65535",
+                    "type": "string",
+                    "example": "80"
+                },
+                "protocol": {
+                    "description": "TCP|HTTP|HTTPS",
+                    "type": "string",
+                    "example": "TCP"
+                },
+                "subGroupId": {
+                    "type": "string",
+                    "example": "g1"
+                }
+            }
+        },
+        "model.TbScaleOutSubGroupReq": {
+            "type": "object",
+            "required": [
+                "numVMsToAdd"
+            ],
+            "properties": {
+                "numVMsToAdd": {
+                    "description": "Define addtional VMs to scaleOut",
+                    "type": "string",
+                    "example": "2"
+                }
+            }
+        },
+        "model.TbSecurityGroupInfo": {
             "type": "object",
             "properties": {
                 "associatedObjectList": {
@@ -13096,7 +12700,7 @@ const docTemplate = `{
                 "firewallRules": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/resource.TbFirewallRuleInfo"
+                        "$ref": "#/definitions/model.TbFirewallRuleInfo"
                     }
                 },
                 "id": {
@@ -13108,7 +12712,7 @@ const docTemplate = `{
                 "keyValueList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.KeyValue"
+                        "$ref": "#/definitions/model.KeyValue"
                     }
                 },
                 "name": {
@@ -13119,12 +12723,16 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
+                "uuid": {
+                    "description": "uuid is universally unique identifier for the resource",
+                    "type": "string"
+                },
                 "vNetId": {
                     "type": "string"
                 }
             }
         },
-        "resource.TbSecurityGroupReq": {
+        "model.TbSecurityGroupReq": {
             "type": "object",
             "required": [
                 "connectionName",
@@ -13146,7 +12754,7 @@ const docTemplate = `{
                     "description": "validate:\"required\"` + "`" + `",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/resource.TbFirewallRuleInfo"
+                        "$ref": "#/definitions/model.TbFirewallRuleInfo"
                     }
                 },
                 "name": {
@@ -13157,7 +12765,25 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.TbSpecInfo": {
+        "model.TbSetK8sNodeGroupAutoscalingReq": {
+            "type": "object",
+            "properties": {
+                "onAutoScaling": {
+                    "type": "string",
+                    "example": "true"
+                }
+            }
+        },
+        "model.TbSetK8sNodeGroupAutoscalingRes": {
+            "type": "object",
+            "properties": {
+                "result": {
+                    "type": "string",
+                    "example": "true"
+                }
+            }
+        },
+        "model.TbSpecInfo": {
             "type": "object",
             "properties": {
                 "acceleratorCount": {
@@ -13280,7 +12906,7 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.TbSpecReq": {
+        "model.TbSpecReq": {
             "type": "object",
             "required": [
                 "connectionName",
@@ -13302,7 +12928,7 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.TbSshKeyInfo": {
+        "model.TbSshKeyInfo": {
             "type": "object",
             "properties": {
                 "associatedObjectList": {
@@ -13337,7 +12963,7 @@ const docTemplate = `{
                 "keyValueList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.KeyValue"
+                        "$ref": "#/definitions/model.KeyValue"
                     }
                 },
                 "name": {
@@ -13357,12 +12983,16 @@ const docTemplate = `{
                 "username": {
                     "type": "string"
                 },
+                "uuid": {
+                    "description": "uuid is universally unique identifier for the resource",
+                    "type": "string"
+                },
                 "verifiedUsername": {
                     "type": "string"
                 }
             }
         },
-        "resource.TbSshKeyReq": {
+        "model.TbSshKeyReq": {
             "type": "object",
             "required": [
                 "connectionName",
@@ -13399,7 +13029,7 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.TbSubnetInfo": {
+        "model.TbSubnetInfo": {
             "type": "object",
             "required": [
                 "ipv4_CIDR",
@@ -13409,7 +13039,7 @@ const docTemplate = `{
                 "bastionNodes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/resource.BastionNode"
+                        "$ref": "#/definitions/model.BastionNode"
                     }
                 },
                 "description": {
@@ -13427,15 +13057,19 @@ const docTemplate = `{
                 "keyValueList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.KeyValue"
+                        "$ref": "#/definitions/model.KeyValue"
                     }
                 },
                 "name": {
                     "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid is universally unique identifier for the resource",
+                    "type": "string"
                 }
             }
         },
-        "resource.TbSubnetReq": {
+        "model.TbSubnetReq": {
             "type": "object",
             "required": [
                 "ipv4_CIDR",
@@ -13454,7 +13088,7 @@ const docTemplate = `{
                 "keyValueList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.KeyValue"
+                        "$ref": "#/definitions/model.KeyValue"
                     }
                 },
                 "name": {
@@ -13462,7 +13096,16 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.TbVNetInfo": {
+        "model.TbUpgradeK8sClusterReq": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "string",
+                    "example": "1.30.1-alyun.1"
+                }
+            }
+        },
+        "model.TbVNetInfo": {
             "type": "object",
             "properties": {
                 "associatedObjectList": {
@@ -13495,7 +13138,7 @@ const docTemplate = `{
                 "keyValueList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.KeyValue"
+                        "$ref": "#/definitions/model.KeyValue"
                     }
                 },
                 "name": {
@@ -13507,17 +13150,21 @@ const docTemplate = `{
                 "subnetInfoList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/resource.TbSubnetInfo"
+                        "$ref": "#/definitions/model.TbSubnetInfo"
                     }
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
+                },
+                "uuid": {
+                    "description": "uuid is universally unique identifier for the resource",
+                    "type": "string"
                 }
             }
         },
-        "resource.TbVNetReq": {
+        "model.TbVNetReq": {
             "type": "object",
             "required": [
                 "connectionName",
@@ -13542,7 +13189,645 @@ const docTemplate = `{
                 "subnetInfoList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/resource.TbSubnetReq"
+                        "$ref": "#/definitions/model.TbSubnetReq"
+                    }
+                }
+            }
+        },
+        "model.TbVmDynamicReq": {
+            "type": "object",
+            "required": [
+                "commonImage",
+                "commonSpec"
+            ],
+            "properties": {
+                "commonImage": {
+                    "description": "CommonImage is field for id of a image in common namespace",
+                    "type": "string",
+                    "example": "ubuntu18.04"
+                },
+                "commonSpec": {
+                    "description": "CommonSpec is field for id of a spec in common namespace",
+                    "type": "string",
+                    "example": "aws+ap-northeast-2+t2.small"
+                },
+                "connectionName": {
+                    "description": "if ConnectionName is given, the VM tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Description"
+                },
+                "label": {
+                    "type": "string",
+                    "example": "DynamicVM"
+                },
+                "name": {
+                    "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
+                    "type": "string",
+                    "example": "g1-1"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
+                    "type": "string",
+                    "default": "default",
+                    "example": "default, 30, 42, ..."
+                },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
+                    "type": "string",
+                    "default": "default",
+                    "example": "default, TYPE1, ..."
+                },
+                "subGroupSize": {
+                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be generated. VMs will be created accordingly.",
+                    "type": "string",
+                    "default": "1",
+                    "example": "3"
+                },
+                "vmUserPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.TbVmInfo": {
+            "type": "object",
+            "properties": {
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "createdTime": {
+                    "description": "Created time",
+                    "type": "string",
+                    "example": "2022-11-10 23:00:00"
+                },
+                "cspViewVmDetail": {
+                    "$ref": "#/definitions/model.SpiderVMInfo"
+                },
+                "dataDiskIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "idByCSP": {
+                    "description": "CSP managed ID or Name",
+                    "type": "string"
+                },
+                "imageId": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/model.Location"
+                },
+                "monAgentStatus": {
+                    "description": "Montoring agent status",
+                    "type": "string",
+                    "example": "[installed, notInstalled, failed]"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "networkAgentStatus": {
+                    "description": "NetworkAgent status",
+                    "type": "string",
+                    "example": "[notInstalled, installing, installed, failed]"
+                },
+                "privateDNS": {
+                    "type": "string"
+                },
+                "privateIP": {
+                    "type": "string"
+                },
+                "publicDNS": {
+                    "type": "string"
+                },
+                "publicIP": {
+                    "type": "string"
+                },
+                "region": {
+                    "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.RegionInfo"
+                        }
+                    ]
+                },
+                "rootDeviceName": {
+                    "type": "string"
+                },
+                "rootDiskSize": {
+                    "type": "string"
+                },
+                "rootDiskType": {
+                    "type": "string"
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "sshKeyId": {
+                    "type": "string"
+                },
+                "sshPort": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Required by CB-Tumblebug",
+                    "type": "string"
+                },
+                "subGroupId": {
+                    "description": "defined if the VM is in a group",
+                    "type": "string"
+                },
+                "subnetId": {
+                    "type": "string"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid is universally unique identifier for the resource",
+                    "type": "string"
+                },
+                "vNetId": {
+                    "type": "string"
+                },
+                "vmUserAccount": {
+                    "type": "string"
+                },
+                "vmUserPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.TbVmReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "imageId",
+                "name",
+                "securityGroupIds",
+                "specId",
+                "sshKeyId",
+                "subnetId",
+                "vNetId"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string",
+                    "example": "testcloud01-seoul"
+                },
+                "dataDiskIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Description"
+                },
+                "idByCsp": {
+                    "description": "CSP managed ID or Name (required for option=register)",
+                    "type": "string",
+                    "example": "i-014fa6ede6ada0b2c"
+                },
+                "imageId": {
+                    "description": "ImageType        string   ` + "`" + `json:\"imageType\"` + "`" + `",
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "name": {
+                    "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
+                    "type": "string",
+                    "example": "g1-1"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
+                    "type": "string",
+                    "example": "default, 30, 42, ..."
+                },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
+                    "type": "string",
+                    "example": "default, TYPE1, ..."
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "sshKeyId": {
+                    "type": "string"
+                },
+                "subGroupSize": {
+                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be generated. VMs will be created accordingly.",
+                    "type": "string",
+                    "example": "3"
+                },
+                "subnetId": {
+                    "type": "string"
+                },
+                "vNetId": {
+                    "type": "string"
+                },
+                "vmUserAccount": {
+                    "type": "string"
+                },
+                "vmUserPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.TbVmSnapshotReq": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-snapshot"
+                }
+            }
+        },
+        "model.TbVmStatusInfo": {
+            "type": "object",
+            "properties": {
+                "createdTime": {
+                    "description": "Created time",
+                    "type": "string",
+                    "example": "2022-11-10 23:00:00"
+                },
+                "cspVmId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/model.Location"
+                },
+                "monAgentStatus": {
+                    "description": "Montoring agent status",
+                    "type": "string",
+                    "example": "[installed, notInstalled, failed]"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nativeStatus": {
+                    "type": "string"
+                },
+                "privateIp": {
+                    "type": "string"
+                },
+                "publicIp": {
+                    "type": "string"
+                },
+                "sshPort": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.TfVarsGcpAwsVpnTunnel": {
+            "type": "object",
+            "required": [
+                "aws-region",
+                "aws-subnet-id",
+                "aws-vpc-id",
+                "gcp-region",
+                "gcp-vpc-network-name"
+            ],
+            "properties": {
+                "aws-region": {
+                    "type": "string",
+                    "default": "ap-northeast-2",
+                    "example": "ap-northeast-2"
+                },
+                "aws-subnet-id": {
+                    "type": "string",
+                    "example": "subnet-xxxxx"
+                },
+                "aws-vpc-id": {
+                    "type": "string",
+                    "example": "vpc-xxxxx"
+                },
+                "gcp-region": {
+                    "type": "string",
+                    "default": "asia-northeast3",
+                    "example": "asia-northeast3"
+                },
+                "gcp-vpc-network-name": {
+                    "type": "string",
+                    "default": "vpc01",
+                    "example": "vpc01"
+                },
+                "resource-group-id": {
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "model.inspectOverview": {
+            "type": "object",
+            "properties": {
+                "customImage": {
+                    "type": "integer"
+                },
+                "dataDisk": {
+                    "type": "integer"
+                },
+                "nlb": {
+                    "type": "integer"
+                },
+                "securityGroup": {
+                    "type": "integer"
+                },
+                "sshKey": {
+                    "type": "integer"
+                },
+                "vNet": {
+                    "type": "integer"
+                },
+                "vm": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.sites": {
+            "type": "object",
+            "properties": {
+                "aws": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SiteDetail"
+                    }
+                },
+                "azure": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SiteDetail"
+                    }
+                },
+                "gcp": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SiteDetail"
+                    }
+                }
+            }
+        },
+        "netutil.Network": {
+            "type": "object",
+            "properties": {
+                "cidrBlock": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subnets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/netutil.Network"
+                    }
+                }
+            }
+        },
+        "netutil.RestPostUtilToDesignNetworkReponse": {
+            "type": "object",
+            "properties": {
+                "cidrBlock": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subnets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/netutil.Network"
+                    }
+                }
+            }
+        },
+        "netutil.RestPostUtilToDesignNetworkRequest": {
+            "type": "object",
+            "properties": {
+                "cidrBlock": {
+                    "type": "string",
+                    "example": "192.168.0.0/16"
+                },
+                "subnettingRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/netutil.SubnettingRule"
+                    }
+                }
+            }
+        },
+        "netutil.RestPostUtilToValidateNetworkRequest": {
+            "type": "object",
+            "properties": {
+                "networkConfiguration": {
+                    "$ref": "#/definitions/netutil.Network"
+                }
+            }
+        },
+        "netutil.SubnettingRule": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/netutil.SubnettingRuleType"
+                        }
+                    ],
+                    "example": "minSubnets"
+                },
+                "value": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "netutil.SubnettingRuleType": {
+            "type": "string",
+            "enum": [
+                "minSubnets",
+                "minHosts"
+            ],
+            "x-enum-varnames": [
+                "SubnettingRuleTypeMinSubnets",
+                "SubnettingRuleTypeMinHosts"
+            ]
+        },
+        "resource.JSONResult": {
+            "type": "object"
+        },
+        "resource.RestFilterSpecsResponse": {
+            "type": "object",
+            "properties": {
+                "spec": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbSpecInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestGetAllCustomImageResponse": {
+            "type": "object",
+            "properties": {
+                "customImage": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbCustomImageInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestGetAllDataDiskResponse": {
+            "type": "object",
+            "properties": {
+                "dataDisk": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbDataDiskInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestGetAllImageResponse": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbImageInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestGetAllSecurityGroupResponse": {
+            "type": "object",
+            "properties": {
+                "securityGroup": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbSecurityGroupInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestGetAllSshKeyResponse": {
+            "type": "object",
+            "properties": {
+                "sshKey": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbSshKeyInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestGetAllVNetResponse": {
+            "type": "object",
+            "properties": {
+                "vNet": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbVNetInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestLookupImageRequest": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspImageId": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.RestLookupSpecRequest": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspSpecName": {
+                    "type": "string"
+                }
+            }
+        },
+        "resource.RestSearchImageRequest": {
+            "type": "object",
+            "properties": {
+                "keywords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "resource.TbFirewallRulesWrapper": {
+            "type": "object",
+            "properties": {
+                "firewallRules": {
+                    "description": "validate:\"required\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbFirewallRuleInfo"
                     }
                 }
             }

@@ -21,10 +21,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/model"
+	networkSiteModel "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	terrariumModel "github.com/cloud-barista/mc-terrarium/pkg/api/rest/model"
 	"github.com/go-resty/resty/v2"
@@ -42,9 +43,9 @@ import (
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Success 200 {object} model.SitesInfo "OK"
-// @Failure 400 {object} common.SimpleMsg "Bad Request"
-// @Failure 500 {object} common.SimpleMsg "Internal Server Error"
-// @Failure 503 {object} common.SimpleMsg "Service Unavailable"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
 // @Router /ns/{nsId}/mci/{mciId}/site [get]
 func RestGetSitesInMci(c echo.Context) error {
 
@@ -52,7 +53,7 @@ func RestGetSitesInMci(c echo.Context) error {
 	if nsId == "" {
 		err := fmt.Errorf("invalid request, namespace ID (nsId: %s) is required", nsId)
 		log.Warn().Msg(err.Error())
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 
@@ -63,7 +64,7 @@ func RestGetSitesInMci(c echo.Context) error {
 	if mciId == "" {
 		err := fmt.Errorf("invalid request, MCI ID (mciId: %s) is required", mciId)
 		log.Warn().Msg(err.Error())
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
@@ -72,7 +73,7 @@ func RestGetSitesInMci(c echo.Context) error {
 	SitesInfo, err := ExtractSitesInfoFromMciInfo(nsId, mciId)
 	if err != nil {
 		log.Err(err).Msg("")
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusInternalServerError, res)
@@ -81,7 +82,7 @@ func RestGetSitesInMci(c echo.Context) error {
 	return c.JSON(http.StatusOK, SitesInfo)
 }
 
-func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
+func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*networkSiteModel.SitesInfo, error) {
 	// Get MCI info
 	mciInfo, err := infra.GetMciInfo(nsId, mciId)
 	if err != nil {
@@ -93,11 +94,11 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 	checkedVpcs := make(map[string]bool)
 
 	// Newly create the SitesInfo structure
-	sitesInfo := model.NewSiteInfo(nsId, mciId)
+	sitesInfo := networkSiteModel.NewSiteInfo(nsId, mciId)
 
-	sitesInAws := []model.SiteDetail{}
-	sitesInAzure := []model.SiteDetail{}
-	sitesInGcp := []model.SiteDetail{}
+	sitesInAws := []networkSiteModel.SiteDetail{}
+	sitesInAzure := []networkSiteModel.SiteDetail{}
+	sitesInGcp := []networkSiteModel.SiteDetail{}
 
 	for _, vm := range mciInfo.Vm {
 
@@ -119,7 +120,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 		}
 
 		// Create and set a site details
-		var site = model.SiteDetail{}
+		var site = networkSiteModel.SiteDetail{}
 		site.CSP = vm.ConnectionConfig.ProviderName
 		site.Region = vm.CspViewVmDetail.Region.Region
 
@@ -137,7 +138,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 				log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
 				continue
 			}
-			vNetInfo := result.(resource.TbVNetInfo)
+			vNetInfo := result.(model.TbVNetInfo)
 
 			// Get the last subnet
 			subnetCount := len(vNetInfo.SubnetInfoList)
@@ -169,7 +170,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 				log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
 				continue
 			}
-			vNetInfo := result.(resource.TbVNetInfo)
+			vNetInfo := result.(model.TbVNetInfo)
 
 			// Get the last subnet CIDR block
 			subnetCount := len(vNetInfo.SubnetInfoList)
@@ -218,10 +219,10 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param vpnReq body model.RestPostVpnRequest true "Sites info for VPN configuration"
-// @Success 200 {object} common.SimpleMsg "OK"
-// @Failure 400 {object} common.SimpleMsg "Bad Request"
-// @Failure 500 {object} common.SimpleMsg "Internal Server Error"
-// @Failure 503 {object} common.SimpleMsg "Service Unavailable"
+// @Success 200 {object} model.SimpleMsg "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
 // @Router /stream-response/ns/{nsId}/mci/{mciId}/vpn/{vpnId} [post]
 func RestPostSiteToSiteVpn(c echo.Context) error {
 
@@ -229,7 +230,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 	if nsId == "" {
 		err := fmt.Errorf("invalid request, namespace ID (nsId: %s) is required", nsId)
 		log.Warn().Msg(err.Error())
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
@@ -239,7 +240,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 	if mciId == "" {
 		err := fmt.Errorf("invalid request, MCI ID (mciId: %s) is required", mciId)
 		log.Warn().Msg(err.Error())
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
@@ -249,18 +250,18 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 	if vpnId == "" {
 		err := fmt.Errorf("invalid request, VPN ID (vpnId: %s) is required", vpnId)
 		log.Warn().Msg(err.Error())
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
 	}
 
 	// Bind the request body to RestPostVpnGcpToAwsRequest struct
-	vpnReq := new(model.RestPostVpnRequest)
+	vpnReq := new(networkSiteModel.RestPostVpnRequest)
 	if err := c.Bind(vpnReq); err != nil {
 		err2 := fmt.Errorf("invalid request format, %v", err)
 		log.Warn().Err(err).Msg("invalid request format")
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err2.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
@@ -271,7 +272,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 	if !ok {
 		err := fmt.Errorf("currently not supported, VPN between %s and %s", vpnReq.Site1.CSP, vpnReq.Site2.CSP)
 		log.Warn().Err(err).Msg("")
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
@@ -291,13 +292,13 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 	trId := fmt.Sprintf("%s-%s-%s", nsId, mciId, vpnId)
 
 	// set endpoint
-	epTerrarium := common.TerrariumRestUrl
+	epTerrarium := model.TerrariumRestUrl
 
 	// check readyz
 	method := "GET"
 	url := fmt.Sprintf("%s/readyz", epTerrarium)
 	requestBody := common.NoBody
-	resReadyz := new(model.Response)
+	resReadyz := new(networkSiteModel.Response)
 
 	err := common.ExecuteHttpRequest(
 		client,
@@ -312,7 +313,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 	if err != nil {
 		log.Err(err).Msg("")
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusServiceUnavailable, res)
@@ -320,7 +321,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 	log.Debug().Msgf("resReadyz: %+v", resReadyz.Message)
 
 	// Flush a response
-	res := common.SimpleMsg{
+	res := model.SimpleMsg{
 		Message: resReadyz.Message,
 	}
 	if err := enc.Encode(res); err != nil {
@@ -356,7 +357,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 		if err != nil {
 			log.Err(err).Msg("")
-			res := common.SimpleMsg{Message: err.Error()}
+			res := model.SimpleMsg{Message: err.Error()}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
@@ -364,7 +365,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
 
 		// Flush a response
-		res = common.SimpleMsg{
+		res = model.SimpleMsg{
 			Message: "successully created a terrarium (trId: " + resTrInfo.Id + ")",
 		}
 		if err := enc.Encode(res); err != nil {
@@ -376,7 +377,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		method = "POST"
 		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-aws/env", epTerrarium, trId)
 		requestBody = common.NoBody
-		resTerrariumEnv := new(model.Response)
+		resTerrariumEnv := new(networkSiteModel.Response)
 
 		err = common.ExecuteHttpRequest(
 			client,
@@ -391,7 +392,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 		if err != nil {
 			log.Err(err).Msg("")
-			res := common.SimpleMsg{Message: err.Error()}
+			res := model.SimpleMsg{Message: err.Error()}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
@@ -399,7 +400,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		log.Trace().Msgf("resInit: %+v", resTerrariumEnv.Detail)
 
 		// flush a response
-		res = common.SimpleMsg{
+		res = model.SimpleMsg{
 			Message: resTerrariumEnv.Message,
 		}
 		if err := enc.Encode(res); err != nil {
@@ -426,7 +427,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 			reqInfracode.TfVars.GcpVpcNetworkName = vpnReq.Site1.VNet
 		}
 
-		resInfracode := new(model.Response)
+		resInfracode := new(networkSiteModel.Response)
 
 		err = common.ExecuteHttpRequest(
 			client,
@@ -441,7 +442,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 		if err != nil {
 			log.Err(err).Msg("")
-			res := common.SimpleMsg{Message: err.Error()}
+			res := model.SimpleMsg{Message: err.Error()}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
@@ -449,7 +450,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
 
 		// Flush a response
-		res = common.SimpleMsg{
+		res = model.SimpleMsg{
 			Message: resInfracode.Message,
 		}
 		if err := enc.Encode(res); err != nil {
@@ -461,7 +462,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		method = "POST"
 		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-aws/plan", epTerrarium, trId)
 		requestBody = common.NoBody
-		resPlan := new(model.Response)
+		resPlan := new(networkSiteModel.Response)
 
 		err = common.ExecuteHttpRequest(
 			client,
@@ -476,7 +477,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 		if err != nil {
 			log.Err(err).Msg("")
-			res := common.SimpleMsg{Message: err.Error()}
+			res := model.SimpleMsg{Message: err.Error()}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
@@ -484,7 +485,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		log.Trace().Msgf("resPlan: %+v", resPlan.Detail)
 
 		// Flush a response
-		res = common.SimpleMsg{
+		res = model.SimpleMsg{
 			Message: resPlan.Message,
 		}
 		if err := enc.Encode(res); err != nil {
@@ -499,7 +500,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		method = "POST"
 		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-aws", epTerrarium, trId)
 		requestBody = common.NoBody
-		resApply := new(model.Response)
+		resApply := new(networkSiteModel.Response)
 
 		err = common.ExecuteHttpRequest(
 			client,
@@ -514,7 +515,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 		if err != nil {
 			log.Err(err).Msg("")
-			res := common.SimpleMsg{Message: err.Error()}
+			res := model.SimpleMsg{Message: err.Error()}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
@@ -522,7 +523,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		log.Trace().Msgf("resApply: %+v", resApply.Detail)
 
 		// Flush a response
-		res = common.SimpleMsg{
+		res = model.SimpleMsg{
 			Message: resApply.Message,
 		}
 		if err := enc.Encode(res); err != nil {
@@ -552,7 +553,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 		if err != nil {
 			log.Err(err).Msg("")
-			res := common.SimpleMsg{Message: err.Error()}
+			res := model.SimpleMsg{Message: err.Error()}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
@@ -560,7 +561,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
 
 		// Flush a response
-		res = common.SimpleMsg{
+		res = model.SimpleMsg{
 			Message: "successully created a terrarium (trId: " + resTrInfo.Id + ")",
 		}
 		if err := enc.Encode(res); err != nil {
@@ -572,7 +573,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		method = "POST"
 		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-azure/env", epTerrarium, trId)
 		requestBody = common.NoBody
-		resTerrariumEnv := new(model.Response)
+		resTerrariumEnv := new(networkSiteModel.Response)
 
 		err = common.ExecuteHttpRequest(
 			client,
@@ -587,7 +588,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 		if err != nil {
 			log.Err(err).Msg("")
-			res := common.SimpleMsg{Message: err.Error()}
+			res := model.SimpleMsg{Message: err.Error()}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
@@ -595,7 +596,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		log.Trace().Msgf("resInit: %+v", resTerrariumEnv.Detail)
 
 		// flush a response
-		res = common.SimpleMsg{
+		res = model.SimpleMsg{
 			Message: resTerrariumEnv.Message,
 		}
 		if err := enc.Encode(res); err != nil {
@@ -628,7 +629,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 			reqInfracode.TfVars.AzureGatewaySubnetCidrBlock = vpnReq.Site2.GatewaySubnetCidr
 		}
 
-		resInfracode := new(model.Response)
+		resInfracode := new(networkSiteModel.Response)
 
 		err = common.ExecuteHttpRequest(
 			client,
@@ -643,7 +644,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 		if err != nil {
 			log.Err(err).Msg("")
-			res := common.SimpleMsg{Message: err.Error()}
+			res := model.SimpleMsg{Message: err.Error()}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
@@ -651,7 +652,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
 
 		// Flush a response
-		res = common.SimpleMsg{
+		res = model.SimpleMsg{
 			Message: resInfracode.Message,
 		}
 		if err := enc.Encode(res); err != nil {
@@ -663,7 +664,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		method = "POST"
 		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-azure/plan", epTerrarium, trId)
 		requestBody = common.NoBody
-		resPlan := new(model.Response)
+		resPlan := new(networkSiteModel.Response)
 
 		err = common.ExecuteHttpRequest(
 			client,
@@ -678,7 +679,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 		if err != nil {
 			log.Err(err).Msg("")
-			res := common.SimpleMsg{Message: err.Error()}
+			res := model.SimpleMsg{Message: err.Error()}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
@@ -686,7 +687,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		log.Trace().Msgf("resPlan: %+v", resPlan.Detail)
 
 		// Flush a response
-		res = common.SimpleMsg{
+		res = model.SimpleMsg{
 			Message: resPlan.Message,
 		}
 		if err := enc.Encode(res); err != nil {
@@ -701,7 +702,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		method = "POST"
 		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-azure", epTerrarium, trId)
 		requestBody = common.NoBody
-		resApply := new(model.Response)
+		resApply := new(networkSiteModel.Response)
 
 		err = common.ExecuteHttpRequest(
 			client,
@@ -716,7 +717,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 		if err != nil {
 			log.Err(err).Msg("")
-			res := common.SimpleMsg{Message: err.Error()}
+			res := model.SimpleMsg{Message: err.Error()}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
@@ -724,7 +725,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		log.Trace().Msgf("resApply: %+v", resApply.Detail)
 
 		// Flush a response
-		res = common.SimpleMsg{
+		res = model.SimpleMsg{
 			Message: resApply.Message,
 		}
 		if err := enc.Encode(res); err != nil {
@@ -770,10 +771,10 @@ func whichCspSet(csp1, csp2 string) string {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
-// @Success 200 {object} common.SimpleMsg "OK"
-// @Failure 400 {object} common.SimpleMsg "Bad Request"
-// @Failure 500 {object} common.SimpleMsg "Internal Server Error"
-// @Failure 503 {object} common.SimpleMsg "Service Unavailable"
+// @Success 200 {object} model.SimpleMsg "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
 // @Router /stream-response/ns/{nsId}/mci/{mciId}/vpn/{vpnId} [delete]
 func RestDeleteSiteToSiteVpn(c echo.Context) error {
 
@@ -781,7 +782,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	if nsId == "" {
 		err := fmt.Errorf("invalid request, namespace ID (nsId: %s) is required", nsId)
 		log.Warn().Msg(err.Error())
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
@@ -791,7 +792,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	if mciId == "" {
 		err := fmt.Errorf("invalid request, MCI ID (mciId: %s) is required", mciId)
 		log.Warn().Msg(err.Error())
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
@@ -801,7 +802,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	if vpnId == "" {
 		err := fmt.Errorf("invalid request, VPN ID (vpnId: %s) is required", vpnId)
 		log.Warn().Msg(err.Error())
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
@@ -821,13 +822,13 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	trId := fmt.Sprintf("%s-%s-%s", nsId, mciId, vpnId)
 
 	// set endpoint
-	epTerrarium := common.TerrariumRestUrl
+	epTerrarium := model.TerrariumRestUrl
 
 	// check readyz
 	method := "GET"
 	url := fmt.Sprintf("%s/readyz", epTerrarium)
 	requestBody := common.NoBody
-	resReadyz := new(model.Response)
+	resReadyz := new(networkSiteModel.Response)
 
 	err := common.ExecuteHttpRequest(
 		client,
@@ -842,7 +843,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 
 	if err != nil {
 		log.Err(err).Msg("")
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusServiceUnavailable, res)
@@ -851,7 +852,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	log.Trace().Msgf("resReadyz: %+v", resReadyz.Detail)
 
 	// Flush a response
-	res := common.SimpleMsg{
+	res := model.SimpleMsg{
 		Message: resReadyz.Message,
 	}
 	if err := enc.Encode(res); err != nil {
@@ -878,7 +879,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 
 	if err != nil {
 		log.Err(err).Msg("")
-		res := common.SimpleMsg{Message: err.Error()}
+		res := model.SimpleMsg{Message: err.Error()}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
 
@@ -888,7 +889,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 
 	// Flush a response
 	msg := fmt.Sprintf("successully got the terrarium (trId: %s) for the enrichment (%s)", resTrInfo.Id, enrichments)
-	res = common.SimpleMsg{
+	res = model.SimpleMsg{
 		Message: msg,
 	}
 	if err := enc.Encode(res); err != nil {
@@ -900,7 +901,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	method = "DELETE"
 	url = fmt.Sprintf("%s/tr/%s/%s", epTerrarium, trId, enrichments)
 	requestBody = common.NoBody
-	resDeleteEnrichments := new(model.Response)
+	resDeleteEnrichments := new(networkSiteModel.Response)
 
 	err = common.ExecuteHttpRequest(
 		client,
@@ -915,7 +916,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 
 	if err != nil {
 		log.Err(err).Msg("")
-		res := common.SimpleMsg{Message: err.Error()}
+		res := model.SimpleMsg{Message: err.Error()}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
 
@@ -923,7 +924,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	log.Trace().Msgf("resDeleteEnrichments: %+v", resDeleteEnrichments.Detail)
 
 	// Flush a response
-	res = common.SimpleMsg{
+	res = model.SimpleMsg{
 		Message: resDeleteEnrichments.Message,
 	}
 	if err := enc.Encode(res); err != nil {
@@ -935,7 +936,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	method = "DELETE"
 	url = fmt.Sprintf("%s/tr/%s/%s/env", epTerrarium, trId, enrichments)
 	requestBody = common.NoBody
-	resDeleteEnv := new(model.Response)
+	resDeleteEnv := new(networkSiteModel.Response)
 
 	err = common.ExecuteHttpRequest(
 		client,
@@ -950,7 +951,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 
 	if err != nil {
 		log.Err(err).Msg("")
-		res := common.SimpleMsg{Message: err.Error()}
+		res := model.SimpleMsg{Message: err.Error()}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
 
@@ -958,7 +959,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	log.Trace().Msgf("resDeleteEnv: %+v", resDeleteEnv.Detail)
 
 	// Flush a response
-	res = common.SimpleMsg{
+	res = model.SimpleMsg{
 		Message: resDeleteEnv.Message,
 	}
 	if err := enc.Encode(res); err != nil {
@@ -970,7 +971,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	method = "DELETE"
 	url = fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
 	requestBody = common.NoBody
-	resDeleteTr := new(model.Response)
+	resDeleteTr := new(networkSiteModel.Response)
 
 	err = common.ExecuteHttpRequest(
 		client,
@@ -985,7 +986,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 
 	if err != nil {
 		log.Err(err).Msg("")
-		res := common.SimpleMsg{Message: err.Error()}
+		res := model.SimpleMsg{Message: err.Error()}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
 
@@ -993,7 +994,7 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	log.Trace().Msgf("resDeleteTr: %+v", resDeleteTr.Detail)
 
 	// Flush a response
-	res = common.SimpleMsg{
+	res = model.SimpleMsg{
 		Message: resDeleteTr.Message,
 	}
 	if err := enc.Encode(res); err != nil {
@@ -1015,10 +1016,10 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param vpnReq body model.RestPostVpnGcpToAwsRequest true "Resources info for VPN tunnel configuration between GCP and AWS"
-// @Success 200 {object} common.SimpleMsg "OK"
-// @Failure 400 {object} common.SimpleMsg "Bad Request"
-// @Failure 500 {object} common.SimpleMsg "Internal Server Error"
-// @Failure 503 {object} common.SimpleMsg "Service Unavailable"
+// @Success 200 {object} model.SimpleMsg "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
 // @Router /stream-response/ns/{nsId}/mci/{mciId}/vpn/{vpnId} [put]
 func RestPutSiteToSiteVpn(c echo.Context) error {
 
@@ -1026,7 +1027,7 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 	if nsId == "" {
 		err := fmt.Errorf("invalid request, namespace ID (nsId: %s) is required", nsId)
 		log.Warn().Msg(err.Error())
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
@@ -1036,7 +1037,7 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 	if mciId == "" {
 		err := fmt.Errorf("invalid request, MCI ID (mciId: %s) is required", mciId)
 		log.Warn().Msg(err.Error())
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
@@ -1046,7 +1047,7 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 	if vpnId == "" {
 		err := fmt.Errorf("invalid request, VPN ID (vpnId: %s) is required", vpnId)
 		log.Warn().Msg(err.Error())
-		res := common.SimpleMsg{
+		res := model.SimpleMsg{
 			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
@@ -1058,7 +1059,7 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 	enc := json.NewEncoder(c.Response())
 
 	// Flush a response
-	res := common.SimpleMsg{
+	res := model.SimpleMsg{
 		Message: "note - API to be provided",
 	}
 	if err := enc.Encode(res); err != nil {
@@ -1081,7 +1082,7 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 	// method := "GET"
 	// url := fmt.Sprintf("%s/readyz", epTerrarium)
 	// requestBody := common.NoBody
-	// resReadyz := new(model.Response)
+	// resReadyz := new(networkSiteModel.Response)
 
 	// err := common.ExecuteHttpRequest(
 	// 	client,
@@ -1096,7 +1097,7 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 
 	// if err != nil {
 	// 	log.Err(err).Msg("")
-	// 	res := common.SimpleMsg{
+	// 	res := model.SimpleMsg{
 	// 		Message: err.Error(),
 	// 	}
 	// 	return c.JSON(http.StatusServiceUnavailable, res)
@@ -1104,7 +1105,7 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 	// log.Debug().Msgf("resReadyz: %+v", resReadyz)
 
 	// // Flush a response
-	// res := common.SimpleMsg{
+	// res := model.SimpleMsg{
 	// 	Message: resReadyz.Message,
 	// }
 	// if err := enc.Encode(res); err != nil {
@@ -1126,10 +1127,10 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param detail query string false "Resource info by detail (refined, raw)" default(refined)
-// @Success 200 {object} model.Response "OK"
-// @Failure 400 {object} model.Response "Bad Request"
-// @Failure 500 {object} model.Response "Internal Server Error"
-// @Failure 503 {object} model.Response "Service Unavailable"
+// @Success 200 {object} networkSiteModel.Response "OK"
+// @Failure 400 {object} networkSiteModel.Response "Bad Request"
+// @Failure 500 {object} networkSiteModel.Response "Internal Server Error"
+// @Failure 503 {object} networkSiteModel.Response "Service Unavailable"
 // @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [get]
 func RestGetSiteToSiteVpn(c echo.Context) error {
 
@@ -1137,7 +1138,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 	if nsId == "" {
 		err := fmt.Errorf("invalid request, namespace ID (nsId: %s) is required", nsId)
 		log.Warn().Msg(err.Error())
-		res := model.Response{
+		res := networkSiteModel.Response{
 			Success: false,
 			Message: err.Error(),
 		}
@@ -1148,7 +1149,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 	if mciId == "" {
 		err := fmt.Errorf("invalid request, MCI ID (mciId: %s) is required", mciId)
 		log.Warn().Msg(err.Error())
-		res := model.Response{
+		res := networkSiteModel.Response{
 			Success: false,
 			Message: err.Error(),
 		}
@@ -1159,7 +1160,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 	if vpnId == "" {
 		err := fmt.Errorf("invalid request, VPN ID (vpnId: %s) is required", vpnId)
 		log.Warn().Msg(err.Error())
-		res := model.Response{
+		res := networkSiteModel.Response{
 			Success: false,
 			Message: err.Error(),
 		}
@@ -1199,13 +1200,13 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 	trId := fmt.Sprintf("%s-%s-%s", nsId, mciId, vpnId)
 
 	// set endpoint
-	epTerrarium := common.TerrariumRestUrl
+	epTerrarium := model.TerrariumRestUrl
 
 	// check readyz
 	method := "GET"
 	url := fmt.Sprintf("%s/readyz", epTerrarium)
 	requestBody := common.NoBody
-	resReadyz := new(model.Response)
+	resReadyz := new(networkSiteModel.Response)
 
 	err := common.ExecuteHttpRequest(
 		client,
@@ -1220,7 +1221,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 
 	if err != nil {
 		log.Err(err).Msg("")
-		res := model.Response{
+		res := networkSiteModel.Response{
 			Success: false,
 			Message: err.Error(),
 		}
@@ -1247,7 +1248,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 
 	if err != nil {
 		log.Err(err).Msg("")
-		res := common.SimpleMsg{Message: err.Error()}
+		res := model.SimpleMsg{Message: err.Error()}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
 
@@ -1259,7 +1260,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 	method = "GET"
 	url = fmt.Sprintf("%s/tr/%s/%s?detail=%s", epTerrarium, trId, enrichments, detail)
 	requestBody = common.NoBody
-	resResourceInfo := new(model.Response)
+	resResourceInfo := new(networkSiteModel.Response)
 
 	err = common.ExecuteHttpRequest(
 		client,
@@ -1274,7 +1275,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 
 	if err != nil {
 		log.Err(err).Msg("")
-		res := model.Response{
+		res := networkSiteModel.Response{
 			Success: false,
 			Message: err.Error(),
 		}
@@ -1284,21 +1285,21 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 	switch detail {
 	case DetailOptions.Refined:
 		log.Debug().Msgf("resResourceInfo: %+v", resResourceInfo.Object)
-		res := model.Response{
+		res := networkSiteModel.Response{
 			Success: resResourceInfo.Success,
 			Object:  resResourceInfo.Object,
 		}
 		return c.JSON(http.StatusOK, res)
 	case DetailOptions.Raw:
 		log.Debug().Msgf("resResourceInfo: %+v", resResourceInfo.List)
-		res := model.Response{
+		res := networkSiteModel.Response{
 			Success: resResourceInfo.Success,
 			List:    resResourceInfo.List,
 		}
 		return c.JSON(http.StatusOK, res)
 	default:
 		log.Warn().Msgf("invalid detail option (%s)", detail)
-		res := model.Response{
+		res := networkSiteModel.Response{
 			Success: false,
 			Message: fmt.Sprintf("invalid detail option (%s)", detail),
 		}
@@ -1317,10 +1318,10 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
 // @Param requestId path string true "Request ID"
-// @Success 200 {object} model.Response "OK"
-// @Failure 400 {object} model.Response "Bad Request"
-// @Failure 500 {object} model.Response "Internal Server Error"
-// @Failure 503 {object} model.Response "Service Unavailable"
+// @Success 200 {object} networkSiteModel.Response "OK"
+// @Failure 400 {object} networkSiteModel.Response "Bad Request"
+// @Failure 500 {object} networkSiteModel.Response "Internal Server Error"
+// @Failure 503 {object} networkSiteModel.Response "Service Unavailable"
 // @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId}/request/{requestId} [get]
 func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 
@@ -1328,7 +1329,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	if nsId == "" {
 		err := fmt.Errorf("invalid request, namespace ID (nsId: %s) is required", nsId)
 		log.Warn().Msg(err.Error())
-		res := model.Response{
+		res := networkSiteModel.Response{
 			Success: false,
 			Message: err.Error(),
 		}
@@ -1339,7 +1340,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	if mciId == "" {
 		err := fmt.Errorf("invalid request, MCI ID (mciId: %s) is required", mciId)
 		log.Warn().Msg(err.Error())
-		res := model.Response{
+		res := networkSiteModel.Response{
 			Success: false,
 			Message: err.Error(),
 		}
@@ -1350,7 +1351,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	if vpnId == "" {
 		err := fmt.Errorf("invalid request, VPN ID (vpnId: %s) is required", vpnId)
 		log.Warn().Msg(err.Error())
-		res := model.Response{
+		res := networkSiteModel.Response{
 			Success: false,
 			Message: err.Error(),
 		}
@@ -1361,7 +1362,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	if reqId == "" {
 		err := fmt.Errorf("invalid request, request ID (requestId: %s) is required", reqId)
 		log.Warn().Msg(err.Error())
-		res := model.Response{
+		res := networkSiteModel.Response{
 			Success: false,
 			Message: err.Error(),
 		}
@@ -1377,7 +1378,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	trId := fmt.Sprintf("%s-%s-%s", nsId, mciId, vpnId)
 
 	// set endpoint
-	epTerrarium := common.TerrariumRestUrl
+	epTerrarium := model.TerrariumRestUrl
 
 	// Get the terrarium info
 	method := "GET"
@@ -1398,7 +1399,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 
 	if err != nil {
 		log.Err(err).Msg("")
-		res := common.SimpleMsg{Message: err.Error()}
+		res := model.SimpleMsg{Message: err.Error()}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
 
@@ -1410,7 +1411,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	method = "GET"
 	url = fmt.Sprintf("%s/tr/%s/%s/request/%s", epTerrarium, trId, enrichments, reqId)
 	reqReqStatus := common.NoBody
-	resReqStatus := new(model.Response)
+	resReqStatus := new(networkSiteModel.Response)
 
 	err = common.ExecuteHttpRequest(
 		client,
@@ -1425,7 +1426,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 
 	if err != nil {
 		log.Err(err).Msg("")
-		res := model.Response{
+		res := networkSiteModel.Response{
 			Success: false,
 			Message: err.Error(),
 		}

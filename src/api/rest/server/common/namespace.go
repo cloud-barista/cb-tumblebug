@@ -20,6 +20,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 )
 
 func RestCheckNs(c echo.Context) error {
@@ -47,8 +48,8 @@ func RestCheckNs(c echo.Context) error {
 // @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns [delete]
 func RestDelAllNs(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -68,8 +69,8 @@ func RestDelAllNs(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId} [delete]
 func RestDelNs(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -95,7 +96,7 @@ type JSONResult struct {
 // Response structure for RestGetAllNs
 type RestGetAllNsResponse struct {
 	//Name string     `json:"name"`
-	Ns []common.NsInfo `json:"ns"`
+	Ns []model.NsInfo `json:"ns"`
 }
 
 // RestGetAllNs godoc
@@ -106,9 +107,9 @@ type RestGetAllNsResponse struct {
 // @Accept  json
 // @Produce  json
 // @Param option query string false "Option" Enums(id)
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllNsResponse,[ID]=common.IdList} "Different return structures by the given option param"
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllNsResponse,[ID]=model.IdList} "Different return structures by the given option param"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns [get]
 func RestGetAllNs(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -119,7 +120,7 @@ func RestGetAllNs(c echo.Context) error {
 
 	var content RestGetAllNsResponse
 	if optionFlag == "id" {
-		content := common.IdList{}
+		content := model.IdList{}
 		var err error
 		content.IdList, err = common.ListNsId()
 		return common.EndRequestWithLog(c, reqID, err, content)
@@ -138,9 +139,9 @@ func RestGetAllNs(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Success 200 {object} common.NsInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.NsInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId} [get]
 func RestGetNs(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -163,17 +164,17 @@ func RestGetNs(c echo.Context) error {
 // @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
-// @Param nsReq body common.NsReq true "Details for a new namespace"
-// @Success 200 {object} common.NsInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param nsReq body model.NsReq true "Details for a new namespace"
+// @Success 200 {object} model.NsInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns [post]
 func RestPostNs(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
-	u := &common.NsReq{}
+	u := &model.NsReq{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -191,17 +192,17 @@ func RestPostNs(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param namespace body common.NsReq true "Details to update existing namespace"
-// @Success 200 {object} common.NsInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param namespace body model.NsReq true "Details to update existing namespace"
+// @Success 200 {object} model.NsInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId} [put]
 func RestPutNs(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
-	u := &common.NsReq{}
+	u := &model.NsReq{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}

@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -35,12 +36,12 @@ import (
 // @Produce  json
 // @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithId)
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param imageInfo body resource.TbImageInfo false "Specify details of a image object (cspImageName, guestOS, description, ...) manually"
-// @Param imageId body resource.TbImageReq false "Specify name, connectionName and cspImageId to register an image object automatically"
+// @Param imageInfo body model.TbImageInfo false "Specify details of a image object (cspImageName, guestOS, description, ...) manually"
+// @Param imageId body model.TbImageReq false "Specify name, connectionName and cspImageId to register an image object automatically"
 // @Param update query boolean false "Force update to existing image object" default(false)
-// @Success 200 {object} resource.TbImageInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbImageInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image [post]
 func RestPostImage(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -66,7 +67,7 @@ func RestPostImage(c echo.Context) error {
 		} else */
 	if action == "registerWithInfo" {
 		log.Debug().Msg("[Registering Image with info]")
-		u := &resource.TbImageInfo{}
+		u := &model.TbImageInfo{}
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
@@ -74,7 +75,7 @@ func RestPostImage(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, content)
 	} else if action == "registerWithId" {
 		log.Debug().Msg("[Registering Image with ID]")
-		u := &resource.TbImageReq{}
+		u := &model.TbImageReq{}
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
@@ -94,12 +95,12 @@ func RestPostImage(c echo.Context) error {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param imageInfo body resource.TbImageInfo true "Details for an image object"
+// @Param imageInfo body model.TbImageInfo true "Details for an image object"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param imageId path string true "Image ID ({providerName}+{regionName}+{imageName})"
-// @Success 200 {object} resource.TbImageInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbImageInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [put]
 func RestPutImage(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -111,7 +112,7 @@ func RestPutImage(c echo.Context) error {
 	resourceId = strings.ReplaceAll(resourceId, " ", "+")
 	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
-	u := &resource.TbImageInfo{}
+	u := &model.TbImageInfo{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -134,9 +135,9 @@ type RestLookupImageRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param lookupImageReq body RestLookupImageRequest true "Specify connectionName & cspImageId"
-// @Success 200 {object} resource.SpiderImageInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SpiderImageInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /lookupImage [post]
 func RestLookupImage(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -162,9 +163,9 @@ func RestLookupImage(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param lookupImagesReq body common.TbConnectionName true "Specify connectionName"
-// @Success 200 {object} resource.SpiderImageList
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SpiderImageList
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /lookupImages [post]
 func RestLookupImageList(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -190,9 +191,9 @@ func RestLookupImageList(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/fetchImages [post]
 func RestFetchImages(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -236,9 +237,9 @@ func RestFetchImages(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param imageId path string true "Image ID ({providerName}+{regionName}+{imageName})"
-// @Success 200 {object} resource.TbImageInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbImageInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [get]
 func RestGetImage(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -247,7 +248,7 @@ func RestGetImage(c echo.Context) error {
 
 // Response structure for RestGetAllImage
 type RestGetAllImageResponse struct {
-	Image []resource.TbImageInfo `json:"image"`
+	Image []model.TbImageInfo `json:"image"`
 }
 
 // RestGetAllImage godoc
@@ -261,9 +262,9 @@ type RestGetAllImageResponse struct {
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex:guestOS)"
 // @Param filterVal query string false "Field value for filtering (ex: Ubuntu18.04)"
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllImageResponse,[ID]=common.IdList} "Different return structures by the given option param"
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllImageResponse,[ID]=model.IdList} "Different return structures by the given option param"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image [get]
 func RestGetAllImage(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -279,8 +280,8 @@ func RestGetAllImage(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param imageId path string true "Image ID ({providerName}+{regionName}+{imageName})"
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [delete]
 func RestDelImage(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -296,8 +297,8 @@ func RestDelImage(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
-// @Success 200 {object} common.IdList
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.IdList
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image [delete]
 func RestDelAllImage(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -319,8 +320,8 @@ type RestSearchImageRequest struct {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param keywords body RestSearchImageRequest true "Keywords"
 // @Success 200 {object} RestGetAllImageResponse
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/searchImage [post]
 func RestSearchImage(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)

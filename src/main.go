@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/logger"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/etcd"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
@@ -39,7 +40,6 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
-	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 
 	restServer "github.com/cloud-barista/cb-tumblebug/src/api/rest/server"
 
@@ -49,28 +49,28 @@ import (
 
 // init for main
 func init() {
-	common.SystemReady = false
+	model.SystemReady = false
 
-	common.SpiderRestUrl = common.NVL(os.Getenv("TB_SPIDER_REST_URL"), "http://localhost:1024/spider")
-	common.DragonflyRestUrl = common.NVL(os.Getenv("TB_DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
-	common.TerrariumRestUrl = common.NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8888/terrarium")
-	common.DBUrl = common.NVL(os.Getenv("TB_SQLITE_URL"), "localhost:3306")
-	common.DBDatabase = common.NVL(os.Getenv("TB_SQLITE_DATABASE"), "cb_tumblebug")
-	common.DBUser = common.NVL(os.Getenv("TB_SQLITE_USER"), "cb_tumblebug")
-	common.DBPassword = common.NVL(os.Getenv("TB_SQLITE_PASSWORD"), "cb_tumblebug")
-	common.AutocontrolDurationMs = common.NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
-	common.DefaultNamespace = common.NVL(os.Getenv("TB_DEFAULT_NAMESPACE"), "default")
-	common.DefaultCredentialHolder = common.NVL(os.Getenv("TB_DEFAULT_CREDENTIALHOLDER"), "admin")
+	model.SpiderRestUrl = common.NVL(os.Getenv("TB_SPIDER_REST_URL"), "http://localhost:1024/spider")
+	model.DragonflyRestUrl = common.NVL(os.Getenv("TB_DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
+	model.TerrariumRestUrl = common.NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8888/terrarium")
+	model.DBUrl = common.NVL(os.Getenv("TB_SQLITE_URL"), "localhost:3306")
+	model.DBDatabase = common.NVL(os.Getenv("TB_SQLITE_DATABASE"), "cb_tumblebug")
+	model.DBUser = common.NVL(os.Getenv("TB_SQLITE_USER"), "cb_tumblebug")
+	model.DBPassword = common.NVL(os.Getenv("TB_SQLITE_PASSWORD"), "cb_tumblebug")
+	model.AutocontrolDurationMs = common.NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
+	model.DefaultNamespace = common.NVL(os.Getenv("TB_DEFAULT_NAMESPACE"), "default")
+	model.DefaultCredentialHolder = common.NVL(os.Getenv("TB_DEFAULT_CREDENTIALHOLDER"), "admin")
 	// Etcd
-	common.EtcdEndpoints = common.NVL(os.Getenv("TB_ETCD_ENDPOINTS"), "localhost:2379")
+	model.EtcdEndpoints = common.NVL(os.Getenv("TB_ETCD_ENDPOINTS"), "localhost:2379")
 
 	// load the latest configuration from DB (if exist)
 
 	log.Info().Msg("[Update system environment]")
-	common.UpdateGlobalVariable(common.StrDragonflyRestUrl)
-	common.UpdateGlobalVariable(common.StrSpiderRestUrl)
-	common.UpdateGlobalVariable(common.TerrariumRestUrl)
-	common.UpdateGlobalVariable(common.StrAutocontrolDurationMs)
+	common.UpdateGlobalVariable(model.StrDragonflyRestUrl)
+	common.UpdateGlobalVariable(model.StrSpiderRestUrl)
+	common.UpdateGlobalVariable(model.TerrariumRestUrl)
+	common.UpdateGlobalVariable(model.StrAutocontrolDurationMs)
 
 	// Initialize the logger
 	logLevel := common.NVL(os.Getenv("TB_LOGLEVEL"), "debug")
@@ -111,19 +111,19 @@ func init() {
 	}
 
 	//err = common.OpenSQL("../meta_db/dat/cbtumblebug.s3db") // commented out to move to use XORM
-	common.ORM, err = xorm.NewEngine("sqlite3", "../meta_db/dat/cbtumblebug.s3db")
+	model.ORM, err = xorm.NewEngine("sqlite3", "../meta_db/dat/cbtumblebug.s3db")
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
 		log.Info().Msg("Database access info set successfully")
 	}
-	//common.ORM.SetMapper(names.SameMapper{})
-	common.ORM.SetTableMapper(names.SameMapper{})
-	common.ORM.SetColumnMapper(names.SameMapper{})
+	//model.ORM.SetMapper(names.SameMapper{})
+	model.ORM.SetTableMapper(names.SameMapper{})
+	model.ORM.SetColumnMapper(names.SameMapper{})
 
 	// "CREATE Table IF NOT EXISTS spec(...)"
 	//err = common.CreateSpecTable() // commented out to move to use XORM
-	err = common.ORM.Sync2(new(resource.TbSpecInfo))
+	err = model.ORM.Sync2(new(model.TbSpecInfo))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
@@ -132,14 +132,14 @@ func init() {
 
 	// "CREATE Table IF NOT EXISTS image(...)"
 	//err = common.CreateImageTable() // commented out to move to use XORM
-	err = common.ORM.Sync2(new(resource.TbImageInfo))
+	err = model.ORM.Sync2(new(model.TbImageInfo))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
 		log.Info().Msg("Table image set successfully..")
 	}
 
-	err = common.ORM.Sync2(new(resource.TbCustomImageInfo))
+	err = model.ORM.Sync2(new(model.TbCustomImageInfo))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
@@ -148,10 +148,10 @@ func init() {
 
 	setConfig()
 
-	_, err = common.GetNs(common.DefaultNamespace)
+	_, err = common.GetNs(model.DefaultNamespace)
 	if err != nil {
-		if common.DefaultNamespace != "" {
-			defaultNS := common.NsReq{Name: common.DefaultNamespace, Description: "Default Namespace"}
+		if model.DefaultNamespace != "" {
+			defaultNS := model.NsReq{Name: model.DefaultNamespace, Description: "Default Namespace"}
 			_, err := common.CreateNs(&defaultNS)
 			if err != nil {
 				log.Error().Err(err).Msg("")
@@ -241,7 +241,7 @@ func setConfig() {
 			log.Info().Msg("CB-Spider is now ready. Initializing CB-Tumblebug...")
 			break
 		}
-		log.Info().Msgf("CB-Spider at %s is not ready. Attempt %d/%d", common.SpiderRestUrl, attempt+1, maxAttempts)
+		log.Info().Msgf("CB-Spider at %s is not ready. Attempt %d/%d", model.SpiderRestUrl, attempt+1, maxAttempts)
 		time.Sleep(3 * time.Second)
 		attempt++
 	}
@@ -260,7 +260,7 @@ func setConfig() {
 		etcdPassword = os.Getenv("TB_ETCD_PASSWORD")
 	}
 
-	etcdEndpoints := strings.Split(common.EtcdEndpoints, ",")
+	etcdEndpoints := strings.Split(model.EtcdEndpoints, ",")
 
 	ctx := context.Background()
 	config := etcd.Config{
@@ -283,7 +283,7 @@ func setConfig() {
 			log.Info().Msg("etcd is now available.")
 			break
 		}
-		log.Warn().Err(err2).Msgf("etcd at %s is not ready. Attempt %d/%d", common.EtcdEndpoints, etcdAttempt, maxAttempts)
+		log.Warn().Err(err2).Msgf("etcd at %s is not ready. Attempt %d/%d", model.EtcdEndpoints, etcdAttempt, maxAttempts)
 		time.Sleep(5 * time.Second)
 	}
 
@@ -411,7 +411,7 @@ func main() {
 
 	log.Info().Msg("[Initiate Multi-Cloud Orchestration]")
 
-	autoControlDuration, _ := strconv.Atoi(common.AutocontrolDurationMs) //ms
+	autoControlDuration, _ := strconv.Atoi(model.AutocontrolDurationMs) //ms
 	ticker := time.NewTicker(time.Millisecond * time.Duration(autoControlDuration))
 	go func() {
 		for t := range ticker.C {

@@ -26,51 +26,10 @@ import (
 	"unicode"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/rs/zerolog/log"
 )
-
-// DeploymentPlan is struct for .
-type DeploymentPlan struct {
-	Filter   FilterInfo   `json:"filter"`
-	Priority PriorityInfo `json:"priority"`
-	Limit    string       `json:"limit" example:"5" enums:"1,2,30"`
-}
-
-// FilterInfo is struct for .
-type FilterInfo struct {
-	Policy []FilterCondition `json:"policy"`
-}
-
-// FilterCondition is struct for .
-type FilterCondition struct {
-	Metric    string      `json:"metric" example:"vCPU" enums:"vCPU,memoryGiB,costPerHour"`
-	Condition []Operation `json:"condition"`
-}
-
-// Operation is struct for .
-type Operation struct {
-	Operator string `json:"operator" example:"<=" enums:">=,<=,=="` // >=, <=, ==
-	Operand  string `json:"operand" example:"4" enums:"4,8,.."`     // 10, 70, 80, 98, ...
-}
-
-// PriorityInfo is struct for .
-type PriorityInfo struct {
-	Policy []PriorityCondition `json:"policy"`
-}
-
-// FilterCondition is struct for .
-type PriorityCondition struct {
-	Metric    string            `json:"metric" example:"location" enums:"location,cost,random,performance,latency"`
-	Weight    string            `json:"weight" example:"0.3" enums:"0.1,0.2,..."`
-	Parameter []ParameterKeyVal `json:"parameter,omitempty"`
-}
-
-// Operation is struct for .
-type ParameterKeyVal struct {
-	Key string   `json:"key" example:"coordinateClose" enums:"coordinateClose,coordinateWithin,coordinateFair"` // coordinate
-	Val []string `json:"val" example:"44.146838/-116.411403"`                                                   // ["Latitude,Longitude","12,543",..,"31,433"]
-}
 
 // toUpperFirst converts the first letter of a string to uppercase
 func toUpperFirst(s string) string {
@@ -83,7 +42,7 @@ func toUpperFirst(s string) string {
 }
 
 // applyFilterPolicies dynamically sets filters on the request based on the policies.
-func applyFilterPolicies(request *resource.FilterSpecsByRangeRequest, plan *DeploymentPlan) error {
+func applyFilterPolicies(request *model.FilterSpecsByRangeRequest, plan *model.DeploymentPlan) error {
 	val := reflect.ValueOf(request).Elem()
 
 	for _, policy := range plan.Filter.Policy {
@@ -102,7 +61,7 @@ func applyFilterPolicies(request *resource.FilterSpecsByRangeRequest, plan *Depl
 }
 
 // setFieldCondition applies the specified condition to the field.
-func setFieldCondition(field reflect.Value, condition Operation) error {
+func setFieldCondition(field reflect.Value, condition model.Operation) error {
 	if field.Kind() == reflect.Struct && (field.Type().Name() == "Range" || field.Type().Name() == "range") {
 		operand, err := strconv.ParseFloat(condition.Operand, 32)
 		if err != nil {
@@ -135,10 +94,10 @@ func applyRange(field reflect.Value, operator string, operand float32) error {
 }
 
 // RecommendVm is func to recommend a VM
-func RecommendVm(nsId string, plan DeploymentPlan) ([]resource.TbSpecInfo, error) {
+func RecommendVm(nsId string, plan model.DeploymentPlan) ([]model.TbSpecInfo, error) {
 	// Filtering first
 
-	u := &resource.FilterSpecsByRangeRequest{}
+	u := &model.FilterSpecsByRangeRequest{}
 	// Apply filter policies dynamically.
 	if err := applyFilterPolicies(u, &plan); err != nil {
 		log.Error().Err(err).Msg("Failed to apply filter policies")
@@ -155,10 +114,10 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]resource.TbSpecInfo, error
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return []resource.TbSpecInfo{}, err
+		return []model.TbSpecInfo{}, err
 	}
 	if len(filteredSpecs) == 0 {
-		return []resource.TbSpecInfo{}, nil
+		return []model.TbSpecInfo{}, nil
 	}
 	// // sorting based on VCPU and MemoryGiB
 	// sort.Slice(filteredSpecs, func(i, j int) bool {
@@ -172,7 +131,7 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]resource.TbSpecInfo, error
 
 	// Prioritizing
 	log.Debug().Msg("[Prioritizing specs]")
-	prioritySpecs := []resource.TbSpecInfo{}
+	prioritySpecs := []model.TbSpecInfo{}
 
 	for _, v := range plan.Priority.Policy {
 		metric := v.Metric
@@ -198,7 +157,7 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]resource.TbSpecInfo, error
 	}
 
 	// limit the number of items in result list
-	result := []resource.TbSpecInfo{}
+	result := []model.TbSpecInfo{}
 	limitNum, err := strconv.Atoi(plan.Limit)
 	if err != nil {
 		limitNum = math.MaxInt
@@ -215,9 +174,9 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]resource.TbSpecInfo, error
 }
 
 // RecommendVmLatency func prioritize specs by latency based on given MCI (fair)
-func RecommendVmLatency(nsId string, specList *[]resource.TbSpecInfo, param *[]ParameterKeyVal) ([]resource.TbSpecInfo, error) {
+func RecommendVmLatency(nsId string, specList *[]model.TbSpecInfo, param *[]model.ParameterKeyVal) ([]model.TbSpecInfo, error) {
 
-	result := []resource.TbSpecInfo{}
+	result := []model.TbSpecInfo{}
 
 	for _, v := range *param {
 
@@ -313,7 +272,7 @@ func RecommendVmLatency(nsId string, specList *[]resource.TbSpecInfo, param *[]P
 }
 
 // RecommendVmLocation func prioritize specs based on given location
-func RecommendVmLocation(nsId string, specList *[]resource.TbSpecInfo, param *[]ParameterKeyVal) ([]resource.TbSpecInfo, error) {
+func RecommendVmLocation(nsId string, specList *[]model.TbSpecInfo, param *[]model.ParameterKeyVal) ([]model.TbSpecInfo, error) {
 
 	for _, v := range *param {
 
@@ -326,12 +285,12 @@ func RecommendVmLocation(nsId string, specList *[]resource.TbSpecInfo, param *[]
 			latitude, err := strconv.ParseFloat(strings.ReplaceAll(slice[0], " ", ""), 32)
 			if err != nil {
 				log.Error().Err(err).Msg("")
-				return []resource.TbSpecInfo{}, err
+				return []model.TbSpecInfo{}, err
 			}
 			longitude, err := strconv.ParseFloat(strings.ReplaceAll(slice[1], " ", ""), 32)
 			if err != nil {
 				log.Error().Err(err).Msg("")
-				return []resource.TbSpecInfo{}, err
+				return []model.TbSpecInfo{}, err
 			}
 
 			type distanceType struct {
@@ -377,7 +336,7 @@ func RecommendVmLocation(nsId string, specList *[]resource.TbSpecInfo, param *[]
 
 			if globalErr != nil { // If there's an error from any goroutine, return it
 				// log.Error().Err(globalErr).Msg("")
-				// return []resource.TbSpecInfo{}, globalErr
+				// return []model.TbSpecInfo{}, globalErr
 			}
 
 			sort.Slice(distances, func(i, j int) bool {
@@ -424,12 +383,12 @@ func RecommendVmLocation(nsId string, specList *[]resource.TbSpecInfo, param *[]
 				latitudeEach, err := strconv.ParseFloat(strings.ReplaceAll(slice[0], " ", ""), 32)
 				if err != nil {
 					log.Error().Err(err).Msg("")
-					return []resource.TbSpecInfo{}, err
+					return []model.TbSpecInfo{}, err
 				}
 				longitudeEach, err := strconv.ParseFloat(strings.ReplaceAll(slice[1], " ", ""), 32)
 				if err != nil {
 					log.Error().Err(err).Msg("")
-					return []resource.TbSpecInfo{}, err
+					return []model.TbSpecInfo{}, err
 				}
 				latitudeSum += latitudeEach
 				longitudeSum += longitudeEach
@@ -480,7 +439,7 @@ func RecommendVmLocation(nsId string, specList *[]resource.TbSpecInfo, param *[]
 			wg.Wait() // Wait for all goroutines to finish
 
 			if globalErr != nil { // If there's an error from any goroutine, return it
-				return []resource.TbSpecInfo{}, globalErr
+				return []model.TbSpecInfo{}, globalErr
 			}
 
 			sort.Slice(distances, func(i, j int) bool {
@@ -520,7 +479,7 @@ func RecommendVmLocation(nsId string, specList *[]resource.TbSpecInfo, param *[]
 
 	}
 
-	result := append([]resource.TbSpecInfo{}, (*specList)...)
+	result := append([]model.TbSpecInfo{}, (*specList)...)
 
 	// Sorting result based on multiple criteria: OrderInFilteredResult, CostPerHour, VCPU, MemoryGiB
 	sort.Slice(result, func(i, j int) bool {
@@ -590,9 +549,9 @@ func getHaversineDistance(a1 float64, b1 float64, a2 float64, b2 float64) (dista
 }
 
 // RecommendVmRandom func prioritize specs randomly
-func RecommendVmRandom(nsId string, specList *[]resource.TbSpecInfo) ([]resource.TbSpecInfo, error) {
+func RecommendVmRandom(nsId string, specList *[]model.TbSpecInfo) ([]model.TbSpecInfo, error) {
 
-	result := append([]resource.TbSpecInfo{}, (*specList)...)
+	result := append([]model.TbSpecInfo{}, (*specList)...)
 
 	rand.Shuffle(len(result), func(i, j int) { result[i], result[j] = result[j], result[i] })
 
@@ -608,9 +567,9 @@ func RecommendVmRandom(nsId string, specList *[]resource.TbSpecInfo) ([]resource
 }
 
 // RecommendVmCost func prioritize specs based on given Cost
-func RecommendVmCost(nsId string, specList *[]resource.TbSpecInfo) ([]resource.TbSpecInfo, error) {
+func RecommendVmCost(nsId string, specList *[]model.TbSpecInfo) ([]model.TbSpecInfo, error) {
 
-	result := append([]resource.TbSpecInfo{}, (*specList)...)
+	result := append([]model.TbSpecInfo{}, (*specList)...)
 
 	sort.Slice(result, func(i, j int) bool { return result[i].CostPerHour < result[j].CostPerHour })
 
@@ -626,9 +585,9 @@ func RecommendVmCost(nsId string, specList *[]resource.TbSpecInfo) ([]resource.T
 }
 
 // RecommendVmPerformance func prioritize specs based on given Performance condition
-func RecommendVmPerformance(nsId string, specList *[]resource.TbSpecInfo) ([]resource.TbSpecInfo, error) {
+func RecommendVmPerformance(nsId string, specList *[]model.TbSpecInfo) ([]model.TbSpecInfo, error) {
 
-	result := append([]resource.TbSpecInfo{}, (*specList)...)
+	result := append([]model.TbSpecInfo{}, (*specList)...)
 
 	sort.Slice(result, func(i, j int) bool { return result[i].EvaluationScore01 > result[j].EvaluationScore01 })
 
@@ -673,8 +632,8 @@ func RecommendVmPerformance(nsId string, specList *[]resource.TbSpecInfo) ([]res
 // 			return []TbVmPriority{}, err
 // 		}
 
-// 		content2 := resource.TbSpecInfo{}
-// 		key2 := common.GenResourceKey(nsId, common.StrSpec, content.Id)
+// 		content2 := model.TbSpecInfo{}
+// 		key2 := common.GenResourceKey(nsId, model.StrSpec, content.Id)
 
 // 		keyValue2, err := kvstore.GetKv(key2)
 // 		if err != nil {

@@ -19,6 +19,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
 )
 
@@ -31,11 +32,11 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Param mciCmdReq body infra.MciCmdReq true "MCI Command Request"
+// @Param mciCmdReq body model.MciCmdReq true "MCI Command Request"
 // @Param option query string false "Option for checking update" Enums(update)
-// @Success 200 {object} infra.MciSshCmdResult
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.MciSshCmdResult
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/installBenchmarkAgent/mci/{mciId} [post]
 func RestPostInstallBenchmarkAgentToMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -47,7 +48,7 @@ func RestPostInstallBenchmarkAgentToMci(c echo.Context) error {
 	mciId := c.Param("mciId")
 	option := c.QueryParam("option")
 
-	req := &infra.MciCmdReq{}
+	req := &model.MciCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
@@ -57,7 +58,7 @@ func RestPostInstallBenchmarkAgentToMci(c echo.Context) error {
 		common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	content := infra.MciSshCmdResult{}
+	content := model.MciSshCmdResult{}
 	for _, v := range resultArray {
 		content.Results = append(content.Results, v)
 	}
@@ -81,9 +82,9 @@ type RestGetAllBenchmarkRequest struct {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param hostIP body RestGetAllBenchmarkRequest true "Host IP address to benchmark"
-// @Success 200 {object} infra.BenchmarkInfoArray
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.BenchmarkInfoArray
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/benchmarkAll/mci/{mciId} [post]
 func RestGetAllBenchmark(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -112,9 +113,9 @@ func RestGetAllBenchmark(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
 // @Param mciId path string true "MCI ID" default(probe)
-// @Success 200 {object} infra.BenchmarkInfoArray
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.BenchmarkInfoArray
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/benchmarkLatency/mci/{mciId} [get]
 func RestGetBenchmarkLatency(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -143,9 +144,9 @@ type RestGetBenchmarkRequest struct {
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param hostIP body RestGetBenchmarkRequest true "Host IP address to benchmark"
 // @Param action query string true "Benchmark Action to MCI" Enums(install, init, cpus, cpum, memR, memW, fioR, fioW, dbR, dbW, rtt, mrtt, clean)
-// @Success 200 {object} infra.BenchmarkInfoArray
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.BenchmarkInfoArray
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/benchmark/mci/{mciId} [post]
 func RestGetBenchmark(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)

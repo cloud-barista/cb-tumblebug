@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -368,7 +369,7 @@ func ForwardRequestToAny(reqPath string, method string, requestBody interface{})
 	client := resty.New()
 	var callResult interface{}
 
-	url := SpiderRestUrl + "/" + reqPath
+	url := model.SpiderRestUrl + "/" + reqPath
 
 	var requestBodyBytes []byte
 	var ok bool

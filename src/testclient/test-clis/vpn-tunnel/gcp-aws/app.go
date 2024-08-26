@@ -8,12 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/model"
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	networkSiteModel "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/model"
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/common/logger"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
-	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
-	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/rs/zerolog/log"
 
 	"github.com/go-resty/resty/v2"
@@ -212,7 +210,7 @@ func createMci(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-	resTbReadiness := new(common.SimpleMsg)
+	resTbReadiness := new(model.SimpleMsg)
 	if err := json.Unmarshal(respBytes, resTbReadiness); err != nil {
 		log.Error().Err(err).Msg("")
 		return
@@ -247,7 +245,7 @@ func createMci(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	reqMciDynamic := new(infra.TbMciDynamicReq)
+	reqMciDynamic := new(model.TbMciDynamicReq)
 	err = json.Unmarshal(mciDynamicData, &reqMciDynamic)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to unmarshal %s", filePath)
@@ -264,7 +262,7 @@ func createMci(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-	mciInfo := new(infra.TbMciInfo)
+	mciInfo := new(model.TbMciInfo)
 	if err := json.Unmarshal(respBytes, mciInfo); err != nil {
 		log.Error().Err(err).Msg("")
 		return
@@ -360,7 +358,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-	resTbReadiness := new(common.SimpleMsg)
+	resTbReadiness := new(model.SimpleMsg)
 	if err := json.Unmarshal(respBytes, resTbReadiness); err != nil {
 		log.Error().Err(err).Msg("")
 		return
@@ -393,7 +391,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-	mciInfo := new(infra.TbMciInfo)
+	mciInfo := new(model.TbMciInfo)
 	if err := json.Unmarshal(respBytes, mciInfo); err != nil {
 		log.Error().Err(err).Msg("")
 		return
@@ -483,7 +481,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	vNetInfo := new(resource.TbVNetInfo)
+	vNetInfo := new(model.TbVNetInfo)
 	if err := json.Unmarshal(respBytes, vNetInfo); err != nil {
 		log.Error().Err(err).Msg("")
 		return
@@ -570,7 +568,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-	initRes := new(model.Response)
+	initRes := new(networkSiteModel.Response)
 	if err := json.Unmarshal(respBytes, initRes); err != nil {
 		log.Error().Err(err).Msg("")
 		return
@@ -831,7 +829,7 @@ func terminateMci(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-	resTbReadiness := new(common.SimpleMsg)
+	resTbReadiness := new(model.SimpleMsg)
 	if err := json.Unmarshal(respBytes, resTbReadiness); err != nil {
 		log.Error().Err(err).Msg("")
 		return
@@ -866,7 +864,7 @@ func terminateMci(cmd *cobra.Command, args []string) {
 	respText := string(respBytes)
 
 	// // Print the response
-	// resp := new(common.SimpleMsg)
+	// resp := new(model.SimpleMsg)
 	// if err := json.Unmarshal(respBytes, resp); err != nil {
 	// 	log.Error().Err(err).Msg(string(respBytes))
 	// 	return
@@ -901,7 +899,7 @@ func terminateMci(cmd *cobra.Command, args []string) {
 		}
 
 		// Print the response
-		mciInfo := new(infra.TbMciInfo)
+		mciInfo := new(model.TbMciInfo)
 		if err := json.Unmarshal(respBytes, mciInfo); err != nil {
 			log.Error().Err(err).Msg("")
 			return
@@ -934,7 +932,7 @@ func terminateMci(cmd *cobra.Command, args []string) {
 
 	respText = string(respBytes)
 	// Print the response
-	// resp = new(common.SimpleMsg)
+	// resp = new(model.SimpleMsg)
 	// if err := json.Unmarshal(respBytes, resp); err != nil {
 	// 	log.Error().Err(err).Msg("")
 	// 	return
@@ -969,7 +967,7 @@ func terminateMci(cmd *cobra.Command, args []string) {
 		}
 
 		// Print the response
-		mciInfo := new(infra.TbMciInfo)
+		mciInfo := new(model.TbMciInfo)
 		if err := json.Unmarshal(respBytes, mciInfo); err != nil {
 			log.Error().Err(err).Msg("")
 			return
@@ -1001,7 +999,7 @@ func terminateMci(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-	resp := new(common.SimpleMsg)
+	resp := new(model.SimpleMsg)
 	if err := json.Unmarshal(respBytes, resp); err != nil {
 		log.Error().Err(err).Msg("")
 		return

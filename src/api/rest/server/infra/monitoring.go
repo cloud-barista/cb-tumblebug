@@ -19,6 +19,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
 )
 
@@ -31,10 +32,10 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Param mciInfo body infra.MciCmdReq true "Details for an MCI object"
-// @Success 200 {object} infra.AgentInstallContentWrapper
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param mciInfo body model.MciCmdReq true "Details for an MCI object"
+// @Success 200 {object} model.AgentInstallContentWrapper
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/monitoring/install/mci/{mciId} [post]
 func RestPostInstallMonitorAgentToMci(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -44,12 +45,12 @@ func RestPostInstallMonitorAgentToMci(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
-	req := &infra.MciCmdReq{}
+	req := &model.MciCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
-	// mciTmpSystemLabel := infra.DefaultSystemLabel
-	content, err := infra.InstallMonitorAgentToMci(nsId, mciId, common.StrMCI, req)
+	// mciTmpSystemLabel := model.DefaultSystemLabel
+	content, err := infra.InstallMonitorAgentToMci(nsId, mciId, model.StrMCI, req)
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
@@ -63,9 +64,9 @@ func RestPostInstallMonitorAgentToMci(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(vm01)
-// @Success 200 {object} infra.TbVmInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbVmInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/monitoring/status/mci/{mciId}/vm/{vmId} [put]
 func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -76,7 +77,7 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
 
-	// mciTmpSystemLabel := infra.DefaultSystemLabel
+	// mciTmpSystemLabel := model.DefaultSystemLabel
 	err := infra.SetMonitoringAgentStatusInstalled(nsId, mciId, vmId)
 	if err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
@@ -96,9 +97,9 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param metric path string true "Metric type: cpu, memory, disk, network"
-// @Success 200 {object} infra.MonResultSimpleResponse
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.MonResultSimpleResponse
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/monitoring/mci/{mciId}/metric/{metric} [get]
 func RestGetMonitorData(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -109,7 +110,7 @@ func RestGetMonitorData(c echo.Context) error {
 	mciId := c.Param("mciId")
 	metric := c.Param("metric")
 
-	req := &infra.MciCmdReq{}
+	req := &model.MciCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}

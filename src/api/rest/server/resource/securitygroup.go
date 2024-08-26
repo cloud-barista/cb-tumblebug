@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 )
@@ -31,10 +32,10 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option: [required params for register] connectionName, name, vNetId, cspSecurityGroupId" Enums(register)
-// @Param securityGroupReq body resource.TbSecurityGroupReq true "Details for an securityGroup object"
-// @Success 200 {object} resource.TbSecurityGroupInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param securityGroupReq body model.TbSecurityGroupReq true "Details for an securityGroup object"
+// @Success 200 {object} model.TbSecurityGroupInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup [post]
 func RestPostSecurityGroup(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
@@ -45,7 +46,7 @@ func RestPostSecurityGroup(c echo.Context) error {
 
 	optionFlag := c.QueryParam("option")
 
-	u := &resource.TbSecurityGroupReq{}
+	u := &model.TbSecurityGroupReq{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -64,10 +65,10 @@ func RestPostSecurityGroup(c echo.Context) error {
 // @Tags [Infra Resource] Security Group Management
 // @Accept  json
 // @Produce  json
-// @Param securityGroupInfo body resource.TbSecurityGroupInfo true "Details for an securityGroup object"
-// @Success 200 {object} resource.TbSecurityGroupInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Param securityGroupInfo body model.TbSecurityGroupInfo true "Details for an securityGroup object"
+// @Success 200 {object} model.TbSecurityGroupInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId} [put]
 */
 func RestPutSecurityGroup(c echo.Context) error {
@@ -85,9 +86,9 @@ func RestPutSecurityGroup(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param securityGroupId path string true "Security Group ID"
-// @Success 200 {object} resource.TbSecurityGroupInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} model.TbSecurityGroupInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId} [get]
 func RestGetSecurityGroup(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -96,7 +97,7 @@ func RestGetSecurityGroup(c echo.Context) error {
 
 // Response structure for RestGetAllSecurityGroup
 type RestGetAllSecurityGroupResponse struct {
-	SecurityGroup []resource.TbSecurityGroupInfo `json:"securityGroup"`
+	SecurityGroup []model.TbSecurityGroupInfo `json:"securityGroup"`
 }
 
 // RestGetAllSecurityGroup godoc
@@ -110,9 +111,9 @@ type RestGetAllSecurityGroupResponse struct {
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex: systemLabel)"
 // @Param filterVal query string false "Field value for filtering (ex: Registered from CSP resource)"
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSecurityGroupResponse,[ID]=common.IdList} "Different return structures by the given option param"
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSecurityGroupResponse,[ID]=model.IdList} "Different return structures by the given option param"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup [get]
 func RestGetAllSecurityGroup(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -128,8 +129,8 @@ func RestGetAllSecurityGroup(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param securityGroupId path string true "Security Group ID"
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId} [delete]
 func RestDelSecurityGroup(c echo.Context) error {
 	// This is a dummy function for Swagger.
@@ -145,8 +146,8 @@ func RestDelSecurityGroup(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
-// @Success 200 {object} common.IdList
-// @Failure 404 {object} common.SimpleMsg
+// @Success 200 {object} model.IdList
+// @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup [delete]
 func RestDelAllSecurityGroup(c echo.Context) error {
 	// This is a dummy function for Swagger.
