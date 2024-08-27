@@ -11,8 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to manage multi-cloud infra
-package infra
+// Package resource is to manage multi-cloud infra resource
+package resource
 
 import (
 	"encoding/json"
@@ -24,7 +24,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
-	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	validator "github.com/go-playground/validator/v10"
@@ -105,7 +104,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 	}
 	spVersion := u.Version
 
-	spVPCName, err := resource.GetCspResourceId(nsId, model.StrVNet, u.VNetId)
+	spVPCName, err := GetCspResourceId(nsId, model.StrVNet, u.VNetId)
 	if spVPCName == "" {
 		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
@@ -114,7 +113,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 	/*
 		var spSubnetNames []string
 		for _, v := range u.SubnetIds {
-			spSnName, err := resource.GetCspResourceId(nsId, model.StrSubnet, v)
+			spSnName, err := GetCspResourceId(nsId, model.StrSubnet, v)
 			if spSnName == "" {
 				log.Error().Err(err).Msg("")
 				return emptyObj, err
@@ -128,7 +127,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 	var spSubnetNames []string
 	var found bool
 
-	tmpInf, err := resource.GetResource(nsId, model.StrVNet, u.VNetId)
+	tmpInf, err := GetResource(nsId, model.StrVNet, u.VNetId)
 	if err != nil {
 		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
@@ -162,7 +161,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 
 	var spSecurityGroupNames []string
 	for _, v := range u.SecurityGroupIds {
-		spSgName, err := resource.GetCspResourceId(nsId, model.StrSecurityGroup, v)
+		spSgName, err := GetCspResourceId(nsId, model.StrSecurityGroup, v)
 		if spSgName == "" {
 			log.Err(err).Msg("Failed to Create a K8sCluster")
 			return emptyObj, err
@@ -183,14 +182,14 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 		if v.ImageId == "" || v.ImageId == "default" {
 			spImgName = ""
 		} else {
-			spImgName, err = resource.GetCspResourceId(nsId, model.StrImage, v.ImageId)
+			spImgName, err = GetCspResourceId(nsId, model.StrImage, v.ImageId)
 			if spImgName == "" {
 				log.Err(err).Msg("Failed to Create a K8sCluster")
 				return emptyObj, err
 			}
 		}
 
-		// specInfo, err := resource.GetSpec(model.SystemCommonNs, v.SpecId)
+		// specInfo, err := GetSpec(model.SystemCommonNs, v.SpecId)
 		// if err != nil {
 		// 	log.Err(err).Msg("Failed to Create a K8sCluster")
 		// 	return emptyObj, err
@@ -198,7 +197,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 		// spSpecName := specInfo.CspSpecName
 		spSpecName := v.SpecId
 
-		spKpName, err := resource.GetCspResourceId(nsId, model.StrSSHKey, v.SshKeyId)
+		spKpName, err := GetCspResourceId(nsId, model.StrSSHKey, v.SshKeyId)
 		if spKpName == "" {
 			log.Err(err).Msg("Failed to Create a K8sCluster")
 			return emptyObj, err
@@ -402,14 +401,14 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 
 	spImgName := "" // Some CSPs do not require ImageName for creating a cluster
 	if u.ImageId != "" {
-		spImgName, err = resource.GetCspResourceId(nsId, model.StrImage, u.ImageId)
+		spImgName, err = GetCspResourceId(nsId, model.StrImage, u.ImageId)
 		if spImgName == "" {
 			log.Err(err).Msg("Failed to Add K8sNodeGroup")
 			return emptyObj, err
 		}
 	}
 
-	// specInfo, err := resource.GetSpec(model.SystemCommonNs, u.SpecId)
+	// specInfo, err := GetSpec(model.SystemCommonNs, u.SpecId)
 	// if err != nil {
 	// 	log.Err(err).Msg("Failed to Add K8sNodeGroup")
 	// 	return emptyObj, err
@@ -417,7 +416,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 	// spSpecName := specInfo.CspSpecName
 	spSpecName := u.SpecId
 
-	spKpName, err := resource.GetCspResourceId(nsId, model.StrSSHKey, u.SshKeyId)
+	spKpName, err := GetCspResourceId(nsId, model.StrSSHKey, u.SshKeyId)
 	if spKpName == "" {
 		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err

@@ -11,15 +11,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package mci is to handle REST API for mci
-package infra
+// Package resource is to handle REST API for resource
+package resource
 
 import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
@@ -128,7 +128,7 @@ func RestPostK8sCluster(c echo.Context) error {
 
 	log.Debug().Msg("[POST K8sCluster]")
 
-	content, err := infra.CreateK8sCluster(nsId, u, optionFlag)
+	content, err := resource.CreateK8sCluster(nsId, u, optionFlag)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -190,7 +190,7 @@ func RestPostK8sNodeGroup(c echo.Context) error {
 
 	log.Debug().Msg("[POST K8sNodeGroup]")
 
-	content, err := infra.AddK8sNodeGroup(nsId, k8sClusterId, u)
+	content, err := resource.AddK8sNodeGroup(nsId, k8sClusterId, u)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -223,7 +223,7 @@ func RestDeleteK8sNodeGroup(c echo.Context) error {
 
 	forceFlag := c.QueryParam("force")
 
-	res, err := infra.RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, forceFlag)
+	res, err := resource.RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, forceFlag)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
@@ -269,7 +269,7 @@ func RestPutSetK8sNodeGroupAutoscaling(c echo.Context) error {
 
 	log.Debug().Msg("[PUT K8s Set AutoScaling]")
 
-	content, err := infra.SetK8sNodeGroupAutoscaling(nsId, k8sClusterId, k8sNodeGroupName, u)
+	content, err := resource.SetK8sNodeGroupAutoscaling(nsId, k8sClusterId, k8sNodeGroupName, u)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -309,7 +309,7 @@ func RestPutChangeK8sNodeGroupAutoscaleSize(c echo.Context) error {
 
 	log.Debug().Msg("[PUT K8s Change AutoScale Size]")
 
-	content, err := infra.ChangeK8sNodeGroupAutoscaleSize(nsId, k8sClusterId, k8sNodeGroupName, u)
+	content, err := resource.ChangeK8sNodeGroupAutoscaleSize(nsId, k8sClusterId, k8sNodeGroupName, u)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -339,7 +339,7 @@ func RestGetK8sCluster(c echo.Context) error {
 	nsId := c.Param("nsId")
 	k8sClusterId := c.Param("k8sClusterId")
 
-	res, err := infra.GetK8sCluster(nsId, k8sClusterId)
+	res, err := resource.GetK8sCluster(nsId, k8sClusterId)
 	if err != nil {
 		mapA := map[string]string{"message": "Failed to find the K8sCluster " + k8sClusterId + ": " + err.Error()}
 		return c.JSON(http.StatusNotFound, &mapA)
@@ -379,7 +379,7 @@ func RestGetAllK8sCluster(c echo.Context) error {
 	if optionFlag == "id" {
 		content := model.IdList{}
 		var err error
-		content.IdList, err = infra.ListK8sClusterId(nsId)
+		content.IdList, err = resource.ListK8sClusterId(nsId)
 		if err != nil {
 			mapA := map[string]string{"message": "Failed to list K8sClusters' ID; " + err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
@@ -388,7 +388,7 @@ func RestGetAllK8sCluster(c echo.Context) error {
 		return c.JSON(http.StatusOK, &content)
 	} else {
 
-		resourceList, err := infra.ListK8sCluster(nsId, filterKey, filterVal)
+		resourceList, err := resource.ListK8sCluster(nsId, filterKey, filterVal)
 		if err != nil {
 			mapA := map[string]string{"message": "Failed to list K8sClusters; " + err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
@@ -423,7 +423,7 @@ func RestDeleteK8sCluster(c echo.Context) error {
 
 	forceFlag := c.QueryParam("force")
 
-	res, err := infra.DeleteK8sCluster(nsId, k8sClusterId, forceFlag)
+	res, err := resource.DeleteK8sCluster(nsId, k8sClusterId, forceFlag)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
@@ -459,7 +459,7 @@ func RestDeleteAllK8sCluster(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 	subString := c.QueryParam("match")
 
-	output, err := infra.DeleteAllK8sCluster(nsId, subString, forceFlag)
+	output, err := resource.DeleteAllK8sCluster(nsId, subString, forceFlag)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
@@ -496,7 +496,7 @@ func RestPutUpgradeK8sCluster(c echo.Context) error {
 
 	log.Debug().Msg("[PUT Upgrade K8sCluster]")
 
-	content, err := infra.UpgradeK8sCluster(nsId, k8sClusterId, u)
+	content, err := resource.UpgradeK8sCluster(nsId, k8sClusterId, u)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
