@@ -117,13 +117,6 @@ definitions:
       host:
         type: string
     type: object
-  infra.RestGetAllK8sClusterResponse:
-    properties:
-      cluster:
-        items:
-          $ref: '#/definitions/model.TbK8sClusterInfo'
-        type: array
-    type: object
   infra.RestGetAllMciPolicyResponse:
     properties:
       mciPolicy:
@@ -3210,6 +3203,13 @@ definitions:
           $ref: '#/definitions/model.TbImageInfo'
         type: array
     type: object
+  resource.RestGetAllK8sClusterResponse:
+    properties:
+      cluster:
+        items:
+          $ref: '#/definitions/model.TbK8sClusterInfo'
+        type: array
+    type: object
   resource.RestGetAllSecurityGroupResponse:
     properties:
       securityGroup:
@@ -4802,10 +4802,10 @@ paths:
           description: Different return structures by the given option param
           schema:
             allOf:
-            - $ref: '#/definitions/infra.JSONResult'
+            - $ref: '#/definitions/resource.JSONResult'
             - properties:
                 '[DEFAULT]':
-                  $ref: '#/definitions/infra.RestGetAllK8sClusterResponse'
+                  $ref: '#/definitions/resource.RestGetAllK8sClusterResponse'
                 '[ID]':
                   $ref: '#/definitions/model.IdList'
               type: object

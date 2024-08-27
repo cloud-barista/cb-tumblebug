@@ -364,21 +364,21 @@ func RunServer(port string) {
 	g.PUT("/:nsId/monitoring/status/mci/:mciId/vm/:vmId", rest_infra.RestPutMonitorAgentStatusInstalled)
 
 	// K8sCluster
-	e.GET("/tumblebug/availableK8sClusterVersion", rest_infra.RestGetAvailableK8sClusterVersion)
-	e.GET("/tumblebug/availableK8sClusterNodeImage", rest_infra.RestGetAvailableK8sClusterNodeImage)
-	e.GET("/tumblebug/checkNodeGroupsOnK8sCreation", rest_infra.RestCheckNodeGroupsOnK8sCreation)
-	g.POST("/:nsId/k8scluster", rest_infra.RestPostK8sCluster)
-	g.POST("/:nsId/k8scluster/:k8sClusterId/k8snodegroup", rest_infra.RestPostK8sNodeGroup)
-	g.DELETE("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName", rest_infra.RestDeleteK8sNodeGroup)
-	g.PUT("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName/onautoscaling", rest_infra.RestPutSetK8sNodeGroupAutoscaling)
-	g.PUT("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName/autoscalesize", rest_infra.RestPutChangeK8sNodeGroupAutoscaleSize)
-	g.GET("/:nsId/k8scluster/:k8sClusterId", rest_infra.RestGetK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
+	e.GET("/tumblebug/availableK8sClusterVersion", rest_resource.RestGetAvailableK8sClusterVersion)
+	e.GET("/tumblebug/availableK8sClusterNodeImage", rest_resource.RestGetAvailableK8sClusterNodeImage)
+	e.GET("/tumblebug/checkNodeGroupsOnK8sCreation", rest_resource.RestCheckNodeGroupsOnK8sCreation)
+	g.POST("/:nsId/k8scluster", rest_resource.RestPostK8sCluster)
+	g.POST("/:nsId/k8scluster/:k8sClusterId/k8snodegroup", rest_resource.RestPostK8sNodeGroup)
+	g.DELETE("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName", rest_resource.RestDeleteK8sNodeGroup)
+	g.PUT("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName/onautoscaling", rest_resource.RestPutSetK8sNodeGroupAutoscaling)
+	g.PUT("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName/autoscalesize", rest_resource.RestPutChangeK8sNodeGroupAutoscaleSize)
+	g.GET("/:nsId/k8scluster/:k8sClusterId", rest_resource.RestGetK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
-	g.GET("/:nsId/k8scluster", rest_infra.RestGetAllK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
+	g.GET("/:nsId/k8scluster", rest_resource.RestGetAllK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
-	g.DELETE("/:nsId/k8scluster/:k8sClusterId", rest_infra.RestDeleteK8sCluster)
-	g.DELETE("/:nsId/k8scluster", rest_infra.RestDeleteAllK8sCluster)
-	g.PUT("/:nsId/k8scluster/:k8sClusterId/upgrade", rest_infra.RestPutUpgradeK8sCluster)
+	g.DELETE("/:nsId/k8scluster/:k8sClusterId", rest_resource.RestDeleteK8sCluster)
+	g.DELETE("/:nsId/k8scluster", rest_resource.RestDeleteAllK8sCluster)
+	g.PUT("/:nsId/k8scluster/:k8sClusterId/upgrade", rest_resource.RestPutUpgradeK8sCluster)
 
 	// Network Load Balancer
 	g.POST("/:nsId/mci/:mciId/mcSwNlb", rest_infra.RestPostMcNLB)
