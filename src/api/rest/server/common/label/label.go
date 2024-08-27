@@ -28,7 +28,7 @@ import (
 // @ID CreateOrUpdateLabel
 // @Summary Create or update a label for a resource
 // @Description Create or update a label for a resource identified by its UUID
-// @Tags [Label] Label Management
+// @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
 // @Param labelType path string true "Label Type (e.g., ns, vnet)"
@@ -69,7 +69,7 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 // @ID RemoveLabel
 // @Summary Remove a label from a resource
 // @Description Remove a label from a resource identified by its UUID
-// @Tags [Label] Label Management
+// @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
 // @Param labelType path string true "Label Type (e.g., ns, vnet)"
@@ -102,7 +102,7 @@ func RestRemoveLabel(c echo.Context) error {
 // @ID GetLabels
 // @Summary Get labels for a resource
 // @Description Get labels for a resource identified by its UUID
-// @Tags [Label] Label Management
+// @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
 // @Param labelType path string true "Label Type (e.g., ns, vnet)"
@@ -144,7 +144,7 @@ type ResourcesResponse struct {
 // @Description - `notin` : Selects resources where the label key is not in the specified set of values (e.g., `env notin (production, staging)`).
 // @Description - `exists` : Selects resources where the label key exists (e.g., `env exists`).
 // @Description - `!exists` : Selects resources where the label key does not exist (e.g., `env !exists`).
-// @Tags [Label] Label Management
+// @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
 // @Param labelType path string true "Label Type (e.g., ns, sshKey, vNet, vm, mci, k8s, etc.)"

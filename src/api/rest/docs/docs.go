@@ -837,7 +837,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Label] Label Management"
+                    "[Infra Resource] Common Utility"
                 ],
                 "summary": "Get labels for a resource",
                 "operationId": "GetLabels",
@@ -890,7 +890,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Label] Label Management"
+                    "[Infra Resource] Common Utility"
                 ],
                 "summary": "Create or update a label for a resource",
                 "operationId": "CreateOrUpdateLabel",
@@ -954,7 +954,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Label] Label Management"
+                    "[Infra Resource] Common Utility"
                 ],
                 "summary": "Remove a label from a resource",
                 "operationId": "RemoveLabel",
@@ -8767,7 +8767,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Label] Label Management"
+                    "[Infra Resource] Common Utility"
                 ],
                 "summary": "Get resources by label selector",
                 "operationId": "GetResourcesByLabelSelector",

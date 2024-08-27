@@ -3863,7 +3863,7 @@ paths:
             $ref: '#/definitions/model.SimpleMsg'
       summary: Get labels for a resource
       tags:
-      - '[Label] Label Management'
+      - '[Infra Resource] Common Utility'
     put:
       consumes:
       - application/json
@@ -3905,7 +3905,7 @@ paths:
             $ref: '#/definitions/model.SimpleMsg'
       summary: Create or update a label for a resource
       tags:
-      - '[Label] Label Management'
+      - '[Infra Resource] Common Utility'
   /label/{labelType}/{uuid}/{key}:
     delete:
       consumes:
@@ -3945,7 +3945,7 @@ paths:
             $ref: '#/definitions/model.SimpleMsg'
       summary: Remove a label from a resource
       tags:
-      - '[Label] Label Management'
+      - '[Infra Resource] Common Utility'
   /loadCommonResource:
     get:
       consumes:
@@ -9269,7 +9269,7 @@ paths:
             $ref: '#/definitions/model.SimpleMsg'
       summary: Get resources by label selector
       tags:
-      - '[Label] Label Management'
+      - '[Infra Resource] Common Utility'
   /stream-response/ns/{nsId}/mci/{mciId}/vpn/{vpnId}:
     delete:
       consumes:
