@@ -2102,11 +2102,6 @@ definitions:
     - TbK8sNodeGroupDeleting
   model.TbMciDynamicReq:
     properties:
-      cidrBlock:
-        description: CidrBlock is a logical address block for the MCIS and is subnetted
-          for vNets and subnets
-        example: 10.10.0.0/16
-        type: string
       description:
         example: Made in CB-TB
         type: string
@@ -2440,6 +2435,21 @@ definitions:
         example: g1
         type: string
     type: object
+  model.TbRegisterVNetReq:
+    properties:
+      connectionName:
+        type: string
+      cspVNetId:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - connectionName
+    - cspVNetId
+    - name
+    type: object
   model.TbScaleOutSubGroupReq:
     properties:
       numVMsToAdd:
@@ -2700,11 +2710,19 @@ definitions:
         items:
           $ref: '#/definitions/model.BastionNode'
         type: array
+      connectionName:
+        type: string
+      cspSubnetId:
+        type: string
+      cspSubnetName:
+        type: string
+      cspVNetId:
+        type: string
+      cspVNetName:
+        type: string
       description:
         type: string
       id:
-        type: string
-      idFromCsp:
         type: string
       ipv4_CIDR:
         type: string
@@ -2714,26 +2732,33 @@ definitions:
         type: array
       name:
         type: string
+      status:
+        type: string
+      tagList:
+        items:
+          $ref: '#/definitions/model.KeyValue'
+        type: array
       uuid:
         description: uuid is universally unique identifier for the resource
         type: string
-    required:
-    - ipv4_CIDR
-    - name
+      zone:
+        type: string
     type: object
   model.TbSubnetReq:
     properties:
       description:
         type: string
-      idFromCsp:
-        type: string
       ipv4_CIDR:
+        example: 10.0.1.0/24
         type: string
-      keyValueList:
+      name:
+        example: subnet-01
+        type: string
+      tagList:
         items:
           $ref: '#/definitions/model.KeyValue'
         type: array
-      name:
+      zone:
         type: string
     required:
     - ipv4_CIDR
@@ -2782,6 +2807,10 @@ definitions:
           string can be used) for special System purpose
         example: Managed by CB-Tumblebug
         type: string
+      tagList:
+        items:
+          $ref: '#/definitions/model.KeyValue'
+        type: array
       uuid:
         description: uuid is universally unique identifier for the resource
         type: string
@@ -2789,18 +2818,24 @@ definitions:
   model.TbVNetReq:
     properties:
       cidrBlock:
+        example: 10.0.0.0/16
         type: string
       connectionName:
-        type: string
-      cspVNetId:
+        example: aws-ap-northeast-2
         type: string
       description:
+        example: vNet-01 managed by CB-Tumblebug
         type: string
       name:
+        example: vNet-01
         type: string
       subnetInfoList:
         items:
           $ref: '#/definitions/model.TbSubnetReq'
+        type: array
+      tagList:
+        items:
+          $ref: '#/definitions/model.KeyValue'
         type: array
     required:
     - connectionName
@@ -8596,7 +8631,10 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create VNet
+      description: |-
+        Mainly create a new VNet.
+
+        Optionally register the VNet, which is externally created, when the query parameter 'action' is set to 'register'.
       operationId: PostVNet
       parameters:
       - default: default
@@ -8605,24 +8643,16 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: 'Option: [required params for register] connectionName, name,
-          cspVNetId'
-        enum:
-        - register
-        in: query
-        name: option
-        type: string
       - description: Details for an VNet object
         in: body
         name: vNetReq
-        required: true
         schema:
           $ref: '#/definitions/model.TbVNetReq'
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/model.TbVNetInfo'
         "404":
@@ -8633,7 +8663,51 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/model.SimpleMsg'
-      summary: Create VNet
+      summary: Create VNet (or Register VNet)
+      tags:
+      - '[Infra Resource] Network Management'
+    put:
+      consumes:
+      - application/json
+      description: Register the VNet, which is externally created, when the query
+        parameter 'action' is set to 'register'.
+      operationId: RestPutVNet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Inforamation required to register the VNet created externally
+        in: body
+        name: vNetRegisterReq
+        required: true
+        schema:
+          $ref: '#/definitions/model.TbRegisterVNetReq'
+      - description: Action
+        enum:
+        - register
+        in: query
+        name: action
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TbVNetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Register VNet (exterally created)
       tags:
       - '[Infra Resource] Network Management'
   /ns/{nsId}/resources/vNet/{vNetId}:
@@ -8653,6 +8727,13 @@ paths:
         in: path
         name: vNetId
         required: true
+        type: string
+      - description: Delete subnets as well
+        enum:
+        - "true"
+        - "false"
+        in: query
+        name: withSubnets
         type: string
       produces:
       - application/json

@@ -450,19 +450,19 @@ func RunServer(port string) {
 	g.POST("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_resource.RestPostFirewallRules)
 	g.DELETE("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_resource.RestDelFirewallRules)
 
-	g.POST("/:nsId/resources/vNet", rest_resource.RestPostVNet)                  // clear
-	g.POST("/:nsId/resources/vNet/register", rest_resource.RestPostVNetRegister) // clear
-	g.GET("/:nsId/resources/vNet/:vNetId", rest_resource.RestGetVNet)            // clear
+	g.POST("/:nsId/resources/vNet", rest_resource.RestPostVNet)
+	g.GET("/:nsId/resources/vNet/:vNetId", rest_resource.RestGetVNet)
 	g.GET("/:nsId/resources/vNet", rest_resource.RestGetAllResources)
+	g.PUT("/:nsId/resources/vNet", rest_resource.RestPutVNet)
 	g.PUT("/:nsId/resources/vNet/:resourceId", rest_resource.RestPutVNet)
-	g.DELETE("/:nsId/resources/vNet/:vNetId", rest_resource.RestDelVNet) // clear
+	g.DELETE("/:nsId/resources/vNet/:vNetId", rest_resource.RestDelVNet)
 	g.DELETE("/:nsId/resources/vNet", rest_resource.RestDelAllResources)
 
 	g.POST("/:nsId/resources/vNet/:vNetId/subnet", rest_resource.RestPostSubnet)
 	// g.GET("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_resource.RestGetSubnet)
 	// g.GET("/:nsId/resources/vNet/:vNetId/subnet", rest_resource.RestGetAllSubnet)
 	// g.PUT("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_resource.RestPutSubnet)
-	// g.DELETE("/:nsId/resources/vNet/:parentResourceId/subnet/:childResourceId", rest_resource.RestDelChildResource)
+	g.DELETE("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_resource.RestDelSubnet)
 	// g.DELETE("/:nsId/resources/vNet/:vNetId/subnet", rest_resource.RestDelAllSubnet)
 
 	/*

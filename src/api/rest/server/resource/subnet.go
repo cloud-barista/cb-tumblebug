@@ -15,12 +15,14 @@ limitations under the License.
 package resource
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // RestPostSubnet godoc
@@ -38,20 +40,38 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet [post]
 func RestPostSubnet(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
+	// [Input]
+	// nsId and vNetId will be checked inside of the DeleteVNet function
 	nsId := c.Param("nsId")
-	vNetId := c.Param("vNetId")
-
-	u := &model.TbSubnetReq{}
-	if err := c.Bind(u); err != nil {
-		return err
+	if err := common.CheckString(nsId); err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	content, err := resource.CreateSubnet(nsId, vNetId, *u, false)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	vNetId := c.Param("vNetId")
+	if err := common.CheckString(vNetId); err != nil {
+		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	reqt := model.TbSubnetReq{}
+	if err := c.Bind(reqt); err != nil {
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Process]
+	resp, err := resource.CreateSubnet(nsId, vNetId, reqt)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	return c.JSON(http.StatusCreated, resp)
 }
 
 /* function RestPutSubnet not yet implemented
@@ -131,8 +151,38 @@ func RestGetAllSubnet(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId} [delete]
 func RestDelSubnet(c echo.Context) error {
-	// This is a dummy function for Swagger.
-	return nil
+
+	// [Input]
+	// nsId and vNetId will be checked inside of the DeleteVNet function
+	nsId := c.Param("nsId")
+	if err := common.CheckString(nsId); err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	vNetId := c.Param("vNetId")
+	if err := common.CheckString(vNetId); err != nil {
+		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+	subnetId := c.Param("subnetId")
+	if err := common.CheckString(subnetId); err != nil {
+		errMsg := fmt.Errorf("invalid subnetId (%s)", subnetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	// [Process]
+	resp, err := resource.DeleteSubnet(nsId, vNetId, subnetId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	return c.JSON(http.StatusCreated, resp)
 }
 
 /*

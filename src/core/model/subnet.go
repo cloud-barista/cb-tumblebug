@@ -16,24 +16,30 @@ package model
 
 // TbSubnetReq is a struct that represents TB subnet object.
 type TbSubnetReq struct { // Tumblebug
-	Name         string     `json:"name,omitempty" validate:"required"`
-	IdFromCsp    string     `json:"idFromCsp,omitempty"`
-	IPv4_CIDR    string     `json:"ipv4_CIDR" validate:"required"`
-	KeyValueList []KeyValue `json:"keyValueList,omitempty"`
-	Description  string     `json:"description,omitempty"`
-	Zone         string     `json:"zone,omitempty"`
-	TagList      []KeyValue `json:"tagList,omitempty"`
+	Name        string     `json:"name" validate:"required" example:"subnet-01"`
+	IPv4_CIDR   string     `json:"ipv4_CIDR" validate:"required" example:"10.0.1.0/24"`
+	Zone        string     `json:"zone,omitempty"`
+	TagList     []KeyValue `json:"tagList,omitempty"`
+	Description string     `json:"description,omitempty"`
+	// KeyValueList []KeyValue `json:"keyValueList,omitempty"`
+	// IdFromCsp    string     `json:"idFromCsp,omitempty"`
 }
 
 // TbSubnetInfo is a struct that represents TB subnet object.
 type TbSubnetInfo struct { // Tumblebug
-	Id   string
-	Name string `validate:"required"`
-	// uuid is universally unique identifier for the resource
-	Uuid         string
-	IdFromCsp    string
-	IPv4_CIDR    string `validate:"required"`
-	BastionNodes []BastionNode
-	KeyValueList []KeyValue
-	Description  string
+	Id             string        `json:"id"`
+	Name           string        `json:"name"`
+	Uuid           string        `json:"uuid,omitempty"` // uuid is universally unique identifier for the resource
+	ConnectionName string        `json:"connectionName"`
+	CspVNetId      string        `json:"cspVNetId"`
+	CspVNetName    string        `json:"cspVNetName"`
+	CspSubnetId    string        `json:"cspSubnetId"`
+	CspSubnetName  string        `json:"cspSubnetName"`
+	Status         string        `json:"status"`
+	IPv4_CIDR      string        `json:"ipv4_CIDR"`
+	Zone           string        `json:"zone,omitempty"`
+	TagList        []KeyValue    `json:"tagList,omitempty"`
+	BastionNodes   []BastionNode `json:"bastionNodes,omitempty"`
+	KeyValueList   []KeyValue    `json:"keyValueList,omitempty"`
+	Description    string        `json:"description"`
 }

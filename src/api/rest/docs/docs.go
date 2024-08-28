@@ -7769,8 +7769,8 @@ const docTemplate = `{
                     }
                 }
             },
-            "post": {
-                "description": "Create VNet",
+            "put": {
+                "description": "Register the VNet, which is externally created, when the query parameter 'action' is set to 'register'.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7780,7 +7780,70 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Network Management"
                 ],
-                "summary": "Create VNet",
+                "summary": "Register VNet (exterally created)",
+                "operationId": "RestPutVNet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Inforamation required to register the VNet created externally",
+                        "name": "vNetRegisterReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.TbRegisterVNetReq"
+                        }
+                    },
+                    {
+                        "enum": [
+                            "register"
+                        ],
+                        "type": "string",
+                        "description": "Action",
+                        "name": "action",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.TbVNetInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Mainly create a new VNet.\n\nOptionally register the VNet, which is externally created, when the query parameter 'action' is set to 'register'.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Network Management"
+                ],
+                "summary": "Create VNet (or Register VNet)",
                 "operationId": "PostVNet",
                 "parameters": [
                     {
@@ -7792,27 +7855,17 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "enum": [
-                            "register"
-                        ],
-                        "type": "string",
-                        "description": "Option: [required params for register] connectionName, name, cspVNetId",
-                        "name": "option",
-                        "in": "query"
-                    },
-                    {
                         "description": "Details for an VNet object",
                         "name": "vNetReq",
                         "in": "body",
-                        "required": true,
                         "schema": {
                             "$ref": "#/definitions/model.TbVNetReq"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/model.TbVNetInfo"
                         }
@@ -7957,6 +8010,16 @@ const docTemplate = `{
                         "name": "vNetId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "true",
+                            "false"
+                        ],
+                        "type": "string",
+                        "description": "Delete subnets as well",
+                        "name": "withSubnets",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -12210,11 +12273,6 @@ const docTemplate = `{
                 "vm"
             ],
             "properties": {
-                "cidrBlock": {
-                    "description": "CidrBlock is a logical address block for the MCIS and is subnetted for vNets and subnets",
-                    "type": "string",
-                    "example": "10.10.0.0/16"
-                },
                 "description": {
                     "type": "string",
                     "example": "Made in CB-TB"
@@ -12657,6 +12715,28 @@ const docTemplate = `{
                 }
             }
         },
+        "model.TbRegisterVNetReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "cspVNetId",
+                "name"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspVNetId": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "model.TbScaleOutSubGroupReq": {
             "type": "object",
             "required": [
@@ -13025,10 +13105,6 @@ const docTemplate = `{
         },
         "model.TbSubnetInfo": {
             "type": "object",
-            "required": [
-                "ipv4_CIDR",
-                "name"
-            ],
             "properties": {
                 "bastionNodes": {
                     "type": "array",
@@ -13036,13 +13112,25 @@ const docTemplate = `{
                         "$ref": "#/definitions/model.BastionNode"
                     }
                 },
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspSubnetId": {
+                    "type": "string"
+                },
+                "cspSubnetName": {
+                    "type": "string"
+                },
+                "cspVNetId": {
+                    "type": "string"
+                },
+                "cspVNetName": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
-                },
-                "idFromCsp": {
                     "type": "string"
                 },
                 "ipv4_CIDR": {
@@ -13057,8 +13145,20 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "status": {
+                    "type": "string"
+                },
+                "tagList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
                 "uuid": {
                     "description": "uuid is universally unique identifier for the resource",
+                    "type": "string"
+                },
+                "zone": {
                     "type": "string"
                 }
             }
@@ -13073,19 +13173,21 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
-                "idFromCsp": {
-                    "type": "string"
-                },
                 "ipv4_CIDR": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "10.0.1.0/24"
                 },
-                "keyValueList": {
+                "name": {
+                    "type": "string",
+                    "example": "subnet-01"
+                },
+                "tagList": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.KeyValue"
                     }
                 },
-                "name": {
+                "zone": {
                     "type": "string"
                 }
             }
@@ -13152,6 +13254,12 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
+                "tagList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
                 "uuid": {
                     "description": "uuid is universally unique identifier for the resource",
                     "type": "string"
@@ -13166,24 +13274,31 @@ const docTemplate = `{
             ],
             "properties": {
                 "cidrBlock": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "10.0.0.0/16"
                 },
                 "connectionName": {
-                    "type": "string"
-                },
-                "cspVNetId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
                 },
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "vNet-01 managed by CB-Tumblebug"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "vNet-01"
                 },
                 "subnetInfoList": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.TbSubnetReq"
+                    }
+                },
+                "tagList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
                     }
                 }
             }
