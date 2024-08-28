@@ -18,11 +18,11 @@ package model
 type TbVNetReq struct { // Tumblebug
 	Name           string        `json:"name" validate:"required" example:"vNet-01"`
 	ConnectionName string        `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
-	CidrBlock      string        `json:"cidrBlock" example:"10.0.0.0/24"`
+	CidrBlock      string        `json:"cidrBlock" example:"10.0.0.0/16"`
 	SubnetInfoList []TbSubnetReq `json:"subnetInfoList"`
 	Description    string        `json:"description" example:"vNet-01 managed by CB-Tumblebug"`
-	CspVNetId      string        `json:"cspVNetId" example:""`
 	TagList        []KeyValue    `json:"tagList,omitempty"`
+	// CspVNetId      string        `json:"cspVNetId" example:""`
 }
 
 // TbRegisterVNetReq TbRegisterVNetReq contains the information needed to register a vNet
@@ -36,10 +36,9 @@ type TbRegisterVNetReq struct {
 
 // TbVNetInfo is a struct that represents TB vNet object.
 type TbVNetInfo struct { // Tumblebug
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	// uuid is universally unique identifier for the resource
-	Uuid                 string
+	Id                   string         `json:"id"`
+	Name                 string         `json:"name"`
+	Uuid                 string         `json:"uuid,omitempty"` // uuid is universally unique identifier for the resource
 	ConnectionName       string         `json:"connectionName"`
 	CidrBlock            string         `json:"cidrBlock"`
 	SubnetInfoList       []TbSubnetInfo `json:"subnetInfoList"`

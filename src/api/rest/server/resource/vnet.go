@@ -15,80 +15,118 @@ limitations under the License.
 package resource
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // RestPostVNet godoc
 // @ID PostVNet
-// @Summary Create VNet
-// @Description Create VNet
+// @Summary Create VNet (or Register VNet)
+// @Description Mainly create a new VNet.
+// @Description
+// @Description Optionally register the VNet, which is externally created, when the query parameter 'action' is set to 'register'.
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param vNetReq body resource.TbVNetReq true "Details for an VNet object"
-// @Param vNetReq body model.TbVNetReq true "Details for an VNet object"
-// @Success 200 {object} model.TbVNetInfo
+// @Param vNetReq body model.TbVNetReq false "Details for an VNet object"
+// @Success 201 {object} model.TbVNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet [post]
 func RestPostVNet(c echo.Context) error {
 
-	// [Note] Input
-	// nsId and req will be checked inside of the CreateVNet function
+	// [Input]
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
-	req := &model.TbVNetReq{}
-	if err := c.Bind(req); err != nil {
+	if err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	// Create vNet
+	// [Input] Bind the request body
+	reqt := &model.TbVNetReq{}
+	if err := c.Bind(reqt); err != nil {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// [Note] Process
-	content, err := resource.CreateVNet(nsId, req)
+	// [Validation] Validate the request
+	err = resource.ValidateVNetReq(reqt)
 	if err != nil {
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Process] Create new vNet
+	resp, err := resource.CreateVNet(nsId, reqt)
+	if err != nil {
+		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// [Note] Output
-	return c.JSON(http.StatusCreated, content)
+	// [Output] Return the created vNet info
+	return c.JSON(http.StatusCreated, resp)
 }
 
-// RestPostVNetRegister godoc
-// @ID PostVNetRegister
-// @Summary Register the VNet created externally
-// @Description Register the VNet created externally
+// RestPutVNet godoc
+// @ID RestPutVNet
+// @Summary Register VNet (exterally created)
+// @Description Register the VNet, which is externally created, when the query parameter 'action' is set to 'register'.
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetRegisterReq body model.TbRegisterVNetReq true "Inforamation required to register the VNet created externally"
-// @Success 200 {object} model.TbVNetInfo
+// @Param action query string true "Action" Enums(register)
+// @Success 201 {object} model.TbVNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/resources/vNet/register [post]
-func RestPostVNetRegister(c echo.Context) error {
+// @Router /ns/{nsId}/resources/vNet [put]
+func RestPutVNet(c echo.Context) error {
 
-	// [Note] Input
-	// nsId and req will be checked inside of the RegisterVNet function
+	// [Input]
 	nsId := c.Param("nsId")
-	req := &model.TbRegisterVNetReq{}
-	if err := c.Bind(req); err != nil {
+	err := common.CheckString(nsId)
+	if err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	action := c.QueryParam("action")
+	if action == "" {
+		// Error
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: "action is required"})
+	} else if action != "" && action != "register" {
+		// Error
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: "action '" + action + "' not supported"})
+	}
+
+	// Register vNet if the action is 'register'
+	// [Input] Bind the request body
+	reqt := &model.TbRegisterVNetReq{}
+	if err := c.Bind(reqt); err != nil {
+		log.Warn().Err(err).Msgf("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// [Note] Process
-	content, err := resource.RegisterVNet(nsId, req)
+	// [Process] Register the VNet created externally
+	resp, err := resource.RegisterVNet(nsId, reqt)
 	if err != nil {
+		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// [Note] Output
-	return c.JSON(http.StatusCreated, content)
+	// [Output] Return the registered vNet info
+	return c.JSON(http.StatusCreated, resp)
 }
 
 /*
@@ -107,11 +145,11 @@ func RestPostVNetRegister(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [put]
 */
-func RestPutVNet(c echo.Context) error {
-	//nsId := c.Param("nsId")
+// func RestPutVNet(c echo.Context) error {
+// 	//nsId := c.Param("nsId")
 
-	return nil
-}
+// 	return nil
+// }
 
 // RestGetVNet godoc
 // @ID GetVNet
@@ -127,19 +165,31 @@ func RestPutVNet(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [get]
 func RestGetVNet(c echo.Context) error {
-	// [Note] Input
+	// [Input]
 	// nsId and vNetId will be checked inside of the DeleteVNet function
 	nsId := c.Param("nsId")
-	vNetId := c.Param("vNetId")
-
-	// [Note] Process
-	content, err := resource.GetVNet(nsId, vNetId)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, common.SimpleMsg{Message: err.Error()})
+	if err := common.CheckString(nsId); err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	// [Note] Output
-	return c.JSON(http.StatusCreated, content)
+	vNetId := c.Param("vNetId")
+	if err := common.CheckString(vNetId); err != nil {
+		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	// [Process]
+	resp, err := resource.GetVNet(nsId, vNetId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	return c.JSON(http.StatusOK, resp)
 }
 
 // Response structure for RestGetAllVNet
@@ -176,23 +226,46 @@ func RestGetAllVNet(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
+// @Param withSubnets query string false "Delete subnets as well" Enums(true,false)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [delete]
 func RestDelVNet(c echo.Context) error {
-	// [Note] Input
+	// [Input]
 	// nsId and vNetId will be checked inside of the DeleteVNet function
 	nsId := c.Param("nsId")
-	vNetId := c.Param("vNetId")
-
-	// [Note] Process
-	content, err := resource.DeleteVNet(nsId, vNetId)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, common.SimpleMsg{Message: err.Error()})
+	if err := common.CheckString(nsId); err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	// [Note] Output
-	return c.JSON(http.StatusCreated, content)
+	vNetId := c.Param("vNetId")
+	if err := common.CheckString(vNetId); err != nil {
+		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	withSubnets := c.QueryParam("withSubnets")
+	if withSubnets != "" && withSubnets != "true" && withSubnets != "false" {
+		errMsg := fmt.Errorf("invalid option, withSubnets (%s)", withSubnets)
+		log.Warn().Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+	if withSubnets == "" {
+		withSubnets = "false"
+	}
+
+	// [Process]
+	content, err := resource.DeleteVNet(nsId, vNetId, withSubnets)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	return c.JSON(http.StatusOK, content)
 }
 
 // RestDelAllVNet godoc
