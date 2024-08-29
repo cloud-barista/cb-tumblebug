@@ -2093,6 +2093,240 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/externalResources/vNet": {
+            "post": {
+                "description": "Register the VNet, which is externally created",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Network Management"
+                ],
+                "summary": "Register VNet (exterally created)",
+                "operationId": "RestPostRegisterVNet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Inforamation required to register the VNet created externally",
+                        "name": "vNetRegisterReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.TbRegisterVNetReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.TbVNetInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/externalResources/vNet/{vNetId}": {
+            "delete": {
+                "description": "Deregister the VNet, which is externally created",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Network Management"
+                ],
+                "summary": "Deregister VNet (exterally created)",
+                "operationId": "RestPostDeregisterVNet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VNet ID",
+                        "name": "vNetId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "true",
+                            "false"
+                        ],
+                        "type": "string",
+                        "description": "Delete subnets as well",
+                        "name": "withSubnets",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.TbVNetInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/externalResources/vNet/{vNetId}/subnet": {
+            "post": {
+                "description": "Register Subnet, which is externally created",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Network Management"
+                ],
+                "summary": "Register Subnet (externally created)",
+                "operationId": "PostRegisterSubnet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VNet ID",
+                        "name": "vNetId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an Subnet object",
+                        "name": "subnetReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.TbRegisterSubnetReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.TbSubnetInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/externalResources/vNet/{vNetId}/subnet/{subnetId}": {
+            "delete": {
+                "description": "Deregister Subnet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Network Management"
+                ],
+                "summary": "Deregister Subnet",
+                "operationId": "DeleteDeregisterSubnet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VNet ID",
+                        "name": "vNetId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Subnet ID",
+                        "name": "subnetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/installBenchmarkAgent/mci/{mciId}": {
             "post": {
                 "description": "Install the benchmark agent to specified MCI",
@@ -7769,71 +8003,8 @@ const docTemplate = `{
                     }
                 }
             },
-            "put": {
-                "description": "Register the VNet, which is externally created, when the query parameter 'action' is set to 'register'.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Network Management"
-                ],
-                "summary": "Register VNet (exterally created)",
-                "operationId": "RestPutVNet",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Inforamation required to register the VNet created externally",
-                        "name": "vNetRegisterReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.TbRegisterVNetReq"
-                        }
-                    },
-                    {
-                        "enum": [
-                            "register"
-                        ],
-                        "type": "string",
-                        "description": "Action",
-                        "name": "action",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/model.TbVNetInfo"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            },
             "post": {
-                "description": "Mainly create a new VNet.\n\nOptionally register the VNet, which is externally created, when the query parameter 'action' is set to 'register'.",
+                "description": "Create a new VNet",
                 "consumes": [
                     "application/json"
                 ],
@@ -7843,7 +8014,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Network Management"
                 ],
-                "summary": "Create VNet (or Register VNet)",
+                "summary": "Create VNet",
                 "operationId": "PostVNet",
                 "parameters": [
                     {
@@ -8039,6 +8210,57 @@ const docTemplate = `{
             }
         },
         "/ns/{nsId}/resources/vNet/{vNetId}/subnet": {
+            "get": {
+                "description": "List all subnets (metadata)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Network Management"
+                ],
+                "summary": "List all subnets (metadata)",
+                "operationId": "GetAllSubnet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VNet ID",
+                        "name": "vNetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resource.RestGetAllSubnetResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Create Subnet",
                 "consumes": [
@@ -8101,6 +8323,64 @@ const docTemplate = `{
             }
         },
         "/ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}": {
+            "get": {
+                "description": "Get Subnet (metadata)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Network Management"
+                ],
+                "summary": "Get Subnet (metadata)",
+                "operationId": "GetSubnet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VNet ID",
+                        "name": "vNetId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Subnet ID",
+                        "name": "subnetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.TbSubnetInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "description": "Delete Subnet",
                 "consumes": [
@@ -12715,6 +12995,31 @@ const docTemplate = `{
                 }
             }
         },
+        "model.TbRegisterSubnetReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "cspSubnetId",
+                "name"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspSubnetId": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
         "model.TbRegisterVNetReq": {
             "type": "object",
             "required": [
@@ -13171,7 +13476,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "subnet00 managed by CB-Tumblebug"
                 },
                 "ipv4_CIDR": {
                     "type": "string",
@@ -13179,7 +13485,7 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string",
-                    "example": "subnet-01"
+                    "example": "subnet00"
                 },
                 "tagList": {
                     "type": "array",
@@ -13283,11 +13589,11 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string",
-                    "example": "vNet-01 managed by CB-Tumblebug"
+                    "example": "vnet00 managed by CB-Tumblebug"
                 },
                 "name": {
                     "type": "string",
-                    "example": "vNet-01"
+                    "example": "vnet00"
                 },
                 "subnetInfoList": {
                     "type": "array",
@@ -13892,6 +14198,17 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.TbSshKeyInfo"
+                    }
+                }
+            }
+        },
+        "resource.RestGetAllSubnetResponse": {
+            "type": "object",
+            "properties": {
+                "subnetInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbSubnetInfo"
                     }
                 }
             }

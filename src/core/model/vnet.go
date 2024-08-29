@@ -16,11 +16,11 @@ package model
 
 // TbVNetReq is a struct to handle 'Create vNet' request toward CB-Tumblebug.
 type TbVNetReq struct { // Tumblebug
-	Name           string        `json:"name" validate:"required" example:"vNet-01"`
+	Name           string        `json:"name" validate:"required" example:"vnet00"`
 	ConnectionName string        `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
 	CidrBlock      string        `json:"cidrBlock" example:"10.0.0.0/16"`
 	SubnetInfoList []TbSubnetReq `json:"subnetInfoList"`
-	Description    string        `json:"description" example:"vNet-01 managed by CB-Tumblebug"`
+	Description    string        `json:"description" example:"vnet00 managed by CB-Tumblebug"`
 	TagList        []KeyValue    `json:"tagList,omitempty"`
 	// CspVNetId      string        `json:"cspVNetId" example:""`
 }
@@ -29,8 +29,8 @@ type TbVNetReq struct { // Tumblebug
 // that has already been created via another external method.
 type TbRegisterVNetReq struct {
 	ConnectionName string `json:"connectionName" validate:"required"`
-	Name           string `json:"name" validate:"required"`
 	CspVNetId      string `json:"cspVNetId" validate:"required"`
+	Name           string `json:"name" validate:"required"`
 	Description    string `json:"description,omitempty"`
 }
 

@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
@@ -33,20 +34,15 @@ type NetworkStatus string
 
 const (
 
-	// Create Operations
-	NetworkOnConfiguring NetworkStatus = "OnConfiguring" // Resources are being configured.
+	// CRUD operations
+	NetworkOnConfiguring NetworkStatus = "Configuring" // Resources are being configured.
+	NetworkOnReading     NetworkStatus = "Reading"     // The network information is being read.
+	NetworkOnUpdating    NetworkStatus = "Updating"    // The network is being updated.
+	NetworkOnDeleting    NetworkStatus = "Deleting"    // The network is being deleted.
 
-	// Read Operations
-	NetworkOnReading NetworkStatus = "OnReading" // The network information is being read.
-
-	// Update Operations
-	NetworkOnUpdating NetworkStatus = "OnUpdating" // The network is being updated.
-
-	// Delete Operations
-	NetworkOnDeleting NetworkStatus = "OnDeleting" // The network is being deleted.
-
-	// Register Operations
-	NetworkOnRegistering NetworkStatus = "OnRegistering" // The network is being registered.
+	// Register/deregister operations
+	NetworkOnRegistering   NetworkStatus = "Registering"  // The network is being registered.
+	NetworkOnDeregistering NetworkStatus = "Dergistering" // The network is being registered.
 
 	// Available status
 	NetworkAvailable NetworkStatus = "Available" // The network is fully created and ready for use.
@@ -91,12 +87,32 @@ func ValidateVNetReq(vNetReq *model.TbVNetReq) error {
 	}
 
 	// Validate if vNet has at least one subnet or not
-	log.Debug().Msgf("vNetReq.SubnetInfoList: %v", vNetReq.SubnetInfoList)
-	log.Debug().Msgf("len(vNetReq.SubnetInfoList): %d", len(vNetReq.SubnetInfoList))
 	if len(vNetReq.SubnetInfoList) == 0 {
 		err := fmt.Errorf("at least one subnet is required")
 		log.Error().Err(err).Msg("")
 		return err
+	}
+
+	// Validate zone in each subnet
+	parts := strings.SplitN(vNetReq.ConnectionName, "-", 2)
+	provider := parts[0]
+	region := parts[1]
+
+	regionDetail, err := common.GetRegion(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	zones := regionDetail.Zones
+	for _, subnetInfo := range vNetReq.SubnetInfoList {
+		if subnetInfo.Zone != "" {
+			if !ContainsZone(zones, subnetInfo.Zone) {
+				err := fmt.Errorf("invalid zone: %s", subnetInfo.Zone)
+				log.Error().Err(err).Msg("")
+				return err
+			}
+		}
 	}
 
 	// A network object for validation
@@ -126,63 +142,78 @@ func ValidateVNetReq(vNetReq *model.TbVNetReq) error {
 	return nil
 }
 
+func ContainsZone(zones []string, zone string) bool {
+	for _, z := range zones {
+		if z == zone {
+			return true
+		}
+	}
+	return false
+}
+
 // The spiderXxx structs are used to call the Spider REST API
 // Ref:
 // 2024-08-22 https://github.com/cloud-barista/cb-spider/blob/master/api-runtime/rest-runtime/VPC-SubnetRest.go
 // 2024-08-22 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VPCHandler.go
 
 // Synchronized the request body with the Spider API
-type spiderVpcRegisterReq struct {
-	ConnectionName string // Connection name for the cloud provider
-	ReqInfo        spiderVpcRegisterReqInfo
+
+// ConnectionRequest represents the request body for common use.
+type spiderConnectionRequest struct {
+	ConnectionName string `json:"ConnectionName" validate:"required" example:"aws-connection"`
 }
 
-type spiderVpcRegisterReqInfo struct {
-	Name  string // Name of the VPC
-	CSPId string // CSP ID of the VPC
+// VPCRegisterRequest represents the request body for registering a VPC.
+type spiderVPCRegisterRequest struct {
+	ConnectionName string                       `json:"ConnectionName" validate:"required" example:"aws-connection"`
+	ReqInfo        spiderVPCRegisterRequestInfo `json:"ReqInfo" validate:"required"`
 }
 
-type spiderVpcCreateReq struct {
-	ConnectionName  string // Connection name for the cloud provider
-	IDTransformMode string // ON | Off, default is ON
-	ReqInfo         spiderVpcCreateReqInfo
+type spiderVPCRegisterRequestInfo struct {
+	Name  string `json:"Name" validate:"required" example:"vpc-01"`
+	CSPId string `json:"CSPId" validate:"required" example:"csp-vpc-1234"`
 }
 
-type spiderVpcCreateReqInfo struct {
-	Name           string                   // Name of the VPC
-	IPv4_CIDR      string                   // CIDR block of the VPC
-	SubnetInfoList []spiderSubnetAddReqInfo // List of Subnets associated with the VPC
-	TagList        []model.KeyValue         // List of tags for the VPC
+// CreateVPCRequest represents the request body for creating a VPC.
+type spiderCreateVPCRequest struct {
+	ConnectionName  string                     `json:"ConnectionName" validate:"required" example:"aws-connection"`
+	IDTransformMode string                     `json:"IDTransformMode,omitempty" validate:"omitempty" example:"ON"` // ON: transform CSP ID, OFF: no-transform CSP ID
+	ReqInfo         spiderCreateVPCRequestInfo `json:"ReqInfo" validate:"required"`
 }
 
-type spiderVpcListReq struct {
-	ConnectionName string // Connection name for the cloud provider
+type spiderCreateVPCRequestInfo struct {
+	Name           string                       `json:"Name" validate:"required" example:"vpc-01"`
+	IPv4_CIDR      string                       `json:"IPv4_CIDR" validate:"omitempty"` // Some CSPs unsupported VPC CIDR
+	SubnetInfoList []spiderAddSubnetRequestInfo `json:"SubnetInfoList" validate:"required"`
+	TagList        []model.KeyValue             `json:"TagList,omitempty" validate:"omitempty"`
 }
 
-type spiderVpcGetReq struct {
-	ConnectionName string // Connection name for the cloud provider
-}
+// type spiderListVPCReq struct {
+// 	ConnectionName string `json:"ConnectionName" query:"ConnectionName" example:"aws-connection"`
+// }
+
+// type spiderListVPCResponse struct {
+// 	Result []spiderVPCInfo `json:"vpc" validate:"required" description:"A list of VPC information"`
+// }
 
 type spiderVpcDeleteReq struct {
 	ConnectionName string // Connection name for the cloud provider
 }
 
-type spiderCspVpcDeleteReq struct {
-	ConnectionName string // Connection name for the cloud provider
-}
+// type spiderCspVpcDeleteReq struct {
+// 	ConnectionName string // Connection name for the cloud provider
+// }
 
 type spiderBooleanInfoResp struct {
 	Result string // Result of the operation
 }
 
-type spiderVpcGetSgOnwerReq struct {
-	ConnectionName string // Connection name for the cloud provider
-	ReqInfo        spiderVpcGetSgOnwerReqInfo
-}
-
-type spiderVpcGetSgOnwerReqInfo struct {
-	CSPId string // CSP ID of the VPC
-}
+// type spiderGetSGOwnerVPCRequest struct {
+// 	ConnectionName string `json:"ConnectionName" validate:"required" example:"aws-connection"`
+// 	ReqInfo        struct {
+// 		CSPId string `json:"CSPId" validate:"required" example:"csp-sg-1234"`
+// 	} `json:"ReqInfo" validate:"required"`
+// }
 
 /*
 	Based on polymorphism, the following Spider-related structs have been designed.
@@ -212,14 +243,13 @@ type spiderVpcGetSgOnwerReqInfo struct {
 // [Note] Use the combined structs for Spider API response bodies
 // The SpiderVpcInfo structure is a union of the properties in
 // Spider's 'vpcRegisterReq', 'vpcCreateReq', and 'VPCInfo' structs.
-type spiderVpcInfo struct {
-	IId            model.IID          // {NameId, SystemId}
-	IPv4_CIDR      string             // CIDR block of the VPC
-	CspId          string             // CSP ID of the VPC
-	SubnetInfoList []spiderSubnetInfo // List of Subnets associated with the VPC
-	TagList        []model.KeyValue   // List of tags for the VPC
-	KeyValueList   []model.KeyValue   // List of key-value pairs indicating CSP-side response
-	// Name           string             // Name of the VPC
+type spiderVPCInfo struct {
+	IId            model.IID          `json:"IId" validate:"required"` // {NameId, SystemId}
+	IPv4_CIDR      string             `json:"IPv4_CIDR" validate:"required" example:"10.0.0.0/16" description:"The IPv4 CIDR block for the VPC"`
+	SubnetInfoList []spiderSubnetInfo `json:"SubnetInfoList" validate:"required" description:"A list of subnet information associated with this VPC"`
+
+	TagList      []model.KeyValue `json:"TagList,omitempty" validate:"omitempty" description:"A list of tags associated with this VPC"`
+	KeyValueList []model.KeyValue `json:"KeyValueList,omitempty" validate:"omitempty" description:"Additional key-value pairs associated with this VPC"`
 }
 
 // CreateVNet accepts vNet creation request, creates and returns an TB vNet object
@@ -227,7 +257,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	log.Info().Msg("CreateVNet")
 
 	// vNet objects
-	var emptyResp model.TbVNetInfo
+	var emptyRet model.TbVNetInfo
 	var vNetInfo model.TbVNetInfo
 
 	// Set the resource type
@@ -238,16 +268,16 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 	err = validate.Struct(vNetReq)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			log.Error().Err(err).Msg("")
-			return emptyResp, err
+			return emptyRet, err
 		}
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Set the vNet object
@@ -266,12 +296,12 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	if exists {
 		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("already exists, vNet: %s", vNetInfo.Id)
-		return emptyResp, err
+		return emptyRet, err
 	}
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("failed to check if the vNet (%s) exists or not", vNetInfo.Id)
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Note: Set subnetInfoList in vNetInfo in advance
@@ -296,16 +326,16 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 	err = kvstore.Put(vNetKey, string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Set request body to create a vNet and subnets
-	spReqt := spiderVpcCreateReq{}
+	spReqt := spiderCreateVPCRequest{}
 	spReqt.ConnectionName = vNetReq.ConnectionName
 	spReqt.ReqInfo.Name = uuid
 	spReqt.ReqInfo.IPv4_CIDR = vNetReq.CidrBlock
@@ -313,7 +343,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	// Note: Use the subnets in the vNetInfo object (instead of the vNetReq object)
 	//       since each subnet UUID must be consistent
 	for _, subnetInfo := range vNetInfo.SubnetInfoList {
-		spReqt.ReqInfo.SubnetInfoList = append(spReqt.ReqInfo.SubnetInfoList, spiderSubnetAddReqInfo{
+		spReqt.ReqInfo.SubnetInfoList = append(spReqt.ReqInfo.SubnetInfoList, spiderAddSubnetRequestInfo{
 			Name:      subnetInfo.Uuid,
 			IPv4_CIDR: subnetInfo.IPv4_CIDR,
 			Zone:      subnetInfo.Zone,
@@ -325,7 +355,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 
 	client := resty.New()
 	method := "POST"
-	var spResp spiderVpcInfo
+	var spResp spiderVPCInfo
 
 	// API to create a vNet
 	url := fmt.Sprintf("%s/vpc", model.SpiderRestUrl)
@@ -343,7 +373,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Set the vNet object with the response from the Spider
@@ -388,13 +418,13 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	value, err := json.Marshal(vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	err = kvstore.Put(vNetKey, string(value))
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Save subnet objects into the key-value store
@@ -404,13 +434,13 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 		value, err := json.Marshal(subnetInfo)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return emptyResp, err
+			return emptyRet, err
 		}
 
 		err = kvstore.Put(subnetKey, string(value))
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return emptyResp, err
+			return emptyRet, err
 		}
 	}
 
@@ -419,19 +449,19 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	if vNetKv == (kvstore.KeyValue{}) {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetInfo.Id)
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	err = json.Unmarshal([]byte(vNetKv.Value), &vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	return vNetInfo, nil
@@ -441,7 +471,7 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 	log.Info().Msg("GetVNet")
 
 	// vNet object
-	var emptyResp model.TbVNetInfo
+	var emptyRet model.TbVNetInfo
 	var vNetInfo model.TbVNetInfo
 
 	// Set the resource type
@@ -453,43 +483,43 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 	err = common.CheckString(vNetId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Read the stored vNet info
 	keyValue, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	if keyValue == (kvstore.KeyValue{}) {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetId)
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	err = json.Unmarshal([]byte(keyValue.Value), &vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
-	// Create a vNet and subnets
-	spReqt := spiderVpcGetReq{}
-	spReqt.ConnectionName = vNetInfo.ConnectionName
-
+	// Get a vNet and subnets
 	client := resty.New()
 	method := "GET"
-	var spResp spiderVpcInfo
+	spReqt := common.NoBody
+	var spResp spiderVPCInfo
 
 	// API to create a vNet
 	url := fmt.Sprintf("%s/vpc/%s", model.SpiderRestUrl, vNetInfo.CspVNetName)
+	queryParams := "?ConnectionName=" + vNetInfo.ConnectionName
+	url += queryParams
 
 	err = common.ExecuteHttpRequest(
 		client,
@@ -504,7 +534,7 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Set the vNet object with the response from the Spider
@@ -518,13 +548,13 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	err = kvstore.Put(vNetKey, string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	return vNetInfo, nil
@@ -535,8 +565,8 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 	log.Info().Msg("DeleteVNet")
 
 	// vNet object
-	var emptyResp model.SimpleMsg
-	var resp model.SimpleMsg
+	var emptyRet model.SimpleMsg
+	var ret model.SimpleMsg
 
 	// Set the resource type
 	resourceType := model.StrVNet
@@ -545,19 +575,19 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 	err = common.CheckString(vNetId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Validate options: withSubnets
 	if withSubnets != "" && withSubnets != "true" && withSubnets != "false" {
 		errMsg := fmt.Errorf("invalid option, withSubnets (%s)", withSubnets)
 		log.Warn().Msgf(errMsg.Error())
-		return emptyResp, errMsg
+		return emptyRet, errMsg
 	}
 	if withSubnets == "" {
 		withSubnets = "false"
@@ -569,14 +599,14 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 	subnetsKv, err := kvstore.GetKvList(vNetKey + "/subnet")
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 	log.Debug().Msgf("subnetsKv: %+v", subnetsKv)
 
 	if withSubnets == "false" && len(subnetsKv) > 0 {
 		err := fmt.Errorf("the vNet (%s) is in-use, may have subnets", vNetId)
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Delete the subnets associated with the vNet
@@ -585,12 +615,12 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 		err = json.Unmarshal([]byte(kv.Value), &subnet)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return emptyResp, err
+			return emptyRet, err
 		}
 		_, err := DeleteSubnet(nsId, vNetId, subnet.Id)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return emptyResp, err
+			return emptyRet, err
 		}
 	}
 
@@ -598,12 +628,12 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 	vNetKv, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 	if vNetKv == (kvstore.KeyValue{}) {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetId)
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// vNet object
@@ -611,7 +641,7 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 	err = json.Unmarshal([]byte(vNetKv.Value), &vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Set status to 'Deleting'
@@ -620,12 +650,12 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 	err = kvstore.Put(vNetKey, string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// [Via Spider] Delete the vNet
@@ -653,38 +683,38 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 	ok, err := strconv.ParseBool(spResp.Result)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 	if !ok {
 		err := fmt.Errorf("failed to delete the vNet (%s)", vNetId)
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Delete the saved the vNet info
 	err = kvstore.Delete(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// [Output] the message
-	resp.Message = fmt.Sprintf("the subnet (%s) has been deleted", vNetId)
+	ret.Message = fmt.Sprintf("the vNet (%s) has been deleted", vNetId)
 
-	return resp, nil
+	return ret, nil
 }
 
-// RegisterVNet accepts vNet creation request, creates and returns an TB vNet object
+// RegisterVNet accepts vNet registration request, register and returns an TB vNet object
 func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.TbVNetInfo, error) {
-	log.Info().Msg("CreateVNet")
+	log.Info().Msg("RegisterVNet")
 
 	// vNet objects
-	var emptyResp model.TbVNetInfo
+	var emptyRet model.TbVNetInfo
 	var vNetInfo model.TbVNetInfo
 
 	// Set the resource type
@@ -695,16 +725,16 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 	err = validate.Struct(vNetRegisterReq)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			log.Error().Err(err).Msg("")
-			return emptyResp, err
+			return emptyRet, err
 		}
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Set the vNet object
@@ -721,11 +751,11 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 	exists, err := CheckResource(nsId, resourceType, vNetRegisterReq.Name)
 	if exists {
 		err := fmt.Errorf("already exists, vNet: %s", vNetRegisterReq.Name)
-		return emptyResp, err
+		return emptyRet, err
 	}
 	if err != nil {
 		err := fmt.Errorf("failed to check if the vNet (%s) exists or not", vNetRegisterReq.Name)
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// [Set status]
@@ -734,23 +764,23 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 	// Save the current operation status and the vNet object
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	err = kvstore.Put(vNetKey, string(val))
 	if err != nil {
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Register a vNet that has already been created externally
-	spReqt := spiderVpcRegisterReq{}
+	spReqt := spiderVPCRegisterRequest{}
 	spReqt.ConnectionName = vNetRegisterReq.ConnectionName
 	spReqt.ReqInfo.Name = common.GenUid()
 	spReqt.ReqInfo.CSPId = vNetRegisterReq.CspVNetId
 
 	client := resty.New()
 	method := "POST"
-	var spResp spiderVpcInfo
+	var spResp spiderVPCInfo
 
 	// API to register a vNet
 	url := fmt.Sprintf("%s/regvpc", model.SpiderRestUrl)
@@ -775,7 +805,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Set the vNet object with the response from the Spider
@@ -793,8 +823,10 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 
 	// Note: Check one by one and update the vNet object with the response from the Spider
 	//       since the order may differ different between slices
-	for _, spSubnetInfo := range spResp.SubnetInfoList {
+	for i, spSubnetInfo := range spResp.SubnetInfoList {
 		subnet := model.TbSubnetInfo{
+			Id:             fmt.Sprintf("reg-subnet-%02d", i+1),
+			Name:           fmt.Sprintf("reg-subnet-%02d", i+1),
 			ConnectionName: vNetInfo.ConnectionName,
 			CspVNetId:      spResp.IId.SystemId,
 			CspVNetName:    spResp.IId.NameId,
@@ -813,12 +845,12 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 		// Save the subnet object
 		value, err := json.Marshal(subnet)
 		if err != nil {
-			return emptyResp, err
+			return emptyRet, err
 		}
 		err = kvstore.Put(subnetKey, string(value))
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return emptyResp, err
+			return emptyRet, err
 		}
 	}
 
@@ -831,12 +863,12 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 	value, err := json.Marshal(vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 	err = kvstore.Put(vNetKey, string(value))
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	// Check if the vNet info is stored
@@ -845,12 +877,12 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 	if keyValue == (kvstore.KeyValue{}) {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetRegisterReq.Name)
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return emptyResp, err
+		return emptyRet, err
 	}
 
 	err = json.Unmarshal([]byte(keyValue.Value), &vNetInfo)
@@ -858,4 +890,153 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 		log.Error().Err(err).Msg("")
 	}
 	return vNetInfo, nil
+}
+
+// DeregisterVNet accepts vNet unregistration request, deregister and returns the result
+func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg, error) {
+	log.Info().Msg("DeregisterVNet")
+
+	// vNet object
+	var emptyRet model.SimpleMsg
+	var ret model.SimpleMsg
+
+	// Set the resource type
+	resourceType := model.StrVNet
+
+	// Check the input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = common.CheckString(vNetId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// Validate options: withSubnets
+	if withSubnets != "" && withSubnets != "true" && withSubnets != "false" {
+		errMsg := fmt.Errorf("invalid option, withSubnets (%s)", withSubnets)
+		log.Warn().Msgf(errMsg.Error())
+		return emptyRet, errMsg
+	}
+	if withSubnets == "" {
+		withSubnets = "false"
+	}
+
+	// Set a vNetKey for the vNet object
+	vNetKey := common.GenResourceKey(nsId, resourceType, vNetId)
+	// Read the stored subnets
+	subnetsKv, err := kvstore.GetKvList(vNetKey + "/subnet")
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	log.Debug().Msgf("subnetsKv: %+v", subnetsKv)
+
+	if withSubnets == "false" && len(subnetsKv) > 0 {
+		err := fmt.Errorf("the vNet (%s) is in-use, may have subnets", vNetId)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// Delete the subnets associated with the vNet
+	for _, kv := range subnetsKv {
+		subnet := model.TbSubnetInfo{}
+		err = json.Unmarshal([]byte(kv.Value), &subnet)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return emptyRet, err
+		}
+		_, err := DeleteSubnet(nsId, vNetId, subnet.Id)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return emptyRet, err
+		}
+	}
+
+	// Read the stored vNet info
+	vNetKv, err := kvstore.GetKv(vNetKey)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	if vNetKv == (kvstore.KeyValue{}) {
+		err := fmt.Errorf("does not exist, vNet: %s", vNetId)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// vNet object
+	var vNetInfo model.TbVNetInfo
+	err = json.Unmarshal([]byte(vNetKv.Value), &vNetInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// Set status to 'Deleting'
+	vNetInfo.Status = string(NetworkOnDeleting)
+	// Save the status
+	val, err := json.Marshal(vNetInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = kvstore.Put(vNetKey, string(val))
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// [Via Spider] Deregister the vNet
+	spReqt := spiderConnectionRequest{}
+	spReqt.ConnectionName = vNetInfo.ConnectionName
+
+	// API to delete a vNet
+	url := fmt.Sprintf("%s/regvpc/%s", model.SpiderRestUrl, vNetInfo.CspVNetName)
+
+	var spResp spiderBooleanInfoResp
+
+	client := resty.New()
+	method := "DELETE"
+
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(spReqt),
+		&spReqt,
+		&spResp,
+		common.MediumDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	ok, err := strconv.ParseBool(spResp.Result)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	if !ok {
+		err := fmt.Errorf("failed to deregister the vNet (%s)", vNetId)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// Delete the saved the vNet info
+	err = kvstore.Delete(vNetKey)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// [Output] the message
+	ret.Message = fmt.Sprintf("the vnet (%s) has been deregistered", vNetId)
+
+	return ret, nil
 }

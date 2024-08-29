@@ -2435,6 +2435,23 @@ definitions:
         example: g1
         type: string
     type: object
+  model.TbRegisterSubnetReq:
+    properties:
+      connectionName:
+        type: string
+      cspSubnetId:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      zone:
+        type: string
+    required:
+    - connectionName
+    - cspSubnetId
+    - name
+    type: object
   model.TbRegisterVNetReq:
     properties:
       connectionName:
@@ -2747,12 +2764,13 @@ definitions:
   model.TbSubnetReq:
     properties:
       description:
+        example: subnet00 managed by CB-Tumblebug
         type: string
       ipv4_CIDR:
         example: 10.0.1.0/24
         type: string
       name:
-        example: subnet-01
+        example: subnet00
         type: string
       tagList:
         items:
@@ -2824,10 +2842,10 @@ definitions:
         example: aws-ap-northeast-2
         type: string
       description:
-        example: vNet-01 managed by CB-Tumblebug
+        example: vnet00 managed by CB-Tumblebug
         type: string
       name:
-        example: vNet-01
+        example: vnet00
         type: string
       subnetInfoList:
         items:
@@ -3262,6 +3280,13 @@ definitions:
       sshKey:
         items:
           $ref: '#/definitions/model.TbSshKeyInfo'
+        type: array
+    type: object
+  resource.RestGetAllSubnetResponse:
+    properties:
+      subnetInfoList:
+        items:
+          $ref: '#/definitions/model.TbSubnetInfo'
         type: array
     type: object
   resource.RestGetAllVNetResponse:
@@ -4728,6 +4753,165 @@ paths:
       summary: Control the lifecycle of VM (suspend, resume, reboot, terminate)
       tags:
       - '[MC-Infra] MCI Provisioning and Management'
+  /ns/{nsId}/externalResources/vNet:
+    post:
+      consumes:
+      - application/json
+      description: Register the VNet, which is externally created
+      operationId: RestPostRegisterVNet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Inforamation required to register the VNet created externally
+        in: body
+        name: vNetRegisterReq
+        required: true
+        schema:
+          $ref: '#/definitions/model.TbRegisterVNetReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TbVNetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Register VNet (exterally created)
+      tags:
+      - '[Infra Resource] Network Management'
+  /ns/{nsId}/externalResources/vNet/{vNetId}:
+    delete:
+      consumes:
+      - application/json
+      description: Deregister the VNet, which is externally created
+      operationId: RestPostDeregisterVNet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      - description: Delete subnets as well
+        enum:
+        - "true"
+        - "false"
+        in: query
+        name: withSubnets
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TbVNetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Deregister VNet (exterally created)
+      tags:
+      - '[Infra Resource] Network Management'
+  /ns/{nsId}/externalResources/vNet/{vNetId}/subnet:
+    post:
+      consumes:
+      - application/json
+      description: Register Subnet, which is externally created
+      operationId: PostRegisterSubnet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      - description: Details for an Subnet object
+        in: body
+        name: subnetReq
+        required: true
+        schema:
+          $ref: '#/definitions/model.TbRegisterSubnetReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TbSubnetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Register Subnet (externally created)
+      tags:
+      - '[Infra Resource] Network Management'
+  /ns/{nsId}/externalResources/vNet/{vNetId}/subnet/{subnetId}:
+    delete:
+      consumes:
+      - application/json
+      description: Deregister Subnet
+      operationId: DeleteDeregisterSubnet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      - description: Subnet ID
+        in: path
+        name: subnetId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Deregister Subnet
+      tags:
+      - '[Infra Resource] Network Management'
   /ns/{nsId}/installBenchmarkAgent/mci/{mciId}:
     post:
       consumes:
@@ -8631,10 +8815,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: |-
-        Mainly create a new VNet.
-
-        Optionally register the VNet, which is externally created, when the query parameter 'action' is set to 'register'.
+      description: Create a new VNet
       operationId: PostVNet
       parameters:
       - default: default
@@ -8663,51 +8844,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/model.SimpleMsg'
-      summary: Create VNet (or Register VNet)
-      tags:
-      - '[Infra Resource] Network Management'
-    put:
-      consumes:
-      - application/json
-      description: Register the VNet, which is externally created, when the query
-        parameter 'action' is set to 'register'.
-      operationId: RestPutVNet
-      parameters:
-      - default: default
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Inforamation required to register the VNet created externally
-        in: body
-        name: vNetRegisterReq
-        required: true
-        schema:
-          $ref: '#/definitions/model.TbRegisterVNetReq'
-      - description: Action
-        enum:
-        - register
-        in: query
-        name: action
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/model.TbVNetInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/model.SimpleMsg'
-      summary: Register VNet (exterally created)
+      summary: Create VNet
       tags:
       - '[Infra Resource] Network Management'
   /ns/{nsId}/resources/vNet/{vNetId}:
@@ -8785,6 +8922,41 @@ paths:
       tags:
       - '[Infra Resource] Network Management'
   /ns/{nsId}/resources/vNet/{vNetId}/subnet:
+    get:
+      consumes:
+      - application/json
+      description: List all subnets (metadata)
+      operationId: GetAllSubnet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/resource.RestGetAllSubnetResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: List all subnets (metadata)
+      tags:
+      - '[Infra Resource] Network Management'
     post:
       consumes:
       - application/json
@@ -8861,6 +9033,46 @@ paths:
           schema:
             $ref: '#/definitions/model.SimpleMsg'
       summary: Delete Subnet
+      tags:
+      - '[Infra Resource] Network Management'
+    get:
+      consumes:
+      - application/json
+      description: Get Subnet (metadata)
+      operationId: GetSubnet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      - description: Subnet ID
+        in: path
+        name: subnetId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TbSubnetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Get Subnet (metadata)
       tags:
       - '[Infra Resource] Network Management'
   /ns/{nsId}/sharedResources:
