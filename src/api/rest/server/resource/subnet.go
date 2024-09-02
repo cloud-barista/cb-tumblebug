@@ -265,8 +265,8 @@ func RestDelAllSubnet(c echo.Context) error {
 
 // RestPostRegisterSubnet godoc
 // @ID PostRegisterSubnet
-// @Summary Register Subnet (externally created)
-// @Description Register Subnet, which is externally created
+// @Summary Register Subnet (created in CSP)
+// @Description Register Subnet, which was created in CSP
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
@@ -276,7 +276,7 @@ func RestDelAllSubnet(c echo.Context) error {
 // @Success 200 {object} model.TbSubnetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/externalResources/vNet/{vNetId}/subnet [post]
+// @Router /ns/{nsId}/registerCspResource/vNet/{vNetId}/subnet [post]
 func RestPostRegisterSubnet(c echo.Context) error {
 
 	// [Input]
@@ -313,8 +313,8 @@ func RestPostRegisterSubnet(c echo.Context) error {
 
 // RestDeleteDeregisterSubnet godoc
 // @ID DeleteDeregisterSubnet
-// @Summary Deregister Subnet
-// @Description Deregister Subnet
+// @Summary Deregister Subnet (created in CSP)
+// @Description Deregister Subnet, which was created in CSP
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
@@ -323,7 +323,7 @@ func RestPostRegisterSubnet(c echo.Context) error {
 // @Param subnetId path string true "Subnet ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
-// @Router /ns/{nsId}/externalResources/vNet/{vNetId}/subnet/{subnetId} [delete]
+// @Router /ns/{nsId}/deregisterCspResource/vNet/{vNetId}/subnet/{subnetId} [delete]
 func RestDeleteDeregisterSubnet(c echo.Context) error {
 
 	// [Input]

@@ -4753,49 +4753,12 @@ paths:
       summary: Control the lifecycle of VM (suspend, resume, reboot, terminate)
       tags:
       - '[MC-Infra] MCI Provisioning and Management'
-  /ns/{nsId}/externalResources/vNet:
-    post:
-      consumes:
-      - application/json
-      description: Register the VNet, which is externally created
-      operationId: RestPostRegisterVNet
-      parameters:
-      - default: default
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Inforamation required to register the VNet created externally
-        in: body
-        name: vNetRegisterReq
-        required: true
-        schema:
-          $ref: '#/definitions/model.TbRegisterVNetReq'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/model.TbVNetInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/model.SimpleMsg'
-      summary: Register VNet (exterally created)
-      tags:
-      - '[Infra Resource] Network Management'
-  /ns/{nsId}/externalResources/vNet/{vNetId}:
+  /ns/{nsId}/deregisterCspResource/vNet/{vNetId}:
     delete:
       consumes:
       - application/json
-      description: Deregister the VNet, which is externally created
-      operationId: RestPostDeregisterVNet
+      description: Deregister the VNet, which was created in CSP
+      operationId: DeleteDeregisterVNet
       parameters:
       - default: default
         description: Namespace ID
@@ -4830,56 +4793,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/model.SimpleMsg'
-      summary: Deregister VNet (exterally created)
+      summary: Deregister VNet (created in CSP)
       tags:
       - '[Infra Resource] Network Management'
-  /ns/{nsId}/externalResources/vNet/{vNetId}/subnet:
-    post:
-      consumes:
-      - application/json
-      description: Register Subnet, which is externally created
-      operationId: PostRegisterSubnet
-      parameters:
-      - default: default
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: VNet ID
-        in: path
-        name: vNetId
-        required: true
-        type: string
-      - description: Details for an Subnet object
-        in: body
-        name: subnetReq
-        required: true
-        schema:
-          $ref: '#/definitions/model.TbRegisterSubnetReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.TbSubnetInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/model.SimpleMsg'
-      summary: Register Subnet (externally created)
-      tags:
-      - '[Infra Resource] Network Management'
-  /ns/{nsId}/externalResources/vNet/{vNetId}/subnet/{subnetId}:
+  /ns/{nsId}/deregisterCspResource/vNet/{vNetId}/subnet/{subnetId}:
     delete:
       consumes:
       - application/json
-      description: Deregister Subnet
+      description: Deregister Subnet, which was created in CSP
       operationId: DeleteDeregisterSubnet
       parameters:
       - default: default
@@ -4909,7 +4830,7 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/model.SimpleMsg'
-      summary: Deregister Subnet
+      summary: Deregister Subnet (created in CSP)
       tags:
       - '[Infra Resource] Network Management'
   /ns/{nsId}/installBenchmarkAgent/mci/{mciId}:
@@ -7216,6 +7137,85 @@ paths:
       summary: Create MCI Automation policy
       tags:
       - '[MC-Infra] MCI Orchestration Management (WIP)'
+  /ns/{nsId}/registerCspResource/vNet:
+    post:
+      consumes:
+      - application/json
+      description: Register the VNet, which was created in CSP
+      operationId: PostRegisterVNet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Inforamation required to register the VNet created externally
+        in: body
+        name: vNetRegisterReq
+        required: true
+        schema:
+          $ref: '#/definitions/model.TbRegisterVNetReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TbVNetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Register VNet (created in CSP)
+      tags:
+      - '[Infra Resource] Network Management'
+  /ns/{nsId}/registerCspResource/vNet/{vNetId}/subnet:
+    post:
+      consumes:
+      - application/json
+      description: Register Subnet, which was created in CSP
+      operationId: PostRegisterSubnet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      - description: Details for an Subnet object
+        in: body
+        name: subnetReq
+        required: true
+        schema:
+          $ref: '#/definitions/model.TbRegisterSubnetReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TbSubnetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Register Subnet (created in CSP)
+      tags:
+      - '[Infra Resource] Network Management'
   /ns/{nsId}/registerCspVm:
     post:
       consumes:

@@ -231,9 +231,9 @@ func RestDelAllVNet(c echo.Context) error {
 }
 
 // RestPostRegisterVNet godoc
-// @ID RestPostRegisterVNet
-// @Summary Register VNet (exterally created)
-// @Description Register the VNet, which is externally created
+// @ID PostRegisterVNet
+// @Summary Register VNet (created in CSP)
+// @Description Register the VNet, which was created in CSP
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
@@ -242,7 +242,7 @@ func RestDelAllVNet(c echo.Context) error {
 // @Success 201 {object} model.TbVNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/externalResources/vNet [post]
+// @Router /ns/{nsId}/registerCspResource/vNet [post]
 func RestPostRegisterVNet(c echo.Context) error {
 
 	// [Input]
@@ -282,10 +282,10 @@ func RestPostRegisterVNet(c echo.Context) error {
 	return c.JSON(http.StatusCreated, resp)
 }
 
-// RestPostDeregisterVNet godoc
-// @ID RestPostDeregisterVNet
-// @Summary Deregister VNet (exterally created)
-// @Description Deregister the VNet, which is externally created
+// RestDeleteDeregisterVNet godoc
+// @ID DeleteDeregisterVNet
+// @Summary Deregister VNet (created in CSP)
+// @Description Deregister the VNet, which was created in CSP
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
@@ -295,8 +295,8 @@ func RestPostRegisterVNet(c echo.Context) error {
 // @Success 201 {object} model.TbVNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/externalResources/vNet/{vNetId} [delete]
-func RestPostDeregisterVNet(c echo.Context) error {
+// @Router /ns/{nsId}/deregisterCspResource/vNet/{vNetId} [delete]
+func RestDeleteDeregisterVNet(c echo.Context) error {
 
 	// [Input]
 	nsId := c.Param("nsId")

@@ -466,9 +466,11 @@ func RunServer(port string) {
 	g.DELETE("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_resource.RestDelSubnet)
 	// g.DELETE("/:nsId/resources/vNet/:vNetId/subnet", rest_resource.RestDelAllSubnet)
 
-	// Network management: external vNet and subnets
-	g.POST("/:nsId/externalResources/vNet", rest_resource.RestPostRegisterVNet)
-	g.DELETE("/:nsId/externalResources/vNet/:vNetId", rest_resource.RestPostDeregisterVNet)
+	// Network management: register vNet and/or subnets, which was created in CSP
+	g.POST("/:nsId/registerCspResource/vNet", rest_resource.RestPostRegisterVNet)
+	g.DELETE("/:nsId/deregisterCspResource/vNet/:vNetId", rest_resource.RestDeleteDeregisterVNet)
+	g.POST("/:nsId/registerCspResource/vNet/:vNetId/subnet", rest_resource.RestPostRegisterSubnet)
+	g.DELETE("/:nsId/registerCspResource/vNet/:vNetId/subnet/:subnetId", rest_resource.RestDeleteDeregisterSubnet)
 
 	/*
 		g.POST("/:nsId/resources/publicIp", resource.RestPostPublicIp)
