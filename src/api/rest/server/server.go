@@ -470,7 +470,7 @@ func RunServer(port string) {
 	g.POST("/:nsId/registerCspResource/vNet", rest_resource.RestPostRegisterVNet)
 	g.DELETE("/:nsId/deregisterCspResource/vNet/:vNetId", rest_resource.RestDeleteDeregisterVNet)
 	g.POST("/:nsId/registerCspResource/vNet/:vNetId/subnet", rest_resource.RestPostRegisterSubnet)
-	g.DELETE("/:nsId/registerCspResource/vNet/:vNetId/subnet/:subnetId", rest_resource.RestDeleteDeregisterSubnet)
+	g.DELETE("/:nsId/deregisterCspResource/vNet/:vNetId/subnet/:subnetId", rest_resource.RestDeleteDeregisterSubnet)
 
 	/*
 		g.POST("/:nsId/resources/publicIp", resource.RestPostPublicIp)
