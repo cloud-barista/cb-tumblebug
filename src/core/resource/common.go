@@ -2115,6 +2115,8 @@ type resourceIds struct { // Tumblebug
 	CspVNicName          string
 	CspDataDiskId        string
 	CspDataDiskName      string
+	CspSubnetId          string
+	CspSubnetName        string
 
 	ConnectionName string
 }
@@ -2170,14 +2172,10 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	// 	content := resourceIds{}
 	// 	json.Unmarshal([]byte(keyValue.Value), &content)
 	// 	return content.CspSpecName, nil
-	case model.StrVNet:
+	case model.StrSubnet:
 		content := resourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspVNetName, nil // contains CspSubnetId
-	// case "subnet":
-	// 	content := subnetInfo{}
-	// 	json.Unmarshal([]byte(keyValue.Value), &content)
-	// 	return content.CspSubnetId
+		return content.CspSubnetName, nil
 	case model.StrSecurityGroup:
 		content := resourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)

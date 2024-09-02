@@ -1318,8 +1318,14 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 			return err
 		}
 
-		// TODO: needs to be enhnaced to use GetCspResourceId (GetCspResourceId needs to be updated as well)
-		requestBody.ReqInfo.SubnetName = vmInfoData.SubnetId //resource.GetCspResourceId(nsId, model.StrVNet, vmInfoData.SubnetId)
+		// retrieve csp subnet id
+		subnetInfo, err := resource.GetSubnet(nsId, vmInfoData.VNetId, vmInfoData.SubnetId)
+		if err != nil {
+			log.Error().Err(err).Msg("Cannot find the Subnet ID: " + vmInfoData.SubnetId)
+			return err
+		}
+
+		requestBody.ReqInfo.SubnetName = subnetInfo.CspSubnetName
 		if requestBody.ReqInfo.SubnetName == "" {
 			log.Error().Err(err).Msg("")
 			return err

@@ -216,7 +216,6 @@ func GenResourceKey(nsId string, resourceType string, resourceId string) string 
 		resourceType == model.StrVNet ||
 		resourceType == model.StrSecurityGroup ||
 		resourceType == model.StrDataDisk {
-		//resourceType == "subnet" ||
 		//resourceType == "publicIp" ||
 		//resourceType == "vNic" {
 		return "/ns/" + nsId + "/resources/" + resourceType + "/" + resourceId
