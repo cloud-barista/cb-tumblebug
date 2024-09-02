@@ -2172,10 +2172,10 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	// 	content := resourceIds{}
 	// 	json.Unmarshal([]byte(keyValue.Value), &content)
 	// 	return content.CspSpecName, nil
-	case model.StrSubnet:
+	case model.StrVNet:
 		content := resourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspSubnetName, nil
+		return content.CspVNetName, nil // contains CspSubnetId
 	case model.StrSecurityGroup:
 		content := resourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
