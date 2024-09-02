@@ -175,6 +175,7 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 	var emptyRet model.TbSubnetInfo
 	var vNetInfo model.TbVNetInfo
 	var subnetInfo model.TbSubnetInfo
+	var err error = nil
 	subnetInfo.Id = subnetReq.Name
 	subnetInfo.Name = subnetReq.Name
 
@@ -183,7 +184,7 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 	resourceType := model.StrSubnet
 
 	// Validate the input parameters
-	err := common.CheckString(nsId)
+	err = common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -271,7 +272,7 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 	spReqt := spiderAddSubnetRequest{}
 	spReqt.ConnectionName = vNetInfo.ConnectionName
 	spReqt.IDTransformMode = "OFF"
-	spReqt.ReqInfo.Name = uuid
+	spReqt.ReqInfo.Name = subnetInfo.Uuid
 	spReqt.ReqInfo.Zone = subnetReq.Zone
 	spReqt.ReqInfo.IPv4_CIDR = subnetReq.IPv4_CIDR
 	spReqt.ReqInfo.TagList = subnetReq.TagList
@@ -282,6 +283,28 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 
 	// API to create a subnet
 	url := fmt.Sprintf("%s/vpc/%s/subnet", model.SpiderRestUrl, vNetInfo.CspVNetName)
+
+	// Defer function to ensure cleanup object
+	defer func() {
+		// Only if this operation fails, the subnet will be deleted
+		if err != nil && subnetInfo.Status == string(NetworkOnConfiguring) {
+			if subnetInfo.CspSubnetId == "" { // Delete the saved the subnet info
+				log.Warn().Msgf("failed to create subnet, cleaning up the subnet info: %v", subnetInfo.Id)
+				deleteErr := kvstore.Delete(subnetKey)
+				if deleteErr != nil {
+					log.Warn().Err(deleteErr).Msgf("failed to delete the subnet info: %v from kvstore", subnetInfo.Id)
+				}
+			}
+			// todo: check if the following operation is obviously required or not
+			// else { // Delete the subnet from the CSP
+			// 	// [Via Spider] Delete the subnet
+			// 	_, deleteErr := DeleteSubnet(nsId, vNetId, subnetInfo.Id)
+			// 	if deleteErr != nil {
+			// 		log.Warn().Err(err).Msgf("failed to delete the subnet: %v from CSP", subnetInfo.Id)
+			// 	}
+			// }
+		}
+	}()
 
 	err = common.ExecuteHttpRequest(
 		client,
@@ -301,7 +324,7 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 
 	// Search the requested subnet in the response from the Spider
 	for _, spSubnetInfo := range spResp.SubnetInfoList {
-		if uuid == spSubnetInfo.IId.NameId {
+		if subnetInfo.Uuid == spSubnetInfo.IId.NameId {
 			// Set the subnet object with the response from the Spider
 			subnetInfo.CspSubnetId = spSubnetInfo.IId.SystemId
 			subnetInfo.CspSubnetName = spSubnetInfo.IId.NameId
@@ -361,7 +384,7 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 		"provider":  "cb-tumblebug",
 		"namespace": nsId,
 	}
-	err = label.CreateOrUpdateLabel(model.StrSubnet, uuid, vNetKey, labels)
+	err = label.CreateOrUpdateLabel(model.StrSubnet, uuid, subnetKey, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -631,6 +654,17 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 		return emptyRet, err
 	}
 
+	// Store label info using CreateOrUpdateLabel
+	// labels := map[string]string{
+	// 	"provider":  "cb-tumblebug",
+	// 	"namespace": nsId,
+	// }
+	err = label.RemoveLabel(model.StrSubnet, subnetInfo.Uuid, subnetKey)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
 	// [Output] the message
 	ret.Message = fmt.Sprintf("the subnet (%s) has been deleted", subnetId)
 
@@ -643,6 +677,7 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubne
 	var emptyRet model.TbSubnetInfo
 	var vNetInfo model.TbVNetInfo
 	var subnetInfo model.TbSubnetInfo
+	var err error = nil
 
 	// Set the subnet object
 	subnetInfo.Id = subnetReq.Name
@@ -653,7 +688,7 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubne
 	resourceType := model.StrSubnet
 
 	// Validate the input parameters
-	err := common.CheckString(nsId)
+	err = common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -716,8 +751,8 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubne
 	subnetInfo.CspVNetId = vNetInfo.CspVNetId
 	subnetInfo.CspVNetName = vNetInfo.CspVNetName
 
-	// Set status to 'Configuring'
-	subnetInfo.Status = string(NetworkOnConfiguring)
+	// Set status to 'Registering'
+	subnetInfo.Status = string(NetworkOnRegistering)
 	// Save the status
 	val, err := json.Marshal(subnetInfo)
 	if err != nil {
@@ -742,8 +777,31 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubne
 	method := "POST"
 	var spResp spiderSubnetInfo
 
-	// API to create a subnet
+	// API to register a subnet from CSP
 	url := fmt.Sprintf("%s/regsubnet", model.SpiderRestUrl)
+	// [Note] Spider doesn't provide "GET /vpc{VPCName}/subnet" API
+
+	// Defer function to ensure cleanup object
+	defer func() {
+		// Only if this operation fails, the subnet will be deleted
+		if err != nil && subnetInfo.Status == string(NetworkOnRegistering) {
+			if subnetInfo.CspSubnetId == "" { // Delete the saved the subnet info
+				log.Warn().Msgf("failed to create subnet, cleaning up the subnet info: %v", subnetInfo.Id)
+				deleteErr := kvstore.Delete(subnetKey)
+				if deleteErr != nil {
+					log.Warn().Err(deleteErr).Msgf("failed to delete the subnet info: %v from kvstore", subnetInfo.Id)
+				}
+			}
+			// todo: check if the following operation is obviously required or not
+			// else { // Delete the subnet from the CSP
+			// 	// [Via Spider] Delete the subnet
+			// 	_, deregisterErr := DeregisterSubnet(nsId, vNetId, subnetInfo.Id)
+			// 	if deregisterErr != nil {
+			// 		log.Warn().Err(err).Msgf("failed to deregister the subnet: %v from CSP", subnetInfo.Id)
+			// 	}
+			// }
+		}
+	}()
 
 	err = common.ExecuteHttpRequest(
 		client,
@@ -982,6 +1040,18 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 		return emptyRet, err
 	}
 	err = kvstore.Put(vNetKey, string(val))
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// Store label info using CreateOrUpdateLabel
+	// labels := map[string]string{
+	// 	"provider":  "cb-tumblebug",
+	// 	"namespace": nsId,
+	// }
+
+	err = label.RemoveLabel(model.StrSubnet, subnetInfo.Uuid, subnetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
