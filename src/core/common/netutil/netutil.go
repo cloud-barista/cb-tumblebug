@@ -51,12 +51,12 @@ type NetworkInterface interface {
 }
 
 type Network struct {
-	CIDRBlock string    `json:"cidrBlock"`
+	CidrBlock string    `json:"cidrBlock"`
 	Name      string    `json:"name,omitempty"`
 	Subnets   []Network `json:"subnets,omitempty"`
 }
 
-func (n *Network) GetCIDRBlock() string  { return n.CIDRBlock }
+func (n *Network) GetCIDRBlock() string  { return n.CidrBlock }
 func (n *Network) GetName() string       { return n.Name }
 func (n *Network) GetSubnets() []Network { return n.Subnets }
 
@@ -68,7 +68,7 @@ func NewNetwork(cidrBlock string) (*Network, error) {
 		return nil, err
 	}
 	network := new(Network)
-	network.CIDRBlock = cidrBlock
+	network.CidrBlock = cidrBlock
 
 	network.Subnets = []Network{}
 
@@ -99,7 +99,7 @@ func NewNetworkDetails(cidrBlock string) (*NetworkDetails, error) {
 		return nil, err
 	}
 	network := new(NetworkDetails)
-	network.CIDRBlock = cidrBlock
+	network.CidrBlock = cidrBlock
 
 	// Set Netmask
 	mask := ipNet.Mask
@@ -277,9 +277,9 @@ func subnetting(network Network, rules []SubnettingRule) (Network, error) {
 	// Subnetting by the given rule
 	switch rule.Type {
 	case SubnettingRuleTypeMinSubnets:
-		subnetsStr, err = SubnettingByMinimumSubnetCount(network.CIDRBlock, rule.Value)
+		subnetsStr, err = SubnettingByMinimumSubnetCount(network.CidrBlock, rule.Value)
 	case SubnettingRuleTypeMinHosts:
-		subnetsStr, err = SubnettingByMinimumHosts(network.CIDRBlock, rule.Value)
+		subnetsStr, err = SubnettingByMinimumHosts(network.CidrBlock, rule.Value)
 	default:
 		return network, fmt.Errorf("unknown rule type: %s", rule.Type)
 	}
@@ -392,19 +392,19 @@ func SubnettingByMinimumHosts(cidrBlock string, hostsPerSubnet int) ([]string, e
 // ValidateNetwork recursively validates the network and its subnets.
 func ValidateNetwork(network Network) error {
 	// Check if the CIDR block is valid
-	if _, _, err := net.ParseCIDR(network.CIDRBlock); err != nil {
-		return fmt.Errorf("invalid CIDR block '%s': %w", network.CIDRBlock, err)
+	if _, _, err := net.ParseCIDR(network.CidrBlock); err != nil {
+		return fmt.Errorf("invalid CIDR block '%s': %w", network.CidrBlock, err)
 	}
 
 	// Check for overlapping subnets within the same network
 	if err := hasOverlappingSubnets(network.Subnets); err != nil {
-		return fmt.Errorf("in network '%s': %w", network.CIDRBlock, err)
+		return fmt.Errorf("in network '%s': %w", network.CidrBlock, err)
 	}
 
 	// Recursively validate each subnet
 	for _, subnet := range network.Subnets {
-		if !isSubnetOf(network.CIDRBlock, subnet.CIDRBlock) {
-			return fmt.Errorf("subnet '%s' is not a valid subnet of '%s'", subnet.CIDRBlock, network.CIDRBlock)
+		if !isSubnetOf(network.CidrBlock, subnet.CidrBlock) {
+			return fmt.Errorf("subnet '%s' is not a valid subnet of '%s'", subnet.CidrBlock, network.CidrBlock)
 		}
 		if err := ValidateNetwork(subnet); err != nil {
 			return err
@@ -424,8 +424,8 @@ func isSubnetOf(parentCIDR, childCIDR string) bool {
 func hasOverlappingSubnets(subnets []Network) error {
 	for i := 0; i < len(subnets); i++ {
 		for j := i + 1; j < len(subnets); j++ {
-			if cidrOverlap(subnets[i].CIDRBlock, subnets[j].CIDRBlock) {
-				return fmt.Errorf("overlapping subnets found: '%s' and '%s'", subnets[i].CIDRBlock, subnets[j].CIDRBlock)
+			if cidrOverlap(subnets[i].CidrBlock, subnets[j].CidrBlock) {
+				return fmt.Errorf("overlapping subnets found: '%s' and '%s'", subnets[i].CidrBlock, subnets[j].CidrBlock)
 			}
 		}
 	}

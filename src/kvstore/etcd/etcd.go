@@ -111,7 +111,7 @@ func (s *EtcdStore) GetListWith(ctx context.Context, keyPrefix string) ([]string
 		return nil, fmt.Errorf("failed to get list with keyPrefix: %w", err)
 	}
 
-	values := make([]string, len(resp.Kvs))
+	values := []string{}
 	for i, kv := range resp.Kvs {
 		values[i] = string(kv.Value)
 	}
@@ -157,7 +157,7 @@ func (s *EtcdStore) GetKvListWith(ctx context.Context, keyPrefix string) ([]kvst
 		return nil, fmt.Errorf("failed to get list with keyPrefix: %w", err)
 	}
 
-	kvs := make([]kvstore.KeyValue, len(resp.Kvs))
+	kvs := []kvstore.KeyValue{}
 	for _, kv := range resp.Kvs {
 		kvs = append(kvs, kvstore.KeyValue{Key: string(kv.Key), Value: string(kv.Value)})
 	}
@@ -177,7 +177,7 @@ func (s *EtcdStore) GetSortedKvListWith(ctx context.Context, keyPrefix string, s
 		return nil, fmt.Errorf("failed to get list with keyPrefix: %w", err)
 	}
 
-	kvs := make([]kvstore.KeyValue, len(resp.Kvs))
+	kvs := []kvstore.KeyValue{}
 	for _, kv := range resp.Kvs {
 		kvs = append(kvs, kvstore.KeyValue{Key: string(kv.Key), Value: string(kv.Value)})
 	}
@@ -200,7 +200,7 @@ func (s *EtcdStore) GetKvMapWith(ctx context.Context, keyPrefix string) (kvstore
 		return nil, fmt.Errorf("failed to get list with keyPrefix: %w", err)
 	}
 
-	kvs := make(kvstore.KeyValueMap, len(resp.Kvs))
+	kvs := kvstore.KeyValueMap{}
 	for _, kv := range resp.Kvs {
 		kvs[string(kv.Key)] = string(kv.Value)
 	}

@@ -15,12 +15,14 @@ limitations under the License.
 package resource
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // RestPostSubnet godoc
@@ -38,20 +40,133 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet [post]
 func RestPostSubnet(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
+	// [Input]
 	nsId := c.Param("nsId")
-	vNetId := c.Param("vNetId")
-
-	u := &model.TbSubnetReq{}
-	if err := c.Bind(u); err != nil {
-		return err
+	if err := common.CheckString(nsId); err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	content, err := resource.CreateSubnet(nsId, vNetId, *u, false)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	vNetId := c.Param("vNetId")
+	if err := common.CheckString(vNetId); err != nil {
+		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	reqt := &model.TbSubnetReq{}
+	if err := c.Bind(reqt); err != nil {
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Process]
+	resp, err := resource.CreateSubnet(nsId, vNetId, reqt)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	return c.JSON(http.StatusCreated, resp)
+}
+
+// RestGetSubnet godoc
+// @ID GetSubnet
+// @Summary Get Subnet (metadata)
+// @Description Get Subnet (metadata)
+// @Tags [Infra Resource] Network Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param vNetId path string true "VNet ID"
+// @Param subnetId path string true "Subnet ID"
+// @Success 200 {object} model.TbSubnetInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId} [get]
+func RestGetSubnet(c echo.Context) error {
+
+	// [Input]
+	nsId := c.Param("nsId")
+	if err := common.CheckString(nsId); err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+	vNetId := c.Param("vNetId")
+	if err := common.CheckString(vNetId); err != nil {
+		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	subnetId := c.Param("subnetId")
+	if err := common.CheckString(subnetId); err != nil {
+		errMsg := fmt.Errorf("invalid subnetId (%s)", subnetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	// [Process]
+	resp, err := resource.GetSubnet(nsId, vNetId, subnetId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	return c.JSON(http.StatusOK, resp)
+}
+
+// Response structure for RestGetAllSubnet
+type RestGetAllSubnetResponse struct {
+	SubnetInfoList []model.TbSubnetInfo `json:"subnetInfoList"`
+}
+
+// RestGetListSubnet godoc
+// @ID GetAllSubnet
+// @Summary List all subnets (metadata)
+// @Description List all subnets (metadata)
+// @Tags [Infra Resource] Network Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param vNetId path string true "VNet ID"
+// @Success 200 {object} RestGetAllSubnetResponse
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet [get]
+func RestGetListSubnet(c echo.Context) error {
+
+	// [Input]
+	nsId := c.Param("nsId")
+	if err := common.CheckString(nsId); err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+	vNetId := c.Param("vNetId")
+	if err := common.CheckString(vNetId); err != nil {
+		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	// [Process]
+	ret, err := resource.ListSubnet(nsId, vNetId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	resp := RestGetAllSubnetResponse{}
+	resp.SubnetInfoList = ret
+
+	return c.JSON(http.StatusOK, resp)
 }
 
 /* function RestPutSubnet not yet implemented
@@ -75,46 +190,11 @@ func RestPutSubnet(c echo.Context) error {
 */
 
 /*
-// RestGetSubnet godoc
-// @ID GetSubnet
-// @Summary Get Subnet
-// @Description Get Subnet
-// @Tags [Infra Resource] Network Management
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param subnetId path string true "Subnet ID"
-// @Success 200 {object} model.TbSubnetInfo
-// @Failure 404 {object} model.SimpleMsg
-// @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId} [get]
-func RestGetSubnet(c echo.Context) error {
-	// This is a dummy function for Swagger.
-	return nil
-}
-
 // Response structure for RestGetAllSubnet
 type RestGetAllSubnetResponse struct {
 	Subnet []model.TbSubnetInfo `json:"subnet"`
 }
 
-// RestGetAllSubnet godoc
-// @ID GetAllSubnet
-// @Summary List all Subnets or Subnets' ID
-// @Description List all Subnets or Subnets' ID
-// @Tags [Infra Resource] Network Management
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param option query string false "Option" Enums(id)
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSubnetResponse,[ID]=model.IdList} "Different return structures by the given option param"
-// @Failure 404 {object} model.SimpleMsg
-// @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet [get]
-func RestGetAllSubnet(c echo.Context) error {
-	// This is a dummy function for Swagger.
-	return nil
-}
 */
 
 // RestDelSubnet godoc
@@ -131,8 +211,38 @@ func RestGetAllSubnet(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId} [delete]
 func RestDelSubnet(c echo.Context) error {
-	// This is a dummy function for Swagger.
-	return nil
+
+	// [Input]
+	// nsId and vNetId will be checked inside of the DeleteVNet function
+	nsId := c.Param("nsId")
+	if err := common.CheckString(nsId); err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	vNetId := c.Param("vNetId")
+	if err := common.CheckString(vNetId); err != nil {
+		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+	subnetId := c.Param("subnetId")
+	if err := common.CheckString(subnetId); err != nil {
+		errMsg := fmt.Errorf("invalid subnetId (%s)", subnetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	// [Process]
+	resp, err := resource.DeleteSubnet(nsId, vNetId, subnetId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	return c.JSON(http.StatusCreated, resp)
 }
 
 /*
@@ -152,3 +262,98 @@ func RestDelAllSubnet(c echo.Context) error {
 	return nil
 }
 */
+
+// RestPostRegisterSubnet godoc
+// @ID PostRegisterSubnet
+// @Summary Register Subnet (created in CSP)
+// @Description Register Subnet, which was created in CSP
+// @Tags [Infra Resource] Network Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param vNetId path string true "VNet ID"
+// @Param subnetReq body model.TbRegisterSubnetReq true "Details for an Subnet object"
+// @Success 200 {object} model.TbSubnetInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/registerCspResource/vNet/{vNetId}/subnet [post]
+func RestPostRegisterSubnet(c echo.Context) error {
+
+	// [Input]
+	nsId := c.Param("nsId")
+	if err := common.CheckString(nsId); err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	vNetId := c.Param("vNetId")
+	if err := common.CheckString(vNetId); err != nil {
+		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	reqt := &model.TbRegisterSubnetReq{}
+	if err := c.Bind(reqt); err != nil {
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Process]
+	resp, err := resource.RegisterSubnet(nsId, vNetId, reqt)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	return c.JSON(http.StatusCreated, resp)
+}
+
+// RestDeleteDeregisterSubnet godoc
+// @ID DeleteDeregisterSubnet
+// @Summary Deregister Subnet (created in CSP)
+// @Description Deregister Subnet, which was created in CSP
+// @Tags [Infra Resource] Network Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param vNetId path string true "VNet ID"
+// @Param subnetId path string true "Subnet ID"
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Router /ns/{nsId}/deregisterCspResource/vNet/{vNetId}/subnet/{subnetId} [delete]
+func RestDeleteDeregisterSubnet(c echo.Context) error {
+
+	// [Input]
+	// nsId and vNetId will be checked inside of the DeregisterVNet function
+	nsId := c.Param("nsId")
+	if err := common.CheckString(nsId); err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+	vNetId := c.Param("vNetId")
+	if err := common.CheckString(vNetId); err != nil {
+		errMsg := fmt.Errorf("invalid vNetId (%s)", vNetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+	subnetId := c.Param("subnetId")
+	if err := common.CheckString(subnetId); err != nil {
+		errMsg := fmt.Errorf("invalid subnetId (%s)", subnetId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	// [Process]
+	resp, err := resource.DeregisterSubnet(nsId, vNetId, subnetId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	return c.JSON(http.StatusCreated, resp)
+}

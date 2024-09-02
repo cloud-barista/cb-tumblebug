@@ -450,19 +450,27 @@ func RunServer(port string) {
 	g.POST("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_resource.RestPostFirewallRules)
 	g.DELETE("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_resource.RestDelFirewallRules)
 
+	// Network management: vNet
 	g.POST("/:nsId/resources/vNet", rest_resource.RestPostVNet)
-	g.GET("/:nsId/resources/vNet/:resourceId", rest_resource.RestGetResource)
+	g.GET("/:nsId/resources/vNet/:vNetId", rest_resource.RestGetVNet)
 	g.GET("/:nsId/resources/vNet", rest_resource.RestGetAllResources)
-	g.PUT("/:nsId/resources/vNet/:resourceId", rest_resource.RestPutVNet)
-	g.DELETE("/:nsId/resources/vNet/:resourceId", rest_resource.RestDelResource)
+	// g.PUT("/:nsId/resources/vNet/:resourceId", rest_resource.RestPutVNet)
+	g.DELETE("/:nsId/resources/vNet/:vNetId", rest_resource.RestDelVNet)
 	g.DELETE("/:nsId/resources/vNet", rest_resource.RestDelAllResources)
 
+	// Network management: subnet associated with vNet
 	g.POST("/:nsId/resources/vNet/:vNetId/subnet", rest_resource.RestPostSubnet)
-	// g.GET("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_resource.RestGetSubnet)
-	// g.GET("/:nsId/resources/vNet/:vNetId/subnet", rest_resource.RestGetAllSubnet)
+	g.GET("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_resource.RestGetSubnet)
+	g.GET("/:nsId/resources/vNet/:vNetId/subnet", rest_resource.RestGetListSubnet)
 	// g.PUT("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_resource.RestPutSubnet)
-	// g.DELETE("/:nsId/resources/vNet/:parentResourceId/subnet/:childResourceId", rest_resource.RestDelChildResource)
+	g.DELETE("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_resource.RestDelSubnet)
 	// g.DELETE("/:nsId/resources/vNet/:vNetId/subnet", rest_resource.RestDelAllSubnet)
+
+	// Network management: register vNet and/or subnets, which was created in CSP
+	g.POST("/:nsId/registerCspResource/vNet", rest_resource.RestPostRegisterVNet)
+	g.DELETE("/:nsId/deregisterCspResource/vNet/:vNetId", rest_resource.RestDeleteDeregisterVNet)
+	g.POST("/:nsId/registerCspResource/vNet/:vNetId/subnet", rest_resource.RestPostRegisterSubnet)
+	g.DELETE("/:nsId/deregisterCspResource/vNet/:vNetId/subnet/:subnetId", rest_resource.RestDeleteDeregisterSubnet)
 
 	/*
 		g.POST("/:nsId/resources/publicIp", resource.RestPostPublicIp)

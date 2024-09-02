@@ -2435,6 +2435,38 @@ definitions:
         example: g1
         type: string
     type: object
+  model.TbRegisterSubnetReq:
+    properties:
+      connectionName:
+        type: string
+      cspSubnetId:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      zone:
+        type: string
+    required:
+    - connectionName
+    - cspSubnetId
+    - name
+    type: object
+  model.TbRegisterVNetReq:
+    properties:
+      connectionName:
+        type: string
+      cspVNetId:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - connectionName
+    - cspVNetId
+    - name
+    type: object
   model.TbScaleOutSubGroupReq:
     properties:
       numVMsToAdd:
@@ -2695,12 +2727,20 @@ definitions:
         items:
           $ref: '#/definitions/model.BastionNode'
         type: array
+      connectionName:
+        type: string
+      cspSubnetId:
+        type: string
+      cspSubnetName:
+        type: string
+      cspVNetId:
+        type: string
+      cspVNetName:
+        type: string
       description:
         type: string
       id:
         type: string
-      idFromCsp:
-        type: string
       ipv4_CIDR:
         type: string
       keyValueList:
@@ -2709,26 +2749,34 @@ definitions:
         type: array
       name:
         type: string
+      status:
+        type: string
+      tagList:
+        items:
+          $ref: '#/definitions/model.KeyValue'
+        type: array
       uuid:
         description: uuid is universally unique identifier for the resource
         type: string
-    required:
-    - ipv4_CIDR
-    - name
+      zone:
+        type: string
     type: object
   model.TbSubnetReq:
     properties:
       description:
-        type: string
-      idFromCsp:
+        example: subnet00 managed by CB-Tumblebug
         type: string
       ipv4_CIDR:
+        example: 10.0.1.0/24
         type: string
-      keyValueList:
+      name:
+        example: subnet00
+        type: string
+      tagList:
         items:
           $ref: '#/definitions/model.KeyValue'
         type: array
-      name:
+      zone:
         type: string
     required:
     - ipv4_CIDR
@@ -2777,6 +2825,10 @@ definitions:
           string can be used) for special System purpose
         example: Managed by CB-Tumblebug
         type: string
+      tagList:
+        items:
+          $ref: '#/definitions/model.KeyValue'
+        type: array
       uuid:
         description: uuid is universally unique identifier for the resource
         type: string
@@ -2784,18 +2836,24 @@ definitions:
   model.TbVNetReq:
     properties:
       cidrBlock:
+        example: 10.0.0.0/16
         type: string
       connectionName:
-        type: string
-      cspVNetId:
+        example: aws-ap-northeast-2
         type: string
       description:
+        example: vnet00 managed by CB-Tumblebug
         type: string
       name:
+        example: vnet00
         type: string
       subnetInfoList:
         items:
           $ref: '#/definitions/model.TbSubnetReq'
+        type: array
+      tagList:
+        items:
+          $ref: '#/definitions/model.KeyValue'
         type: array
     required:
     - connectionName
@@ -3222,6 +3280,13 @@ definitions:
       sshKey:
         items:
           $ref: '#/definitions/model.TbSshKeyInfo'
+        type: array
+    type: object
+  resource.RestGetAllSubnetResponse:
+    properties:
+      subnetInfoList:
+        items:
+          $ref: '#/definitions/model.TbSubnetInfo'
         type: array
     type: object
   resource.RestGetAllVNetResponse:
@@ -4688,6 +4753,86 @@ paths:
       summary: Control the lifecycle of VM (suspend, resume, reboot, terminate)
       tags:
       - '[MC-Infra] MCI Provisioning and Management'
+  /ns/{nsId}/deregisterCspResource/vNet/{vNetId}:
+    delete:
+      consumes:
+      - application/json
+      description: Deregister the VNet, which was created in CSP
+      operationId: DeleteDeregisterVNet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      - description: Delete subnets as well
+        enum:
+        - "true"
+        - "false"
+        in: query
+        name: withSubnets
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TbVNetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Deregister VNet (created in CSP)
+      tags:
+      - '[Infra Resource] Network Management'
+  /ns/{nsId}/deregisterCspResource/vNet/{vNetId}/subnet/{subnetId}:
+    delete:
+      consumes:
+      - application/json
+      description: Deregister Subnet, which was created in CSP
+      operationId: DeleteDeregisterSubnet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      - description: Subnet ID
+        in: path
+        name: subnetId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Deregister Subnet (created in CSP)
+      tags:
+      - '[Infra Resource] Network Management'
   /ns/{nsId}/installBenchmarkAgent/mci/{mciId}:
     post:
       consumes:
@@ -6992,6 +7137,85 @@ paths:
       summary: Create MCI Automation policy
       tags:
       - '[MC-Infra] MCI Orchestration Management (WIP)'
+  /ns/{nsId}/registerCspResource/vNet:
+    post:
+      consumes:
+      - application/json
+      description: Register the VNet, which was created in CSP
+      operationId: PostRegisterVNet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Inforamation required to register the VNet created externally
+        in: body
+        name: vNetRegisterReq
+        required: true
+        schema:
+          $ref: '#/definitions/model.TbRegisterVNetReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.TbVNetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Register VNet (created in CSP)
+      tags:
+      - '[Infra Resource] Network Management'
+  /ns/{nsId}/registerCspResource/vNet/{vNetId}/subnet:
+    post:
+      consumes:
+      - application/json
+      description: Register Subnet, which was created in CSP
+      operationId: PostRegisterSubnet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      - description: Details for an Subnet object
+        in: body
+        name: subnetReq
+        required: true
+        schema:
+          $ref: '#/definitions/model.TbRegisterSubnetReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TbSubnetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Register Subnet (created in CSP)
+      tags:
+      - '[Infra Resource] Network Management'
   /ns/{nsId}/registerCspVm:
     post:
       consumes:
@@ -8591,7 +8815,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create VNet
+      description: Create a new VNet
       operationId: PostVNet
       parameters:
       - default: default
@@ -8600,24 +8824,16 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: 'Option: [required params for register] connectionName, name,
-          cspVNetId'
-        enum:
-        - register
-        in: query
-        name: option
-        type: string
       - description: Details for an VNet object
         in: body
         name: vNetReq
-        required: true
         schema:
           $ref: '#/definitions/model.TbVNetReq'
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/model.TbVNetInfo'
         "404":
@@ -8648,6 +8864,13 @@ paths:
         in: path
         name: vNetId
         required: true
+        type: string
+      - description: Delete subnets as well
+        enum:
+        - "true"
+        - "false"
+        in: query
+        name: withSubnets
         type: string
       produces:
       - application/json
@@ -8699,6 +8922,41 @@ paths:
       tags:
       - '[Infra Resource] Network Management'
   /ns/{nsId}/resources/vNet/{vNetId}/subnet:
+    get:
+      consumes:
+      - application/json
+      description: List all subnets (metadata)
+      operationId: GetAllSubnet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/resource.RestGetAllSubnetResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: List all subnets (metadata)
+      tags:
+      - '[Infra Resource] Network Management'
     post:
       consumes:
       - application/json
@@ -8775,6 +9033,46 @@ paths:
           schema:
             $ref: '#/definitions/model.SimpleMsg'
       summary: Delete Subnet
+      tags:
+      - '[Infra Resource] Network Management'
+    get:
+      consumes:
+      - application/json
+      description: Get Subnet (metadata)
+      operationId: GetSubnet
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      - description: Subnet ID
+        in: path
+        name: subnetId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TbSubnetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Get Subnet (metadata)
       tags:
       - '[Infra Resource] Network Management'
   /ns/{nsId}/sharedResources:

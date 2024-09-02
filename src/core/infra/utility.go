@@ -825,14 +825,14 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 			result.SystemMessage = err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := model.TbVNetReq{}
+			req := model.TbRegisterVNetReq{}
 			req.ConnectionName = connConfig
 			req.CspVNetId = r.IdByCsp
 			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
 			req.Name = req.ConnectionName + "-" + req.CspVNetId
 			req.Name = common.ChangeIdString(req.Name)
 
-			_, err = resource.CreateVNet(nsId, &req, optionFlag)
+			_, err = resource.RegisterVNet(nsId, &req)
 
 			registeredStatus = ""
 			if err != nil {

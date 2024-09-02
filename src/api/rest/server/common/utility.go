@@ -271,7 +271,6 @@ func RestGetRegion(c echo.Context) error {
 
 	content, err := common.GetRegion(providerName, regionName)
 	return common.EndRequestWithLog(c, reqID, err, content)
-
 }
 
 // RestGetRegionList func is a rest api wrapper for GetRegionList.
