@@ -143,7 +143,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*networkSiteModel.SitesInf
 			// Get the last subnet
 			subnetCount := len(vNetInfo.SubnetInfoList)
 			lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
-			lastSubnetIdFromCSP := lastSubnet.CspSubnetId
+			lastSubnetIdFromCSP := lastSubnet.CspResourceId
 
 			// Set VNet and the last subnet IDs
 			site.VNet = vm.CspViewVmDetail.VpcIID.SystemId

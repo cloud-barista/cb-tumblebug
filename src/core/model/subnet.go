@@ -22,12 +22,11 @@ type TbSubnetReq struct { // Tumblebug
 	Description string `json:"description,omitempty" example:"subnet00 managed by CB-Tumblebug"`
 	// todo: restore the tag list later
 	// TagList     []KeyValue `json:"tagList,omitempty"`
-	// IdFromCsp    string     `json:"idFromCsp,omitempty"`
 }
 
 type TbRegisterSubnetReq struct {
 	ConnectionName string `json:"connectionName" validate:"required"`
-	CspSubnetId    string `json:"cspSubnetId" validate:"required"`
+	CspResourceId  string `json:"cspResourceId" validate:"required"`
 	Name           string `json:"name" validate:"required"`
 	Zone           string `json:"zone,omitempty"`
 	Description    string `json:"description,omitempty"`
@@ -35,20 +34,28 @@ type TbRegisterSubnetReq struct {
 
 // TbSubnetInfo is a struct that represents TB subnet object.
 type TbSubnetInfo struct { // Tumblebug
-	Id             string        `json:"id"`
-	Name           string        `json:"name"`
-	Uuid           string        `json:"uuid,omitempty"` // uuid is universally unique identifier for the resource
-	ConnectionName string        `json:"connectionName"`
-	CspVNetId      string        `json:"cspVNetId"`
-	CspVNetName    string        `json:"cspVNetName"`
-	CspSubnetId    string        `json:"cspSubnetId"`
-	CspSubnetName  string        `json:"cspSubnetName"`
-	Status         string        `json:"status"`
-	IPv4_CIDR      string        `json:"ipv4_CIDR"`
-	Zone           string        `json:"zone,omitempty"`
-	BastionNodes   []BastionNode `json:"bastionNodes,omitempty"`
-	KeyValueList   []KeyValue    `json:"keyValueList,omitempty"`
-	Description    string        `json:"description"`
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"aws-ap-southeast-1"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	// CspResourceHandlingName is identifier to handle CSP resource
+	CspResourceHandlingName string `json:"cspResourceHandlingName,omitempty" example:"we12fawefadf1221edcf"`
+	// CspResourceId is resource identifier managed by CSP
+	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+
+	// Name is human-readable string to represent the object
+	Name           string `json:"name" example:"aws-ap-southeast-1"`
+	ConnectionName string `json:"connectionName"`
+	// CspVNetHandlingId is identifier to handle CSP vNet resource
+	CspVNetHandlingId string `json:"cspVNetHandlingId,omitempty" example:"we12fawefadf1221edcf"`
+	// CspVNetId is vNet resource identifier managed by CSP
+	CspVNetId    string        `json:"cspResourceId,omitempty" example:"csp-45eb41e14121c550a"`
+	Status       string        `json:"status"`
+	IPv4_CIDR    string        `json:"ipv4_CIDR"`
+	Zone         string        `json:"zone,omitempty"`
+	BastionNodes []BastionNode `json:"bastionNodes,omitempty"`
+	KeyValueList []KeyValue    `json:"keyValueList,omitempty"`
+	Description  string        `json:"description"`
 	// todo: restore the tag list later
 	// TagList        []KeyValue    `json:"tagList,omitempty"`
 }

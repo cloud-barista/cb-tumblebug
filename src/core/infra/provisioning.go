@@ -463,7 +463,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 		req.SystemLabel = "Registered from CSP resource"
 	}
 
-	uuid := common.GenUid()
+	uid := common.GenUid()
 
 	targetAction := model.ActionCreate
 	targetStatus := model.StatusRunning
@@ -476,7 +476,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 	mapA := map[string]string{
 		"id":              mciId,
 		"name":            mciId,
-		"uuid":            uuid,
+		"uid":             uid,
 		"description":     req.Description,
 		"status":          model.StatusCreating,
 		"targetAction":    targetAction,
@@ -504,7 +504,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 		"provider":  "cb-tumblebug",
 		"namespace": nsId,
 	}
-	err = label.CreateOrUpdateLabel(model.StrMCI, uuid, key, labels)
+	err = label.CreateOrUpdateLabel(model.StrMCI, uid, key, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
@@ -564,12 +564,12 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 			log.Info().Msg("Create MCI subGroup object")
 			key := common.GenMciSubGroupKey(nsId, mciId, k.Name)
 
-			uuidSubGroup := common.GenUid()
+			uidSubGroup := common.GenUid()
 
 			subGroupInfoData := model.TbSubGroupInfo{}
 			subGroupInfoData.Id = common.ToLower(k.Name)
 			subGroupInfoData.Name = common.ToLower(k.Name)
-			subGroupInfoData.Uuid = uuidSubGroup
+			subGroupInfoData.Uid = uidSubGroup
 			subGroupInfoData.SubGroupSize = k.SubGroupSize
 
 			for i := vmStartIndex; i < subGroupSize+vmStartIndex; i++ {
@@ -587,7 +587,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 				"provider":  "cb-tumblebug",
 				"namespace": nsId,
 			}
-			err = label.CreateOrUpdateLabel(model.StrSubGroup, uuid, key, labels)
+			err = label.CreateOrUpdateLabel(model.StrSubGroup, uid, key, labels)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return nil, err
@@ -610,10 +610,9 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 				log.Debug().Msg("vmInfoData.Name: " + vmInfoData.Name)
 
 			}
-			uuidVm := common.GenUid()
 
 			vmInfoData.Id = vmInfoData.Name
-			vmInfoData.Uuid = uuidVm
+			vmInfoData.Uid = common.GenUid()
 
 			vmInfoData.PublicIP = "empty"
 			vmInfoData.PublicDNS = "empty"
@@ -643,7 +642,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 
 			vmInfoData.Label = k.Label
 
-			vmInfoData.IdByCSP = k.IdByCSP
+			vmInfoData.CspResourceId = k.CspResourceId
 
 			// Avoid concurrent requests to CSP.
 			time.Sleep(time.Duration(i) * time.Second)
@@ -1190,7 +1189,7 @@ func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model
 		"provider":  "cb-tumblebug",
 		"namespace": nsId,
 	}
-	err = label.CreateOrUpdateLabel(model.StrVM, vmInfoData.Uuid, key, labels)
+	err = label.CreateOrUpdateLabel(model.StrVM, vmInfoData.Uid, key, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -1230,9 +1229,9 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 
 	// in case of registering existing CSP VM
 	if option == "register" {
-		// IdByCSP is required
-		if vmInfoData.IdByCSP == "" {
-			err := fmt.Errorf("vmInfoData.IdByCSP is empty (required for register VM)")
+		// CspResourceId is required
+		if vmInfoData.CspResourceId == "" {
+			err := fmt.Errorf("vmInfoData.CspResourceId is empty (required for register VM)")
 			log.Error().Err(err).Msg("")
 			return err
 		}
@@ -1245,7 +1244,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 	requestBody.ConnectionName = vmInfoData.ConnectionName
 
 	//generate VM ID(Name) to request to CSP(Spider)
-	requestBody.ReqInfo.Name = vmInfoData.Uuid
+	requestBody.ReqInfo.Name = vmInfoData.Uid
 
 	customImageFlag := false
 
@@ -1261,7 +1260,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 	requestBody.ReqInfo.RootDiskSize = vmInfoData.RootDiskSize
 
 	if option == "register" {
-		requestBody.ReqInfo.CSPid = vmInfoData.IdByCSP
+		requestBody.ReqInfo.CSPid = vmInfoData.CspResourceId
 
 	} else {
 		// Try lookup customImage
@@ -1325,7 +1324,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 			return err
 		}
 
-		requestBody.ReqInfo.SubnetName = subnetInfo.CspSubnetName
+		requestBody.ReqInfo.SubnetName = subnetInfo.CspResourceHandlingName
 		if requestBody.ReqInfo.SubnetName == "" {
 			log.Error().Err(err).Msg("")
 			return err
@@ -1333,13 +1332,13 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 
 		var SecurityGroupIdsTmp []string
 		for _, v := range vmInfoData.SecurityGroupIds {
-			CspSgId, err := resource.GetCspResourceId(nsId, model.StrSecurityGroup, v)
-			if CspSgId == "" {
+			CspResourceId, err := resource.GetCspResourceId(nsId, model.StrSecurityGroup, v)
+			if CspResourceId == "" {
 				log.Error().Err(err).Msg("")
 				return err
 			}
 
-			SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, CspSgId)
+			SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, CspResourceId)
 		}
 		requestBody.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
 
@@ -1347,12 +1346,12 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 		for _, v := range vmInfoData.DataDiskIds {
 			// ignore DataDiskIds == "", assume it is ignorable mistake
 			if v != "" {
-				CspDataDiskId, err := resource.GetCspResourceId(nsId, model.StrDataDisk, v)
-				if err != nil || CspDataDiskId == "" {
+				CspResourceId, err := resource.GetCspResourceId(nsId, model.StrDataDisk, v)
+				if err != nil || CspResourceId == "" {
 					log.Error().Err(err).Msg("")
 					return err
 				}
-				DataDiskIdsTmp = append(DataDiskIdsTmp, CspDataDiskId)
+				DataDiskIdsTmp = append(DataDiskIdsTmp, CspResourceId)
 			}
 		}
 		requestBody.ReqInfo.DataDiskNames = DataDiskIdsTmp
@@ -1397,10 +1396,8 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 	vmInfoData.CspViewVmDetail = callResult
 	vmInfoData.VmUserAccount = callResult.VMUserId
 	vmInfoData.VmUserPassword = callResult.VMUserPasswd
-	//vmInfoData.Location = vmInfoData.Location
-	//vmInfoData.PlacementAlgo = vmInfoData.PlacementAlgo
-	//vmInfoData.CspVmId = temp.Id
-	//vmInfoData.StartTime = temp.StartTime
+	vmInfoData.CspResourceHandlingName = callResult.IId.NameId
+	vmInfoData.CspResourceId = callResult.IId.SystemId
 	vmInfoData.Region = callResult.Region
 	vmInfoData.PublicIP = callResult.PublicIP
 	vmInfoData.SSHPort, _ = TrimIP(callResult.SSHAccessPoint)
@@ -1410,13 +1407,12 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 	vmInfoData.RootDiskType = callResult.RootDiskType
 	vmInfoData.RootDiskSize = callResult.RootDiskSize
 	vmInfoData.RootDeviceName = callResult.RootDeviceName
-	//configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
 
 	if option == "register" {
 
 		// Reconstuct resource IDs
 		// vNet
-		resourceListInNs, err := resource.ListResource(nsId, model.StrVNet, "cspVNetName", callResult.VpcIID.NameId)
+		resourceListInNs, err := resource.ListResource(nsId, model.StrVNet, "cspResourceHandlingName", callResult.VpcIID.NameId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		} else {
@@ -1430,7 +1426,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 		}
 
 		// access Key
-		resourceListInNs, err = resource.ListResource(nsId, model.StrSSHKey, "cspSshKeyName", callResult.KeyPairIId.NameId)
+		resourceListInNs, err = resource.ListResource(nsId, model.StrSSHKey, "cspResourceHandlingName", callResult.KeyPairIId.NameId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		} else {
@@ -1469,13 +1465,13 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 		tbDataDiskReq := model.TbDataDiskReq{
 			Name:           v.NameId,
 			ConnectionName: vmInfoData.ConnectionName,
-			// CspDataDiskId:  v.NameId, // v.SystemId ? IdByCsp ?
+			CspResourceId:  v.SystemId,
 		}
 
 		dataDisk, err := resource.CreateDataDisk(nsId, &tbDataDiskReq, "register")
 		if err != nil {
-			err = fmt.Errorf("After starting VM %s, failed to register dataDisk %s. \n", vmInfoData.Name, v.NameId)
-			// continue
+			err = fmt.Errorf("after starting VM %s, failed to register dataDisk %s. \n", vmInfoData.Name, v.NameId)
+			log.Err(err).Msg("")
 		}
 
 		vmInfoData.DataDiskIds = append(vmInfoData.DataDiskIds, dataDisk.Id)

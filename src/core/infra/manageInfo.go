@@ -928,9 +928,9 @@ func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (model.TbVmSta
 		return errorInfo, err
 	}
 
-	cspVmId := temp.CspViewVmDetail.IId.NameId
-	if cspVmId == "" {
-		err = fmt.Errorf("cspVmId is empty (VmId: %s)", vmId)
+	cspResourceHandlingName := temp.CspViewVmDetail.IId.NameId
+	if cspResourceHandlingName == "" {
+		err = fmt.Errorf("cspResourceHandlingName is empty (VmId: %s)", vmId)
 		log.Error().Err(err).Msg("")
 		return errorInfo, err
 	}
@@ -946,7 +946,7 @@ func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (model.TbVmSta
 
 	client := resty.New()
 	client.SetTimeout(2 * time.Minute)
-	url := model.SpiderRestUrl + "/vm/" + cspVmId
+	url := model.SpiderRestUrl + "/vm/" + cspResourceHandlingName
 	method := "GET"
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = temp.ConnectionName
@@ -1044,7 +1044,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.TbVmStatusInfo
 
 	errorInfo.Id = temp.Id
 	errorInfo.Name = temp.Name
-	errorInfo.CspVmId = temp.CspViewVmDetail.IId.NameId
+	errorInfo.CspResourceHandlingName = temp.CspViewVmDetail.IId.NameId
 	errorInfo.PublicIp = temp.PublicIP
 	errorInfo.SSHPort = temp.SSHPort
 	errorInfo.PrivateIp = temp.PrivateIP
@@ -1056,10 +1056,10 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.TbVmStatusInfo
 	errorInfo.CreatedTime = temp.CreatedTime
 	errorInfo.SystemMessage = "Error in FetchVmStatus"
 
-	cspVmId := temp.CspViewVmDetail.IId.NameId
+	cspResourceHandlingName := temp.CspViewVmDetail.IId.NameId
 
-	if (temp.TargetAction != model.ActionCreate && temp.TargetAction != model.ActionTerminate) && cspVmId == "" {
-		err = fmt.Errorf("cspVmId is empty (VmId: %s)", vmId)
+	if (temp.TargetAction != model.ActionCreate && temp.TargetAction != model.ActionTerminate) && cspResourceHandlingName == "" {
+		err = fmt.Errorf("cspResourceHandlingName is empty (VmId: %s)", vmId)
 		log.Error().Err(err).Msg("")
 		return errorInfo, err
 	}
@@ -1070,9 +1070,9 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.TbVmStatusInfo
 	callResult := statusResponse{}
 	callResult.Status = ""
 
-	if temp.Status != model.StatusTerminated && cspVmId != "" {
+	if temp.Status != model.StatusTerminated && cspResourceHandlingName != "" {
 		client := resty.New()
-		url := model.SpiderRestUrl + "/vmstatus/" + cspVmId
+		url := model.SpiderRestUrl + "/vmstatus/" + cspResourceHandlingName
 		method := "GET"
 		client.SetTimeout(60 * time.Second)
 
@@ -1140,7 +1140,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.TbVmStatusInfo
 	vmStatusTmp := model.TbVmStatusInfo{}
 	vmStatusTmp.Id = temp.Id
 	vmStatusTmp.Name = temp.Name
-	vmStatusTmp.CspVmId = temp.CspViewVmDetail.IId.NameId
+	vmStatusTmp.CspResourceHandlingName = temp.CspViewVmDetail.IId.NameId
 
 	vmStatusTmp.PrivateIp = temp.PrivateIP
 	vmStatusTmp.NativeStatus = nativeStatus
@@ -1230,8 +1230,8 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.TbVmStatusInfo
 	temp.TargetStatus = vmStatusTmp.TargetStatus
 	temp.SystemMessage = vmStatusTmp.SystemMessage
 
-	if cspVmId != "" {
-		// don't update VM info, if cspVmId is empty
+	if cspResourceHandlingName != "" {
+		// don't update VM info, if cspResourceHandlingName is empty
 		UpdateVmInfo(nsId, mciId, temp)
 	}
 
@@ -1418,13 +1418,13 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	switch command {
 	case model.AttachDataDisk:
 		//req = req.SetResult(&model.SpiderDiskInfo{})
-		url = fmt.Sprintf("%s/disk/%s/attach", model.SpiderRestUrl, dataDisk.CspDataDiskName)
+		url = fmt.Sprintf("%s/disk/%s/attach", model.SpiderRestUrl, dataDisk.CspResourceHandlingName)
 
 		cmdToUpdateAsso = model.StrAdd
 
 	case model.DetachDataDisk:
 		// req = req.SetResult(&bool)
-		url = fmt.Sprintf("%s/disk/%s/detach", model.SpiderRestUrl, dataDisk.CspDataDiskName)
+		url = fmt.Sprintf("%s/disk/%s/detach", model.SpiderRestUrl, dataDisk.CspResourceHandlingName)
 
 		cmdToUpdateAsso = model.StrDelete
 
@@ -1514,7 +1514,7 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	// Just calling GetResource(dataDisk) once will update TB DataDisk object's 'status' field
 	resource.GetResource(nsId, model.StrDataDisk, dataDiskId)
 	/*
-		url = fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, dataDisk.CspDataDiskName)
+		url = fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, dataDisk.CspResourceHandlingName)
 
 		req = client.R().
 			SetHeader("Content-Type", "application/json").

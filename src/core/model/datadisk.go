@@ -90,8 +90,8 @@ type TbDataDiskReq struct {
 	Description    string `json:"description,omitempty"`
 
 	// Fields for "Register existing dataDisk" feature
-	// CspDataDiskId is required to register object from CSP (option=register)
-	CspDataDiskId string `json:"cspDataDiskId"`
+	// CspResourceId is required to register object from CSP (option=register)
+	CspResourceId string `json:"cspResourceId"`
 }
 
 // TbDataDiskVmReq is a struct to handle 'Provisioning dataDisk to VM' request toward CB-Tumblebug.
@@ -104,17 +104,23 @@ type TbDataDiskVmReq struct {
 
 // TbDataDiskInfo is a struct that represents TB dataDisk object.
 type TbDataDiskInfo struct {
-	Id   string `json:"id,omitempty" example:"aws-ap-southeast-1-datadisk"`
-	Name string `json:"name,omitempty" example:"aws-ap-southeast-1-datadisk"`
-	// uuid is universally unique identifier for the resource
-	Uuid                 string     `json:"uuid,omitempty"`
+
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"aws-ap-southeast-1"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	// CspResourceHandlingName is identifier to handle CSP resource
+	CspResourceHandlingName string `json:"cspResourceHandlingName,omitempty" example:"we12fawefadf1221edcf"`
+	// CspResourceId is resource identifier managed by CSP
+	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+
+	// Name is human-readable string to represent the object
+	Name                 string     `json:"name" example:"aws-ap-southeast-1"`
 	ConnectionName       string     `json:"connectionName,omitempty" example:"aws-ap-southeast-1"`
 	DiskType             string     `json:"diskType" example:"standard"`
 	DiskSize             string     `json:"diskSize" example:"77"`
-	CspDataDiskId        string     `json:"cspDataDiskId,omitempty" example:"vol-0d397c3239629bd43"`
-	CspDataDiskName      string     `json:"cspDataDiskName,omitempty" example:"default-aws-ap-southeast-1-datadisk"`
 	Status               DiskStatus `json:"status" example:"Available"` // Available, Unavailable, Attached, ...
-	AssociatedObjectList []string   `json:"associatedObjectList" example:["/ns/default/mci/mci01/vm/aws-ap-southeast-1-1"]`
+	AssociatedObjectList []string   `json:"associatedObjectList" example:"/ns/default/mci/mci01/vm/aws-ap-southeast-1-1"`
 	CreatedTime          time.Time  `json:"createdTime,omitempty" example:"2022-10-12T05:09:51.05Z"`
 	KeyValueList         []KeyValue `json:"keyValueList,omitempty"`
 	Description          string     `json:"description,omitempty" example:"Available"`

@@ -8,7 +8,7 @@ function CallTB() {
 		{ 
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}", 
 			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-			"cspSpecName": "${SPEC_NAME[$INDEX,$REGION]}"
+			"cspResourceId": "${SPEC_NAME[$INDEX,$REGION]}"
 		}
 EOF
     ); echo ${resp} | jq ''

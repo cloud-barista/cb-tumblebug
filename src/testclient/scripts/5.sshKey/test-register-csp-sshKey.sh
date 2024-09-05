@@ -7,7 +7,7 @@ function CallTB() {
 		'{ 
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
-			"cspSshKeyId": "jhseo-test",
+			"cspResourceId": "jhseo-test",
 			"fingerprint": "test-fingerprint",
 			"username": "test-username",
 			"publicKey": "test-public-key",

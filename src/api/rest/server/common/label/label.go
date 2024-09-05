@@ -27,17 +27,17 @@ import (
 // RestCreateOrUpdateLabel godoc
 // @ID CreateOrUpdateLabel
 // @Summary Create or update a label for a resource
-// @Description Create or update a label for a resource identified by its UUID
+// @Description Create or update a label for a resource identified by its uid
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
 // @Param labelType path string true "Label Type (e.g., ns, vnet)"
-// @Param uuid path string true "Resource UUID"
+// @Param uid path string true "Resource uid"
 // @Param labels body map[string]string true "Labels to create or update"
 // @Success 200 {object} model.SimpleMsg "Label created or updated successfully"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// @Router /label/{labelType}/{uuid} [put]
+// @Router /label/{labelType}/{uid} [put]
 func RestCreateOrUpdateLabel(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
@@ -45,7 +45,7 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 	}
 
 	labelType := c.Param("labelType")
-	uuid := c.Param("uuid")
+	uid := c.Param("uid")
 
 	// Parse the incoming request body to get the labels
 	labels := make(map[string]string)
@@ -54,10 +54,10 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 	}
 
 	// Get the resource key
-	resourceKey := fmt.Sprintf("/%s/%s", labelType, uuid)
+	resourceKey := fmt.Sprintf("/%s/%s", labelType, uid)
 
 	// Create or update the label in the KV store
-	err := label.CreateOrUpdateLabel(labelType, uuid, resourceKey, labels)
+	err := label.CreateOrUpdateLabel(labelType, uid, resourceKey, labels)
 	if err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -68,17 +68,17 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 // RestRemoveLabel godoc
 // @ID RemoveLabel
 // @Summary Remove a label from a resource
-// @Description Remove a label from a resource identified by its UUID
+// @Description Remove a label from a resource identified by its uid
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
 // @Param labelType path string true "Label Type (e.g., ns, vnet)"
-// @Param uuid path string true "Resource UUID"
+// @Param uid path string true "Resource uid"
 // @Param key path string true "Label key to remove"
 // @Success 200 {object} model.SimpleMsg "Label removed successfully"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// @Router /label/{labelType}/{uuid}/{key} [delete]
+// @Router /label/{labelType}/{uid}/{key} [delete]
 func RestRemoveLabel(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
@@ -86,11 +86,11 @@ func RestRemoveLabel(c echo.Context) error {
 	}
 
 	labelType := c.Param("labelType")
-	uuid := c.Param("uuid")
+	uid := c.Param("uid")
 	key := c.Param("key")
 
 	// Remove the label from the KV store
-	err := label.RemoveLabel(labelType, uuid, key)
+	err := label.RemoveLabel(labelType, uid, key)
 	if err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -101,16 +101,16 @@ func RestRemoveLabel(c echo.Context) error {
 // RestGetLabels godoc
 // @ID GetLabels
 // @Summary Get labels for a resource
-// @Description Get labels for a resource identified by its UUID
+// @Description Get labels for a resource identified by its uid
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
 // @Param labelType path string true "Label Type (e.g., ns, vnet)"
-// @Param uuid path string true "Resource UUID"
+// @Param uid path string true "Resource uid"
 // @Success 200 {object} map[string]string "Labels for the resource"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// @Router /label/{labelType}/{uuid} [get]
+// @Router /label/{labelType}/{uid} [get]
 func RestGetLabels(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
@@ -118,10 +118,10 @@ func RestGetLabels(c echo.Context) error {
 	}
 
 	labelType := c.Param("labelType")
-	uuid := c.Param("uuid")
+	uid := c.Param("uid")
 
 	// Get the labels from the KV store
-	labelInfo, err := label.GetLabels(labelType, uuid)
+	labelInfo, err := label.GetLabels(labelType, uid)
 	if err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}

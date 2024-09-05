@@ -95,8 +95,8 @@ type TbK8sClusterReq struct { // Tumblebug
 	K8sNodeGroupList []TbK8sNodeGroupReq `json:"k8sNodeGroupList"`
 
 	// Fields for "Register existing K8sCluster" feature
-	// @description CspK8sClusterId is required to register a k8s cluster from CSP (option=register)
-	CspK8sClusterId string `json:"cspK8sClusterId" example:"required when option is register"`
+	// @description CspResourceId is required to register a k8s cluster from CSP (option=register)
+	CspResourceId string `json:"cspResourceId" example:"required when option is register"`
 }
 
 // 2023-11-13 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/api-runtime/rest-runtime/ClusterRest.go#L441
@@ -293,10 +293,17 @@ type SpiderClusterInfo struct {
 
 // TbK8sClusterInfo is a struct that represents TB K8sCluster object.
 type TbK8sClusterInfo struct { // Tumblebug
-	Id   string `json:"id" example:"k8scluster-01"`
-	Name string `json:"name" example:"k8scluster-01"`
-	// uuid is universally unique identifier for the resource
-	Uuid           string `json:"uuid,omitempty"`
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"aws-ap-southeast-1"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	// CspResourceHandlingName is identifier to handle CSP resource
+	CspResourceHandlingName string `json:"cspResourceHandlingName,omitempty" example:"we12fawefadf1221edcf"`
+	// CspResourceId is resource identifier managed by CSP
+	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+
+	// Name is human-readable string to represent the object
+	Name           string `json:"name" example:"aws-ap-southeast-1"`
 	ConnectionName string `json:"connectionName" example:"alibaba-ap-northeast-2"`
 
 	Version string `json:"version" example:"1.30.1-aliyun.1"` // Kubernetes Version, ex) 1.23.3
@@ -313,9 +320,7 @@ type TbK8sClusterInfo struct { // Tumblebug
 	CreatedTime  time.Time  `json:"createdTime" example:"1970-01-01T00:00:00.00Z"`
 	KeyValueList []KeyValue `json:"keyValueList"`
 
-	Description       string `json:"description" example:"My K8sCluster"`
-	CspK8sClusterId   string `json:"cspK8sClusterId" example:"c123456789012345678901234567890"`
-	CspK8sClusterName string `json:"cspK8sClusterName" example:"default-k8scluster-01"`
+	Description string `json:"description" example:"My K8sCluster"`
 
 	// Latest system message such as error message
 	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
@@ -375,8 +380,17 @@ type SpiderNodeGroupInfo struct {
 
 // TbK8sNodeGroupInfo is a struct to handle K8sCluster's Node Group information from the CB-Tumblebug's REST API response
 type TbK8sNodeGroupInfo struct {
-	Id string `json:"id" example:"ng-01"`
-	//Name string `json:"name"`
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"aws-ap-southeast-1"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	// CspResourceHandlingName is identifier to handle CSP resource
+	CspResourceHandlingName string `json:"cspResourceHandlingName,omitempty" example:"we12fawefadf1221edcf"`
+	// CspResourceId is resource identifier managed by CSP
+	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+
+	// Name is human-readable string to represent the object
+	Name string `json:"name" example:"aws-ap-southeast-1"`
 
 	// VM config.
 	ImageId      string `json:"imageId" example:"image-01"`

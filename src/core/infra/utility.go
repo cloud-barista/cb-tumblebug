@@ -15,8 +15,6 @@ limitations under the License.
 package infra
 
 import (
-	//"encoding/json"
-	//uuid "github.com/google/uuid"
 	"fmt"
 	"sort"
 	"strconv"
@@ -70,31 +68,7 @@ func init() {
 
 }
 
-/*
-func GenUid() string {
-	return uuid.New().String()
-}
-*/
-
-/*
-type resourceIds struct {
-	CspImageId           string
-	CspImageName         string
-	CspSshKeyName        string
-	Name                 string // Spec
-	CspVNetId            string
-	CspVNetName          string
-	CspSecurityGroupId   string
-	CspSecurityGroupName string
-	CspPublicIpId        string
-	CspPublicIpName      string
-	CspVNicId            string
-	CspVNicName          string
-
-	ConnectionName string
-}
-*/
-
+// CheckMci func is to check given mciId is duplicated with existing
 func CheckMci(nsId string, mciId string) (bool, error) {
 
 	// Check parameters' emptiness
@@ -315,7 +289,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 					if nlb.ConnectionName == connConfig { // filtering
 						temp := model.ResourceOnTumblebugInfo{}
 						temp.IdByTb = nlb.Id
-						temp.IdByCsp = nlb.CspNLBId
+						temp.CspResourceId = nlb.CspResourceId
 						temp.NsId = ns
 						temp.MciId = mci
 						temp.ObjectKey = GenNLBKey(ns, mci, nlb.Id)
@@ -351,7 +325,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 					if vm.ConnectionName == connConfig { // filtering
 						temp := model.ResourceOnTumblebugInfo{}
 						temp.IdByTb = vm.Id
-						temp.IdByCsp = vm.CspViewVmDetail.IId.SystemId
+						temp.CspResourceId = vm.CspViewVmDetail.IId.SystemId
 						temp.NsId = ns
 						temp.MciId = mci
 						temp.ObjectKey = common.GenMciKey(ns, mci, vm.Id)
@@ -375,7 +349,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				if resource.ConnectionName == connConfig { // filtering
 					temp := model.ResourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
-					temp.IdByCsp = resource.CspVNetId
+					temp.CspResourceId = resource.CspResourceId
 					temp.NsId = ns
 					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
@@ -397,7 +371,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				if resource.ConnectionName == connConfig { // filtering
 					temp := model.ResourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
-					temp.IdByCsp = resource.CspSecurityGroupId
+					temp.CspResourceId = resource.CspResourceId
 					temp.NsId = ns
 					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
@@ -419,7 +393,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				if resource.ConnectionName == connConfig { // filtering
 					temp := model.ResourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
-					temp.IdByCsp = resource.CspSshKeyId
+					temp.CspResourceId = resource.CspResourceId
 					temp.NsId = ns
 					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
@@ -441,7 +415,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				if resource.ConnectionName == connConfig { // filtering
 					temp := model.ResourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
-					temp.IdByCsp = resource.CspDataDiskId
+					temp.CspResourceId = resource.CspResourceId
 					temp.NsId = ns
 					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
@@ -463,7 +437,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				if resource.ConnectionName == connConfig { // filtering
 					temp := model.ResourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
-					temp.IdByCsp = resource.CspCustomImageId
+					temp.CspResourceId = resource.CspResourceId
 					temp.NsId = ns
 					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
@@ -559,22 +533,22 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 
 	for _, v := range (*temp).AllList.MappedList {
 		tmpResourceOnSpider.IdBySp = v.NameId
-		tmpResourceOnSpider.IdByCsp = v.SystemId
+		tmpResourceOnSpider.CspResourceId = v.SystemId
 		result.Resources.OnSpider.Info = append(result.Resources.OnSpider.Info, tmpResourceOnSpider)
 
-		tmpResourceOnCsp.IdByCsp = v.SystemId
+		tmpResourceOnCsp.CspResourceId = v.SystemId
 		tmpResourceOnCsp.RefNameOrId = v.NameId
 		result.Resources.OnCspTotal.Info = append(result.Resources.OnCspTotal.Info, tmpResourceOnCsp)
 	}
 
 	for _, v := range (*temp).AllList.OnlySpiderList {
 		tmpResourceOnSpider.IdBySp = v.NameId
-		tmpResourceOnSpider.IdByCsp = v.SystemId
+		tmpResourceOnSpider.CspResourceId = v.SystemId
 		result.Resources.OnSpider.Info = append(result.Resources.OnSpider.Info, tmpResourceOnSpider)
 	}
 
 	for _, v := range (*temp).AllList.OnlyCSPList {
-		tmpResourceOnCsp.IdByCsp = v.SystemId
+		tmpResourceOnCsp.CspResourceId = v.SystemId
 		tmpResourceOnCsp.RefNameOrId = v.NameId
 
 		result.Resources.OnCspTotal.Info = append(result.Resources.OnCspTotal.Info, tmpResourceOnCsp)
@@ -827,9 +801,9 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
 			req := model.TbRegisterVNetReq{}
 			req.ConnectionName = connConfig
-			req.CspVNetId = r.IdByCsp
+			req.CspResourceId = r.CspResourceId
 			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
-			req.Name = req.ConnectionName + "-" + req.CspVNetId
+			req.Name = req.ConnectionName + "-" + req.CspResourceId
 			req.Name = common.ChangeIdString(req.Name)
 
 			_, err = resource.RegisterVNet(nsId, &req)
@@ -858,9 +832,9 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 			req := model.TbSecurityGroupReq{}
 			req.ConnectionName = connConfig
 			req.VNetId = "not defined"
-			req.CspSecurityGroupId = r.IdByCsp
+			req.CspResourceId = r.CspResourceId
 			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
-			req.Name = req.ConnectionName + "-" + req.CspSecurityGroupId
+			req.Name = req.ConnectionName + "-" + req.CspResourceId
 			req.Name = common.ChangeIdString(req.Name)
 
 			_, err = resource.CreateSecurityGroup(nsId, &req, optionFlag)
@@ -888,9 +862,9 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
 			req := model.TbSshKeyReq{}
 			req.ConnectionName = connConfig
-			req.CspSshKeyId = r.IdByCsp
+			req.CspResourceId = r.CspResourceId
 			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
-			req.Name = req.ConnectionName + "-" + req.CspSshKeyId
+			req.Name = req.ConnectionName + "-" + req.CspResourceId
 			req.Name = common.ChangeIdString(req.Name)
 
 			req.Fingerprint = "cannot retrieve"
@@ -923,9 +897,9 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
 			req := model.TbDataDiskReq{
-				Name:           fmt.Sprintf("%s-%s", connConfig, r.IdByCsp),
+				Name:           fmt.Sprintf("%s-%s", connConfig, r.CspResourceId),
 				ConnectionName: connConfig,
-				CspDataDiskId:  r.IdByCsp,
+				CspResourceId:  r.CspResourceId,
 			}
 			req.Name = common.ChangeIdString(req.Name)
 
@@ -954,9 +928,9 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
 			req := model.TbCustomImageReq{
-				Name:             fmt.Sprintf("%s-%s", connConfig, r.IdByCsp),
-				ConnectionName:   connConfig,
-				CspCustomImageId: r.IdByCsp,
+				Name:           fmt.Sprintf("%s-%s", connConfig, r.CspResourceId),
+				ConnectionName: connConfig,
+				CspResourceId:  r.CspResourceId,
 			}
 			req.Name = common.ChangeIdString(req.Name)
 
@@ -995,9 +969,9 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 
 			vm := model.TbVmReq{}
 			vm.ConnectionName = connConfig
-			vm.IdByCSP = r.IdByCsp
+			vm.CspResourceId = r.CspResourceId
 			vm.Description = "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)"
-			vm.Name = vm.ConnectionName + "-" + r.RefNameOrId + "-" + vm.IdByCSP
+			vm.Name = vm.ConnectionName + "-" + r.RefNameOrId + "-" + vm.CspResourceId
 			vm.Name = common.ChangeIdString(vm.Name)
 			if mciFlag == "n" {
 				// (if mciFlag == "n") create a mci for each vm
@@ -1039,7 +1013,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 
 }
 
-func FindTbVmByCspId(nsId string, mciId string, vmIdByCsp string) (model.TbVmInfo, error) {
+func FindTbVmByCspId(nsId string, mciId string, vmCspResourceId string) (model.TbVmInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1053,7 +1027,7 @@ func FindTbVmByCspId(nsId string, mciId string, vmIdByCsp string) (model.TbVmInf
 		return model.TbVmInfo{}, err
 	}
 
-	err = common.CheckString(vmIdByCsp)
+	err = common.CheckString(vmCspResourceId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.TbVmInfo{}, err
@@ -1079,11 +1053,11 @@ func FindTbVmByCspId(nsId string, mciId string, vmIdByCsp string) (model.TbVmInf
 
 	vms := mci.Vm
 	for _, v := range vms {
-		if v.IdByCSP == vmIdByCsp || v.CspViewVmDetail.IId.NameId == vmIdByCsp {
+		if v.CspResourceId == vmCspResourceId || v.CspViewVmDetail.IId.NameId == vmCspResourceId {
 			return v, nil
 		}
 	}
 
-	err = fmt.Errorf("Cannot find the VM %s in %s/%s", vmIdByCsp, nsId, mciId)
+	err = fmt.Errorf("Cannot find the VM %s in %s/%s", vmCspResourceId, nsId, mciId)
 	return model.TbVmInfo{}, err
 }

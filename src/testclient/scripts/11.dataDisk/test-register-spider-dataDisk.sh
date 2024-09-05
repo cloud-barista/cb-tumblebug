@@ -7,7 +7,7 @@ function CallTB() {
 		'{ 
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
-			"cspDataDiskId": ""
+			"cspResourceId": ""
 		}' | jq ''
 }
 

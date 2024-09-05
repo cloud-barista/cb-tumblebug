@@ -827,9 +827,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/label/{labelType}/{uuid}": {
+        "/label/{labelType}/{uid}": {
             "get": {
-                "description": "Get labels for a resource identified by its UUID",
+                "description": "Get labels for a resource identified by its uid",
                 "consumes": [
                     "application/json"
                 ],
@@ -851,8 +851,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Resource UUID",
-                        "name": "uuid",
+                        "description": "Resource uid",
+                        "name": "uid",
                         "in": "path",
                         "required": true
                     }
@@ -882,7 +882,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Create or update a label for a resource identified by its UUID",
+                "description": "Create or update a label for a resource identified by its uid",
                 "consumes": [
                     "application/json"
                 ],
@@ -904,8 +904,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Resource UUID",
-                        "name": "uuid",
+                        "description": "Resource uid",
+                        "name": "uid",
                         "in": "path",
                         "required": true
                     },
@@ -944,9 +944,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/label/{labelType}/{uuid}/{key}": {
+        "/label/{labelType}/{uid}/{key}": {
             "delete": {
-                "description": "Remove a label from a resource identified by its UUID",
+                "description": "Remove a label from a resource identified by its uid",
                 "consumes": [
                     "application/json"
                 ],
@@ -968,8 +968,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Resource UUID",
-                        "name": "uuid",
+                        "description": "Resource uid",
+                        "name": "uid",
                         "in": "path",
                         "required": true
                     },
@@ -1049,7 +1049,7 @@ const docTemplate = `{
                 "operationId": "LookupImage",
                 "parameters": [
                     {
-                        "description": "Specify connectionName \u0026 cspImageId",
+                        "description": "Specify connectionName \u0026 cspResourceId",
                         "name": "lookupImageReq",
                         "in": "body",
                         "required": true,
@@ -1143,7 +1143,7 @@ const docTemplate = `{
                 "operationId": "LookupSpec",
                 "parameters": [
                     {
-                        "description": "Specify connectionName \u0026 cspSpecName",
+                        "description": "Specify connectionName \u0026 cspResourceId",
                         "name": "lookupSpecReq",
                         "in": "body",
                         "required": true,
@@ -2316,7 +2316,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Field key for filtering (ex: cspK8sClusterName)",
+                        "description": "Field key for filtering (ex: cspResourceHandlingName)",
                         "name": "filterKey",
                         "in": "query"
                     },
@@ -2390,7 +2390,7 @@ const docTemplate = `{
                             "register"
                         ],
                         "type": "string",
-                        "description": "Option: [required params for register] connectionName, name, cspK8sClusterId",
+                        "description": "Option: [required params for register] connectionName, name, cspResourceId",
                         "name": "option",
                         "in": "query"
                     },
@@ -3461,7 +3461,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Field key for filtering (ex: cspNLBName)",
+                        "description": "Field key for filtering (ex: cspResourceHandlingName)",
                         "name": "filterKey",
                         "in": "query"
                     },
@@ -3543,7 +3543,7 @@ const docTemplate = `{
                             "register"
                         ],
                         "type": "string",
-                        "description": "Option: [required params for register] connectionName, name, cspNLBId",
+                        "description": "Option: [required params for register] connectionName, name, cspResourceId",
                         "name": "option",
                         "in": "query"
                     },
@@ -6631,7 +6631,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Specify details of a image object (cspImageName, guestOS, description, ...) manually",
+                        "description": "Specify details of a image object (cspResourceHandlingName, guestOS, description, ...) manually",
                         "name": "imageInfo",
                         "in": "body",
                         "schema": {
@@ -6639,7 +6639,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Specify name, connectionName and cspImageId to register an image object automatically",
+                        "description": "Specify name, connectionName and cspResourceId to register an image object automatically",
                         "name": "imageId",
                         "in": "body",
                         "schema": {
@@ -7042,7 +7042,7 @@ const docTemplate = `{
                             "register"
                         ],
                         "type": "string",
-                        "description": "Option: [required params for register] connectionName, name, vNetId, cspSecurityGroupId",
+                        "description": "Option: [required params for register] connectionName, name, vNetId, cspResourceId",
                         "name": "option",
                         "in": "query"
                     },
@@ -7355,7 +7355,7 @@ const docTemplate = `{
                     {
                         "enum": [
                             "registerWithInfo",
-                            "registerWithCspSpecName"
+                            "registerWithCspResourceId"
                         ],
                         "type": "string",
                         "description": "registeringMethod",
@@ -7380,7 +7380,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Specify name, connectionName and cspSpecName to register a spec object automatically",
+                        "description": "Specify name, connectionName and cspResourceId to register a spec object automatically",
                         "name": "specName",
                         "in": "body",
                         "schema": {
@@ -7683,7 +7683,7 @@ const docTemplate = `{
                             "register"
                         ],
                         "type": "string",
-                        "description": "Option: [required params for register] connectionName, name, cspSshKeyId, fingerprint, username, publicKey, privateKey",
+                        "description": "Option: [required params for register] connectionName, name, cspResourceId, fingerprint, username, publicKey, privateKey",
                         "name": "option",
                         "in": "query"
                     },
@@ -7956,7 +7956,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Field key for filtering (ex: cspVNetName)",
+                        "description": "Field key for filtering (ex: cspResourceHandlingName)",
                         "name": "filterKey",
                         "in": "query"
                     },
@@ -10194,7 +10194,7 @@ const docTemplate = `{
                 "costPerHour": {
                     "$ref": "#/definitions/model.Range"
                 },
-                "cspSpecName": {
+                "cspResourceId": {
                     "type": "string"
                 },
                 "description": {
@@ -10823,16 +10823,19 @@ const docTemplate = `{
                     "example": "Description for this namespace"
                 },
                 "id": {
+                    "description": "Id is unique identifier for the object",
                     "type": "string",
                     "example": "default"
                 },
                 "name": {
+                    "description": "Name is human-readable string to represent the object",
                     "type": "string",
                     "example": "default"
                 },
-                "uuid": {
-                    "description": "uuid is universally unique identifier for the resource",
-                    "type": "string"
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 }
             }
         },
@@ -11139,7 +11142,7 @@ const docTemplate = `{
         "model.ResourceOnCspInfo": {
             "type": "object",
             "properties": {
-                "idByCsp": {
+                "cspResourceId": {
                     "type": "string"
                 },
                 "refNameOrId": {
@@ -11164,7 +11167,7 @@ const docTemplate = `{
         "model.ResourceOnSpiderInfo": {
             "type": "object",
             "properties": {
-                "idByCsp": {
+                "cspResourceId": {
                     "type": "string"
                 },
                 "idBySp": {
@@ -11189,7 +11192,7 @@ const docTemplate = `{
         "model.ResourceOnTumblebugInfo": {
             "type": "object",
             "properties": {
-                "idByCsp": {
+                "cspResourceId": {
                     "type": "string"
                 },
                 "idByTb": {
@@ -11731,13 +11734,24 @@ const docTemplate = `{
         "model.TbChangeK8sNodeGroupAutoscaleSizeRes": {
             "type": "object",
             "properties": {
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
                 "desiredNodeSize": {
                     "type": "integer",
                     "example": 1
                 },
                 "id": {
+                    "description": "Id is unique identifier for the object",
                     "type": "string",
-                    "example": "ng-01"
+                    "example": "aws-ap-southeast-1"
                 },
                 "imageId": {
                     "description": "VM config.",
@@ -11768,6 +11782,11 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
+                "name": {
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
                 "onAutoScaling": {
                     "description": "Scaling config.",
                     "type": "boolean",
@@ -11797,6 +11816,11 @@ const docTemplate = `{
                         }
                     ],
                     "example": "Creating"
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 }
             }
         },
@@ -11807,7 +11831,10 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "/ns/default/mci/mci01/vm/aws-ap-southeast-1-1"
+                    ]
                 },
                 "connectionName": {
                     "type": "string",
@@ -11817,13 +11844,15 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2022-10-18T08:12:48Z"
                 },
-                "cspCustomImageId": {
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
                     "type": "string",
-                    "example": "ami-06eb41e14121c550a"
+                    "example": "we12fawefadf1221edcf"
                 },
-                "cspCustomImageName": {
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
-                    "example": "aws-ap-southeast-1-snapshot"
+                    "example": "csp-06eb41e14121c550a"
                 },
                 "description": {
                     "type": "string"
@@ -11833,8 +11862,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
+                    "description": "Id is unique identifier for the object",
                     "type": "string",
-                    "example": "aws-ap-southeast-1-snapshot"
+                    "example": "aws-ap-southeast-1"
                 },
                 "isAutoGenerated": {
                     "type": "boolean"
@@ -11846,8 +11876,9 @@ const docTemplate = `{
                     }
                 },
                 "name": {
+                    "description": "Name is human-readable string to represent the object",
                     "type": "string",
-                    "example": "aws-ap-southeast-1-snapshot"
+                    "example": "aws-ap-southeast-1"
                 },
                 "namespace": {
                     "description": "required to save in RDB",
@@ -11871,9 +11902,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
-                "uuid": {
-                    "description": "uuid is universally unique identifier for the resource",
-                    "type": "string"
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 }
             }
         },
@@ -11886,7 +11918,7 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspCustomImageId": {
+                "cspResourceId": {
                     "description": "This field is for 'Register existing custom image'",
                     "type": "string"
                 },
@@ -11908,7 +11940,10 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "/ns/default/mci/mci01/vm/aws-ap-southeast-1-1"
+                    ]
                 },
                 "connectionName": {
                     "type": "string",
@@ -11918,13 +11953,15 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2022-10-12T05:09:51.05Z"
                 },
-                "cspDataDiskId": {
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
                     "type": "string",
-                    "example": "vol-0d397c3239629bd43"
+                    "example": "we12fawefadf1221edcf"
                 },
-                "cspDataDiskName": {
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
-                    "example": "default-aws-ap-southeast-1-datadisk"
+                    "example": "csp-06eb41e14121c550a"
                 },
                 "description": {
                     "type": "string",
@@ -11939,8 +11976,9 @@ const docTemplate = `{
                     "example": "standard"
                 },
                 "id": {
+                    "description": "Id is unique identifier for the object",
                     "type": "string",
-                    "example": "aws-ap-southeast-1-datadisk"
+                    "example": "aws-ap-southeast-1"
                 },
                 "isAutoGenerated": {
                     "type": "boolean"
@@ -11952,8 +11990,9 @@ const docTemplate = `{
                     }
                 },
                 "name": {
+                    "description": "Name is human-readable string to represent the object",
                     "type": "string",
-                    "example": "aws-ap-southeast-1-datadisk"
+                    "example": "aws-ap-southeast-1"
                 },
                 "status": {
                     "description": "Available, Unavailable, Attached, ...",
@@ -11974,9 +12013,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Failed because ..."
                 },
-                "uuid": {
-                    "description": "uuid is universally unique identifier for the resource",
-                    "type": "string"
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 }
             }
         },
@@ -11992,8 +12032,8 @@ const docTemplate = `{
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
-                "cspDataDiskId": {
-                    "description": "Fields for \"Register existing dataDisk\" feature\nCspDataDiskId is required to register object from CSP (option=register)",
+                "cspResourceId": {
+                    "description": "Fields for \"Register existing dataDisk\" feature\nCspResourceId is required to register object from CSP (option=register)",
                     "type": "string"
                 },
                 "description": {
@@ -12115,11 +12155,15 @@ const docTemplate = `{
                 "creationDate": {
                     "type": "string"
                 },
-                "cspImageId": {
-                    "type": "string"
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
-                "cspImageName": {
-                    "type": "string"
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
                 },
                 "description": {
                     "type": "string"
@@ -12129,7 +12173,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "infraType": {
                     "description": "vm|k8s|kubernetes|container, etc.",
@@ -12145,11 +12191,14 @@ const docTemplate = `{
                     }
                 },
                 "name": {
-                    "type": "string"
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "namespace": {
                     "description": "required to save in RDB",
-                    "type": "string"
+                    "type": "string",
+                    "example": "default"
                 },
                 "status": {
                     "description": "available, unavailable",
@@ -12160,9 +12209,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
-                "uuid": {
-                    "description": "uuid is universally unique identifier for the resource",
-                    "type": "string"
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 }
             }
         },
@@ -12170,14 +12220,14 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "connectionName",
-                "cspImageId",
+                "cspResourceId",
                 "name"
             ],
             "properties": {
                 "connectionName": {
                     "type": "string"
                 },
-                "cspImageId": {
+                "cspResourceId": {
                     "type": "string"
                 },
                 "description": {
@@ -12229,21 +12279,24 @@ const docTemplate = `{
                     "type": "string",
                     "example": "1970-01-01T00:00:00.00Z"
                 },
-                "cspK8sClusterId": {
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
                     "type": "string",
-                    "example": "c123456789012345678901234567890"
+                    "example": "we12fawefadf1221edcf"
                 },
-                "cspK8sClusterName": {
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
-                    "example": "default-k8scluster-01"
+                    "example": "csp-06eb41e14121c550a"
                 },
                 "description": {
                     "type": "string",
                     "example": "My K8sCluster"
                 },
                 "id": {
+                    "description": "Id is unique identifier for the object",
                     "type": "string",
-                    "example": "k8scluster-01"
+                    "example": "aws-ap-southeast-1"
                 },
                 "k8sNodeGroupList": {
                     "type": "array",
@@ -12258,8 +12311,9 @@ const docTemplate = `{
                     }
                 },
                 "name": {
+                    "description": "Name is human-readable string to represent the object",
                     "type": "string",
-                    "example": "k8scluster-01"
+                    "example": "aws-ap-southeast-1"
                 },
                 "network": {
                     "$ref": "#/definitions/model.TbK8sClusterNetworkInfo"
@@ -12283,9 +12337,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Failed because ..."
                 },
-                "uuid": {
-                    "description": "uuid is universally unique identifier for the resource",
-                    "type": "string"
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 },
                 "version": {
                     "description": "Kubernetes Version, ex) 1.23.3",
@@ -12342,8 +12397,8 @@ const docTemplate = `{
                     "type": "string",
                     "example": "alibaba-ap-northeast-2"
                 },
-                "cspK8sClusterId": {
-                    "description": "Fields for \"Register existing K8sCluster\" feature\n@description CspK8sClusterId is required to register a k8s cluster from CSP (option=register)",
+                "cspResourceId": {
+                    "description": "Fields for \"Register existing K8sCluster\" feature\n@description CspResourceId is required to register a k8s cluster from CSP (option=register)",
                     "type": "string",
                     "example": "required when option is register"
                 },
@@ -12412,13 +12467,24 @@ const docTemplate = `{
         "model.TbK8sNodeGroupInfo": {
             "type": "object",
             "properties": {
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
                 "desiredNodeSize": {
                     "type": "integer",
                     "example": 1
                 },
                 "id": {
+                    "description": "Id is unique identifier for the object",
                     "type": "string",
-                    "example": "ng-01"
+                    "example": "aws-ap-southeast-1"
                 },
                 "imageId": {
                     "description": "VM config.",
@@ -12449,6 +12515,11 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
+                "name": {
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
                 "onAutoScaling": {
                     "description": "Scaling config.",
                     "type": "boolean",
@@ -12478,6 +12549,11 @@ const docTemplate = `{
                         }
                     ],
                     "example": "Creating"
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 }
             }
         },
@@ -12606,7 +12682,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "installMonAgent": {
                     "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
@@ -12624,7 +12702,9 @@ const docTemplate = `{
                     "example": "User custom label"
                 },
                 "name": {
-                    "type": "string"
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "newVmList": {
                     "description": "List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.",
@@ -12658,9 +12738,10 @@ const docTemplate = `{
                 "targetStatus": {
                     "type": "string"
                 },
-                "uuid": {
-                    "description": "uuid is universally unique identifier for the resource",
-                    "type": "string"
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 },
                 "vm": {
                     "type": "array",
@@ -12795,11 +12876,15 @@ const docTemplate = `{
                 "createdTime": {
                     "type": "string"
                 },
-                "cspNLBId": {
-                    "type": "string"
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
-                "cspNLBName": {
-                    "type": "string"
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
                 },
                 "description": {
                     "type": "string"
@@ -12808,7 +12893,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/model.TbNLBHealthCheckerInfo"
                 },
                 "id": {
-                    "type": "string"
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "isAutoGenerated": {
                     "type": "boolean"
@@ -12826,7 +12913,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/model.Location"
                 },
                 "name": {
-                    "type": "string"
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "scope": {
                     "description": "REGION(V) | GLOBAL",
@@ -12847,9 +12936,10 @@ const docTemplate = `{
                     "description": "PUBLIC(V) | INTERNAL",
                     "type": "string"
                 },
-                "uuid": {
-                    "description": "uuid is universally unique identifier for the resource",
-                    "type": "string"
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 }
             }
         },
@@ -12894,7 +12984,7 @@ const docTemplate = `{
                 "type"
             ],
             "properties": {
-                "cspNLBId": {
+                "cspResourceId": {
                     "description": "Existing NLB (used only for option=register)",
                     "type": "string"
                 },
@@ -12999,14 +13089,14 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "connectionName",
-                "cspSubnetId",
+                "cspResourceId",
                 "name"
             ],
             "properties": {
                 "connectionName": {
                     "type": "string"
                 },
-                "cspSubnetId": {
+                "cspResourceId": {
                     "type": "string"
                 },
                 "description": {
@@ -13024,14 +13114,14 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "connectionName",
-                "cspVNetId",
+                "cspResourceId",
                 "name"
             ],
             "properties": {
                 "connectionName": {
                     "type": "string"
                 },
-                "cspVNetId": {
+                "cspResourceId": {
                     "type": "string"
                 },
                 "description": {
@@ -13067,11 +13157,15 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspSecurityGroupId": {
-                    "type": "string"
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
-                "cspSecurityGroupName": {
-                    "type": "string"
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
                 },
                 "description": {
                     "type": "string"
@@ -13083,7 +13177,9 @@ const docTemplate = `{
                     }
                 },
                 "id": {
-                    "type": "string"
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "isAutoGenerated": {
                     "type": "boolean"
@@ -13095,16 +13191,19 @@ const docTemplate = `{
                     }
                 },
                 "name": {
-                    "type": "string"
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
-                "uuid": {
-                    "description": "uuid is universally unique identifier for the resource",
-                    "type": "string"
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 },
                 "vNetId": {
                     "type": "string"
@@ -13122,8 +13221,8 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspSecurityGroupId": {
-                    "description": "CspSecurityGroupId is required to register object from CSP (option=register)",
+                "cspResourceId": {
+                    "description": "CspResourceId is required to register object from CSP (option=register)",
                     "type": "string"
                 },
                 "description": {
@@ -13189,8 +13288,15 @@ const docTemplate = `{
                 "costPerHour": {
                     "type": "number"
                 },
-                "cspSpecName": {
-                    "type": "string"
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
                 },
                 "description": {
                     "type": "string"
@@ -13229,7 +13335,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "infraType": {
                     "description": "vm|k8s|kubernetes|container, etc.",
@@ -13245,11 +13353,13 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "name": {
-                    "type": "string"
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "namespace": {
-                    "description": "required to save in RDB",
-                    "type": "string"
+                    "type": "string",
+                    "example": "default"
                 },
                 "netBwGbps": {
                     "type": "integer"
@@ -13280,6 +13390,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
+                },
                 "vCPU": {
                     "type": "integer"
                 }
@@ -13289,14 +13404,14 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "connectionName",
-                "cspSpecName",
+                "cspResourceId",
                 "name"
             ],
             "properties": {
                 "connectionName": {
                     "type": "string"
                 },
-                "cspSpecName": {
+                "cspResourceId": {
                     "type": "string"
                 },
                 "description": {
@@ -13319,13 +13434,15 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspSshKeyId": {
-                    "description": "CspSshKeyId used for CSP-native identifier (either Name or ID)",
-                    "type": "string"
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
-                "cspSshKeyName": {
-                    "description": "CspSshKeyName used for CB-Spider identifier",
-                    "type": "string"
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
                 },
                 "description": {
                     "type": "string"
@@ -13334,7 +13451,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "isAutoGenerated": {
                     "type": "boolean"
@@ -13346,7 +13465,9 @@ const docTemplate = `{
                     }
                 },
                 "name": {
-                    "type": "string"
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "privateKey": {
                     "type": "string"
@@ -13359,11 +13480,12 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
-                "username": {
-                    "type": "string"
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 },
-                "uuid": {
-                    "description": "uuid is universally unique identifier for the resource",
+                "username": {
                     "type": "string"
                 },
                 "verifiedUsername": {
@@ -13381,8 +13503,8 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspSshKeyId": {
-                    "description": "Fields for \"Register existing SSH keys\" feature\nCspSshKeyId is required to register object from CSP (option=register)",
+                "cspResourceId": {
+                    "description": "Fields for \"Register existing SSH keys\" feature\nCspResourceId is required to register object from CSP (option=register)",
                     "type": "string"
                 },
                 "description": {
@@ -13420,23 +13542,28 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspSubnetId": {
-                    "type": "string"
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
-                "cspSubnetName": {
-                    "type": "string"
+                "cspResourceId": {
+                    "description": "CspVNetId is vNet resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-45eb41e14121c550a"
                 },
-                "cspVNetId": {
-                    "type": "string"
-                },
-                "cspVNetName": {
-                    "type": "string"
+                "cspVNetHandlingId": {
+                    "description": "CspVNetHandlingId is identifier to handle CSP vNet resource",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "description": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "ipv4_CIDR": {
                     "type": "string"
@@ -13448,14 +13575,23 @@ const docTemplate = `{
                     }
                 },
                 "name": {
-                    "type": "string"
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "status": {
                     "type": "string"
                 },
-                "uuid": {
-                    "description": "uuid is universally unique identifier for the resource",
-                    "type": "string"
+                "tagList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 },
                 "zone": {
                     "type": "string"
@@ -13510,17 +13646,23 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspVNetId": {
-                    "type": "string"
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
-                "cspVNetName": {
-                    "type": "string"
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
                 },
                 "description": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "isAutoGenerated": {
                     "type": "boolean"
@@ -13532,7 +13674,9 @@ const docTemplate = `{
                     }
                 },
                 "name": {
-                    "type": "string"
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "status": {
                     "type": "string"
@@ -13547,6 +13691,12 @@ const docTemplate = `{
                     "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
+                },
+                "tagList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
                 },
                 "uuid": {
                     "description": "uuid is universally unique identifier for the resource",
@@ -13656,6 +13806,16 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2022-11-10 23:00:00"
                 },
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
                 "cspViewVmDetail": {
                     "$ref": "#/definitions/model.SpiderVMInfo"
                 },
@@ -13669,11 +13829,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
-                },
-                "idByCSP": {
-                    "description": "CSP managed ID or Name",
-                    "type": "string"
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "imageId": {
                     "type": "string"
@@ -13690,7 +13848,9 @@ const docTemplate = `{
                     "example": "[installed, notInstalled, failed]"
                 },
                 "name": {
-                    "type": "string"
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "networkAgentStatus": {
                     "description": "NetworkAgent status",
@@ -13763,9 +13923,10 @@ const docTemplate = `{
                 "targetStatus": {
                     "type": "string"
                 },
-                "uuid": {
-                    "description": "uuid is universally unique identifier for the resource",
-                    "type": "string"
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 },
                 "vNetId": {
                     "type": "string"
@@ -13795,6 +13956,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "testcloud01-seoul"
                 },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP (required for option=register)",
+                    "type": "string",
+                    "example": "i-014fa6ede6ada0b2c"
+                },
                 "dataDiskIds": {
                     "type": "array",
                     "items": {
@@ -13804,11 +13970,6 @@ const docTemplate = `{
                 "description": {
                     "type": "string",
                     "example": "Description"
-                },
-                "idByCsp": {
-                    "description": "CSP managed ID or Name (required for option=register)",
-                    "type": "string",
-                    "example": "i-014fa6ede6ada0b2c"
                 },
                 "imageId": {
                     "description": "ImageType        string   ` + "`" + `json:\"imageType\"` + "`" + `",
@@ -13880,11 +14041,20 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2022-11-10 23:00:00"
                 },
-                "cspVmId": {
-                    "type": "string"
+                "cspResourceHandlingName": {
+                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
                 },
                 "id": {
-                    "type": "string"
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "location": {
                     "$ref": "#/definitions/model.Location"
@@ -13895,7 +14065,9 @@ const docTemplate = `{
                     "example": "[installed, notInstalled, failed]"
                 },
                 "name": {
-                    "type": "string"
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "nativeStatus": {
                     "type": "string"
@@ -13922,6 +14094,11 @@ const docTemplate = `{
                 },
                 "targetStatus": {
                     "type": "string"
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 }
             }
         },
@@ -14206,7 +14383,7 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspImageId": {
+                "cspResourceId": {
                     "type": "string"
                 }
             }
@@ -14217,7 +14394,7 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspSpecName": {
+                "cspResourceId": {
                     "type": "string"
                 }
             }

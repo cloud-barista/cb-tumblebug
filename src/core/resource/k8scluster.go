@@ -143,7 +143,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 		found = false
 		for _, w := range tbVNetInfo.SubnetInfoList {
 			if v == w.Name {
-				spSnName = w.CspSubnetName
+				spSnName = w.CspResourceHandlingName
 				found = true
 				break
 			}
@@ -194,7 +194,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 		// 	log.Err(err).Msg("Failed to Create a K8sCluster")
 		// 	return emptyObj, err
 		// }
-		// spSpecName := specInfo.CspSpecName
+		// spSpecName := specInfo.CspResourceId
 		spSpecName := v.SpecId
 
 		spKpName, err := GetCspResourceId(nsId, model.StrSSHKey, v.SshKeyId)
@@ -217,13 +217,13 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 		})
 	}
 
-	uuid := common.GenUid()
+	uid := common.GenUid()
 
 	requestBody := model.SpiderClusterReq{
 		NameSpace:      "", // should be empty string from Tumblebug
 		ConnectionName: u.ConnectionName,
 		ReqInfo: model.SpiderClusterReqInfo{
-			Name:               uuid,
+			Name:               uid,
 			Version:            spVersion,
 			VPCName:            spVPCName,
 			SubnetNames:        spSubnetNames,
@@ -269,12 +269,12 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 	 */
 
 	tbK8sCInfo := convertSpiderClusterInfoToTbK8sClusterInfo(&spClusterRes.ClusterInfo, u.Id, u.ConnectionName, u.Description)
-	tbK8sCInfo.Uuid = uuid
+	tbK8sCInfo.Uid = uid
 
-	if option == "register" && u.CspK8sClusterId == "" {
+	if option == "register" && u.CspResourceId == "" {
 		tbK8sCInfo.SystemLabel = "Registered from CB-Spider resource"
 		// TODO: check to handle something to register
-	} else if option == "register" && u.CspK8sClusterId != "" {
+	} else if option == "register" && u.CspResourceId != "" {
 		tbK8sCInfo.SystemLabel = "Registered from CSP resource"
 	}
 
@@ -309,7 +309,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 		"provider":  "cb-tumblebug",
 		"namespace": nsId,
 	}
-	err = label.CreateOrUpdateLabel(model.StrK8s, uuid, k, labels)
+	err = label.CreateOrUpdateLabel(model.StrK8s, uid, k, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return tbK8sCInfo, err
@@ -413,7 +413,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 	// 	log.Err(err).Msg("Failed to Add K8sNodeGroup")
 	// 	return emptyObj, err
 	// }
-	// spSpecName := specInfo.CspSpecName
+	// spSpecName := specInfo.CspResourceId
 	spSpecName := u.SpecId
 
 	spKpName, err := GetCspResourceId(nsId, model.StrSSHKey, u.SshKeyId)
@@ -445,7 +445,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 	method := "POST"
 	client.SetTimeout(20 * time.Minute)
 
-	url := model.SpiderRestUrl + "/cluster/" + oldTbK8sCInfo.CspK8sClusterName + "/nodegroup"
+	url := model.SpiderRestUrl + "/cluster/" + oldTbK8sCInfo.CspResourceHandlingName + "/nodegroup"
 
 	var spClusterRes model.SpiderClusterRes
 
@@ -552,7 +552,7 @@ func RemoveK8sNodeGroup(nsId string, k8sClusterId string, k8sNodeGroupName strin
 	requestBody.ConnectionName = tbK8sCInfo.ConnectionName
 
 	client := resty.New()
-	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspK8sClusterName + "/nodegroup/" + k8sNodeGroupName
+	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspResourceHandlingName + "/nodegroup/" + k8sNodeGroupName
 	if forceFlag == "true" {
 		url += "?force=true"
 	}
@@ -648,7 +648,7 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 	}
 
 	client := resty.New()
-	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspK8sClusterName + "/nodegroup/" + k8sNodeGroupName + "/onautoscaling"
+	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspResourceHandlingName + "/nodegroup/" + k8sNodeGroupName + "/onautoscaling"
 	method := "PUT"
 
 	var spSetAutoscalingRes model.SpiderSetAutoscalingRes
@@ -737,7 +737,7 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 	}
 
 	client := resty.New()
-	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspK8sClusterName + "/nodegroup/" + k8sNodeGroupName + "/autoscalesize"
+	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspResourceHandlingName + "/nodegroup/" + k8sNodeGroupName + "/autoscalesize"
 	method := "PUT"
 
 	var spChangeAutoscaleSizeRes model.SpiderChangeAutoscaleSizeRes
@@ -824,7 +824,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (model.TbK8sClusterInfo, er
 
 	client := resty.New()
 	client.SetTimeout(10 * time.Minute)
-	url := model.SpiderRestUrl + "/cluster/" + storedTbK8sCInfo.CspK8sClusterName
+	url := model.SpiderRestUrl + "/cluster/" + storedTbK8sCInfo.CspResourceHandlingName
 	method := "GET"
 
 	// Create Request body for GetK8sCluster of CB-Spider
@@ -877,8 +877,8 @@ func isEqualTbK8sClusterInfoExceptStatus(info1 model.TbK8sClusterInfo, info2 mod
 		info1.Name != info2.Name ||
 		info1.ConnectionName != info2.ConnectionName ||
 		info1.Description != info2.Description ||
-		info1.CspK8sClusterId != info2.CspK8sClusterId ||
-		info1.CspK8sClusterName != info2.CspK8sClusterName ||
+		info1.CspResourceId != info2.CspResourceId ||
+		info1.CspResourceHandlingName != info2.CspResourceHandlingName ||
 		info1.CreatedTime != info2.CreatedTime {
 		return false
 
@@ -1092,7 +1092,7 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 	requestBody.ConnectionName = tbK8sCInfo.ConnectionName
 
 	client := resty.New()
-	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspK8sClusterName
+	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspResourceHandlingName
 	if forceFlag == "true" {
 		url += "?force=true"
 	}
@@ -1258,7 +1258,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.TbUpgradeK8sCl
 	}
 
 	client := resty.New()
-	url := model.SpiderRestUrl + "/cluster/" + oldTbK8sCInfo.CspK8sClusterName + "/upgrade"
+	url := model.SpiderRestUrl + "/cluster/" + oldTbK8sCInfo.CspResourceHandlingName + "/upgrade"
 	method := "PUT"
 
 	var spClusterRes model.SpiderClusterRes
@@ -1412,20 +1412,20 @@ func convertSpiderClusterInfoToTbK8sClusterInfo(spClusterInfo *model.SpiderClust
 	tbK8sCStatus := convertSpiderClusterStatusToTbK8sClusterStatus(spClusterInfo.Status)
 	tbKVList := convertSpiderKeyValueListToTbKeyValueList(spClusterInfo.KeyValueList)
 	tbK8sCInfo := model.TbK8sClusterInfo{
-		Id:                id,
-		Name:              id,
-		ConnectionName:    connectionName,
-		Version:           spClusterInfo.Version,
-		Network:           tbK8sCNInfo,
-		K8sNodeGroupList:  tbK8sNGList,
-		AccessInfo:        tbK8sCAccInfo,
-		Addons:            tbK8sCAddInfo,
-		Status:            tbK8sCStatus,
-		CreatedTime:       spClusterInfo.CreatedTime,
-		KeyValueList:      tbKVList,
-		Description:       description,
-		CspK8sClusterId:   spClusterInfo.IId.SystemId,
-		CspK8sClusterName: spClusterInfo.IId.NameId,
+		Id:                      id,
+		Name:                    id,
+		ConnectionName:          connectionName,
+		Version:                 spClusterInfo.Version,
+		Network:                 tbK8sCNInfo,
+		K8sNodeGroupList:        tbK8sNGList,
+		AccessInfo:              tbK8sCAccInfo,
+		Addons:                  tbK8sCAddInfo,
+		Status:                  tbK8sCStatus,
+		CreatedTime:             spClusterInfo.CreatedTime,
+		KeyValueList:            tbKVList,
+		Description:             description,
+		CspResourceId:           spClusterInfo.IId.SystemId,
+		CspResourceHandlingName: spClusterInfo.IId.NameId,
 	}
 
 	return tbK8sCInfo

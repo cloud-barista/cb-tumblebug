@@ -75,7 +75,6 @@ func CreateNs(u *model.NsReq) (model.NsInfo, error) {
 	}
 
 	content := model.NsInfo{}
-	//content.Id = GenUid()
 	content.Id = u.Name
 	content.Name = u.Name
 	content.Description = u.Description

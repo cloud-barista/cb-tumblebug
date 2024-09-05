@@ -105,7 +105,7 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 		return content, err
 	}
 
-	uuid := common.GenUid()
+	uid := common.GenUid()
 
 	// TODO: Need to be improved
 	// Avoid retrieving vNet info if option == register
@@ -153,9 +153,9 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 
 	requestBody := model.SpiderSecurityReqInfoWrapper{}
 	requestBody.ConnectionName = u.ConnectionName
-	requestBody.ReqInfo.Name = uuid
-	requestBody.ReqInfo.VPCName = vNetInfo.CspVNetName
-	requestBody.ReqInfo.CSPId = u.CspSecurityGroupId
+	requestBody.ReqInfo.Name = uid
+	requestBody.ReqInfo.VPCName = vNetInfo.CspResourceHandlingName
+	requestBody.ReqInfo.CSPId = u.CspResourceId
 
 	// requestBody.ReqInfo.SecurityRules = u.FirewallRules
 	if u.FirewallRules != nil {
@@ -189,10 +189,10 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 	var resp *resty.Response
 
 	var url string
-	if option == "register" && u.CspSecurityGroupId == "" {
+	if option == "register" && u.CspResourceId == "" {
 		url = fmt.Sprintf("%s/securitygroup/%s", model.SpiderRestUrl, u.Name)
 		resp, err = req.Get(url)
-	} else if option == "register" && u.CspSecurityGroupId != "" {
+	} else if option == "register" && u.CspResourceId != "" {
 		url = fmt.Sprintf("%s/regsecuritygroup", model.SpiderRestUrl)
 		resp, err = req.Post(url)
 	} else { // option != "register"
@@ -221,11 +221,11 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 	content := model.TbSecurityGroupInfo{}
 	content.Id = u.Name
 	content.Name = u.Name
-	content.Uuid = uuid
+	content.Uid = uid
 	content.ConnectionName = u.ConnectionName
 	content.VNetId = u.VNetId
-	content.CspSecurityGroupId = tempSpiderSecurityInfo.IId.SystemId
-	content.CspSecurityGroupName = tempSpiderSecurityInfo.IId.NameId
+	content.CspResourceId = tempSpiderSecurityInfo.IId.SystemId
+	content.CspResourceHandlingName = tempSpiderSecurityInfo.IId.NameId
 	content.Description = u.Description
 	content.KeyValueList = tempSpiderSecurityInfo.KeyValueList
 	content.AssociatedObjectList = []string{}
@@ -238,9 +238,9 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 	}
 	content.FirewallRules = tempTbFirewallRules
 
-	if option == "register" && u.CspSecurityGroupId == "" {
+	if option == "register" && u.CspResourceId == "" {
 		content.SystemLabel = "Registered from CB-Spider resource"
-	} else if option == "register" && u.CspSecurityGroupId != "" {
+	} else if option == "register" && u.CspResourceId != "" {
 		content.SystemLabel = "Registered from CSP resource"
 	}
 
@@ -258,7 +258,7 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 		"provider":  "cb-tumblebug",
 		"namespace": nsId,
 	}
-	err = label.CreateOrUpdateLabel(model.StrSecurityGroup, uuid, Key, labels)
+	err = label.CreateOrUpdateLabel(model.StrSecurityGroup, uid, Key, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
@@ -351,7 +351,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 			requestBody.ReqInfo.RuleInfoList = append(requestBody.ReqInfo.RuleInfoList, model.SpiderSecurityRuleInfo(newRule)) // Is this really works?
 		}
 
-		url := fmt.Sprintf("%s/securitygroup/%s/rules", model.SpiderRestUrl, oldSecurityGroup.CspSecurityGroupName)
+		url := fmt.Sprintf("%s/securitygroup/%s/rules", model.SpiderRestUrl, oldSecurityGroup.CspResourceHandlingName)
 
 		client := resty.New().SetCloseConnection(true)
 
@@ -510,7 +510,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 		}
 	}
 
-	url := fmt.Sprintf("%s/securitygroup/%s/rules", model.SpiderRestUrl, oldSecurityGroup.CspSecurityGroupName)
+	url := fmt.Sprintf("%s/securitygroup/%s/rules", model.SpiderRestUrl, oldSecurityGroup.CspResourceHandlingName)
 
 	client := resty.New().SetCloseConnection(true)
 
@@ -550,7 +550,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 
 	var tempSpiderSecurityInfo *model.SpiderSecurityInfo
 
-	url = fmt.Sprintf("%s/securitygroup/%s", model.SpiderRestUrl, oldSecurityGroup.CspSecurityGroupName)
+	url = fmt.Sprintf("%s/securitygroup/%s", model.SpiderRestUrl, oldSecurityGroup.CspResourceHandlingName)
 
 	client = resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)

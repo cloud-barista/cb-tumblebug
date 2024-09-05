@@ -23,29 +23,34 @@ type TbVNetReq struct { // Tumblebug
 	Description    string        `json:"description" example:"vnet00 managed by CB-Tumblebug"`
 	// todo: restore the tag list later
 	// TagList        []KeyValue    `json:"tagList,omitempty"`
-	// CspVNetId      string        `json:"cspVNetId" example:""`
 }
 
 // TbRegisterVNetReq TbRegisterVNetReq contains the information needed to register a vNet
 // that has already been created via another external method.
 type TbRegisterVNetReq struct {
 	ConnectionName string `json:"connectionName" validate:"required"`
-	CspVNetId      string `json:"cspVNetId" validate:"required"`
+	CspResourceId  string `json:"cspResourceId" validate:"required"`
 	Name           string `json:"name" validate:"required"`
 	Description    string `json:"description,omitempty"`
 }
 
 // TbVNetInfo is a struct that represents TB vNet object.
 type TbVNetInfo struct { // Tumblebug
-	Id                   string         `json:"id"`
-	Name                 string         `json:"name"`
-	Uuid                 string         `json:"uuid,omitempty"` // uuid is universally unique identifier for the resource
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"aws-ap-southeast-1"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	// CspResourceHandlingName is identifier to handle CSP resource
+	CspResourceHandlingName string `json:"cspResourceHandlingName,omitempty" example:"we12fawefadf1221edcf"`
+	// CspResourceId is resource identifier managed by CSP
+	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+
+	// Name is human-readable string to represent the object
+	Name                 string         `json:"name" example:"aws-ap-southeast-1"`
 	ConnectionName       string         `json:"connectionName"`
 	CidrBlock            string         `json:"cidrBlock"`
 	SubnetInfoList       []TbSubnetInfo `json:"subnetInfoList"`
 	Description          string         `json:"description"`
-	CspVNetId            string         `json:"cspVNetId"`
-	CspVNetName          string         `json:"cspVNetName"`
 	Status               string         `json:"status"`
 	KeyValueList         []KeyValue     `json:"keyValueList,omitempty"`
 	AssociatedObjectList []string       `json:"associatedObjectList"`

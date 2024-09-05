@@ -7,7 +7,7 @@ function CallTB() {
 		'{ 
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
-			"cspCustomImageId": "ami-04f77645a3b0b07c5"
+			"cspResourceId": "ami-04f77645a3b0b07c5"
 		}' | jq ''
 }
 

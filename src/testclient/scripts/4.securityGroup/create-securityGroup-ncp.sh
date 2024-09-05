@@ -9,7 +9,7 @@ function CallTB() {
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
 			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",			
 			"vNetId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-			"cspSecurityGroupId": "1333707"
+			"cspResourceId": "1333707"
 		}
 EOF
     ); echo ${resp} | jq ''

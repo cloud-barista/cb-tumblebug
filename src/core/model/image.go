@@ -36,20 +36,25 @@ type SpiderImageInfo struct {
 type TbImageReq struct {
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
-	CspImageId     string `json:"cspImageId" validate:"required"`
+	CspResourceId  string `json:"cspResourceId" validate:"required"`
 	Description    string `json:"description"`
 }
 
 // TbImageInfo is a struct that represents TB image object.
 type TbImageInfo struct {
-	Namespace string `json:"namespace,omitempty"` // required to save in RDB
-	Id        string `json:"id,omitempty"`
-	Name      string `json:"name,omitempty"`
-	// uuid is universally unique identifier for the resource
-	Uuid                 string     `json:"uuid,omitempty"`
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"aws-ap-southeast-1"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	// CspResourceHandlingName is identifier to handle CSP resource
+	CspResourceHandlingName string `json:"cspResourceHandlingName,omitempty" example:"we12fawefadf1221edcf"`
+	// CspResourceId is resource identifier managed by CSP
+	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+
+	// Name is human-readable string to represent the object
+	Name                 string     `json:"name" example:"aws-ap-southeast-1"`
+	Namespace            string     `json:"namespace,omitempty" example:"default"` // required to save in RDB
 	ConnectionName       string     `json:"connectionName,omitempty"`
-	CspImageId           string     `json:"cspImageId,omitempty"`
-	CspImageName         string     `json:"cspImageName,omitempty"`
 	InfraType            string     `json:"infraType,omitempty"` // vm|k8s|kubernetes|container, etc.
 	Description          string     `json:"description,omitempty"`
 	CreationDate         string     `json:"creationDate,omitempty"`

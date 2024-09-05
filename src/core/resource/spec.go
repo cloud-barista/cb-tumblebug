@@ -55,7 +55,7 @@ func ConvertSpiderSpecToTumblebugSpec(spiderSpec model.SpiderSpecInfo) (model.Tb
 	tumblebugSpec := model.TbSpecInfo{}
 
 	tumblebugSpec.Name = spiderSpec.Name
-	tumblebugSpec.CspSpecName = spiderSpec.Name
+	tumblebugSpec.CspResourceId = spiderSpec.Name
 	tumblebugSpec.RegionName = spiderSpec.Region
 	tempUint64, _ := strconv.ParseUint(spiderSpec.VCpu.Count, 10, 16)
 	tumblebugSpec.VCPU = uint16(tempUint64)
@@ -218,8 +218,8 @@ func FetchSpecsForAllConnConfigs(nsId string) (connConfigCount uint, specCount u
 	return connConfigCount, specCount, nil
 }
 
-// RegisterSpecWithCspSpecName accepts spec creation request, creates and returns an TB spec object
-func RegisterSpecWithCspSpecName(nsId string, u *model.TbSpecReq, update bool) (model.TbSpecInfo, error) {
+// RegisterSpecWithCspResourceId accepts spec creation request, creates and returns an TB spec object
+func RegisterSpecWithCspResourceId(nsId string, u *model.TbSpecReq, update bool) (model.TbSpecInfo, error) {
 
 	content := model.TbSpecInfo{}
 
@@ -229,16 +229,16 @@ func RegisterSpecWithCspSpecName(nsId string, u *model.TbSpecReq, update bool) (
 		return content, err
 	}
 
-	res, err := LookupSpec(u.ConnectionName, u.CspSpecName)
+	res, err := LookupSpec(u.ConnectionName, u.CspResourceId)
 	if err != nil {
-		log.Error().Err(err).Msgf("Cannot LookupSpec ConnectionName(%s), CspSpecName(%s)", u.ConnectionName, u.CspSpecName)
+		log.Error().Err(err).Msgf("Cannot LookupSpec ConnectionName(%s), CspResourceId(%s)", u.ConnectionName, u.CspResourceId)
 		return content, err
 	}
 
 	content.Namespace = nsId
 	content.Id = u.Name
 	content.Name = u.Name
-	content.CspSpecName = res.Name
+	content.CspResourceId = res.Name
 	content.ConnectionName = u.ConnectionName
 	content.AssociatedObjectList = []string{}
 	tempUint64, _ := strconv.ParseUint(res.VCpu.Count, 10, 16)
@@ -313,7 +313,7 @@ type Range struct {
 	Max float32 `json:"max"`
 }
 
-// GetSpec accepts namespace Id and specKey(Id,CspImageId,...), and returns the TB spec object
+// GetSpec accepts namespace Id and specKey(Id,CspResourceId,...), and returns the TB spec object
 func GetSpec(nsId string, specKey string) (model.TbSpecInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
@@ -337,16 +337,16 @@ func GetSpec(nsId string, specKey string) (model.TbSpecInfo, error) {
 	}
 
 	// ex: img-487zeit5
-	spec = model.TbSpecInfo{Namespace: nsId, CspSpecName: specKey}
-	has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspSpecName) = ?", nsId, specKey).Get(&spec)
+	spec = model.TbSpecInfo{Namespace: nsId, CspResourceId: specKey}
+	has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspResourceId) = ?", nsId, specKey).Get(&spec)
 	if err != nil {
-		log.Info().Err(err).Msgf("Failed to get spec %s by CspSpecName", specKey)
+		log.Info().Err(err).Msgf("Failed to get spec %s by CspResourceId", specKey)
 	}
 	if has {
 		return spec, nil
 	}
 
-	return model.TbSpecInfo{}, fmt.Errorf("The specKey %s not found by any of ID, CspSpecName", specKey)
+	return model.TbSpecInfo{}, fmt.Errorf("The specKey %s not found by any of ID, CspResourceId", specKey)
 }
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects

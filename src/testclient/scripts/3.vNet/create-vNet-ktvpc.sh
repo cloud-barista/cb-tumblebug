@@ -8,7 +8,7 @@ function CallTB() {
         {
 			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"cspVNetId": "60e5d9da-55cd-47be-a0d9-6cf67c54f15c"
+			"cspResourceId": "60e5d9da-55cd-47be-a0d9-6cf67c54f15c"
 		}
 EOF
     ); echo ${resp} | jq ''

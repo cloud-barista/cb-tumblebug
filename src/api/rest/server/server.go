@@ -276,9 +276,9 @@ func RunServer(port string) {
 	g.DELETE("", rest_common.RestDelAllNs)
 
 	// Resource Label
-	e.PUT("/tumblebug/label/:labelType/:uuid", rest_label.RestCreateOrUpdateLabel)
-	e.DELETE("/tumblebug/label/:labelType/:uuid/:key", rest_label.RestRemoveLabel)
-	e.GET("/tumblebug/label/:labelType/:uuid", rest_label.RestGetLabels)
+	e.PUT("/tumblebug/label/:labelType/:uid", rest_label.RestCreateOrUpdateLabel)
+	e.DELETE("/tumblebug/label/:labelType/:uid/:key", rest_label.RestRemoveLabel)
+	e.GET("/tumblebug/label/:labelType/:uid", rest_label.RestGetLabels)
 	e.GET("/tumblebug/resources/:labelType", rest_label.RestGetResourcesByLabelSelector)
 
 	//MCI Management

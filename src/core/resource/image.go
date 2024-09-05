@@ -62,8 +62,8 @@ func ConvertSpiderImageToTumblebugImage(spiderImage model.SpiderImageInfo) (mode
 		tumblebugImage.Name = spiderImage.IId.NameId
 	}
 
-	tumblebugImage.CspImageId = spiderImage.IId.NameId
-	tumblebugImage.CspImageName = common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
+	tumblebugImage.CspResourceId = spiderImage.IId.NameId
+	tumblebugImage.CspResourceHandlingName = common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
 	tumblebugImage.Description = common.LookupKeyValueList(spiderImage.KeyValueList, "Description")
 	tumblebugImage.CreationDate = common.LookupKeyValueList(spiderImage.KeyValueList, "CreationDate")
 	tumblebugImage.GuestOS = spiderImage.GuestOS
@@ -99,14 +99,14 @@ func RegisterImageWithId(nsId string, u *model.TbImageReq, update bool, RDBonly 
 		}
 	}
 
-	res, err := LookupImage(u.ConnectionName, u.CspImageId)
+	res, err := LookupImage(u.ConnectionName, u.CspResourceId)
 	if err != nil {
 		log.Trace().Err(err).Msg("")
 		return content, err
 	}
 	if res.IId.NameId == "" {
 		err := fmt.Errorf("CB-Spider returned empty IId.NameId without Error: %s", u.ConnectionName)
-		log.Error().Err(err).Msgf("Cannot LookupImage %s %v", u.CspImageId, res)
+		log.Error().Err(err).Msgf("Cannot LookupImage %s %v", u.CspResourceId, res)
 		return content, err
 	}
 
@@ -469,7 +469,7 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate model.TbImageInfo, 
 	return fieldsToUpdate, nil
 }
 
-// GetImage accepts namespace Id and imageKey(Id,CspImageId,GuestOS,...), and returns the TB image object
+// GetImage accepts namespace Id and imageKey(Id,CspResourceId,GuestOS,...), and returns the TB image object
 func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
@@ -493,10 +493,10 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 	}
 
 	// ex: img-487zeit5
-	image = model.TbImageInfo{Namespace: nsId, CspImageId: imageKey}
-	has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspImageId) = ?", nsId, imageKey).Get(&image)
+	image = model.TbImageInfo{Namespace: nsId, CspResourceId: imageKey}
+	has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspResourceId) = ?", nsId, imageKey).Get(&image)
 	if err != nil {
-		log.Info().Err(err).Msgf("Failed to get image %s by CspImageId", imageKey)
+		log.Info().Err(err).Msgf("Failed to get image %s by CspResourceId", imageKey)
 	}
 	if has {
 		return image, nil
@@ -512,5 +512,5 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 		return image, nil
 	}
 
-	return model.TbImageInfo{}, fmt.Errorf("The imageKey %s not found by any of ID, CspImageId, GuestOS", imageKey)
+	return model.TbImageInfo{}, fmt.Errorf("The imageKey %s not found by any of ID, CspResourceId, GuestOS", imageKey)
 }

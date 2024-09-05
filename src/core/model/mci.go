@@ -107,10 +107,14 @@ type TbMciReq struct {
 
 // TbMciInfo is struct for MCI info
 type TbMciInfo struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	// uuid is universally unique identifier for the resource
-	Uuid         string          `json:"uuid,omitempty"`
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"aws-ap-southeast-1"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+
+	// Name is human-readable string to represent the object
+	Name string `json:"name" example:"aws-ap-southeast-1"`
+
 	Status       string          `json:"status"`
 	StatusCount  StatusCountInfo `json:"statusCount"`
 	TargetStatus string          `json:"targetStatus"`
@@ -144,8 +148,8 @@ type TbVmReq struct {
 	// VM name or subGroup name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
 	Name string `json:"name" validate:"required" example:"g1-1"`
 
-	// CSP managed ID or Name (required for option=register)
-	IdByCSP string `json:"idByCsp,omitempty" example:"i-014fa6ede6ada0b2c"`
+	// CspResourceId is resource identifier managed by CSP (required for option=register)
+	CspResourceId string `json:"cspResourceId,omitempty" example:"i-014fa6ede6ada0b2c"`
 
 	// if subGroupSize is (not empty) && (> 0), subGroup will be generated. VMs will be created accordingly.
 	SubGroupSize string `json:"subGroupSize" example:"3" default:""`
@@ -309,19 +313,25 @@ type SpiderVMInfo struct {
 type TbSubGroupInfo struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
-	// uuid is universally unique identifier for the resource
-	Uuid         string   `json:"uuid,omitempty"`
+	// uid is universally unique identifier for the resource
+	Uid          string   `json:"uid,omitempty"`
 	VmId         []string `json:"vmId"`
 	SubGroupSize string   `json:"subGroupSize"`
 }
 
 // TbVmInfo is struct to define a server instance object
 type TbVmInfo struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	// uuid is universally unique identifier for the resource
-	Uuid    string `json:"uuid,omitempty"`
-	IdByCSP string `json:"idByCSP"` // CSP managed ID or Name
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"aws-ap-southeast-1"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	// CspResourceHandlingName is identifier to handle CSP resource
+	CspResourceHandlingName string `json:"cspResourceHandlingName,omitempty" example:"we12fawefadf1221edcf"`
+	// CspResourceId is resource identifier managed by CSP
+	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+
+	// Name is human-readable string to represent the object
+	Name string `json:"name" example:"aws-ap-southeast-1"`
 
 	// defined if the VM is in a group
 	SubGroupId string `json:"subGroupId"`
@@ -520,9 +530,18 @@ type ControlVmResultWrapper struct {
 
 // TbVmStatusInfo is to define simple information of VM with updated status
 type TbVmStatusInfo struct {
-	Id      string `json:"id"`
-	Name    string `json:"name"`
-	CspVmId string `json:"cspVmId"`
+
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"aws-ap-southeast-1"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	// CspResourceHandlingName is identifier to handle CSP resource
+	CspResourceHandlingName string `json:"cspResourceHandlingName,omitempty" example:"we12fawefadf1221edcf"`
+	// CspResourceId is resource identifier managed by CSP
+	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+
+	// Name is human-readable string to represent the object
+	Name string `json:"name" example:"aws-ap-southeast-1"`
 
 	Status       string `json:"status"`
 	TargetStatus string `json:"targetStatus"`

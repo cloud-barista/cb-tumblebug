@@ -31,7 +31,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param option query string false "Option: [required params for register] connectionName, name, vNetId, cspSecurityGroupId" Enums(register)
+// @Param option query string false "Option: [required params for register] connectionName, name, vNetId, cspResourceId" Enums(register)
 // @Param securityGroupReq body model.TbSecurityGroupReq true "Details for an securityGroup object"
 // @Success 200 {object} model.TbSecurityGroupInfo
 // @Failure 404 {object} model.SimpleMsg
