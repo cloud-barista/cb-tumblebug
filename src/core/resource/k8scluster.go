@@ -306,8 +306,17 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"provider":  "cb-tumblebug",
-		"namespace": nsId,
+		"sys.manager":         model.StrManager,
+		"sys.namespace":       nsId,
+		"sys.labelType":       model.StrK8s,
+		"sys.id":              tbK8sCInfo.Id,
+		"sys.name":            tbK8sCInfo.Name,
+		"sys.uid":             tbK8sCInfo.Uid,
+		"sys.version":         tbK8sCInfo.Version,
+		"sys.cspResourceId":   tbK8sCInfo.CspResourceId,
+		"sys.cspResourceName": tbK8sCInfo.CspResourceName,
+		"sys.description":     tbK8sCInfo.Description,
+		"sys.createdTime":     tbK8sCInfo.CreatedTime.String(),
 	}
 	err = label.CreateOrUpdateLabel(model.StrK8s, uid, k, labels)
 	if err != nil {

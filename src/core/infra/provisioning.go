@@ -475,7 +475,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 	key := common.GenMciKey(nsId, mciId, "")
 	mapA := map[string]string{
 		"id":              mciId,
-		"name":            mciId,
+		"name":            req.Name,
 		"uid":             uid,
 		"description":     req.Description,
 		"status":          model.StatusCreating,
@@ -501,8 +501,13 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"provider":  "cb-tumblebug",
-		"namespace": nsId,
+		"sys.manager":     model.StrManager,
+		"sys.namespace":   nsId,
+		"sys.labelType":   model.StrMCI,
+		"sys.id":          mciId,
+		"sys.name":        req.Name,
+		"sys.uid":         uid,
+		"sys.description": req.Description,
 	}
 	err = label.CreateOrUpdateLabel(model.StrMCI, uid, key, labels)
 	if err != nil {
@@ -584,8 +589,16 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 
 			// Store label info using CreateOrUpdateLabel
 			labels := map[string]string{
-				"provider":  "cb-tumblebug",
-				"namespace": nsId,
+				"sys.manager":        model.StrManager,
+				"sys.namespace":      nsId,
+				"sys.labelType":      model.StrSubGroup,
+				"sys.id":             subGroupInfoData.Id,
+				"sys.name":           subGroupInfoData.Name,
+				"sys.uid":            subGroupInfoData.Uid,
+				"sys.mciId":          mciId,
+				"sys.mciname":        req.Name,
+				"sys.mciUid":         uid,
+				"sys.mciDescription": req.Description,
 			}
 			err = label.CreateOrUpdateLabel(model.StrSubGroup, uid, key, labels)
 			if err != nil {
@@ -1186,8 +1199,17 @@ func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"provider":  "cb-tumblebug",
-		"namespace": nsId,
+		"sys.manager":         model.StrManager,
+		"sys.namespace":       nsId,
+		"sys.labelType":       model.StrVM,
+		"sys.id":              vmInfoData.Id,
+		"sys.name":            vmInfoData.Name,
+		"sys.uid":             vmInfoData.Uid,
+		"sys.cspResourceId":   vmInfoData.CspResourceId,
+		"sys.cspResourceName": vmInfoData.CspResourceName,
+		"sys.subGroupId":      vmInfoData.SubGroupId,
+		"sys.mciId":           mciId,
+		"sys.createdTime":     vmInfoData.CreatedTime,
 	}
 	err = label.CreateOrUpdateLabel(model.StrVM, vmInfoData.Uid, key, labels)
 	if err != nil {

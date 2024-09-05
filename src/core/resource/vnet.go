@@ -516,8 +516,17 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"provider":  "cb-tumblebug",
-		"namespace": nsId,
+		"sys.manager":         model.StrManager,
+		"sys.namespace":       nsId,
+		"sys.labelType":       model.StrSubnet,
+		"sys.id":              vNetInfo.Id,
+		"sys.name":            vNetInfo.Name,
+		"sys.uid":             vNetInfo.Uid,
+		"sys.cspResourceId":   vNetInfo.CspResourceId,
+		"sys.cspResourceName": vNetInfo.CspResourceName,
+		"sys.cidr":            vNetInfo.CidrBlock,
+		"sys.status":          vNetInfo.Status,
+		"sys.description":     vNetInfo.Description,
 	}
 	err = label.CreateOrUpdateLabel(model.StrVNet, vNetInfo.Uid, vNetKey, labels)
 	if err != nil {
@@ -767,7 +776,7 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 
 	// Remove label info using RemoveLabel
 	// labels := map[string]string{
-	// 	"provider":  "cb-tumblebug",
+	// 	"sys.manager":  model.StrManager,
 	// 	"namespace": nsId,
 	// }
 	err = label.RemoveLabel(model.StrVNet, vNetInfo.Uid, vNetKey)
@@ -1173,7 +1182,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 
 	// Remove label info using RemoveLabel
 	// labels := map[string]string{
-	// 	"provider":  "cb-tumblebug",
+	// 	"sys.manager":  model.StrManager,
 	// 	"namespace": nsId,
 	// }
 	err = label.RemoveLabel(model.StrVNet, vNetInfo.Uid, vNetKey)

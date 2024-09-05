@@ -168,8 +168,18 @@ func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.T
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"provider":  "cb-tumblebug",
-		"namespace": nsId,
+		"sys.manager":         model.StrManager,
+		"sys.namespace":       nsId,
+		"sys.labelType":       model.StrDataDisk,
+		"sys.id":              content.Id,
+		"sys.name":            content.Name,
+		"sys.uid":             content.Uid,
+		"sys.diskType":        content.DiskType,
+		"sys.diskSize":        content.DiskSize,
+		"sys.cspResourceId":   content.CspResourceId,
+		"sys.cspResourceName": content.CspResourceName,
+		"sys.description":     content.Description,
+		"sys.createdTime":     content.CreatedTime.String(),
 	}
 	err = label.CreateOrUpdateLabel(model.StrDataDisk, uid, Key, labels)
 	if err != nil {

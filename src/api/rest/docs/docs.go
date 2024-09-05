@@ -843,8 +843,20 @@ const docTemplate = `{
                 "operationId": "GetLabels",
                 "parameters": [
                     {
+                        "enum": [
+                            "ns",
+                            "mci",
+                            "subGroup",
+                            "vm",
+                            "k8s",
+                            "vNet",
+                            "subnet",
+                            "securityGroup",
+                            "sshKey",
+                            "dataDisk"
+                        ],
                         "type": "string",
-                        "description": "Label Type (e.g., ns, vnet)",
+                        "description": "Label Type",
                         "name": "labelType",
                         "in": "path",
                         "required": true
@@ -861,10 +873,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Labels for the resource",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.LabelInfo"
                         }
                     },
                     "400": {
@@ -896,8 +905,20 @@ const docTemplate = `{
                 "operationId": "CreateOrUpdateLabel",
                 "parameters": [
                     {
+                        "enum": [
+                            "ns",
+                            "mci",
+                            "subGroup",
+                            "vm",
+                            "k8s",
+                            "vNet",
+                            "subnet",
+                            "securityGroup",
+                            "sshKey",
+                            "dataDisk"
+                        ],
                         "type": "string",
-                        "description": "Label Type (e.g., ns, vnet)",
+                        "description": "Label Type",
                         "name": "labelType",
                         "in": "path",
                         "required": true
@@ -915,10 +936,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.Label"
                         }
                     }
                 ],
@@ -960,8 +978,20 @@ const docTemplate = `{
                 "operationId": "RemoveLabel",
                 "parameters": [
                     {
+                        "enum": [
+                            "ns",
+                            "mci",
+                            "subGroup",
+                            "vm",
+                            "k8s",
+                            "vNet",
+                            "subnet",
+                            "securityGroup",
+                            "sshKey",
+                            "dataDisk"
+                        ],
                         "type": "string",
-                        "description": "Label Type (e.g., ns, vnet)",
+                        "description": "Label Type",
                         "name": "labelType",
                         "in": "path",
                         "required": true
@@ -9161,8 +9191,20 @@ const docTemplate = `{
                 "operationId": "GetResourcesByLabelSelector",
                 "parameters": [
                     {
+                        "enum": [
+                            "ns",
+                            "mci",
+                            "subGroup",
+                            "vm",
+                            "k8s",
+                            "vNet",
+                            "subnet",
+                            "securityGroup",
+                            "sshKey",
+                            "dataDisk"
+                        ],
                         "type": "string",
-                        "description": "Label Type (e.g., ns, sshKey, vNet, vm, mci, k8s, etc.)",
+                        "description": "Label Type",
                         "name": "labelType",
                         "in": "path",
                         "required": true
@@ -10630,6 +10672,31 @@ const docTemplate = `{
                 },
                 "value": {
                     "description": "Should be encrypted by the public key issued by GET /credential/publicKey",
+                    "type": "string"
+                }
+            }
+        },
+        "model.Label": {
+            "type": "object",
+            "properties": {
+                "labels": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.LabelInfo": {
+            "type": "object",
+            "properties": {
+                "labels": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "resourceKey": {
                     "type": "string"
                 }
             }

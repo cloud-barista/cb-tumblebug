@@ -383,8 +383,21 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"provider":  "cb-tumblebug",
-		"namespace": nsId,
+		"sys.manager":         model.StrManager,
+		"sys.namespace":       nsId,
+		"sys.labelType":       model.StrSubnet,
+		"sys.id":              subnetInfo.Id,
+		"sys.name":            subnetInfo.Name,
+		"sys.uid":             subnetInfo.Uid,
+		"sys.cspResourceId":   subnetInfo.CspResourceId,
+		"sys.cspResourceName": subnetInfo.CspResourceName,
+		"sys.ipv4_CIDR":       subnetInfo.IPv4_CIDR,
+		"sys.zone":            subnetInfo.Zone,
+		"sys.status":          subnetInfo.Status,
+		"sys.vNetId":          vNetInfo.Id,
+		"sys.cspvNetId":       vNetInfo.CspResourceId,
+		"sys.cspvNetName":     vNetInfo.CspResourceName,
+		"sys.description":     subnetInfo.Description,
 	}
 	err = label.CreateOrUpdateLabel(model.StrSubnet, uid, subnetKey, labels)
 	if err != nil {
@@ -658,10 +671,10 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 
 	// Store label info using CreateOrUpdateLabel
 	// labels := map[string]string{
-	// 	"provider":  "cb-tumblebug",
+	// 	"sys.manager":  model.StrManager,
 	// 	"namespace": nsId,
 	// }
-	err = label.RemoveLabel(model.StrSubnet, subnetInfo.Uid, subnetKey)
+	err = label.DeleteLabelObject(model.StrSubnet, subnetInfo.Uid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -875,8 +888,21 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubne
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"provider":  "cb-tumblebug",
-		"namespace": nsId,
+		"sys.manager":         model.StrManager,
+		"sys.namespace":       nsId,
+		"sys.labelType":       model.StrSubnet,
+		"sys.id":              subnetInfo.Id,
+		"sys.name":            subnetInfo.Name,
+		"sys.uid":             subnetInfo.Uid,
+		"sys.cspResourceId":   subnetInfo.CspResourceId,
+		"sys.cspResourceName": subnetInfo.CspResourceName,
+		"sys.ipv4_CIDR":       subnetInfo.IPv4_CIDR,
+		"sys.zone":            subnetInfo.Zone,
+		"sys.status":          subnetInfo.Status,
+		"sys.vNetId":          vNetInfo.Id,
+		"sys.cspvNetId":       vNetInfo.CspResourceId,
+		"sys.cspvNetName":     vNetInfo.CspResourceName,
+		"sys.description":     subnetInfo.Description,
 	}
 	err = label.CreateOrUpdateLabel(model.StrSubnet, uid, vNetKey, labels)
 	if err != nil {
@@ -1050,11 +1076,11 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 
 	// Store label info using CreateOrUpdateLabel
 	// labels := map[string]string{
-	// 	"provider":  "cb-tumblebug",
+	// 	"sys.manager":  model.StrManager,
 	// 	"namespace": nsId,
 	// }
 
-	err = label.RemoveLabel(model.StrSubnet, subnetInfo.Uid, subnetKey)
+	err = label.DeleteLabelObject(model.StrSubnet, subnetInfo.Uid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err

@@ -231,7 +231,8 @@ func RestDelAllMci(c echo.Context) error {
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
 
-	result, err := infra.DelAllMci(nsId, option)
+	message, err := infra.DelAllMci(nsId, option)
+	result := model.SimpleMsg{Message: message}
 	return common.EndRequestWithLog(c, reqID, err, result)
 }
 

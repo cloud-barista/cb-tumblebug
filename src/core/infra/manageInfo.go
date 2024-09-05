@@ -28,6 +28,7 @@ import (
 	"sync"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -211,6 +212,36 @@ func ListVmBySubGroup(nsId string, mciId string, groupId string) ([]string, erro
 	// SubGroupId is the Key for SubGroupId in model.TbVmInfo struct
 	filterKey := "SubGroupId"
 	return ListVmByFilter(nsId, mciId, filterKey, groupId)
+}
+
+// GetSubGroup is func to return list of SubGroups in a given MCI
+func GetSubGroup(nsId string, mciId string, subGroupId string) (model.TbSubGroupInfo, error) {
+	subGroupInfo := model.TbSubGroupInfo{}
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return subGroupInfo, err
+	}
+
+	err = common.CheckString(mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return subGroupInfo, err
+	}
+
+	key := common.GenMciSubGroupKey(nsId, mciId, subGroupId)
+	keyValue, err := kvstore.GetKv(key)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return subGroupInfo, err
+	}
+	err = json.Unmarshal([]byte(keyValue.Value), &subGroupInfo)
+	if err != nil {
+		err = fmt.Errorf("failed to get subGroupInfo (Key: %s), message: failed to unmarshal", key)
+		log.Error().Err(err).Msg("")
+		return subGroupInfo, err
+	}
+	return subGroupInfo, nil
 }
 
 // ListSubGroupId is func to return list of SubGroups in a given MCI
@@ -1605,21 +1636,10 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 	deletedResources := model.IdList{}
 	deleteStatus := "[Done] "
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return deletedResources, err
-	}
+	mciInfo, err := GetMciInfo(nsId, mciId)
 
-	err = common.CheckString(mciId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return deletedResources, err
-	}
-	check, _ := CheckMci(nsId, mciId)
-
-	if !check {
-		err := fmt.Errorf("The mci " + mciId + " does not exist.")
+		log.Error().Err(err).Msg("Cannot Delete Mci")
 		return deletedResources, err
 	}
 
@@ -1674,7 +1694,7 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 	key := common.GenMciKey(nsId, mciId, "")
 
 	// delete associated MCI Policy
-	check, _ = CheckMciPolicy(nsId, mciId)
+	check, _ := CheckMciPolicy(nsId, mciId)
 	if check {
 		err = DelMciPolicy(nsId, mciId)
 		if err != nil {
@@ -1725,6 +1745,12 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 			resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v2, model.StrDelete, vmKey)
 		}
 		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"VM: "+v)
+
+		err = label.DeleteLabelObject(model.StrVM, vmInfo.Uid)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+		}
+
 	}
 
 	// delete subGroup info
@@ -1735,12 +1761,23 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 	}
 	for _, v := range subGroupList {
 		subGroupKey := common.GenMciSubGroupKey(nsId, mciId, v)
-		err := kvstore.Delete(subGroupKey)
+		subGroupInfo, err := GetSubGroup(nsId, mciId, v)
+		if err != nil {
+			log.Error().Err(err).Msg("Cannot get SubGroup")
+			return deletedResources, err
+		}
+
+		err = kvstore.Delete(subGroupKey)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
 		}
 		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"SubGroup: "+v)
+
+		err = label.DeleteLabelObject(model.StrSubGroup, subGroupInfo.Uid)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+		}
 	}
 
 	// delete associated CSP NLBs
@@ -1774,6 +1811,11 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 		return deletedResources, err
 	}
 	deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"MCI: "+mciId)
+
+	err = label.DeleteLabelObject(model.StrMCI, mciInfo.Uid)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	}
 
 	return deletedResources, nil
 }
@@ -1878,6 +1920,11 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 
 	for _, v := range vmInfo.DataDiskIds {
 		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v, model.StrDelete, key)
+	}
+
+	err = label.DeleteLabelObject(model.StrVM, vmInfo.Uid)
+	if err != nil {
+		log.Error().Err(err).Msg("")
 	}
 
 	return nil

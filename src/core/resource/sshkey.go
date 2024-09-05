@@ -179,8 +179,15 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"provider":  "cb-tumblebug",
-		"namespace": nsId,
+		"sys.manager":         model.StrManager,
+		"sys.namespace":       nsId,
+		"sys.labelType":       model.StrSSHKey,
+		"sys.id":              content.Id,
+		"sys.name":            content.Name,
+		"sys.uid":             content.Uid,
+		"sys.cspResourceId":   content.CspResourceId,
+		"sys.cspResourceName": content.CspResourceName,
+		"sys.description":     content.Description,
 	}
 	err = label.CreateOrUpdateLabel(model.StrSSHKey, uid, Key, labels)
 	if err != nil {

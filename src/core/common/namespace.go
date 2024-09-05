@@ -24,6 +24,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
@@ -79,15 +80,30 @@ func CreateNs(u *model.NsReq) (model.NsInfo, error) {
 	content.Name = u.Name
 	content.Description = u.Description
 
-	Key := "/ns/" + content.Id
+	key := "/ns/" + content.Id
 	Val, _ := json.Marshal(content)
-	err = kvstore.Put(Key, string(Val))
+	err = kvstore.Put(key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
-	keyValue, _ := kvstore.GetKv(Key)
-	fmt.Println("CreateNs: Key: " + keyValue.Key + "\nValue: " + keyValue.Value)
+
+	// Store label info using CreateOrUpdateLabel
+	labels := map[string]string{
+		"sys.manager":     model.StrManager,
+		"sys.namespace":   content.Id,
+		"sys.labelType":   model.StrNamespace,
+		"sys.id":          content.Id,
+		"sys.name":        content.Name,
+		"sys.uid":         content.Uid,
+		"sys.description": content.Description,
+	}
+	err = label.CreateOrUpdateLabel(model.StrNamespace, content.Uid, key, labels)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return content, err
+	}
+
 	return content, nil
 }
 
@@ -295,13 +311,7 @@ func DelNs(id string) error {
 		return err
 	}
 
-	check, err := CheckNs(id)
-
-	if !check {
-		errString := "The namespace " + id + " does not exist."
-		err := fmt.Errorf(errString)
-		return err
-	}
+	ns, err := GetNs(id)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -310,7 +320,6 @@ func DelNs(id string) error {
 
 	log.Debug().Msg("[Delete ns] " + id)
 	key := "/ns/" + id
-	log.Debug().Msg(key)
 
 	mciList := GetChildIdList(key + "/mci")
 	imageList := GetChildIdList(key + "/resources/image")
@@ -350,6 +359,11 @@ func DelNs(id string) error {
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
+	}
+
+	err = label.DeleteLabelObject(model.StrNamespace, ns.Uid)
+	if err != nil {
+		log.Error().Err(err).Msg("")
 	}
 
 	return nil

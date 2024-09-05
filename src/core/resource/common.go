@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
@@ -161,6 +162,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	var childResources interface{}
 
 	var url string
+	uid := ""
 
 	// Create Req body
 	type JsonTemplate struct {
@@ -195,6 +197,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 		requestBody.ConnectionName = temp.ConnectionName
 		url = model.SpiderRestUrl + "/myimage/" + temp.CspResourceName
+		uid = temp.Uid
 
 		/*
 			// delete image info
@@ -250,6 +253,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 		requestBody.ConnectionName = temp.ConnectionName
 		url = model.SpiderRestUrl + "/keypair/" + temp.CspResourceName
+		uid = temp.Uid
+
 	case model.StrVNet:
 		temp := model.TbVNetInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -260,6 +265,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		requestBody.ConnectionName = temp.ConnectionName
 		url = model.SpiderRestUrl + "/vpc/" + temp.CspResourceName
 		childResources = temp.SubnetInfoList
+		uid = temp.Uid
+
 	case model.StrSecurityGroup:
 		temp := model.TbSecurityGroupInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -269,6 +276,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 		requestBody.ConnectionName = temp.ConnectionName
 		url = model.SpiderRestUrl + "/securitygroup/" + temp.CspResourceName
+		uid = temp.Uid
+
 	case model.StrDataDisk:
 		temp := model.TbDataDiskInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -278,6 +287,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 		requestBody.ConnectionName = temp.ConnectionName
 		url = model.SpiderRestUrl + "/disk/" + temp.CspResourceName
+		uid = temp.Uid
 	/*
 		case "subnet":
 			temp := subnetInfo{}
@@ -334,6 +344,12 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				log.Error().Err(err).Msg("")
 				// return err
 			}
+
+			err = label.DeleteLabelObject(resourceType, v.Uid)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+			}
+
 		}
 	} else if resourceType == model.StrCustomImage {
 		// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
@@ -350,6 +366,12 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		log.Error().Err(err).Msg("")
 		return err
 	}
+
+	err = label.DeleteLabelObject(resourceType, uid)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	}
+
 	return nil
 }
 
