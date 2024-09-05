@@ -1930,7 +1930,7 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 	return nil
 }
 
-// DelAllMci is func to delete all MCI objects
+// DelAllMci is func to delete all MCI objects in parallel
 func DelAllMci(nsId string, option string) (string, error) {
 
 	err := common.CheckString(nsId)
@@ -1949,15 +1949,30 @@ func DelAllMci(nsId string, option string) (string, error) {
 		return "No MCI to delete", nil
 	}
 
+	var wg sync.WaitGroup
+	errCh := make(chan error, len(mciList))
+	defer close(errCh)
+
 	for _, v := range mciList {
-		_, err := DelMci(nsId, v, option)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return "", fmt.Errorf("Failed to delete All MCIs")
-		}
+		wg.Add(1)
+		go func(mciId string) {
+			defer wg.Done()
+			_, err := DelMci(nsId, mciId, option)
+			if err != nil {
+				log.Error().Err(err).Str("mciId", mciId).Msg("Failed to delete MCI")
+				errCh <- err
+			}
+		}(v)
 	}
 
-	return "All MCIs has been deleted", nil
+	wg.Wait()
+
+	select {
+	case err := <-errCh:
+		return "", fmt.Errorf("failed to delete all MCIs: %v", err)
+	default:
+		return "All MCIs have been deleted", nil
+	}
 }
 
 // UpdateVmPublicIp is func to update VM public IP
