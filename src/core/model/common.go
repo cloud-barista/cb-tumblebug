@@ -230,8 +230,8 @@ type RegionZoneInfo struct {
 	AssignedZone   string `json:"assignedZone"`
 }
 
-// RegionList is array struct for Region
-type RegionList struct {
+// RetrievedRegionList is array struct for Region
+type RetrievedRegionList struct {
 	Region []SpiderRegionZoneInfo `json:"region"`
 }
 

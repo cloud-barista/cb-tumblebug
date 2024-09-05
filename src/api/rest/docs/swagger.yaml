@@ -1029,9 +1029,9 @@ definitions:
     type: object
   model.RegionList:
     properties:
-      region:
+      regions:
         items:
-          $ref: '#/definitions/model.SpiderRegionZoneInfo'
+          $ref: '#/definitions/model.RegionDetail'
         type: array
     type: object
   model.RegionZoneInfo:
@@ -1196,6 +1196,13 @@ definitions:
         $ref: '#/definitions/model.SiteDetail'
       site2:
         $ref: '#/definitions/model.SiteDetail'
+    type: object
+  model.RetrievedRegionList:
+    properties:
+      region:
+        items:
+          $ref: '#/definitions/model.SpiderRegionZoneInfo'
+        type: array
     type: object
   model.SimpleMsg:
     properties:
@@ -9327,6 +9334,36 @@ paths:
       summary: List all registered Providers
       tags:
       - '[Admin] Multi-Cloud Information'
+  /provider/{providerName}/region:
+    get:
+      consumes:
+      - application/json
+      description: Get registered region info
+      operationId: GetRegions
+      parameters:
+      - description: Name of the CSP to retrieve
+        in: path
+        name: providerName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RegionList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Get registered region info
+      tags:
+      - '[Admin] Multi-Cloud Information'
   /provider/{providerName}/region/{regionName}:
     get:
       consumes:
@@ -9382,19 +9419,19 @@ paths:
       summary: Check Tumblebug is ready
       tags:
       - '[Admin] System Management'
-  /region:
+  /regionFromCsp:
     get:
       consumes:
       - application/json
-      description: List all registered regions
-      operationId: GetRegionList
+      description: RetrieveR all region lists from CSPs
+      operationId: RetrieveRegionListFromCsp
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.RegionList'
+            $ref: '#/definitions/model.RetrievedRegionList'
         "404":
           description: Not Found
           schema:
@@ -9403,7 +9440,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/model.SimpleMsg'
-      summary: List all registered regions
+      summary: RetrieveR all region lists from CSPs
       tags:
       - '[Admin] Multi-Cloud Information'
   /registerCspResources:
