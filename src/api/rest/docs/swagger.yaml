@@ -2881,10 +2881,6 @@ definitions:
         type: string
       status:
         type: string
-      tagList:
-        items:
-          $ref: '#/definitions/model.KeyValue'
-        type: array
       uid:
         description: Uid is universally unique identifier for the object, used for
           labelSelector
@@ -2961,12 +2957,10 @@ definitions:
           string can be used) for special System purpose
         example: Managed by CB-Tumblebug
         type: string
-      tagList:
-        items:
-          $ref: '#/definitions/model.KeyValue'
-        type: array
-      uuid:
-        description: uuid is universally unique identifier for the resource
+      uid:
+        description: Uid is universally unique identifier for the object, used for
+          labelSelector
+        example: wef12awefadf1221edcf
         type: string
     type: object
   model.TbVNetReq:

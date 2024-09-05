@@ -13582,12 +13582,6 @@ const docTemplate = `{
                 "status": {
                     "type": "string"
                 },
-                "tagList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
-                    }
-                },
                 "uid": {
                     "description": "Uid is universally unique identifier for the object, used for labelSelector",
                     "type": "string",
@@ -13692,15 +13686,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
-                "tagList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
-                    }
-                },
-                "uuid": {
-                    "description": "uuid is universally unique identifier for the resource",
-                    "type": "string"
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 }
             }
         },
