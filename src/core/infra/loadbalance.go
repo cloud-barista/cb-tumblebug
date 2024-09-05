@@ -303,7 +303,7 @@ func CreateNLB(nsId string, mciId string, u *model.TbNLBReq, option string) (mod
 			return emptyObj, err
 		}
 
-		requestBody.ReqInfo.VMGroup.VMs = append(requestBody.ReqInfo.VMGroup.VMs, vm.CspViewVmDetail.IId.NameId)
+		requestBody.ReqInfo.VMGroup.VMs = append(requestBody.ReqInfo.VMGroup.VMs, vm.CspResourceName)
 	}
 
 	var tempSpiderNLBInfo *model.SpiderNLBInfo
@@ -1046,7 +1046,7 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.TbNLBAddRe
 			return model.TbNLBInfo{}, err
 		}
 
-		requestBody.ReqInfo.VMs = append(requestBody.ReqInfo.VMs, vm.CspViewVmDetail.IId.NameId)
+		requestBody.ReqInfo.VMs = append(requestBody.ReqInfo.VMs, vm.CspResourceName)
 	}
 
 	var tempSpiderNLBInfo *model.SpiderNLBInfo
@@ -1227,10 +1227,10 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.TbNLBAd
 		// log.Debug().Msg("vm:")                             // for debug
 		// payload, _ := json.MarshalIndent(vm, "", "  ") // for debug
 		// fmt.Print(string(payload))                     // for debug
-		if vm.CspViewVmDetail.IId.NameId == "" {
+		if vm.CspResourceName == "" {
 			fmt.Printf("Failed to get %s; skipping;", v)
 		} else {
-			requestBody.ReqInfo.VMs = append(requestBody.ReqInfo.VMs, vm.CspViewVmDetail.IId.NameId)
+			requestBody.ReqInfo.VMs = append(requestBody.ReqInfo.VMs, vm.CspResourceName)
 		}
 	}
 

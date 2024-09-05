@@ -168,7 +168,7 @@ func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToA
 	vmTemplate.SubnetId = vmObj.SubnetId
 	vmTemplate.SecurityGroupIds = vmObj.SecurityGroupIds
 	vmTemplate.SshKeyId = vmObj.SshKeyId
-	vmTemplate.VmUserAccount = vmObj.VmUserAccount
+	vmTemplate.VmUserName = vmObj.VmUserName
 	vmTemplate.VmUserPassword = vmObj.VmUserPassword
 	vmTemplate.RootDiskType = vmObj.RootDiskType
 	vmTemplate.RootDiskSize = vmObj.RootDiskSize
@@ -364,7 +364,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbVmReq, newSu
 		vmInfoData.RootDiskType = vmRequest.RootDiskType
 		vmInfoData.RootDiskSize = vmRequest.RootDiskSize
 
-		vmInfoData.VmUserAccount = vmRequest.VmUserAccount
+		vmInfoData.VmUserName = vmRequest.VmUserName
 		vmInfoData.VmUserPassword = vmRequest.VmUserPassword
 
 		wg.Add(1)
@@ -635,7 +635,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 			vmInfoData.DataDiskIds = k.DataDiskIds
 			vmInfoData.SshKeyId = k.SshKeyId
 			vmInfoData.Description = k.Description
-			vmInfoData.VmUserAccount = k.VmUserAccount
+			vmInfoData.VmUserName = k.VmUserName
 			vmInfoData.VmUserPassword = k.VmUserPassword
 			vmInfoData.RootDiskType = k.RootDiskType
 			vmInfoData.RootDiskSize = k.RootDiskSize
@@ -1248,7 +1248,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 
 	customImageFlag := false
 
-	requestBody.ReqInfo.VMUserId = vmInfoData.VmUserAccount
+	requestBody.ReqInfo.VMUserId = vmInfoData.VmUserName
 	requestBody.ReqInfo.VMUserPasswd = vmInfoData.VmUserPassword
 	// provide a random passwd, if it is not provided by user (the passwd required for Windows)
 	if requestBody.ReqInfo.VMUserPasswd == "" {
@@ -1393,8 +1393,8 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 		return err
 	}
 
-	vmInfoData.CspViewVmDetail = callResult
-	vmInfoData.VmUserAccount = callResult.VMUserId
+	vmInfoData.AddtionalDetails = callResult.KeyValueList
+	vmInfoData.VmUserName = callResult.VMUserId
 	vmInfoData.VmUserPassword = callResult.VMUserPasswd
 	vmInfoData.CspResourceName = callResult.IId.NameId
 	vmInfoData.CspResourceId = callResult.IId.SystemId
@@ -1407,6 +1407,13 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 	vmInfoData.RootDiskType = callResult.RootDiskType
 	vmInfoData.RootDiskSize = callResult.RootDiskSize
 	vmInfoData.RootDeviceName = callResult.RootDeviceName
+	vmInfoData.NetworkInterface = callResult.NetworkInterface
+
+	vmInfoData.CspSpecId = callResult.VMSpecName
+	vmInfoData.CspImageId = callResult.ImageIId.SystemId
+	vmInfoData.CspVNetId = callResult.VpcIID.SystemId
+	vmInfoData.CspSubnetId = callResult.SubnetIID.SystemId
+	vmInfoData.CspSshKeyId = callResult.KeyPairIId.SystemId
 
 	if option == "register" {
 

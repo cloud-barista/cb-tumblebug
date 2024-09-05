@@ -166,7 +166,7 @@ type TbVmReq struct {
 	SubnetId         string   `json:"subnetId" validate:"required"`
 	SecurityGroupIds []string `json:"securityGroupIds" validate:"required"`
 	SshKeyId         string   `json:"sshKeyId" validate:"required"`
-	VmUserAccount    string   `json:"vmUserAccount,omitempty"`
+	VmUserName       string   `json:"vmUserName,omitempty"`
 	VmUserPassword   string   `json:"vmUserPassword,omitempty"`
 	RootDiskType     string   `json:"rootDiskType,omitempty" example:"default, TYPE1, ..."`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
 	RootDiskSize     string   `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
@@ -371,16 +371,22 @@ type TbVmInfo struct {
 	ConnectionName   string     `json:"connectionName"`
 	ConnectionConfig ConnConfig `json:"connectionConfig"`
 	SpecId           string     `json:"specId"`
+	CspSpecId        string     `json:"cspSpecId"`
 	ImageId          string     `json:"imageId"`
+	CspImageId       string     `json:"cspImageId"`
 	VNetId           string     `json:"vNetId"`
+	CspVNetId        string     `json:"cspVNetId"`
 	SubnetId         string     `json:"subnetId"`
+	CspSubnetId      string     `json:"cspSubnetId"`
+	NetworkInterface string     `json:"networkInterface"`
 	SecurityGroupIds []string   `json:"securityGroupIds"`
 	DataDiskIds      []string   `json:"dataDiskIds"`
 	SshKeyId         string     `json:"sshKeyId"`
-	VmUserAccount    string     `json:"vmUserAccount,omitempty"`
+	CspSshKeyId      string     `json:"cspSshKeyId"`
+	VmUserName       string     `json:"vmUserName,omitempty"`
 	VmUserPassword   string     `json:"vmUserPassword,omitempty"`
 
-	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail,omitempty"`
+	AddtionalDetails []KeyValue `json:"addtionalDetails,omitempty"`
 }
 
 // MciAccessInfo is struct to retrieve overall access information of a MCI
@@ -405,7 +411,7 @@ type MciVmAccessInfo struct {
 	PrivateIP      string `json:"privateIP"`
 	SSHPort        string `json:"sshPort"`
 	PrivateKey     string `json:"privateKey,omitempty"`
-	VmUserAccount  string `json:"vmUserAccount,omitempty"`
+	VmUserName     string `json:"vmUserName,omitempty"`
 	VmUserPassword string `json:"vmUserPassword,omitempty"`
 }
 

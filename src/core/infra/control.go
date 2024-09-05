@@ -371,8 +371,8 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 			log.Fatal().Err(unmarshalErr).Msg("Unmarshal error")
 		}
 
-		cspResourceName := temp.CspViewVmDetail.IId.NameId
-		//common.PrintJsonPretty(temp.CspViewVmDetail)
+		cspResourceName := temp.CspResourceName
+		//common.PrintJsonPretty(temp.AddtionalDetails)
 
 		// Prevent malformed cspResourceName
 		if cspResourceName == "" || common.CheckString(cspResourceName) != nil {

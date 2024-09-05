@@ -849,7 +849,7 @@ definitions:
         type: string
       vmId:
         type: string
-      vmUserAccount:
+      vmUserName:
         type: string
       vmUserPassword:
         type: string
@@ -1279,14 +1279,6 @@ definitions:
           $ref: '#/definitions/model.SpiderImageInfo'
         type: array
     type: object
-  model.SpiderImageType:
-    enum:
-    - PublicImage
-    - MyImage
-    type: string
-    x-enum-varnames:
-    - PublicImage
-    - MyImage
   model.SpiderRegionZoneInfo:
     properties:
       availableZoneList:
@@ -1337,96 +1329,6 @@ definitions:
         description: GHz
         type: string
       count:
-        type: string
-    type: object
-  model.SpiderVMInfo:
-    properties:
-      cspid:
-        description: VM ID given by CSP (required for registering VM)
-        type: string
-      dataDiskIIDs:
-        items:
-          $ref: '#/definitions/model.IID'
-        type: array
-      dataDiskNames:
-        items:
-          type: string
-        type: array
-      iid:
-        allOf:
-        - $ref: '#/definitions/model.IID'
-        description: Fields for response
-      imageIId:
-        $ref: '#/definitions/model.IID'
-      imageName:
-        type: string
-      imageType:
-        $ref: '#/definitions/model.SpiderImageType'
-      keyPairIId:
-        $ref: '#/definitions/model.IID'
-      keyPairName:
-        type: string
-      keyValueList:
-        items:
-          $ref: '#/definitions/model.KeyValue'
-        type: array
-      name:
-        description: Fields for request
-        type: string
-      networkInterface:
-        description: ex) eth0
-        type: string
-      privateDNS:
-        type: string
-      privateIP:
-        type: string
-      publicDNS:
-        type: string
-      publicIP:
-        type: string
-      region:
-        allOf:
-        - $ref: '#/definitions/model.RegionInfo'
-        description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
-      rootDeviceName:
-        description: '"/dev/sda1", ...'
-        type: string
-      rootDiskSize:
-        description: '"default", "50", "1000" (GB)'
-        type: string
-      rootDiskType:
-        description: '"SSD(gp2)", "Premium SSD", ...'
-        type: string
-      securityGroupIIds:
-        description: AWS, ex) sg-0b7452563e1121bb6
-        items:
-          $ref: '#/definitions/model.IID'
-        type: array
-      securityGroupNames:
-        items:
-          type: string
-        type: array
-      sshaccessPoint:
-        type: string
-      startTime:
-        type: string
-      subnetIID:
-        allOf:
-        - $ref: '#/definitions/model.IID'
-        description: AWS, ex) subnet-8c4a53e4
-      subnetName:
-        type: string
-      vmspecName:
-        description: Fields for both request and response
-        type: string
-      vmuserId:
-        description: ex) user1
-        type: string
-      vmuserPasswd:
-        type: string
-      vpcIID:
-        $ref: '#/definitions/model.IID'
-      vpcname:
         type: string
     type: object
   model.SshCmdResult:
@@ -3050,6 +2952,10 @@ definitions:
     type: object
   model.TbVmInfo:
     properties:
+      addtionalDetails:
+        items:
+          $ref: '#/definitions/model.KeyValue'
+        type: array
       connectionConfig:
         $ref: '#/definitions/model.ConnConfig'
       connectionName:
@@ -3057,6 +2963,8 @@ definitions:
       createdTime:
         description: Created time
         example: "2022-11-10 23:00:00"
+        type: string
+      cspImageId:
         type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
@@ -3067,8 +2975,14 @@ definitions:
           is internally used to handle the resource.
         example: we12fawefadf1221edcf
         type: string
-      cspViewVmDetail:
-        $ref: '#/definitions/model.SpiderVMInfo'
+      cspSpecId:
+        type: string
+      cspSshKeyId:
+        type: string
+      cspSubnetId:
+        type: string
+      cspVNetId:
+        type: string
       dataDiskIds:
         items:
           type: string
@@ -3096,6 +3010,8 @@ definitions:
       networkAgentStatus:
         description: NetworkAgent status
         example: '[notInstalled, installing, installed, failed]'
+        type: string
+      networkInterface:
         type: string
       privateDNS:
         type: string
@@ -3148,7 +3064,7 @@ definitions:
         type: string
       vNetId:
         type: string
-      vmUserAccount:
+      vmUserName:
         type: string
       vmUserPassword:
         type: string
@@ -3208,7 +3124,7 @@ definitions:
         type: string
       vNetId:
         type: string
-      vmUserAccount:
+      vmUserName:
         type: string
       vmUserPassword:
         type: string

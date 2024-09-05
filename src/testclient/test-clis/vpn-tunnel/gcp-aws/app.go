@@ -419,10 +419,10 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 			Msg("IDs managed by Cloud-Barista system")
 
 		log.Debug().
-			Str("VPC/vNet ID", vm.CspViewVmDetail.VpcIID.SystemId).
-			Str("Subnet ID", vm.CspViewVmDetail.SubnetIID.SystemId).
-			Str("Region", vm.CspViewVmDetail.Region.Region).
-			Str("Region", vm.CspViewVmDetail.Region.Zone).
+			Str("VPC/vNet ID", vm.CspVNetId).
+			Str("Subnet ID", vm.CspSubnetId).
+			Str("Region", vm.Region.Region).
+			Str("Region", vm.Region.Zone).
 			Msg("IDs managed by CSPs")
 
 	}
@@ -448,19 +448,19 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 		providerName := strings.ToLower(vm.ConnectionConfig.ProviderName)
 		switch providerName {
 		case "aws":
-			awsRegion = vm.CspViewVmDetail.Region.Region
-			awsVpcId = vm.CspViewVmDetail.VpcIID.SystemId
-			awsSubnetId = vm.CspViewVmDetail.SubnetIID.SystemId
+			awsRegion = vm.Region.Region
+			awsVpcId = vm.CspVNetId
+			awsSubnetId = vm.CspSubnetId
 		case "gcp":
-			gcpRegion = vm.CspViewVmDetail.Region.Region
-			gcpVpcNetworkName = vm.CspViewVmDetail.VpcIID.SystemId
+			gcpRegion = vm.Region.Region
+			gcpVpcNetworkName = vm.CspVNetId
 		case "azure":
-			azureRegion = vm.CspViewVmDetail.Region.Region
+			azureRegion = vm.Region.Region
 
 			// Sample
 			// /subscriptions/xxxxxxxxx/resourceGroups/cb-tb-az-krc-tb/providers/xxxxxxx \
 			// /virtualNetworks/kdemo-default-kdemo-default-shared-az-krc-cobrrejpr52be711ok20
-			parts := strings.Split(vm.CspViewVmDetail.VpcIID.SystemId, "/")
+			parts := strings.Split(vm.CspVNetId, "/")
 			log.Debug().Msgf("parts: %+v", parts)
 			azureResourceGroupName = parts[4]
 			azureVirtualNetworkName = parts[8]

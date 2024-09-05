@@ -325,7 +325,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 					if vm.ConnectionName == connConfig { // filtering
 						temp := model.ResourceOnTumblebugInfo{}
 						temp.IdByTb = vm.Id
-						temp.CspResourceId = vm.CspViewVmDetail.IId.SystemId
+						temp.CspResourceId = vm.CspResourceId
 						temp.NsId = ns
 						temp.MciId = mci
 						temp.ObjectKey = common.GenMciKey(ns, mci, vm.Id)
@@ -1053,7 +1053,7 @@ func FindTbVmByCspId(nsId string, mciId string, vmCspResourceId string) (model.T
 
 	vms := mci.Vm
 	for _, v := range vms {
-		if v.CspResourceId == vmCspResourceId || v.CspViewVmDetail.IId.NameId == vmCspResourceId {
+		if v.CspResourceId == vmCspResourceId || v.CspResourceName == vmCspResourceId {
 			return v, nil
 		}
 	}

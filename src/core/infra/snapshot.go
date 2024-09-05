@@ -52,7 +52,7 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 			SourceVM string
 		}{
 			Name:     snapshotName,
-			SourceVM: vm.CspViewVmDetail.IId.NameId,
+			SourceVM: vm.CspResourceName,
 		},
 	}
 
