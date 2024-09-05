@@ -278,6 +278,10 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]interface{}
 				log.Error().Err(err).Str("resourceKey", labelInfo.ResourceKey).Msg("Failed to get resource data")
 				continue // Skip this entry and continue with the next one
 			}
+			if len(resourceData) == 0 {
+				log.Debug().Str("resourceKey", labelInfo.ResourceKey).Msg("Resource data is empty")
+				continue // Skip this entry and continue with the next
+			}
 
 			log.Debug().Str("resourceKey", labelInfo.ResourceKey).Str("resourceData", string(resourceData)).Msg("Fetched resource data")
 

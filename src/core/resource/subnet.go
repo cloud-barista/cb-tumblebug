@@ -250,6 +250,7 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 	// Set subnet object
 	uid := common.GenUid()
 	subnetInfo.Uid = uid
+	subnetInfo.ResourceType = resourceType
 	subnetInfo.ConnectionName = vNetInfo.ConnectionName
 	subnetInfo.CspVNetId = vNetInfo.CspResourceId
 	subnetInfo.CspVNetHandlingId = vNetInfo.CspResourceName
@@ -398,6 +399,7 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 		"sys.cspvNetId":       vNetInfo.CspResourceId,
 		"sys.cspvNetName":     vNetInfo.CspResourceName,
 		"sys.description":     subnetInfo.Description,
+		"sys.connectionName":  subnetInfo.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrSubnet, uid, subnetKey, labels)
 	if err != nil {
@@ -701,6 +703,7 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubne
 	// Set the resource type
 	parentResourceType := model.StrVNet
 	resourceType := model.StrSubnet
+	subnetInfo.ResourceType = resourceType
 
 	// Validate the input parameters
 	err = common.CheckString(nsId)
@@ -903,6 +906,7 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubne
 		"sys.cspvNetId":       vNetInfo.CspResourceId,
 		"sys.cspvNetName":     vNetInfo.CspResourceName,
 		"sys.description":     subnetInfo.Description,
+		"sys.connectionName":  subnetInfo.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrSubnet, uid, vNetKey, labels)
 	if err != nil {

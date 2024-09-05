@@ -34,6 +34,9 @@ type TbRegisterSubnetReq struct {
 
 // TbSubnetInfo is a struct that represents TB subnet object.
 type TbSubnetInfo struct { // Tumblebug
+	// ResourceType is the type of the resource
+	ResourceType string `json:"resourceType"`
+
 	// Id is unique identifier for the object
 	Id string `json:"id" example:"aws-ap-southeast-1"`
 	// Uid is universally unique identifier for the object, used for labelSelector

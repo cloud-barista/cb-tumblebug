@@ -107,6 +107,9 @@ type TbMciReq struct {
 
 // TbMciInfo is struct for MCI info
 type TbMciInfo struct {
+	// ResourceType is the type of the resource
+	ResourceType string `json:"resourceType"`
+
 	// Id is unique identifier for the object
 	Id string `json:"id" example:"aws-ap-southeast-1"`
 	// Uid is universally unique identifier for the object, used for labelSelector
@@ -311,16 +314,25 @@ type SpiderVMInfo struct {
 
 // TbSubGroupInfo is struct to define an object that includes homogeneous VMs
 type TbSubGroupInfo struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	// uid is universally unique identifier for the resource
-	Uid          string   `json:"uid,omitempty"`
+	// ResourceType is the type of the resource
+	ResourceType string `json:"resourceType"`
+
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"aws-ap-southeast-1"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	// Name is human-readable string to represent the object
+	Name string `json:"name" example:"aws-ap-southeast-1"`
+
 	VmId         []string `json:"vmId"`
 	SubGroupSize string   `json:"subGroupSize"`
 }
 
 // TbVmInfo is struct to define a server instance object
 type TbVmInfo struct {
+	// ResourceType is the type of the resource
+	ResourceType string `json:"resourceType"`
+
 	// Id is unique identifier for the object
 	Id string `json:"id" example:"aws-ap-southeast-1"`
 	// Uid is universally unique identifier for the object, used for labelSelector

@@ -934,6 +934,9 @@ definitions:
         description: Name is human-readable string to represent the object
         example: default
         type: string
+      resourceType:
+        description: ResourceType is the type of the resource
+        type: string
       uid:
         description: Uid is universally unique identifier for the object, used for
           labelSelector
@@ -1565,6 +1568,9 @@ definitions:
         description: required to save in RDB
         example: default
         type: string
+      resourceType:
+        description: ResourceType is the type of the resource
+        type: string
       sourceVmId:
         example: aws-ap-southeast-1-1
         type: string
@@ -1644,6 +1650,9 @@ definitions:
       name:
         description: Name is human-readable string to represent the object
         example: aws-ap-southeast-1
+        type: string
+      resourceType:
+        description: ResourceType is the type of the resource
         type: string
       status:
         allOf:
@@ -1888,6 +1897,9 @@ definitions:
         type: string
       network:
         $ref: '#/definitions/model.TbK8sClusterNetworkInfo'
+      resourceType:
+        description: ResourceType is the type of the resource
+        type: string
       status:
         allOf:
         - $ref: '#/definitions/model.TbK8sClusterStatus'
@@ -2200,6 +2212,9 @@ definitions:
         type: array
       placementAlgo:
         type: string
+      resourceType:
+        description: ResourceType is the type of the resource
+        type: string
       status:
         type: string
       statusCount:
@@ -2353,6 +2368,9 @@ definitions:
       name:
         description: Name is human-readable string to represent the object
         example: aws-ap-southeast-1
+        type: string
+      resourceType:
+        description: ResourceType is the type of the resource
         type: string
       scope:
         description: REGION(V) | GLOBAL
@@ -2551,6 +2569,9 @@ definitions:
       name:
         description: Name is human-readable string to represent the object
         example: aws-ap-southeast-1
+        type: string
+      resourceType:
+        description: ResourceType is the type of the resource
         type: string
       systemLabel:
         description: SystemLabel is for describing the Resource in a keyword (any
@@ -2754,6 +2775,9 @@ definitions:
         type: string
       publicKey:
         type: string
+      resourceType:
+        description: ResourceType is the type of the resource
+        type: string
       systemLabel:
         description: SystemLabel is for describing the Resource in a keyword (any
           string can be used) for special System purpose
@@ -2833,6 +2857,9 @@ definitions:
         description: Name is human-readable string to represent the object
         example: aws-ap-southeast-1
         type: string
+      resourceType:
+        description: ResourceType is the type of the resource
+        type: string
       status:
         type: string
       uid:
@@ -2900,6 +2927,9 @@ definitions:
       name:
         description: Name is human-readable string to represent the object
         example: aws-ap-southeast-1
+        type: string
+      resourceType:
+        description: ResourceType is the type of the resource
         type: string
       status:
         type: string
@@ -3066,6 +3096,9 @@ definitions:
         allOf:
         - $ref: '#/definitions/model.RegionInfo'
         description: AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+      resourceType:
+        description: ResourceType is the type of the resource
+        type: string
       rootDeviceName:
         type: string
       rootDiskSize:

@@ -270,6 +270,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 
 	tbK8sCInfo := convertSpiderClusterInfoToTbK8sClusterInfo(&spClusterRes.ClusterInfo, u.Id, u.ConnectionName, u.Description)
 	tbK8sCInfo.Uid = uid
+	tbK8sCInfo.ResourceType = model.StrK8s
 
 	if option == "register" && u.CspResourceId == "" {
 		tbK8sCInfo.SystemLabel = "Registered from CB-Spider resource"
@@ -317,6 +318,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 		"sys.cspResourceName": tbK8sCInfo.CspResourceName,
 		"sys.description":     tbK8sCInfo.Description,
 		"sys.createdTime":     tbK8sCInfo.CreatedTime.String(),
+		"sys.connectionName":  tbK8sCInfo.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrK8s, uid, k, labels)
 	if err != nil {

@@ -133,6 +133,7 @@ func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.T
 	tempSpiderDiskInfo = resp.Result().(*model.SpiderDiskInfo)
 
 	content := model.TbDataDiskInfo{
+		ResourceType:         resourceType,
 		Id:                   u.Name,
 		Name:                 u.Name,
 		Uid:                  uid,
@@ -180,6 +181,7 @@ func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.T
 		"sys.cspResourceName": content.CspResourceName,
 		"sys.description":     content.Description,
 		"sys.createdTime":     content.CreatedTime.String(),
+		"sys.connectionName":  content.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrDataDisk, uid, Key, labels)
 	if err != nil {

@@ -11019,6 +11019,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "default"
                 },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
+                },
                 "uid": {
                     "description": "Uid is universally unique identifier for the object, used for labelSelector",
                     "type": "string",
@@ -11935,6 +11939,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "default"
                 },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
+                },
                 "sourceVmId": {
                     "type": "string",
                     "example": "aws-ap-southeast-1-1"
@@ -12043,6 +12051,10 @@ const docTemplate = `{
                     "description": "Name is human-readable string to represent the object",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
                 },
                 "status": {
                     "description": "Available, Unavailable, Attached, ...",
@@ -12367,6 +12379,10 @@ const docTemplate = `{
                 },
                 "network": {
                     "$ref": "#/definitions/model.TbK8sClusterNetworkInfo"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
                 },
                 "status": {
                     "description": "Creating, Active, Inactive, Updating, Deleting",
@@ -12766,6 +12782,10 @@ const docTemplate = `{
                 "placementAlgo": {
                     "type": "string"
                 },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
+                },
                 "status": {
                     "type": "string"
                 },
@@ -12966,6 +12986,10 @@ const docTemplate = `{
                     "description": "Name is human-readable string to represent the object",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
                 },
                 "scope": {
                     "description": "REGION(V) | GLOBAL",
@@ -13244,6 +13268,10 @@ const docTemplate = `{
                     "description": "Name is human-readable string to represent the object",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
@@ -13525,6 +13553,10 @@ const docTemplate = `{
                 "publicKey": {
                     "type": "string"
                 },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
+                },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
                     "type": "string",
@@ -13629,6 +13661,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
+                },
                 "status": {
                     "type": "string"
                 },
@@ -13721,6 +13757,10 @@ const docTemplate = `{
                     "description": "Name is human-readable string to represent the object",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"
@@ -13936,6 +13976,10 @@ const docTemplate = `{
                             "$ref": "#/definitions/model.RegionInfo"
                         }
                     ]
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
                 },
                 "rootDeviceName": {
                     "type": "string"
