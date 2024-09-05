@@ -63,7 +63,7 @@ func ConvertSpiderImageToTumblebugImage(spiderImage model.SpiderImageInfo) (mode
 	}
 
 	tumblebugImage.CspResourceId = spiderImage.IId.NameId
-	tumblebugImage.CspResourceHandlingName = common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
+	tumblebugImage.CspResourceName = common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
 	tumblebugImage.Description = common.LookupKeyValueList(spiderImage.KeyValueList, "Description")
 	tumblebugImage.CreationDate = common.LookupKeyValueList(spiderImage.KeyValueList, "CreationDate")
 	tumblebugImage.GuestOS = spiderImage.GuestOS

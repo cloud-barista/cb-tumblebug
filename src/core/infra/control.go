@@ -371,12 +371,12 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 			log.Fatal().Err(unmarshalErr).Msg("Unmarshal error")
 		}
 
-		cspResourceHandlingName := temp.CspViewVmDetail.IId.NameId
+		cspResourceName := temp.CspViewVmDetail.IId.NameId
 		//common.PrintJsonPretty(temp.CspViewVmDetail)
 
-		// Prevent malformed cspResourceHandlingName
-		if cspResourceHandlingName == "" || common.CheckString(cspResourceHandlingName) != nil {
-			callResult.Error = fmt.Errorf("Not valid requested CSPNativeVmId: [" + cspResourceHandlingName + "]")
+		// Prevent malformed cspResourceName
+		if cspResourceName == "" || common.CheckString(cspResourceName) != nil {
+			callResult.Error = fmt.Errorf("Not valid requested CSPNativeVmId: [" + cspResourceName + "]")
 			temp.Status = model.StatusFailed
 			temp.SystemMessage = callResult.Error.Error()
 			UpdateVmInfo(nsId, mciId, temp)
@@ -392,7 +392,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 				temp.TargetStatus = model.StatusTerminated
 				temp.Status = model.StatusTerminating
 
-				url = model.SpiderRestUrl + "/vm/" + cspResourceHandlingName
+				url = model.SpiderRestUrl + "/vm/" + cspResourceName
 				method = "DELETE"
 
 				// Remove Bastion Info from all vNets if the terminating VM is a Bastion
@@ -407,7 +407,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 				temp.TargetStatus = model.StatusRunning
 				temp.Status = model.StatusRebooting
 
-				url = model.SpiderRestUrl + "/controlvm/" + cspResourceHandlingName + "?action=reboot"
+				url = model.SpiderRestUrl + "/controlvm/" + cspResourceName + "?action=reboot"
 				method = "GET"
 			case model.ActionSuspend:
 
@@ -415,7 +415,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 				temp.TargetStatus = model.StatusSuspended
 				temp.Status = model.StatusSuspending
 
-				url = model.SpiderRestUrl + "/controlvm/" + cspResourceHandlingName + "?action=suspend"
+				url = model.SpiderRestUrl + "/controlvm/" + cspResourceName + "?action=suspend"
 				method = "GET"
 			case model.ActionResume:
 
@@ -423,7 +423,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 				temp.TargetStatus = model.StatusRunning
 				temp.Status = model.StatusResuming
 
-				url = model.SpiderRestUrl + "/controlvm/" + cspResourceHandlingName + "?action=resume"
+				url = model.SpiderRestUrl + "/controlvm/" + cspResourceName + "?action=resume"
 				method = "GET"
 			default:
 				callResult.Error = fmt.Errorf(action + " is invalid actionType")

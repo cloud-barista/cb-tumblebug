@@ -230,7 +230,7 @@ func CreateNLB(nsId string, mciId string, u *model.TbNLBReq, option string) (mod
 		ConnectionName: vm.ConnectionName,
 		ReqInfo: model.SpiderNLBReqInfo{
 			Name:     common.GenUid(),
-			VPCName:  vNetInfo.CspResourceHandlingName,
+			VPCName:  vNetInfo.CspResourceName,
 			Type:     u.Type,
 			Scope:    u.Scope,
 			Listener: u.Listener,
@@ -369,12 +369,12 @@ func CreateNLB(nsId string, mciId string, u *model.TbNLBReq, option string) (mod
 			Threshold:    tempSpiderNLBInfo.HealthChecker.Threshold,
 			KeyValueList: tempSpiderNLBInfo.HealthChecker.KeyValueList,
 		},
-		CspResourceId:           tempSpiderNLBInfo.IId.SystemId,
-		CspResourceHandlingName: tempSpiderNLBInfo.IId.NameId,
-		CreatedTime:             tempSpiderNLBInfo.CreatedTime,
-		Description:             u.Description,
-		KeyValueList:            tempSpiderNLBInfo.KeyValueList,
-		AssociatedObjectList:    []string{},
+		CspResourceId:        tempSpiderNLBInfo.IId.SystemId,
+		CspResourceName:      tempSpiderNLBInfo.IId.NameId,
+		CreatedTime:          tempSpiderNLBInfo.CreatedTime,
+		Description:          u.Description,
+		KeyValueList:         tempSpiderNLBInfo.KeyValueList,
+		AssociatedObjectList: []string{},
 		TargetGroup: model.TbNLBTargetGroupInfo{
 			Protocol:     tempSpiderNLBInfo.VMGroup.Protocol,
 			Port:         tempSpiderNLBInfo.VMGroup.Port,
@@ -732,7 +732,7 @@ func DelNLB(nsId string, mciId string, resourceId string, forceFlag string) erro
 		return err
 	}
 	requestBody.ConnectionName = temp.ConnectionName
-	url = model.SpiderRestUrl + "/nlb/" + temp.CspResourceHandlingName
+	url = model.SpiderRestUrl + "/nlb/" + temp.CspResourceName
 
 	fmt.Println("url: " + url)
 
@@ -893,7 +893,7 @@ func GetNLBHealth(nsId string, mciId string, nlbId string) (model.TbNLBHealthInf
 	var resp *resty.Response
 
 	var url string
-	url = fmt.Sprintf("%s/nlb/%s/health", model.SpiderRestUrl, nlb.CspResourceHandlingName)
+	url = fmt.Sprintf("%s/nlb/%s/health", model.SpiderRestUrl, nlb.CspResourceName)
 	resp, err = req.Get(url)
 
 	if err != nil {
@@ -1063,7 +1063,7 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.TbNLBAddRe
 	var resp *resty.Response
 
 	var url string
-	url = fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspResourceHandlingName)
+	url = fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspResourceName)
 	resp, err = req.Post(url)
 
 	if err != nil {
@@ -1105,12 +1105,12 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.TbNLBAddRe
 			Threshold:    tempSpiderNLBInfo.HealthChecker.Threshold,
 			KeyValueList: tempSpiderNLBInfo.HealthChecker.KeyValueList,
 		},
-		CspResourceId:           tempSpiderNLBInfo.IId.SystemId,
-		CspResourceHandlingName: tempSpiderNLBInfo.IId.NameId,
-		CreatedTime:             tempSpiderNLBInfo.CreatedTime,
-		Description:             nlb.Description,
-		KeyValueList:            tempSpiderNLBInfo.KeyValueList,
-		AssociatedObjectList:    []string{},
+		CspResourceId:        tempSpiderNLBInfo.IId.SystemId,
+		CspResourceName:      tempSpiderNLBInfo.IId.NameId,
+		CreatedTime:          tempSpiderNLBInfo.CreatedTime,
+		Description:          nlb.Description,
+		KeyValueList:         tempSpiderNLBInfo.KeyValueList,
+		AssociatedObjectList: []string{},
 		TargetGroup: model.TbNLBTargetGroupInfo{
 			Protocol:   tempSpiderNLBInfo.VMGroup.Protocol,
 			Port:       tempSpiderNLBInfo.VMGroup.Port,
@@ -1268,7 +1268,7 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.TbNLBAd
 	var resp *resty.Response
 
 	var url string
-	url = fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspResourceHandlingName)
+	url = fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspResourceName)
 	resp, err = req.Delete(url)
 
 	if err != nil {
@@ -1306,7 +1306,7 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.TbNLBAd
 		content.Listener = tempSpiderNLBInfo.Listener
 		content.HealthChecker = tempSpiderNLBInfo.HealthChecker
 		content.CspResourceId = tempSpiderNLBInfo.IId.SystemId
-		content.CspResourceHandlingName = tempSpiderNLBInfo.IId.NameId
+		content.CspResourceName = tempSpiderNLBInfo.IId.NameId
 		content.Description = nlb.Description
 		content.KeyValueList = tempSpiderNLBInfo.KeyValueList
 		content.AssociatedObjectList = []string{}

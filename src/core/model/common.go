@@ -146,9 +146,9 @@ var ResourceTypeRegistry = map[string]func() interface{}{
 
 // ResourceIds is struct for containing id and name of each Resource type
 type ResourceIds struct { // Tumblebug
-	CspResourceId           string
-	CspResourceHandlingName string
-	ConnectionName          string
+	CspResourceId   string
+	CspResourceName string
+	ConnectionName  string
 }
 
 // ConnConfig is struct for containing modified CB-Spider struct for connection config

@@ -36,7 +36,7 @@ import (
 // @Produce  json
 // @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithId)
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param imageInfo body model.TbImageInfo false "Specify details of a image object (cspResourceHandlingName, guestOS, description, ...) manually"
+// @Param imageInfo body model.TbImageInfo false "Specify details of a image object (cspResourceName, guestOS, description, ...) manually"
 // @Param imageId body model.TbImageReq false "Specify name, connectionName and cspResourceId to register an image object automatically"
 // @Param update query boolean false "Force update to existing image object" default(false)
 // @Success 200 {object} model.TbImageInfo

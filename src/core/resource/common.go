@@ -194,7 +194,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
-		url = model.SpiderRestUrl + "/myimage/" + temp.CspResourceHandlingName
+		url = model.SpiderRestUrl + "/myimage/" + temp.CspResourceName
 
 		/*
 			// delete image info
@@ -249,7 +249,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
-		url = model.SpiderRestUrl + "/keypair/" + temp.CspResourceHandlingName
+		url = model.SpiderRestUrl + "/keypair/" + temp.CspResourceName
 	case model.StrVNet:
 		temp := model.TbVNetInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -258,7 +258,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
-		url = model.SpiderRestUrl + "/vpc/" + temp.CspResourceHandlingName
+		url = model.SpiderRestUrl + "/vpc/" + temp.CspResourceName
 		childResources = temp.SubnetInfoList
 	case model.StrSecurityGroup:
 		temp := model.TbSecurityGroupInfo{}
@@ -268,7 +268,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
-		url = model.SpiderRestUrl + "/securitygroup/" + temp.CspResourceHandlingName
+		url = model.SpiderRestUrl + "/securitygroup/" + temp.CspResourceName
 	case model.StrDataDisk:
 		temp := model.TbDataDiskInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -277,7 +277,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
-		url = model.SpiderRestUrl + "/disk/" + temp.CspResourceHandlingName
+		url = model.SpiderRestUrl + "/disk/" + temp.CspResourceName
 	/*
 		case "subnet":
 			temp := subnetInfo{}
@@ -914,7 +914,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			}
 
 			// Update TB CustomImage object's 'status' field
-			url := fmt.Sprintf("%s/myimage/%s", model.SpiderRestUrl, res.CspResourceHandlingName)
+			url := fmt.Sprintf("%s/myimage/%s", model.SpiderRestUrl, res.CspResourceName)
 
 			client := resty.New().SetCloseConnection(true)
 			client.SetAllowGetMethodPayload(true)
@@ -991,7 +991,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			}
 
 			// Update TB DataDisk object's 'status' field
-			url := fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, res.CspResourceHandlingName)
+			url := fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, res.CspResourceName)
 
 			client := resty.New().SetCloseConnection(true)
 			client.SetAllowGetMethodPayload(true)
@@ -1932,8 +1932,8 @@ func expandInfraType(infraType string) string {
 	return strings.Join(expInfraTypeList, "|")
 }
 
-// GetCspResourceHandlingName is func to retrieve CSP native resource ID
-func GetCspResourceHandlingName(nsId string, resourceType string, resourceId string) (string, error) {
+// GetCspResourceName is func to retrieve CSP native resource ID
+func GetCspResourceName(nsId string, resourceType string, resourceId string) (string, error) {
 
 	if resourceType == model.StrSpec {
 		specInfo, err := GetSpec(nsId, resourceId)
@@ -1970,23 +1970,23 @@ func GetCspResourceHandlingName(nsId string, resourceType string, resourceId str
 	case model.StrCustomImage:
 		content := model.ResourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspResourceHandlingName, nil
+		return content.CspResourceName, nil
 	case model.StrSSHKey:
 		content := model.ResourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspResourceHandlingName, nil
+		return content.CspResourceName, nil
 	case model.StrVNet:
 		content := model.ResourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspResourceHandlingName, nil // contains CspResourceId
+		return content.CspResourceName, nil // contains CspResourceId
 	case model.StrSecurityGroup:
 		content := model.ResourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspResourceHandlingName, nil
+		return content.CspResourceName, nil
 	case model.StrDataDisk:
 		content := model.ResourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspResourceHandlingName, nil
+		return content.CspResourceName, nil
 
 	default:
 		return "", fmt.Errorf("invalid resourceType")

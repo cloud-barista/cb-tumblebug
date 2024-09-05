@@ -417,7 +417,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 
 	// Set the vNet object with the response from the Spider
 	vNetInfo.CspResourceId = spResp.IId.SystemId
-	vNetInfo.CspResourceHandlingName = spResp.IId.NameId
+	vNetInfo.CspResourceName = spResp.IId.NameId
 	vNetInfo.CidrBlock = spResp.IPv4_CIDR
 	vNetInfo.KeyValueList = spResp.KeyValueList
 	// todo: restore the tag list later
@@ -430,10 +430,10 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 			if tbSubnetInfo.Uid == spSubnetInfo.IId.NameId {
 				vNetInfo.SubnetInfoList[i].ConnectionName = vNetInfo.ConnectionName
 				vNetInfo.SubnetInfoList[i].CspResourceId = spResp.IId.SystemId
-				vNetInfo.SubnetInfoList[i].CspResourceHandlingName = spResp.IId.NameId
+				vNetInfo.SubnetInfoList[i].CspResourceName = spResp.IId.NameId
 				vNetInfo.SubnetInfoList[i].Status = string(NetworkAvailable)
 				vNetInfo.SubnetInfoList[i].CspResourceId = spSubnetInfo.IId.SystemId
-				vNetInfo.SubnetInfoList[i].CspResourceHandlingName = spSubnetInfo.IId.NameId
+				vNetInfo.SubnetInfoList[i].CspResourceName = spSubnetInfo.IId.NameId
 				vNetInfo.SubnetInfoList[i].KeyValueList = spSubnetInfo.KeyValueList
 				vNetInfo.SubnetInfoList[i].Zone = spSubnetInfo.Zone
 				vNetInfo.SubnetInfoList[i].IPv4_CIDR = spSubnetInfo.IPv4_CIDR
@@ -565,7 +565,7 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 	var spResp spiderVPCInfo
 
 	// API to create a vNet
-	url := fmt.Sprintf("%s/vpc/%s", model.SpiderRestUrl, vNetInfo.CspResourceHandlingName)
+	url := fmt.Sprintf("%s/vpc/%s", model.SpiderRestUrl, vNetInfo.CspResourceName)
 	queryParams := "?ConnectionName=" + vNetInfo.ConnectionName
 	url += queryParams
 
@@ -587,7 +587,7 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 
 	// Set the vNet object with the response from the Spider
 	vNetInfo.CspResourceId = spResp.IId.SystemId
-	vNetInfo.CspResourceHandlingName = spResp.IId.NameId
+	vNetInfo.CspResourceName = spResp.IId.NameId
 	vNetInfo.CidrBlock = spResp.IPv4_CIDR
 	vNetInfo.KeyValueList = spResp.KeyValueList
 	// todo: restore the tag list later
@@ -712,7 +712,7 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 	spReqt.ConnectionName = vNetInfo.ConnectionName
 
 	// API to delete a vNet
-	url := fmt.Sprintf("%s/vpc/%s", model.SpiderRestUrl, vNetInfo.CspResourceHandlingName)
+	url := fmt.Sprintf("%s/vpc/%s", model.SpiderRestUrl, vNetInfo.CspResourceName)
 
 	var spResp spiderBooleanInfoResp
 
@@ -907,7 +907,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 
 	// Set the vNet object with the response from the Spider
 	vNetInfo.CspResourceId = spResp.IId.SystemId
-	vNetInfo.CspResourceHandlingName = spResp.IId.NameId
+	vNetInfo.CspResourceName = spResp.IId.NameId
 	vNetInfo.CidrBlock = spResp.IPv4_CIDR
 	vNetInfo.KeyValueList = spResp.KeyValueList
 	// todo: restore the tag list later
@@ -923,15 +923,15 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 	//       since the order may differ different between slices
 	for i, spSubnetInfo := range spResp.SubnetInfoList {
 		subnet := model.TbSubnetInfo{
-			Id:                      fmt.Sprintf("reg-subnet-%02d", i+1),
-			Name:                    fmt.Sprintf("reg-subnet-%02d", i+1),
-			ConnectionName:          vNetInfo.ConnectionName,
-			Status:                  string(NetworkUnknown),
-			CspResourceId:           spSubnetInfo.IId.SystemId,
-			CspResourceHandlingName: spSubnetInfo.IId.NameId,
-			KeyValueList:            spSubnetInfo.KeyValueList,
-			Zone:                    spSubnetInfo.Zone,
-			IPv4_CIDR:               spSubnetInfo.IPv4_CIDR,
+			Id:              fmt.Sprintf("reg-subnet-%02d", i+1),
+			Name:            fmt.Sprintf("reg-subnet-%02d", i+1),
+			ConnectionName:  vNetInfo.ConnectionName,
+			Status:          string(NetworkUnknown),
+			CspResourceId:   spSubnetInfo.IId.SystemId,
+			CspResourceName: spSubnetInfo.IId.NameId,
+			KeyValueList:    spSubnetInfo.KeyValueList,
+			Zone:            spSubnetInfo.Zone,
+			IPv4_CIDR:       spSubnetInfo.IPv4_CIDR,
 			// todo: restore the tag list later
 			// TagList:        spSubnetInfo.TagList,
 		}
@@ -1092,7 +1092,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 	spReqt.ConnectionName = vNetInfo.ConnectionName
 
 	// API to delete a vNet
-	url := fmt.Sprintf("%s/regvpc/%s", model.SpiderRestUrl, vNetInfo.CspResourceHandlingName)
+	url := fmt.Sprintf("%s/regvpc/%s", model.SpiderRestUrl, vNetInfo.CspResourceName)
 
 	var spResp spiderBooleanInfoResp
 

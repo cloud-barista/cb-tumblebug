@@ -297,8 +297,8 @@ type TbK8sClusterInfo struct { // Tumblebug
 	Id string `json:"id" example:"aws-ap-southeast-1"`
 	// Uid is universally unique identifier for the object, used for labelSelector
 	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
-	// CspResourceHandlingName is identifier to handle CSP resource
-	CspResourceHandlingName string `json:"cspResourceHandlingName,omitempty" example:"we12fawefadf1221edcf"`
+	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
+	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
 	// CspResourceId is resource identifier managed by CSP
 	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
 
@@ -384,8 +384,8 @@ type TbK8sNodeGroupInfo struct {
 	Id string `json:"id" example:"aws-ap-southeast-1"`
 	// Uid is universally unique identifier for the object, used for labelSelector
 	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
-	// CspResourceHandlingName is identifier to handle CSP resource
-	CspResourceHandlingName string `json:"cspResourceHandlingName,omitempty" example:"we12fawefadf1221edcf"`
+	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
+	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
 	// CspResourceId is resource identifier managed by CSP
 	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
 

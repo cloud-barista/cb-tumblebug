@@ -362,7 +362,7 @@ type RestGetAllK8sClusterResponse struct {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option" Enums(id)
-// @Param filterKey query string false "Field key for filtering (ex: cspResourceHandlingName)"
+// @Param filterKey query string false "Field key for filtering (ex: cspResourceName)"
 // @Param filterVal query string false "Field value for filtering (ex: default-alibaba-ap-northeast-2-vpc)"
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllK8sClusterResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg

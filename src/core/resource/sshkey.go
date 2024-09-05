@@ -145,7 +145,7 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 	content.ConnectionName = u.ConnectionName
 	content.Uid = uid
 	content.CspResourceId = tempSpiderKeyPairInfo.IId.SystemId
-	content.CspResourceHandlingName = tempSpiderKeyPairInfo.IId.NameId
+	content.CspResourceName = tempSpiderKeyPairInfo.IId.NameId
 	content.Fingerprint = tempSpiderKeyPairInfo.Fingerprint
 	content.Username = tempSpiderKeyPairInfo.VMUserID
 	content.PublicKey = tempSpiderKeyPairInfo.PublicKey

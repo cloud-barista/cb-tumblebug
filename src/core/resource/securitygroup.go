@@ -154,7 +154,7 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 	requestBody := model.SpiderSecurityReqInfoWrapper{}
 	requestBody.ConnectionName = u.ConnectionName
 	requestBody.ReqInfo.Name = uid
-	requestBody.ReqInfo.VPCName = vNetInfo.CspResourceHandlingName
+	requestBody.ReqInfo.VPCName = vNetInfo.CspResourceName
 	requestBody.ReqInfo.CSPId = u.CspResourceId
 
 	// requestBody.ReqInfo.SecurityRules = u.FirewallRules
@@ -225,7 +225,7 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 	content.ConnectionName = u.ConnectionName
 	content.VNetId = u.VNetId
 	content.CspResourceId = tempSpiderSecurityInfo.IId.SystemId
-	content.CspResourceHandlingName = tempSpiderSecurityInfo.IId.NameId
+	content.CspResourceName = tempSpiderSecurityInfo.IId.NameId
 	content.Description = u.Description
 	content.KeyValueList = tempSpiderSecurityInfo.KeyValueList
 	content.AssociatedObjectList = []string{}
@@ -351,7 +351,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 			requestBody.ReqInfo.RuleInfoList = append(requestBody.ReqInfo.RuleInfoList, model.SpiderSecurityRuleInfo(newRule)) // Is this really works?
 		}
 
-		url := fmt.Sprintf("%s/securitygroup/%s/rules", model.SpiderRestUrl, oldSecurityGroup.CspResourceHandlingName)
+		url := fmt.Sprintf("%s/securitygroup/%s/rules", model.SpiderRestUrl, oldSecurityGroup.CspResourceName)
 
 		client := resty.New().SetCloseConnection(true)
 
@@ -510,7 +510,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 		}
 	}
 
-	url := fmt.Sprintf("%s/securitygroup/%s/rules", model.SpiderRestUrl, oldSecurityGroup.CspResourceHandlingName)
+	url := fmt.Sprintf("%s/securitygroup/%s/rules", model.SpiderRestUrl, oldSecurityGroup.CspResourceName)
 
 	client := resty.New().SetCloseConnection(true)
 
@@ -550,7 +550,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 
 	var tempSpiderSecurityInfo *model.SpiderSecurityInfo
 
-	url = fmt.Sprintf("%s/securitygroup/%s", model.SpiderRestUrl, oldSecurityGroup.CspResourceHandlingName)
+	url = fmt.Sprintf("%s/securitygroup/%s", model.SpiderRestUrl, oldSecurityGroup.CspResourceName)
 
 	client = resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
