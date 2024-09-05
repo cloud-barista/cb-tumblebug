@@ -430,8 +430,8 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 		for i, tbSubnetInfo := range vNetInfo.SubnetInfoList {
 			if tbSubnetInfo.Uid == spSubnetInfo.IId.NameId {
 				vNetInfo.SubnetInfoList[i].ConnectionName = vNetInfo.ConnectionName
-				vNetInfo.SubnetInfoList[i].CspResourceId = spResp.IId.SystemId
-				vNetInfo.SubnetInfoList[i].CspResourceName = spResp.IId.NameId
+				vNetInfo.SubnetInfoList[i].CspVNetId = spResp.IId.SystemId
+				vNetInfo.SubnetInfoList[i].CspVNetHandlingId = spResp.IId.NameId
 				vNetInfo.SubnetInfoList[i].Status = string(NetworkAvailable)
 				vNetInfo.SubnetInfoList[i].CspResourceId = spSubnetInfo.IId.SystemId
 				vNetInfo.SubnetInfoList[i].CspResourceName = spSubnetInfo.IId.NameId
@@ -478,7 +478,19 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 			return emptyRet, err
 		}
 
+		// Save the subnet object into the key-value store
 		err = kvstore.Put(subnetKey, string(value))
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return emptyRet, err
+		}
+
+		// Store label info using CreateOrUpdateLabel
+		labels := map[string]string{
+			"provider":  "cb-tumblebug",
+			"namespace": nsId,
+		}
+		err = label.CreateOrUpdateLabel(model.StrSubnet, subnetInfo.Uid, subnetKey, labels)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
@@ -924,15 +936,18 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 	//       since the order may differ different between slices
 	for i, spSubnetInfo := range spResp.SubnetInfoList {
 		subnet := model.TbSubnetInfo{
-			Id:              fmt.Sprintf("reg-subnet-%02d", i+1),
-			Name:            fmt.Sprintf("reg-subnet-%02d", i+1),
-			ConnectionName:  vNetInfo.ConnectionName,
-			Status:          string(NetworkUnknown),
-			CspResourceId:   spSubnetInfo.IId.SystemId,
-			CspResourceName: spSubnetInfo.IId.NameId,
-			KeyValueList:    spSubnetInfo.KeyValueList,
-			Zone:            spSubnetInfo.Zone,
-			IPv4_CIDR:       spSubnetInfo.IPv4_CIDR,
+			Id:                fmt.Sprintf("reg-subnet-%02d", i+1),
+			Name:              fmt.Sprintf("reg-subnet-%02d", i+1),
+			Uid:               common.GenUid(),
+			ConnectionName:    vNetInfo.ConnectionName,
+			Status:            string(NetworkUnknown),
+			CspResourceId:     spSubnetInfo.IId.SystemId,
+			CspResourceName:   spSubnetInfo.IId.NameId,
+			CspVNetId:         spResp.IId.SystemId,
+			CspVNetHandlingId: spResp.IId.NameId,
+			KeyValueList:      spSubnetInfo.KeyValueList,
+			Zone:              spSubnetInfo.Zone,
+			IPv4_CIDR:         spSubnetInfo.IPv4_CIDR,
 			// todo: restore the tag list later
 			// TagList:        spSubnetInfo.TagList,
 		}
@@ -946,6 +961,17 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 			return emptyRet, err
 		}
 		err = kvstore.Put(subnetKey, string(value))
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return emptyRet, err
+		}
+
+		// Store label info using CreateOrUpdateLabel
+		labels := map[string]string{
+			"provider":  "cb-tumblebug",
+			"namespace": nsId,
+		}
+		err = label.CreateOrUpdateLabel(model.StrSubnet, subnet.Uid, subnetKey, labels)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
@@ -987,6 +1013,18 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	}
+
+	// Store label info using CreateOrUpdateLabel
+	labels := map[string]string{
+		"provider":  "cb-tumblebug",
+		"namespace": nsId,
+	}
+	err = label.CreateOrUpdateLabel(model.StrVNet, vNetInfo.Uid, vNetKey, labels)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
 	return vNetInfo, nil
 }
 
