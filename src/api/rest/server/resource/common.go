@@ -309,8 +309,8 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
-// RestLoadCommonResource godoc
-// @ID LoadCommonResource
+// RestLoadAssets godoc
+// @ID LoadAssets
 // @Summary Load Common Resources from internal asset files
 // @Description Load Common Resources from internal asset files (Spec, Image)
 // @Tags [Admin] System Configuration
@@ -318,13 +318,13 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 // @Produce  json
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
-// @Router /loadCommonResource [get]
-func RestLoadCommonResource(c echo.Context) error {
+// @Router /loadAssets [get]
+func RestLoadAssets(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
-	content, err := resource.LoadCommonResource()
+	content, err := resource.LoadAssets()
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 

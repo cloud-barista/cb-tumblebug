@@ -1257,8 +1257,8 @@ func GetNameFromStruct(u interface{}) (string, error) {
 	return idStruct.Name, nil
 }
 
-// LoadCommonResource is to register common resources from asset files (../assets/*.csv)
-func LoadCommonResource() (model.IdList, error) {
+// LoadAssets is to register common resources from asset files (../assets/*.csv)
+func LoadAssets() (model.IdList, error) {
 
 	regiesteredIds := model.IdList{}
 	regiesteredStatus := ""

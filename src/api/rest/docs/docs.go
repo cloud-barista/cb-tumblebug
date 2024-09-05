@@ -1033,7 +1033,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/loadCommonResource": {
+        "/loadAssets": {
             "get": {
                 "description": "Load Common Resources from internal asset files (Spec, Image)",
                 "consumes": [
@@ -1046,7 +1046,7 @@ const docTemplate = `{
                     "[Admin] System Configuration"
                 ],
                 "summary": "Load Common Resources from internal asset files",
-                "operationId": "LoadCommonResource",
+                "operationId": "LoadAssets",
                 "responses": {
                     "200": {
                         "description": "OK",

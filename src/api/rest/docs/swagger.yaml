@@ -4218,12 +4218,12 @@ paths:
       summary: Remove a label from a resource
       tags:
       - '[Infra Resource] Common Utility'
-  /loadCommonResource:
+  /loadAssets:
     get:
       consumes:
       - application/json
       description: Load Common Resources from internal asset files (Spec, Image)
-      operationId: LoadCommonResource
+      operationId: LoadAssets
       produces:
       - application/json
       responses:
