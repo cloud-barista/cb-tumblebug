@@ -487,14 +487,26 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 
 		// Store label info using CreateOrUpdateLabel
 		labels := map[string]string{
-			"provider":  "cb-tumblebug",
-			"namespace": nsId,
+			"sys.manager":         model.StrManager,
+			"sys.namespace":       nsId,
+			"sys.labelType":       model.StrSubnet,
+			"sys.id":              subnetInfo.Id,
+			"sys.name":            subnetInfo.Name,
+			"sys.uid":             subnetInfo.Uid,
+			"sys.cspResourceId":   subnetInfo.CspResourceId,
+			"sys.cspResourceName": subnetInfo.CspResourceName,
+			"sys.cidr":            subnetInfo.IPv4_CIDR,
+			"sys.status":          subnetInfo.Status,
+			"sys.description":     subnetInfo.Description,
+			"sys.zone":            subnetInfo.Zone,
+			"sys.vNetId":          vNetInfo.Id,
 		}
 		err = label.CreateOrUpdateLabel(model.StrSubnet, subnetInfo.Uid, subnetKey, labels)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
 		}
+
 	}
 
 	// Check if the vNet info is stored
@@ -518,7 +530,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	labels := map[string]string{
 		"sys.manager":         model.StrManager,
 		"sys.namespace":       nsId,
-		"sys.labelType":       model.StrSubnet,
+		"sys.labelType":       model.StrVNet,
 		"sys.id":              vNetInfo.Id,
 		"sys.name":            vNetInfo.Name,
 		"sys.uid":             vNetInfo.Uid,
@@ -944,7 +956,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 	// Note: Check one by one and update the vNet object with the response from the Spider
 	//       since the order may differ different between slices
 	for i, spSubnetInfo := range spResp.SubnetInfoList {
-		subnet := model.TbSubnetInfo{
+		subnetInfo := model.TbSubnetInfo{
 			Id:                fmt.Sprintf("reg-subnet-%02d", i+1),
 			Name:              fmt.Sprintf("reg-subnet-%02d", i+1),
 			Uid:               common.GenUid(),
@@ -960,12 +972,12 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 			// todo: restore the tag list later
 			// TagList:        spSubnetInfo.TagList,
 		}
-		vNetInfo.SubnetInfoList = append(vNetInfo.SubnetInfoList, subnet)
+		vNetInfo.SubnetInfoList = append(vNetInfo.SubnetInfoList, subnetInfo)
 
 		// Set a subnetKey for the subnet object
-		subnetKey := common.GenChildResourceKey(nsId, childResourceType, vNetInfo.Id, subnet.Id)
+		subnetKey := common.GenChildResourceKey(nsId, childResourceType, vNetInfo.Id, subnetInfo.Id)
 		// Save the subnet object
-		value, err := json.Marshal(subnet)
+		value, err := json.Marshal(subnetInfo)
 		if err != nil {
 			return emptyRet, err
 		}
@@ -977,14 +989,26 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 
 		// Store label info using CreateOrUpdateLabel
 		labels := map[string]string{
-			"provider":  "cb-tumblebug",
-			"namespace": nsId,
+			"sys.manager":         model.StrManager,
+			"sys.namespace":       nsId,
+			"sys.labelType":       model.StrSubnet,
+			"sys.id":              subnetInfo.Id,
+			"sys.name":            subnetInfo.Name,
+			"sys.uid":             subnetInfo.Uid,
+			"sys.cspResourceId":   subnetInfo.CspResourceId,
+			"sys.cspResourceName": subnetInfo.CspResourceName,
+			"sys.cidr":            subnetInfo.IPv4_CIDR,
+			"sys.status":          subnetInfo.Status,
+			"sys.description":     subnetInfo.Description,
+			"sys.zone":            subnetInfo.Zone,
+			"sys.vNetId":          vNetInfo.Id,
 		}
-		err = label.CreateOrUpdateLabel(model.StrSubnet, subnet.Uid, subnetKey, labels)
+		err = label.CreateOrUpdateLabel(model.StrSubnet, subnetInfo.Uid, subnetKey, labels)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
 		}
+
 	}
 
 	log.Debug().Msgf("vNetInfo: %+v", vNetInfo)
@@ -1025,8 +1049,17 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"provider":  "cb-tumblebug",
-		"namespace": nsId,
+		"sys.manager":         model.StrManager,
+		"sys.namespace":       nsId,
+		"sys.labelType":       model.StrVNet,
+		"sys.id":              vNetInfo.Id,
+		"sys.name":            vNetInfo.Name,
+		"sys.uid":             vNetInfo.Uid,
+		"sys.cspResourceId":   vNetInfo.CspResourceId,
+		"sys.cspResourceName": vNetInfo.CspResourceName,
+		"sys.cidr":            vNetInfo.CidrBlock,
+		"sys.status":          vNetInfo.Status,
+		"sys.description":     vNetInfo.Description,
 	}
 	err = label.CreateOrUpdateLabel(model.StrVNet, vNetInfo.Uid, vNetKey, labels)
 	if err != nil {
