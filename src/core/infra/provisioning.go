@@ -1264,17 +1264,17 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 
 	} else {
 		// Try lookup customImage
-		requestBody.ReqInfo.ImageName, err = resource.GetCspResourceId(nsId, model.StrCustomImage, vmInfoData.ImageId)
+		requestBody.ReqInfo.ImageName, err = resource.GetCspResourceHandlingName(nsId, model.StrCustomImage, vmInfoData.ImageId)
 		if requestBody.ReqInfo.ImageName == "" || err != nil {
 			log.Warn().Msgf("Not found %s from CustomImage in ns: %s, find it from UserImage", vmInfoData.ImageId, nsId)
 			errAgg := err.Error()
 			// If customImage doesn't exist, then try lookup image
-			requestBody.ReqInfo.ImageName, err = resource.GetCspResourceId(nsId, model.StrImage, vmInfoData.ImageId)
+			requestBody.ReqInfo.ImageName, err = resource.GetCspResourceHandlingName(nsId, model.StrImage, vmInfoData.ImageId)
 			if requestBody.ReqInfo.ImageName == "" || err != nil {
 				log.Warn().Msgf("Not found %s from UserImage in ns: %s, find CommonImage from SystemCommonNs", vmInfoData.ImageId, nsId)
 				errAgg += err.Error()
 				// If cannot find the resource, use common resource
-				requestBody.ReqInfo.ImageName, err = resource.GetCspResourceId(model.SystemCommonNs, model.StrImage, vmInfoData.ImageId)
+				requestBody.ReqInfo.ImageName, err = resource.GetCspResourceHandlingName(model.SystemCommonNs, model.StrImage, vmInfoData.ImageId)
 				if requestBody.ReqInfo.ImageName == "" || err != nil {
 					errAgg += err.Error()
 					err = fmt.Errorf(errAgg)
@@ -1295,12 +1295,12 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 			requestBody.ReqInfo.RootDiskSize = ""
 		}
 
-		requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceId(nsId, model.StrSpec, vmInfoData.SpecId)
+		requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceHandlingName(nsId, model.StrSpec, vmInfoData.SpecId)
 		if requestBody.ReqInfo.VMSpecName == "" || err != nil {
 			log.Warn().Msgf("Not found the Spec: %s in nsId: %s, find it from SystemCommonNs", vmInfoData.SpecId, nsId)
 			errAgg := err.Error()
 			// If cannot find the resource, use common resource
-			requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceId(model.SystemCommonNs, model.StrSpec, vmInfoData.SpecId)
+			requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceHandlingName(model.SystemCommonNs, model.StrSpec, vmInfoData.SpecId)
 			log.Info().Msgf("Use the common VMSpecName: %s", requestBody.ReqInfo.VMSpecName)
 
 			if requestBody.ReqInfo.ImageName == "" || err != nil {
@@ -1311,7 +1311,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 			}
 		}
 
-		requestBody.ReqInfo.VPCName, err = resource.GetCspResourceId(nsId, model.StrVNet, vmInfoData.VNetId)
+		requestBody.ReqInfo.VPCName, err = resource.GetCspResourceHandlingName(nsId, model.StrVNet, vmInfoData.VNetId)
 		if requestBody.ReqInfo.VPCName == "" {
 			log.Error().Err(err).Msg("")
 			return err
@@ -1332,7 +1332,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 
 		var SecurityGroupIdsTmp []string
 		for _, v := range vmInfoData.SecurityGroupIds {
-			CspResourceId, err := resource.GetCspResourceId(nsId, model.StrSecurityGroup, v)
+			CspResourceId, err := resource.GetCspResourceHandlingName(nsId, model.StrSecurityGroup, v)
 			if CspResourceId == "" {
 				log.Error().Err(err).Msg("")
 				return err
@@ -1346,7 +1346,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 		for _, v := range vmInfoData.DataDiskIds {
 			// ignore DataDiskIds == "", assume it is ignorable mistake
 			if v != "" {
-				CspResourceId, err := resource.GetCspResourceId(nsId, model.StrDataDisk, v)
+				CspResourceId, err := resource.GetCspResourceHandlingName(nsId, model.StrDataDisk, v)
 				if err != nil || CspResourceId == "" {
 					log.Error().Err(err).Msg("")
 					return err
@@ -1356,7 +1356,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 		}
 		requestBody.ReqInfo.DataDiskNames = DataDiskIdsTmp
 
-		requestBody.ReqInfo.KeyPairName, err = resource.GetCspResourceId(nsId, model.StrSSHKey, vmInfoData.SshKeyId)
+		requestBody.ReqInfo.KeyPairName, err = resource.GetCspResourceHandlingName(nsId, model.StrSSHKey, vmInfoData.SshKeyId)
 		if requestBody.ReqInfo.KeyPairName == "" {
 			log.Error().Err(err).Msg("")
 			return err

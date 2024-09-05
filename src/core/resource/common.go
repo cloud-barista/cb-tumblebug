@@ -1932,8 +1932,8 @@ func expandInfraType(infraType string) string {
 	return strings.Join(expInfraTypeList, "|")
 }
 
-// GetCspResourceId is func to retrieve CSP native resource ID
-func GetCspResourceId(nsId string, resourceType string, resourceId string) (string, error) {
+// GetCspResourceHandlingName is func to retrieve CSP native resource ID
+func GetCspResourceHandlingName(nsId string, resourceType string, resourceId string) (string, error) {
 
 	if resourceType == model.StrSpec {
 		specInfo, err := GetSpec(nsId, resourceId)
