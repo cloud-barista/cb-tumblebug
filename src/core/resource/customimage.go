@@ -67,6 +67,7 @@ func RegisterCustomImageWithInfo(nsId string, content model.TbCustomImageInfo) (
 		return model.TbCustomImageInfo{}, err
 	}
 
+	content.ResourceType = resourceType
 	content.Namespace = nsId
 	content.Id = content.Name
 	content.AssociatedObjectList = []string{}
@@ -236,6 +237,7 @@ func RegisterCustomImageWithId(nsId string, u *model.TbCustomImageReq) (model.Tb
 	}
 
 	content := model.TbCustomImageInfo{
+		ResourceType:         resourceType,
 		Namespace:            nsId,
 		Id:                   u.Name,
 		Name:                 u.Name,

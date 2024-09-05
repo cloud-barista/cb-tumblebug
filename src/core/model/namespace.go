@@ -21,6 +21,9 @@ type NsReq struct {
 
 // swagger:response NsInfo
 type NsInfo struct {
+	// ResourceType is the type of the resource
+	ResourceType string `json:"resourceType"`
+
 	// Id is unique identifier for the object
 	Id string `json:"id" example:"default"`
 	// Uid is universally unique identifier for the object, used for labelSelector

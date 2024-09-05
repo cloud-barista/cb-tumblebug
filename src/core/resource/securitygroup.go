@@ -219,6 +219,7 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 	tempSpiderSecurityInfo = resp.Result().(*model.SpiderSecurityInfo)
 
 	content := model.TbSecurityGroupInfo{}
+	content.ResourceType = resourceType
 	content.Id = u.Name
 	content.Name = u.Name
 	content.Uid = uid
@@ -265,6 +266,7 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 		"sys.cspResourceId":   content.CspResourceId,
 		"sys.cspResourceName": content.CspResourceName,
 		"sys.description":     content.Description,
+		"sys.connectionName":  content.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrSecurityGroup, uid, Key, labels)
 	if err != nil {

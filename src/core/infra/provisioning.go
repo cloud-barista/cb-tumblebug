@@ -271,6 +271,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbVmReq, newSu
 		log.Info().Msg("Create MCI subGroup object")
 
 		subGroupInfoData := model.TbSubGroupInfo{}
+		subGroupInfoData.ResourceType = model.StrSubGroup
 		subGroupInfoData.Id = tentativeVmId
 		subGroupInfoData.Name = tentativeVmId
 		subGroupInfoData.SubGroupSize = vmRequest.SubGroupSize
@@ -334,6 +335,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbVmReq, newSu
 			log.Debug().Msg("vmInfoData.Name: " + vmInfoData.Name)
 
 		}
+		vmInfoData.ResourceType = model.StrVM
 		vmInfoData.Id = vmInfoData.Name
 
 		vmInfoData.Description = vmRequest.Description
@@ -474,6 +476,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 	log.Info().Msg("Create MCI object")
 	key := common.GenMciKey(nsId, mciId, "")
 	mapA := map[string]string{
+		"resourceType":    model.StrMCI,
 		"id":              mciId,
 		"name":            req.Name,
 		"uid":             uid,
@@ -572,6 +575,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 			uidSubGroup := common.GenUid()
 
 			subGroupInfoData := model.TbSubGroupInfo{}
+			subGroupInfoData.ResourceType = model.StrSubGroup
 			subGroupInfoData.Id = common.ToLower(k.Name)
 			subGroupInfoData.Name = common.ToLower(k.Name)
 			subGroupInfoData.Uid = uidSubGroup
@@ -623,7 +627,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 				log.Debug().Msg("vmInfoData.Name: " + vmInfoData.Name)
 
 			}
-
+			vmInfoData.ResourceType = model.StrVM
 			vmInfoData.Id = vmInfoData.Name
 			vmInfoData.Uid = common.GenUid()
 
@@ -1210,6 +1214,7 @@ func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model
 		"sys.subGroupId":      vmInfoData.SubGroupId,
 		"sys.mciId":           mciId,
 		"sys.createdTime":     vmInfoData.CreatedTime,
+		"sys.connectionName":  vmInfoData.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrVM, vmInfoData.Uid, key, labels)
 	if err != nil {

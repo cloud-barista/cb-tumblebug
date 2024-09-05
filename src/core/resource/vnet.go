@@ -285,6 +285,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 
 	// Set the vNet object
 	uid := common.GenUid()
+	vNetInfo.ResourceType = resourceType
 	vNetInfo.Name = vNetReq.Name
 	vNetInfo.Id = vNetReq.Name
 	vNetInfo.Uid = uid
@@ -312,11 +313,12 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	//       since each subnet uid must be consistent
 	for _, subnetInfo := range vNetReq.SubnetInfoList {
 		vNetInfo.SubnetInfoList = append(vNetInfo.SubnetInfoList, model.TbSubnetInfo{
-			Id:        subnetInfo.Name,
-			Name:      subnetInfo.Name,
-			Uid:       common.GenUid(),
-			IPv4_CIDR: subnetInfo.IPv4_CIDR,
-			Zone:      subnetInfo.Zone,
+			ResourceType: model.StrSubnet,
+			Id:           subnetInfo.Name,
+			Name:         subnetInfo.Name,
+			Uid:          common.GenUid(),
+			IPv4_CIDR:    subnetInfo.IPv4_CIDR,
+			Zone:         subnetInfo.Zone,
 			// todo: restore the tag list later
 			// TagList:   subnetInfo.TagList,
 		})
@@ -429,6 +431,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	for _, spSubnetInfo := range spResp.SubnetInfoList {
 		for i, tbSubnetInfo := range vNetInfo.SubnetInfoList {
 			if tbSubnetInfo.Uid == spSubnetInfo.IId.NameId {
+				vNetInfo.SubnetInfoList[i].ResourceType = model.StrSubnet
 				vNetInfo.SubnetInfoList[i].ConnectionName = vNetInfo.ConnectionName
 				vNetInfo.SubnetInfoList[i].CspVNetId = spResp.IId.SystemId
 				vNetInfo.SubnetInfoList[i].CspVNetHandlingId = spResp.IId.NameId
@@ -500,6 +503,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 			"sys.description":     subnetInfo.Description,
 			"sys.zone":            subnetInfo.Zone,
 			"sys.vNetId":          vNetInfo.Id,
+			"sys.connectionName":  vNetInfo.ConnectionName,
 		}
 		err = label.CreateOrUpdateLabel(model.StrSubnet, subnetInfo.Uid, subnetKey, labels)
 		if err != nil {
@@ -539,6 +543,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 		"sys.cidr":            vNetInfo.CidrBlock,
 		"sys.status":          vNetInfo.Status,
 		"sys.description":     vNetInfo.Description,
+		"sys.connectionName":  vNetInfo.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrVNet, vNetInfo.Uid, vNetKey, labels)
 	if err != nil {
@@ -834,6 +839,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 
 	// Set the vNet object
 	uid := common.GenUid()
+	vNetInfo.ResourceType = resourceType
 	vNetInfo.Id = vNetRegisterReq.Name
 	vNetInfo.Name = vNetRegisterReq.Name
 	vNetInfo.Uid = uid
@@ -1002,6 +1008,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 			"sys.description":     subnetInfo.Description,
 			"sys.zone":            subnetInfo.Zone,
 			"sys.vNetId":          vNetInfo.Id,
+			"sys.connectionName":  vNetInfo.ConnectionName,
 		}
 		err = label.CreateOrUpdateLabel(model.StrSubnet, subnetInfo.Uid, subnetKey, labels)
 		if err != nil {
@@ -1060,6 +1067,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 		"sys.cidr":            vNetInfo.CidrBlock,
 		"sys.status":          vNetInfo.Status,
 		"sys.description":     vNetInfo.Description,
+		"sys.connectionName":  vNetInfo.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrVNet, vNetInfo.Uid, vNetKey, labels)
 	if err != nil {

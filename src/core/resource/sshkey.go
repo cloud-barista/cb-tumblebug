@@ -139,7 +139,7 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 	tempSpiderKeyPairInfo = resp.Result().(*model.SpiderKeyPairInfo)
 
 	content := model.TbSshKeyInfo{}
-	//content.Id = common.GenUid()
+	content.ResourceType = resourceType
 	content.Id = u.Name
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
@@ -188,6 +188,7 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 		"sys.cspResourceId":   content.CspResourceId,
 		"sys.cspResourceName": content.CspResourceName,
 		"sys.description":     content.Description,
+		"sys.connectionName":  content.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrSSHKey, uid, Key, labels)
 	if err != nil {

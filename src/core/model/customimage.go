@@ -70,6 +70,9 @@ type TbCustomImageReq struct {
 
 // TbCustomImageInfo is a struct for custom image (VM snapshot)
 type TbCustomImageInfo struct {
+	// ResourceType is the type of the resource
+	ResourceType string `json:"resourceType"`
+
 	// Id is unique identifier for the object
 	Id string `json:"id" example:"aws-ap-southeast-1"`
 	// Uid is universally unique identifier for the object, used for labelSelector
