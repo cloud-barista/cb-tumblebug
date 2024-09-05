@@ -143,7 +143,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 		found = false
 		for _, w := range tbVNetInfo.SubnetInfoList {
 			if v == w.Name {
-				spSnName = w.Name
+				spSnName = w.CspSubnetName
 				found = true
 				break
 			}
