@@ -13453,12 +13453,6 @@ const docTemplate = `{
                 "status": {
                     "type": "string"
                 },
-                "tagList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
-                    }
-                },
                 "uuid": {
                     "description": "uuid is universally unique identifier for the resource",
                     "type": "string"
@@ -13486,12 +13480,6 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "subnet00"
-                },
-                "tagList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
-                    }
                 },
                 "zone": {
                     "type": "string"
@@ -13560,12 +13548,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
-                "tagList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
-                    }
-                },
                 "uuid": {
                     "description": "uuid is universally unique identifier for the resource",
                     "type": "string"
@@ -13599,12 +13581,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.TbSubnetReq"
-                    }
-                },
-                "tagList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
                     }
                 }
             }

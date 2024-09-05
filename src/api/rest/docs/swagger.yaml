@@ -2751,10 +2751,6 @@ definitions:
         type: string
       status:
         type: string
-      tagList:
-        items:
-          $ref: '#/definitions/model.KeyValue'
-        type: array
       uuid:
         description: uuid is universally unique identifier for the resource
         type: string
@@ -2772,10 +2768,6 @@ definitions:
       name:
         example: subnet00
         type: string
-      tagList:
-        items:
-          $ref: '#/definitions/model.KeyValue'
-        type: array
       zone:
         type: string
     required:
@@ -2825,10 +2817,6 @@ definitions:
           string can be used) for special System purpose
         example: Managed by CB-Tumblebug
         type: string
-      tagList:
-        items:
-          $ref: '#/definitions/model.KeyValue'
-        type: array
       uuid:
         description: uuid is universally unique identifier for the resource
         type: string
@@ -2850,10 +2838,6 @@ definitions:
       subnetInfoList:
         items:
           $ref: '#/definitions/model.TbSubnetReq'
-        type: array
-      tagList:
-        items:
-          $ref: '#/definitions/model.KeyValue'
         type: array
     required:
     - connectionName
