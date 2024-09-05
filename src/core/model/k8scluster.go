@@ -83,7 +83,7 @@ type TbK8sClusterReq struct { // Tumblebug
 	Description    string `json:"description" example:"My K8sCluster"`
 
 	// (1) K8sCluster Info
-	Id      string `json:"id" validate:"required" example:"k8scluster-01"`
+	Name    string `json:"name" validate:"required" example:"k8scluster-01"`
 	Version string `json:"version" example:"1.30.1-aliyun.1"`
 
 	// (2) Network Info

@@ -1961,15 +1961,15 @@ definitions:
       description:
         example: My K8sCluster
         type: string
-      id:
-        description: (1) K8sCluster Info
-        example: k8scluster-01
-        type: string
       k8sNodeGroupList:
         description: (3) NodeGroupInfo List
         items:
           $ref: '#/definitions/model.TbK8sNodeGroupReq'
         type: array
+      name:
+        description: (1) K8sCluster Info
+        example: k8scluster-01
+        type: string
       securityGroupIds:
         example:
         - sg-01
@@ -1991,7 +1991,7 @@ definitions:
         type: string
     required:
     - connectionName
-    - id
+    - name
     - securityGroupIds
     - subnetIds
     - vNetId

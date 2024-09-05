@@ -36,32 +36,22 @@ func TbK8sClusterReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(model.TbK8sClusterReq)
 
-	err := common.CheckString(u.Id)
+	err := common.CheckString(u.Name)
 	if err != nil {
 		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
-		sl.ReportError(u.Id, "id", "Id", err.Error(), "")
+		sl.ReportError(u.Name, "name", "Name", err.Error(), "")
 	}
 }
 
 // CreateK8sCluster create a k8s cluster
-func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (model.TbK8sClusterInfo, error) {
+func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (model.TbK8sClusterInfo, error) {
 	log.Info().Msg("CreateK8sCluster")
 
 	emptyObj := model.TbK8sClusterInfo{}
-	/*
-		err := common.CheckString(nsId)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return emptyObj, err
-		}
 
-		err = common.CheckString(u.Id)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return emptyObj, err
-		}
-	*/
-	err := validate.Struct(u)
+	reqId := req.Name
+
+	err := validate.Struct(req)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			log.Err(err).Msg("Failed to Create a K8sCluster")
@@ -71,14 +61,14 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 		return emptyObj, err
 	}
 
-	check, err := CheckK8sCluster(nsId, u.Id)
+	check, err := CheckK8sCluster(nsId, reqId)
 	if err != nil {
 		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
 
 	if check {
-		err := fmt.Errorf("The k8s cluster " + u.Id + " already exists.")
+		err := fmt.Errorf("The k8s cluster " + reqId + " already exists.")
 		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
@@ -86,7 +76,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 	/*
 	 * Check for K8sCluster Enablement from K8sClusterSetting
 	 */
-	err = checkK8sClusterEnablement(u.ConnectionName)
+	err = checkK8sClusterEnablement(req.ConnectionName)
 	if err != nil {
 		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
@@ -97,14 +87,14 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 	 */
 
 	// Validate
-	err = validateAtCreateK8sCluster(u)
+	err = validateAtCreateK8sCluster(req)
 	if err != nil {
-		log.Err(err).Msgf("Failed to Create a K8sCluster: Requested K8sVersion(%s)", u.Version)
+		log.Err(err).Msgf("Failed to Create a K8sCluster: Requested K8sVersion(%s)", req.Version)
 		return emptyObj, err
 	}
-	spVersion := u.Version
+	spVersion := req.Version
 
-	spVPCName, err := GetCspResourceName(nsId, model.StrVNet, u.VNetId)
+	spVPCName, err := GetCspResourceName(nsId, model.StrVNet, req.VNetId)
 	if spVPCName == "" {
 		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
@@ -127,7 +117,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 	var spSubnetNames []string
 	var found bool
 
-	tmpInf, err := GetResource(nsId, model.StrVNet, u.VNetId)
+	tmpInf, err := GetResource(nsId, model.StrVNet, req.VNetId)
 	if err != nil {
 		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
@@ -139,7 +129,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 		return emptyObj, err
 	}
 
-	for _, v := range u.SubnetIds {
+	for _, v := range req.SubnetIds {
 		found = false
 		for _, w := range tbVNetInfo.SubnetInfoList {
 			if v == w.Name {
@@ -154,13 +144,13 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 		}
 	}
 	if len(spSubnetNames) == 0 {
-		err := fmt.Errorf("No valid subnets in VNetId(%s)", u.VNetId)
+		err := fmt.Errorf("No valid subnets in VNetId(%s)", req.VNetId)
 		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
 
 	var spSecurityGroupNames []string
-	for _, v := range u.SecurityGroupIds {
+	for _, v := range req.SecurityGroupIds {
 		spSgName, err := GetCspResourceName(nsId, model.StrSecurityGroup, v)
 		if spSgName == "" {
 			log.Err(err).Msg("Failed to Create a K8sCluster")
@@ -171,7 +161,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 	}
 
 	var spNodeGroupList []model.SpiderNodeGroupReqInfo
-	for _, v := range u.K8sNodeGroupList {
+	for _, v := range req.K8sNodeGroupList {
 		err := common.CheckString(v.Name)
 		if err != nil {
 			log.Err(err).Msg("Failed to Create a K8sCluster")
@@ -221,7 +211,7 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 
 	requestBody := model.SpiderClusterReq{
 		NameSpace:      "", // should be empty string from Tumblebug
-		ConnectionName: u.ConnectionName,
+		ConnectionName: req.ConnectionName,
 		ReqInfo: model.SpiderClusterReqInfo{
 			Name:               uid,
 			Version:            spVersion,
@@ -268,14 +258,15 @@ func CreateK8sCluster(nsId string, u *model.TbK8sClusterReq, option string) (mod
 	 * Extract SpiderClusterInfo from Response & Build model.TbK8sClusterInfo object
 	 */
 
-	tbK8sCInfo := convertSpiderClusterInfoToTbK8sClusterInfo(&spClusterRes.ClusterInfo, u.Id, u.ConnectionName, u.Description)
+	tbK8sCInfo := convertSpiderClusterInfoToTbK8sClusterInfo(&spClusterRes.ClusterInfo, reqId, req.ConnectionName, req.Description)
+	tbK8sCInfo.Id = reqId
 	tbK8sCInfo.Uid = uid
 	tbK8sCInfo.ResourceType = model.StrK8s
 
-	if option == "register" && u.CspResourceId == "" {
+	if option == "register" && req.CspResourceId == "" {
 		tbK8sCInfo.SystemLabel = "Registered from CB-Spider resource"
 		// TODO: check to handle something to register
-	} else if option == "register" && u.CspResourceId != "" {
+	} else if option == "register" && req.CspResourceId != "" {
 		tbK8sCInfo.SystemLabel = "Registered from CSP resource"
 	}
 
