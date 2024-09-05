@@ -684,7 +684,7 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 	}
 
 	// register connection config for all regions with the credential
-	allRegisteredRegions, err := GetRegionList()
+	allRegisteredRegions, err := RetrieveRegionListFromCsp()
 	if err != nil {
 		return callResult, err
 	}
@@ -999,8 +999,8 @@ func GetRegion(ProviderName, RegionName string) (model.RegionDetail, error) {
 	return model.RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in Provider '%s'", RegionName, ProviderName)
 }
 
-// GetRegionList is func to retrieve region list
-func GetRegionList() (model.RegionList, error) {
+// RetrieveRegionListFromCsp is func to retrieve region list
+func RetrieveRegionListFromCsp() (model.RegionList, error) {
 
 	url := model.SpiderRestUrl + "/region"
 

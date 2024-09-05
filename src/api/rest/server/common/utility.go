@@ -290,7 +290,7 @@ func RestGetRegionList(c echo.Context) error {
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
-	content, err := common.GetRegionList()
+	content, err := common.RetrieveRegionListFromCsp()
 	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
