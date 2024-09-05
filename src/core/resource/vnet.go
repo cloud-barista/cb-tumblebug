@@ -17,6 +17,7 @@ package resource
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 
@@ -1147,4 +1148,97 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 	ret.Message = fmt.Sprintf("the vnet (%s) has been deregistered", vNetId)
 
 	return ret, nil
+}
+
+/*
+The following functions are used for Designing VNets
+*/
+
+// DesignVNets accepts a VNet design request, designs and returns a VNet design response
+func DesignVNets(reqt *model.VNetDesignRequest) (model.VNetDesignResponse, error) {
+
+	var vNetDesignResp model.VNetDesignResponse
+	var vNetReqList []model.TbVNetReq
+	var allCIDRs []string
+
+	baseIP, _, err := net.ParseCIDR(reqt.TargetPrivateNetwork)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return model.VNetDesignResponse{}, err
+	}
+
+	nextAvailableIP := baseIP
+
+	idx := 0
+	for i, region := range reqt.CspRegions {
+		for j, vnet := range region.NeededVNets {
+
+			// Design a vNet
+			fmt.Printf("Region %d, VNet %d:\n", i+1, j+1)
+
+			// Calculate CIDR blocks for vNet and subnets
+			cidr, subnets, newNextAvailableIP, err := netutil.DeriveVNetAndSubnets(nextAvailableIP, vnet.SubnetSize, vnet.SubnetCount)
+			if err != nil {
+				fmt.Printf("Error calculating subnets: %v\n", err)
+				continue
+			}
+			fmt.Printf("vNet: %s\n", cidr)
+			vNetReq := model.TbVNetReq{
+				Name:           fmt.Sprintf("vnet%02d", idx),
+				ConnectionName: region.ConnectionName,
+				CidrBlock:      cidr,
+				Description:    fmt.Sprintf("vnet%02d designed by util/vNet/design", idx),
+			}
+
+			fmt.Println("Subnets:")
+			zones, length, err := GetFirstNZones(region.ConnectionName, 2)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+			}
+
+			for k, subnet := range subnets {
+				subnetReq := model.TbSubnetReq{}
+				subnetReq.IPv4_CIDR = subnet
+
+				// Note - Depending on the input, a few more subnets can be created
+				if k < vnet.SubnetCount {
+					subnetReq.Name = fmt.Sprintf("subnet%02d", k)
+					subnetReq.Description = fmt.Sprintf("subnet%02d designed by util/vNet/design", k)
+				} else {
+					subnetReq.Name = fmt.Sprintf("subnet%02d-reserved", k)
+					subnetReq.Description = fmt.Sprintf("subnet%02d-reserved designed by util/vNet/design", k)
+				}
+
+				// Zone selection method: firstTwoZones
+				if length > 0 {
+					subnetReq.Zone = zones[k%length]
+				} else {
+					subnetReq.Zone = ""
+				}
+
+				// Add the subnet to the vNet
+				vNetReq.SubnetInfoList = append(vNetReq.SubnetInfoList, subnetReq)
+			}
+			nextAvailableIP = newNextAvailableIP
+
+			// Keep all CIDRs for supernetting
+			allCIDRs = append(allCIDRs, cidr)
+
+			// Add the vNet to the list
+			vNetReqList = append(vNetReqList, vNetReq)
+		}
+	}
+	vNetDesignResp.VNetReqList = vNetReqList
+
+	if reqt.SupernettingEnabled == "true" {
+		supernet, err := netutil.CalculateSupernet(allCIDRs)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return model.VNetDesignResponse{}, err
+		}
+		log.Info().Msgf("Supernet of all vNets: %s", supernet)
+		vNetDesignResp.RootNetworkCIDR = supernet
+	}
+
+	return vNetDesignResp, nil
 }

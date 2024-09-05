@@ -6,8 +6,48 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
+
+type RestPostUtilToDesignVNetRequest struct {
+	model.VNetDesignRequest
+}
+
+type RestPostUtilToDesignVNetReponse struct {
+	model.VNetDesignResponse
+}
+
+// RestPostUtilToDesignVNet godoc
+// @ID PostUtilToDesignVNet
+// @Summary Design VNet and subnets based on user-friendly properties
+// @Description Design VNet and subnets based on user-friendly properties
+// @Tags [Infra Resource] Network Management
+// @Accept  json
+// @Produce  json
+// @Param vNetDesignReq body RestPostUtilToDesignVNetRequest true "User-friendly properties to design VNet and subnets"
+// @Success 201 {object} RestPostUtilToDesignVNetReponse
+// @Failure 400 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /util/vNet/design [post]
+func RestPostUtilToDesignVNet(c echo.Context) error {
+
+	// Bind the request body to SubnettingRequest struct
+	reqt := new(RestPostUtilToDesignVNetRequest)
+	if err := c.Bind(reqt); err != nil {
+		log.Warn().Msgf("invalid request: %v", err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+
+	resp, err := resource.DesignVNets(&reqt.VNetDesignRequest)
+	if err != nil {
+		log.Error().Msgf("failed to design VNets: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
+	}
+
+	return c.JSON(http.StatusCreated, resp)
+}
 
 type RestPostUtilToDesignNetworkRequest struct {
 	netutil.SubnettingRequest
