@@ -83,12 +83,14 @@ func RemoveLabel(labelType, uid, key string) error {
 	// Fetch the existing model.LabelInfo
 	labelData, err := kvstore.Get(labelKey)
 	if err != nil {
+		log.Error().Err(err).Msgf("labelData: %v", labelData)
 		return err
 	}
 
 	var labelInfo model.LabelInfo
 	err = json.Unmarshal([]byte(labelData), &labelInfo)
 	if err != nil {
+		log.Error().Err(err).Msgf("labelInfo: %v", labelInfo)
 		return err
 	}
 
@@ -98,11 +100,13 @@ func RemoveLabel(labelType, uid, key string) error {
 	// Save the updated model.LabelInfo back to the Key-Value store
 	updatedLabelData, err := json.Marshal(labelInfo)
 	if err != nil {
+		log.Error().Err(err).Msgf("updatedLabelData: %v", updatedLabelData)
 		return err
 	}
 
 	err = kvstore.Put(labelKey, string(updatedLabelData))
 	if err != nil {
+		log.Error().Err(err).Msgf("")
 		return err
 	}
 
