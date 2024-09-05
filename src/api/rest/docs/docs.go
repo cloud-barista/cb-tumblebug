@@ -2925,66 +2925,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/loadSharedResource": {
-            "get": {
-                "description": "Load Default Resource from internal asset file",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Common Utility"
-                ],
-                "summary": "Load Default Resource from internal asset file",
-                "operationId": "LoadSharedResource",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "enum": [
-                            "all",
-                            "vnet",
-                            "sg",
-                            "sshkey"
-                        ],
-                        "type": "string",
-                        "description": "Option",
-                        "name": "option",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "",
-                        "description": "connectionName of cloud for designated resource",
-                        "name": "connectionName",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/ns/{nsId}/mci": {
             "get": {
                 "description": "List all MCIs or MCIs' ID",
@@ -8447,6 +8387,66 @@ const docTemplate = `{
                         "name": "subnetId",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/sharedResource": {
+            "post": {
+                "description": "Create shared resources for MC-Infra",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Common Utility"
+                ],
+                "summary": "Create shared resources for MC-Infra",
+                "operationId": "CreateSharedResource",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "all",
+                            "vnet",
+                            "sg",
+                            "sshkey"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "connectionName of cloud for designated resource",
+                        "name": "connectionName",
+                        "in": "query"
                     }
                 ],
                 "responses": {

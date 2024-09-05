@@ -328,10 +328,10 @@ func RestLoadAssets(c echo.Context) error {
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
-// RestLoadSharedResource godoc
-// @ID LoadSharedResource
-// @Summary Load Default Resource from internal asset file
-// @Description Load Default Resource from internal asset file
+// RestCreateSharedResource godoc
+// @ID CreateSharedResource
+// @Summary Create shared resources for MC-Infra
+// @Description Create shared resources for MC-Infra
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
@@ -340,8 +340,8 @@ func RestLoadAssets(c echo.Context) error {
 // @Param connectionName query string false "connectionName of cloud for designated resource" default()
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
-// @Router /ns/{nsId}/loadSharedResource [get]
-func RestLoadSharedResource(c echo.Context) error {
+// @Router /ns/{nsId}/sharedResource [post]
+func RestCreateSharedResource(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
@@ -352,7 +352,7 @@ func RestLoadSharedResource(c echo.Context) error {
 	// default of connectionConfig is empty string. with empty string, register all resources.
 	connectionName := c.QueryParam("connectionName")
 
-	err := resource.LoadSharedResource(nsId, resType, connectionName)
+	err := resource.CreateSharedResource(nsId, resType, connectionName)
 	content := map[string]string{"message": "Done"}
 	return common.EndRequestWithLog(c, reqID, err, content)
 }

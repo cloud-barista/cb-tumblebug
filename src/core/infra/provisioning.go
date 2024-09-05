@@ -1052,7 +1052,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 			return &model.TbVmReq{}, err
 		}
 		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
-		err2 := resource.LoadSharedResource(nsId, model.StrVNet, vmReq.ConnectionName)
+		err2 := resource.CreateSharedResource(nsId, model.StrVNet, vmReq.ConnectionName)
 		if err2 != nil {
 			log.Error().Err(err2).Msg("Failed to create new default vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
 			return &model.TbVmReq{}, err2
@@ -1074,7 +1074,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 			return &model.TbVmReq{}, err
 		}
 		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
-		err2 := resource.LoadSharedResource(nsId, model.StrSSHKey, vmReq.ConnectionName)
+		err2 := resource.CreateSharedResource(nsId, model.StrSSHKey, vmReq.ConnectionName)
 		if err2 != nil {
 			log.Error().Err(err2).Msg("Failed to create new default SSHKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
 			return &model.TbVmReq{}, err2
@@ -1096,7 +1096,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 			return &model.TbVmReq{}, err
 		}
 		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
-		err2 := resource.LoadSharedResource(nsId, model.StrSecurityGroup, vmReq.ConnectionName)
+		err2 := resource.CreateSharedResource(nsId, model.StrSecurityGroup, vmReq.ConnectionName)
 		if err2 != nil {
 			log.Error().Err(err2).Msg("Failed to create new default securityGroup " + securityGroup + " from " + vmReq.ConnectionName)
 			return &model.TbVmReq{}, err2
