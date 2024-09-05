@@ -7,7 +7,7 @@ networks:
 services:
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.9.9
+    image: cloudbaristaorg/cb-tumblebug:0.9.10
     container_name: cb-tumblebug
     build:
       context: .
