@@ -252,7 +252,7 @@ func RunServer(port string) {
 	e.DELETE("/tumblebug/object", rest_common.RestDeleteObject)
 	e.DELETE("/tumblebug/objects", rest_common.RestDeleteObjects)
 
-	e.GET("/tumblebug/loadCommonResource", rest_resource.RestLoadCommonResource)
+	e.GET("/tumblebug/loadAssets", rest_resource.RestLoadAssets)
 	e.GET("/tumblebug/ns/:nsId/loadSharedResource", rest_resource.RestLoadSharedResource)
 	e.DELETE("/tumblebug/ns/:nsId/sharedResources", rest_resource.RestDelAllSharedResources)
 

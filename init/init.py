@@ -241,7 +241,7 @@ print(Fore.RESET)
 def load_resources():
     global response_json
     try:
-        response = requests.get(f"http://{TUMBLEBUG_SERVER}/tumblebug/loadCommonResource", headers=HEADERS)
+        response = requests.get(f"http://{TUMBLEBUG_SERVER}/tumblebug/loadAssets", headers=HEADERS)
         response.raise_for_status()  # Will raise an exception for HTTP error codes
         response_json = response.json()
         if response_json is None:  # Check if response.json() returned None
