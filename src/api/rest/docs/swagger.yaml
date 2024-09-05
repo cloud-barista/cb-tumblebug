@@ -699,6 +699,22 @@ definitions:
         description: Should be encrypted by the public key issued by GET /credential/publicKey
         type: string
     type: object
+  model.Label:
+    properties:
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  model.LabelInfo:
+    properties:
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      resourceKey:
+        type: string
+    type: object
   model.Location:
     properties:
       display:
@@ -4028,7 +4044,18 @@ paths:
       description: Get labels for a resource identified by its uid
       operationId: GetLabels
       parameters:
-      - description: Label Type (e.g., ns, vnet)
+      - description: Label Type
+        enum:
+        - ns
+        - mci
+        - subGroup
+        - vm
+        - k8s
+        - vNet
+        - subnet
+        - securityGroup
+        - sshKey
+        - dataDisk
         in: path
         name: labelType
         required: true
@@ -4044,9 +4071,7 @@ paths:
         "200":
           description: Labels for the resource
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.LabelInfo'
         "400":
           description: Invalid request
           schema:
@@ -4064,7 +4089,18 @@ paths:
       description: Create or update a label for a resource identified by its uid
       operationId: CreateOrUpdateLabel
       parameters:
-      - description: Label Type (e.g., ns, vnet)
+      - description: Label Type
+        enum:
+        - ns
+        - mci
+        - subGroup
+        - vm
+        - k8s
+        - vNet
+        - subnet
+        - securityGroup
+        - sshKey
+        - dataDisk
         in: path
         name: labelType
         required: true
@@ -4079,9 +4115,7 @@ paths:
         name: labels
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/model.Label'
       produces:
       - application/json
       responses:
@@ -4107,7 +4141,18 @@ paths:
       description: Remove a label from a resource identified by its uid
       operationId: RemoveLabel
       parameters:
-      - description: Label Type (e.g., ns, vnet)
+      - description: Label Type
+        enum:
+        - ns
+        - mci
+        - subGroup
+        - vm
+        - k8s
+        - vNet
+        - subnet
+        - securityGroup
+        - sshKey
+        - dataDisk
         in: path
         name: labelType
         required: true
@@ -9699,7 +9744,18 @@ paths:
         - `!exists` : Selects resources where the label key does not exist (e.g., `env !exists`).
       operationId: GetResourcesByLabelSelector
       parameters:
-      - description: Label Type (e.g., ns, sshKey, vNet, vm, mci, k8s, etc.)
+      - description: Label Type
+        enum:
+        - ns
+        - mci
+        - subGroup
+        - vm
+        - k8s
+        - vNet
+        - subnet
+        - securityGroup
+        - sshKey
+        - dataDisk
         in: path
         name: labelType
         required: true

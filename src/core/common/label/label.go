@@ -75,6 +75,22 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 	return nil
 }
 
+// DeleteLabelObject deletes the entire label object for a given resource identified by its labelType and uid.
+func DeleteLabelObject(labelType, uid string) error {
+	// Construct the labelKey
+	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uid)
+
+	// Delete the entire label object from the Key-Value store
+	err := kvstore.Delete(labelKey)
+	if err != nil {
+		log.Error().Err(err).Str("labelKey", labelKey).Msg("Failed to delete label object from kvstore")
+		return fmt.Errorf("failed to delete label object: %w", err)
+	}
+
+	log.Info().Str("labelKey", labelKey).Msg("Label object successfully deleted from kvstore")
+	return nil
+}
+
 // RemoveLabel removes a label from a resource identified by its uid.
 func RemoveLabel(labelType, uid, key string) error {
 	// Construct the labelKey
@@ -125,6 +141,10 @@ func GetLabels(labelType, uid string) (lable model.LabelInfo, err error) {
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get label data from kvstore")
 		return labelInfo, err
+	}
+	if len(labelData) == 0 {
+		log.Debug().Msg("labelData is empty")
+		return labelInfo, nil
 	}
 
 	err = json.Unmarshal([]byte(labelData), &labelInfo)

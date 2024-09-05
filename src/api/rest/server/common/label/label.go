@@ -22,6 +22,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 )
 
 // RestCreateOrUpdateLabel godoc
@@ -31,9 +32,9 @@ import (
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
-// @Param labelType path string true "Label Type (e.g., ns, vnet)"
+// @Param labelType path string true "Label Type" Enums(ns, mci, subGroup, vm, k8s, vNet, subnet, securityGroup, sshKey, dataDisk)
 // @Param uid path string true "Resource uid"
-// @Param labels body map[string]string true "Labels to create or update"
+// @Param labels body model.Label true "Labels to create or update"
 // @Success 200 {object} model.SimpleMsg "Label created or updated successfully"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
@@ -48,8 +49,8 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 	uid := c.Param("uid")
 
 	// Parse the incoming request body to get the labels
-	labels := make(map[string]string)
-	if err := c.Bind(&labels); err != nil {
+	var labelReq model.Label
+	if err := c.Bind(&labelReq); err != nil {
 		return common.EndRequestWithLog(c, reqID, fmt.Errorf("Invalid request body"), nil)
 	}
 
@@ -57,7 +58,7 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 	resourceKey := fmt.Sprintf("/%s/%s", labelType, uid)
 
 	// Create or update the label in the KV store
-	err := label.CreateOrUpdateLabel(labelType, uid, resourceKey, labels)
+	err := label.CreateOrUpdateLabel(labelType, uid, resourceKey, labelReq.Labels)
 	if err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -72,7 +73,7 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
-// @Param labelType path string true "Label Type (e.g., ns, vnet)"
+// @Param labelType path string true "Label Type" Enums(ns, mci, subGroup, vm, k8s, vNet, subnet, securityGroup, sshKey, dataDisk)
 // @Param uid path string true "Resource uid"
 // @Param key path string true "Label key to remove"
 // @Success 200 {object} model.SimpleMsg "Label removed successfully"
@@ -105,9 +106,9 @@ func RestRemoveLabel(c echo.Context) error {
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
-// @Param labelType path string true "Label Type (e.g., ns, vnet)"
+// @Param labelType path string true "Label Type" Enums(ns, mci, subGroup, vm, k8s, vNet, subnet, securityGroup, sshKey, dataDisk)
 // @Param uid path string true "Resource uid"
-// @Success 200 {object} map[string]string "Labels for the resource"
+// @Success 200 {object} model.LabelInfo "Labels for the resource"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Router /label/{labelType}/{uid} [get]
@@ -126,7 +127,7 @@ func RestGetLabels(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	return common.EndRequestWithLog(c, reqID, nil, labelInfo.Labels)
+	return common.EndRequestWithLog(c, reqID, nil, labelInfo)
 }
 
 // ResourcesResponse is a struct to wrap the results of a label selector query
@@ -147,7 +148,7 @@ type ResourcesResponse struct {
 // @Tags [Infra Resource] Common Utility
 // @Accept  json
 // @Produce  json
-// @Param labelType path string true "Label Type (e.g., ns, sshKey, vNet, vm, mci, k8s, etc.)"
+// @Param labelType path string true "Label Type" Enums(ns, mci, subGroup, vm, k8s, vNet, subnet, securityGroup, sshKey, dataDisk)
 // @Param labelSelector query string true "Label selector query. Example: env=production,tier=backend"
 // @Success 200 {object} ResourcesResponse "Matched resources"
 // @Failure 400 {object} model.SimpleMsg "Invalid request"

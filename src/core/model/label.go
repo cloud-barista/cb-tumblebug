@@ -25,3 +25,8 @@ type LabelInfo struct {
 	ResourceKey string            `json:"resourceKey"`
 	Labels      map[string]string `json:"labels"`
 }
+
+// Label is a struct to handle labels
+type Label struct {
+	Labels map[string]string `json:"labels"`
+}
