@@ -3139,10 +3139,11 @@ const docTemplate = `{
                     },
                     {
                         "enum": [
-                            "force"
+                            "force",
+                            "terminate"
                         ],
                         "type": "string",
-                        "description": "Option for delete MCI (support force delete)",
+                        "description": "Option for delete all MCIs (support force object delete, terminate before delete)",
                         "name": "option",
                         "in": "query"
                     }
