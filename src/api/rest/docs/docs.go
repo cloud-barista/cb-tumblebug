@@ -12453,7 +12453,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "connectionName",
-                "id",
+                "name",
                 "securityGroupIds",
                 "subnetIds",
                 "vNetId"
@@ -12473,17 +12473,17 @@ const docTemplate = `{
                     "type": "string",
                     "example": "My K8sCluster"
                 },
-                "id": {
-                    "description": "(1) K8sCluster Info",
-                    "type": "string",
-                    "example": "k8scluster-01"
-                },
                 "k8sNodeGroupList": {
                     "description": "(3) NodeGroupInfo List",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.TbK8sNodeGroupReq"
                     }
+                },
+                "name": {
+                    "description": "(1) K8sCluster Info",
+                    "type": "string",
+                    "example": "k8scluster-01"
                 },
                 "securityGroupIds": {
                     "type": "array",
