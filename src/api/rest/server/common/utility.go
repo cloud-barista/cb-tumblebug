@@ -273,19 +273,43 @@ func RestGetRegion(c echo.Context) error {
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
-// RestGetRegionList func is a rest api wrapper for GetRegionList.
-// RestGetRegionList godoc
-// @ID GetRegionList
-// @Summary List all registered regions
-// @Description List all registered regions
+// RestGetRegions func is a rest api wrapper for GetRegion.
+// RestGetRegions godoc
+// @ID GetRegions
+// @Summary Get registered region info
+// @Description Get registered region info
 // @Tags [Admin] Multi-Cloud Information
 // @Accept  json
 // @Produce  json
+// @Param providerName path string true "Name of the CSP to retrieve"
 // @Success 200 {object} model.RegionList
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /region [get]
-func RestGetRegionList(c echo.Context) error {
+// @Router /provider/{providerName}/region [get]
+func RestGetRegions(c echo.Context) error {
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
+	providerName := c.Param("providerName")
+
+	content, err := common.GetRegions(providerName)
+	return common.EndRequestWithLog(c, reqID, err, content)
+}
+
+// RestGetRegionListFromCsp func is a rest api wrapper for RetrieveRegionListFromCsp.
+// RestGetRegionListFromCsp godoc
+// @ID RetrieveRegionListFromCsp
+// @Summary RetrieveR all region lists from CSPs
+// @Description RetrieveR all region lists from CSPs
+// @Tags [Admin] Multi-Cloud Information
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} model.RetrievedRegionList
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /regionFromCsp [get]
+func RestGetRegionListFromCsp(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})

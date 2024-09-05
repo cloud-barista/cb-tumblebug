@@ -999,35 +999,57 @@ func GetRegion(ProviderName, RegionName string) (model.RegionDetail, error) {
 	return model.RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in Provider '%s'", RegionName, ProviderName)
 }
 
+// GetRegions is func to get regionInfo list
+func GetRegions(ProviderName string) (model.RegionList, error) {
+
+	ProviderName = strings.ToLower(ProviderName)
+
+	cloudInfo, err := GetCloudInfo()
+	if err != nil {
+		return model.RegionList{}, err
+	}
+
+	cspDetail, ok := cloudInfo.CSPs[ProviderName]
+	if !ok {
+		return model.RegionList{}, fmt.Errorf("cloudType '%s' not found", ProviderName)
+	}
+
+	regionList := model.RegionList{}
+	for _, regionDetail := range cspDetail.Regions {
+		regionList.Regions = append(regionList.Regions, regionDetail)
+	}
+
+	return regionList, nil
+}
+
 // RetrieveRegionListFromCsp is func to retrieve region list
-func RetrieveRegionListFromCsp() (model.RegionList, error) {
+func RetrieveRegionListFromCsp() (model.RetrievedRegionList, error) {
 
 	url := model.SpiderRestUrl + "/region"
 
 	client := resty.New().SetCloseConnection(true)
 
 	resp, err := client.R().
-		SetResult(&model.RegionList{}).
+		SetResult(&model.RetrievedRegionList{}).
 		//SetError(&SimpleMsg{}).
 		Get(url)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		content := model.RegionList{}
+		content := model.RetrievedRegionList{}
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
 	}
 
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
 		err := fmt.Errorf(string(resp.Body()))
 		log.Error().Err(err).Msg("")
-		content := model.RegionList{}
+		content := model.RetrievedRegionList{}
 		return content, err
 	}
 
-	temp, _ := resp.Result().(*model.RegionList)
+	temp, _ := resp.Result().(*model.RetrievedRegionList)
 	return *temp, nil
 
 }

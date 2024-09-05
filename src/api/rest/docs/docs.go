@@ -8686,6 +8686,51 @@ const docTemplate = `{
                 }
             }
         },
+        "/provider/{providerName}/region": {
+            "get": {
+                "description": "Get registered region info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Multi-Cloud Information"
+                ],
+                "summary": "Get registered region info",
+                "operationId": "GetRegions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the CSP to retrieve",
+                        "name": "providerName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RegionList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/provider/{providerName}/region/{regionName}": {
             "get": {
                 "description": "Get registered region info",
@@ -8768,9 +8813,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/region": {
+        "/regionFromCsp": {
             "get": {
-                "description": "List all registered regions",
+                "description": "RetrieveR all region lists from CSPs",
                 "consumes": [
                     "application/json"
                 ],
@@ -8780,13 +8825,13 @@ const docTemplate = `{
                 "tags": [
                     "[Admin] Multi-Cloud Information"
                 ],
-                "summary": "List all registered regions",
-                "operationId": "GetRegionList",
+                "summary": "RetrieveR all region lists from CSPs",
+                "operationId": "RetrieveRegionListFromCsp",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.RegionList"
+                            "$ref": "#/definitions/model.RetrievedRegionList"
                         }
                     },
                     "404": {
@@ -11017,10 +11062,10 @@ const docTemplate = `{
         "model.RegionList": {
             "type": "object",
             "properties": {
-                "region": {
+                "regions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.SpiderRegionZoneInfo"
+                        "$ref": "#/definitions/model.RegionDetail"
                     }
                 }
             }
@@ -11271,6 +11316,17 @@ const docTemplate = `{
                 },
                 "site2": {
                     "$ref": "#/definitions/model.SiteDetail"
+                }
+            }
+        },
+        "model.RetrievedRegionList": {
+            "type": "object",
+            "properties": {
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SpiderRegionZoneInfo"
+                    }
                 }
             }
         },

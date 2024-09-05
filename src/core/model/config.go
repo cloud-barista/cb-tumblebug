@@ -36,6 +36,11 @@ type RegionDetail struct {
 	Zones       []string `mapstructure:"zone" json:"zones"`
 }
 
+// RegionList is structure for region list
+type RegionList struct {
+	Regions []RegionDetail `mapstructure:"regions" json:"regions"`
+}
+
 // Location is structure for location information
 type Location struct {
 	Display   string  `mapstructure:"display" json:"display"`
