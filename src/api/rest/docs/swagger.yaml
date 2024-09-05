@@ -5507,48 +5507,6 @@ paths:
       summary: Upgrade a K8sCluster's version
       tags:
       - '[Kubernetes] Cluster Management'
-  /ns/{nsId}/loadSharedResource:
-    get:
-      consumes:
-      - application/json
-      description: Load Default Resource from internal asset file
-      operationId: LoadSharedResource
-      parameters:
-      - default: default
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Option
-        enum:
-        - all
-        - vnet
-        - sg
-        - sshkey
-        in: query
-        name: option
-        required: true
-        type: string
-      - default: ""
-        description: connectionName of cloud for designated resource
-        in: query
-        name: connectionName
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.SimpleMsg'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/model.SimpleMsg'
-      summary: Load Default Resource from internal asset file
-      tags:
-      - '[Infra Resource] Common Utility'
   /ns/{nsId}/mci:
     delete:
       consumes:
@@ -9284,6 +9242,48 @@ paths:
       summary: Get Subnet (metadata)
       tags:
       - '[Infra Resource] Network Management'
+  /ns/{nsId}/sharedResource:
+    post:
+      consumes:
+      - application/json
+      description: Create shared resources for MC-Infra
+      operationId: CreateSharedResource
+      parameters:
+      - default: default
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Option
+        enum:
+        - all
+        - vnet
+        - sg
+        - sshkey
+        in: query
+        name: option
+        required: true
+        type: string
+      - default: ""
+        description: connectionName of cloud for designated resource
+        in: query
+        name: connectionName
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Create shared resources for MC-Infra
+      tags:
+      - '[Infra Resource] Common Utility'
   /ns/{nsId}/sharedResources:
     delete:
       consumes:
