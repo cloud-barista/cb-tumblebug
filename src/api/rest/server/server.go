@@ -261,6 +261,7 @@ func RunServer(port string) {
 	// Utility for network design
 	e.POST("/tumblebug/util/net/design", rest_netutil.RestPostUtilToDesignNetwork)
 	e.POST("/tumblebug/util/net/validate", rest_netutil.RestPostUtilToValidateNetwork)
+	e.POST("/tumblebug/util/vNet/design", rest_netutil.RestPostUtilToDesignVNet)
 
 	// Route for NameSpace subgroup
 	g := e.Group("/tumblebug/ns", common.NsValidation())

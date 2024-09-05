@@ -400,6 +400,15 @@ definitions:
         example: cr31av30uphc738d7h0g
         type: string
     type: object
+  model.CspRegion:
+    properties:
+      connectionName:
+        type: string
+      neededVNets:
+        items:
+          $ref: '#/definitions/model.NeededVNet'
+        type: array
+    type: object
   model.CustomImageStatus:
     enum:
     - Available
@@ -885,6 +894,15 @@ definitions:
       protocol:
         description: TCP|UDP
         example: TCP
+        type: string
+    type: object
+  model.NeededVNet:
+    properties:
+      subnetCount:
+        type: integer
+      subnetSize:
+        type: integer
+      zoneSelectionMethod:
         type: string
     type: object
   model.NsInfo:
@@ -3297,6 +3315,27 @@ definitions:
         items:
           $ref: '#/definitions/netutil.SubnettingRule'
         type: array
+    type: object
+  netutil.RestPostUtilToDesignVNetReponse:
+    properties:
+      rootNetworkCIDR:
+        description: in case of supernetting enabled
+        type: string
+      vNetReqList:
+        items:
+          $ref: '#/definitions/model.TbVNetReq'
+        type: array
+    type: object
+  netutil.RestPostUtilToDesignVNetRequest:
+    properties:
+      cspRegions:
+        items:
+          $ref: '#/definitions/model.CspRegion'
+        type: array
+      supernettingEnabled:
+        type: string
+      targetPrivateNetwork:
+        type: string
     type: object
   netutil.RestPostUtilToValidateNetworkRequest:
     properties:
@@ -9932,6 +9971,37 @@ paths:
           schema:
             $ref: '#/definitions/model.SimpleMsg'
       summary: Validate a multi-cloud network configuration
+      tags:
+      - '[Infra Resource] Network Management'
+  /util/vNet/design:
+    post:
+      consumes:
+      - application/json
+      description: Design VNet and subnets based on user-friendly properties
+      operationId: PostUtilToDesignVNet
+      parameters:
+      - description: User-friendly properties to design VNet and subnets
+        in: body
+        name: vNetDesignReq
+        required: true
+        schema:
+          $ref: '#/definitions/netutil.RestPostUtilToDesignVNetRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/netutil.RestPostUtilToDesignVNetReponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Design VNet and subnets based on user-friendly properties
       tags:
       - '[Infra Resource] Network Management'
 securityDefinitions:

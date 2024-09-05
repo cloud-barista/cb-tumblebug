@@ -9548,6 +9548,53 @@
                     }
                 }
             }
+        },
+        "/util/vNet/design": {
+            "post": {
+                "description": "Design VNet and subnets based on user-friendly properties",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Network Management"
+                ],
+                "summary": "Design VNet and subnets based on user-friendly properties",
+                "operationId": "PostUtilToDesignVNet",
+                "parameters": [
+                    {
+                        "description": "User-friendly properties to design VNet and subnets",
+                        "name": "vNetDesignReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/netutil.RestPostUtilToDesignVNetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/netutil.RestPostUtilToDesignVNetReponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -10129,6 +10176,20 @@
                     "description": "PublicKeyTokenId is the unique token ID used to retrieve the corresponding private key for decryption.",
                     "type": "string",
                     "example": "cr31av30uphc738d7h0g"
+                }
+            }
+        },
+        "model.CspRegion": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "neededVNets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.NeededVNet"
+                    }
                 }
             }
         },
@@ -10850,6 +10911,20 @@
                     "description": "TCP|UDP",
                     "type": "string",
                     "example": "TCP"
+                }
+            }
+        },
+        "model.NeededVNet": {
+            "type": "object",
+            "properties": {
+                "subnetCount": {
+                    "type": "integer"
+                },
+                "subnetSize": {
+                    "type": "integer"
+                },
+                "zoneSelectionMethod": {
+                    "type": "string"
                 }
             }
         },
@@ -14147,6 +14222,38 @@
                     "items": {
                         "$ref": "#/definitions/netutil.SubnettingRule"
                     }
+                }
+            }
+        },
+        "netutil.RestPostUtilToDesignVNetReponse": {
+            "type": "object",
+            "properties": {
+                "rootNetworkCIDR": {
+                    "description": "in case of supernetting enabled",
+                    "type": "string"
+                },
+                "vNetReqList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbVNetReq"
+                    }
+                }
+            }
+        },
+        "netutil.RestPostUtilToDesignVNetRequest": {
+            "type": "object",
+            "properties": {
+                "cspRegions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CspRegion"
+                    }
+                },
+                "supernettingEnabled": {
+                    "type": "string"
+                },
+                "targetPrivateNetwork": {
+                    "type": "string"
                 }
             }
         },

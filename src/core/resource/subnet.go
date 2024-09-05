@@ -1065,3 +1065,36 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 
 	return ret, nil
 }
+
+/*
+The following functions are used for Designing VNets
+*/
+
+// GetFirstNZones returns the first N zones of the given connection
+func GetFirstNZones(connectionName string, firstN int) ([]string, int, error) {
+
+	// Splite the connectionName into provider and region
+	parts := strings.SplitN(connectionName, "-", 2)
+	provider := parts[0]
+	region := parts[1]
+
+	// Get the region details
+	regionDetail, err := common.GetRegion(provider, region)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get the first N zones
+	zones := regionDetail.Zones
+	length := len(zones)
+	if length > firstN {
+		zones = zones[:firstN]
+		length = firstN
+	}
+
+	if zones == nil || len(zones) == 0 {
+		return nil, 0, nil
+	}
+
+	return zones, length, nil
+}

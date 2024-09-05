@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"net"
+	"strings"
 )
 
 var (
@@ -508,4 +509,98 @@ func PreviousSubnet(currentSubnet string, baseNetworkCIDR string) (string, error
 	}
 
 	return fmt.Sprintf("%s/%d", previousIP.String(), maskSize), nil
+}
+
+/*
+The following functions are used for Designing VNets
+*/
+
+// DeriveVNetAndSubnets calculates the CIDR blocks for a VNet and its subnets based on the given parameters.
+func DeriveVNetAndSubnets(baseIP net.IP, subnetSize, subnetCount int) (string, []string, net.IP, error) {
+
+	// Adjust the subnet size to account for the network and broadcast addresses
+	adjustedSubnetSize := subnetSize + 2
+	totalIPs := adjustedSubnetSize * subnetCount
+	cidrSize := 32 - int(math.Ceil(math.Log2(float64(totalIPs))))
+
+	if cidrSize < 0 {
+		return "", nil, nil, fmt.Errorf("subnet size too large")
+	}
+
+	// Adjust the subnet count to be a power of 2 (e.g., 1, 2, 4, 8, 16, ...)
+	adjustSubnetCount := 1 << uint(math.Ceil(math.Log2(float64(subnetCount))))
+
+	for (1<<uint(32-cidrSize))%adjustSubnetCount != 0 {
+		cidrSize--
+		if cidrSize < 0 {
+			return "", nil, nil, fmt.Errorf("cannot allocate: required CIDR block is too large")
+		}
+	}
+
+	cidr := fmt.Sprintf("%s/%d", baseIP.String(), cidrSize)
+
+	subnets := make([]string, adjustSubnetCount)
+	subnetBits := 32 - cidrSize
+	actualSubnetSize := 1 << uint(subnetBits) / adjustSubnetCount
+	var nextAvailableIP net.IP
+
+	baseIPUint := IpToUint32(baseIP)
+
+	for i := 0; i < adjustSubnetCount; i++ {
+		start := baseIPUint + uint32(i*actualSubnetSize)
+		subnetIP := Uint32ToIP(start)
+		subnetCIDR := 32 - int(math.Log2(float64(actualSubnetSize)))
+		subnets[i] = fmt.Sprintf("%s/%d", subnetIP.String(), subnetCIDR)
+
+		if i == adjustSubnetCount-1 {
+			nextAvailableIP = Uint32ToIP(start + uint32(actualSubnetSize))
+		}
+	}
+
+	return cidr, subnets, nextAvailableIP, nil
+}
+
+// CalculateSupernet calculates the supernet of the given CIDRs.
+func CalculateSupernet(cidrs []string) (string, error) {
+	if len(cidrs) == 0 {
+		return "", fmt.Errorf("no CIDRs provided")
+	}
+
+	var minIP, maxIP net.IP
+	for i, cidrStr := range cidrs {
+		_, ipNet, err := net.ParseCIDR(cidrStr)
+		if err != nil {
+			return "", fmt.Errorf("invalid CIDR %s: %v", cidrStr, err)
+		}
+
+		if i == 0 {
+			minIP = ipNet.IP
+			maxIP = lastIPInNetwork(ipNet)
+		} else {
+			if IpToUint32(ipNet.IP) < IpToUint32(minIP) {
+				minIP = ipNet.IP
+			}
+			lastIP := lastIPInNetwork(ipNet)
+			if IpToUint32(lastIP) > IpToUint32(maxIP) {
+				maxIP = lastIP
+			}
+		}
+	}
+
+	prefixLen := commonPrefixLength(minIP, maxIP)
+	return fmt.Sprintf("%s/%d", minIP.Mask(net.CIDRMask(prefixLen, 32)), prefixLen), nil
+}
+
+func lastIPInNetwork(ipNet *net.IPNet) net.IP {
+	lastIP := make(net.IP, len(ipNet.IP))
+	copy(lastIP, ipNet.IP)
+	for i := range lastIP {
+		lastIP[i] |= ^ipNet.Mask[i]
+	}
+	return lastIP
+}
+
+func commonPrefixLength(ip1, ip2 net.IP) int {
+	xor := IpToUint32(ip1) ^ IpToUint32(ip2)
+	return 32 - len(strings.TrimLeft(fmt.Sprintf("%032b", xor), "0"))
 }
