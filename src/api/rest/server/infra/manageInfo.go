@@ -219,7 +219,7 @@ func RestDelMci(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param option query string false "Option for delete MCI (support force delete)" Enums(force)
+// @Param option query string false "Option for delete all MCIs (support force object delete, terminate before delete)" Enums(force, terminate)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci [delete]
