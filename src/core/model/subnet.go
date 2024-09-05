@@ -16,12 +16,12 @@ package model
 
 // TbSubnetReq is a struct that represents TB subnet object.
 type TbSubnetReq struct { // Tumblebug
-	Name        string     `json:"name" validate:"required" example:"subnet00"`
-	IPv4_CIDR   string     `json:"ipv4_CIDR" validate:"required" example:"10.0.1.0/24"`
-	Zone        string     `json:"zone,omitempty"`
-	TagList     []KeyValue `json:"tagList,omitempty"`
-	Description string     `json:"description,omitempty" example:"subnet00 managed by CB-Tumblebug"`
-	// KeyValueList []KeyValue `json:"keyValueList,omitempty"`
+	Name        string `json:"name" validate:"required" example:"subnet00"`
+	IPv4_CIDR   string `json:"ipv4_CIDR" validate:"required" example:"10.0.1.0/24"`
+	Zone        string `json:"zone,omitempty"`
+	Description string `json:"description,omitempty" example:"subnet00 managed by CB-Tumblebug"`
+	// todo: restore the tag list later
+	// TagList     []KeyValue `json:"tagList,omitempty"`
 	// IdFromCsp    string     `json:"idFromCsp,omitempty"`
 }
 
@@ -46,8 +46,9 @@ type TbSubnetInfo struct { // Tumblebug
 	Status         string        `json:"status"`
 	IPv4_CIDR      string        `json:"ipv4_CIDR"`
 	Zone           string        `json:"zone,omitempty"`
-	TagList        []KeyValue    `json:"tagList,omitempty"`
 	BastionNodes   []BastionNode `json:"bastionNodes,omitempty"`
 	KeyValueList   []KeyValue    `json:"keyValueList,omitempty"`
 	Description    string        `json:"description"`
+	// todo: restore the tag list later
+	// TagList        []KeyValue    `json:"tagList,omitempty"`
 }

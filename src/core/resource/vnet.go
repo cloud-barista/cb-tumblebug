@@ -289,7 +289,8 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	vNetInfo.Uuid = uuid
 	vNetInfo.ConnectionName = vNetReq.ConnectionName
 	vNetInfo.Description = vNetReq.Description
-	vNetInfo.TagList = vNetReq.TagList
+	// todo: restore the tag list later
+	// vNetInfo.TagList = vNetReq.TagList
 
 	// Set a vNetKey for the vNet object
 	vNetKey := common.GenResourceKey(nsId, resourceType, vNetInfo.Id)
@@ -315,7 +316,8 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 			Uuid:      common.GenUid(),
 			IPv4_CIDR: subnetInfo.IPv4_CIDR,
 			Zone:      subnetInfo.Zone,
-			TagList:   subnetInfo.TagList,
+			// todo: restore the tag list later
+			// TagList:   subnetInfo.TagList,
 		})
 	}
 
@@ -349,7 +351,8 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 			Name:      subnetInfo.Uuid,
 			IPv4_CIDR: subnetInfo.IPv4_CIDR,
 			Zone:      subnetInfo.Zone,
-			TagList:   subnetInfo.TagList,
+			// todo: restore the tag list later
+			// TagList:   subnetInfo.TagList,
 		})
 	}
 
@@ -417,7 +420,8 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	vNetInfo.CspVNetName = spResp.IId.NameId
 	vNetInfo.CidrBlock = spResp.IPv4_CIDR
 	vNetInfo.KeyValueList = spResp.KeyValueList
-	vNetInfo.TagList = spResp.TagList
+	// todo: restore the tag list later
+	// vNetInfo.TagList = spResp.TagList
 
 	// Note: Check one by one and update the vNet object with the response from the Spider
 	//       since the order may differ different between slices
@@ -431,9 +435,10 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 				vNetInfo.SubnetInfoList[i].CspSubnetId = spSubnetInfo.IId.SystemId
 				vNetInfo.SubnetInfoList[i].CspSubnetName = spSubnetInfo.IId.NameId
 				vNetInfo.SubnetInfoList[i].KeyValueList = spSubnetInfo.KeyValueList
-				vNetInfo.SubnetInfoList[i].TagList = spSubnetInfo.TagList
 				vNetInfo.SubnetInfoList[i].Zone = spSubnetInfo.Zone
 				vNetInfo.SubnetInfoList[i].IPv4_CIDR = spSubnetInfo.IPv4_CIDR
+				// todo: restore the tag list later
+				// vNetInfo.SubnetInfoList[i].TagList = spSubnetInfo.TagList
 			}
 		}
 	}
@@ -585,7 +590,8 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 	vNetInfo.CspVNetName = spResp.IId.NameId
 	vNetInfo.CidrBlock = spResp.IPv4_CIDR
 	vNetInfo.KeyValueList = spResp.KeyValueList
-	vNetInfo.TagList = spResp.TagList
+	// todo: restore the tag list later
+	// vNetInfo.TagList = spResp.TagList
 
 	// Save the current operation status and the vNet object
 	val, err := json.Marshal(vNetInfo)
@@ -904,7 +910,8 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 	vNetInfo.CspVNetName = spResp.IId.NameId
 	vNetInfo.CidrBlock = spResp.IPv4_CIDR
 	vNetInfo.KeyValueList = spResp.KeyValueList
-	vNetInfo.TagList = spResp.TagList
+	// todo: restore the tag list later
+	// vNetInfo.TagList = spResp.TagList
 
 	if vNetRegisterReq.CspVNetId != "" {
 		vNetInfo.SystemLabel = "Registered from CSP resource"
@@ -925,9 +932,10 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 			CspSubnetId:    spSubnetInfo.IId.SystemId,
 			CspSubnetName:  spSubnetInfo.IId.NameId,
 			KeyValueList:   spSubnetInfo.KeyValueList,
-			TagList:        spSubnetInfo.TagList,
 			Zone:           spSubnetInfo.Zone,
 			IPv4_CIDR:      spSubnetInfo.IPv4_CIDR,
+			// todo: restore the tag list later
+			// TagList:        spSubnetInfo.TagList,
 		}
 		vNetInfo.SubnetInfoList = append(vNetInfo.SubnetInfoList, subnet)
 

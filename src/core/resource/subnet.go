@@ -275,7 +275,8 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 	spReqt.ReqInfo.Name = subnetInfo.Uuid
 	spReqt.ReqInfo.Zone = subnetReq.Zone
 	spReqt.ReqInfo.IPv4_CIDR = subnetReq.IPv4_CIDR
-	spReqt.ReqInfo.TagList = subnetReq.TagList
+	// todo: restore the tag list later
+	// spReqt.ReqInfo.TagList = subnetReq.TagList
 
 	client := resty.New()
 	method := "POST"
@@ -330,7 +331,8 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 			subnetInfo.CspSubnetName = spSubnetInfo.IId.NameId
 			subnetInfo.IPv4_CIDR = spSubnetInfo.IPv4_CIDR
 			subnetInfo.Zone = spSubnetInfo.Zone
-			subnetInfo.TagList = spSubnetInfo.TagList
+			// todo: restore the tag list later
+			// subnetInfo.TagList = spSubnetInfo.TagList
 			subnetInfo.KeyValueList = spSubnetInfo.KeyValueList
 			break
 		}
@@ -824,8 +826,9 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubne
 	subnetInfo.CspSubnetName = spResp.IId.NameId
 	subnetInfo.IPv4_CIDR = spResp.IPv4_CIDR
 	subnetInfo.Zone = spResp.Zone
-	subnetInfo.TagList = spResp.TagList
 	subnetInfo.KeyValueList = spResp.KeyValueList
+	// todo: restore the tag list later
+	// subnetInfo.TagList = spResp.TagList
 
 	// Set status to 'Available'
 	subnetInfo.Status = string(NetworkAvailable)

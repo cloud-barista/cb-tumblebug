@@ -13446,12 +13446,6 @@
                 "status": {
                     "type": "string"
                 },
-                "tagList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
-                    }
-                },
                 "uuid": {
                     "description": "uuid is universally unique identifier for the resource",
                     "type": "string"
@@ -13479,12 +13473,6 @@
                 "name": {
                     "type": "string",
                     "example": "subnet00"
-                },
-                "tagList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
-                    }
                 },
                 "zone": {
                     "type": "string"
@@ -13553,12 +13541,6 @@
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
-                "tagList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
-                    }
-                },
                 "uuid": {
                     "description": "uuid is universally unique identifier for the resource",
                     "type": "string"
@@ -13592,12 +13574,6 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.TbSubnetReq"
-                    }
-                },
-                "tagList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
                     }
                 }
             }
