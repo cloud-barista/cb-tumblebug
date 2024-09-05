@@ -21,9 +21,13 @@ type NsReq struct {
 
 // swagger:response NsInfo
 type NsInfo struct {
-	Id   string `json:"id" example:"default"`
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"default"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+
+	// Name is human-readable string to represent the object
 	Name string `json:"name" example:"default"`
-	// uuid is universally unique identifier for the resource
-	Uuid        string `json:"uuid,omitempty"`
+
 	Description string `json:"description" example:"Description for this namespace"`
 }

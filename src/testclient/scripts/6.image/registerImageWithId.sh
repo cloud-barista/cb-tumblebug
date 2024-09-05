@@ -8,7 +8,7 @@ function CallTB() {
 		{ 
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}", 
 			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-			"cspImageId": "${IMAGE_NAME[$INDEX,$REGION]}",
+			"cspResourceId": "${IMAGE_NAME[$INDEX,$REGION]}",
 			"description": "Canonical, Ubuntu, 18.04 LTS, amd64 bionic",
 			"guestOS": "Ubuntu"
 		}
@@ -24,7 +24,7 @@ EOF
 		    { 
 			    "connectionName": "${CONN_CONFIG[$INDEX,$REGION]}", 
 			    "name": "k8s-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-			    "cspImageId": "${CONTAINER_IMAGE_NAME[$INDEX,$REGION]}",
+			    "cspResourceId": "${CONTAINER_IMAGE_NAME[$INDEX,$REGION]}",
 			    "description": "${CONTAINER_IMAGE_TYPE[$INDEX,$REGION]}",
 			    "guestOS": "Ubuntu"
 		    }

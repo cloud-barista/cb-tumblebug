@@ -42,8 +42,8 @@ type TbSshKeyReq struct {
 	Description    string `json:"description"`
 
 	// Fields for "Register existing SSH keys" feature
-	// CspSshKeyId is required to register object from CSP (option=register)
-	CspSshKeyId      string `json:"cspSshKeyId"`
+	// CspResourceId is required to register object from CSP (option=register)
+	CspResourceId    string `json:"cspResourceId"`
 	Fingerprint      string `json:"fingerprint"`
 	Username         string `json:"username"`
 	VerifiedUsername string `json:"verifiedUsername"`
@@ -53,18 +53,20 @@ type TbSshKeyReq struct {
 
 // TbSshKeyInfo is a struct that represents TB SSH key object.
 type TbSshKeyInfo struct {
-	Id   string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	// uuid is universally unique identifier for the resource
-	Uuid           string `json:"uuid,omitempty"`
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"aws-ap-southeast-1"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
+	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
+	// CspResourceId is resource identifier managed by CSP
+	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+
+	// Name is human-readable string to represent the object
+	Name string `json:"name" example:"aws-ap-southeast-1"`
+
 	ConnectionName string `json:"connectionName,omitempty"`
 	Description    string `json:"description,omitempty"`
-
-	// CspSshKeyId used for CSP-native identifier (either Name or ID)
-	CspSshKeyId string `json:"cspSshKeyId,omitempty"`
-
-	// CspSshKeyName used for CB-Spider identifier
-	CspSshKeyName string `json:"cspSshKeyName,omitempty"`
 
 	Fingerprint          string     `json:"fingerprint,omitempty"`
 	Username             string     `json:"username,omitempty"`

@@ -230,7 +230,7 @@ func CreateNLB(nsId string, mciId string, u *model.TbNLBReq, option string) (mod
 		ConnectionName: vm.ConnectionName,
 		ReqInfo: model.SpiderNLBReqInfo{
 			Name:     common.GenUid(),
-			VPCName:  vNetInfo.CspVNetName,
+			VPCName:  vNetInfo.CspResourceName,
 			Type:     u.Type,
 			Scope:    u.Scope,
 			Listener: u.Listener,
@@ -320,10 +320,10 @@ func CreateNLB(nsId string, mciId string, u *model.TbNLBReq, option string) (mod
 	var resp *resty.Response
 
 	var url string
-	if option == "register" && u.CspNLBId == "" {
+	if option == "register" && u.CspResourceId == "" {
 		url = fmt.Sprintf("%s/nlb/%s", model.SpiderRestUrl, u.TargetGroup.SubGroupId)
 		resp, err = req.Get(url)
-	} else if option == "register" && u.CspNLBId != "" {
+	} else if option == "register" && u.CspResourceId != "" {
 		url = fmt.Sprintf("%s/regnlb", model.SpiderRestUrl)
 		resp, err = req.Post(url)
 	} else { // option != "register"
@@ -369,8 +369,8 @@ func CreateNLB(nsId string, mciId string, u *model.TbNLBReq, option string) (mod
 			Threshold:    tempSpiderNLBInfo.HealthChecker.Threshold,
 			KeyValueList: tempSpiderNLBInfo.HealthChecker.KeyValueList,
 		},
-		CspNLBId:             tempSpiderNLBInfo.IId.SystemId,
-		CspNLBName:           tempSpiderNLBInfo.IId.NameId,
+		CspResourceId:        tempSpiderNLBInfo.IId.SystemId,
+		CspResourceName:      tempSpiderNLBInfo.IId.NameId,
 		CreatedTime:          tempSpiderNLBInfo.CreatedTime,
 		Description:          u.Description,
 		KeyValueList:         tempSpiderNLBInfo.KeyValueList,
@@ -385,9 +385,9 @@ func CreateNLB(nsId string, mciId string, u *model.TbNLBReq, option string) (mod
 		Location: location,
 	}
 
-	if option == "register" && u.CspNLBId == "" {
+	if option == "register" && u.CspResourceId == "" {
 		content.SystemLabel = "Registered from CB-Spider resource"
-	} else if option == "register" && u.CspNLBId != "" {
+	} else if option == "register" && u.CspResourceId != "" {
 		content.SystemLabel = "Registered from CSP resource"
 	}
 
@@ -732,7 +732,7 @@ func DelNLB(nsId string, mciId string, resourceId string, forceFlag string) erro
 		return err
 	}
 	requestBody.ConnectionName = temp.ConnectionName
-	url = model.SpiderRestUrl + "/nlb/" + temp.CspNLBName
+	url = model.SpiderRestUrl + "/nlb/" + temp.CspResourceName
 
 	fmt.Println("url: " + url)
 
@@ -893,7 +893,7 @@ func GetNLBHealth(nsId string, mciId string, nlbId string) (model.TbNLBHealthInf
 	var resp *resty.Response
 
 	var url string
-	url = fmt.Sprintf("%s/nlb/%s/health", model.SpiderRestUrl, nlb.CspNLBName)
+	url = fmt.Sprintf("%s/nlb/%s/health", model.SpiderRestUrl, nlb.CspResourceName)
 	resp, err = req.Get(url)
 
 	if err != nil {
@@ -1063,7 +1063,7 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.TbNLBAddRe
 	var resp *resty.Response
 
 	var url string
-	url = fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspNLBName)
+	url = fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspResourceName)
 	resp, err = req.Post(url)
 
 	if err != nil {
@@ -1105,8 +1105,8 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.TbNLBAddRe
 			Threshold:    tempSpiderNLBInfo.HealthChecker.Threshold,
 			KeyValueList: tempSpiderNLBInfo.HealthChecker.KeyValueList,
 		},
-		CspNLBId:             tempSpiderNLBInfo.IId.SystemId,
-		CspNLBName:           tempSpiderNLBInfo.IId.NameId,
+		CspResourceId:        tempSpiderNLBInfo.IId.SystemId,
+		CspResourceName:      tempSpiderNLBInfo.IId.NameId,
 		CreatedTime:          tempSpiderNLBInfo.CreatedTime,
 		Description:          nlb.Description,
 		KeyValueList:         tempSpiderNLBInfo.KeyValueList,
@@ -1250,7 +1250,7 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.TbNLBAd
 				return model.TbNLBInfo{}, err
 			}
 
-			requestBody.ReqInfo.SubGroup = append(requestBody.ReqInfo.SubGroup, vm.IdByCSP)
+			requestBody.ReqInfo.SubGroup = append(requestBody.ReqInfo.SubGroup, vm.CspResourceId)
 		}
 	*/
 
@@ -1268,7 +1268,7 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.TbNLBAd
 	var resp *resty.Response
 
 	var url string
-	url = fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspNLBName)
+	url = fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspResourceName)
 	resp, err = req.Delete(url)
 
 	if err != nil {
@@ -1305,8 +1305,8 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.TbNLBAd
 		content.Scope = tempSpiderNLBInfo.Scope
 		content.Listener = tempSpiderNLBInfo.Listener
 		content.HealthChecker = tempSpiderNLBInfo.HealthChecker
-		content.CspNLBId = tempSpiderNLBInfo.IId.SystemId
-		content.CspNLBName = tempSpiderNLBInfo.IId.NameId
+		content.CspResourceId = tempSpiderNLBInfo.IId.SystemId
+		content.CspResourceName = tempSpiderNLBInfo.IId.NameId
 		content.Description = nlb.Description
 		content.KeyValueList = tempSpiderNLBInfo.KeyValueList
 		content.AssociatedObjectList = []string{}

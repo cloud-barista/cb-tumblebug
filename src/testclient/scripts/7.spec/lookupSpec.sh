@@ -7,7 +7,7 @@ function CallTB() {
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/lookupSpec -H 'Content-Type: application/json' -d @- <<EOF
 		{ 
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"cspSpecName": "${SPEC_NAME[$INDEX,$REGION]}"
+			"cspResourceId": "${SPEC_NAME[$INDEX,$REGION]}"
 		}
 EOF
     ); echo ${resp} | jq ''

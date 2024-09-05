@@ -34,10 +34,10 @@ import (
 // @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
-// @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithCspSpecName)
+// @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithCspResourceId)
 // @Param nsId path string true "Namespace ID" default(system)
 // @Param specInfo body model.TbSpecInfo false "Specify details of a spec object (vCPU, memoryGiB, ...) manually"
-// @Param specName body model.TbSpecReq false "Specify name, connectionName and cspSpecName to register a spec object automatically"
+// @Param specName body model.TbSpecReq false "Specify name, connectionName and cspResourceId to register a spec object automatically"
 // @Param update query boolean false "Force update to existing spec object" default(false)
 // @Success 200 {object} model.TbSpecInfo
 // @Failure 404 {object} model.SimpleMsg
@@ -67,13 +67,13 @@ func RestPostSpec(c echo.Context) error {
 		content, err := resource.RegisterSpecWithInfo(nsId, u, update)
 		return common.EndRequestWithLog(c, reqID, err, content)
 
-	} else { // if action == "registerWithCspSpecName" { // The default mode.
-		log.Debug().Msg("[Registering Spec with CspSpecName]")
+	} else { // if action == "registerWithCspResourceId" { // The default mode.
+		log.Debug().Msg("[Registering Spec with CspResourceId]")
 		u := &model.TbSpecReq{}
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
-		content, err := resource.RegisterSpecWithCspSpecName(nsId, u, update)
+		content, err := resource.RegisterSpecWithCspResourceId(nsId, u, update)
 		return common.EndRequestWithLog(c, reqID, err, content)
 
 	} /* else {
@@ -119,7 +119,7 @@ func RestPutSpec(c echo.Context) error {
 // Request structure for RestLookupSpec
 type RestLookupSpecRequest struct {
 	ConnectionName string `json:"connectionName"`
-	CspSpecName    string `json:"cspSpecName"`
+	CspResourceId  string `json:"cspResourceId"`
 }
 
 // RestLookupSpec godoc
@@ -129,7 +129,7 @@ type RestLookupSpecRequest struct {
 // @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
-// @Param lookupSpecReq body RestLookupSpecRequest true "Specify connectionName & cspSpecName"
+// @Param lookupSpecReq body RestLookupSpecRequest true "Specify connectionName & cspResourceId"
 // @Success 200 {object} model.SpiderSpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -144,8 +144,8 @@ func RestLookupSpec(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	fmt.Println("[Lookup spec]: " + u.CspSpecName)
-	content, err := resource.LookupSpec(u.ConnectionName, u.CspSpecName)
+	fmt.Println("[Lookup spec]: " + u.CspResourceId)
+	content, err := resource.LookupSpec(u.ConnectionName, u.CspResourceId)
 	return common.EndRequestWithLog(c, reqID, err, content)
 
 }

@@ -32,7 +32,7 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Param option query string false "Option: [required params for register] connectionName, name, cspNLBId" Enums(register)
+// @Param option query string false "Option: [required params for register] connectionName, name, cspResourceId" Enums(register)
 // @Param nlbReq body model.TbNLBReq true "Details of the NLB object"
 // @Success 200 {object} model.TbNLBInfo
 // @Failure 404 {object} model.SimpleMsg
@@ -156,7 +156,7 @@ type RestGetAllNLBResponse struct {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param option query string false "Option" Enums(id)
-// @Param filterKey query string false "Field key for filtering (ex: cspNLBName)"
+// @Param filterKey query string false "Field key for filtering (ex: cspResourceName)"
 // @Param filterVal query string false "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllNLBResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg

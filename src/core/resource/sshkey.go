@@ -51,7 +51,7 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
-	uuid := common.GenUid()
+	uid := common.GenUid()
 
 	if option == "register" { // fields validation
 		errs := []error{}
@@ -93,8 +93,8 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 
 	requestBody := model.SpiderKeyPairReqInfoWrapper{}
 	requestBody.ConnectionName = u.ConnectionName
-	requestBody.ReqInfo.Name = uuid
-	requestBody.ReqInfo.CSPId = u.CspSshKeyId
+	requestBody.ReqInfo.Name = uid
+	requestBody.ReqInfo.CSPId = u.CspResourceId
 
 	var tempSpiderKeyPairInfo *model.SpiderKeyPairInfo
 
@@ -110,10 +110,10 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 	var resp *resty.Response
 
 	var url string
-	if option == "register" && u.CspSshKeyId == "" {
+	if option == "register" && u.CspResourceId == "" {
 		url = fmt.Sprintf("%s/keypair/%s", model.SpiderRestUrl, u.Name)
 		resp, err = req.Get(url)
-	} else if option == "register" && u.CspSshKeyId != "" {
+	} else if option == "register" && u.CspResourceId != "" {
 		url = fmt.Sprintf("%s/regkeypair", model.SpiderRestUrl)
 		resp, err = req.Post(url)
 	} else { // option != "register"
@@ -143,9 +143,9 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 	content.Id = u.Name
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
-	content.Uuid = uuid
-	content.CspSshKeyId = tempSpiderKeyPairInfo.IId.SystemId
-	content.CspSshKeyName = tempSpiderKeyPairInfo.IId.NameId
+	content.Uid = uid
+	content.CspResourceId = tempSpiderKeyPairInfo.IId.SystemId
+	content.CspResourceName = tempSpiderKeyPairInfo.IId.NameId
 	content.Fingerprint = tempSpiderKeyPairInfo.Fingerprint
 	content.Username = tempSpiderKeyPairInfo.VMUserID
 	content.PublicKey = tempSpiderKeyPairInfo.PublicKey
@@ -155,9 +155,9 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 	content.AssociatedObjectList = []string{}
 
 	if option == "register" {
-		if u.CspSshKeyId == "" {
+		if u.CspResourceId == "" {
 			content.SystemLabel = "Registered from CB-Spider resource"
-		} else if u.CspSshKeyId != "" {
+		} else if u.CspResourceId != "" {
 			content.SystemLabel = "Registered from CSP resource"
 		}
 
@@ -182,7 +182,7 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 		"provider":  "cb-tumblebug",
 		"namespace": nsId,
 	}
-	err = label.CreateOrUpdateLabel(model.StrSSHKey, uuid, Key, labels)
+	err = label.CreateOrUpdateLabel(model.StrSSHKey, uid, Key, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err

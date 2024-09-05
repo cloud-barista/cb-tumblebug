@@ -48,7 +48,7 @@ import (
 
 // MCI utilities
 
-// GenUid is func to return a UUID string
+// GenUid is func to return a uid string
 func GenUid() string {
 	return uid.New().String()
 }

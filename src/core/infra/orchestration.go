@@ -225,7 +225,7 @@ func OrchestrationController() {
 					case autoAction.ActionType == model.AutoActionScaleOut:
 
 						autoAction.VmDynamicReq.Label = model.LabelAutoGen
-						// append UUID to given vm name to avoid duplicated vm ID.
+						// append uid to given vm name to avoid duplicated vm ID.
 						autoAction.VmDynamicReq.Name = common.ToLower(autoAction.VmDynamicReq.Name) + "-" + common.GenUid()
 						//vmReqTmp := autoAction.Vm
 						// autoAction.VmDynamicReq.SubGroupSize = "1"

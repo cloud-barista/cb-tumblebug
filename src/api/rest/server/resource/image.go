@@ -36,8 +36,8 @@ import (
 // @Produce  json
 // @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithId)
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param imageInfo body model.TbImageInfo false "Specify details of a image object (cspImageName, guestOS, description, ...) manually"
-// @Param imageId body model.TbImageReq false "Specify name, connectionName and cspImageId to register an image object automatically"
+// @Param imageInfo body model.TbImageInfo false "Specify details of a image object (cspResourceName, guestOS, description, ...) manually"
+// @Param imageId body model.TbImageReq false "Specify name, connectionName and cspResourceId to register an image object automatically"
 // @Param update query boolean false "Force update to existing image object" default(false)
 // @Success 200 {object} model.TbImageInfo
 // @Failure 404 {object} model.SimpleMsg
@@ -124,7 +124,7 @@ func RestPutImage(c echo.Context) error {
 // Request structure for RestLookupImage
 type RestLookupImageRequest struct {
 	ConnectionName string `json:"connectionName"`
-	CspImageId     string `json:"cspImageId"`
+	CspResourceId  string `json:"cspResourceId"`
 }
 
 // RestLookupImage godoc
@@ -134,7 +134,7 @@ type RestLookupImageRequest struct {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param lookupImageReq body RestLookupImageRequest true "Specify connectionName & cspImageId"
+// @Param lookupImageReq body RestLookupImageRequest true "Specify connectionName & cspResourceId"
 // @Success 200 {object} model.SpiderImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -149,8 +149,8 @@ func RestLookupImage(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	log.Debug().Msg("[Lookup image]: " + u.CspImageId)
-	content, err := resource.LookupImage(u.ConnectionName, u.CspImageId)
+	log.Debug().Msg("[Lookup image]: " + u.CspResourceId)
+	content, err := resource.LookupImage(u.ConnectionName, u.CspResourceId)
 	return common.EndRequestWithLog(c, reqID, err, content)
 
 }

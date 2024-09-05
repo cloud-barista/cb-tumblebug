@@ -6,7 +6,7 @@ echo "####################################################################"
 
 source ../init.sh
 
-PRINT="ProviderName,connectionName,cspImageId,OsType"
+PRINT="ProviderName,connectionName,cspResourceId,OsType"
 echo "${PRINT}"
 echo "${PRINT}" >./cloudimage.csv
 
@@ -20,7 +20,7 @@ for ((cspi = 1; cspi <= INDEXX; cspi++)); do
 	done
 done
 
-PRINT="providerName,regionName,connectionName,cspSpecName,CostPerHour,evaluationScore01,evaluationScore02,evaluationScore03,evaluationScore04,evaluationScore05,evaluationScore06,evaluationScore07,evaluationScore08,evaluationScore09,evaluationScore10,rootDiskType,rootDiskSize"
+PRINT="providerName,regionName,connectionName,cspResourceId,CostPerHour,evaluationScore01,evaluationScore02,evaluationScore03,evaluationScore04,evaluationScore05,evaluationScore06,evaluationScore07,evaluationScore08,evaluationScore09,evaluationScore10,rootDiskType,rootDiskSize"
 echo "${PRINT}"
 echo "${PRINT}" >./cloudspec.csv
 

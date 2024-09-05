@@ -187,7 +187,7 @@ type TbNLBReq struct { // Tumblebug
 
 	Description string `json:"description"`
 	// Existing NLB (used only for option=register)
-	CspNLBId string `json:"cspNLBId"`
+	CspResourceId string `json:"cspResourceId"`
 
 	Type  string `json:"type" validate:"required" enums:"PUBLIC,INTERNAL" example:"PUBLIC"` // PUBLIC(V) | INTERNAL
 	Scope string `json:"scope" validate:"required" enums:"REGION,GLOBAL" example:"REGION"`  // REGION(V) | GLOBAL
@@ -202,10 +202,18 @@ type TbNLBReq struct { // Tumblebug
 
 // TbNLBInfo is a struct that represents TB nlb object.
 type TbNLBInfo struct { // Tumblebug
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	// uuid is universally unique identifier for the resource
-	Uuid           string `json:"uuid,omitempty"`
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"aws-ap-southeast-1"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
+	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
+	// CspResourceId is resource identifier managed by CSP
+	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+
+	// Name is human-readable string to represent the object
+	Name string `json:"name" example:"aws-ap-southeast-1"`
+
 	ConnectionName string `json:"connectionName"`
 
 	Type  string // PUBLIC(V) | INTERNAL
@@ -223,8 +231,6 @@ type TbNLBInfo struct { // Tumblebug
 	CreatedTime time.Time
 
 	Description          string     `json:"description"`
-	CspNLBId             string     `json:"cspNLBId"`
-	CspNLBName           string     `json:"cspNLBName"`
 	Status               string     `json:"status"`
 	KeyValueList         []KeyValue `json:"keyValueList"`
 	AssociatedObjectList []string   `json:"associatedObjectList"`

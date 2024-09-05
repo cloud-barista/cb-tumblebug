@@ -27,9 +27,9 @@ import (
 
 // CreateOrUpdateLabel adds a new label or updates an existing label for the given resource,
 // and then persists the updated label information in the Key-Value store.
-func CreateOrUpdateLabel(labelType, uuid string, resourceKey string, labels map[string]string) error {
+func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[string]string) error {
 	// Construct the labelKey
-	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uuid)
+	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uid)
 
 	// Fetch the existing model.LabelInfo if it exists
 	labelData, err := kvstore.Get(labelKey)
@@ -75,10 +75,10 @@ func CreateOrUpdateLabel(labelType, uuid string, resourceKey string, labels map[
 	return nil
 }
 
-// RemoveLabel removes a label from a resource identified by its UUID.
-func RemoveLabel(labelType, uuid, key string) error {
+// RemoveLabel removes a label from a resource identified by its uid.
+func RemoveLabel(labelType, uid, key string) error {
 	// Construct the labelKey
-	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uuid)
+	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uid)
 
 	// Fetch the existing model.LabelInfo
 	labelData, err := kvstore.Get(labelKey)
@@ -109,12 +109,12 @@ func RemoveLabel(labelType, uuid, key string) error {
 	return nil
 }
 
-// GetLabels retrieves the labels for a resource identified by its UUID.
-func GetLabels(labelType, uuid string) (lable model.LabelInfo, err error) {
+// GetLabels retrieves the labels for a resource identified by its uid.
+func GetLabels(labelType, uid string) (lable model.LabelInfo, err error) {
 	labelInfo := model.LabelInfo{}
 
 	// Construct the labelKey
-	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uuid)
+	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uid)
 
 	// Fetch the existing model.LabelInfo
 	labelData, err := kvstore.Get(labelKey)

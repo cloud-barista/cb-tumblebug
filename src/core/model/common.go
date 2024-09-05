@@ -144,26 +144,11 @@ var ResourceTypeRegistry = map[string]func() interface{}{
 	StrNamespace:     func() interface{} { return &NsInfo{} },
 }
 
-// resourceIds is struct for containing id and name of each Resource type
-type resourceIds struct { // Tumblebug
-	CspImageId           string
-	CspImageName         string
-	CspCustomImageId     string
-	CspCustomImageName   string
-	CspSshKeyName        string
-	CspSpecName          string
-	CspVNetId            string
-	CspVNetName          string
-	CspSecurityGroupId   string
-	CspSecurityGroupName string
-	CspPublicIpId        string
-	CspPublicIpName      string
-	CspVNicId            string
-	CspVNicName          string
-	CspDataDiskId        string
-	CspDataDiskName      string
-
-	ConnectionName string
+// ResourceIds is struct for containing id and name of each Resource type
+type ResourceIds struct { // Tumblebug
+	CspResourceId   string
+	CspResourceName string
+	ConnectionName  string
 }
 
 // ConnConfig is struct for containing modified CB-Spider struct for connection config
@@ -342,8 +327,8 @@ type ResourceOnSpider struct {
 
 // ResourceOnSpiderInfo is struct for Resource on Spider Info
 type ResourceOnSpiderInfo struct {
-	IdBySp  string `json:"idBySp"`
-	IdByCsp string `json:"idByCsp"`
+	IdBySp        string `json:"idBySp"`
+	CspResourceId string `json:"cspResourceId"`
 }
 
 // ResourceOnCsp is struct for Resource on CSP
@@ -354,8 +339,8 @@ type ResourceOnCsp struct {
 
 // ResourceOnCspInfo is struct for Resource on CSP Info
 type ResourceOnCspInfo struct {
-	IdByCsp     string `json:"idByCsp"`
-	RefNameOrId string `json:"refNameOrId"`
+	CspResourceId string `json:"cspResourceId"`
+	RefNameOrId   string `json:"refNameOrId"`
 }
 
 // ResourceOnTumblebug is struct for Resource on Tumblebug
@@ -366,11 +351,11 @@ type ResourceOnTumblebug struct {
 
 // ResourceOnTumblebugInfo is struct for Resource on Tumblebug Info
 type ResourceOnTumblebugInfo struct {
-	IdByTb    string `json:"idByTb"`
-	IdByCsp   string `json:"idByCsp"`
-	NsId      string `json:"nsId"`
-	MciId     string `json:"mciId,omitempty"`
-	ObjectKey string `json:"objectKey"`
+	IdByTb        string `json:"idByTb"`
+	CspResourceId string `json:"cspResourceId"`
+	NsId          string `json:"nsId"`
+	MciId         string `json:"mciId,omitempty"`
+	ObjectKey     string `json:"objectKey"`
 }
 
 // RegisterResourceAllResult is struct for Register Resource Result for All Clouds

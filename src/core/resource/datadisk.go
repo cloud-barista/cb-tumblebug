@@ -77,13 +77,13 @@ func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.T
 		return model.TbDataDiskInfo{}, err
 	}
 
-	uuid := common.GenUid()
+	uid := common.GenUid()
 
 	requestBody := model.SpiderDiskReqInfoWrapper{
 		ConnectionName: u.ConnectionName,
 		ReqInfo: model.SpiderDiskInfo{
-			Name:     uuid,
-			CSPid:    u.CspDataDiskId, // for option=register
+			Name:     uid,
+			CSPid:    u.CspResourceId, // for option=register
 			DiskType: u.DiskType,
 			DiskSize: u.DiskSize,
 		},
@@ -104,10 +104,10 @@ func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.T
 	// var err error
 
 	var url string
-	if option == "register" && u.CspDataDiskId == "" {
+	if option == "register" && u.CspResourceId == "" {
 		url = fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, u.Name)
 		resp, err = req.Get(url)
-	} else if option == "register" && u.CspDataDiskId != "" {
+	} else if option == "register" && u.CspResourceId != "" {
 		url = fmt.Sprintf("%s/regdisk", model.SpiderRestUrl)
 		resp, err = req.Post(url)
 	} else { // option != "register"
@@ -135,12 +135,12 @@ func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.T
 	content := model.TbDataDiskInfo{
 		Id:                   u.Name,
 		Name:                 u.Name,
-		Uuid:                 uuid,
+		Uid:                  uid,
 		ConnectionName:       u.ConnectionName,
 		DiskType:             tempSpiderDiskInfo.DiskType,
 		DiskSize:             tempSpiderDiskInfo.DiskSize,
-		CspDataDiskId:        tempSpiderDiskInfo.IId.SystemId,
-		CspDataDiskName:      tempSpiderDiskInfo.IId.NameId,
+		CspResourceId:        tempSpiderDiskInfo.IId.SystemId,
+		CspResourceName:      tempSpiderDiskInfo.IId.NameId,
 		Status:               tempSpiderDiskInfo.Status,
 		AssociatedObjectList: []string{},
 		CreatedTime:          tempSpiderDiskInfo.CreatedTime,
@@ -150,9 +150,9 @@ func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.T
 	}
 
 	if option == "register" {
-		if u.CspDataDiskId == "" {
+		if u.CspResourceId == "" {
 			content.SystemLabel = "Registered from CB-Spider resource"
-		} else if u.CspDataDiskId != "" {
+		} else if u.CspResourceId != "" {
 			content.SystemLabel = "Registered from CSP resource"
 		}
 	}
@@ -171,7 +171,7 @@ func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.T
 		"provider":  "cb-tumblebug",
 		"namespace": nsId,
 	}
-	err = label.CreateOrUpdateLabel(model.StrDataDisk, uuid, Key, labels)
+	err = label.CreateOrUpdateLabel(model.StrDataDisk, uid, Key, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
@@ -258,7 +258,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *model.TbDataDiskUpsizeReq
 	var resp *resty.Response
 	// var err error
 
-	url := fmt.Sprintf("%s/disk/%s/size", model.SpiderRestUrl, dataDisk.CspDataDiskName)
+	url := fmt.Sprintf("%s/disk/%s/size", model.SpiderRestUrl, dataDisk.CspResourceName)
 	resp, err = req.Put(url)
 
 	if err != nil {

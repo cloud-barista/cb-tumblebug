@@ -26,8 +26,6 @@ import (
 	"sync"
 	"time"
 
-	//uuid "github.com/google/uuid"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -196,7 +194,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
-		url = model.SpiderRestUrl + "/myimage/" + temp.CspCustomImageName
+		url = model.SpiderRestUrl + "/myimage/" + temp.CspResourceName
 
 		/*
 			// delete image info
@@ -251,7 +249,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
-		url = model.SpiderRestUrl + "/keypair/" + temp.CspSshKeyName
+		url = model.SpiderRestUrl + "/keypair/" + temp.CspResourceName
 	case model.StrVNet:
 		temp := model.TbVNetInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -260,7 +258,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
-		url = model.SpiderRestUrl + "/vpc/" + temp.CspVNetName
+		url = model.SpiderRestUrl + "/vpc/" + temp.CspResourceName
 		childResources = temp.SubnetInfoList
 	case model.StrSecurityGroup:
 		temp := model.TbSecurityGroupInfo{}
@@ -270,7 +268,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
-		url = model.SpiderRestUrl + "/securitygroup/" + temp.CspSecurityGroupName
+		url = model.SpiderRestUrl + "/securitygroup/" + temp.CspResourceName
 	case model.StrDataDisk:
 		temp := model.TbDataDiskInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -279,12 +277,12 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
-		url = model.SpiderRestUrl + "/disk/" + temp.CspDataDiskName
+		url = model.SpiderRestUrl + "/disk/" + temp.CspResourceName
 	/*
 		case "subnet":
 			temp := subnetInfo{}
 			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspSubnetId
+			return content.CspResourceId
 		case "publicIp":
 			temp := publicIpInfo{}
 			json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -354,169 +352,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 	return nil
 }
-
-// Todo: need to reimplment the following invalid function
-
-// // DelChildResource deletes the TB Resource object
-// func DelChildResource(nsId string, resourceType string, parentResourceId string, resourceId string, forceFlag string) error {
-
-// 	var parentResourceType string
-// 	switch resourceType {
-// 	case model.StrSubnet:
-// 		parentResourceType = model.StrVNet
-// 	default:
-// 		err := fmt.Errorf("Not valid child resource type.")
-// 		return err
-// 	}
-
-// 	err := common.CheckString(nsId)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return err
-// 	}
-
-// 	err = common.CheckString(parentResourceId)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return err
-// 	}
-
-// 	err = common.CheckString(resourceId)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return err
-// 	}
-
-// 	check, err := CheckResource(nsId, parentResourceType, parentResourceId)
-
-// 	if !check {
-// 		errString := "The " + parentResourceType + " " + parentResourceId + " does not exist."
-// 		err := fmt.Errorf(errString)
-// 		return err
-// 	}
-
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return err
-// 	}
-
-// 	check, err = CheckChildResource(nsId, resourceType, parentResourceId, resourceId)
-
-// 	if !check {
-// 		errString := "The " + resourceType + " " + resourceId + " does not exist."
-// 		err := fmt.Errorf(errString)
-// 		return err
-// 	}
-
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return err
-// 	}
-
-// 	parentResourceKey := common.GenResourceKey(nsId, parentResourceType, parentResourceId)
-// 	log.Debug().Msg("parentResourceKey: " + parentResourceKey)
-
-// 	childResourceKey := common.GenChildResourceKey(nsId, resourceType, parentResourceId, resourceId)
-// 	log.Debug().Msg("childResourceKey: " + childResourceKey)
-
-// 	parentKeyValue, _ := kvstore.GetKv(parentResourceKey)
-
-// 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
-
-// 	var url string
-
-// 	// Create Req body
-// 	type JsonTemplate struct {
-// 		ConnectionName string
-// 	}
-// 	requestBody := JsonTemplate{}
-
-// 	switch resourceType {
-// 	case model.StrSubnet:
-// 		vnet := TbVNetInfo{}
-// 		err = json.Unmarshal([]byte(parentKeyValue.Value), &vnet)
-// 		if err != nil {
-// 			log.Error().Err(err).Msg("")
-// 			return err
-// 		}
-// 		requestBody.ConnectionName = vnet.ConnectionName
-// 		url = fmt.Sprintf("%s/vpc/%s/subnet/%s", model.SpiderRestUrl, vnet.CspVNetName, vnet.SubnetInfoList)
-// 	default:
-// 		err := fmt.Errorf("invalid resourceType")
-// 		return err
-// 	}
-
-// 	if forceFlag == "true" {
-// 		url += "?force=true"
-// 	}
-// 	var callResult interface{}
-// 	client := resty.New()
-// 	method := "DELETE"
-// 	//client.SetTimeout(60 * time.Second)
-
-// 	err = common.ExecuteHttpRequest(
-// 		client,
-// 		method,
-// 		url,
-// 		nil,
-// 		common.SetUseBody(requestBody),
-// 		&requestBody,
-// 		&callResult,
-// 		common.VeryShortDuration,
-// 	)
-
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return err
-// 	}
-
-// 	err = kvstore.Delete(childResourceKey)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return err
-// 	}
-
-// 	// Delete the child element in parent resources' array
-// 	switch resourceType {
-// 	case model.StrSubnet:
-// 		oldVNet := TbVNetInfo{}
-// 		err = json.Unmarshal([]byte(parentKeyValue.Value), &oldVNet)
-// 		if err != nil {
-// 			log.Error().Err(err).Msg("")
-// 			return err
-// 		}
-
-// 		newVNet := TbVNetInfo{}
-// 		newVNet = oldVNet
-
-// 		var subnetIndex int
-// 		subnetIndex = -1
-// 		for i, v := range newVNet.SubnetInfoList {
-// 			if v.Name == resourceId {
-// 				subnetIndex = i
-// 				break
-// 			}
-// 		}
-
-// 		if subnetIndex != -1 {
-// 			DelEleInSlice(&newVNet.SubnetInfoList, subnetIndex)
-// 		} else {
-// 			err := fmt.Errorf("Failed to find and delete subnet %s in vNet %s.", resourceId, parentResourceId)
-// 			log.Error().Err(err).Msg("")
-// 		}
-
-// 		Val, _ := json.Marshal(newVNet)
-// 		err = kvstore.Put(parentResourceKey, string(Val))
-// 		if err != nil {
-// 			log.Error().Err(err).Msg("")
-// 			return err
-// 		}
-// 		// default:
-// 	}
-
-// 	return nil
-
-// }
 
 // DelEleInSlice delete an element from slice by index
 //   - arr: the reference of slice
@@ -1079,7 +914,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			}
 
 			// Update TB CustomImage object's 'status' field
-			url := fmt.Sprintf("%s/myimage/%s", model.SpiderRestUrl, res.CspCustomImageName)
+			url := fmt.Sprintf("%s/myimage/%s", model.SpiderRestUrl, res.CspResourceName)
 
 			client := resty.New().SetCloseConnection(true)
 			client.SetAllowGetMethodPayload(true)
@@ -1156,7 +991,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			}
 
 			// Update TB DataDisk object's 'status' field
-			url := fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, res.CspDataDiskName)
+			url := fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, res.CspResourceName)
 
 			client := resty.New().SetCloseConnection(true)
 			client.SetAllowGetMethodPayload(true)
@@ -1587,7 +1422,7 @@ func LoadCommonResource() (model.IdList, error) {
 		specReqTmp := model.TbSpecReq{}
 		// 0	providerName
 		// 1	regionName
-		// 2	cspSpecName
+		// 2	cspResourceId
 		// 3	CostPerHour
 		// 4	evaluationScore01
 		// 5	evaluationScore02
@@ -1609,7 +1444,7 @@ func LoadCommonResource() (model.IdList, error) {
 
 		providerName := strings.ToLower(row[0])
 		regionName := strings.ToLower(row[1])
-		specReqTmp.CspSpecName = row[2]
+		specReqTmp.CspResourceId = row[2]
 		rootDiskType := row[14]
 		rootDiskSize := row[15]
 		acceleratorType := row[16]
@@ -1625,7 +1460,7 @@ func LoadCommonResource() (model.IdList, error) {
 		description := row[20]
 		infraType := strings.ToLower(row[21])
 
-		specReqTmp.Name = GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
+		specReqTmp.Name = GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspResourceId)
 
 		//get connetion for lookup (if regionName is "all", use providerName only)
 		validRepresentativeConnectionMapKey := providerName + "-" + regionName
@@ -1635,10 +1470,10 @@ func LoadCommonResource() (model.IdList, error) {
 
 			_, ignoreCase := ignoreConnectionMap.Load(specReqTmp.ConnectionName)
 			if !ignoreCase {
-				// Give a name for spec object by combining ConnectionName and CspSpecName
+				// Give a name for spec object by combining ConnectionName and CspResourceId
 				// To avoid naming-rule violation, modify the string
 
-				// specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
+				// specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspResourceId
 				// specReqTmp.Name = ToNamingRuleCompatible(specReqTmp.Name)
 				specInfoId := specReqTmp.Name
 
@@ -1651,7 +1486,7 @@ func LoadCommonResource() (model.IdList, error) {
 				log.Trace().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
 
 				// Register Spec object
-				searchKey := GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
+				searchKey := GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspResourceId)
 				_, ok := specMap.Load(searchKey)
 				if ok {
 					// spiderSpec := value.(SpiderSpecInfo)
@@ -1671,9 +1506,9 @@ func LoadCommonResource() (model.IdList, error) {
 				} else {
 					errRegisterSpec = fmt.Errorf("Not Found spec from the fetched spec list: %s", searchKey)
 					log.Trace().Msgf(errRegisterSpec.Error())
-					// _, errRegisterSpec = RegisterSpecWithCspSpecName(model.SystemCommonNs, &specReqTmp, true)
+					// _, errRegisterSpec = RegisterSpecWithCspResourceId(model.SystemCommonNs, &specReqTmp, true)
 					// if errRegisterSpec != nil {
-					// 	log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspSpecName failed")
+					// 	log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspResourceId failed")
 					// }
 				}
 
@@ -1741,14 +1576,14 @@ func LoadCommonResource() (model.IdList, error) {
 			imageReqTmp := model.TbImageReq{}
 			// row0: ProviderName
 			// row1: regionName
-			// row2: cspImageId
+			// row2: cspResourceId
 			// row3: OsType
 			// row4: description
 			// row5: supportedInstance
 			// row6: infraType
 			providerName := strings.ToLower(row[0])
 			regionName := strings.ToLower(row[1])
-			imageReqTmp.CspImageId = row[2]
+			imageReqTmp.CspResourceId = row[2]
 			osType := strings.ReplaceAll(row[3], " ", "")
 			description := row[4]
 			infraType := strings.ToLower(row[6])
@@ -1780,7 +1615,7 @@ func LoadCommonResource() (model.IdList, error) {
 
 					_, err1 := RegisterImageWithId(model.SystemCommonNs, &imageReqTmp, true, true)
 					if err1 != nil {
-						log.Info().Msgf("Provider: %s, Region: %s, CspImageId: %s Error: %s", providerName, regionName, imageReqTmp.CspImageId, err1.Error())
+						log.Info().Msgf("Provider: %s, Region: %s, CspResourceId: %s Error: %s", providerName, regionName, imageReqTmp.CspResourceId, err1.Error())
 						regiesteredStatus += "  [Failed] " + err1.Error()
 					} else {
 						// Update registered image object with OsType info
@@ -2097,46 +1932,22 @@ func expandInfraType(infraType string) string {
 	return strings.Join(expInfraTypeList, "|")
 }
 
-// resourceIds is struct for containing id and name of each Resource type
-type resourceIds struct { // Tumblebug
-	CspImageId           string
-	CspImageName         string
-	CspCustomImageId     string
-	CspCustomImageName   string
-	CspSshKeyName        string
-	CspSpecName          string
-	CspVNetId            string
-	CspVNetName          string
-	CspSecurityGroupId   string
-	CspSecurityGroupName string
-	CspPublicIpId        string
-	CspPublicIpName      string
-	CspVNicId            string
-	CspVNicName          string
-	CspDataDiskId        string
-	CspDataDiskName      string
-	CspSubnetId          string
-	CspSubnetName        string
-
-	ConnectionName string
-}
-
-// GetCspResourceId is func to retrieve CSP native resource ID
-func GetCspResourceId(nsId string, resourceType string, resourceId string) (string, error) {
+// GetCspResourceName is func to retrieve CSP native resource ID
+func GetCspResourceName(nsId string, resourceType string, resourceId string) (string, error) {
 
 	if resourceType == model.StrSpec {
 		specInfo, err := GetSpec(nsId, resourceId)
 		if err != nil {
 			return "", err
 		}
-		return specInfo.CspSpecName, nil
+		return specInfo.CspResourceId, nil
 	}
 	if resourceType == model.StrImage {
 		imageInfo, err := GetImage(nsId, resourceId)
 		if err != nil {
 			return "", err
 		}
-		return imageInfo.CspImageId, nil
+		return imageInfo.CspResourceId, nil
 	}
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
@@ -2156,69 +1967,28 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	}
 
 	switch resourceType {
-	// case model.StrImage:
-	// 	content := resourceIds{}
-	// 	json.Unmarshal([]byte(keyValue.Value), &content)
-	// 	return content.CspImageId, nil
 	case model.StrCustomImage:
-		content := resourceIds{}
+		content := model.ResourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspCustomImageName, nil
+		return content.CspResourceName, nil
 	case model.StrSSHKey:
-		content := resourceIds{}
+		content := model.ResourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspSshKeyName, nil
-	// case StrSpec:
-	// 	content := resourceIds{}
-	// 	json.Unmarshal([]byte(keyValue.Value), &content)
-	// 	return content.CspSpecName, nil
+		return content.CspResourceName, nil
 	case model.StrVNet:
-		content := resourceIds{}
+		content := model.ResourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspVNetName, nil // contains CspSubnetId
+		return content.CspResourceName, nil // contains CspResourceId
 	case model.StrSecurityGroup:
-		content := resourceIds{}
+		content := model.ResourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspSecurityGroupName, nil
+		return content.CspResourceName, nil
 	case model.StrDataDisk:
-		content := resourceIds{}
+		content := model.ResourceIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspDataDiskName, nil
-	/*
-		case "publicIp":
-			content := resourceIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspPublicIpName
-		case "vNic":
-			content := resourceIds{}
-			err = json.Unmarshal([]byte(keyValue.Value), &content)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				// if there is no matched value for the key, return empty string. Error will be handled in a parent function
-				return ""
-			}
-			return content.CspVNicName
-	*/
+		return content.CspResourceName, nil
+
 	default:
 		return "", fmt.Errorf("invalid resourceType")
 	}
 }
-
-/*
-func AreEqualJSON(s1, s2 string) (bool, error) {
-	var o1 interface{}
-	var o2 interface{}
-
-	var err error
-	err = json.Unmarshal([]byte(s1), &o1)
-	if err != nil {
-		return false, fmt.Errorf("Error mashalling string 1 :: %s", err.Error())
-	}
-	err = json.Unmarshal([]byte(s2), &o2)
-	if err != nil {
-		return false, fmt.Errorf("Error mashalling string 2 :: %s", err.Error())
-	}
-
-	return reflect.DeepEqual(o1, o2), nil
-}
-*/

@@ -97,8 +97,8 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 		Name:                 snapshotName,
 		ConnectionName:       vm.ConnectionName,
 		SourceVmId:           vmId,
-		CspCustomImageId:     tempSpiderMyImageInfo.IId.SystemId,
-		CspCustomImageName:   tempSpiderMyImageInfo.IId.NameId,
+		CspResourceId:        tempSpiderMyImageInfo.IId.SystemId,
+		CspResourceName:      tempSpiderMyImageInfo.IId.NameId,
 		Description:          "",
 		CreationDate:         tempSpiderMyImageInfo.CreatedTime,
 		GuestOS:              "",
@@ -133,12 +133,12 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 	// 	tempTbDataDiskReq := model.TbDataDiskReq{
 	// 		Name:           fmt.Sprintf("%s-%s", vm.Name, common.GenerateNewRandomString(5)),
 	// 		ConnectionName: vm.ConnectionName,
-	// 		CspDataDiskId:  v.IdByCsp,
+	// 		CspResourceId:  v.CspResourceId,
 	// 	}
 
 	// 	_, err = resource.CreateDataDisk(nsId, &tempTbDataDiskReq, "register")
 	// 	if err != nil {
-	// 		err := fmt.Errorf("Failed to register the created dataDisk %s to TB. \n", v.IdByCsp)
+	// 		err := fmt.Errorf("Failed to register the created dataDisk %s to TB. \n", v.CspResourceId)
 	// 		log.Error().Err(err).Msg("")
 	// 		continue
 	// 	}
