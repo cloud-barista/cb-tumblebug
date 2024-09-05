@@ -390,12 +390,12 @@ func GetMciAccessInfo(nsId string, mciId string, option string) (*model.MciAcces
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					vmAccessInfo.PrivateKey = ""
-					vmAccessInfo.VmUserAccount = ""
+					vmAccessInfo.VmUserName = ""
 				} else {
 					if strings.EqualFold(option, "showSshKey") {
 						vmAccessInfo.PrivateKey = privateKey
 					}
-					vmAccessInfo.VmUserAccount = verifiedUserName
+					vmAccessInfo.VmUserName = verifiedUserName
 				}
 
 				//vmAccessInfo.VmUserPassword
@@ -650,9 +650,9 @@ func GetVmIdNameInDetail(nsId string, mciId string, vmId string) (*model.TbIdNam
 	var idDetails model.TbIdNameInDetailInfo
 
 	idDetails.IdInTb = vmTmp.Id
-	idDetails.IdInSp = vmTmp.CspViewVmDetail.IId.NameId
-	idDetails.IdInCsp = vmTmp.CspViewVmDetail.IId.SystemId
-	idDetails.NameInCsp = "TBD"
+	idDetails.IdInSp = vmTmp.CspResourceName
+	idDetails.IdInCsp = vmTmp.CspResourceId
+	idDetails.NameInCsp = vmTmp.CspResourceName
 
 	type spiderReqTmp struct {
 		ConnectionName string `json:"ConnectionName"`
@@ -928,7 +928,7 @@ func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (model.TbVmSta
 		return errorInfo, err
 	}
 
-	cspResourceName := temp.CspViewVmDetail.IId.NameId
+	cspResourceName := temp.CspResourceName
 	if cspResourceName == "" {
 		err = fmt.Errorf("cspResourceName is empty (VmId: %s)", vmId)
 		log.Error().Err(err).Msg("")
@@ -1044,7 +1044,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.TbVmStatusInfo
 
 	errorInfo.Id = temp.Id
 	errorInfo.Name = temp.Name
-	errorInfo.CspResourceName = temp.CspViewVmDetail.IId.NameId
+	errorInfo.CspResourceName = temp.CspResourceName
 	errorInfo.PublicIp = temp.PublicIP
 	errorInfo.SSHPort = temp.SSHPort
 	errorInfo.PrivateIp = temp.PrivateIP
@@ -1056,7 +1056,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.TbVmStatusInfo
 	errorInfo.CreatedTime = temp.CreatedTime
 	errorInfo.SystemMessage = "Error in FetchVmStatus"
 
-	cspResourceName := temp.CspViewVmDetail.IId.NameId
+	cspResourceName := temp.CspResourceName
 
 	if (temp.TargetAction != model.ActionCreate && temp.TargetAction != model.ActionTerminate) && cspResourceName == "" {
 		err = fmt.Errorf("cspResourceName is empty (VmId: %s)", vmId)
@@ -1140,7 +1140,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.TbVmStatusInfo
 	vmStatusTmp := model.TbVmStatusInfo{}
 	vmStatusTmp.Id = temp.Id
 	vmStatusTmp.Name = temp.Name
-	vmStatusTmp.CspResourceName = temp.CspViewVmDetail.IId.NameId
+	vmStatusTmp.CspResourceName = temp.CspResourceName
 
 	vmStatusTmp.PrivateIp = temp.PrivateIP
 	vmStatusTmp.NativeStatus = nativeStatus
@@ -1408,7 +1408,7 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	requestBody := model.SpiderDiskAttachDetachReqWrapper{
 		ConnectionName: vm.ConnectionName,
 		ReqInfo: model.SpiderDiskAttachDetachReq{
-			VMName: vm.CspViewVmDetail.IId.NameId,
+			VMName: vm.CspResourceName,
 		},
 	}
 
@@ -1480,7 +1480,7 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 
 	time.Sleep(8 * time.Second)
 	method = "GET"
-	url = fmt.Sprintf("%s/vm/%s", model.SpiderRestUrl, vm.CspViewVmDetail.IId.NameId)
+	url = fmt.Sprintf("%s/vm/%s", model.SpiderRestUrl, vm.CspResourceName)
 	requestBodyConnection := model.SpiderConnectionName{
 		ConnectionName: vm.ConnectionName,
 	}
@@ -1503,7 +1503,7 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	}
 
 	// fmt.Printf("in AttachDetachDataDisk(), updatedSpiderVM.DataDiskIIDs: %s", updatedSpiderVM.DataDiskIIDs) // for debug
-	vm.CspViewVmDetail = callResultSpiderVMInfo
+	vm.AddtionalDetails = callResultSpiderVMInfo.KeyValueList
 
 	UpdateVmInfo(nsId, mciId, vm)
 
@@ -1957,7 +1957,7 @@ func GetVmTemplate(nsId string, mciId string, algo string) (model.TbVmInfo, erro
 	vmTemplate.SubnetId = vmObj.SubnetId
 	vmTemplate.SecurityGroupIds = vmObj.SecurityGroupIds
 	vmTemplate.SshKeyId = vmObj.SshKeyId
-	vmTemplate.VmUserAccount = vmObj.VmUserAccount
+	vmTemplate.VmUserName = vmObj.VmUserName
 	vmTemplate.VmUserPassword = vmObj.VmUserPassword
 
 	if vmErr != nil {

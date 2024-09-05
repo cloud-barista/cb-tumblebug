@@ -47,7 +47,7 @@ curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mci -H 'Co
 					"subGroupSize": "'${NUMVM}'",
 					"name": "'${CONN_CONFIG[$INDEX,$REGION]}'",
 					"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-					"vmUserAccount": "cb-user",
+					"vmUserName": "cb-user",
 					"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
 					"sshKeyId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 					"specId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",

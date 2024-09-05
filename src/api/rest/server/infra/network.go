@@ -122,7 +122,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*networkSiteModel.SitesInf
 		// Create and set a site details
 		var site = networkSiteModel.SiteDetail{}
 		site.CSP = vm.ConnectionConfig.ProviderName
-		site.Region = vm.CspViewVmDetail.Region.Region
+		site.Region = vm.Region.Region
 
 		// Lowercase the provider name
 		providerName = strings.ToLower(providerName)
@@ -146,14 +146,14 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*networkSiteModel.SitesInf
 			lastSubnetIdFromCSP := lastSubnet.CspResourceId
 
 			// Set VNet and the last subnet IDs
-			site.VNet = vm.CspViewVmDetail.VpcIID.SystemId
+			site.VNet = vm.CspVNetId
 			site.Subnet = lastSubnetIdFromCSP
 
 			sitesInAws = append(sitesInAws, site)
 
 		case "azure":
 			// Parse vNet and resource group names
-			parts := strings.Split(vm.CspViewVmDetail.VpcIID.SystemId, "/")
+			parts := strings.Split(vm.CspVNetId, "/")
 			log.Debug().Msgf("parts: %+v", parts)
 			parsedResourceGroupName := parts[4]
 			parsedVirtualNetworkName := parts[8]
@@ -190,7 +190,7 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*networkSiteModel.SitesInf
 
 		case "gcp":
 			// Set vNet ID
-			site.VNet = vm.CspViewVmDetail.VpcIID.SystemId
+			site.VNet = vm.CspVNetId
 
 			sitesInGcp = append(sitesInGcp, site)
 

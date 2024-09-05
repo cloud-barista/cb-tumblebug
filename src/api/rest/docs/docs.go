@@ -10758,7 +10758,7 @@ const docTemplate = `{
                 "vmId": {
                     "type": "string"
                 },
-                "vmUserAccount": {
+                "vmUserName": {
                     "type": "string"
                 },
                 "vmUserPassword": {
@@ -11395,17 +11395,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.SpiderImageType": {
-            "type": "string",
-            "enum": [
-                "PublicImage",
-                "MyImage"
-            ],
-            "x-enum-varnames": [
-                "PublicImage",
-                "MyImage"
-            ]
-        },
         "model.SpiderRegionZoneInfo": {
             "type": "object",
             "properties": {
@@ -11480,143 +11469,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "count": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.SpiderVMInfo": {
-            "type": "object",
-            "properties": {
-                "cspid": {
-                    "description": "VM ID given by CSP (required for registering VM)",
-                    "type": "string"
-                },
-                "dataDiskIIDs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.IID"
-                    }
-                },
-                "dataDiskNames": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "iid": {
-                    "description": "Fields for response",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.IID"
-                        }
-                    ]
-                },
-                "imageIId": {
-                    "$ref": "#/definitions/model.IID"
-                },
-                "imageName": {
-                    "type": "string"
-                },
-                "imageType": {
-                    "$ref": "#/definitions/model.SpiderImageType"
-                },
-                "keyPairIId": {
-                    "$ref": "#/definitions/model.IID"
-                },
-                "keyPairName": {
-                    "type": "string"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
-                    }
-                },
-                "name": {
-                    "description": "Fields for request",
-                    "type": "string"
-                },
-                "networkInterface": {
-                    "description": "ex) eth0",
-                    "type": "string"
-                },
-                "privateDNS": {
-                    "type": "string"
-                },
-                "privateIP": {
-                    "type": "string"
-                },
-                "publicDNS": {
-                    "type": "string"
-                },
-                "publicIP": {
-                    "type": "string"
-                },
-                "region": {
-                    "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.RegionInfo"
-                        }
-                    ]
-                },
-                "rootDeviceName": {
-                    "description": "\"/dev/sda1\", ...",
-                    "type": "string"
-                },
-                "rootDiskSize": {
-                    "description": "\"default\", \"50\", \"1000\" (GB)",
-                    "type": "string"
-                },
-                "rootDiskType": {
-                    "description": "\"SSD(gp2)\", \"Premium SSD\", ...",
-                    "type": "string"
-                },
-                "securityGroupIIds": {
-                    "description": "AWS, ex) sg-0b7452563e1121bb6",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.IID"
-                    }
-                },
-                "securityGroupNames": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sshaccessPoint": {
-                    "type": "string"
-                },
-                "startTime": {
-                    "type": "string"
-                },
-                "subnetIID": {
-                    "description": "AWS, ex) subnet-8c4a53e4",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.IID"
-                        }
-                    ]
-                },
-                "subnetName": {
-                    "type": "string"
-                },
-                "vmspecName": {
-                    "description": "Fields for both request and response",
-                    "type": "string"
-                },
-                "vmuserId": {
-                    "description": "ex) user1",
-                    "type": "string"
-                },
-                "vmuserPasswd": {
-                    "type": "string"
-                },
-                "vpcIID": {
-                    "$ref": "#/definitions/model.IID"
-                },
-                "vpcname": {
                     "type": "string"
                 }
             }
@@ -13784,6 +13636,12 @@ const docTemplate = `{
         "model.TbVmInfo": {
             "type": "object",
             "properties": {
+                "addtionalDetails": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
                 "connectionConfig": {
                     "$ref": "#/definitions/model.ConnConfig"
                 },
@@ -13795,6 +13653,9 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2022-11-10 23:00:00"
                 },
+                "cspImageId": {
+                    "type": "string"
+                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
@@ -13805,8 +13666,17 @@ const docTemplate = `{
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
                 },
-                "cspViewVmDetail": {
-                    "$ref": "#/definitions/model.SpiderVMInfo"
+                "cspSpecId": {
+                    "type": "string"
+                },
+                "cspSshKeyId": {
+                    "type": "string"
+                },
+                "cspSubnetId": {
+                    "type": "string"
+                },
+                "cspVNetId": {
+                    "type": "string"
                 },
                 "dataDiskIds": {
                     "type": "array",
@@ -13845,6 +13715,9 @@ const docTemplate = `{
                     "description": "NetworkAgent status",
                     "type": "string",
                     "example": "[notInstalled, installing, installed, failed]"
+                },
+                "networkInterface": {
+                    "type": "string"
                 },
                 "privateDNS": {
                     "type": "string"
@@ -13920,7 +13793,7 @@ const docTemplate = `{
                 "vNetId": {
                     "type": "string"
                 },
-                "vmUserAccount": {
+                "vmUserName": {
                     "type": "string"
                 },
                 "vmUserPassword": {
@@ -14005,7 +13878,7 @@ const docTemplate = `{
                 "vNetId": {
                     "type": "string"
                 },
-                "vmUserAccount": {
+                "vmUserName": {
                     "type": "string"
                 },
                 "vmUserPassword": {
