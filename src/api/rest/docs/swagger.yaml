@@ -1508,13 +1508,14 @@ definitions:
     type: object
   model.TbChangeK8sNodeGroupAutoscaleSizeRes:
     properties:
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       desiredNodeSize:
         example: 1
@@ -1589,13 +1590,14 @@ definitions:
       creationDate:
         example: "2022-10-18T08:12:48Z"
         type: string
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       description:
         type: string
@@ -1668,13 +1670,14 @@ definitions:
       createdTime:
         example: "2022-10-12T05:09:51.05Z"
         type: string
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       description:
         example: Available
@@ -1816,13 +1819,14 @@ definitions:
         type: string
       creationDate:
         type: string
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       description:
         type: string
@@ -1911,13 +1915,14 @@ definitions:
       createdTime:
         example: "1970-01-01T00:00:00.00Z"
         type: string
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       description:
         example: My K8sCluster
@@ -2052,13 +2057,14 @@ definitions:
     - TbK8sClusterDeleting
   model.TbK8sNodeGroupInfo:
     properties:
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       desiredNodeSize:
         example: 1
@@ -2374,13 +2380,14 @@ definitions:
         type: string
       createdTime:
         type: string
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       description:
         type: string
@@ -2573,13 +2580,14 @@ definitions:
         type: array
       connectionName:
         type: string
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       description:
         type: string
@@ -2667,13 +2675,14 @@ definitions:
         type: string
       costPerHour:
         type: number
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       description:
         type: string
@@ -2771,13 +2780,14 @@ definitions:
         type: array
       connectionName:
         type: string
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       description:
         type: string
@@ -2851,13 +2861,14 @@ definitions:
         type: array
       connectionName:
         type: string
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspVNetId is vNet resource identifier managed by CSP
         example: csp-45eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       cspVNetHandlingId:
         description: CspVNetHandlingId is identifier to handle CSP vNet resource
@@ -2922,13 +2933,14 @@ definitions:
         type: string
       connectionName:
         type: string
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       description:
         type: string
@@ -3046,13 +3058,14 @@ definitions:
         description: Created time
         example: "2022-11-10 23:00:00"
         type: string
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       cspViewVmDetail:
         $ref: '#/definitions/model.SpiderVMInfo'
@@ -3221,13 +3234,14 @@ definitions:
         description: Created time
         example: "2022-11-10 23:00:00"
         type: string
-      cspResourceHandlingName:
-        description: CspResourceHandlingName is identifier to handle CSP resource
-        example: we12fawefadf1221edcf
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
+        type: string
+      cspResourceName:
+        description: CspResourceName is name assigned to the CSP resource. This name
+          is internally used to handle the resource.
+        example: we12fawefadf1221edcf
         type: string
       id:
         description: Id is unique identifier for the object
@@ -5085,7 +5099,7 @@ paths:
         in: query
         name: option
         type: string
-      - description: 'Field key for filtering (ex: cspResourceHandlingName)'
+      - description: 'Field key for filtering (ex: cspResourceName)'
         in: query
         name: filterKey
         type: string
@@ -5870,7 +5884,7 @@ paths:
         in: query
         name: option
         type: string
-      - description: 'Field key for filtering (ex: cspResourceHandlingName)'
+      - description: 'Field key for filtering (ex: cspResourceName)'
         in: query
         name: filterKey
         type: string
@@ -8033,7 +8047,7 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Specify details of a image object (cspResourceHandlingName, guestOS,
+      - description: Specify details of a image object (cspResourceName, guestOS,
           description, ...) manually
         in: body
         name: imageInfo
@@ -8932,7 +8946,7 @@ paths:
         in: query
         name: option
         type: string
-      - description: 'Field key for filtering (ex: cspResourceHandlingName)'
+      - description: 'Field key for filtering (ex: cspResourceName)'
         in: query
         name: filterKey
         type: string

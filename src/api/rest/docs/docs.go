@@ -2316,7 +2316,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Field key for filtering (ex: cspResourceHandlingName)",
+                        "description": "Field key for filtering (ex: cspResourceName)",
                         "name": "filterKey",
                         "in": "query"
                     },
@@ -3461,7 +3461,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Field key for filtering (ex: cspResourceHandlingName)",
+                        "description": "Field key for filtering (ex: cspResourceName)",
                         "name": "filterKey",
                         "in": "query"
                     },
@@ -6631,7 +6631,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Specify details of a image object (cspResourceHandlingName, guestOS, description, ...) manually",
+                        "description": "Specify details of a image object (cspResourceName, guestOS, description, ...) manually",
                         "name": "imageInfo",
                         "in": "body",
                         "schema": {
@@ -7956,7 +7956,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Field key for filtering (ex: cspResourceHandlingName)",
+                        "description": "Field key for filtering (ex: cspResourceName)",
                         "name": "filterKey",
                         "in": "query"
                     },
@@ -11734,15 +11734,15 @@ const docTemplate = `{
         "model.TbChangeK8sNodeGroupAutoscaleSizeRes": {
             "type": "object",
             "properties": {
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "desiredNodeSize": {
                     "type": "integer",
@@ -11844,15 +11844,15 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2022-10-18T08:12:48Z"
                 },
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "description": {
                     "type": "string"
@@ -11953,15 +11953,15 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2022-10-12T05:09:51.05Z"
                 },
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "description": {
                     "type": "string",
@@ -12155,15 +12155,15 @@ const docTemplate = `{
                 "creationDate": {
                     "type": "string"
                 },
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "description": {
                     "type": "string"
@@ -12279,15 +12279,15 @@ const docTemplate = `{
                     "type": "string",
                     "example": "1970-01-01T00:00:00.00Z"
                 },
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "description": {
                     "type": "string",
@@ -12467,15 +12467,15 @@ const docTemplate = `{
         "model.TbK8sNodeGroupInfo": {
             "type": "object",
             "properties": {
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "desiredNodeSize": {
                     "type": "integer",
@@ -12876,15 +12876,15 @@ const docTemplate = `{
                 "createdTime": {
                     "type": "string"
                 },
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "description": {
                     "type": "string"
@@ -13157,15 +13157,15 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "description": {
                     "type": "string"
@@ -13288,15 +13288,15 @@ const docTemplate = `{
                 "costPerHour": {
                     "type": "number"
                 },
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "description": {
                     "type": "string"
@@ -13434,15 +13434,15 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "description": {
                     "type": "string"
@@ -13542,15 +13542,15 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspVNetId is vNet resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-45eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "cspVNetHandlingId": {
                     "description": "CspVNetHandlingId is identifier to handle CSP vNet resource",
@@ -13640,15 +13640,15 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "description": {
                     "type": "string"
@@ -13795,15 +13795,15 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2022-11-10 23:00:00"
                 },
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "cspViewVmDetail": {
                     "$ref": "#/definitions/model.SpiderVMInfo"
@@ -14030,15 +14030,15 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2022-11-10 23:00:00"
                 },
-                "cspResourceHandlingName": {
-                    "description": "CspResourceHandlingName is identifier to handle CSP resource",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 },
                 "id": {
                     "description": "Id is unique identifier for the object",
