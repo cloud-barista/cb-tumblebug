@@ -383,9 +383,9 @@ type TbVmInfo struct {
 	ConnectionName   string     `json:"connectionName"`
 	ConnectionConfig ConnConfig `json:"connectionConfig"`
 	SpecId           string     `json:"specId"`
-	CspSpecId        string     `json:"cspSpecId"`
+	CspSpecName      string     `json:"cspSpecName"`
 	ImageId          string     `json:"imageId"`
-	CspImageId       string     `json:"cspImageId"`
+	CspImageName       string     `json:"cspImageName"`
 	VNetId           string     `json:"vNetId"`
 	CspVNetId        string     `json:"cspVNetId"`
 	SubnetId         string     `json:"subnetId"`

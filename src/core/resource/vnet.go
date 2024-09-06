@@ -434,7 +434,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 				vNetInfo.SubnetInfoList[i].ResourceType = model.StrSubnet
 				vNetInfo.SubnetInfoList[i].ConnectionName = vNetInfo.ConnectionName
 				vNetInfo.SubnetInfoList[i].CspVNetId = spResp.IId.SystemId
-				vNetInfo.SubnetInfoList[i].CspVNetHandlingId = spResp.IId.NameId
+				vNetInfo.SubnetInfoList[i].CspVNetName = spResp.IId.NameId
 				vNetInfo.SubnetInfoList[i].Status = string(NetworkAvailable)
 				vNetInfo.SubnetInfoList[i].CspResourceId = spSubnetInfo.IId.SystemId
 				vNetInfo.SubnetInfoList[i].CspResourceName = spSubnetInfo.IId.NameId
@@ -963,18 +963,18 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 	//       since the order may differ different between slices
 	for i, spSubnetInfo := range spResp.SubnetInfoList {
 		subnetInfo := model.TbSubnetInfo{
-			Id:                fmt.Sprintf("reg-subnet-%02d", i+1),
-			Name:              fmt.Sprintf("reg-subnet-%02d", i+1),
-			Uid:               common.GenUid(),
-			ConnectionName:    vNetInfo.ConnectionName,
-			Status:            string(NetworkUnknown),
-			CspResourceId:     spSubnetInfo.IId.SystemId,
-			CspResourceName:   spSubnetInfo.IId.NameId,
-			CspVNetId:         spResp.IId.SystemId,
-			CspVNetHandlingId: spResp.IId.NameId,
-			KeyValueList:      spSubnetInfo.KeyValueList,
-			Zone:              spSubnetInfo.Zone,
-			IPv4_CIDR:         spSubnetInfo.IPv4_CIDR,
+			Id:              fmt.Sprintf("reg-subnet-%02d", i+1),
+			Name:            fmt.Sprintf("reg-subnet-%02d", i+1),
+			Uid:             common.GenUid(),
+			ConnectionName:  vNetInfo.ConnectionName,
+			Status:          string(NetworkUnknown),
+			CspResourceId:   spSubnetInfo.IId.SystemId,
+			CspResourceName: spSubnetInfo.IId.NameId,
+			CspVNetId:       spResp.IId.SystemId,
+			CspVNetName:     spResp.IId.NameId,
+			KeyValueList:    spSubnetInfo.KeyValueList,
+			Zone:            spSubnetInfo.Zone,
+			IPv4_CIDR:       spSubnetInfo.IPv4_CIDR,
 			// todo: restore the tag list later
 			// TagList:        spSubnetInfo.TagList,
 		}

@@ -37,7 +37,7 @@ import (
 // @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithId)
 // @Param nsId path string true "Namespace ID" default(system)
 // @Param imageInfo body model.TbImageInfo false "Specify details of a image object (cspResourceName, guestOS, description, ...) manually"
-// @Param imageId body model.TbImageReq false "Specify name, connectionName and cspResourceId to register an image object automatically"
+// @Param imageReq body model.TbImageReq false "Specify (name, connectionName, cspImageName) to register an image object automatically"
 // @Param update query boolean false "Force update to existing image object" default(false)
 // @Success 200 {object} model.TbImageInfo
 // @Failure 404 {object} model.SimpleMsg
@@ -96,8 +96,8 @@ func RestPostImage(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param imageInfo body model.TbImageInfo true "Details for an image object"
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param imageId path string true "Image ID ({providerName}+{regionName}+{imageName})"
+// @Param nsId path string true "Namespace ID" default(system)
+// @Param imageId path string true "Image ID ({providerName}+{regionName}+{cspImageName})"
 // @Success 200 {object} model.TbImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -124,7 +124,7 @@ func RestPutImage(c echo.Context) error {
 // Request structure for RestLookupImage
 type RestLookupImageRequest struct {
 	ConnectionName string `json:"connectionName"`
-	CspResourceId  string `json:"cspResourceId"`
+	CspImageName   string `json:"cspImageName"`
 }
 
 // RestLookupImage godoc
@@ -134,7 +134,7 @@ type RestLookupImageRequest struct {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param lookupImageReq body RestLookupImageRequest true "Specify connectionName & cspResourceId"
+// @Param lookupImageReq body RestLookupImageRequest true "Specify connectionName, cspImageName"
 // @Success 200 {object} model.SpiderImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -149,8 +149,8 @@ func RestLookupImage(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	log.Debug().Msg("[Lookup image]: " + u.CspResourceId)
-	content, err := resource.LookupImage(u.ConnectionName, u.CspResourceId)
+	log.Debug().Msg("[Lookup image]: " + u.CspImageName)
+	content, err := resource.LookupImage(u.ConnectionName, u.CspImageName)
 	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
@@ -190,7 +190,7 @@ func RestLookupImageList(c echo.Context) error {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
+// @Param nsId path string true "Namespace ID" default(system)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -235,8 +235,8 @@ func RestFetchImages(c echo.Context) error {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param imageId path string true "Image ID ({providerName}+{regionName}+{imageName})"
+// @Param nsId path string true "Namespace ID" default(system)
+// @Param imageId path string true "Image ID ({providerName}+{regionName}+{cspImageName})"
 // @Success 200 {object} model.TbImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -258,7 +258,7 @@ type RestGetAllImageResponse struct {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
+// @Param nsId path string true "Namespace ID" default(system)
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex:guestOS)"
 // @Param filterVal query string false "Field value for filtering (ex: Ubuntu18.04)"
@@ -278,8 +278,8 @@ func RestGetAllImage(c echo.Context) error {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param imageId path string true "Image ID ({providerName}+{regionName}+{imageName})"
+// @Param nsId path string true "Namespace ID" default(system)
+// @Param imageId path string true "Image ID ({providerName}+{regionName}+{cspImageName})"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [delete]
@@ -295,7 +295,7 @@ func RestDelImage(c echo.Context) error {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
+// @Param nsId path string true "Namespace ID" default(system)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
@@ -317,7 +317,7 @@ type RestSearchImageRequest struct {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
+// @Param nsId path string true "Namespace ID" default(system)
 // @Param keywords body RestSearchImageRequest true "Keywords"
 // @Success 200 {object} RestGetAllImageResponse
 // @Failure 404 {object} model.SimpleMsg

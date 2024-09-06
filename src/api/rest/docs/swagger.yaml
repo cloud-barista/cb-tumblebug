@@ -480,7 +480,7 @@ definitions:
         type: string
       costPerHour:
         $ref: '#/definitions/model.Range'
-      cspResourceId:
+      cspSpecName:
         type: string
       description:
         type: string
@@ -1454,6 +1454,10 @@ definitions:
     type: object
   model.TbChangeK8sNodeGroupAutoscaleSizeRes:
     properties:
+      cspImageName:
+        description: VM config.
+        example: image-01
+        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
@@ -1463,16 +1467,15 @@ definitions:
           is internally used to handle the resource.
         example: we12fawefadf1221edcf
         type: string
+      cspSpecName:
+        example: spec-01
+        type: string
       desiredNodeSize:
         example: 1
         type: integer
       id:
         description: Id is unique identifier for the object
         example: aws-ap-southeast-1
-        type: string
-      imageId:
-        description: VM config.
-        example: image-01
         type: string
       k8sNodes:
         description: id for nodes
@@ -1504,9 +1507,6 @@ definitions:
         type: string
       rootDiskType:
         example: cloud_essd
-        type: string
-      specId:
-        example: spec-01
         type: string
       sshKeyId:
         example: sshkey-01
@@ -1771,14 +1771,9 @@ definitions:
         type: string
       creationDate:
         type: string
-      cspResourceId:
-        description: CspResourceId is resource identifier managed by CSP
+      cspImageName:
+        description: CspImageName is name of the image given by CSP
         example: csp-06eb41e14121c550a
-        type: string
-      cspResourceName:
-        description: CspResourceName is name assigned to the CSP resource. This name
-          is internally used to handle the resource.
-        example: we12fawefadf1221edcf
         type: string
       description:
         type: string
@@ -1824,7 +1819,7 @@ definitions:
     properties:
       connectionName:
         type: string
-      cspResourceId:
+      cspImageName:
         type: string
       description:
         type: string
@@ -1832,7 +1827,7 @@ definitions:
         type: string
     required:
     - connectionName
-    - cspResourceId
+    - cspImageName
     - name
     type: object
   model.TbK8sAccessInfo:
@@ -2012,6 +2007,10 @@ definitions:
     - TbK8sClusterDeleting
   model.TbK8sNodeGroupInfo:
     properties:
+      cspImageName:
+        description: VM config.
+        example: image-01
+        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
@@ -2021,16 +2020,15 @@ definitions:
           is internally used to handle the resource.
         example: we12fawefadf1221edcf
         type: string
+      cspSpecName:
+        example: spec-01
+        type: string
       desiredNodeSize:
         example: 1
         type: integer
       id:
         description: Id is unique identifier for the object
         example: aws-ap-southeast-1
-        type: string
-      imageId:
-        description: VM config.
-        example: image-01
         type: string
       k8sNodes:
         description: id for nodes
@@ -2063,9 +2061,6 @@ definitions:
       rootDiskType:
         example: cloud_essd
         type: string
-      specId:
-        example: spec-01
-        type: string
       sshKeyId:
         example: sshkey-01
         type: string
@@ -2082,11 +2077,15 @@ definitions:
     type: object
   model.TbK8sNodeGroupReq:
     properties:
+      cspImageName:
+        example: image-01
+        type: string
+      cspSpecName:
+        example: Standard_B2s (temporarily, CSP's Spec Names are valid. It will be
+          upgraded)
+        type: string
       desiredNodeSize:
         example: "1"
-        type: string
-      imageId:
-        example: image-01
         type: string
       maxNodeSize:
         example: "3"
@@ -2111,10 +2110,6 @@ definitions:
           "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"],
           TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
         example: cloud_essd
-        type: string
-      specId:
-        example: Standard_B2s (temporarily, CSP's Spec Names are valid. It will be
-          upgraded)
         type: string
       sshKeyId:
         example: sshkey-01
@@ -2639,14 +2634,9 @@ definitions:
         type: string
       costPerHour:
         type: number
-      cspResourceId:
-        description: CspResourceId is resource identifier managed by CSP
+      cspSpecName:
+        description: CspSpecName is name of the spec given by CSP
         example: csp-06eb41e14121c550a
-        type: string
-      cspResourceName:
-        description: CspResourceName is name assigned to the CSP resource. This name
-          is internally used to handle the resource.
-        example: we12fawefadf1221edcf
         type: string
       description:
         type: string
@@ -2677,7 +2667,7 @@ definitions:
         example: aws-ap-southeast-1
         type: string
       infraType:
-        description: vm|k8s|kubernetes|container, etc.
+        description: InfraType can be one of vm|k8s|kubernetes|container, etc.
         type: string
       isAutoGenerated:
         type: boolean
@@ -2725,15 +2715,18 @@ definitions:
     properties:
       connectionName:
         type: string
-      cspResourceId:
+      cspSpecName:
+        description: CspSpecName is name of the spec given by CSP
         type: string
       description:
         type: string
       name:
+        description: Name is human-readable string to represent the object, used to
+          generate Id
         type: string
     required:
     - connectionName
-    - cspResourceId
+    - cspSpecName
     - name
     type: object
   model.TbSshKeyInfo:
@@ -2837,8 +2830,8 @@ definitions:
           is internally used to handle the resource.
         example: we12fawefadf1221edcf
         type: string
-      cspVNetHandlingId:
-        description: CspVNetHandlingId is identifier to handle CSP vNet resource
+      cspVNetName:
+        description: CspVNetName is identifier to handle CSP vNet resource
         example: we12fawefadf1221edcf
         type: string
       description:
@@ -3035,7 +3028,7 @@ definitions:
         description: Created time
         example: "2022-11-10 23:00:00"
         type: string
-      cspImageId:
+      cspImageName:
         type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
@@ -3046,7 +3039,7 @@ definitions:
           is internally used to handle the resource.
         example: we12fawefadf1221edcf
         type: string
-      cspSpecId:
+      cspSpecName:
         type: string
       cspSshKeyId:
         type: string
@@ -3478,7 +3471,7 @@ definitions:
     properties:
       connectionName:
         type: string
-      cspResourceId:
+      cspImageName:
         type: string
     type: object
   resource.RestLookupSpecRequest:
@@ -4245,7 +4238,7 @@ paths:
       description: Lookup image
       operationId: LookupImage
       parameters:
-      - description: Specify connectionName & cspResourceId
+      - description: Specify connectionName, cspImageName
         in: body
         name: lookupImageReq
         required: true
@@ -4307,7 +4300,7 @@ paths:
       description: Lookup spec
       operationId: LookupSpec
       parameters:
-      - description: Specify connectionName & cspResourceId
+      - description: Specify connectionName & cspSpecNameS
         in: body
         name: lookupSpecReq
         required: true
@@ -7853,7 +7846,7 @@ paths:
       description: Fetch images
       operationId: FetchImages
       parameters:
-      - default: default
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
@@ -7951,7 +7944,7 @@ paths:
       description: Delete all images
       operationId: DelAllImage
       parameters:
-      - default: default
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
@@ -7982,7 +7975,7 @@ paths:
       description: List all images or images' ID
       operationId: GetAllImage
       parameters:
-      - default: default
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
@@ -8053,10 +8046,10 @@ paths:
         name: imageInfo
         schema:
           $ref: '#/definitions/model.TbImageInfo'
-      - description: Specify name, connectionName and cspResourceId to register an
-          image object automatically
+      - description: Specify (name, connectionName, cspImageName) to register an image
+          object automatically
         in: body
-        name: imageId
+        name: imageReq
         schema:
           $ref: '#/definitions/model.TbImageReq'
       - default: false
@@ -8089,13 +8082,13 @@ paths:
       description: Delete image
       operationId: DelImage
       parameters:
-      - default: default
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: Image ID ({providerName}+{regionName}+{imageName})
+      - description: Image ID ({providerName}+{regionName}+{cspImageName})
         in: path
         name: imageId
         required: true
@@ -8120,13 +8113,13 @@ paths:
       description: Get image
       operationId: GetImage
       parameters:
-      - default: default
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: Image ID ({providerName}+{regionName}+{imageName})
+      - description: Image ID ({providerName}+{regionName}+{cspImageName})
         in: path
         name: imageId
         required: true
@@ -8161,13 +8154,13 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/model.TbImageInfo'
-      - default: default
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: Image ID ({providerName}+{regionName}+{imageName})
+      - description: Image ID ({providerName}+{regionName}+{cspImageName})
         in: path
         name: imageId
         required: true
@@ -8197,7 +8190,7 @@ paths:
       description: Search image
       operationId: SearchImage
       parameters:
-      - default: default
+      - default: system
         description: Namespace ID
         in: path
         name: nsId
@@ -8525,10 +8518,10 @@ paths:
         name: specInfo
         schema:
           $ref: '#/definitions/model.TbSpecInfo'
-      - description: Specify name, connectionName and cspResourceId to register a
-          spec object automatically
+      - description: Specify n(ame, connectionName, cspSpecName) to register a spec
+          object automatically
         in: body
-        name: specName
+        name: specReq
         schema:
           $ref: '#/definitions/model.TbSpecReq'
       - default: false
@@ -8567,7 +8560,7 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Spec ID ({providerName}+{regionName}+{specName})
+      - description: Spec ID ({providerName}+{regionName}+{cspSpecName})
         in: path
         name: specId
         required: true
@@ -8598,7 +8591,7 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Spec ID ({providerName}+{regionName}+{specName})
+      - description: Spec ID ({providerName}+{regionName}+{cspSpecName})
         in: path
         name: specId
         required: true
@@ -8639,7 +8632,7 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Spec ID ({providerName}+{regionName}+{specName})
+      - description: Spec ID ({providerName}+{regionName}+{cspSpecName})
         in: path
         name: specId
         required: true

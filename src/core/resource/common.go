@@ -1466,7 +1466,7 @@ func LoadAssets() (model.IdList, error) {
 
 		providerName := strings.ToLower(row[0])
 		regionName := strings.ToLower(row[1])
-		specReqTmp.CspResourceId = row[2]
+		specReqTmp.CspSpecName = row[2]
 		rootDiskType := row[14]
 		rootDiskSize := row[15]
 		acceleratorType := row[16]
@@ -1482,7 +1482,7 @@ func LoadAssets() (model.IdList, error) {
 		description := row[20]
 		infraType := strings.ToLower(row[21])
 
-		specReqTmp.Name = GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspResourceId)
+		specReqTmp.Name = GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
 
 		//get connetion for lookup (if regionName is "all", use providerName only)
 		validRepresentativeConnectionMapKey := providerName + "-" + regionName
@@ -1508,7 +1508,7 @@ func LoadAssets() (model.IdList, error) {
 				log.Trace().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
 
 				// Register Spec object
-				searchKey := GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspResourceId)
+				searchKey := GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
 				_, ok := specMap.Load(searchKey)
 				if ok {
 					// spiderSpec := value.(SpiderSpecInfo)
@@ -1605,7 +1605,7 @@ func LoadAssets() (model.IdList, error) {
 			// row6: infraType
 			providerName := strings.ToLower(row[0])
 			regionName := strings.ToLower(row[1])
-			imageReqTmp.CspResourceId = row[2]
+			imageReqTmp.CspImageName = row[2]
 			osType := strings.ReplaceAll(row[3], " ", "")
 			description := row[4]
 			infraType := strings.ToLower(row[6])
@@ -1637,7 +1637,7 @@ func LoadAssets() (model.IdList, error) {
 
 					_, err1 := RegisterImageWithId(model.SystemCommonNs, &imageReqTmp, true, true)
 					if err1 != nil {
-						log.Info().Msgf("Provider: %s, Region: %s, CspResourceId: %s Error: %s", providerName, regionName, imageReqTmp.CspResourceId, err1.Error())
+						log.Info().Msgf("Provider: %s, Region: %s, CspResourceId: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err1.Error())
 						regiesteredStatus += "  [Failed] " + err1.Error()
 					} else {
 						// Update registered image object with OsType info
@@ -1962,14 +1962,14 @@ func GetCspResourceName(nsId string, resourceType string, resourceId string) (st
 		if err != nil {
 			return "", err
 		}
-		return specInfo.CspResourceId, nil
+		return specInfo.CspSpecName, nil
 	}
 	if resourceType == model.StrImage {
 		imageInfo, err := GetImage(nsId, resourceId)
 		if err != nil {
 			return "", err
 		}
-		return imageInfo.CspResourceId, nil
+		return imageInfo.CspImageName, nil
 	}
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)

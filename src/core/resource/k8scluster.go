@@ -169,10 +169,10 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 		}
 
 		spImgName := "" // Some CSPs do not require ImageName for creating a k8s cluster
-		if v.ImageId == "" || v.ImageId == "default" {
+		if v.CspImageName == "" || v.CspImageName == "default" {
 			spImgName = ""
 		} else {
-			spImgName, err = GetCspResourceName(nsId, model.StrImage, v.ImageId)
+			spImgName, err = GetCspResourceName(nsId, model.StrImage, v.CspImageName)
 			if spImgName == "" {
 				log.Err(err).Msg("Failed to Create a K8sCluster")
 				return emptyObj, err
@@ -185,7 +185,7 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 		// 	return emptyObj, err
 		// }
 		// spSpecName := specInfo.CspResourceId
-		spSpecName := v.SpecId
+		spSpecName := v.CspSpecName
 
 		spKpName, err := GetCspResourceName(nsId, model.StrSSHKey, v.SshKeyId)
 		if spKpName == "" {
@@ -402,8 +402,8 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 	}
 
 	spImgName := "" // Some CSPs do not require ImageName for creating a cluster
-	if u.ImageId != "" {
-		spImgName, err = GetCspResourceName(nsId, model.StrImage, u.ImageId)
+	if u.CspImageName != "" {
+		spImgName, err = GetCspResourceName(nsId, model.StrImage, u.CspImageName)
 		if spImgName == "" {
 			log.Err(err).Msg("Failed to Add K8sNodeGroup")
 			return emptyObj, err
@@ -416,7 +416,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 	// 	return emptyObj, err
 	// }
 	// spSpecName := specInfo.CspResourceId
-	spSpecName := u.SpecId
+	spSpecName := u.CspSpecName
 
 	spKpName, err := GetCspResourceName(nsId, model.StrSSHKey, u.SshKeyId)
 	if spKpName == "" {
@@ -1343,8 +1343,8 @@ func convertSpiderNetworkInfoToTbK8sClusterNetworkInfo(spNetworkInfo model.Spide
 
 func convertSpiderNodeGroupInfoToTbK8sNodeGroupInfo(spNodeGroupInfo *model.SpiderNodeGroupInfo) model.TbK8sNodeGroupInfo {
 	tbNodeId := spNodeGroupInfo.IId.SystemId
-	tbImageId := spNodeGroupInfo.ImageIID.SystemId
-	tbSpecId := spNodeGroupInfo.VMSpecName
+	tbCspImageName := spNodeGroupInfo.ImageIID.SystemId
+	tbCspSpecName := spNodeGroupInfo.VMSpecName
 	tbRootDiskType := spNodeGroupInfo.RootDiskType
 	tbRootDiskSize := spNodeGroupInfo.RootDiskSize
 	tbSshKeyId := spNodeGroupInfo.KeyPairIID.SystemId
@@ -1362,8 +1362,8 @@ func convertSpiderNodeGroupInfoToTbK8sNodeGroupInfo(spNodeGroupInfo *model.Spide
 	tbKeyValueList := convertSpiderKeyValueListToTbKeyValueList(spNodeGroupInfo.KeyValueList)
 	tbK8sNodeGroupInfo := model.TbK8sNodeGroupInfo{
 		Id:              tbNodeId,
-		ImageId:         tbImageId,
-		SpecId:          tbSpecId,
+		CspImageName:    tbCspImageName,
+		CspSpecName:     tbCspSpecName,
 		RootDiskType:    tbRootDiskType,
 		RootDiskSize:    tbRootDiskSize,
 		SshKeyId:        tbSshKeyId,

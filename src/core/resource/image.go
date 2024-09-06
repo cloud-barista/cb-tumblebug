@@ -62,8 +62,7 @@ func ConvertSpiderImageToTumblebugImage(spiderImage model.SpiderImageInfo) (mode
 		tumblebugImage.Name = spiderImage.IId.NameId
 	}
 
-	tumblebugImage.CspResourceId = spiderImage.IId.NameId
-	tumblebugImage.CspResourceName = common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
+	tumblebugImage.CspImageName = spiderImage.IId.NameId
 	tumblebugImage.Description = common.LookupKeyValueList(spiderImage.KeyValueList, "Description")
 	tumblebugImage.CreationDate = common.LookupKeyValueList(spiderImage.KeyValueList, "CreationDate")
 	tumblebugImage.GuestOS = spiderImage.GuestOS
@@ -99,14 +98,14 @@ func RegisterImageWithId(nsId string, u *model.TbImageReq, update bool, RDBonly 
 		}
 	}
 
-	res, err := LookupImage(u.ConnectionName, u.CspResourceId)
+	res, err := LookupImage(u.ConnectionName, u.CspImageName)
 	if err != nil {
 		log.Trace().Err(err).Msg("")
 		return content, err
 	}
 	if res.IId.NameId == "" {
 		err := fmt.Errorf("CB-Spider returned empty IId.NameId without Error: %s", u.ConnectionName)
-		log.Error().Err(err).Msgf("Cannot LookupImage %s %v", u.CspResourceId, res)
+		log.Error().Err(err).Msgf("Cannot LookupImage %s %v", u.CspImageName, res)
 		return content, err
 	}
 
@@ -166,11 +165,11 @@ func RegisterImageWithInfo(nsId string, content *model.TbImageInfo, update bool)
 		log.Error().Err(err).Msg("")
 		return model.TbImageInfo{}, err
 	}
-	err = common.CheckString(content.Name)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return model.TbImageInfo{}, err
-	}
+	// err = common.CheckString(content.Name)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return model.TbImageInfo{}, err
+	// }
 	check, err := CheckResource(nsId, resourceType, content.Name)
 
 	if !update {
@@ -493,7 +492,7 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 	}
 
 	// ex: img-487zeit5
-	image = model.TbImageInfo{Namespace: nsId, CspResourceId: imageKey}
+	image = model.TbImageInfo{Namespace: nsId, CspImageName: imageKey}
 	has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspResourceId) = ?", nsId, imageKey).Get(&image)
 	if err != nil {
 		log.Info().Err(err).Msgf("Failed to get image %s by CspResourceId", imageKey)

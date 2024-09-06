@@ -36,7 +36,7 @@ type SpiderImageInfo struct {
 type TbImageReq struct {
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
-	CspResourceId  string `json:"cspResourceId" validate:"required"`
+	CspImageName   string `json:"cspImageName" validate:"required"`
 	Description    string `json:"description"`
 }
 
@@ -46,10 +46,9 @@ type TbImageInfo struct {
 	Id string `json:"id" example:"aws-ap-southeast-1"`
 	// Uid is universally unique identifier for the object, used for labelSelector
 	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
-	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
-	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
-	// CspResourceId is resource identifier managed by CSP
-	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+
+	// CspImageName is name of the image given by CSP
+	CspImageName string `json:"cspImageName,omitempty" example:"csp-06eb41e14121c550a"`
 
 	// Name is human-readable string to represent the object
 	Name                 string     `json:"name" example:"aws-ap-southeast-1"`
