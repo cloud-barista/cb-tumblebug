@@ -24,7 +24,7 @@ CB-Tumblebug (CB-TB for short) is a system for managing multi-cloud infrastructu
 
 - [Overview](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Overview), [Features](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Features), [Architecture](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Architecture)
 - [Supported Cloud Providers and Resource Types](https://docs.google.com/spreadsheets/d/1idBoaTxEMzuVACKUIMIE9OY1rPO-7yZ0y7Rs1dBG0og/edit?usp=sharing)
-  ![image](https://github.com/user-attachments/assets/7f2d026e-1780-48a7-9494-34ff51da3e76)
+  ![image](https://github.com/user-attachments/assets/7c3a5961-ffbe-4ed1-bc50-f3f445417a96)
   - This is for reference only, and we do not guarantee its functionality. Regular updates are made.
   - The support for Kubernetes is currently mostly a WIP, and even when available, it offers only a limited set of features.
 
