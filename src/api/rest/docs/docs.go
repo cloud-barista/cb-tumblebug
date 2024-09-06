@@ -1079,7 +1079,7 @@ const docTemplate = `{
                 "operationId": "LookupImage",
                 "parameters": [
                     {
-                        "description": "Specify connectionName \u0026 cspResourceId",
+                        "description": "Specify connectionName, cspImageName",
                         "name": "lookupImageReq",
                         "in": "body",
                         "required": true,
@@ -1173,7 +1173,7 @@ const docTemplate = `{
                 "operationId": "LookupSpec",
                 "parameters": [
                     {
-                        "description": "Specify connectionName \u0026 cspResourceId",
+                        "description": "Specify connectionName \u0026 cspSpecNameS",
                         "name": "lookupSpecReq",
                         "in": "body",
                         "required": true,
@@ -6358,7 +6358,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "default",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6504,7 +6504,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "default",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6610,8 +6610,8 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Specify name, connectionName and cspResourceId to register an image object automatically",
-                        "name": "imageId",
+                        "description": "Specify (name, connectionName, cspImageName) to register an image object automatically",
+                        "name": "imageReq",
                         "in": "body",
                         "schema": {
                             "$ref": "#/definitions/model.TbImageReq"
@@ -6662,7 +6662,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "default",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6709,7 +6709,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "default",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6717,7 +6717,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Image ID ({providerName}+{regionName}+{imageName})",
+                        "description": "Image ID ({providerName}+{regionName}+{cspImageName})",
                         "name": "imageId",
                         "in": "path",
                         "required": true
@@ -6769,7 +6769,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "default",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6777,7 +6777,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Image ID ({providerName}+{regionName}+{imageName})",
+                        "description": "Image ID ({providerName}+{regionName}+{cspImageName})",
                         "name": "imageId",
                         "in": "path",
                         "required": true
@@ -6820,7 +6820,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "default",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6828,7 +6828,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Image ID ({providerName}+{regionName}+{imageName})",
+                        "description": "Image ID ({providerName}+{regionName}+{cspImageName})",
                         "name": "imageId",
                         "in": "path",
                         "required": true
@@ -6867,7 +6867,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "default",
+                        "default": "system",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -7351,8 +7351,8 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Specify name, connectionName and cspResourceId to register a spec object automatically",
-                        "name": "specName",
+                        "description": "Specify n(ame, connectionName, cspSpecName) to register a spec object automatically",
+                        "name": "specReq",
                         "in": "body",
                         "schema": {
                             "$ref": "#/definitions/model.TbSpecReq"
@@ -7413,7 +7413,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Spec ID ({providerName}+{regionName}+{specName})",
+                        "description": "Spec ID ({providerName}+{regionName}+{cspSpecName})",
                         "name": "specId",
                         "in": "path",
                         "required": true
@@ -7473,7 +7473,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Spec ID ({providerName}+{regionName}+{specName})",
+                        "description": "Spec ID ({providerName}+{regionName}+{cspSpecName})",
                         "name": "specId",
                         "in": "path",
                         "required": true
@@ -7524,7 +7524,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Spec ID ({providerName}+{regionName}+{specName})",
+                        "description": "Spec ID ({providerName}+{regionName}+{cspSpecName})",
                         "name": "specId",
                         "in": "path",
                         "required": true
@@ -10343,7 +10343,7 @@ const docTemplate = `{
                 "costPerHour": {
                     "$ref": "#/definitions/model.Range"
                 },
-                "cspResourceId": {
+                "cspSpecName": {
                     "type": "string"
                 },
                 "description": {
@@ -11789,6 +11789,11 @@ const docTemplate = `{
         "model.TbChangeK8sNodeGroupAutoscaleSizeRes": {
             "type": "object",
             "properties": {
+                "cspImageName": {
+                    "description": "VM config.",
+                    "type": "string",
+                    "example": "image-01"
+                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
@@ -11799,6 +11804,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
                 },
+                "cspSpecName": {
+                    "type": "string",
+                    "example": "spec-01"
+                },
                 "desiredNodeSize": {
                     "type": "integer",
                     "example": 1
@@ -11807,11 +11816,6 @@ const docTemplate = `{
                     "description": "Id is unique identifier for the object",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
-                },
-                "imageId": {
-                    "description": "VM config.",
-                    "type": "string",
-                    "example": "image-01"
                 },
                 "k8sNodes": {
                     "description": "id for nodes",
@@ -11854,10 +11858,6 @@ const docTemplate = `{
                 "rootDiskType": {
                     "type": "string",
                     "example": "cloud_essd"
-                },
-                "specId": {
-                    "type": "string",
-                    "example": "spec-01"
                 },
                 "sshKeyId": {
                     "type": "string",
@@ -12218,15 +12218,10 @@ const docTemplate = `{
                 "creationDate": {
                     "type": "string"
                 },
-                "cspResourceId": {
-                    "description": "CspResourceId is resource identifier managed by CSP",
+                "cspImageName": {
+                    "description": "CspImageName is name of the image given by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
-                },
-                "cspResourceName": {
-                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
                 },
                 "description": {
                     "type": "string"
@@ -12283,14 +12278,14 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "connectionName",
-                "cspResourceId",
+                "cspImageName",
                 "name"
             ],
             "properties": {
                 "connectionName": {
                     "type": "string"
                 },
-                "cspResourceId": {
+                "cspImageName": {
                     "type": "string"
                 },
                 "description": {
@@ -12534,6 +12529,11 @@ const docTemplate = `{
         "model.TbK8sNodeGroupInfo": {
             "type": "object",
             "properties": {
+                "cspImageName": {
+                    "description": "VM config.",
+                    "type": "string",
+                    "example": "image-01"
+                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
@@ -12544,6 +12544,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
                 },
+                "cspSpecName": {
+                    "type": "string",
+                    "example": "spec-01"
+                },
                 "desiredNodeSize": {
                     "type": "integer",
                     "example": 1
@@ -12552,11 +12556,6 @@ const docTemplate = `{
                     "description": "Id is unique identifier for the object",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
-                },
-                "imageId": {
-                    "description": "VM config.",
-                    "type": "string",
-                    "example": "image-01"
                 },
                 "k8sNodes": {
                     "description": "id for nodes",
@@ -12600,10 +12599,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "cloud_essd"
                 },
-                "specId": {
-                    "type": "string",
-                    "example": "spec-01"
-                },
                 "sshKeyId": {
                     "type": "string",
                     "example": "sshkey-01"
@@ -12627,13 +12622,17 @@ const docTemplate = `{
         "model.TbK8sNodeGroupReq": {
             "type": "object",
             "properties": {
+                "cspImageName": {
+                    "type": "string",
+                    "example": "image-01"
+                },
+                "cspSpecName": {
+                    "type": "string",
+                    "example": "Standard_B2s (temporarily, CSP's Spec Names are valid. It will be upgraded)"
+                },
                 "desiredNodeSize": {
                     "type": "string",
                     "example": "1"
-                },
-                "imageId": {
-                    "type": "string",
-                    "example": "image-01"
                 },
                 "maxNodeSize": {
                     "type": "string",
@@ -12661,10 +12660,6 @@ const docTemplate = `{
                     "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
                     "type": "string",
                     "example": "cloud_essd"
-                },
-                "specId": {
-                    "type": "string",
-                    "example": "Standard_B2s (temporarily, CSP's Spec Names are valid. It will be upgraded)"
                 },
                 "sshKeyId": {
                     "type": "string",
@@ -13367,15 +13362,10 @@ const docTemplate = `{
                 "costPerHour": {
                     "type": "number"
                 },
-                "cspResourceId": {
-                    "description": "CspResourceId is resource identifier managed by CSP",
+                "cspSpecName": {
+                    "description": "CspSpecName is name of the spec given by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
-                },
-                "cspResourceName": {
-                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
                 },
                 "description": {
                     "type": "string"
@@ -13419,7 +13409,7 @@ const docTemplate = `{
                     "example": "aws-ap-southeast-1"
                 },
                 "infraType": {
-                    "description": "vm|k8s|kubernetes|container, etc.",
+                    "description": "InfraType can be one of vm|k8s|kubernetes|container, etc.",
                     "type": "string"
                 },
                 "isAutoGenerated": {
@@ -13483,20 +13473,22 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "connectionName",
-                "cspResourceId",
+                "cspSpecName",
                 "name"
             ],
             "properties": {
                 "connectionName": {
                     "type": "string"
                 },
-                "cspResourceId": {
+                "cspSpecName": {
+                    "description": "CspSpecName is name of the spec given by CSP",
                     "type": "string"
                 },
                 "description": {
                     "type": "string"
                 },
                 "name": {
+                    "description": "Name is human-readable string to represent the object, used to generate Id",
                     "type": "string"
                 }
             }
@@ -13635,8 +13627,8 @@ const docTemplate = `{
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
                 },
-                "cspVNetHandlingId": {
-                    "description": "CspVNetHandlingId is identifier to handle CSP vNet resource",
+                "cspVNetName": {
+                    "description": "CspVNetName is identifier to handle CSP vNet resource",
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
                 },
@@ -13892,7 +13884,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2022-11-10 23:00:00"
                 },
-                "cspImageId": {
+                "cspImageName": {
                     "type": "string"
                 },
                 "cspResourceId": {
@@ -13905,7 +13897,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
                 },
-                "cspSpecId": {
+                "cspSpecName": {
                     "type": "string"
                 },
                 "cspSshKeyId": {
@@ -14520,7 +14512,7 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspResourceId": {
+                "cspImageName": {
                     "type": "string"
                 }
             }

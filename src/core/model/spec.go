@@ -49,11 +49,13 @@ type SpiderGpuInfo struct {
 }
 
 // TbSpecReq is a struct to handle 'Register spec' request toward CB-Tumblebug.
-type TbSpecReq struct { // Tumblebug
+type TbSpecReq struct {
+	// Name is human-readable string to represent the object, used to generate Id
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
-	CspResourceId  string `json:"cspResourceId" validate:"required"`
-	Description    string `json:"description"`
+	// CspSpecName is name of the spec given by CSP
+	CspSpecName string `json:"cspSpecName" validate:"required"`
+	Description string `json:"description"`
 }
 
 // TbSpecInfo is a struct that represents TB spec object.
@@ -62,10 +64,9 @@ type TbSpecInfo struct { // Tumblebug
 	Id string `json:"id" example:"aws-ap-southeast-1"`
 	// Uid is universally unique identifier for the object, used for labelSelector
 	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
-	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
-	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
-	// CspResourceId is resource identifier managed by CSP
-	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+
+	// CspSpecName is name of the spec given by CSP
+	CspSpecName string `json:"cspSpecName,omitempty" example:"csp-06eb41e14121c550a"`
 
 	// Name is human-readable string to represent the object
 	Name           string `json:"name" example:"aws-ap-southeast-1"`
@@ -73,7 +74,7 @@ type TbSpecInfo struct { // Tumblebug
 	ConnectionName string `json:"connectionName,omitempty"`
 	ProviderName   string `json:"providerName,omitempty"`
 	RegionName     string `json:"regionName,omitempty"`
-	// vm|k8s|kubernetes|container, etc.
+	// InfraType can be one of vm|k8s|kubernetes|container, etc.
 	InfraType             string   `json:"infraType,omitempty"`
 	OsType                string   `json:"osType,omitempty"`
 	VCPU                  uint16   `json:"vCPU,omitempty"`
@@ -115,7 +116,7 @@ type FilterSpecsByRangeRequest struct {
 	ConnectionName      string `json:"connectionName"`
 	ProviderName        string `json:"providerName"`
 	RegionName          string `json:"regionName"`
-	CspResourceId       string `json:"cspResourceId"`
+	CspSpecName         string `json:"cspSpecName"`
 	InfraType           string `json:"infraType"`
 	OsType              string `json:"osType"`
 	VCPU                Range  `json:"vCPU"`

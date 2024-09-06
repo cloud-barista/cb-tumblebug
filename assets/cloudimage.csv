@@ -1,4 +1,4 @@
-ProviderName,regionName,cspResourceId,OsType,description,supportedInstance,infraType
+providerName,regionName,cspImageName,osType,description,supportedInstance,infraType
 AWS,ap-southeast-1,ami-061eb2b23f9f8839c,Ubuntu 18.04,,,vm
 AWS,ap-northeast-1,ami-06b060f6dd92163e3,Ubuntu 20.04,Ubuntu Server 20.04 LTS (HVM) with SQL Server 2022 Standard,,vm
 AWS,ap-southeast-1,ami-02ee763250491e04a,Ubuntu 22.04,,,vm

@@ -1436,8 +1436,8 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 	vmInfoData.RootDeviceName = callResult.RootDeviceName
 	vmInfoData.NetworkInterface = callResult.NetworkInterface
 
-	vmInfoData.CspSpecId = callResult.VMSpecName
-	vmInfoData.CspImageId = callResult.ImageIId.SystemId
+	vmInfoData.CspSpecName = callResult.VMSpecName
+	vmInfoData.CspImageName = callResult.ImageIId.SystemId
 	vmInfoData.CspVNetId = callResult.VpcIID.SystemId
 	vmInfoData.CspSubnetId = callResult.SubnetIID.SystemId
 	vmInfoData.CspSshKeyId = callResult.KeyPairIId.SystemId

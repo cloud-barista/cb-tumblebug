@@ -253,7 +253,7 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 	subnetInfo.ResourceType = resourceType
 	subnetInfo.ConnectionName = vNetInfo.ConnectionName
 	subnetInfo.CspVNetId = vNetInfo.CspResourceId
-	subnetInfo.CspVNetHandlingId = vNetInfo.CspResourceName
+	subnetInfo.CspVNetName = vNetInfo.CspResourceName
 
 	// Set status to 'Configuring'
 	subnetInfo.Status = string(NetworkOnConfiguring)
@@ -608,7 +608,7 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 	spReqt.ConnectionName = subnetInfo.ConnectionName
 
 	// API to delete a subnet
-	url := fmt.Sprintf("%s/vpc/%s/subnet/%s", model.SpiderRestUrl, subnetInfo.CspVNetHandlingId, subnetInfo.CspResourceName)
+	url := fmt.Sprintf("%s/vpc/%s/subnet/%s", model.SpiderRestUrl, subnetInfo.CspVNetName, subnetInfo.CspResourceName)
 
 	var spResp spiderBooleanInfoResp
 
@@ -767,7 +767,7 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubne
 	subnetInfo.Uid = uid
 	subnetInfo.ConnectionName = vNetInfo.ConnectionName
 	subnetInfo.CspVNetId = vNetInfo.CspResourceId
-	subnetInfo.CspVNetHandlingId = vNetInfo.CspResourceName
+	subnetInfo.CspVNetName = vNetInfo.CspResourceName
 
 	// Set status to 'Registering'
 	subnetInfo.Status = string(NetworkOnRegistering)
@@ -1012,7 +1012,7 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 	// [Via Spider] Deregister the subnet
 	spReqt := spiderSubnetUnregisterRequest{}
 	spReqt.ConnectionName = subnetInfo.ConnectionName
-	spReqt.ReqInfo.VPCName = subnetInfo.CspVNetHandlingId
+	spReqt.ReqInfo.VPCName = subnetInfo.CspVNetName
 
 	// API to deregister subnet
 	url := fmt.Sprintf("%s/regsubne/%s", model.SpiderRestUrl, subnetInfo.CspResourceName)

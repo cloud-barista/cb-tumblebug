@@ -37,7 +37,7 @@ import (
 // @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithCspResourceId)
 // @Param nsId path string true "Namespace ID" default(system)
 // @Param specInfo body model.TbSpecInfo false "Specify details of a spec object (vCPU, memoryGiB, ...) manually"
-// @Param specName body model.TbSpecReq false "Specify name, connectionName and cspResourceId to register a spec object automatically"
+// @Param specReq body model.TbSpecReq false "Specify n(ame, connectionName, cspSpecName) to register a spec object automatically"
 // @Param update query boolean false "Force update to existing spec object" default(false)
 // @Success 200 {object} model.TbSpecInfo
 // @Failure 404 {object} model.SimpleMsg
@@ -68,7 +68,7 @@ func RestPostSpec(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, content)
 
 	} else { // if action == "registerWithCspResourceId" { // The default mode.
-		log.Debug().Msg("[Registering Spec with CspResourceId]")
+		log.Debug().Msg("[Registering Spec with cspSpecName]")
 		u := &model.TbSpecReq{}
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
@@ -92,7 +92,7 @@ func RestPostSpec(c echo.Context) error {
 // @Produce  json
 // @Param specInfo body model.TbSpecInfo true "Details for an spec object"
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param specId path string true "Spec ID ({providerName}+{regionName}+{specName})"
+// @Param specId path string true "Spec ID ({providerName}+{regionName}+{cspSpecName})"
 // @Success 200 {object} model.TbSpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -129,7 +129,7 @@ type RestLookupSpecRequest struct {
 // @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
-// @Param lookupSpecReq body RestLookupSpecRequest true "Specify connectionName & cspResourceId"
+// @Param lookupSpecReq body RestLookupSpecRequest true "Specify connectionName & cspSpecNameS"
 // @Success 200 {object} model.SpiderSpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -268,7 +268,7 @@ func RestFilterSpecsByRange(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param specId path string true "Spec ID ({providerName}+{regionName}+{specName})"
+// @Param specId path string true "Spec ID ({providerName}+{regionName}+{cspSpecName})"
 // @Success 200 {object} model.TbSpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -297,7 +297,7 @@ func RestGetSpec(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param specId path string true "Spec ID ({providerName}+{regionName}+{specName})"
+// @Param specId path string true "Spec ID ({providerName}+{regionName}+{cspSpecName})"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/spec/{specId} [delete]

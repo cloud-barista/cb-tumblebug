@@ -55,7 +55,7 @@ func ConvertSpiderSpecToTumblebugSpec(spiderSpec model.SpiderSpecInfo) (model.Tb
 	tumblebugSpec := model.TbSpecInfo{}
 
 	tumblebugSpec.Name = spiderSpec.Name
-	tumblebugSpec.CspResourceId = spiderSpec.Name
+	tumblebugSpec.CspSpecName = spiderSpec.Name
 	tumblebugSpec.RegionName = spiderSpec.Region
 	tempUint64, _ := strconv.ParseUint(spiderSpec.VCpu.Count, 10, 16)
 	tumblebugSpec.VCPU = uint16(tempUint64)
@@ -229,16 +229,16 @@ func RegisterSpecWithCspResourceId(nsId string, u *model.TbSpecReq, update bool)
 		return content, err
 	}
 
-	res, err := LookupSpec(u.ConnectionName, u.CspResourceId)
+	res, err := LookupSpec(u.ConnectionName, u.CspSpecName)
 	if err != nil {
-		log.Error().Err(err).Msgf("Cannot LookupSpec ConnectionName(%s), CspResourceId(%s)", u.ConnectionName, u.CspResourceId)
+		log.Error().Err(err).Msgf("Cannot LookupSpec ConnectionName(%s), CspResourceId(%s)", u.ConnectionName, u.CspSpecName)
 		return content, err
 	}
 
 	content.Namespace = nsId
 	content.Id = u.Name
 	content.Name = u.Name
-	content.CspResourceId = res.Name
+	content.CspSpecName = res.Name
 	content.ConnectionName = u.ConnectionName
 	content.AssociatedObjectList = []string{}
 	tempUint64, _ := strconv.ParseUint(res.VCpu.Count, 10, 16)
@@ -337,7 +337,7 @@ func GetSpec(nsId string, specKey string) (model.TbSpecInfo, error) {
 	}
 
 	// ex: img-487zeit5
-	spec = model.TbSpecInfo{Namespace: nsId, CspResourceId: specKey}
+	spec = model.TbSpecInfo{Namespace: nsId, CspSpecName: specKey}
 	has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspResourceId) = ?", nsId, specKey).Get(&spec)
 	if err != nil {
 		log.Info().Err(err).Msgf("Failed to get spec %s by CspResourceId", specKey)
