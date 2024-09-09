@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 	"unicode"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -110,15 +111,23 @@ func RecommendVm(nsId string, plan model.DeploymentPlan) ([]model.TbSpecInfo, er
 	// Filtering
 	log.Debug().Msg("[Filtering specs]")
 
+	startTime := time.Now()
 	filteredSpecs, err := resource.FilterSpecsByRange(nsId, *u)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return []model.TbSpecInfo{}, err
 	}
+	elapsedTime := time.Since(startTime)
+	log.Info().
+		Int("filteredItemCount", len(filteredSpecs)).
+		Dur("elapsedTime", elapsedTime).
+		Msg("Filtering complete")
+
 	if len(filteredSpecs) == 0 {
 		return []model.TbSpecInfo{}, nil
 	}
+
 	// // sorting based on VCPU and MemoryGiB
 	// sort.Slice(filteredSpecs, func(i, j int) bool {
 	// 	// sort based on VCPU first
@@ -133,6 +142,7 @@ func RecommendVm(nsId string, plan model.DeploymentPlan) ([]model.TbSpecInfo, er
 	log.Debug().Msg("[Prioritizing specs]")
 	prioritySpecs := []model.TbSpecInfo{}
 
+	startTime = time.Now()
 	for _, v := range plan.Priority.Policy {
 		metric := v.Metric
 
@@ -155,6 +165,11 @@ func RecommendVm(nsId string, plan model.DeploymentPlan) ([]model.TbSpecInfo, er
 	if plan.Priority.Policy == nil {
 		prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
 	}
+
+	elapsedTime = time.Since(startTime)
+	log.Info().
+		Dur("elapsedTime", elapsedTime).
+		Msg("Sorting complete")
 
 	// limit the number of items in result list
 	result := []model.TbSpecInfo{}

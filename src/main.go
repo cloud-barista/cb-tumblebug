@@ -146,6 +146,11 @@ func init() {
 		log.Info().Msg("Table customImage set successfully..")
 	}
 
+	err = addIndexes()
+	if err != nil {
+		log.Error().Err(err).Msg("Cannot add indexes to the tables (ORM)")
+	}
+
 	setConfig()
 
 	_, err = common.GetNs(model.DefaultNamespace)
@@ -361,6 +366,37 @@ func setConfig() {
 	//fmt.Printf("RuntimeLatancyMap: %v\n\n", common.RuntimeLatancyMap)
 	//fmt.Printf("[RuntimeLatancyMapIndex]\n %v\n", common.RuntimeLatancyMapIndex)
 
+}
+
+// addIndexes adds indexes to the tables for faster search
+func addIndexes() error {
+
+	_, err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_namespace ON tb_spec_info (Namespace)")
+	if err != nil {
+		return err
+	}
+
+	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_vcpu ON tb_spec_info (VCPU)")
+	if err != nil {
+		return err
+	}
+
+	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_memorygib ON tb_spec_info (MemoryGiB)")
+	if err != nil {
+		return err
+	}
+
+	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_cspspecname ON tb_spec_info (CspSpecName)")
+	if err != nil {
+		return err
+	}
+
+	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_costperhour ON tb_spec_info (CostPerHour)")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Main Body
