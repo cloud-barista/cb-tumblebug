@@ -392,12 +392,19 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]
 		}
 	}
 
+	startTime := time.Now()
+
 	var specs []model.TbSpecInfo
 	err := session.Find(&specs)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to execute query")
 		return nil, err
 	}
+
+	elapsedTime := time.Since(startTime)
+	log.Info().
+		Dur("elapsedTime", elapsedTime).
+		Msg("ORM:session.Find(&specs)")
 
 	return specs, nil
 }
