@@ -15,23 +15,46 @@ function CallTB() {
 	# IPv4CIDR01="10.1.0.0/18"
 	# IPv4CIDR02="10.1.64.0/18"
 
-    resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet -H 'Content-Type: application/json' -d @- <<EOF
-        {
-			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"cidrBlock": "${CidrBlock}",
-			"subnetInfoList": [ {
-				"Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-				"IPv4_CIDR": "${IPv4CIDR01}"
-			}, {
-				"Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}-01",
-				"IPv4_CIDR": "${IPv4CIDR02}"
-			} ]
-		}
+	ZONE1=""
+	ZONE2=""
+	if [ "${CSP}" == "aws" ]; then
+		ZONE1=$(cat <<-END
+		,
+		"Zone": "${RegionNativeName[$INDEX,$REGION]}a"
+		
+END
+		);
+		ZONE2=$(cat <<-END
+		,
+		"Zone": "${RegionNativeName[$INDEX,$REGION]}b"
+END
+		);
+	fi
+
+	req=$(cat << EOF
+	{
+		"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
+		"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
+		"cidrBlock": "${CidrBlock}",
+		"subnetInfoList": [ {
+			"Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
+			"IPv4_CIDR": "${IPv4CIDR01}"
+			${ZONE1}
+		}, {
+			"Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}-01",
+			"IPv4_CIDR": "${IPv4CIDR02}"
+			${ZONE2}
+		} ]
+	}
 EOF
-    ); echo ${resp} | jq ''
-    echo ""
+	); echo ${req} | jq ''
+
+	resp=$(
+        	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet -H 'Content-Type: application/json' -d @- <<EOF
+			${req}
+EOF
+	); echo ${resp} | jq ''
+	echo ""
 }
 
 #function create_vNet() {
@@ -64,7 +87,7 @@ EOF
 	else
 		echo ""
 		
-		ResourceRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
+		ResourceRegionNativeName=${RegionNativeName[$INDEX,$REGION]}
 
 		CallTB
 

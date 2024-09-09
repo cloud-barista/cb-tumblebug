@@ -68,7 +68,7 @@ function test_sequence_allcsp_resource() {
 	echo "[Resource:${ResourceRegionNativeName}(${SECONDS}s)] ${_self} (Resource) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
-	cat ./executionStatus
+	#cat ./executionStatus
 	cp ./executionStatus ./executionStatus.back
 	echo ""
 
@@ -100,7 +100,7 @@ if [ "${INDEX}" == "0" ]; then
 			REGION=$cspj
 			echo $CSP
 			echo $REGION
-			echo ${RegionNativeName[1,1]}
+			echo ${RegionNativeName[$cspi,$cspj]}
 			ResourceRegionNativeName=${RegionNativeName[$cspi,$cspj]}
 			echo "- Create Resource in ${ResourceRegionNativeName}"		
 

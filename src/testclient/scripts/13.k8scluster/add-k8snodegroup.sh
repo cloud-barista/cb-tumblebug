@@ -55,7 +55,7 @@ req=$(cat << EOF
 	{
 		"name": "${K8SNODEGROUPNAME}",
 		"imageId": "${NODEIMAGEID}",
-                "specId": "${SPEC_NAME[$INDEX,$REGION]}",
+		"specId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
 		"rootDiskType": "${RootDiskType}",
 		"rootDiskSize": "${RootDiskSize}",
 		"sshKeyId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",

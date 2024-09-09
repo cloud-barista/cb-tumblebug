@@ -8,7 +8,7 @@ function CallTB() {
 		{ 
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}", 
 			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-			"cspResourceId": "${IMAGE_NAME[$INDEX,$REGION]}",
+			"cspImageName": "${IMAGE_NAME[$INDEX,$REGION]}",
 			"description": "Canonical, Ubuntu, 18.04 LTS, amd64 bionic",
 			"guestOS": "Ubuntu"
 		}

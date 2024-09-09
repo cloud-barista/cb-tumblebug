@@ -117,7 +117,7 @@ function clean_sequence() {
 	sed -i "/(Resource) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
 	echo ""
 	echo "[Executed Command List]"
-	cat ./executionStatus
+	#cat ./executionStatus
 	cp ./executionStatus ./executionStatus.back
 	echo ""
 

@@ -97,5 +97,5 @@ printElapsed $@
 
 echo ""
 echo "[Executed Command List]"
-cat ./executionStatus
+#cat ./executionStatus
 echo ""

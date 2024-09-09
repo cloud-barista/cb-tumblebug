@@ -169,23 +169,21 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 		}
 
 		spImgName := "" // Some CSPs do not require ImageName for creating a k8s cluster
-		if v.CspImageName == "" || v.CspImageName == "default" {
+		if v.ImageId == "" || v.ImageId == "default" {
 			spImgName = ""
 		} else {
-			spImgName, err = GetCspResourceName(nsId, model.StrImage, v.CspImageName)
+			spImgName, err = GetCspResourceName(nsId, model.StrImage, v.ImageId)
 			if spImgName == "" {
 				log.Err(err).Msg("Failed to Create a K8sCluster")
 				return emptyObj, err
 			}
 		}
 
-		// specInfo, err := GetSpec(model.SystemCommonNs, v.SpecId)
-		// if err != nil {
-		// 	log.Err(err).Msg("Failed to Create a K8sCluster")
-		// 	return emptyObj, err
-		// }
-		// spSpecName := specInfo.CspResourceId
-		spSpecName := v.CspSpecName
+		spSpecName, err := GetCspResourceName(nsId, model.StrSpec, v.SpecId)
+		if err != nil {
+			log.Err(err).Msg("Failed to Create a K8sCluster")
+			return emptyObj, err
+		}
 
 		spKpName, err := GetCspResourceName(nsId, model.StrSSHKey, v.SshKeyId)
 		if spKpName == "" {
@@ -258,10 +256,17 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 	 * Extract SpiderClusterInfo from Response & Build model.TbK8sClusterInfo object
 	 */
 
-	tbK8sCInfo := convertSpiderClusterInfoToTbK8sClusterInfo(&spClusterRes.ClusterInfo, reqId, req.ConnectionName, req.Description)
-	tbK8sCInfo.Id = reqId
-	tbK8sCInfo.Uid = uid
-	tbK8sCInfo.ResourceType = model.StrK8s
+	tbK8sCInfo := model.TbK8sClusterInfo{
+		ResourceType:            model.StrK8s,
+		Id:                      reqId,
+		Uid:                     uid,
+		CspResourceName:         spClusterRes.ClusterInfo.IId.NameId,
+		CspResourceId:           spClusterRes.ClusterInfo.IId.SystemId,
+		Name:                    reqId,
+		ConnectionName:          req.ConnectionName,
+		Description:             req.Description,
+		CspViewK8sClusterDetail: spClusterRes.ClusterInfo,
+	}
 
 	if option == "register" && req.CspResourceId == "" {
 		tbK8sCInfo.SystemLabel = "Registered from CB-Spider resource"
@@ -304,17 +309,17 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 		"sys.id":              tbK8sCInfo.Id,
 		"sys.name":            tbK8sCInfo.Name,
 		"sys.uid":             tbK8sCInfo.Uid,
-		"sys.version":         tbK8sCInfo.Version,
+		"sys.version":         tbK8sCInfo.CspViewK8sClusterDetail.Version,
 		"sys.cspResourceId":   tbK8sCInfo.CspResourceId,
 		"sys.cspResourceName": tbK8sCInfo.CspResourceName,
 		"sys.description":     tbK8sCInfo.Description,
-		"sys.createdTime":     tbK8sCInfo.CreatedTime.String(),
+		"sys.createdTime":     tbK8sCInfo.CspViewK8sClusterDetail.CreatedTime.String(),
 		"sys.connectionName":  tbK8sCInfo.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrK8s, uid, k, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return tbK8sCInfo, err
+		return storedTbK8sCInfo, err
 	}
 
 	return storedTbK8sCInfo, nil
@@ -402,21 +407,19 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 	}
 
 	spImgName := "" // Some CSPs do not require ImageName for creating a cluster
-	if u.CspImageName != "" {
-		spImgName, err = GetCspResourceName(nsId, model.StrImage, u.CspImageName)
+	if u.ImageId == "" || u.ImageId == "default" {
+		spImgName, err = GetCspResourceName(nsId, model.StrImage, u.ImageId)
 		if spImgName == "" {
 			log.Err(err).Msg("Failed to Add K8sNodeGroup")
 			return emptyObj, err
 		}
 	}
 
-	// specInfo, err := GetSpec(model.SystemCommonNs, u.SpecId)
-	// if err != nil {
-	// 	log.Err(err).Msg("Failed to Add K8sNodeGroup")
-	// 	return emptyObj, err
-	// }
-	// spSpecName := specInfo.CspResourceId
-	spSpecName := u.CspSpecName
+	spSpecName, err := GetCspResourceName(nsId, model.StrSpec, u.SpecId)
+	if err != nil {
+		log.Err(err).Msg("Failed to Create a K8sCluster")
+		return emptyObj, err
+	}
 
 	spKpName, err := GetCspResourceName(nsId, model.StrSSHKey, u.SshKeyId)
 	if spKpName == "" {
@@ -471,7 +474,17 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 	 * Extract SpiderClusterInfo from Response & Build model.TbK8sClusterInfo object
 	 */
 
-	newTbK8sCInfo := convertSpiderClusterInfoToTbK8sClusterInfo(&spClusterRes.ClusterInfo, oldTbK8sCInfo.Id, oldTbK8sCInfo.ConnectionName, oldTbK8sCInfo.Description)
+	newTbK8sCInfo := model.TbK8sClusterInfo{
+		ResourceType:            model.StrK8s,
+		Id:                      oldTbK8sCInfo.Id,
+		Uid:                     oldTbK8sCInfo.Uid,
+		CspResourceName:         oldTbK8sCInfo.CspResourceName,
+		CspResourceId:           oldTbK8sCInfo.CspResourceId,
+		Name:                    oldTbK8sCInfo.Name,
+		ConnectionName:          oldTbK8sCInfo.ConnectionName,
+		Description:             oldTbK8sCInfo.Description,
+		CspViewK8sClusterDetail: spClusterRes.ClusterInfo,
+	}
 
 	/*
 	 * Put/Get model.TbK8sClusterInfo to/from kvstore
@@ -760,7 +773,9 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 	}
 
 	var tbK8sCAutoscaleSizeRes model.TbChangeK8sNodeGroupAutoscaleSizeRes
-	tbK8sCAutoscaleSizeRes.TbK8sNodeGroupInfo = convertSpiderNodeGroupInfoToTbK8sNodeGroupInfo(&spChangeAutoscaleSizeRes.NodeGroupInfo)
+	tbK8sCAutoscaleSizeRes.TbK8sNodeGroupInfo = model.TbK8sNodeGroupInfo{
+		CspViewK8sNodeGroupDetail: spChangeAutoscaleSizeRes.NodeGroupInfo,
+	}
 
 	return tbK8sCAutoscaleSizeRes, nil
 }
@@ -856,21 +871,33 @@ func GetK8sCluster(nsId string, k8sClusterId string) (model.TbK8sClusterInfo, er
 		return emptyObj, err
 	}
 
-	tbK8sCInfo := convertSpiderClusterInfoToTbK8sClusterInfo(&spClusterRes.ClusterInfo, k8sClusterId, storedTbK8sCInfo.ConnectionName, storedTbK8sCInfo.Description)
+	tbK8sCInfo := model.TbK8sClusterInfo{
+		ResourceType:            model.StrK8s,
+		Id:                      storedTbK8sCInfo.Id,
+		Uid:                     storedTbK8sCInfo.Uid,
+		CspResourceName:         storedTbK8sCInfo.CspResourceName,
+		CspResourceId:           storedTbK8sCInfo.CspResourceId,
+		Name:                    storedTbK8sCInfo.Name,
+		ConnectionName:          storedTbK8sCInfo.ConnectionName,
+		Description:             storedTbK8sCInfo.Description,
+		CspViewK8sClusterDetail: spClusterRes.ClusterInfo,
+	}
 
 	/*
 	 * FIXME: Do not compare, just store?
 	 * Compare tbK8sCInfo with storedTbK8sCInfo
 	 */
-	if !isEqualTbK8sClusterInfoExceptStatus(storedTbK8sCInfo, tbK8sCInfo) {
-		err := fmt.Errorf("The k8s cluster " + k8sClusterId + " has been changed something.")
-		log.Err(err).Msg("Failed to Get K8sCluster")
-		return emptyObj, err
-	}
-
+	/*
+		if !isEqualTbK8sClusterInfoExceptStatus(storedTbK8sCInfo, tbK8sCInfo) {
+			err := fmt.Errorf("The k8s cluster " + k8sClusterId + " has been changed something.")
+			log.Err(err).Msg("Failed to Get K8sCluster")
+			return emptyObj, err
+		}
+	*/
 	return tbK8sCInfo, nil
 }
 
+/*
 func isEqualTbK8sClusterInfoExceptStatus(info1 model.TbK8sClusterInfo, info2 model.TbK8sClusterInfo) bool {
 
 	// FIX: now compare some fields only
@@ -888,6 +915,7 @@ func isEqualTbK8sClusterInfoExceptStatus(info1 model.TbK8sClusterInfo, info2 mod
 
 	return true
 }
+*/
 
 // CheckK8sCluster returns the existence of the TB K8sCluster object in bool form.
 func CheckK8sCluster(nsId string, k8sClusterId string) (bool, error) {
@@ -1284,7 +1312,17 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.TbUpgradeK8sCl
 	 * Extract SpiderClusterInfo from Response & Build model.TbK8sClusterInfo object
 	 */
 
-	newTbK8sCInfo := convertSpiderClusterInfoToTbK8sClusterInfo(&spClusterRes.ClusterInfo, oldTbK8sCInfo.Id, oldTbK8sCInfo.ConnectionName, oldTbK8sCInfo.Description)
+	newTbK8sCInfo := model.TbK8sClusterInfo{
+		ResourceType:            model.StrK8s,
+		Id:                      oldTbK8sCInfo.Id,
+		Uid:                     oldTbK8sCInfo.Uid,
+		CspResourceName:         oldTbK8sCInfo.CspResourceName,
+		CspResourceId:           oldTbK8sCInfo.CspResourceId,
+		Name:                    oldTbK8sCInfo.Name,
+		ConnectionName:          oldTbK8sCInfo.ConnectionName,
+		Description:             oldTbK8sCInfo.Description,
+		CspViewK8sClusterDetail: spClusterRes.ClusterInfo,
+	}
 
 	/*
 	 * Put/Get model.TbK8sClusterInfo to/from kvstore
@@ -1316,6 +1354,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.TbUpgradeK8sCl
 	return storedTbK8sCInfo, nil
 }
 
+/*
 func convertSpiderNetworkInfoToTbK8sClusterNetworkInfo(spNetworkInfo model.SpiderNetworkInfo) model.TbK8sClusterNetworkInfo {
 	tbVNetId := spNetworkInfo.VpcIID.SystemId
 
@@ -1464,6 +1503,7 @@ func convertSpiderNodeGroupStatusToTbK8sNodeGroupStatus(spNodeGroupStatus model.
 
 	return model.TbK8sNodeGroupInactive
 }
+*/
 
 // checkK8sClusterEnablement returns the enablement status(nil or error) for K8sCluster related to Connection.
 func checkK8sClusterEnablement(connectionName string) error {
