@@ -18,6 +18,8 @@ import subprocess
 import yaml
 import json
 import requests
+import shutil
+
 
 nominatim_base_url = 'https://nominatim.openstreetmap.org/search'
 
@@ -40,10 +42,10 @@ csp_connection_names = {
     'ibm': 'ibm-us-east',
     'alibaba': 'alibaba-us-east-1',
     'tencent': 'tencent-ap-singapore',
-    'ncp': 'ncp-kr-kr-1',
+    'ncp': 'ncp-kr',
     'ncpvpc': 'ncpvpc-kr',
-    'ktcloud': 'ktcloud-kor-central-a',
-    'ktcloudvpc': 'ktcloudvpc-kr-dx-m1',
+    'ktcloud': 'ktcloud-kor-central',
+    'ktcloudvpc': 'ktcloudvpc-kr1',
     'nhncloud': 'nhncloud-kr1'
     # Add more CSPs here
 }
@@ -79,15 +81,16 @@ def fetch_regions_and_zones_from_spider(csp, region_zones):
         for region_info in regions_info:
             region_name = region_info['Name']
             print(f"{region_name}:")
-            if region_info['ZoneList'] is not None: 
-                zones = [zone['Name'] for zone in region_info['ZoneList']]
+            zone_list = region_info.get('ZoneList', None)
+            if zone_list is not None: 
+                zones = [zone['Name'] for zone in zone_list]
                 zones.sort()
             else:
                 zones = [] 
             region_zones[csp][region_name] = zones
             print(f"{zones}")
     else:
-        print(f"Failed to fetch GCP regions and zones: {response.text}")
+        print(f"Failed to fetch {csp} regions and zones: {response.text}")
     return region_zones
 
 
@@ -140,6 +143,12 @@ def fetch_location_details(display_name):
 
 # Fetch region description using csp CLI
 def fetch_region_description(region_name):
+
+    # Check if AWS CLI is installed
+    if shutil.which('aws') is None:
+        print(f"AWS CLI is not installed. Cannot fetch region description for {region_name}.")
+        return f"No description available for {region_name}"
+
     try:
         result = subprocess.run(
             ['aws', 'ssm', 'get-parameters-by-path', '--path', f'/aws/service/global-infrastructure/regions/{region_name}', '--query', "Parameters[?Name.contains(@,`longName`)].Value", '--output', 'text'],
@@ -233,7 +242,7 @@ def main():
     for csp in target_csp:
         region_zones = fetch_regions_and_zones_from_spider(csp, region_zones)
     
-    region_zones = fetch_regions_and_zones('aws', region_zones)
+    # region_zones = fetch_regions_and_zones('aws', region_zones)
 
     compare_and_update_yaml(cloud_info, output_file_path, region_zones)
 
