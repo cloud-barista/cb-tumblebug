@@ -1285,6 +1285,63 @@ definitions:
       sites:
         $ref: '#/definitions/model.sites'
     type: object
+  model.SpiderAccessInfo:
+    properties:
+      endpoint:
+        description: ex) https://1.2.3.4:6443
+        type: string
+      kubeconfig:
+        type: string
+    type: object
+  model.SpiderAddonsInfo:
+    properties:
+      keyValueList:
+        items:
+          $ref: '#/definitions/model.KeyValue'
+        type: array
+    type: object
+  model.SpiderClusterInfo:
+    properties:
+      accessInfo:
+        $ref: '#/definitions/model.SpiderAccessInfo'
+      addons:
+        $ref: '#/definitions/model.SpiderAddonsInfo'
+      createdTime:
+        type: string
+      iid:
+        allOf:
+        - $ref: '#/definitions/model.IID'
+        description: '{NameId, SystemId}'
+      keyValueList:
+        items:
+          $ref: '#/definitions/model.KeyValue'
+        type: array
+      network:
+        $ref: '#/definitions/model.SpiderNetworkInfo'
+      nodeGroupList:
+        items:
+          $ref: '#/definitions/model.SpiderNodeGroupInfo'
+        type: array
+      status:
+        $ref: '#/definitions/model.SpiderClusterStatus'
+      version:
+        description: Kubernetes Version, ex) 1.23.3
+        type: string
+    type: object
+  model.SpiderClusterStatus:
+    enum:
+    - Creating
+    - Active
+    - Inactive
+    - Updating
+    - Deleting
+    type: string
+    x-enum-varnames:
+    - SpiderClusterCreating
+    - SpiderClusterActive
+    - SpiderClusterInactive
+    - SpiderClusterUpdating
+    - SpiderClusterDeleting
   model.SpiderGpuInfo:
     properties:
       count:
@@ -1323,6 +1380,79 @@ definitions:
           $ref: '#/definitions/model.SpiderImageInfo'
         type: array
     type: object
+  model.SpiderNetworkInfo:
+    properties:
+      keyValueList:
+        items:
+          $ref: '#/definitions/model.KeyValue'
+        type: array
+      securityGroupIIDs:
+        items:
+          $ref: '#/definitions/model.IID'
+        type: array
+      subnetIIDs:
+        items:
+          $ref: '#/definitions/model.IID'
+        type: array
+      vpcIID:
+        allOf:
+        - $ref: '#/definitions/model.IID'
+        description: '{NameId, SystemId}'
+    type: object
+  model.SpiderNodeGroupInfo:
+    properties:
+      desiredNodeSize:
+        type: integer
+      iid:
+        allOf:
+        - $ref: '#/definitions/model.IID'
+        description: '{NameId, SystemId}'
+      imageIID:
+        allOf:
+        - $ref: '#/definitions/model.IID'
+        description: VM config.
+      keyPairIID:
+        $ref: '#/definitions/model.IID'
+      keyValueList:
+        items:
+          $ref: '#/definitions/model.KeyValue'
+        type: array
+      maxNodeSize:
+        type: integer
+      minNodeSize:
+        type: integer
+      nodes:
+        items:
+          $ref: '#/definitions/model.IID'
+        type: array
+      onAutoScaling:
+        description: Scaling config.
+        type: boolean
+      rootDiskSize:
+        description: '"", "default", "50", "1000" (GB)'
+        type: string
+      rootDiskType:
+        description: '"SSD(gp2)", "Premium SSD", ...'
+        type: string
+      status:
+        $ref: '#/definitions/model.SpiderNodeGroupStatus'
+      vmspecName:
+        type: string
+    type: object
+  model.SpiderNodeGroupStatus:
+    enum:
+    - Creating
+    - Active
+    - Inactive
+    - Updating
+    - Deleting
+    type: string
+    x-enum-varnames:
+    - SpiderNodeGroupCreating
+    - SpiderNodeGroupActive
+    - SpiderNodeGroupInactive
+    - SpiderNodeGroupUpdating
+    - SpiderNodeGroupDeleting
   model.SpiderRegionZoneInfo:
     properties:
       availableZoneList:
@@ -1454,10 +1584,6 @@ definitions:
     type: object
   model.TbChangeK8sNodeGroupAutoscaleSizeRes:
     properties:
-      cspImageName:
-        description: VM config.
-        example: image-01
-        type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
         example: csp-06eb41e14121c550a
@@ -1467,55 +1593,16 @@ definitions:
           is internally used to handle the resource.
         example: we12fawefadf1221edcf
         type: string
-      cspSpecName:
-        example: spec-01
-        type: string
-      desiredNodeSize:
-        example: 1
-        type: integer
+      cspViewK8sNodeGroupDetail:
+        $ref: '#/definitions/model.SpiderNodeGroupInfo'
       id:
         description: Id is unique identifier for the object
         example: aws-ap-southeast-1
         type: string
-      k8sNodes:
-        description: id for nodes
-        example:
-        - node-01
-        items:
-          type: string
-        type: array
-      keyValueList:
-        items:
-          $ref: '#/definitions/model.KeyValue'
-        type: array
-      maxNodeSize:
-        example: 3
-        type: integer
-      minNodeSize:
-        example: 1
-        type: integer
       name:
         description: Name is human-readable string to represent the object
         example: aws-ap-southeast-1
         type: string
-      onAutoScaling:
-        description: Scaling config.
-        example: true
-        type: boolean
-      rootDiskSize:
-        example: "40"
-        type: string
-      rootDiskType:
-        example: cloud_essd
-        type: string
-      sshKeyId:
-        example: sshkey-01
-        type: string
-      status:
-        allOf:
-        - $ref: '#/definitions/model.TbK8sNodeGroupStatus'
-        description: '---'
-        example: Creating
       uid:
         description: Uid is universally unique identifier for the object, used for
           labelSelector
@@ -1830,37 +1917,10 @@ definitions:
     - cspImageName
     - name
     type: object
-  model.TbK8sAccessInfo:
-    properties:
-      endpoint:
-        example: http://1.2.3.4:6443
-        type: string
-      kubeconfig:
-        example: |-
-          apiVersion: v1
-          clusters:
-          - cluster:
-           certificate-authority-data: LS0...
-        type: string
-    type: object
-  model.TbK8sAddonsInfo:
-    properties:
-      keyValueList:
-        items:
-          $ref: '#/definitions/model.KeyValue'
-        type: array
-    type: object
   model.TbK8sClusterInfo:
     properties:
-      accessInfo:
-        $ref: '#/definitions/model.TbK8sAccessInfo'
-      addons:
-        $ref: '#/definitions/model.TbK8sAddonsInfo'
       connectionName:
         example: alibaba-ap-northeast-2
-        type: string
-      createdTime:
-        example: "1970-01-01T00:00:00.00Z"
         type: string
       cspResourceId:
         description: CspResourceId is resource identifier managed by CSP
@@ -1871,6 +1931,8 @@ definitions:
           is internally used to handle the resource.
         example: we12fawefadf1221edcf
         type: string
+      cspViewK8sClusterDetail:
+        $ref: '#/definitions/model.SpiderClusterInfo'
       description:
         example: My K8sCluster
         type: string
@@ -1878,28 +1940,13 @@ definitions:
         description: Id is unique identifier for the object
         example: aws-ap-southeast-1
         type: string
-      k8sNodeGroupList:
-        items:
-          $ref: '#/definitions/model.TbK8sNodeGroupInfo'
-        type: array
-      keyValueList:
-        items:
-          $ref: '#/definitions/model.KeyValue'
-        type: array
       name:
         description: Name is human-readable string to represent the object
         example: aws-ap-southeast-1
         type: string
-      network:
-        $ref: '#/definitions/model.TbK8sClusterNetworkInfo'
       resourceType:
         description: ResourceType is the type of the resource
         type: string
-      status:
-        allOf:
-        - $ref: '#/definitions/model.TbK8sClusterStatus'
-        description: Creating, Active, Inactive, Updating, Deleting
-        example: Creating
       systemLabel:
         description: SystemLabel is for describing the Resource in a keyword (any
           string can be used) for special System purpose
@@ -1913,32 +1960,6 @@ definitions:
         description: Uid is universally unique identifier for the object, used for
           labelSelector
         example: wef12awefadf1221edcf
-        type: string
-      version:
-        description: Kubernetes Version, ex) 1.23.3
-        example: 1.30.1-aliyun.1
-        type: string
-    type: object
-  model.TbK8sClusterNetworkInfo:
-    properties:
-      keyValueList:
-        items:
-          $ref: '#/definitions/model.KeyValue'
-        type: array
-      securityGroupIds:
-        example:
-        - sg-01
-        items:
-          type: string
-        type: array
-      subnetIds:
-        example:
-        - subnet-01
-        items:
-          type: string
-        type: array
-      vNetId:
-        example: vpc-01
         type: string
     type: object
   model.TbK8sClusterReq:
@@ -1991,101 +2012,13 @@ definitions:
     - subnetIds
     - vNetId
     type: object
-  model.TbK8sClusterStatus:
-    enum:
-    - Creating
-    - Active
-    - Inactive
-    - Updating
-    - Deleting
-    type: string
-    x-enum-varnames:
-    - TbK8sClusterCreating
-    - TbK8sClusterActive
-    - TbK8sClusterInactive
-    - TbK8sClusterUpdating
-    - TbK8sClusterDeleting
-  model.TbK8sNodeGroupInfo:
-    properties:
-      cspImageName:
-        description: VM config.
-        example: image-01
-        type: string
-      cspResourceId:
-        description: CspResourceId is resource identifier managed by CSP
-        example: csp-06eb41e14121c550a
-        type: string
-      cspResourceName:
-        description: CspResourceName is name assigned to the CSP resource. This name
-          is internally used to handle the resource.
-        example: we12fawefadf1221edcf
-        type: string
-      cspSpecName:
-        example: spec-01
-        type: string
-      desiredNodeSize:
-        example: 1
-        type: integer
-      id:
-        description: Id is unique identifier for the object
-        example: aws-ap-southeast-1
-        type: string
-      k8sNodes:
-        description: id for nodes
-        example:
-        - node-01
-        items:
-          type: string
-        type: array
-      keyValueList:
-        items:
-          $ref: '#/definitions/model.KeyValue'
-        type: array
-      maxNodeSize:
-        example: 3
-        type: integer
-      minNodeSize:
-        example: 1
-        type: integer
-      name:
-        description: Name is human-readable string to represent the object
-        example: aws-ap-southeast-1
-        type: string
-      onAutoScaling:
-        description: Scaling config.
-        example: true
-        type: boolean
-      rootDiskSize:
-        example: "40"
-        type: string
-      rootDiskType:
-        example: cloud_essd
-        type: string
-      sshKeyId:
-        example: sshkey-01
-        type: string
-      status:
-        allOf:
-        - $ref: '#/definitions/model.TbK8sNodeGroupStatus'
-        description: '---'
-        example: Creating
-      uid:
-        description: Uid is universally unique identifier for the object, used for
-          labelSelector
-        example: wef12awefadf1221edcf
-        type: string
-    type: object
   model.TbK8sNodeGroupReq:
     properties:
-      cspImageName:
-        example: image-01
-        type: string
-      cspSpecName:
-        example: Standard_B2s (temporarily, CSP's Spec Names are valid. It will be
-          upgraded)
-        type: string
       desiredNodeSize:
         example: "1"
+        type: string
+      imageId:
+        example: image-01
         type: string
       maxNodeSize:
         example: "3"
@@ -2111,24 +2044,13 @@ definitions:
           TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
         example: cloud_essd
         type: string
+      specId:
+        example: spec-01
+        type: string
       sshKeyId:
         example: sshkey-01
         type: string
     type: object
-  model.TbK8sNodeGroupStatus:
-    enum:
-    - Creating
-    - Active
-    - Inactive
-    - Updating
-    - Deleting
-    type: string
-    x-enum-varnames:
-    - TbK8sNodeGroupCreating
-    - TbK8sNodeGroupActive
-    - TbK8sNodeGroupInactive
-    - TbK8sNodeGroupUpdating
-    - TbK8sNodeGroupDeleting
   model.TbMciDynamicReq:
     properties:
       description:
