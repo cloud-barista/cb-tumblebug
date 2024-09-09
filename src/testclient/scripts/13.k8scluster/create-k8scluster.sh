@@ -19,11 +19,17 @@ else
 fi
 
 K8SNODEGROUPNAME="ng${INDEX}${REGION}${K8SCLUSTERID_ADD}"
-if [ -n "${CONTAINER_IMAGE_NAME[$INDEX,$REGION]}" ]; then
-	NODEIMAGEID="k8s-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
+
+if [ "${CSP}" == "azure" ]; then
+    NODEIMAGEID="" # In azure, image designation is not supported
 else
-	NODEIMAGEID="${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
+    if [ -n "${CONTAINER_IMAGE_NAME[$INDEX,$REGION]}" ]; then
+	    NODEIMAGEID="k8s-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
+    else
+	    NODEIMAGEID="${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
+    fi
 fi
+
 
 if [ -n "${K8S_VERSION[$INDEX,$REGION]}" ]; then
 	VERSION=${K8S_VERSION[$INDEX,$REGION]}
@@ -68,8 +74,8 @@ else # Type-II CSP
     		,
                 "k8sNodeGroupList": [ {
                         "name": "${K8SNODEGROUPNAME}",
-			"imageId": "default",
-                        "specId": "${SPEC_NAME[$INDEX,$REGION]}",
+			"imageId": "${NODEIMAGEID}",
+                        "specId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
                         "rootDiskType": "${RootDiskType}",
                         "rootDiskSize": "${RootDiskSize}",
                         "sshKeyId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
@@ -89,7 +95,7 @@ fi
 req=$(cat <<EOF
         {
                 "connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-                "id": "${K8SCLUSTERID}",
+                "name": "${K8SCLUSTERID}",
                 "version": "${VERSION}",
                 "vNetId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
                 "subnetIds": [

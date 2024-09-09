@@ -90,7 +90,7 @@ echo -e "${NC}"
 sed -i "/(K8SCLUSTER) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
 echo ""
 echo "[Executed Command List]"
-cat ./executionStatus
+#cat ./executionStatus
 cp ./executionStatus ./executionStatus.back
 echo ""
 

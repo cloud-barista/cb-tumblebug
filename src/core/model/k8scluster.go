@@ -127,8 +127,8 @@ type SpiderNodeGroupReqInfo struct {
 // TbK8sNodeGroupReq is a struct to handle requests related to K8sNodeGroup toward CB-Tumblebug.
 type TbK8sNodeGroupReq struct {
 	Name         string `json:"name" example:"ng-01"`
-	CspImageName string `json:"cspImageName" example:"image-01"`
-	CspSpecName  string `json:"cspSpecName" example:"Standard_B2s (temporarily, CSP's Spec Names are valid. It will be upgraded)"`
+	ImageId      string `json:"imageId" example:"image-01"`
+	SpecId       string `json:"specId" example:"spec-01"`
 	RootDiskType string `json:"rootDiskType" example:"cloud_essd" enum:"default, TYPE1, ..."` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
 	RootDiskSize string `json:"rootDiskSize" example:"40" enum:"default, 30, 42, ..."`        // "default", Integer (GB): ["50", ..., "1000"]
 	SshKeyId     string `json:"sshKeyId" example:"sshkey-01"`
@@ -309,19 +309,22 @@ type TbK8sClusterInfo struct {
 	Name           string `json:"name" example:"aws-ap-southeast-1"`
 	ConnectionName string `json:"connectionName" example:"alibaba-ap-northeast-2"`
 
-	Version string `json:"version" example:"1.30.1-aliyun.1"` // Kubernetes Version, ex) 1.23.3
-	Network TbK8sClusterNetworkInfo
+	/*
+		Version string `json:"version" example:"1.30.1-aliyun.1"` // Kubernetes Version, ex) 1.23.3
 
-	// ---
+		Network TbK8sClusterNetworkInfo
 
-	K8sNodeGroupList []TbK8sNodeGroupInfo
-	AccessInfo       TbK8sAccessInfo
-	Addons           TbK8sAddonsInfo
+		// ---
 
-	Status TbK8sClusterStatus `json:"status" example:"Creating"` // Creating, Active, Inactive, Updating, Deleting
+		K8sNodeGroupList []TbK8sNodeGroupInfo
+		AccessInfo       TbK8sAccessInfo
+		Addons           TbK8sAddonsInfo
 
-	CreatedTime  time.Time  `json:"createdTime" example:"1970-01-01T00:00:00.00Z"`
-	KeyValueList []KeyValue `json:"keyValueList"`
+		Status TbK8sClusterStatus `json:"status" example:"Creating"` // Creating, Active, Inactive, Updating, Deleting
+
+		CreatedTime  time.Time  `json:"createdTime" example:"1970-01-01T00:00:00.00Z"`
+		KeyValueList []KeyValue `json:"keyValueList"`
+	*/
 
 	Description string `json:"description" example:"My K8sCluster"`
 
@@ -331,7 +334,7 @@ type TbK8sClusterInfo struct {
 	// SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
 
-	//CspViewK8sClusterDetail SpiderClusterInfo `json:cspViewK8sClusterDetail,omitempty"`
+	CspViewK8sClusterDetail SpiderClusterInfo `json:cspViewK8sClusterDetail,omitempty"`
 }
 
 // SpiderNetworkInfo is a struct to handle Cluster Network information from the CB-Spider's REST API response
@@ -395,24 +398,28 @@ type TbK8sNodeGroupInfo struct {
 	// Name is human-readable string to represent the object
 	Name string `json:"name" example:"aws-ap-southeast-1"`
 
-	// VM config.
-	CspImageName string `json:"cspImageName" example:"image-01"`
-	CspSpecName  string `json:"cspSpecName" example:"spec-01"`
-	RootDiskType string `json:"rootDiskType" example:"cloud_essd"`
-	RootDiskSize string `json:"rootDiskSize" example:"40"`
-	SshKeyId     string `json:"sshKeyId" example:"sshkey-01"`
+	CspViewK8sNodeGroupDetail SpiderNodeGroupInfo `json:"cspViewK8sNodeGroupDetail,omitempty"`
 
-	// Scaling config.
-	OnAutoScaling   bool `json:"onAutoScaling" example:"true"`
-	DesiredNodeSize int  `json:"desiredNodeSize" example:"1"`
-	MinNodeSize     int  `json:"minNodeSize" example:"1"`
-	MaxNodeSize     int  `json:"maxNodeSize" example:"3"`
+	/*
+	   // VM config.
+	   ImageId      string `json:"imageId" example:"image-01"`
+	   SpecId       string `json:"specId" example:"spec-01"`
+	   RootDiskType string `json:"rootDiskType" example:"cloud_essd"`
+	   RootDiskSize string `json:"rootDiskSize" example:"40"`
+	   SshKeyId     string `json:"sshKeyId" example:"sshkey-01"`
 
-	// ---
-	Status   TbK8sNodeGroupStatus `json:"status" example:"Creating"`  // Creating, Active, Inactive, Updating, Deleting
-	K8sNodes []string             `json:"k8sNodes" example:"node-01"` // id for nodes
+	   // Scaling config.
+	   OnAutoScaling   bool `json:"onAutoScaling" example:"true"`
+	   DesiredNodeSize int  `json:"desiredNodeSize" example:"1"`
+	   MinNodeSize     int  `json:"minNodeSize" example:"1"`
+	   MaxNodeSize     int  `json:"maxNodeSize" example:"3"`
 
-	KeyValueList []KeyValue `json:"keyValueList"`
+	   // ---
+	   Status   TbK8sNodeGroupStatus `json:"status" example:"Creating"`  // Creating, Active, Inactive, Updating, Deleting
+	   K8sNodes []string             `json:"k8sNodes" example:"node-01"` // id for nodes
+
+	   KeyValueList []KeyValue `json:"keyValueList"`
+	*/
 }
 
 // SpiderAccessInfo is a struct to handle Cluster Access information from the CB-Spider's REST API response
