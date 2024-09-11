@@ -12,9 +12,35 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+// Define context keys
+type contextKey string
+
+const (
+	TraceIdKey contextKey = "traceId"
+	SpanIdKey  contextKey = "spanId"
+)
+
+// Define TracingHook struct
+type TracingHook struct{}
+
+// Run method: Executed when a log event occurs
+func (h TracingHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
+	ctx := e.GetCtx()
+	traceID := ctx.Value(TraceIdKey)
+	spanID := ctx.Value(SpanIdKey)
+
+	if traceID != nil {
+		e.Str(string(TraceIdKey), traceID.(string))
+	}
+	if spanID != nil {
+		e.Str(string(SpanIdKey), spanID.(string))
+	}
+}
+
 var (
 	sharedLogFile *lumberjack.Logger
 	once          sync.Once
+	traceLogger   zerolog.Logger
 )
 
 type Config struct {
@@ -57,7 +83,7 @@ func NewLogger(config Config) *zerolog.Logger {
 		config.LogFilePath = "./log/app.log"
 	}
 	if config.MaxSize == 0 {
-		config.MaxSize = 100 // in MB
+		config.MaxSize = 1000 // in MB
 	}
 	if config.MaxBackups == 0 {
 		config.MaxBackups = 3
@@ -90,10 +116,17 @@ func NewLogger(config Config) *zerolog.Logger {
 		if err := os.Chmod(config.LogFilePath, 0644); err != nil {
 			log.Fatal().Msgf("Failed to change file permissions: %v", err)
 		}
+
+		// traceLogger = zerolog.New(sharedLogFile).Level(zerolog.TraceLevel).With().Timestamp().Caller().Logger()
+		traceLogger = zerolog.New(sharedLogFile).Level(zerolog.TraceLevel).With().Timestamp().Logger()
+		traceLogger.Hook(TracingHook{})
 	})
 
 	level := getLogLevel(config.LogLevel)
 	logger := configureWriter(config.LogWriter, level)
+
+	// Add tracing hook to the logger
+	logger.Hook(TracingHook{})
 
 	// Log a message to confirm logger setup
 	logger.Info().
@@ -101,6 +134,11 @@ func NewLogger(config Config) *zerolog.Logger {
 		Msg("New logger created")
 
 	return logger
+}
+
+// GetTraceLogger returns the trace logger
+func GetTraceLogger() *zerolog.Logger {
+	return &traceLogger
 }
 
 // getLogLevel returns the zerolog.Level based on the string level

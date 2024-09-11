@@ -33,8 +33,8 @@ import (
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
 	rest_label "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common/label"
 	rest_infra "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares"
 	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares/authmw"
-	middlewares "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares/custom-middleware"
 	rest_resource "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/resource"
 	rest_netutil "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/util"
 
@@ -108,6 +108,9 @@ func RunServer(port string) {
 
 	// Custom middleware for RequestID and RequestDetails
 	e.Use(middlewares.RequestIdAndDetailsIssuer)
+
+	// Custom middleware for tracing
+	e.Use(middlewares.TracingMiddleware)
 
 	// Custom middleware for ResponseBodyDump
 	e.Use(middlewares.ResponseBodyDump())
