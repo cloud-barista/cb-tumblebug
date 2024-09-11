@@ -57,10 +57,12 @@ import (
 
 const (
 	infoColor    = "\033[1;34m%s\033[0m"
+	titleColor   = "\033[1;34m"
 	noticeColor  = "\033[1;36m%s\033[0m"
-	warningColor = "\033[1;33m%s\033[0m"
+	warningColor = "\033[1;33m"
 	errorColor   = "\033[1;31m%s\033[0m"
 	debugColor   = "\033[0;36m%s\033[0m"
+	resetColor   = "\033[0m" // Reset color
 )
 
 const (
@@ -125,6 +127,7 @@ func RunServer(port string) {
 	// e.GET("/tumblebug/swaggerActive", rest_common.RestGetSwagger)
 	e.GET("/tumblebug/readyz", rest_common.RestGetReadyz)
 	e.GET("/tumblebug/httpVersion", rest_common.RestCheckHTTPVersion)
+	e.POST("tumblebug/testStreamResponse", rest_common.RestTestStreamResponse)
 
 	allowedOrigins := os.Getenv("TB_ALLOW_ORIGINS")
 	if allowedOrigins == "" {
@@ -209,6 +212,7 @@ func RunServer(port string) {
 	fmt.Println("\n \n ")
 
 	// Route
+
 	e.GET("/tumblebug/checkNs/:nsId", rest_common.RestCheckNs)
 
 	e.GET("/tumblebug/cloudInfo", rest_common.RestGetCloudInfo)
@@ -507,16 +511,22 @@ func RunServer(port string) {
 	g.GET("/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId", rest_resource.RestTestGetAssociatedObjectCount)
 
 	selfEndpoint := os.Getenv("TB_SELF_ENDPOINT")
-	apidashboard := " http://" + selfEndpoint + "/tumblebug/api"
+	apiServer := "http://" + selfEndpoint + "/tumblebug/readyz"
+	apiDashboard := "http://localhost:1325"
+	mapUI := "http://localhost:1324"
 
-	fmt.Println(" Default Namespace: " + model.DefaultNamespace)
-	fmt.Println(" Default CredentialHolder: " + model.DefaultCredentialHolder + "\n")
-
+	fmt.Print(resetColor)
+	fmt.Printf(" Default Namespace: %s%s%s\n", warningColor, model.DefaultNamespace, resetColor)
+	fmt.Printf(" Default CredentialHolder: %s%s%s\n\n", warningColor, model.DefaultCredentialHolder, resetColor)
+	fmt.Printf(" API Endpoint: %s%s%s\n", warningColor, apiServer, resetColor)
+	fmt.Println(" ")
+	fmt.Printf(" MapUI (Simple GUI): %s%s%s\n", warningColor, mapUI, resetColor)
+	fmt.Printf(" SwaggerUI (API Dashboard): %s%s%s\n", warningColor, apiDashboard, resetColor)
+	// Check if auth is enabled and print message accordingly
 	if authEnabled {
-		fmt.Println(" Access to API dashboard" + " (username: " + apiUser + " / password: " + apiPass + ")")
+		fmt.Printf(" %s(Check ENV to get the API username and password)%s\n", titleColor, resetColor)
 	}
 
-	fmt.Printf(noticeColor, apidashboard)
 	fmt.Println("\n ")
 
 	// A context for graceful shutdown (It is based on the signal package)selfEndpoint := os.Getenv("TB_SELF_ENDPOINT")

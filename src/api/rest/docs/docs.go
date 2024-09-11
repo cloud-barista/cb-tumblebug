@@ -9505,6 +9505,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/testStreamResponse": {
+            "post": {
+                "description": "Receives a number and streams the decrementing number every second until zero",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/x-json-stream"
+                ],
+                "tags": [
+                    "[Test] Stream Response"
+                ],
+                "summary": "Stream response of a number decrement",
+                "operationId": "PostTestStreamResponse",
+                "parameters": [
+                    {
+                        "description": "Number input",
+                        "name": "number",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/common.NumberRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "currentNumber",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Stream failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/util/net/design": {
             "post": {
                 "description": "Design a hierarchical network configuration of a VPC network or multi-cloud network consisting of multiple VPC networks",
@@ -9670,6 +9726,15 @@ const docTemplate = `{
         },
         "common.JSONResult": {
             "type": "object"
+        },
+        "common.NumberRequest": {
+            "type": "object",
+            "properties": {
+                "number": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
         },
         "common.RequestDetails": {
             "type": "object",
@@ -14483,7 +14548,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "latest",
-	Host:             "",
+	Host:             "localhost:1323",
 	BasePath:         "/tumblebug",
 	Schemes:          []string{},
 	Title:            "CB-Tumblebug REST API",

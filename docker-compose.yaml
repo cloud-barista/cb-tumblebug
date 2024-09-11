@@ -161,6 +161,29 @@ services:
       retries: 3
       start_period: 10s
 
+  # Swagger UI
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: swagger-ui
+    networks:
+      - external_network
+    ports:
+      - 1325:8080
+    volumes:
+      # cb-tumblebug swagger.yaml mount
+      - ./src/api/rest/docs/swagger.yaml:/swagger.yaml
+    environment:
+      # Options: https://github.com/swagger-api/swagger-ui/blob/37b8c1a8b67200dd425216ab8f97b725a429a5c0/docs/usage/configuration.md#docker
+      - SWAGGER_JSON=/swagger.yaml 
+    logging:
+      # Disable logging
+      driver: "none"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "localhost", "1325"]
+      timeout: 5s
+      retries: 3
+      start_period: 3s
+
   # # cb-tumblebug-etcd-conf
   # cb-tumblebug-etcd-conf:
   #   image: alpine:latest
