@@ -24,3 +24,4 @@ clean:
 
 swag swagger:
 	~/go/bin/swag i -o ./api/rest/docs
+	../scripts/misc/convert-swagger-version.sh
