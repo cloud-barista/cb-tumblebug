@@ -164,14 +164,17 @@ func RestGetAllVNet(c echo.Context) error {
 
 // RestDelVNet godoc
 // @ID DelVNet
-// @Summary Delete VNet
+// @Summary Delete VNet (supporting actions: withsubnet, refine, force)
 // @Description Delete VNet
+// @Description - withsubnets: delete VNet and its subnets
+// @Description - refine: delete information of VNet and its subnets if there's no info/resource in Spider/CSP
+// @Description - force: delete VNet and its subnets regardless of the status of info/resource in Spider/CSP
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
-// @Param withSubnets query string false "Delete subnets as well" Enums(true,false)
+// @Param action query string false "Action" Enums(withsubnets,refine,force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [delete]
@@ -192,25 +195,41 @@ func RestDelVNet(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	withSubnets := c.QueryParam("withSubnets")
-	if withSubnets != "" && withSubnets != "true" && withSubnets != "false" {
-		errMsg := fmt.Errorf("invalid option, withSubnets (%s)", withSubnets)
+	actionParam := c.QueryParam("action")
+	action, valid := resource.ParseNetworkAction(actionParam)
+	if !valid {
+		errMsg := fmt.Errorf("invalid action (%s)", action)
+		log.Warn().Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+
+	}
+
+	var resp model.SimpleMsg
+	var err error
+
+	switch action {
+	case resource.ActionNone, resource.ActionWithSubnets, resource.ActionForce:
+		// [Process]
+		resp, err = resource.DeleteVNet(nsId, vNetId, action.String())
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		}
+	case resource.ActionRefine:
+		// [Process]
+		resp, err = resource.RefineVNet(nsId, vNetId)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		}
+	default:
+		errMsg := fmt.Errorf("invalid action (%s)", action)
 		log.Warn().Msgf(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
-	if withSubnets == "" {
-		withSubnets = "false"
-	}
-
-	// [Process]
-	content, err := resource.DeleteVNet(nsId, vNetId, withSubnets)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
-	}
 
 	// [Output]
-	return c.JSON(http.StatusOK, content)
+	return c.JSON(http.StatusOK, resp)
 }
 
 // RestDelAllVNet godoc

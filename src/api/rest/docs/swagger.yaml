@@ -6093,23 +6093,38 @@ paths:
       x-codegen-request-body-name: vNetReq
     delete:
       tags:
-      - "[Infra Resource] Network Management"
-      summary: Delete all VNets
-      description: Delete all VNets
-      operationId: DelAllVNet
+      - '[Infra Resource] Network Management'
+  /ns/{nsId}/resources/vNet/{vNetId}:
+    delete:
+      consumes:
+      - application/json
+      description: |-
+        Delete VNet
+        - withsubnets: delete VNet and its subnets
+        - refine: delete information of VNet and its subnets if there's no info/resource in Spider/CSP
+        - force: delete VNet and its subnets regardless of the status of info/resource in Spider/CSP
+      operationId: DelVNet
       parameters:
       - name: nsId
         in: path
         description: Namespace ID
         required: true
-        schema:
-          type: string
-          default: default
-      - name: match
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      - description: Action
+        enum:
+        - withsubnets
+        - refine
+        - force
         in: query
-        description: Delete resources containing matched ID-substring only
-        schema:
-          type: string
+        name: action
+        type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
@@ -6119,12 +6134,9 @@ paths:
                 $ref: '#/components/schemas/model.IdList'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/resources/vNet/{vNetId}:
-    get:
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: 'Delete VNet (supporting actions: withsubnet, refine, force)'
       tags:
       - "[Infra Resource] Network Management"
       summary: Get VNet
@@ -6206,10 +6218,9 @@ paths:
                 $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/vNet/{vNetId}/subnet:
     get:
-      tags:
-      - "[Infra Resource] Network Management"
-      summary: List all subnets (metadata)
-      description: List all subnets (metadata)
+      consumes:
+      - application/json
+      description: List all subnets
       operationId: GetAllSubnet
       parameters:
       - name: nsId
@@ -6240,11 +6251,9 @@ paths:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-    post:
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: List all subnets
       tags:
       - "[Infra Resource] Network Management"
       summary: Create Subnet
@@ -6294,9 +6303,62 @@ paths:
   /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}:
     get:
       tags:
-      - "[Infra Resource] Network Management"
-      summary: Get Subnet (metadata)
-      description: Get Subnet (metadata)
+      - '[Infra Resource] Network Management'
+  /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}:
+    delete:
+      consumes:
+      - application/json
+      description: |-
+        Delete Subnet
+        - refine: delete information of subnet if there's no info/resource in Spider/CSP
+        - force: delete subnet regardless of the status of info/resource in Spider/CSP
+      operationId: DelSubnet
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: vNetId
+        in: path
+        description: VNet ID
+        required: true
+        schema:
+          type: string
+      - name: subnetId
+        in: path
+        description: Subnet ID
+        required: true
+        type: string
+      - description: Action
+        enum:
+        - refine
+        - force
+        in: query
+        name: action
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.TbSubnetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: 'Delete Subnet (supporting actions: refine, force)'
+      tags:
+      - '[Infra Resource] Network Management'
+    get:
+      consumes:
+      - application/json
+      description: Get Subnet
       operationId: GetSubnet
       parameters:
       - name: nsId
@@ -6324,58 +6386,18 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSubnetInfo'
+                $ref: '#/components/schemas/model.SimpleMsg'
         "404":
           description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
         "500":
           description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-    delete:
+          schema:
+            $ref: '#/definitions/model.SimpleMsg'
+      summary: Get Subnet
       tags:
-      - "[Infra Resource] Network Management"
-      summary: Delete Subnet
-      description: Delete Subnet
-      operationId: DelSubnet
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: vNetId
-        in: path
-        description: VNet ID
-        required: true
-        schema:
-          type: string
-      - name: subnetId
-        in: path
-        description: Subnet ID
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
+      - '[Infra Resource] Network Management'
   /ns/{nsId}/sharedResource:
     post:
       tags:
