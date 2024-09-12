@@ -122,38 +122,32 @@ func ListVmId(nsId string, mciId string) ([]string, error) {
 
 }
 
-// ListVmByLabel is func to list VM by label
-func ListVmByLabel(nsId string, mciId string, label string) ([]string, error) {
+// ListVmByLabel is a function to list VM IDs by label
+func ListVmByLabel(nsId string, mciId string, labelKey string) ([]string, error) {
+	// Construct the label selector
+	labelSelector := labelKey + " exists" + "," + "sys.nsId=" + nsId + "," + "sys.mciId=" + mciId
 
-	log.Debug().Msg("[GetVmListByLabel]" + mciId + " by " + label)
-
-	var vmListByLabel []string
-
-	vmList, err := ListVmId(nsId, mciId)
-	fmt.Println(vmList)
+	// Call GetResourcesByLabelSelector (returns []interface{})
+	resources, err := label.GetResourcesByLabelSelector(model.StrVM, labelSelector)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("Failed to get resources by label selector")
 		return nil, err
 	}
-	if len(vmList) == 0 {
-		return nil, nil
-	}
 
-	// delete vms info
-	for _, v := range vmList {
-		vmObj, vmErr := GetVmObject(nsId, mciId, v)
-		if vmErr != nil {
-			log.Error().Err(err).Msg("")
-			return nil, vmErr
-		}
+	// Slice to store the list of VM IDs
+	var vmListByLabel []string
 
-		if vmObj.Label == label {
-			log.Debug().Msg("Found VM with " + vmObj.Label + ", VM ID: " + vmObj.Id)
-			vmListByLabel = append(vmListByLabel, vmObj.Id)
+	// Convert []interface{} to TbVmInfo and extract IDs
+	for _, resource := range resources {
+		if vmInfo, ok := resource.(*model.TbVmInfo); ok {
+			vmListByLabel = append(vmListByLabel, vmInfo.Id)
+		} else {
+			log.Warn().Msg("Resource is not of type TbVmInfo")
 		}
 	}
+
+	// Return the list of VM IDs
 	return vmListByLabel, nil
-
 }
 
 // ListVmByFilter is func to get list VMs in a MCI by a filter consist of Key and Value
@@ -343,6 +337,24 @@ func GetMciInfo(nsId string, mciId string) (*model.TbMciInfo, error) {
 			}
 		}
 	}
+
+	// add label info for VM
+	for i := range mciObj.Vm {
+		labelInfo, err := label.GetLabels(model.StrVM, mciObj.Vm[i].Uid)
+		if err != nil {
+			log.Error().Err(err).Msg("Cannot get the label info")
+			return nil, err
+		}
+		mciObj.Vm[i].Label = labelInfo.Labels
+	}
+
+	// add label info
+	labelInfo, err := label.GetLabels(model.StrMCI, mciObj.Uid)
+	if err != nil {
+		log.Error().Err(err).Msg("Cannot get the label info")
+		return nil, err
+	}
+	mciObj.Label = labelInfo.Labels
 
 	return &mciObj, nil
 }

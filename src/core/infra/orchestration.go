@@ -224,7 +224,10 @@ func OrchestrationController() {
 					switch {
 					case autoAction.ActionType == model.AutoActionScaleOut:
 
-						autoAction.VmDynamicReq.Label = model.LabelAutoGen
+						labels := map[string]string{
+							"sys.deploymentType": model.LabelAutoGen,
+						}
+						autoAction.VmDynamicReq.Label = labels
 						// append uid to given vm name to avoid duplicated vm ID.
 						autoAction.VmDynamicReq.Name = common.ToLower(autoAction.VmDynamicReq.Name) + "-" + common.GenUid()
 						//vmReqTmp := autoAction.Vm

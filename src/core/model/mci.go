@@ -75,7 +75,7 @@ const (
 	StatusComplete string = "None"
 )
 
-const LabelAutoGen string = "AutoGen"
+const LabelAutoGen string = "sys.autogen"
 
 // DefaultSystemLabel is const for string to specify the Default System Label
 const DefaultSystemLabel string = "Managed by CB-Tumblebug"
@@ -93,8 +93,8 @@ type TbMciReq struct {
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"no" default:"yes" enums:"yes,no"` // yes or no
 
-	// Label is for describing the mci in a keyword (any string can be used)
-	Label string `json:"label" example:"custom tag" default:""`
+	// Label is for describing the object by keywords
+	Label map[string]string `json:"label"`
 
 	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"" default:""`
@@ -129,8 +129,8 @@ type TbMciInfo struct {
 	// ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)
 	ConfigureCloudAdaptiveNetwork string `json:"configureCloudAdaptiveNetwork" example:"yes" default:"no" enums:"yes,no"` // yes or no
 
-	// Label is for describing the mci in a keyword (any string can be used)
-	Label string `json:"label" example:"User custom label"`
+	// Label is for describing the object by keywords
+	Label map[string]string `json:"label"`
 
 	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
@@ -157,7 +157,8 @@ type TbVmReq struct {
 	// if subGroupSize is (not empty) && (> 0), subGroup will be generated. VMs will be created accordingly.
 	SubGroupSize string `json:"subGroupSize" example:"3" default:""`
 
-	Label string `json:"label"`
+	// Label is for describing the object by keywords
+	Label map[string]string `json:"label"`
 
 	Description string `json:"description" example:"Description"`
 
@@ -191,8 +192,8 @@ type TbMciDynamicReq struct {
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
 
-	// Label is for describing the mci in a keyword (any string can be used)
-	Label string `json:"label" example:"DynamicVM" default:""`
+	// Label is for describing the object by keywords
+	Label map[string]string `json:"label"`
 
 	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"" default:""`
@@ -210,7 +211,8 @@ type TbVmDynamicReq struct {
 	// if subGroupSize is (not empty) && (> 0), subGroup will be generated. VMs will be created accordingly.
 	SubGroupSize string `json:"subGroupSize" example:"3" default:"1"`
 
-	Label string `json:"label" example:"DynamicVM"`
+	// Label is for describing the object by keywords
+	Label map[string]string `json:"label"`
 
 	Description string `json:"description" example:"Description"`
 
@@ -367,8 +369,8 @@ type TbVmInfo struct {
 	// Created time
 	CreatedTime string `json:"createdTime" example:"2022-11-10 23:00:00" default:""`
 
-	Label       string `json:"label"`
-	Description string `json:"description"`
+	Label       map[string]string `json:"label"`
+	Description string            `json:"description"`
 
 	Region         RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
 	PublicIP       string     `json:"publicIP"`
@@ -385,7 +387,7 @@ type TbVmInfo struct {
 	SpecId           string     `json:"specId"`
 	CspSpecName      string     `json:"cspSpecName"`
 	ImageId          string     `json:"imageId"`
-	CspImageName       string     `json:"cspImageName"`
+	CspImageName     string     `json:"cspImageName"`
 	VNetId           string     `json:"vNetId"`
 	CspVNetId        string     `json:"cspVNetId"`
 	SubnetId         string     `json:"subnetId"`
@@ -525,8 +527,8 @@ type MciStatusInfo struct {
 	MasterIp      string `json:"masterIp" example:"32.201.134.113"`
 	MasterSSHPort string `json:"masterSSHPort"`
 
-	// Label is for describing the mci in a keyword (any string can be used)
-	Label string `json:"label" example:"User custom label"`
+	// Label is for describing the object by keywords
+	Label map[string]string `json:"label"`
 
 	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
