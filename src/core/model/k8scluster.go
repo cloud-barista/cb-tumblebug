@@ -331,6 +331,9 @@ type TbK8sClusterInfo struct {
 	// Latest system message such as error message
 	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
 
+	// Label is for describing the object by keywords
+	Label map[string]string `json:"label"`
+
 	// SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
 
@@ -397,6 +400,9 @@ type TbK8sNodeGroupInfo struct {
 
 	// Name is human-readable string to represent the object
 	Name string `json:"name" example:"aws-ap-southeast-1"`
+
+	// Label is for describing the object by keywords
+	Label map[string]string `json:"label"`
 
 	CspViewK8sNodeGroupDetail SpiderNodeGroupInfo `json:"cspViewK8sNodeGroupDetail,omitempty"`
 

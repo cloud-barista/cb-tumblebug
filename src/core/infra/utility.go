@@ -977,7 +977,10 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 				// (if mciFlag == "n") create a mci for each vm
 				req.Name = vm.Name
 			}
-			vm.Label = "not defined"
+			labels := map[string]string{
+				"sys.registered": "true",
+			}
+			vm.Label = labels
 
 			vm.ImageId = "cannot retrieve"
 			vm.SpecId = "cannot retrieve"

@@ -485,7 +485,6 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 		"targetAction":    targetAction,
 		"targetStatus":    targetStatus,
 		"installMonAgent": req.InstallMonAgent,
-		"label":           req.Label,
 		"systemLabel":     req.SystemLabel,
 	}
 	val, err := json.Marshal(mapA)
@@ -512,6 +511,10 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 		"sys.uid":         uid,
 		"sys.description": req.Description,
 	}
+	for key, value := range req.Label {
+		labels[key] = value
+	}
+
 	err = label.CreateOrUpdateLabel(model.StrMCI, uid, key, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -789,7 +792,10 @@ func CreateSystemMciDynamic(option string) (*model.TbMciInfo, error) {
 
 	// special purpose MCI
 	req.Name = option
-	req.Label = option
+	labels := map[string]string{
+		"sys.purpose": option,
+	}
+	req.Label = labels
 	req.SystemLabel = option
 	req.Description = option
 	req.InstallMonAgent = "no"
@@ -826,7 +832,7 @@ func CreateSystemMciDynamic(option string) (*model.TbMciInfo, error) {
 				recommendedSpec := specList[0].Id
 				vmReq.CommonSpec = recommendedSpec
 
-				vmReq.Label = vmReq.CommonSpec
+				vmReq.Label = labels
 				vmReq.Name = vmReq.CommonSpec
 
 				vmReq.RootDiskType = specList[0].RootDiskType
@@ -1215,6 +1221,9 @@ func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model
 		"sys.mciId":           mciId,
 		"sys.createdTime":     vmInfoData.CreatedTime,
 		"sys.connectionName":  vmInfoData.ConnectionName,
+	}
+	for key, value := range vmInfoData.Label {
+		labels[key] = value
 	}
 	err = label.CreateOrUpdateLabel(model.StrVM, vmInfoData.Uid, key, labels)
 	if err != nil {

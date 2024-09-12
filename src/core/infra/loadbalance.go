@@ -67,8 +67,10 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.TbNLBReq, option string
 	nlbMciId := mciId + nlbPostfix
 
 	// create a special MCI for (SW)NLB
-
-	mciDynamicReq := model.TbMciDynamicReq{Name: nlbMciId, InstallMonAgent: "no", Label: "McSwNlb"}
+	labels := map[string]string{
+		"sys.description": "MCI for Global-NLB",
+	}
+	mciDynamicReq := model.TbMciDynamicReq{Name: nlbMciId, InstallMonAgent: "no", Label: labels}
 
 	// get vm requst from cloud_conf.yaml
 	vmGroupName := "nlb"

@@ -287,16 +287,7 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 		return tbK8sCInfo, err
 	}
 
-	kv, err := kvstore.GetKv(k)
-	if err != nil {
-		err = fmt.Errorf("In CreateK8sCluster(); kvstore.GetKv() returned an error: " + err.Error())
-		log.Err(err).Msg("")
-	}
-
-	log.Debug().Msg("<" + kv.Key + "> \n" + kv.Value)
-
-	storedTbK8sCInfo := model.TbK8sClusterInfo{}
-	err = json.Unmarshal([]byte(kv.Value), &storedTbK8sCInfo)
+	storedTbK8sCInfo, err := GetK8sCluster(nsId, tbK8sCInfo.Id)
 	if err != nil {
 		log.Err(err).Msg("")
 	}
@@ -894,6 +885,15 @@ func GetK8sCluster(nsId string, k8sClusterId string) (model.TbK8sClusterInfo, er
 			return emptyObj, err
 		}
 	*/
+
+	// add label info
+	labelInfo, err := label.GetLabels(model.StrK8s, tbK8sCInfo.Uid)
+	if err != nil {
+		log.Error().Err(err).Msg("Cannot get the label info")
+		return tbK8sCInfo, err
+	}
+	tbK8sCInfo.Label = labelInfo.Labels
+
 	return tbK8sCInfo, nil
 }
 

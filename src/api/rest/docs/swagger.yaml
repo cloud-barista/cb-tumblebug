@@ -8164,10 +8164,10 @@ components:
             \ ([yes/no] default:yes)"
           example: "[yes, no]"
         label:
-          type: string
-          description: Label is for describing the mci in a keyword (any string can
-            be used)
-          example: User custom label
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
         masterIp:
           type: string
           example: 32.201.134.113
@@ -8953,6 +8953,11 @@ components:
           type: string
           description: Id is unique identifier for the object
           example: aws-ap-southeast-1
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
         name:
           type: string
           description: Name is human-readable string to represent the object
@@ -9296,6 +9301,11 @@ components:
           type: string
           description: Id is unique identifier for the object
           example: aws-ap-southeast-1
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
         name:
           type: string
           description: Name is human-readable string to represent the object
@@ -9427,10 +9437,10 @@ components:
           - "yes"
           - "no"
         label:
-          type: string
-          description: Label is for describing the mci in a keyword (any string can
-            be used)
-          example: DynamicVM
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
         name:
           type: string
           example: mci01
@@ -9471,10 +9481,10 @@ components:
           - "yes"
           - "no"
         label:
-          type: string
-          description: Label is for describing the mci in a keyword (any string can
-            be used)
-          example: User custom label
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
         name:
           type: string
           description: Name is human-readable string to represent the object
@@ -9535,10 +9545,10 @@ components:
           - "yes"
           - "no"
         label:
-          type: string
-          description: Label is for describing the mci in a keyword (any string can
-            be used)
-          example: custom tag
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
         name:
           type: string
           example: mci01
@@ -10268,8 +10278,10 @@ components:
           type: string
           example: Description
         label:
-          type: string
-          example: DynamicVM
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
         name:
           type: string
           description: "VM name or subGroup name if is (not empty) && (> 0). If it\
@@ -10344,7 +10356,9 @@ components:
         imageId:
           type: string
         label:
-          type: string
+          type: object
+          additionalProperties:
+            type: string
         location:
           $ref: '#/components/schemas/model.Location'
         monAgentStatus:
@@ -10451,7 +10465,10 @@ components:
           type: string
           description: ImageType        string   `json:"imageType"`
         label:
-          type: string
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
         name:
           type: string
           description: "VM name or subGroup name if is (not empty) && (> 0). If it\

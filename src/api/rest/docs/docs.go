@@ -10916,9 +10916,11 @@ const docTemplate = `{
                     "example": "[yes, no]"
                 },
                 "label": {
-                    "description": "Label is for describing the mci in a keyword (any string can be used)",
-                    "type": "string",
-                    "example": "User custom label"
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "masterIp": {
                     "type": "string",
@@ -12067,6 +12069,13 @@ const docTemplate = `{
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
+                "label": {
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "name": {
                     "description": "Name is human-readable string to represent the object",
                     "type": "string",
@@ -12525,6 +12534,13 @@ const docTemplate = `{
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
+                "label": {
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "name": {
                     "description": "Name is human-readable string to represent the object",
                     "type": "string",
@@ -12686,9 +12702,11 @@ const docTemplate = `{
                     "example": "no"
                 },
                 "label": {
-                    "description": "Label is for describing the mci in a keyword (any string can be used)",
-                    "type": "string",
-                    "example": "DynamicVM"
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "name": {
                     "type": "string",
@@ -12739,9 +12757,11 @@ const docTemplate = `{
                     "example": "yes"
                 },
                 "label": {
-                    "description": "Label is for describing the mci in a keyword (any string can be used)",
-                    "type": "string",
-                    "example": "User custom label"
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "name": {
                     "description": "Name is human-readable string to represent the object",
@@ -12819,9 +12839,11 @@ const docTemplate = `{
                     "example": "no"
                 },
                 "label": {
-                    "description": "Label is for describing the mci in a keyword (any string can be used)",
-                    "type": "string",
-                    "example": "custom tag"
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "name": {
                     "type": "string",
@@ -13813,8 +13835,11 @@ const docTemplate = `{
                     "example": "Description"
                 },
                 "label": {
-                    "type": "string",
-                    "example": "DynamicVM"
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "name": {
                     "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
@@ -13907,7 +13932,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "label": {
-                    "type": "string"
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "location": {
                     "$ref": "#/definitions/model.Location"
@@ -14053,7 +14081,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "label": {
-                    "type": "string"
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "name": {
                     "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
