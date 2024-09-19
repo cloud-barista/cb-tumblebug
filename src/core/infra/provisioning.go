@@ -503,13 +503,13 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"sys.manager":     model.StrManager,
-		"sys.namespace":   nsId,
-		"sys.labelType":   model.StrMCI,
-		"sys.id":          mciId,
-		"sys.name":        req.Name,
-		"sys.uid":         uid,
-		"sys.description": req.Description,
+		model.LabelManager:     model.StrManager,
+		model.LabelNamespace:   nsId,
+		model.LabelLabelType:   model.StrMCI,
+		model.LabelId:          mciId,
+		model.LabelName:        req.Name,
+		model.LabelUid:         uid,
+		model.LabelDescription: req.Description,
 	}
 	for key, value := range req.Label {
 		labels[key] = value
@@ -596,16 +596,16 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 
 			// Store label info using CreateOrUpdateLabel
 			labels := map[string]string{
-				"sys.manager":        model.StrManager,
-				"sys.namespace":      nsId,
-				"sys.labelType":      model.StrSubGroup,
-				"sys.id":             subGroupInfoData.Id,
-				"sys.name":           subGroupInfoData.Name,
-				"sys.uid":            subGroupInfoData.Uid,
-				"sys.mciId":          mciId,
-				"sys.mciname":        req.Name,
-				"sys.mciUid":         uid,
-				"sys.mciDescription": req.Description,
+				model.LabelManager:        model.StrManager,
+				model.LabelNamespace:      nsId,
+				model.LabelLabelType:      model.StrSubGroup,
+				model.LabelId:             subGroupInfoData.Id,
+				model.LabelName:           subGroupInfoData.Name,
+				model.LabelUid:            subGroupInfoData.Uid,
+				model.LabelMciId:          mciId,
+				model.LabelMciName:        req.Name,
+				model.LabelMciUid:         uid,
+				model.LabelMciDescription: req.Description,
 			}
 			err = label.CreateOrUpdateLabel(model.StrSubGroup, uid, key, labels)
 			if err != nil {
@@ -793,7 +793,7 @@ func CreateSystemMciDynamic(option string) (*model.TbMciInfo, error) {
 	// special purpose MCI
 	req.Name = option
 	labels := map[string]string{
-		"sys.purpose": option,
+		model.LabelPurpose: option,
 	}
 	req.Label = labels
 	req.SystemLabel = option
@@ -1209,18 +1209,18 @@ func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"sys.manager":         model.StrManager,
-		"sys.namespace":       nsId,
-		"sys.labelType":       model.StrVM,
-		"sys.id":              vmInfoData.Id,
-		"sys.name":            vmInfoData.Name,
-		"sys.uid":             vmInfoData.Uid,
-		"sys.cspResourceId":   vmInfoData.CspResourceId,
-		"sys.cspResourceName": vmInfoData.CspResourceName,
-		"sys.subGroupId":      vmInfoData.SubGroupId,
-		"sys.mciId":           mciId,
-		"sys.createdTime":     vmInfoData.CreatedTime,
-		"sys.connectionName":  vmInfoData.ConnectionName,
+		model.LabelManager:         model.StrManager,
+		model.LabelNamespace:       nsId,
+		model.LabelLabelType:       model.StrVM,
+		model.LabelId:              vmInfoData.Id,
+		model.LabelName:            vmInfoData.Name,
+		model.LabelUid:             vmInfoData.Uid,
+		model.LabelCspResourceId:   vmInfoData.CspResourceId,
+		model.LabelCspResourceName: vmInfoData.CspResourceName,
+		model.LabelSubGroupId:      vmInfoData.SubGroupId,
+		model.LabelMciId:           mciId,
+		model.LabelCreatedTime:     vmInfoData.CreatedTime,
+		model.LabelConnectionName:  vmInfoData.ConnectionName,
 	}
 	for key, value := range vmInfoData.Label {
 		labels[key] = value

@@ -30,3 +30,90 @@ type LabelInfo struct {
 type Label struct {
 	Labels map[string]string `json:"labels"`
 }
+
+// SystemLabelInfo is a struct to return LabelTypes and System label Keys
+type SystemLabelInfo struct {
+	LabelTypes   []string          `json:"labelTypes"`
+	SystemLabels map[string]string `json:"systemLabels"`
+}
+
+const (
+	LabelManager         string = "sys.manager"
+	LabelNamespace       string = "sys.namespace"
+	LabelLabelType       string = "sys.labelType"
+	LabelId              string = "sys.id"
+	LabelName            string = "sys.name"
+	LabelUid             string = "sys.uid"
+	LabelCspResourceId   string = "sys.cspResourceId"
+	LabelCspResourceName string = "sys.cspResourceName"
+	LabelMciId           string = "sys.mciId"
+	LabelMciName         string = "sys.mciName"
+	LabelMciUid          string = "sys.mciUid"
+	LabelMciDescription  string = "sys.mciDescription"
+	LabelSubGroupId      string = "sys.subGroupId"
+	LabelCreatedTime     string = "sys.createdTime"
+	LabelConnectionName  string = "sys.connectionName"
+	LabelDescription     string = "sys.description"
+	LabelRegistered      string = "sys.registered"
+	LabelPurpose         string = "sys.purpose"
+	LabelDeploymentType  string = "sys.deploymentType"
+	LabelDiskType        string = "sys.diskType"
+	LabelDiskSize        string = "sys.diskSize"
+	LabelVersion         string = "sys.version"
+	LabelVNetId          string = "sys.vNetId"
+	LabelIpv4_CIDR       string = "sys.ipv4_CIDR"
+	LabelZone            string = "sys.zone"
+	LabelStatus          string = "sys.status"
+	LabelCspVNetId       string = "sys.cspVNetId"
+	LabelCspVNetName     string = "sys.cspVNetName"
+	LabelCidr            string = "sys.cidr"
+)
+
+// GetLabelConstantsMap returns a map with label-related system constants as keys and their example values.
+func GetLabelConstantsMap() map[string]string {
+	return map[string]string{
+		LabelManager:         "cb-tumblebug",
+		LabelNamespace:       "default",
+		LabelLabelType:       StrMCI,
+		LabelId:              "mci-1234",
+		LabelName:            "mci-1234",
+		LabelUid:             "wef12awefadf1221edcf",
+		LabelCspResourceId:   "csp-vm-1234",
+		LabelCspResourceName: "csp-vm-1234",
+		LabelMciId:           "mci-1234",
+		LabelSubGroupId:      "sg-1234",
+		LabelCreatedTime:     "2021-01-01T00:00:00Z",
+		LabelConnectionName:  "connection-1234",
+		LabelDescription:     "Description",
+		LabelRegistered:      "true",
+		LabelPurpose:         "testing",
+		LabelDeploymentType:  "vm",
+		LabelDiskType:        "HDD",
+		LabelDiskSize:        "10",
+		LabelVersion:         "1.0",
+		LabelVNetId:          "vnet-1234",
+		LabelIpv4_CIDR:       "10.0.0.0/24",
+		LabelZone:            "zone-1",
+		LabelStatus:          "Running",
+		LabelCspVNetId:       "csp-vnet-1234",
+		LabelCspVNetName:     "csp-vnet-1234",
+		LabelCidr:            "10.0.0.0/24",
+	}
+}
+
+// GetLabelTypes returns a list of label types.
+func GetLabelTypes() []string {
+	return []string{
+		StrVNet,
+		StrSubnet,
+		StrDataDisk,
+		StrNLB,
+		StrVM,
+		StrMCI,
+		StrSubGroup,
+		StrK8s,
+		StrKubernetes,
+		StrContainer,
+		StrNamespace,
+	}
+}

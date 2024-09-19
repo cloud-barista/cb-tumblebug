@@ -75,7 +75,7 @@ const (
 	StatusComplete string = "None"
 )
 
-const LabelAutoGen string = "sys.autogen"
+const StrAutoGen string = "autogen"
 
 // DefaultSystemLabel is const for string to specify the Default System Label
 const DefaultSystemLabel string = "Managed by CB-Tumblebug"

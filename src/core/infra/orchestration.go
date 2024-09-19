@@ -225,7 +225,7 @@ func OrchestrationController() {
 					case autoAction.ActionType == model.AutoActionScaleOut:
 
 						labels := map[string]string{
-							"sys.deploymentType": model.LabelAutoGen,
+							model.LabelDeploymentType: model.StrAutoGen,
 						}
 						autoAction.VmDynamicReq.Label = labels
 						// append uid to given vm name to avoid duplicated vm ID.
@@ -289,7 +289,7 @@ func OrchestrationController() {
 
 						// ScaleIn MCI.
 						log.Debug().Msg("[Removing VM]")
-						vmList, vmListErr := ListVmByLabel(nsId, mciPolicyTmp.Id, model.LabelAutoGen)
+						vmList, vmListErr := ListVmByLabel(nsId, mciPolicyTmp.Id, model.StrAutoGen)
 						if vmListErr != nil {
 							mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 							UpdateMciPolicyInfo(nsId, mciPolicyTmp)

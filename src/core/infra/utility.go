@@ -978,7 +978,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 				req.Name = vm.Name
 			}
 			labels := map[string]string{
-				"sys.registered": "true",
+				model.LabelRegistered: "true",
 			}
 			vm.Label = labels
 

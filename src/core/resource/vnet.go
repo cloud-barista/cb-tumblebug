@@ -490,20 +490,20 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 
 		// Store label info using CreateOrUpdateLabel
 		labels := map[string]string{
-			"sys.manager":         model.StrManager,
-			"sys.namespace":       nsId,
-			"sys.labelType":       model.StrSubnet,
-			"sys.id":              subnetInfo.Id,
-			"sys.name":            subnetInfo.Name,
-			"sys.uid":             subnetInfo.Uid,
-			"sys.cspResourceId":   subnetInfo.CspResourceId,
-			"sys.cspResourceName": subnetInfo.CspResourceName,
-			"sys.cidr":            subnetInfo.IPv4_CIDR,
-			"sys.status":          subnetInfo.Status,
-			"sys.description":     subnetInfo.Description,
-			"sys.zone":            subnetInfo.Zone,
-			"sys.vNetId":          vNetInfo.Id,
-			"sys.connectionName":  vNetInfo.ConnectionName,
+			model.LabelManager:         model.StrManager,
+			model.LabelNamespace:       nsId,
+			model.LabelLabelType:       model.StrSubnet,
+			model.LabelId:              subnetInfo.Id,
+			model.LabelName:            subnetInfo.Name,
+			model.LabelUid:             subnetInfo.Uid,
+			model.LabelCspResourceId:   subnetInfo.CspResourceId,
+			model.LabelCspResourceName: subnetInfo.CspResourceName,
+			model.LabelCidr:            subnetInfo.IPv4_CIDR,
+			model.LabelStatus:          subnetInfo.Status,
+			model.LabelDescription:     subnetInfo.Description,
+			model.LabelZone:            subnetInfo.Zone,
+			model.LabelVNetId:          vNetInfo.Id,
+			model.LabelConnectionName:  vNetInfo.ConnectionName,
 		}
 		err = label.CreateOrUpdateLabel(model.StrSubnet, subnetInfo.Uid, subnetKey, labels)
 		if err != nil {
@@ -532,18 +532,18 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"sys.manager":         model.StrManager,
-		"sys.namespace":       nsId,
-		"sys.labelType":       model.StrVNet,
-		"sys.id":              vNetInfo.Id,
-		"sys.name":            vNetInfo.Name,
-		"sys.uid":             vNetInfo.Uid,
-		"sys.cspResourceId":   vNetInfo.CspResourceId,
-		"sys.cspResourceName": vNetInfo.CspResourceName,
-		"sys.cidr":            vNetInfo.CidrBlock,
-		"sys.status":          vNetInfo.Status,
-		"sys.description":     vNetInfo.Description,
-		"sys.connectionName":  vNetInfo.ConnectionName,
+		model.LabelManager:         model.StrManager,
+		model.LabelNamespace:       nsId,
+		model.LabelLabelType:       model.StrVNet,
+		model.LabelId:              vNetInfo.Id,
+		model.LabelName:            vNetInfo.Name,
+		model.LabelUid:             vNetInfo.Uid,
+		model.LabelCspResourceId:   vNetInfo.CspResourceId,
+		model.LabelCspResourceName: vNetInfo.CspResourceName,
+		model.LabelCidr:            vNetInfo.CidrBlock,
+		model.LabelStatus:          vNetInfo.Status,
+		model.LabelDescription:     vNetInfo.Description,
+		model.LabelConnectionName:  vNetInfo.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrVNet, vNetInfo.Uid, vNetKey, labels)
 	if err != nil {
@@ -793,7 +793,7 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 
 	// Remove label info using RemoveLabel
 	// labels := map[string]string{
-	// 	"sys.manager":  model.StrManager,
+	// 	model.LabelManager:  model.StrManager,
 	// 	"namespace": nsId,
 	// }
 	err = label.RemoveLabel(model.StrVNet, vNetInfo.Uid, vNetKey)
@@ -995,20 +995,20 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 
 		// Store label info using CreateOrUpdateLabel
 		labels := map[string]string{
-			"sys.manager":         model.StrManager,
-			"sys.namespace":       nsId,
-			"sys.labelType":       model.StrSubnet,
-			"sys.id":              subnetInfo.Id,
-			"sys.name":            subnetInfo.Name,
-			"sys.uid":             subnetInfo.Uid,
-			"sys.cspResourceId":   subnetInfo.CspResourceId,
-			"sys.cspResourceName": subnetInfo.CspResourceName,
-			"sys.cidr":            subnetInfo.IPv4_CIDR,
-			"sys.status":          subnetInfo.Status,
-			"sys.description":     subnetInfo.Description,
-			"sys.zone":            subnetInfo.Zone,
-			"sys.vNetId":          vNetInfo.Id,
-			"sys.connectionName":  vNetInfo.ConnectionName,
+			model.LabelManager:         model.StrManager,
+			model.LabelNamespace:       nsId,
+			model.LabelLabelType:       model.StrSubnet,
+			model.LabelId:              subnetInfo.Id,
+			model.LabelName:            subnetInfo.Name,
+			model.LabelUid:             subnetInfo.Uid,
+			model.LabelCspResourceId:   subnetInfo.CspResourceId,
+			model.LabelCspResourceName: subnetInfo.CspResourceName,
+			model.LabelCidr:            subnetInfo.IPv4_CIDR,
+			model.LabelStatus:          subnetInfo.Status,
+			model.LabelDescription:     subnetInfo.Description,
+			model.LabelZone:            subnetInfo.Zone,
+			model.LabelVNetId:          vNetInfo.Id,
+			model.LabelConnectionName:  vNetInfo.ConnectionName,
 		}
 		err = label.CreateOrUpdateLabel(model.StrSubnet, subnetInfo.Uid, subnetKey, labels)
 		if err != nil {
@@ -1056,18 +1056,18 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"sys.manager":         model.StrManager,
-		"sys.namespace":       nsId,
-		"sys.labelType":       model.StrVNet,
-		"sys.id":              vNetInfo.Id,
-		"sys.name":            vNetInfo.Name,
-		"sys.uid":             vNetInfo.Uid,
-		"sys.cspResourceId":   vNetInfo.CspResourceId,
-		"sys.cspResourceName": vNetInfo.CspResourceName,
-		"sys.cidr":            vNetInfo.CidrBlock,
-		"sys.status":          vNetInfo.Status,
-		"sys.description":     vNetInfo.Description,
-		"sys.connectionName":  vNetInfo.ConnectionName,
+		model.LabelManager:         model.StrManager,
+		model.LabelNamespace:       nsId,
+		model.LabelLabelType:       model.StrVNet,
+		model.LabelId:              vNetInfo.Id,
+		model.LabelName:            vNetInfo.Name,
+		model.LabelUid:             vNetInfo.Uid,
+		model.LabelCspResourceId:   vNetInfo.CspResourceId,
+		model.LabelCspResourceName: vNetInfo.CspResourceName,
+		model.LabelCidr:            vNetInfo.CidrBlock,
+		model.LabelStatus:          vNetInfo.Status,
+		model.LabelDescription:     vNetInfo.Description,
+		model.LabelConnectionName:  vNetInfo.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrVNet, vNetInfo.Uid, vNetKey, labels)
 	if err != nil {
@@ -1223,7 +1223,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 
 	// Remove label info using RemoveLabel
 	// labels := map[string]string{
-	// 	"sys.manager":  model.StrManager,
+	// 	model.LabelManager:  model.StrManager,
 	// 	"namespace": nsId,
 	// }
 	err = label.RemoveLabel(model.StrVNet, vNetInfo.Uid, vNetKey)

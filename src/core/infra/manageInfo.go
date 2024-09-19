@@ -125,7 +125,7 @@ func ListVmId(nsId string, mciId string) ([]string, error) {
 // ListVmByLabel is a function to list VM IDs by label
 func ListVmByLabel(nsId string, mciId string, labelKey string) ([]string, error) {
 	// Construct the label selector
-	labelSelector := labelKey + " exists" + "," + "sys.nsId=" + nsId + "," + "sys.mciId=" + mciId
+	labelSelector := labelKey + " exists" + "," + model.LabelNamespace + "=" + nsId + "," + model.LabelMciId + "=" + mciId
 
 	// Call GetResourcesByLabelSelector (returns []interface{})
 	resources, err := label.GetResourcesByLabelSelector(model.StrVM, labelSelector)

@@ -289,6 +289,7 @@ func RunServer(port string) {
 	e.DELETE("/tumblebug/label/:labelType/:uid/:key", rest_label.RestRemoveLabel)
 	e.GET("/tumblebug/label/:labelType/:uid", rest_label.RestGetLabels)
 	e.GET("/tumblebug/resources/:labelType", rest_label.RestGetResourcesByLabelSelector)
+	e.GET("/tumblebug/labelInfo", rest_label.RestGetSystemLabelInfo)
 
 	//MCI Management
 	g.POST("/:nsId/mci", rest_infra.RestPostMci)

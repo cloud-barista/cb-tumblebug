@@ -68,7 +68,7 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.TbNLBReq, option string
 
 	// create a special MCI for (SW)NLB
 	labels := map[string]string{
-		"sys.description": "MCI for Global-NLB",
+		model.LabelDescription: "MCI for Global-NLB",
 	}
 	mciDynamicReq := model.TbMciDynamicReq{Name: nlbMciId, InstallMonAgent: "no", Label: labels}
 
