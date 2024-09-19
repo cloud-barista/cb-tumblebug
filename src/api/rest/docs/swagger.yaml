@@ -776,6 +776,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /labelInfo:
+    get:
+      tags:
+      - "[Infra Resource] Common Utility"
+      summary: Return LabelTypes and system defined label keys with example
+      description: Return LabelTypes and system defined label keys with example
+      operationId: GetSystemLabelInfo
+      responses:
+        "200":
+          description: LabelTypes and System labels with example values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SystemLabelInfo'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /loadAssets:
     get:
       tags:
@@ -8916,6 +8936,17 @@ components:
         countUndefined:
           type: integer
           description: CountUndefined is for counting Undefined
+    model.SystemLabelInfo:
+      type: object
+      properties:
+        labelTypes:
+          type: array
+          items:
+            type: string
+        systemLabels:
+          type: object
+          additionalProperties:
+            type: string
     model.TbAttachDetachDataDiskReq:
       required:
       - dataDiskId

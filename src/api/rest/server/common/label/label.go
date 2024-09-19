@@ -176,3 +176,32 @@ func RestGetResourcesByLabelSelector(c echo.Context) error {
 
 	return common.EndRequestWithLog(c, reqID, nil, response)
 }
+
+// RestGetSystemLabelInfo godoc
+// @ID GetSystemLabelInfo
+// @Summary Return LabelTypes and system defined label keys with example
+// @Description Return LabelTypes and system defined label keys with example
+// @Tags [Infra Resource] Common Utility
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} model.SystemLabelInfo "LabelTypes and System labels with example values"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /labelInfo [get]
+func RestGetSystemLabelInfo(c echo.Context) error {
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message": idErr.Error()})
+	}
+
+	// Use the GetLabelConstantsMap function to get the system label constants
+	systemLabels := model.GetLabelConstantsMap()
+	labelTypes := model.GetLabelTypes()
+
+	// Wrap the map in SystemLabelInfo struct
+	systemLabelInfo := model.SystemLabelInfo{
+		SystemLabels: systemLabels,
+		LabelTypes:   labelTypes,
+	}
+
+	return common.EndRequestWithLog(c, reqID, nil, systemLabelInfo)
+}

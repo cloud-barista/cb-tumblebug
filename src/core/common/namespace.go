@@ -90,13 +90,13 @@ func CreateNs(u *model.NsReq) (model.NsInfo, error) {
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"sys.manager":     model.StrManager,
-		"sys.namespace":   content.Id,
-		"sys.labelType":   model.StrNamespace,
-		"sys.id":          content.Id,
-		"sys.name":        content.Name,
-		"sys.uid":         content.Uid,
-		"sys.description": content.Description,
+		model.LabelManager:     model.StrManager,
+		model.LabelNamespace:   content.Id,
+		model.LabelLabelType:   model.StrNamespace,
+		model.LabelId:          content.Id,
+		model.LabelName:        content.Name,
+		model.LabelUid:         content.Uid,
+		model.LabelDescription: content.Description,
 	}
 	err = label.CreateOrUpdateLabel(model.StrNamespace, content.Uid, key, labels)
 	if err != nil {

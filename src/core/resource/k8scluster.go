@@ -294,18 +294,18 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"sys.manager":         model.StrManager,
-		"sys.namespace":       nsId,
-		"sys.labelType":       model.StrK8s,
-		"sys.id":              tbK8sCInfo.Id,
-		"sys.name":            tbK8sCInfo.Name,
-		"sys.uid":             tbK8sCInfo.Uid,
-		"sys.version":         tbK8sCInfo.CspViewK8sClusterDetail.Version,
-		"sys.cspResourceId":   tbK8sCInfo.CspResourceId,
-		"sys.cspResourceName": tbK8sCInfo.CspResourceName,
-		"sys.description":     tbK8sCInfo.Description,
-		"sys.createdTime":     tbK8sCInfo.CspViewK8sClusterDetail.CreatedTime.String(),
-		"sys.connectionName":  tbK8sCInfo.ConnectionName,
+		model.LabelManager:         model.StrManager,
+		model.LabelNamespace:       nsId,
+		model.LabelLabelType:       model.StrK8s,
+		model.LabelId:              tbK8sCInfo.Id,
+		model.LabelName:            tbK8sCInfo.Name,
+		model.LabelUid:             tbK8sCInfo.Uid,
+		model.LabelVersion:         tbK8sCInfo.CspViewK8sClusterDetail.Version,
+		model.LabelCspResourceId:   tbK8sCInfo.CspResourceId,
+		model.LabelCspResourceName: tbK8sCInfo.CspResourceName,
+		model.LabelDescription:     tbK8sCInfo.Description,
+		model.LabelCreatedTime:     tbK8sCInfo.CspViewK8sClusterDetail.CreatedTime.String(),
+		model.LabelConnectionName:  tbK8sCInfo.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrK8s, uid, k, labels)
 	if err != nil {

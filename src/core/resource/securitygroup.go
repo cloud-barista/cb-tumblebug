@@ -256,17 +256,17 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"sys.manager":         model.StrManager,
-		"sys.namespace":       nsId,
-		"sys.labelType":       model.StrSecurityGroup,
-		"sys.id":              content.Id,
-		"sys.name":            content.Name,
-		"sys.uid":             content.Uid,
-		"sys.vNetId":          content.VNetId,
-		"sys.cspResourceId":   content.CspResourceId,
-		"sys.cspResourceName": content.CspResourceName,
-		"sys.description":     content.Description,
-		"sys.connectionName":  content.ConnectionName,
+		model.LabelManager:         model.StrManager,
+		model.LabelNamespace:       nsId,
+		model.LabelLabelType:       model.StrSecurityGroup,
+		model.LabelId:              content.Id,
+		model.LabelName:            content.Name,
+		model.LabelUid:             content.Uid,
+		model.LabelVNetId:          content.VNetId,
+		model.LabelCspResourceId:   content.CspResourceId,
+		model.LabelCspResourceName: content.CspResourceName,
+		model.LabelDescription:     content.Description,
+		model.LabelConnectionName:  content.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrSecurityGroup, uid, Key, labels)
 	if err != nil {

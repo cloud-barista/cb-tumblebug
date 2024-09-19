@@ -384,22 +384,22 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"sys.manager":         model.StrManager,
-		"sys.namespace":       nsId,
-		"sys.labelType":       model.StrSubnet,
-		"sys.id":              subnetInfo.Id,
-		"sys.name":            subnetInfo.Name,
-		"sys.uid":             subnetInfo.Uid,
-		"sys.cspResourceId":   subnetInfo.CspResourceId,
-		"sys.cspResourceName": subnetInfo.CspResourceName,
-		"sys.ipv4_CIDR":       subnetInfo.IPv4_CIDR,
-		"sys.zone":            subnetInfo.Zone,
-		"sys.status":          subnetInfo.Status,
-		"sys.vNetId":          vNetInfo.Id,
-		"sys.cspvNetId":       vNetInfo.CspResourceId,
-		"sys.cspvNetName":     vNetInfo.CspResourceName,
-		"sys.description":     subnetInfo.Description,
-		"sys.connectionName":  subnetInfo.ConnectionName,
+		model.LabelManager:         model.StrManager,
+		model.LabelNamespace:       nsId,
+		model.LabelLabelType:       model.StrSubnet,
+		model.LabelId:              subnetInfo.Id,
+		model.LabelName:            subnetInfo.Name,
+		model.LabelUid:             subnetInfo.Uid,
+		model.LabelCspResourceId:   subnetInfo.CspResourceId,
+		model.LabelCspResourceName: subnetInfo.CspResourceName,
+		model.LabelIpv4_CIDR:       subnetInfo.IPv4_CIDR,
+		model.LabelZone:            subnetInfo.Zone,
+		model.LabelStatus:          subnetInfo.Status,
+		model.LabelVNetId:          vNetInfo.Id,
+		model.LabelCspVNetId:       vNetInfo.CspResourceId,
+		model.LabelCspVNetName:     vNetInfo.CspResourceName,
+		model.LabelDescription:     subnetInfo.Description,
+		model.LabelConnectionName:  subnetInfo.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrSubnet, uid, subnetKey, labels)
 	if err != nil {
@@ -673,7 +673,7 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 
 	// Store label info using CreateOrUpdateLabel
 	// labels := map[string]string{
-	// 	"sys.manager":  model.StrManager,
+	// 	model.LabelManager:  model.StrManager,
 	// 	"namespace": nsId,
 	// }
 	err = label.DeleteLabelObject(model.StrSubnet, subnetInfo.Uid)
@@ -891,22 +891,22 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubne
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
-		"sys.manager":         model.StrManager,
-		"sys.namespace":       nsId,
-		"sys.labelType":       model.StrSubnet,
-		"sys.id":              subnetInfo.Id,
-		"sys.name":            subnetInfo.Name,
-		"sys.uid":             subnetInfo.Uid,
-		"sys.cspResourceId":   subnetInfo.CspResourceId,
-		"sys.cspResourceName": subnetInfo.CspResourceName,
-		"sys.ipv4_CIDR":       subnetInfo.IPv4_CIDR,
-		"sys.zone":            subnetInfo.Zone,
-		"sys.status":          subnetInfo.Status,
-		"sys.vNetId":          vNetInfo.Id,
-		"sys.cspvNetId":       vNetInfo.CspResourceId,
-		"sys.cspvNetName":     vNetInfo.CspResourceName,
-		"sys.description":     subnetInfo.Description,
-		"sys.connectionName":  subnetInfo.ConnectionName,
+		model.LabelManager:         model.StrManager,
+		model.LabelNamespace:       nsId,
+		model.LabelLabelType:       model.StrSubnet,
+		model.LabelId:              subnetInfo.Id,
+		model.LabelName:            subnetInfo.Name,
+		model.LabelUid:             subnetInfo.Uid,
+		model.LabelCspResourceId:   subnetInfo.CspResourceId,
+		model.LabelCspResourceName: subnetInfo.CspResourceName,
+		model.LabelIpv4_CIDR:       subnetInfo.IPv4_CIDR,
+		model.LabelZone:            subnetInfo.Zone,
+		model.LabelStatus:          subnetInfo.Status,
+		model.LabelVNetId:          vNetInfo.Id,
+		model.LabelCspVNetId:       vNetInfo.CspResourceId,
+		model.LabelCspVNetName:     vNetInfo.CspResourceName,
+		model.LabelDescription:     subnetInfo.Description,
+		model.LabelConnectionName:  subnetInfo.ConnectionName,
 	}
 	err = label.CreateOrUpdateLabel(model.StrSubnet, uid, vNetKey, labels)
 	if err != nil {
@@ -1080,7 +1080,7 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 
 	// Store label info using CreateOrUpdateLabel
 	// labels := map[string]string{
-	// 	"sys.manager":  model.StrManager,
+	// 	model.LabelManager:  model.StrManager,
 	// 	"namespace": nsId,
 	// }
 

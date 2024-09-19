@@ -1033,6 +1033,36 @@ const docTemplate = `{
                 }
             }
         },
+        "/labelInfo": {
+            "get": {
+                "description": "Return LabelTypes and system defined label keys with example",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Common Utility"
+                ],
+                "summary": "Return LabelTypes and system defined label keys with example",
+                "operationId": "GetSystemLabelInfo",
+                "responses": {
+                    "200": {
+                        "description": "LabelTypes and System labels with example values",
+                        "schema": {
+                            "$ref": "#/definitions/model.SystemLabelInfo"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/loadAssets": {
             "get": {
                 "description": "Load Common Resources from internal asset files (Spec, Image)",
@@ -12017,6 +12047,23 @@ const docTemplate = `{
                 "countUndefined": {
                     "description": "CountUndefined is for counting Undefined",
                     "type": "integer"
+                }
+            }
+        },
+        "model.SystemLabelInfo": {
+            "type": "object",
+            "properties": {
+                "labelTypes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "systemLabels": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 }
             }
         },
