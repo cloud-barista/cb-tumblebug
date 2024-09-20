@@ -559,6 +559,246 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string) 
 	return stdoutMap, stderrMap, nil
 }
 
+// TransferFileToMci is a function to transfer a file to all VMs in MCI by SSH through bastion hosts
+func TransferFileToMci(nsId string, mciId string, subGroupId string, vmId string, fileData []byte, fileName string, targetPath string) ([]model.SshCmdResult, error) {
+	// Get the list of VMs in the MCI
+	vmList, err := ListVmId(nsId, mciId)
+	if err != nil {
+		return nil, err
+	}
+	// If a subGroupId is provided, filter the VM list by subGroup
+	if subGroupId != "" {
+		vmListInGroup, err := ListVmBySubGroup(nsId, mciId, subGroupId)
+		if err != nil {
+			return nil, err
+		}
+		vmList = vmListInGroup
+	}
+	// If a specific vmId is provided, limit the transfer to that VM only
+	if vmId != "" {
+		vmList = []string{vmId}
+	}
+
+	// Create a wait group to sync goroutines
+	var wg sync.WaitGroup
+	var resultArray []model.SshCmdResult
+	var resultMutex sync.Mutex // To safely append to resultArray in concurrent goroutines
+
+	// Iterate over the VM list to transfer the file
+	for _, vmId := range vmList {
+		wg.Add(1)
+		go func(vmId string) {
+			defer wg.Done()
+			log.Info().Msgf("Transferring file to VM: %s", vmId)
+
+			_, targetVmIP, targetSshPort, _ := GetVmIp(nsId, mciId, vmId)
+			targetUserName, targetPrivateKey, _ := VerifySshUserName(nsId, mciId, vmId, targetVmIP, targetSshPort, "")
+			// error will be handled in the next step
+
+			targetSshInfo := model.SshInfo{
+				EndPoint:   fmt.Sprintf("%s:%s", targetVmIP, targetSshPort),
+				UserName:   targetUserName,
+				PrivateKey: []byte(targetPrivateKey),
+			}
+
+			// Transfer file to the VM via bastion
+			err := transferFileToVmViaBastion(nsId, mciId, vmId, targetSshInfo, fileData, fileName, targetPath)
+
+			// Create the result for this VM
+			result := model.SshCmdResult{
+				MciId:   mciId,
+				VmId:    vmId,
+				VmIp:    targetVmIP,
+				Command: map[int]string{0: fmt.Sprintf("scp %s to %s", fileName, targetPath)},
+				Stdout:  map[int]string{},
+				Stderr:  map[int]string{},
+			}
+
+			if err != nil {
+				result.Stderr[0] = fmt.Sprintf("Failed to transfer file: %v", err)
+				result.Err = fmt.Errorf("file transfer failed: %v", err)
+				log.Error().Err(err).Msgf("Failed to transfer file to VM: %s", vmId)
+			} else {
+				result.Stdout[0] = fmt.Sprintf("File transfer successful: %s%s", targetPath, fileName)
+				log.Info().Msgf("Successfully transferred file to VM: %s", vmId)
+			}
+
+			// Safely append to resultArray
+			resultMutex.Lock()
+			resultArray = append(resultArray, result)
+			resultMutex.Unlock()
+		}(vmId)
+	}
+	wg.Wait()
+
+	return resultArray, nil
+}
+
+// transferFileToVmViaBastion is a function to transfer a file to a specific VM via Bastion Host
+func transferFileToVmViaBastion(nsId string, mciId string, vmId string, targetSshInfo model.SshInfo, fileData []byte, fileName string, targetPath string) error {
+
+	bastionNodes, err := GetBastionNodes(nsId, mciId, vmId)
+	if err != nil || len(bastionNodes) == 0 {
+		return fmt.Errorf("failed to get bastion nodes: %v", err)
+	}
+
+	bastionNode := bastionNodes[0]
+	bastionIp, _, bastionSshPort, err := GetVmIp(nsId, bastionNode.MciId, bastionNode.VmId)
+	if err != nil {
+		return fmt.Errorf("failed to get bastion VM IP and SSH port: %v", err)
+	}
+
+	bastionUserName, bastionPrivateKey, err := VerifySshUserName(nsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, "")
+	if err != nil {
+		return fmt.Errorf("failed to verify SSH username for bastion: %v", err)
+	}
+
+	bastionSshInfo := model.SshInfo{
+		EndPoint:   fmt.Sprintf("%s:%s", bastionIp, bastionSshPort),
+		UserName:   bastionUserName,
+		PrivateKey: []byte(bastionPrivateKey),
+	}
+
+	err = runSCPWithBastion(bastionSshInfo, targetSshInfo, fileData, fileName, targetPath)
+	if err != nil {
+		return fmt.Errorf("failed to transfer file to VM via bastion: %v", err)
+	}
+
+	log.Info().Msgf("File successfully transferred to VM %s via bastion", vmId)
+	return nil
+}
+
+// runSCPWithBastion is func to send a file using SCP over SSH via a Bastion host
+func runSCPWithBastion(bastionInfo model.SshInfo, targetInfo model.SshInfo, fileData []byte, fileName string, targetPath string) error {
+	log.Info().Msg("Setting up SCP connection via Bastion Host")
+
+	// Parse the private key for the bastion host
+	bastionSigner, err := ssh.ParsePrivateKey(bastionInfo.PrivateKey)
+	if err != nil {
+		return fmt.Errorf("failed to parse bastion private key: %v", err)
+	}
+
+	// Create an SSH client configuration for the bastion host
+	bastionConfig := &ssh.ClientConfig{
+		User: bastionInfo.UserName,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(bastionSigner),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	// Parse the private key for the target host
+	targetSigner, err := ssh.ParsePrivateKey(targetInfo.PrivateKey)
+	if err != nil {
+		return fmt.Errorf("failed to parse target private key: %v", err)
+	}
+
+	// Create an SSH client configuration for the target host
+	targetConfig := &ssh.ClientConfig{
+		User: targetInfo.UserName,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(targetSigner),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	// Setup the bastion host connection
+	bastionClient, err := ssh.Dial("tcp", bastionInfo.EndPoint, bastionConfig)
+	if err != nil {
+		return fmt.Errorf("failed to dial bastion: %v", err)
+	}
+	defer bastionClient.Close()
+
+	// Setup the actual SSH client through the bastion host
+	conn, err := bastionClient.Dial("tcp", targetInfo.EndPoint)
+	if err != nil {
+		return fmt.Errorf("failed to dial target via bastion: %v", err)
+	}
+
+	ncc, chans, reqs, err := ssh.NewClientConn(conn, targetInfo.EndPoint, targetConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create target SSH connection: %v", err)
+	}
+	client := ssh.NewClient(ncc, chans, reqs)
+	defer client.Close()
+
+	session, err := client.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create SSH session: %v", err)
+	}
+	defer session.Close()
+
+	// Set up pipes for capturing stdout and stderr
+	stdout, err := session.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("failed to set up stdout pipe: %v", err)
+	}
+	stderr, err := session.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("failed to set up stderr pipe: %v", err)
+	}
+
+	// Set up stdin pipe for SCP data transfer
+	stdin, err := session.StdinPipe()
+	if err != nil {
+		return fmt.Errorf("failed to set up stdin for SCP: %v", err)
+	}
+
+	// Construct the SCP command and log it
+	targetFullPath := fmt.Sprintf("%s/%s", targetPath, fileName)
+	cmd := fmt.Sprintf("scp -t '%s'", targetFullPath)
+	log.Info().Msgf("Executing SCP command: %s", cmd)
+
+	// Run the SCP command
+	if err := session.Start(cmd); err != nil {
+		stdin.Close() // Close stdin to signal error and exit early
+		return fmt.Errorf("failed to start SCP command: %v", err)
+	}
+
+	// Send the file metadata (file size and permissions)
+	fileSize := len(fileData)
+	fmt.Fprintf(stdin, "C0644 %d %s\n", fileSize, fileName)
+
+	// Log file data transfer initiation
+	log.Info().Msgf("Sending file data: %s (size: %d)", fileName, fileSize)
+
+	// Write the file data to the remote server
+	_, err = stdin.Write(fileData)
+	if err != nil {
+		stdin.Close() // Close stdin to ensure resources are cleaned up
+		return fmt.Errorf("failed to write file data: %v", err)
+	}
+
+	// End of file transmission (SCP protocol requires a 0-byte to signify EOF)
+	fmt.Fprint(stdin, "\x00")
+
+	// Close stdin explicitly before waiting for the session to complete
+	stdin.Close()
+
+	// Capture and log stdout and stderr
+	stdoutBuf := new(bytes.Buffer)
+	stderrBuf := new(bytes.Buffer)
+
+	go io.Copy(stdoutBuf, stdout)
+	go io.Copy(stderrBuf, stderr)
+
+	// Wait for SCP session to complete and check for errors
+	if err := session.Wait(); err != nil {
+		// Log stdout and stderr for better error diagnostics
+		log.Error().Msgf("SCP command failed with error: %v", err)
+		log.Error().Msgf("SCP stdout: %s", stdoutBuf.String())
+		log.Error().Msgf("SCP stderr: %s", stderrBuf.String())
+
+		// Include stderr in the returned error
+		return fmt.Errorf("SCP command failed: %v, stderr: %s", err, stderrBuf.String())
+	}
+
+	// Log success message after file transfer is complete
+	log.Info().Msgf("File successfully transferred to %s via Bastion", targetFullPath)
+
+	return nil
+}
+
 // SetBastionNodes func sets bastion nodes
 func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionVmId string) (string, error) {
 

@@ -6448,6 +6448,86 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/transferFile/mci/{mciId}:
+    post:
+      tags:
+      - "[MC-Infra] MCI Remote Command"
+      summary: Transfer a file to specified MCI
+      description: |-
+        Transfer a file to specified MCI to the specified path.
+        The file size should be less than 10MB.
+        Not for gerneral file transfer but for specific purpose (small configuration files).
+      operationId: PostFileToMci
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: subGroupId
+        in: query
+        description: subGroupId to apply the file transfer only for VMs in subGroup
+          of MCI
+        schema:
+          type: string
+          default: g1
+      - name: vmId
+        in: query
+        description: vmId to apply the file transfer only for a VM in MCI
+        schema:
+          type: string
+          default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+              - file
+              - path
+              type: object
+              properties:
+                path:
+                  type: string
+                  description: Target path where the file will be stored
+                  default: /home/cb-user/
+                file:
+                  type: string
+                  description: The file to be uploaded (Max 10MB)
+                  format: binary
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.MciSshCmdResult'
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /object:
     get:
       tags:

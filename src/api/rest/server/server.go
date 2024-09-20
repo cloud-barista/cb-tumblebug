@@ -338,6 +338,7 @@ func RunServer(port string) {
 	g.GET("/:nsId/control/mci/:mciId/vm/:vmId", rest_infra.RestGetControlMciVm)
 
 	g.POST("/:nsId/cmd/mci/:mciId", rest_infra.RestPostCmdMci)
+	g.POST("/:nsId/transferFile/mci/:mciId", rest_infra.RestPostFileToMci)
 	g.PUT("/:nsId/mci/:mciId/vm/:targetVmId/bastion/:bastionVmId", rest_infra.RestSetBastionNodes)
 	g.DELETE("/:nsId/mci/:mciId/bastion/:bastionVmId", rest_infra.RestRemoveBastionNodes)
 	g.GET("/:nsId/mci/:mciId/vm/:targetVmId/bastion", rest_infra.RestGetBastionNodes)

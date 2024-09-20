@@ -15,6 +15,8 @@ limitations under the License.
 package infra
 
 import (
+	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -74,6 +76,82 @@ func RestPostCmdMci(c echo.Context) error {
 
 	// return common.EndRequestWithLog(c, reqID, err, result)
 
+}
+
+// RestPostFileToMci godoc
+// @ID PostFileToMci
+// @Summary Transfer a file to specified MCI
+// @Description Transfer a file to specified MCI to the specified path.
+// @Description The file size should be less than 10MB.
+// @Description Not for gerneral file transfer but for specific purpose (small configuration files).
+// @Tags [MC-Infra] MCI Remote Command
+// @Accept  multipart/form-data
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param subGroupId query string false "subGroupId to apply the file transfer only for VMs in subGroup of MCI" default(g1)
+// @Param vmId query string false "vmId to apply the file transfer only for a VM in MCI" default(g1-1)
+// @Param path formData string true "Target path where the file will be stored" default(/home/cb-user/)
+// @Param file formData file true "The file to be uploaded (Max 10MB)"
+// @Param x-request-id header string false "Custom request ID"
+// @Success 200 {object} model.MciSshCmdResult
+// @Failure 400 {object} model.SimpleMsg "Invalid request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/transferFile/mci/{mciId} [post]
+func RestPostFileToMci(c echo.Context) error {
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	subGroupId := c.QueryParam("subGroupId")
+	vmId := c.QueryParam("vmId")
+	targetPath := c.FormValue("path")
+
+	if targetPath == "" {
+		err := fmt.Errorf("target path is required")
+		return common.EndRequestWithLog(c, reqID, err, nil)
+	}
+
+	// Validate the file
+	file, err := c.FormFile("file")
+	if err != nil {
+		err = fmt.Errorf("failed to read the file %v", err)
+		return common.EndRequestWithLog(c, reqID, err, nil)
+	}
+
+	// File size validation
+	fileSizeLimit := int64(10 * 1024 * 1024) // (10MB limit)
+	if file.Size > fileSizeLimit {
+		err := fmt.Errorf("file too large, max size is %v", fileSizeLimit)
+		return common.EndRequestWithLog(c, reqID, err, nil)
+	}
+
+	// Open the file and read it into memory
+	src, err := file.Open()
+	if err != nil {
+		err = fmt.Errorf("failed to open the file %v", err)
+		return common.EndRequestWithLog(c, reqID, err, nil)
+	}
+	defer src.Close()
+
+	// Read the file into memory
+	fileBytes, err := io.ReadAll(src)
+	if err != nil {
+		err = fmt.Errorf("failed to read the file %v", err)
+		return common.EndRequestWithLog(c, reqID, err, nil)
+	}
+
+	// Call the TransferFileToMci function
+	result, err := infra.TransferFileToMci(nsId, mciId, subGroupId, vmId, fileBytes, file.Filename, targetPath)
+	if err != nil {
+		err = fmt.Errorf("failed to transfer file to mci %v", err)
+		return common.EndRequestWithLog(c, reqID, err, nil)
+	}
+
+	// Return the result
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestSetBastionNodes godoc
