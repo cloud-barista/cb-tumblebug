@@ -18,7 +18,7 @@ else
         RootDiskSize="${DISK_SIZE[$INDEX,$REGION]}"
 fi
 
-K8SNODEGROUPNAME="ng${INDEX}${REGION}${K8SCLUSTERID_ADD}"
+K8SNODEGROUPNAME="ng${INDEX}${REGION}"
 
 if [ "${CSP}" == "azure" ]; then
     NODEIMAGEID="" # In azure, image designation is not supported
@@ -75,7 +75,7 @@ else # Type-II CSP
                 "k8sNodeGroupList": [ {
                         "name": "${K8SNODEGROUPNAME}",
 			"imageId": "${NODEIMAGEID}",
-                        "specId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
+			"specId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
                         "rootDiskType": "${RootDiskType}",
                         "rootDiskSize": "${RootDiskSize}",
                         "sshKeyId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",

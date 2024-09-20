@@ -89,22 +89,6 @@ if [ "${INDEX}" == "0" ]; then
 			echo ""
 			echo "[Waiting for initialization of K8SCLUSTER:$CNAME (3s)]"
 			dozing 3 
-
-<<COMMENT
-			echo "Checking K8SCLUSTER object. (upto 3s * 20 trials)"
-			for ((try = 1; try <= 20; try++)); do
-				HTTP_CODE=0
-				HTTP_CODE=$(curl -H "${AUTH}" -o /dev/null --write-out "%{http_code}\n" "http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}" --silent)
-				echo "HTTP status for get K8SCLUSTER object: $HTTP_CODE"
-				if [ ${HTTP_CODE} -ge 200 -a ${HTTP_CODE} -le 204 ]; then
-					echo "[$try : K8SCLUSTER object is READY]"
-					break
-				else
-					printf "[$try : K8SCLUSTER object is not ready yet].."
-					dozing 10
-				fi
-			done
-COMMENT
 		 done
 	done
 	wait

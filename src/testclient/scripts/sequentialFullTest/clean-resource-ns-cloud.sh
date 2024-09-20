@@ -33,7 +33,7 @@ function clean_sequence() {
 
 			if [ "${c}" == 20 ] && [ "${OUTPUT2}" == 1 ]; then
 				echo "Problem in sshKey: Delete. Exit without unregister-cloud."
-				exit
+				break
 			fi
 		done
 
@@ -63,7 +63,7 @@ function clean_sequence() {
 
 			if [ "${c}" == 30 ] && [ "${OUTPUT2}" == 1 ]; then
 				echo "Problem in SecurityGroup: Delete. Exit without unregister-cloud."
-				exit
+				break
 			fi
 		done
 
@@ -93,7 +93,7 @@ function clean_sequence() {
 
 			if [ "${c}" == 20 ] && [ "${OUTPUT2}" == 1 ]; then
 				echo "Problem in delete-vNet. Exit without unregister-cloud."
-				exit
+				break
 			fi
 		done
 
