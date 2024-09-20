@@ -15,8 +15,6 @@ limitations under the License.
 package infra
 
 import (
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -39,10 +37,7 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb [post]
 func RestPostNLB(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
@@ -50,11 +45,11 @@ func RestPostNLB(c echo.Context) error {
 
 	u := &model.TbNLBReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := infra.CreateNLB(nsId, mciId, u, optionFlag)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestPostMcNLB godoc
@@ -72,20 +67,17 @@ func RestPostNLB(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/mcSwNlb [post]
 func RestPostMcNLB(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
 	u := &model.TbNLBReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := infra.CreateMcSwNlb(nsId, mciId, u, "")
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 /*
@@ -129,16 +121,13 @@ func RestPutNLB(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId} [get]
 func RestGetNLB(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	resourceId := c.Param("resourceId")
 
 	res, err := infra.GetNLB(nsId, mciId, resourceId)
-	return common.EndRequestWithLog(c, reqID, err, res)
+	return common.EndRequestWithLog(c, err, res)
 }
 
 // Response structure for RestGetAllNLB
@@ -163,10 +152,7 @@ type RestGetAllNLBResponse struct {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb [get]
 func RestGetAllNLB(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
@@ -178,12 +164,12 @@ func RestGetAllNLB(c echo.Context) error {
 		content := model.IdList{}
 		var err error
 		content.IdList, err = infra.ListNLBId(nsId, mciId)
-		return common.EndRequestWithLog(c, reqID, err, content)
+		return common.EndRequestWithLog(c, err, content)
 	} else {
 
 		resourceList, err := infra.ListNLB(nsId, mciId, filterKey, filterVal)
 		if err != nil {
-			return common.EndRequestWithLog(c, reqID, err, nil)
+			return common.EndRequestWithLog(c, err, nil)
 		}
 
 		var content struct {
@@ -191,7 +177,7 @@ func RestGetAllNLB(c echo.Context) error {
 		}
 
 		content.NLB = resourceList.([]model.TbNLBInfo) // type assertion (interface{} -> array)
-		return common.EndRequestWithLog(c, reqID, err, content)
+		return common.EndRequestWithLog(c, err, content)
 	}
 }
 
@@ -209,10 +195,7 @@ func RestGetAllNLB(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId} [delete]
 func RestDelNLB(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	resourceId := c.Param("resourceId")
@@ -221,7 +204,7 @@ func RestDelNLB(c echo.Context) error {
 
 	err := infra.DelNLB(nsId, mciId, resourceId, forceFlag)
 	content := map[string]string{"message": "The NLB " + resourceId + " has been deleted"}
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestDelAllNLB godoc
@@ -238,10 +221,7 @@ func RestDelNLB(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb [delete]
 func RestDelAllNLB(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
@@ -249,7 +229,7 @@ func RestDelAllNLB(c echo.Context) error {
 	subString := c.QueryParam("match")
 
 	content, err := infra.DelAllNLB(nsId, mciId, subString, forceFlag)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetNLBHealth godoc
@@ -267,16 +247,13 @@ func RestDelAllNLB(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/healthz [get]
 func RestGetNLBHealth(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	resourceId := c.Param("resourceId")
 
 	content, err := infra.GetNLBHealth(nsId, mciId, resourceId)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // The REST APIs below are for dev/test only
@@ -297,10 +274,7 @@ func RestGetNLBHealth(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/vm [post]
 func RestAddNLBVMs(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	resourceId := c.Param("resourceId")
@@ -310,7 +284,7 @@ func RestAddNLBVMs(c echo.Context) error {
 		return err
 	}
 	content, err := infra.AddNLBVMs(nsId, mciId, resourceId, u)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestRemoveNLBVMs godoc
@@ -328,10 +302,7 @@ func RestAddNLBVMs(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/vm [delete]
 func RestRemoveNLBVMs(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	resourceId := c.Param("resourceId")
@@ -343,5 +314,5 @@ func RestRemoveNLBVMs(c echo.Context) error {
 
 	err := infra.RemoveNLBVMs(nsId, mciId, resourceId, u)
 	content := map[string]string{"message": "Removed VMs from the NLB " + resourceId}
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }

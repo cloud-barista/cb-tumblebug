@@ -21,6 +21,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // RestPostMci godoc
@@ -37,20 +38,17 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci [post]
 func RestPostMci(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 
 	req := &model.TbMciReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	option := "create"
 	result, err := infra.CreateMci(nsId, req, option)
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // RestPostRegisterCSPNativeVM godoc
@@ -67,20 +65,17 @@ func RestPostMci(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/registerCspVm [post]
 func RestPostRegisterCSPNativeVM(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 
 	req := &model.TbMciReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	option := "register"
 	result, err := infra.CreateMci(nsId, req, option)
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // RestPostSystemMci godoc
@@ -96,19 +91,16 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /systemMci [post]
 func RestPostSystemMci(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	option := c.QueryParam("option")
 
 	req := &model.TbMciDynamicReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.CreateSystemMciDynamic(option)
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // RestPostMciDynamic godoc
@@ -134,12 +126,14 @@ func RestPostMciDynamic(c echo.Context) error {
 
 	req := &model.TbMciDynamicReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		log.Warn().Err(err).Msg("invalid request")
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.CreateMciDynamic(reqID, nsId, req, option)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		log.Error().Err(err).Msg("failed to create MCI dynamically")
+		return common.EndRequestWithLog(c, err, nil)
 	}
 	return c.JSON(http.StatusOK, result)
 }
@@ -159,20 +153,17 @@ func RestPostMciDynamic(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vmDynamic [post]
 func RestPostMciVmDynamic(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
 	req := &model.TbVmDynamicReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.CreateMciVmDynamic(nsId, mciId, req)
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // RestPostMciDynamicCheckRequest godoc
@@ -188,17 +179,14 @@ func RestPostMciVmDynamic(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /mciDynamicCheckRequest [post]
 func RestPostMciDynamicCheckRequest(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	req := &model.MciConnectionConfigCandidatesReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.CheckMciDynamicReq(req)
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // RestPostMciVm godoc
@@ -216,19 +204,16 @@ func RestPostMciDynamicCheckRequest(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm [post]
 func RestPostMciVm(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
 	vmInfoData := &model.TbVmReq{}
 	if err := c.Bind(vmInfoData); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 	result, err := infra.CreateMciGroupVm(nsId, mciId, vmInfoData, true)
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // RestPostMciSubGroupScaleOut godoc
@@ -247,19 +232,16 @@ func RestPostMciVm(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/subgroup/{subgroupId} [post]
 func RestPostMciSubGroupScaleOut(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	subgroupId := c.Param("subgroupId")
 
 	scaleOutReq := &model.TbScaleOutSubGroupReq{}
 	if err := c.Bind(scaleOutReq); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.ScaleOutMciSubGroup(nsId, mciId, subgroupId, scaleOutReq.NumVMsToAdd)
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }

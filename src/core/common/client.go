@@ -299,32 +299,35 @@ func ExtractRequestInfo(r *http.Request) RequestInfo {
 	}
 }
 
-// StartRequestWithLog initializes request tracking details
-func StartRequestWithLog(c echo.Context) (string, error) {
-	reqID := c.Request().Header.Get("x-request-id")
-	if reqID == "" {
-		reqID = fmt.Sprintf("%d", time.Now().UnixNano())
-	}
-	if _, ok := RequestMap.Load(reqID); ok {
-		return reqID, fmt.Errorf("The x-request-id is already in use")
-	}
+// // StartRequestWithLog initializes request tracking details
+// func StartRequestWithLog(c echo.Context) (string, error) {
+// 	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+// 	if reqID == "" {
+// 		reqID = fmt.Sprintf("%d", time.Now().UnixNano())
+// 	}
+// 	if _, ok := RequestMap.Load(reqID); ok {
+// 		return reqID, fmt.Errorf("the x-request-id is already in use")
+// 	}
 
-	details := RequestDetails{
-		StartTime:   time.Now(),
-		Status:      "Handling",
-		RequestInfo: ExtractRequestInfo(c.Request()),
-	}
-	RequestMap.Store(reqID, details)
-	return reqID, nil
-}
+// 	details := RequestDetails{
+// 		StartTime:   time.Now(),
+// 		Status:      "Handling",
+// 		RequestInfo: ExtractRequestInfo(c.Request()),
+// 	}
+// 	RequestMap.Store(reqID, details)
+// 	return reqID, nil
+// }
 
 // EndRequestWithLog updates the request details and sends the final response.
-func EndRequestWithLog(c echo.Context, reqID string, err error, responseData interface{}) error {
+func EndRequestWithLog(c echo.Context, err error, responseData interface{}) error {
+
+	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+
 	if v, ok := RequestMap.Load(reqID); ok {
 		details := v.(RequestDetails)
 		details.EndTime = time.Now()
 
-		c.Response().Header().Set("X-Request-ID", reqID)
+		c.Response().Header().Set(echo.HeaderXRequestID, reqID)
 
 		if err != nil {
 			details.Status = "Error"

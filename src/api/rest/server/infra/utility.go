@@ -15,18 +15,13 @@ limitations under the License.
 package infra
 
 import (
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/labstack/echo/v4"
 )
 
 func RestCheckMci(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
@@ -37,14 +32,11 @@ func RestCheckMci(c echo.Context) error {
 	}
 	content := JsonTemplate{}
 	content.Exists = exists
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 func RestCheckVm(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
@@ -56,5 +48,5 @@ func RestCheckVm(c echo.Context) error {
 	}
 	content := JsonTemplate{}
 	content.Exists = exists
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }

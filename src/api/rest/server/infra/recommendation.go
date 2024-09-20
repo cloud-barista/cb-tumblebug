@@ -15,8 +15,6 @@ limitations under the License.
 package infra
 
 import (
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -36,19 +34,16 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /mciRecommendVm [post]
 func RestRecommendVm(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := model.SystemCommonNs
 
 	u := &model.DeploymentPlan{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := infra.RecommendVm(nsId, *u)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 type RestPostMciRecommendResponse struct {

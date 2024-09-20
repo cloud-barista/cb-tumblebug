@@ -72,24 +72,20 @@ type RestPostUtilToDesignNetworkReponse struct {
 func RestPostUtilToDesignNetwork(c echo.Context) error {
 
 	// ID for API request tracing
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
 
 	// Bind the request body to SubnettingRequest struct
 	subnettingReq := new(netutil.SubnettingRequest)
 	if err := c.Bind(subnettingReq); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	// Subnetting as many as requested rules
 	networkConfig, err := netutil.SubnettingBy(*subnettingReq)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
-	return common.EndRequestWithLog(c, reqID, err, networkConfig)
+	return common.EndRequestWithLog(c, err, networkConfig)
 }
 
 type RestPostUtilToValidateNetworkRequest struct {
@@ -110,27 +106,21 @@ type RestPostUtilToValidateNetworkRequest struct {
 // @Router /util/net/validate [post]
 func RestPostUtilToValidateNetwork(c echo.Context) error {
 
-	// ID for API request tracing
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
-
 	// Bind the request body to SubnettingRequest struct
 	req := new(netutil.NetworkConfig)
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	// Validate the network configuration
 	netConf := req.NetworkConfiguration
 	err := netutil.ValidateNetwork(netConf)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	okMessage := model.SimpleMsg{}
 	okMessage.Message = "Network configuration is valid."
 
-	return common.EndRequestWithLog(c, reqID, err, okMessage)
+	return common.EndRequestWithLog(c, err, okMessage)
 }

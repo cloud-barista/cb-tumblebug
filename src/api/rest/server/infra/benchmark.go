@@ -15,8 +15,6 @@ limitations under the License.
 package infra
 
 import (
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -39,10 +37,6 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/installBenchmarkAgent/mci/{mciId} [post]
 func RestPostInstallBenchmarkAgentToMci(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
 
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
@@ -55,7 +49,7 @@ func RestPostInstallBenchmarkAgentToMci(c echo.Context) error {
 
 	resultArray, err := infra.InstallBenchmarkAgentToMci(nsId, mciId, req, option)
 	if err != nil {
-		common.EndRequestWithLog(c, reqID, err, nil)
+		common.EndRequestWithLog(c, err, nil)
 	}
 
 	content := model.MciSshCmdResult{}
@@ -63,7 +57,7 @@ func RestPostInstallBenchmarkAgentToMci(c echo.Context) error {
 		content.Results = append(content.Results, v)
 	}
 
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 
 }
 
@@ -87,10 +81,6 @@ type RestGetAllBenchmarkRequest struct {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/benchmarkAll/mci/{mciId} [post]
 func RestGetAllBenchmark(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
 
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
@@ -101,7 +91,7 @@ func RestGetAllBenchmark(c echo.Context) error {
 	}
 
 	content, err := infra.RunAllBenchmarks(nsId, mciId, req.Host)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetLatencyBenchmark godoc
@@ -118,15 +108,12 @@ func RestGetAllBenchmark(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/benchmarkLatency/mci/{mciId} [get]
 func RestGetBenchmarkLatency(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
 	content, err := infra.RunLatencyBenchmark(nsId, mciId, "")
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 type RestGetBenchmarkRequest struct {
@@ -149,10 +136,7 @@ type RestGetBenchmarkRequest struct {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/benchmark/mci/{mciId} [post]
 func RestGetBenchmark(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	action := c.QueryParam("action")
@@ -163,5 +147,5 @@ func RestGetBenchmark(c echo.Context) error {
 	}
 
 	content, err := infra.CoreGetBenchmark(nsId, mciId, action, req.Host)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }

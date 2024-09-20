@@ -127,13 +127,8 @@ func RestCheckHTTPVersion(c echo.Context) error {
 // @Router /credential/publicKey [get]
 func RestGetPublicKeyForCredentialEncryption(c echo.Context) error {
 
-	reqID, err := common.StartRequestWithLog(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
-	}
 	result, err := common.GetPublicKeyForCredentialEncryption()
-	return common.EndRequestWithLog(c, reqID, err, result)
-
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // RestRegisterCredential is a REST API handler for registering credentials.
@@ -149,17 +144,14 @@ func RestGetPublicKeyForCredentialEncryption(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /credential [post]
 func RestRegisterCredential(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	u := &model.CredentialReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := common.RegisterCredential(*u)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 
 }
 
@@ -177,14 +169,11 @@ func RestRegisterCredential(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /connConfig/{connConfigName} [get]
 func RestGetConnConfig(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	connConfigName := c.Param("connConfigName")
 
 	content, err := common.GetConnConfig(connConfigName)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 
 }
 
@@ -204,10 +193,7 @@ func RestGetConnConfig(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /connConfig [get]
 func RestGetConnConfigList(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	filterCredentialHolder := c.QueryParam("filterCredentialHolder")
 	filterVerified := c.QueryParam("filterVerified")
 	filterRegionRepresentative := c.QueryParam("filterRegionRepresentative")
@@ -222,7 +208,7 @@ func RestGetConnConfigList(c echo.Context) error {
 	}
 
 	content, err := common.GetConnConfigList(filterCredentialHolder, filterVerifiedBool, filterRegionRepresentativeBool)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetProviderList func is a rest api wrapper for GetProviderList.
@@ -238,12 +224,9 @@ func RestGetConnConfigList(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /provider [get]
 func RestGetProviderList(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	content, err := common.GetProviderList()
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 
 }
 
@@ -262,15 +245,12 @@ func RestGetProviderList(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /provider/{providerName}/region/{regionName} [get]
 func RestGetRegion(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	providerName := c.Param("providerName")
 	regionName := c.Param("regionName")
 
 	content, err := common.GetRegion(providerName, regionName)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetRegions func is a rest api wrapper for GetRegion.
@@ -287,14 +267,11 @@ func RestGetRegion(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /provider/{providerName}/region [get]
 func RestGetRegions(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	providerName := c.Param("providerName")
 
 	content, err := common.GetRegions(providerName)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetRegionListFromCsp func is a rest api wrapper for RetrieveRegionListFromCsp.
@@ -310,12 +287,9 @@ func RestGetRegions(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /regionFromCsp [get]
 func RestGetRegionListFromCsp(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	content, err := common.RetrieveRegionListFromCsp()
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 
 }
 
@@ -332,12 +306,9 @@ func RestGetRegionListFromCsp(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /cloudInfo [get]
 func RestGetCloudInfo(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	content, err := common.GetCloudInfo()
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetK8sClusterInfo func is a rest api wrapper for K8sClsuterInfo.
@@ -353,12 +324,9 @@ func RestGetCloudInfo(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /k8sClusterInfo [get]
 func RestGetK8sClusterInfo(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	content, err := common.GetK8sClusterInfo()
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // ObjectList struct consists of object IDs
@@ -492,10 +460,7 @@ type RestInspectResourcesRequest struct {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /inspectResources [post]
 func RestInspectResources(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	u := &RestInspectResourcesRequest{}
 	if err := c.Bind(u); err != nil {
 		return err
@@ -511,7 +476,7 @@ func RestInspectResources(c echo.Context) error {
 	// 	content, err = infra.InspectVMs(u.ConnectionName)
 	// }
 	content, err = infra.InspectResources(u.ConnectionName, u.ResourceType)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 
 }
 
@@ -527,12 +492,9 @@ func RestInspectResources(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /inspectResourcesOverview [get]
 func RestInspectResourcesOverview(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	content, err := infra.InspectResourcesOverview()
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // Request struct for RestRegisterCspNativeResources
@@ -557,19 +519,16 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /registerCspResources [post]
 func RestRegisterCspNativeResources(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	u := &RestRegisterCspNativeResourcesRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 	option := c.QueryParam("option")
 	mciFlag := c.QueryParam("mciFlag")
 
 	content, err := infra.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.MciName, option, mciFlag)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 
 }
 
@@ -594,19 +553,16 @@ type RestRegisterCspNativeResourcesRequestAll struct {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /registerCspResourcesAll [post]
 func RestRegisterCspNativeResourcesAll(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	u := &RestRegisterCspNativeResourcesRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 	option := c.QueryParam("option")
 	mciFlag := c.QueryParam("mciFlag")
 
 	content, err := infra.RegisterCspNativeResourcesAll(u.NsId, u.MciName, option, mciFlag)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestForwardAnyReqToAny godoc
@@ -621,14 +577,11 @@ func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 // @Success 200 {object} map[string]interface{}
 // @Router /forward/{path} [post]
 func RestForwardAnyReqToAny(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	reqPath := c.Param("*")
 	reqPath, err := url.PathUnescape(reqPath)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	log.Info().Msgf("reqPath: %s", reqPath)
@@ -638,7 +591,7 @@ func RestForwardAnyReqToAny(c echo.Context) error {
 	if c.Request().Body != nil {
 		bodyBytes, err := io.ReadAll(c.Request().Body)
 		if err != nil {
-			return common.EndRequestWithLog(c, reqID, fmt.Errorf("Failed to read request body: %v", err), nil)
+			return common.EndRequestWithLog(c, fmt.Errorf("Failed to read request body: %v", err), nil)
 		}
 		requestBody = bodyBytes
 	} else {
@@ -646,5 +599,5 @@ func RestForwardAnyReqToAny(c echo.Context) error {
 	}
 
 	content, err := common.ForwardRequestToAny(reqPath, method, requestBody)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }

@@ -44,23 +44,20 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /config/{configId} [delete]
 func RestInitConfig(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	if err := Validate(c, []string{"configId"}); err != nil {
 		log.Error().Err(err).Msg("")
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	err := common.InitConfig(c.Param("configId"))
 	if err != nil {
 		err := fmt.Errorf("Failed to init the config " + c.Param("configId"))
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	} else {
 		// return SendMessage(c, http.StatusOK, "The config "+c.Param("configId")+" has been initialized.")
 		content := map[string]string{"message": "The config " + c.Param("configId") + " has been initialized."}
-		return common.EndRequestWithLog(c, reqID, err, content)
+		return common.EndRequestWithLog(c, err, content)
 	}
 }
 
@@ -77,10 +74,7 @@ func RestInitConfig(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /config/{configId} [get]
 func RestGetConfig(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	if err := Validate(c, []string{"configId"}); err != nil {
 		log.Error().Err(err).Msg("")
 		return SendMessage(c, http.StatusBadRequest, err.Error())
@@ -89,9 +83,9 @@ func RestGetConfig(c echo.Context) error {
 	content, err := common.GetConfig(c.Param("configId"))
 	if err != nil {
 		err := fmt.Errorf("Failed to find the config " + c.Param("configId"))
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	} else {
-		return common.EndRequestWithLog(c, reqID, err, content)
+		return common.EndRequestWithLog(c, err, content)
 	}
 }
 
@@ -113,15 +107,12 @@ type RestGetAllConfigResponse struct {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /config [get]
 func RestGetAllConfig(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	var content RestGetAllConfigResponse
 
 	configList, err := common.ListConfig()
 	content.Config = configList
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestPostConfig godoc
@@ -137,18 +128,15 @@ func RestGetAllConfig(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /config [post]
 func RestPostConfig(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	u := &model.ConfigReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	log.Debug().Msg("[Creating or Updating Config]")
 	content, err := common.UpdateConfig(u)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 
 }
 
@@ -163,14 +151,11 @@ func RestPostConfig(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /config [delete]
 func RestInitAllConfig(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	err := common.InitAllConfig()
 	content := map[string]string{
 		"message": "All configs has been initialized"}
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetRequest godoc

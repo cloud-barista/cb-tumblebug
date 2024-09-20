@@ -19,10 +19,9 @@ func RequestIdAndDetailsIssuer(next echo.HandlerFunc) echo.HandlerFunc {
 		reqID := c.Request().Header.Get(echo.HeaderXRequestID)
 		if reqID == "" {
 			reqID = fmt.Sprintf("%d", time.Now().UnixNano())
+			// Set the generated request ID to the request header
+			c.Request().Header.Set(echo.HeaderXRequestID, reqID)
 		}
-
-		// Set Request on the context
-		c.Set("RequestID", reqID)
 
 		//log.Trace().Msgf("(Request ID middleware) Request ID: %s", reqID)
 		if _, ok := common.RequestMap.Load(reqID); ok {

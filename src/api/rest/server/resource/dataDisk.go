@@ -16,7 +16,6 @@ package resource
 
 import (
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -41,10 +40,6 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/dataDisk [post]
 func RestPostDataDisk(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
 
 	nsId := c.Param("nsId")
 
@@ -52,11 +47,11 @@ func RestPostDataDisk(c echo.Context) error {
 
 	u := &model.TbDataDiskReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.CreateDataDisk(nsId, u, optionFlag)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestPutDataDisk godoc
@@ -74,21 +69,17 @@ func RestPostDataDisk(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/dataDisk/{dataDiskId} [put]
 func RestPutDataDisk(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
 
 	nsId := c.Param("nsId")
 	dataDiskId := c.Param("resourceId")
 
 	u := &model.TbDataDiskUpsizeReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.UpsizeDataDisk(nsId, dataDiskId, u)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetDataDisk godoc
@@ -186,10 +177,7 @@ func RestDelAllDataDisk(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [put]
 func RestPutVmDataDisk(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
@@ -201,13 +189,13 @@ func RestPutVmDataDisk(c echo.Context) error {
 	if forceStr != "" {
 		forceBool, err = strconv.ParseBool(forceStr)
 		if err != nil {
-			return common.EndRequestWithLog(c, reqID, fmt.Errorf("Invalid force value: %s", forceStr), nil)
+			return common.EndRequestWithLog(c, fmt.Errorf("Invalid force value: %s", forceStr), nil)
 		}
 	}
 
 	u := &model.TbAttachDetachDataDiskReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	switch option {
@@ -215,11 +203,11 @@ func RestPutVmDataDisk(c echo.Context) error {
 		fallthrough
 	case model.DetachDataDisk:
 		result, err := infra.AttachDetachDataDisk(nsId, mciId, vmId, option, u.DataDiskId, forceBool)
-		return common.EndRequestWithLog(c, reqID, err, result)
+		return common.EndRequestWithLog(c, err, result)
 
 	default:
 		err := fmt.Errorf("Supported options: %s, %s, %s", model.AttachDataDisk, model.DetachDataDisk, model.AvailableDataDisk)
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 }
 
@@ -238,25 +226,22 @@ func RestPutVmDataDisk(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [post]
 func RestPostVmDataDisk(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
 
 	u := &model.TbDataDiskVmReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.ProvisionDataDisk(nsId, mciId, vmId, u)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // RestGetVmDataDisk godoc
@@ -274,10 +259,7 @@ func RestPostVmDataDisk(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [get]
 func RestGetVmDataDisk(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
@@ -285,7 +267,7 @@ func RestGetVmDataDisk(c echo.Context) error {
 
 	result, err := infra.GetAvailableDataDisks(nsId, mciId, vmId, optionFlag)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	var content interface{}
@@ -299,5 +281,5 @@ func RestGetVmDataDisk(c echo.Context) error {
 		}
 	}
 
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
