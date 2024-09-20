@@ -23,8 +23,8 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 			// log.Debug().Msg("Start - BodyDump() middleware")
 
 			// Get the request ID
-			reqID := c.Get("RequestID").(string)
-			//log.Trace().Msgf("(BodyDump middleware) Request ID: %s", reqID)
+			reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+			// log.Debug().Msgf("(BodyDump middleware) Request ID: %s", reqID)
 
 			// Get the content type
 			contentType := c.Response().Header().Get(echo.HeaderContentType)

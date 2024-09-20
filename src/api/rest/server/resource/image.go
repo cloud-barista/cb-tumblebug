@@ -16,7 +16,6 @@ package resource
 
 import (
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 
@@ -44,10 +43,7 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image [post]
 func RestPostImage(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 
 	action := c.QueryParam("action")
@@ -69,21 +65,21 @@ func RestPostImage(c echo.Context) error {
 		log.Debug().Msg("[Registering Image with info]")
 		u := &model.TbImageInfo{}
 		if err := c.Bind(u); err != nil {
-			return common.EndRequestWithLog(c, reqID, err, nil)
+			return common.EndRequestWithLog(c, err, nil)
 		}
 		content, err := resource.RegisterImageWithInfo(nsId, u, update)
-		return common.EndRequestWithLog(c, reqID, err, content)
+		return common.EndRequestWithLog(c, err, content)
 	} else if action == "registerWithId" {
 		log.Debug().Msg("[Registering Image with ID]")
 		u := &model.TbImageReq{}
 		if err := c.Bind(u); err != nil {
-			return common.EndRequestWithLog(c, reqID, err, nil)
+			return common.EndRequestWithLog(c, err, nil)
 		}
 		content, err := resource.RegisterImageWithId(nsId, u, update, false)
-		return common.EndRequestWithLog(c, reqID, err, content)
+		return common.EndRequestWithLog(c, err, content)
 	} else {
 		err := fmt.Errorf("You must specify: action=registerWithInfo or action=registerWithId")
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 }
@@ -103,10 +99,7 @@ func RestPostImage(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [put]
 func RestPutImage(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	resourceId := c.Param("imageId")
 	resourceId = strings.ReplaceAll(resourceId, " ", "+")
@@ -114,11 +107,11 @@ func RestPutImage(c echo.Context) error {
 
 	u := &model.TbImageInfo{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.UpdateImage(nsId, resourceId, *u, false)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // Request structure for RestLookupImage
@@ -140,18 +133,15 @@ type RestLookupImageRequest struct {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /lookupImage [post]
 func RestLookupImage(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	u := &RestLookupImageRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	log.Debug().Msg("[Lookup image]: " + u.CspImageName)
 	content, err := resource.LookupImage(u.ConnectionName, u.CspImageName)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 
 }
 
@@ -168,18 +158,15 @@ func RestLookupImage(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /lookupImages [post]
 func RestLookupImageList(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	u := &RestLookupImageRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	log.Debug().Msg("[Lookup images]")
 	content, err := resource.LookupImageList(u.ConnectionName)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 
 }
 
@@ -196,15 +183,12 @@ func RestLookupImageList(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/fetchImages [post]
 func RestFetchImages(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 
 	u := &RestLookupImageRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	var connConfigCount, imageCount uint
@@ -213,19 +197,19 @@ func RestFetchImages(c echo.Context) error {
 	if u.ConnectionName == "" {
 		connConfigCount, imageCount, err = resource.FetchImagesForAllConnConfigs(nsId)
 		if err != nil {
-			return common.EndRequestWithLog(c, reqID, err, nil)
+			return common.EndRequestWithLog(c, err, nil)
 		}
 	} else {
 		connConfigCount = 1
 		imageCount, err = resource.FetchImagesForConnConfig(u.ConnectionName, nsId)
 		if err != nil {
-			return common.EndRequestWithLog(c, reqID, err, nil)
+			return common.EndRequestWithLog(c, err, nil)
 		}
 	}
 
 	content := map[string]string{
 		"message": "Fetched " + fmt.Sprint(imageCount) + " images (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetImage godoc
@@ -324,10 +308,7 @@ type RestSearchImageRequest struct {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/searchImage [post]
 func RestSearchImage(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 
 	u := &RestSearchImageRequest{}
@@ -338,5 +319,5 @@ func RestSearchImage(c echo.Context) error {
 	content, err := resource.SearchImage(nsId, u.Keywords...)
 	result := RestGetAllImageResponse{}
 	result.Image = content
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }

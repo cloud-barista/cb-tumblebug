@@ -16,7 +16,6 @@ package resource
 
 import (
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -36,10 +35,7 @@ type JSONResult struct {
 // RestDelAllResources is a common function to handle 'DelAllResources' REST API requests.
 // Dummy functions for Swagger exist in [resource/*.go]
 func RestDelAllResources(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	resourceType := strings.Split(c.Path(), "/")[5]
 	// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
@@ -48,16 +44,13 @@ func RestDelAllResources(c echo.Context) error {
 	subString := c.QueryParam("match")
 
 	content, err := resource.DelAllResources(nsId, resourceType, subString, forceFlag)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestDelResource is a common function to handle 'DelResource' REST API requests.
 // Dummy functions for Swagger exist in [resource/*.go]
 func RestDelResource(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 
 	resourceType := strings.Split(c.Path(), "/")[5]
@@ -71,7 +64,7 @@ func RestDelResource(c echo.Context) error {
 
 	err := resource.DelResource(nsId, resourceType, resourceId, forceFlag)
 	content := map[string]string{"message": "The " + resourceType + " " + resourceId + " has been deleted"}
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // Todo: need to reimplment the following invalid function
@@ -99,16 +92,13 @@ func RestDelResource(c echo.Context) error {
 
 // 	err := model.DelChildResource(nsId, childResourceType, parentResourceId, childResourceId, forceFlag)
 // 	content := map[string]string{"message": "The " + childResourceType + " " + childResourceId + " has been deleted"}
-// 	return common.EndRequestWithLog(c, reqID, err, content)
+// 	return common.EndRequestWithLog(c, err, content)
 // }
 
 // RestGetAllResources is a common function to handle 'GetAllResources' REST API requests.
 // Dummy functions for Swagger exist in [resource/*.go]
 func RestGetAllResources(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 
 	optionFlag := c.QueryParam("option")
@@ -122,13 +112,13 @@ func RestGetAllResources(c echo.Context) error {
 		content := model.IdList{}
 		var err error
 		content.IdList, err = resource.ListResourceId(nsId, resourceType)
-		return common.EndRequestWithLog(c, reqID, err, content)
+		return common.EndRequestWithLog(c, err, content)
 	} else {
 
 		resourceList, err := resource.ListResource(nsId, resourceType, filterKey, filterVal)
 		if err != nil {
 			err := fmt.Errorf("Failed to list " + resourceType + "s; " + err.Error())
-			return common.EndRequestWithLog(c, reqID, err, nil)
+			return common.EndRequestWithLog(c, err, nil)
 		}
 
 		switch resourceType {
@@ -138,52 +128,52 @@ func RestGetAllResources(c echo.Context) error {
 			}
 
 			content.Image = resourceList.([]model.TbImageInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, reqID, err, content)
+			return common.EndRequestWithLog(c, err, content)
 		case model.StrCustomImage:
 			var content struct {
 				Image []model.TbCustomImageInfo `json:"customImage"`
 			}
 
 			content.Image = resourceList.([]model.TbCustomImageInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, reqID, err, content)
+			return common.EndRequestWithLog(c, err, content)
 		case model.StrSecurityGroup:
 			var content struct {
 				SecurityGroup []model.TbSecurityGroupInfo `json:"securityGroup"`
 			}
 
 			content.SecurityGroup = resourceList.([]model.TbSecurityGroupInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, reqID, err, content)
+			return common.EndRequestWithLog(c, err, content)
 		case model.StrSpec:
 			var content struct {
 				Spec []model.TbSpecInfo `json:"spec"`
 			}
 
 			content.Spec = resourceList.([]model.TbSpecInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, reqID, err, content)
+			return common.EndRequestWithLog(c, err, content)
 		case model.StrSSHKey:
 			var content struct {
 				SshKey []model.TbSshKeyInfo `json:"sshKey"`
 			}
 
 			content.SshKey = resourceList.([]model.TbSshKeyInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, reqID, err, content)
+			return common.EndRequestWithLog(c, err, content)
 		case model.StrVNet:
 			var content struct {
 				VNet []model.TbVNetInfo `json:"vNet"`
 			}
 
 			content.VNet = resourceList.([]model.TbVNetInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, reqID, err, content)
+			return common.EndRequestWithLog(c, err, content)
 		case model.StrDataDisk:
 			var content struct {
 				DataDisk []model.TbDataDiskInfo `json:"dataDisk"`
 			}
 
 			content.DataDisk = resourceList.([]model.TbDataDiskInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, reqID, err, content)
+			return common.EndRequestWithLog(c, err, content)
 		default:
 			err := fmt.Errorf("Not accepatble resourceType: " + resourceType)
-			return common.EndRequestWithLog(c, reqID, err, nil)
+			return common.EndRequestWithLog(c, err, nil)
 
 		}
 	}
@@ -192,10 +182,7 @@ func RestGetAllResources(c echo.Context) error {
 // RestGetResource is a common function to handle 'GetResource' REST API requests.
 // Dummy functions for Swagger exist in [resource/*.go]
 func RestGetResource(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 
 	resourceType := strings.Split(c.Path(), "/")[5]
@@ -209,9 +196,9 @@ func RestGetResource(c echo.Context) error {
 	result, err := resource.GetResource(nsId, resourceType, resourceId)
 	if err != nil {
 		errorMessage := fmt.Errorf("Failed to find " + resourceType + " " + resourceId)
-		return common.EndRequestWithLog(c, reqID, errorMessage, nil)
+		return common.EndRequestWithLog(c, errorMessage, nil)
 	}
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // RestCheckResource godoc
@@ -228,10 +215,7 @@ func RestGetResource(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/checkResource/{resourceType}/{resourceId} [get]
 func RestCheckResource(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	resourceType := c.Param("resourceType")
 	resourceId := c.Param("resourceId")
@@ -246,16 +230,13 @@ func RestCheckResource(c echo.Context) error {
 	content := JsonTemplate{}
 	content.Exists = exists
 
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestTestAddObjectAssociation is a REST API call handling function
 // to test "model.UpdateAssociatedObjectList" function with "add" argument.
 func RestTestAddObjectAssociation(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	//resourceType := strings.Split(c.Path(), "/")[5]
 	// c.Path(): /tumblebug/ns/:nsId/testAddObjectAssociation/:resourceType/:resourceId
@@ -266,16 +247,13 @@ func RestTestAddObjectAssociation(c echo.Context) error {
 
 	content, err := resource.UpdateAssociatedObjectList(nsId, resourceType, resourceId, model.StrAdd, "/test/vm/key")
 
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestTestDeleteObjectAssociation is a REST API call handling function
 // to test "model.UpdateAssociatedObjectList" function with "delete" argument.
 func RestTestDeleteObjectAssociation(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	//resourceType := strings.Split(c.Path(), "/")[5]
 	// c.Path(): /tumblebug/ns/:nsId/testDeleteObjectAssociation/:resourceType/:resourceId
@@ -285,16 +263,13 @@ func RestTestDeleteObjectAssociation(c echo.Context) error {
 	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
 	content, err := resource.UpdateAssociatedObjectList(nsId, resourceType, resourceId, model.StrDelete, "/test/vm/key")
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestTestGetAssociatedObjectCount is a REST API call handling function
 // to test "model.GetAssociatedObjectCount" function.
 func RestTestGetAssociatedObjectCount(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	//resourceType := strings.Split(c.Path(), "/")[5]
 	// c.Path(): /tumblebug/ns/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId
@@ -306,7 +281,7 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 	associatedObjectCount, err := resource.GetAssociatedObjectCount(nsId, resourceType, resourceId)
 	content := map[string]int{"associatedObjectCount": associatedObjectCount}
 
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestLoadAssets godoc
@@ -320,12 +295,9 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /loadAssets [get]
 func RestLoadAssets(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	content, err := resource.LoadAssets()
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestCreateSharedResource godoc
@@ -342,10 +314,7 @@ func RestLoadAssets(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/sharedResource [post]
 func RestCreateSharedResource(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	resType := c.QueryParam("option")
 
@@ -354,7 +323,7 @@ func RestCreateSharedResource(c echo.Context) error {
 
 	err := resource.CreateSharedResource(nsId, resType, connectionName)
 	content := map[string]string{"message": "Done"}
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestDelAllSharedResources godoc
@@ -369,14 +338,11 @@ func RestCreateSharedResource(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/sharedResources [delete]
 func RestDelAllSharedResources(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 
 	content, err := resource.DelAllSharedResources(nsId)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 /*

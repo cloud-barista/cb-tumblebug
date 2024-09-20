@@ -43,11 +43,6 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/cmd/mci/{mciId} [post]
 func RestPostCmdMci(c echo.Context) error {
-	// reqID, idErr := common.StartRequestWithLog(c)
-	// if idErr != nil {
-	// 	return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	// }
-	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
 
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
@@ -56,12 +51,12 @@ func RestPostCmdMci(c echo.Context) error {
 
 	req := &model.MciCmdReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	output, err := infra.RemoteCommandToMci(nsId, mciId, subGroupId, vmId, req)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	result := model.MciSshCmdResult{}
@@ -74,7 +69,7 @@ func RestPostCmdMci(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, result)
 
-	// return common.EndRequestWithLog(c, reqID, err, result)
+	// return common.EndRequestWithLog(c, err, result)
 
 }
 
@@ -99,10 +94,7 @@ func RestPostCmdMci(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Router /ns/{nsId}/transferFile/mci/{mciId} [post]
 func RestPostFileToMci(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	subGroupId := c.QueryParam("subGroupId")
@@ -111,28 +103,28 @@ func RestPostFileToMci(c echo.Context) error {
 
 	if targetPath == "" {
 		err := fmt.Errorf("target path is required")
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	// Validate the file
 	file, err := c.FormFile("file")
 	if err != nil {
 		err = fmt.Errorf("failed to read the file %v", err)
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	// File size validation
 	fileSizeLimit := int64(10 * 1024 * 1024) // (10MB limit)
 	if file.Size > fileSizeLimit {
 		err := fmt.Errorf("file too large, max size is %v", fileSizeLimit)
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	// Open the file and read it into memory
 	src, err := file.Open()
 	if err != nil {
 		err = fmt.Errorf("failed to open the file %v", err)
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 	defer src.Close()
 
@@ -140,18 +132,18 @@ func RestPostFileToMci(c echo.Context) error {
 	fileBytes, err := io.ReadAll(src)
 	if err != nil {
 		err = fmt.Errorf("failed to read the file %v", err)
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	// Call the TransferFileToMci function
 	result, err := infra.TransferFileToMci(nsId, mciId, subGroupId, vmId, fileBytes, file.Filename, targetPath)
 	if err != nil {
 		err = fmt.Errorf("failed to transfer file to mci %v", err)
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	// Return the result
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // RestSetBastionNodes godoc
@@ -170,17 +162,14 @@ func RestPostFileToMci(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion/{bastionVmId} [put]
 func RestSetBastionNodes(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	targetVmId := c.Param("targetVmId")
 	bastionVmId := c.Param("bastionVmId")
 
 	content, err := infra.SetBastionNodes(nsId, mciId, targetVmId, bastionVmId)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetBastionNodes godoc
@@ -198,16 +187,13 @@ func RestSetBastionNodes(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{targetVmId}/bastion [get]
 func RestGetBastionNodes(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	targetVmId := c.Param("targetVmId")
 
 	content, err := infra.GetBastionNodes(nsId, mciId, targetVmId)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestRemoveBastionNodes godoc
@@ -225,14 +211,11 @@ func RestGetBastionNodes(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/bastion/{bastionVmId} [delete]
 func RestRemoveBastionNodes(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	bastionVmId := c.Param("bastionVmId")
 
 	content, err := infra.RemoveBastionNodes(nsId, mciId, bastionVmId)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }

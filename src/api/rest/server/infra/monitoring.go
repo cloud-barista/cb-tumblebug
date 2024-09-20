@@ -15,8 +15,6 @@ limitations under the License.
 package infra
 
 import (
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -38,20 +36,17 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/monitoring/install/mci/{mciId} [post]
 func RestPostInstallMonitorAgentToMci(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
 	req := &model.MciCmdReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 	// mciTmpSystemLabel := model.DefaultSystemLabel
 	content, err := infra.InstallMonitorAgentToMci(nsId, mciId, model.StrMCI, req)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestPutMonitorAgentStatusInstalled godoc
@@ -69,10 +64,7 @@ func RestPostInstallMonitorAgentToMci(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/monitoring/status/mci/{mciId}/vm/{vmId} [put]
 func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
@@ -80,11 +72,11 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 	// mciTmpSystemLabel := model.DefaultSystemLabel
 	err := infra.SetMonitoringAgentStatusInstalled(nsId, mciId, vmId)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.ListVmInfo(nsId, mciId, vmId)
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // RestGetMonitorData godoc
@@ -102,19 +94,16 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/monitoring/mci/{mciId}/metric/{metric} [get]
 func RestGetMonitorData(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	metric := c.Param("metric")
 
 	req := &model.MciCmdReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := infra.GetMonitoringData(nsId, mciId, metric)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }

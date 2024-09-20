@@ -15,8 +15,6 @@ limitations under the License.
 package resource
 
 import (
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -38,10 +36,6 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey [post]
 func RestPostSshKey(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
 
 	nsId := c.Param("nsId")
 
@@ -49,11 +43,11 @@ func RestPostSshKey(c echo.Context) error {
 
 	u := &model.TbSshKeyReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.CreateSshKey(nsId, u, optionFlag)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestPutSshKey godoc
@@ -71,20 +65,17 @@ func RestPostSshKey(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [put]
 func RestPutSshKey(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	sshKeyId := c.Param("resourceId")
 
 	u := &model.TbSshKeyInfo{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.UpdateSshKey(nsId, sshKeyId, *u)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetSshKey godoc

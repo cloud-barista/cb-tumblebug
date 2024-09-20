@@ -16,7 +16,6 @@ package infra
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
@@ -53,10 +52,6 @@ type JSONResult struct {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId} [get]
 func RestGetMci(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
 
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
@@ -70,12 +65,12 @@ func RestGetMci(c echo.Context) error {
 		content := model.IdList{}
 		var err error
 		content.IdList, err = infra.ListVmByFilter(nsId, mciId, filterKey, filterVal)
-		return common.EndRequestWithLog(c, reqID, err, content)
+		return common.EndRequestWithLog(c, err, content)
 	} else if option == "status" {
 
 		result, err := infra.GetMciStatus(nsId, mciId)
 		if err != nil {
-			return common.EndRequestWithLog(c, reqID, err, nil)
+			return common.EndRequestWithLog(c, err, nil)
 		}
 
 		var content struct {
@@ -83,17 +78,17 @@ func RestGetMci(c echo.Context) error {
 		}
 		content.Result = result
 
-		return common.EndRequestWithLog(c, reqID, err, content)
+		return common.EndRequestWithLog(c, err, content)
 
 	} else if option == "accessinfo" {
 
 		result, err := infra.GetMciAccessInfo(nsId, mciId, accessInfoOption)
-		return common.EndRequestWithLog(c, reqID, err, result)
+		return common.EndRequestWithLog(c, err, result)
 
 	} else {
 
 		result, err := infra.GetMciInfo(nsId, mciId)
-		return common.EndRequestWithLog(c, reqID, err, result)
+		return common.EndRequestWithLog(c, err, result)
 
 	}
 }
@@ -122,10 +117,7 @@ type RestGetAllMciStatusResponse struct {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci [get]
 func RestGetAllMci(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
 
@@ -134,34 +126,34 @@ func RestGetAllMci(c echo.Context) error {
 		content := model.IdList{}
 		var err error
 		content.IdList, err = infra.ListMciId(nsId)
-		return common.EndRequestWithLog(c, reqID, err, content)
+		return common.EndRequestWithLog(c, err, content)
 	} else if option == "status" {
 		// return MCI Status objects (diffent with MCI objects)
 		result, err := infra.ListMciStatus(nsId)
 		if err != nil {
-			return common.EndRequestWithLog(c, reqID, err, nil)
+			return common.EndRequestWithLog(c, err, nil)
 		}
 		content := RestGetAllMciStatusResponse{}
 		content.Mci = result
-		return common.EndRequestWithLog(c, reqID, err, content)
+		return common.EndRequestWithLog(c, err, content)
 	} else if option == "simple" {
 		// MCI in simple (without VM information)
 		result, err := infra.ListMciInfo(nsId, option)
 		if err != nil {
-			return common.EndRequestWithLog(c, reqID, err, nil)
+			return common.EndRequestWithLog(c, err, nil)
 		}
 		content := RestGetAllMciResponse{}
 		content.Mci = result
-		return common.EndRequestWithLog(c, reqID, err, content)
+		return common.EndRequestWithLog(c, err, content)
 	} else {
 		// MCI in detail (with status information)
 		result, err := infra.ListMciInfo(nsId, "status")
 		if err != nil {
-			return common.EndRequestWithLog(c, reqID, err, nil)
+			return common.EndRequestWithLog(c, err, nil)
 		}
 		content := RestGetAllMciResponse{}
 		content.Mci = result
-		return common.EndRequestWithLog(c, reqID, err, content)
+		return common.EndRequestWithLog(c, err, content)
 	}
 }
 
@@ -199,16 +191,13 @@ func RestPutMci(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId} [delete]
 func RestDelMci(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	option := c.QueryParam("option")
 
 	content, err := infra.DelMci(nsId, mciId, option)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestDelAllMci godoc
@@ -224,16 +213,13 @@ func RestDelMci(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci [delete]
 func RestDelAllMci(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
 
 	message, err := infra.DelAllMci(nsId, option)
 	result := model.SimpleMsg{Message: message}
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // TODO: swag does not support multiple response types (success 200) in an API.
@@ -255,10 +241,7 @@ func RestDelAllMci(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId} [get]
 func RestGetMciVm(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
@@ -268,15 +251,15 @@ func RestGetMciVm(c echo.Context) error {
 	switch option {
 	case "status":
 		result, err := infra.GetMciVmStatus(nsId, mciId, vmId)
-		return common.EndRequestWithLog(c, reqID, err, result)
+		return common.EndRequestWithLog(c, err, result)
 
 	case "idsInDetail":
 		result, err := infra.GetVmIdNameInDetail(nsId, mciId, vmId)
-		return common.EndRequestWithLog(c, reqID, err, result)
+		return common.EndRequestWithLog(c, err, result)
 
 	default:
 		result, err := infra.ListVmInfo(nsId, mciId, vmId)
-		return common.EndRequestWithLog(c, reqID, err, result)
+		return common.EndRequestWithLog(c, err, result)
 	}
 }
 
@@ -316,10 +299,7 @@ func RestPutMciVm(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId} [delete]
 func RestDelMciVm(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
@@ -329,11 +309,11 @@ func RestDelMciVm(c echo.Context) error {
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("Failed to delete the VM info")
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	result := map[string]string{"message": "Deleted the VM info"}
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // RestGetMciGroupVms godoc
@@ -352,10 +332,7 @@ func RestDelMciVm(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/subgroup/{subgroupId} [get]
 func RestGetMciGroupVms(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	subgroupId := c.Param("subgroupId")
@@ -364,7 +341,7 @@ func RestGetMciGroupVms(c echo.Context) error {
 	content := model.IdList{}
 	var err error
 	content.IdList, err = infra.ListVmBySubGroup(nsId, mciId, subgroupId)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetMciGroupIds godoc
@@ -381,10 +358,7 @@ func RestGetMciGroupVms(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/subgroup [get]
 func RestGetMciGroupIds(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	//option := c.QueryParam("option")
@@ -392,5 +366,5 @@ func RestGetMciGroupIds(c echo.Context) error {
 	content := model.IdList{}
 	var err error
 	content.IdList, err = infra.ListSubGroupId(nsId, mciId)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }

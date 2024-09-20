@@ -16,7 +16,6 @@ package infra
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
@@ -40,20 +39,17 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/policy/mci/{mciId} [post]
 func RestPostMciPolicy(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
 	req := &model.MciPolicyReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := infra.CreateMciPolicy(nsId, mciId, req)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetMciPolicy godoc
@@ -70,10 +66,6 @@ func RestPostMciPolicy(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/policy/mci/{mciId} [get]
 func RestGetMciPolicy(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
 
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
@@ -81,14 +73,14 @@ func RestGetMciPolicy(c echo.Context) error {
 	result, err := infra.GetMciPolicyObject(nsId, mciId)
 	if err != nil {
 		errorMessage := fmt.Errorf("Error to find MciPolicyObject : " + mciId + "ERROR : " + err.Error())
-		return common.EndRequestWithLog(c, reqID, errorMessage, nil)
+		return common.EndRequestWithLog(c, errorMessage, nil)
 	}
 
 	if result.Id == "" {
 		errorMessage := fmt.Errorf("Failed to find MciPolicyObject : " + mciId)
-		return common.EndRequestWithLog(c, reqID, errorMessage, nil)
+		return common.EndRequestWithLog(c, errorMessage, nil)
 	}
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // Response structure for RestGetAllMciPolicy
@@ -109,21 +101,18 @@ type RestGetAllMciPolicyResponse struct {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/policy/mci [get]
 func RestGetAllMciPolicy(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	log.Debug().Msg("[Get MCI Policy List]")
 
 	result, err := infra.GetAllMciPolicyObject(nsId)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content := RestGetAllMciPolicyResponse{}
 	content.MciPolicy = result
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 /*
@@ -159,16 +148,13 @@ func RestPutMciPolicy(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/policy/mci/{mciId} [delete]
 func RestDelMciPolicy(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
 	err := infra.DelMciPolicy(nsId, mciId)
 	result := map[string]string{"message": "Deleted the MCI Policy info"}
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }
 
 // RestDelAllMciPolicy godoc
@@ -183,11 +169,8 @@ func RestDelMciPolicy(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/policy/mci [delete]
 func RestDelAllMciPolicy(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	result, err := infra.DelAllMciPolicy(nsId)
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }

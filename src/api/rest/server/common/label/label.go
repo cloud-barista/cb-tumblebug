@@ -16,7 +16,6 @@ package label
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/labstack/echo/v4"
 
@@ -40,10 +39,6 @@ import (
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Router /label/{labelType}/{uid} [put]
 func RestCreateOrUpdateLabel(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
 
 	labelType := c.Param("labelType")
 	uid := c.Param("uid")
@@ -51,7 +46,7 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 	// Parse the incoming request body to get the labels
 	var labelReq model.Label
 	if err := c.Bind(&labelReq); err != nil {
-		return common.EndRequestWithLog(c, reqID, fmt.Errorf("Invalid request body"), nil)
+		return common.EndRequestWithLog(c, fmt.Errorf("Invalid request body"), nil)
 	}
 
 	// Get the resource key
@@ -60,10 +55,10 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 	// Create or update the label in the KV store
 	err := label.CreateOrUpdateLabel(labelType, uid, resourceKey, labelReq.Labels)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
-	return common.EndRequestWithLog(c, reqID, nil, map[string]string{"message": "Label created or updated successfully"})
+	return common.EndRequestWithLog(c, nil, map[string]string{"message": "Label created or updated successfully"})
 }
 
 // RestRemoveLabel godoc
@@ -81,10 +76,6 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Router /label/{labelType}/{uid}/{key} [delete]
 func RestRemoveLabel(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
 
 	labelType := c.Param("labelType")
 	uid := c.Param("uid")
@@ -93,10 +84,10 @@ func RestRemoveLabel(c echo.Context) error {
 	// Remove the label from the KV store
 	err := label.RemoveLabel(labelType, uid, key)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
-	return common.EndRequestWithLog(c, reqID, nil, map[string]string{"message": "Label removed successfully"})
+	return common.EndRequestWithLog(c, nil, map[string]string{"message": "Label removed successfully"})
 }
 
 // RestGetLabels godoc
@@ -113,10 +104,6 @@ func RestRemoveLabel(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Router /label/{labelType}/{uid} [get]
 func RestGetLabels(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
 
 	labelType := c.Param("labelType")
 	uid := c.Param("uid")
@@ -124,10 +111,10 @@ func RestGetLabels(c echo.Context) error {
 	// Get the labels from the KV store
 	labelInfo, err := label.GetLabels(labelType, uid)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
-	return common.EndRequestWithLog(c, reqID, nil, labelInfo)
+	return common.EndRequestWithLog(c, nil, labelInfo)
 }
 
 // ResourcesResponse is a struct to wrap the results of a label selector query
@@ -155,10 +142,6 @@ type ResourcesResponse struct {
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Router /resources/{labelType} [get]
 func RestGetResourcesByLabelSelector(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
 
 	labelType := c.Param("labelType")
 	labelSelector := c.QueryParam("labelSelector")
@@ -166,7 +149,7 @@ func RestGetResourcesByLabelSelector(c echo.Context) error {
 	// Get resources based on the label selector
 	resources, err := label.GetResourcesByLabelSelector(labelType, labelSelector)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	// Wrap the results in a JSON object
@@ -174,7 +157,7 @@ func RestGetResourcesByLabelSelector(c echo.Context) error {
 		Results: resources,
 	}
 
-	return common.EndRequestWithLog(c, reqID, nil, response)
+	return common.EndRequestWithLog(c, nil, response)
 }
 
 // RestGetSystemLabelInfo godoc
@@ -188,10 +171,6 @@ func RestGetResourcesByLabelSelector(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Router /labelInfo [get]
 func RestGetSystemLabelInfo(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": idErr.Error()})
-	}
 
 	// Use the GetLabelConstantsMap function to get the system label constants
 	systemLabels := model.GetLabelConstantsMap()
@@ -203,5 +182,5 @@ func RestGetSystemLabelInfo(c echo.Context) error {
 		LabelTypes:   labelTypes,
 	}
 
-	return common.EndRequestWithLog(c, reqID, nil, systemLabelInfo)
+	return common.EndRequestWithLog(c, nil, systemLabelInfo)
 }

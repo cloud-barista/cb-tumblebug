@@ -39,15 +39,12 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /availableK8sClusterVersion [get]
 func RestGetAvailableK8sClusterVersion(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	providerName := c.QueryParam("providerName")
 	regionName := c.QueryParam("regionName")
 
 	content, err := common.GetAvailableK8sClusterVersion(providerName, regionName)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetAvailableK8sClusterNodeImage func is a rest api wrapper for GetAvailableK8sClusterNodeImage.
@@ -65,15 +62,12 @@ func RestGetAvailableK8sClusterVersion(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /availableK8sClusterNodeImage [get]
 func RestGetAvailableK8sClusterNodeImage(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	providerName := c.QueryParam("providerName")
 	regionName := c.QueryParam("regionName")
 
 	content, err := common.GetAvailableK8sClusterNodeImage(providerName, regionName)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestCheckNodeGroupsOnK8sCreation func is a rest api wrapper for CheckNodeGroupsOnK8sCreation.
@@ -90,14 +84,11 @@ func RestGetAvailableK8sClusterNodeImage(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /checkNodeGroupsOnK8sCreation [get]
 func RestCheckNodeGroupsOnK8sCreation(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	providerName := c.QueryParam("providerName")
 
 	content, err := common.CheckNodeGroupsOnK8sCreation(providerName)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestPostK8sCluster func is a rest api wrapper for CreateK8sCluster.

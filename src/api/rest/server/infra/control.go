@@ -16,7 +16,6 @@ package infra
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
@@ -40,10 +39,7 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/control/mci/{mciId} [get]
 func RestGetControlMci(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
@@ -59,14 +55,14 @@ func RestGetControlMci(c echo.Context) error {
 
 		resultString, err := infra.HandleMciAction(nsId, mciId, action, forceOption)
 		if err != nil {
-			return common.EndRequestWithLog(c, reqID, err, returnObj)
+			return common.EndRequestWithLog(c, err, returnObj)
 		}
 		returnObj.Message = resultString
-		return common.EndRequestWithLog(c, reqID, err, returnObj)
+		return common.EndRequestWithLog(c, err, returnObj)
 
 	} else {
 		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine, continue, withdraw")
-		return common.EndRequestWithLog(c, reqID, err, returnObj)
+		return common.EndRequestWithLog(c, err, returnObj)
 	}
 }
 
@@ -87,10 +83,7 @@ func RestGetControlMci(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/control/mci/{mciId}/vm/{vmId} [get]
 func RestGetControlMciVm(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
@@ -108,14 +101,14 @@ func RestGetControlMciVm(c echo.Context) error {
 
 		resultString, err := infra.HandleMciVmAction(nsId, mciId, vmId, action, forceOption)
 		if err != nil {
-			return common.EndRequestWithLog(c, reqID, err, returnObj)
+			return common.EndRequestWithLog(c, err, returnObj)
 		}
 		returnObj.Message = resultString
-		return common.EndRequestWithLog(c, reqID, err, returnObj)
+		return common.EndRequestWithLog(c, err, returnObj)
 
 	} else {
 		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine")
-		return common.EndRequestWithLog(c, reqID, err, returnObj)
+		return common.EndRequestWithLog(c, err, returnObj)
 	}
 }
 
@@ -135,10 +128,7 @@ func RestGetControlMciVm(c echo.Context) error {
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/snapshot [post]
 func RestPostMciVmSnapshot(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
@@ -150,7 +140,7 @@ func RestPostMciVmSnapshot(c echo.Context) error {
 
 	result, err := infra.CreateVmSnapshot(nsId, mciId, vmId, u.Name)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, model.SimpleMsg{Message: "Failed to create a snapshot"})
+		return common.EndRequestWithLog(c, err, model.SimpleMsg{Message: "Failed to create a snapshot"})
 	}
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return common.EndRequestWithLog(c, err, result)
 }

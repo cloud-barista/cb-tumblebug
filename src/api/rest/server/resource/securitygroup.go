@@ -15,8 +15,6 @@ limitations under the License.
 package resource
 
 import (
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -38,21 +36,18 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup [post]
 func RestPostSecurityGroup(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 
 	optionFlag := c.QueryParam("option")
 
 	u := &model.TbSecurityGroupReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.CreateSecurityGroup(nsId, u, optionFlag)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 /*

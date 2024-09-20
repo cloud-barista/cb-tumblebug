@@ -16,7 +16,6 @@ package resource
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -39,26 +38,23 @@ import (
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/customImage [post]
 func RestPostCustomImage(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+
 	nsId := c.Param("nsId")
 
 	optionFlag := c.QueryParam("option")
 
 	if optionFlag != "register" {
 		err := fmt.Errorf("POST customImage can be called only with 'option=register'")
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	u := &model.TbCustomImageReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.RegisterCustomImageWithId(nsId, u)
-	return common.EndRequestWithLog(c, reqID, err, content)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // RestGetCustomImage godoc
