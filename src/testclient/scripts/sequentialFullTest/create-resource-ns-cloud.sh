@@ -86,7 +86,6 @@ source ../init.sh
 
 NUMVM=${OPTION01:-1}
 
-
 if [ "${INDEX}" == "0" ]; then
 	echo "[Parallel execution for all CSP regions]"
 

@@ -24,7 +24,7 @@ echo -e "${BOLD}"
 echo -e "${NC} ${BLUE} ${BOLD}"
 curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}?option=${GetK8sClusterOption} |
     jq '.status | .K8SCLUSTER | sort_by(.id)' |
-    jq -r '(["NodeGroup-ID","Status","ImageId","SpecId","RootDiskType","RootDiskSize","SshKeyId", "OnAutoScaling", "DesiredNodeSize", "MinNodeSize", "MaxNodeSize"] | (., map(length*"-"))), (.[] | [.id, .status, .imageId, .specId, .rootDiskType, .rootDiskSize, .sshKeyId, .onAutoScaling, .desiredNodeSize, .minNodeSize, .maxNodeSize]) | @tsv' |
+    jq -r '(["NodeGroup-ID","Status","cspImageName","cspSpecName","RootDiskType","RootDiskSize","SshKeyId", "OnAutoScaling", "DesiredNodeSize", "MinNodeSize", "MaxNodeSize"] | (., map(length*"-"))), (.[] | [.id, .status, .cspImageName, .cspSpecName, .rootDiskType, .rootDiskSize, .sshKeyId, .onAutoScaling, .desiredNodeSize, .minNodeSize, .maxNodeSize]) | @tsv' |
     column -t
 echo -e "${NC}"
 
