@@ -8529,6 +8529,95 @@
                 }
             }
         },
+        "/ns/{nsId}/transferFile/mci/{mciId}": {
+            "post": {
+                "description": "Transfer a file to specified MCI to the specified path.\nThe file size should be less than 10MB.\nNot for gerneral file transfer but for specific purpose (small configuration files).",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command"
+                ],
+                "summary": "Transfer a file to specified MCI",
+                "operationId": "PostFileToMci",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1",
+                        "description": "subGroupId to apply the file transfer only for VMs in subGroup of MCI",
+                        "name": "subGroupId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "vmId to apply the file transfer only for a VM in MCI",
+                        "name": "vmId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "/home/cb-user/",
+                        "description": "Target path where the file will be stored",
+                        "name": "path",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "The file to be uploaded (Max 10MB)",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MciSshCmdResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/object": {
             "get": {
                 "description": "Get value of an object",
