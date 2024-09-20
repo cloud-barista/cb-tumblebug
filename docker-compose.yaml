@@ -143,11 +143,11 @@ services:
 
   # cb-mapui
   cb-mapui:
-    image: cloudbaristaorg/cb-mapui:0.9.4
+    image: cloudbaristaorg/cb-mapui:0.9.5
     container_name: cb-mapui
-    build:
-      context: ../cb-mapui
-      dockerfile: Dockerfile
+    # build:
+    #   context: ../cb-mapui
+    #   dockerfile: Dockerfile
     networks:
       - external_network
     ports:
