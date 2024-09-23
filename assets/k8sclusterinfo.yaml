@@ -46,12 +46,16 @@ k8scluster:
     version:
       - region: [common]
         available:
+          - name: 1.30
+            id: 1.30.3-gke.1225000
           - name: 1.29
-            id: 1.29.6-gke.1038001
+            id: 1.29.7-gke.1104000
           - name: 1.28
-            id: 1.28.11-gke.1019001
-          - name: 1.26
-            id: 1.27.14-gke.1059002
+            id: 1.28.12-gke.1052000
+          - name: 1.27
+            id: 1.27.16-gke.1051000
+      - region: [africa-south1]
+        # addnodegroup unavailble
     rootDisk:
       - region: [common]
         type:
