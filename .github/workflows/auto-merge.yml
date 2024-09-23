@@ -52,7 +52,7 @@ jobs:
       
       # AutoMerging if this PR has MERGE_LABELS: approved, lgtm (not wip, hold)
       - name: automerge-lgtm-approved
-        uses: "pascalgn/automerge-action@v0.16.3"
+        uses: "pascalgn/automerge-action@v0.16.4"
         with:
           args: "--trace"
         env:
