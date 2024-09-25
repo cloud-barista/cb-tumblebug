@@ -102,6 +102,16 @@ func NewLogger(config Config) *zerolog.Logger {
 			Compress:   config.Compress,
 		}
 
+		// Ensure the log file directory exists before creating the log file
+		dir := filepath.Dir(config.LogFilePath)
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			// Create the directory if it does not exist
+			err = os.MkdirAll(dir, 0755) // Set permissions as needed
+			if err != nil {
+				log.Fatal().Msgf("Failed to create log directory: %v", err)
+			}
+		}
+
 		// Ensure the log file exists before changing its permissions
 		if _, err := os.Stat(config.LogFilePath); os.IsNotExist(err) {
 			// Create the log file if it does not exist
