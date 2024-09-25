@@ -162,7 +162,8 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 
 	var spNodeGroupList []model.SpiderNodeGroupReqInfo
 	for _, v := range req.K8sNodeGroupList {
-		err := common.CheckString(v.Name)
+		spName := v.Name
+		err := common.CheckString(spName)
 		if err != nil {
 			log.Err(err).Msg("Failed to Create a K8sCluster")
 			return emptyObj, err
@@ -192,7 +193,7 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 		}
 
 		spNodeGroupList = append(spNodeGroupList, model.SpiderNodeGroupReqInfo{
-			Name:            common.GenUid(),
+			Name:            spName,
 			ImageName:       spImgName,
 			VMSpecName:      spSpecName,
 			RootDiskType:    v.RootDiskType,
