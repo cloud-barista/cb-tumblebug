@@ -96,16 +96,39 @@ func ValidateVNetReq(vNetReq *model.TbVNetReq) error {
 	}
 
 	// Validate zone in each subnet
+	// TODO: Update the validation logic
+	// It's a temporary validation logic due to the connection name pattern
+
+	// Split the connection name into provider and region/zone
 	parts := strings.SplitN(vNetReq.ConnectionName, "-", 2)
 	provider := parts[0]
-	region := parts[1]
+	regionZone := parts[1]
 
-	regionDetail, err := common.GetRegion(provider, region)
+	// Get the region list
+	regionsObj, err := common.GetRegions(provider)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
 
+	// Try to match and get the region detail
+	var regionDetail model.RegionDetail
+	for _, region := range regionsObj.Regions {
+		exists := strings.HasPrefix(regionZone, region.RegionName)
+		if exists {
+			regionDetail = region
+			break
+		}
+	}
+
+	// Check if the region detail exists or not
+	if regionDetail.RegionName == "" && len(regionDetail.Zones) == 0 {
+		err := fmt.Errorf("invalid region/zone: %s", regionZone)
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	// Validate the zone in each subnet
 	zones := regionDetail.Zones
 	for _, subnetInfo := range vNetReq.SubnetInfoList {
 		if subnetInfo.Zone != "" {
@@ -1262,15 +1285,15 @@ func DesignVNets(reqt *model.VNetDesignRequest) (model.VNetDesignResponse, error
 		for j, vnet := range region.NeededVNets {
 
 			// Design a vNet
-			fmt.Printf("Region %d, VNet %d:\n", i+1, j+1)
+			log.Debug().Msgf("Region %d, VNet %d:\n", i+1, j+1)
 
 			// Calculate CIDR blocks for vNet and subnets
 			cidr, subnets, newNextAvailableIP, err := netutil.DeriveVNetAndSubnets(nextAvailableIP, vnet.SubnetSize, vnet.SubnetCount)
 			if err != nil {
-				fmt.Printf("Error calculating subnets: %v\n", err)
+				log.Warn().Msgf("Error calculating subnets: %v", err)
 				continue
 			}
-			fmt.Printf("vNet: %s\n", cidr)
+			log.Debug().Msgf("vNet: %s", cidr)
 			vNetReq := model.TbVNetReq{
 				Name:           fmt.Sprintf("vnet%02d", idx),
 				ConnectionName: region.ConnectionName,
@@ -1278,7 +1301,7 @@ func DesignVNets(reqt *model.VNetDesignRequest) (model.VNetDesignResponse, error
 				Description:    fmt.Sprintf("vnet%02d designed by util/vNet/design", idx),
 			}
 
-			fmt.Println("Subnets:")
+			log.Debug().Msgf("Subnets:")
 			zones, length, err := GetFirstNZones(region.ConnectionName, 2)
 			if err != nil {
 				log.Error().Err(err).Msg("")
