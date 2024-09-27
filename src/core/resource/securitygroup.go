@@ -17,7 +17,6 @@ package resource
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"reflect"
 	"strings"
@@ -207,7 +206,7 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 		return content, err
 	}
 
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
@@ -379,7 +378,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 			return content, err
 		}
 
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+		// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
@@ -538,7 +537,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 		return content, err
 	}
 
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
@@ -579,7 +578,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 		return content, err
 	}
 
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))

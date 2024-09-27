@@ -339,7 +339,7 @@ func CreateNLB(nsId string, mciId string, u *model.TbNLBReq, option string) (mod
 		return emptyObj, err
 	}
 
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
@@ -753,7 +753,7 @@ func DelNLB(nsId string, mciId string, resourceId string, forceFlag string) erro
 		return err
 	}
 
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
 	case forceFlag == "true":
 		url += "?force=true"
@@ -904,7 +904,7 @@ func GetNLBHealth(nsId string, mciId string, nlbId string) (model.TbNLBHealthInf
 		return model.TbNLBHealthInfo{}, err
 	}
 
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
@@ -1075,7 +1075,7 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.TbNLBAddRe
 		return content, err
 	}
 
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
@@ -1280,7 +1280,7 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.TbNLBAd
 		return err
 	}
 
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))

@@ -494,7 +494,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 		return nullObj, err
 	}
 
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
