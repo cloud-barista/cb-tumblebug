@@ -130,7 +130,7 @@ func RemoveLabel(labelType, uid, key string) error {
 }
 
 // GetLabels retrieves the labels for a resource identified by its uid.
-func GetLabels(labelType, uid string) (lable model.LabelInfo, err error) {
+func GetLabels(labelType, uid string) (label model.LabelInfo, err error) {
 	labelInfo := model.LabelInfo{}
 
 	// Construct the labelKey
