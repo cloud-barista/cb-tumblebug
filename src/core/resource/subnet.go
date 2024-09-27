@@ -55,16 +55,39 @@ func ValidateSubnetReq(subnetReq *model.TbSubnetReq, existingVNet model.TbVNetIn
 	}
 
 	// Validate zone in each subnet
+	// TODO: Update the validation logic
+	// It's a temporary validation logic due to the connection name pattern
+	// Split the connection name into provider and region/zone
 	parts := strings.SplitN(existingVNet.ConnectionName, "-", 2)
 	provider := parts[0]
-	region := parts[1]
-	regionDetail, err := common.GetRegion(provider, region)
+	regionZone := parts[1]
+
+	// Get the region list
+	regionsObj, err := common.GetRegions(provider)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	zones := regionDetail.Zones
 
+	// Try to match and get the region detail
+	var regionDetail model.RegionDetail
+	for _, region := range regionsObj.Regions {
+		exists := strings.HasPrefix(regionZone, region.RegionName)
+		if exists {
+			regionDetail = region
+			break
+		}
+	}
+
+	// Check if the region detail exists or not
+	if regionDetail.RegionName == "" && len(regionDetail.Zones) == 0 {
+		err := fmt.Errorf("invalid region/zone: %s", regionZone)
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	// Validate the zone
+	zones := regionDetail.Zones
 	if subnetReq.Zone != "" {
 		if !ContainsZone(zones, subnetReq.Zone) {
 			err := fmt.Errorf("invalid zone: %s", subnetReq.Zone)
