@@ -176,7 +176,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, mciServi
 		}
 		defer res.Body.Close()
 
-		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
+		// fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err = fmt.Errorf("CB-DF HTTP Status: " + strconv.Itoa(res.StatusCode) + " / " + string(body))
@@ -421,7 +421,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, vmID 
 		log.Error().Err(err).Msg("")
 		errStr = err.Error()
 	} else {
-		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
+		// fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err1 := fmt.Errorf("HTTP Status: not in 200-399")

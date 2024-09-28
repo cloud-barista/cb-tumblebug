@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 
-	"strconv"
 	"strings"
 
 	"encoding/csv"
@@ -121,7 +120,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mciId string
 		defer res.Body.Close()
 		fmt.Println(string(body))
 
-		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
+		// fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err := fmt.Errorf(string(body))

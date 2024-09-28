@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -246,7 +245,7 @@ func LookupImageList(connConfig string) (model.SpiderImageList, error) {
 
 	log.Debug().Msg(string(resp.Body()))
 
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
