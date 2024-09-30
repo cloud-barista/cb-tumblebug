@@ -400,6 +400,8 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 
 	spImgName := "" // Some CSPs do not require ImageName for creating a cluster
 	if u.ImageId == "" || u.ImageId == "default" {
+		spImgName = ""
+	} else {
 		spImgName, err = GetCspResourceName(nsId, model.StrImage, u.ImageId)
 		if spImgName == "" {
 			log.Err(err).Msg("Failed to Add K8sNodeGroup")
