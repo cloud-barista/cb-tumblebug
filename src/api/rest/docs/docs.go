@@ -12644,6 +12644,14 @@ const docTemplate = `{
         "model.TbK8sClusterInfo": {
             "type": "object",
             "properties": {
+                "connectionConfig": {
+                    "description": "ConnectionConfig shows connection info to cloud service provider",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ConnConfig"
+                        }
+                    ]
+                },
                 "connectionName": {
                     "type": "string",
                     "example": "alibaba-ap-northeast-2"

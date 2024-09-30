@@ -309,6 +309,9 @@ type TbK8sClusterInfo struct {
 	Name           string `json:"name" example:"aws-ap-southeast-1"`
 	ConnectionName string `json:"connectionName" example:"alibaba-ap-northeast-2"`
 
+	// ConnectionConfig shows connection info to cloud service provider
+	ConnectionConfig ConnConfig `json:"connectionConfig"`
+
 	/*
 		Version string `json:"version" example:"1.30.1-aliyun.1"` // Kubernetes Version, ex) 1.23.3
 
