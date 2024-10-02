@@ -19,6 +19,7 @@ import (
 
 	// "log"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -28,6 +29,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/cloud-barista/cb-tumblebug/src/api/rest/docs"
 	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/auth"
 
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
@@ -88,7 +90,7 @@ const (
 )
 
 // RunServer func start Rest API server
-func RunServer(port string) {
+func RunServer() {
 
 	log.Info().Msg("REST API Server is starting")
 
@@ -119,6 +121,7 @@ func RunServer(port string) {
 	//e.colorer.Printf(banner, e.colorer.Red("v"+Version), e.colorer.Blue(website))
 
 	// Route for system management
+	docs.SwaggerInfo.Host = model.SelfEndpoint
 	swaggerRedirect := func(c echo.Context) error {
 		return c.Redirect(http.StatusMovedPermanently, "/tumblebug/api/index.html")
 	}
@@ -515,10 +518,14 @@ func RunServer(port string) {
 	g.PUT("/:nsId/testDeleteObjectAssociation/:resourceType/:resourceId", rest_resource.RestTestDeleteObjectAssociation)
 	g.GET("/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId", rest_resource.RestTestGetAssociatedObjectCount)
 
-	selfEndpoint := os.Getenv("TB_SELF_ENDPOINT")
-	apiServer := "http://" + selfEndpoint + "/tumblebug/readyz"
-	apiDashboard := "http://localhost:1325"
-	mapUI := "http://localhost:1324"
+	selfEndpoint := strings.Split(model.SelfEndpoint, ":")
+	selfIp := selfEndpoint[0]
+	selfPort := selfEndpoint[1]
+
+	apiServer := fmt.Sprintf("http://%s:%s/tumblebug/readyz", selfIp, selfPort)
+	//apiDashboard := fmt.Sprintf("http://%s:%s", selfIp, "1325")
+	apiDashboard := fmt.Sprintf("http://%s:%s/tumblebug/api", selfIp, selfPort)
+	mapUI := fmt.Sprintf("http://%s:%s", selfIp, "1324")
 
 	fmt.Print(resetColor)
 	fmt.Printf(" Default Namespace: %s%s%s\n", warningColor, model.DefaultNamespace, resetColor)
@@ -565,9 +572,8 @@ func RunServer(port string) {
 		}
 	}(&wg)
 
-	port = fmt.Sprintf(":%s", port)
 	model.SystemReady = true
-	if err := e.Start(port); err != nil && err != http.ErrServerClosed {
+	if err := e.Start(":" + selfPort); err != nil && err != http.ErrServerClosed {
 		log.Error().Err(err).Msg("Error in Starting CB-Tumblebug API Server")
 		e.Logger.Panic("Shuttig down the server: ", err)
 	}

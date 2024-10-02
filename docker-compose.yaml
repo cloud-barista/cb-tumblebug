@@ -28,6 +28,9 @@ services:
       - ./container-volume/cb-tumblebug-container/log/:/app/log/
     environment:
       # - TB_ROOT_PATH=/app
+      # # Enable TB_SELF_ENDPOINT to specify an endpoint for CB-TB API (default: localhost:1323)
+      # # Use public IP if you want to access the API Dashboard from outside of localhost
+      # - TB_SELF_ENDPOINT=xxx.xxx.xxx.xxx:1323
       - TB_SPIDER_REST_URL=http://cb-spider:1024/spider
       - TB_ETCD_ENDPOINTS=http://cb-tumblebug-etcd:2379
       # - TB_ETCD_AUTH_ENABLED=true
@@ -42,7 +45,6 @@ services:
       # - TB_API_USERNAME=default
       # - TB_API_PASSWORD=default
       # - TB_AUTOCONTROL_DURATION_MS=10000
-      # - TB_SELF_ENDPOINT=localhost:1323
       # - TB_DRAGONFLY_REST_URL=http://cb-dragonfly:9090/dragonfly
       # - TB_DEFAULT_NAMESPACE=default
       # - TB_DEFAULT_CREDENTIALHOLDER=admin
@@ -161,28 +163,29 @@ services:
       retries: 3
       start_period: 10s
 
-  # Swagger UI
-  swagger-ui:
-    image: swaggerapi/swagger-ui
-    container_name: swagger-ui
-    networks:
-      - external_network
-    ports:
-      - 1325:8080
-    volumes:
-      # cb-tumblebug swagger.yaml mount
-      - ./src/api/rest/docs/swagger.yaml:/swagger.yaml
-    environment:
-      # Options: https://github.com/swagger-api/swagger-ui/blob/37b8c1a8b67200dd425216ab8f97b725a429a5c0/docs/usage/configuration.md#docker
-      - SWAGGER_JSON=/swagger.yaml 
-    logging:
-      # Disable logging
-      driver: "none"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "localhost", "1325"]
-      timeout: 5s
-      retries: 3
-      start_period: 3s
+  # # Swagger UI
+  # swagger-ui:
+  #   image: swaggerapi/swagger-ui
+  #   container_name: swagger-ui
+  #   networks:
+  #     - external_network
+  #   ports:
+  #     - 1325:8080
+  #   volumes:
+  #     # cb-tumblebug swagger.yaml mount
+  #     - ./src/api/rest/docs/swagger.yaml:/swagger.yaml
+  #   environment:
+  #     # Options: https://github.com/swagger-api/swagger-ui/blob/37b8c1a8b67200dd425216ab8f97b725a429a5c0/docs/usage/configuration.md#docker
+  #     - SWAGGER_JSON=/swagger.yaml 
+  #     - QUERY_CONFIG_ENABLED=true
+  #   logging:
+  #     # Disable logging
+  #     driver: "none"
+  #   healthcheck:
+  #     test: [ "CMD", "curl", "-f", "localhost", "1325"]
+  #     timeout: 5s
+  #     retries: 3
+  #     start_period: 3s
 
   # # cb-tumblebug-etcd-conf
   # cb-tumblebug-etcd-conf:

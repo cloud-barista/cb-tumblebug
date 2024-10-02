@@ -18,7 +18,6 @@ import (
 	"bufio"
 	"context"
 	"encoding/csv"
-	"flag"
 	"fmt"
 	"os"
 	"os/user"
@@ -51,6 +50,7 @@ import (
 func init() {
 	model.SystemReady = false
 
+	model.SelfEndpoint = common.NVL(os.Getenv("TB_SELF_ENDPOINT"), "localhost:1323")
 	model.SpiderRestUrl = common.NVL(os.Getenv("TB_SPIDER_REST_URL"), "http://localhost:1024/spider")
 	model.DragonflyRestUrl = common.NVL(os.Getenv("TB_DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
 	model.TerrariumRestUrl = common.NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8888/terrarium")
@@ -61,6 +61,7 @@ func init() {
 	model.AutocontrolDurationMs = common.NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
 	model.DefaultNamespace = common.NVL(os.Getenv("TB_DEFAULT_NAMESPACE"), "default")
 	model.DefaultCredentialHolder = common.NVL(os.Getenv("TB_DEFAULT_CREDENTIALHOLDER"), "admin")
+
 	// Etcd
 	model.EtcdEndpoints = common.NVL(os.Getenv("TB_ETCD_ENDPOINTS"), "localhost:2379")
 
@@ -412,7 +413,6 @@ func addIndexes() error {
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host      localhost:1323
 // @BasePath /tumblebug
 
 // @securityDefinitions.basic BasicAuth
@@ -423,31 +423,8 @@ func addIndexes() error {
 // @description Type "Bearer" followed by a space and JWT token ([TBD] Get token in http://xxx.xxx.xxx.xxx:xxx/auth)
 func main() {
 
-	// giving a default value of "1323"
-	port := flag.String("port", "1323", "port number for the restapiserver to listen to")
-	flag.Parse()
-
-	// validate arguments from flag
-	validationFlag := true
-	// validation: port
-	// set validationFlag to false if your number is not in [1-65535] range
-	if portInt, err := strconv.Atoi(*port); err == nil {
-		if portInt < 1 || portInt > 65535 {
-			validationFlag = false
-		}
-	} else {
-		validationFlag = false
-	}
-	if !validationFlag {
-		fmt.Printf("%s is not a valid port number.\n", *port)
-		fmt.Printf("Please retry with a valid port number (ex: -port=[1-65535]).\n")
-		os.Exit(1)
-	}
-
 	//Ticker for MCI Orchestration Policy
-
 	log.Info().Msg("[Initiate Multi-Cloud Orchestration]")
-
 	autoControlDuration, _ := strconv.Atoi(model.AutocontrolDurationMs) //ms
 	ticker := time.NewTicker(time.Millisecond * time.Duration(autoControlDuration))
 	go func() {
@@ -483,7 +460,7 @@ func main() {
 
 	// Start REST Server
 	go func() {
-		restServer.RunServer(*port)
+		restServer.RunServer()
 		wg.Done()
 	}()
 

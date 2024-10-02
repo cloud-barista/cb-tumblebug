@@ -73,6 +73,7 @@ var AutocontrolDurationMs string
 var DefaultNamespace string
 var DefaultCredentialHolder string
 var EtcdEndpoints string
+var SelfEndpoint string
 var MyDB *sql.DB
 var err error
 var ORM *xorm.Engine
