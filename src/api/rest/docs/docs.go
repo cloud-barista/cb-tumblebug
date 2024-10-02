@@ -14724,7 +14724,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "latest",
-	Host:             "localhost:1323",
+	Host:             "",
 	BasePath:         "/tumblebug",
 	Schemes:          []string{},
 	Title:            "CB-Tumblebug REST API",

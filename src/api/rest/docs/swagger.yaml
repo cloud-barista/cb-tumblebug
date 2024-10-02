@@ -12,7 +12,7 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: latest
 servers:
-- url: //localhost:1323/tumblebug
+- url: /tumblebug
 paths:
   /auth/test:
     get:
