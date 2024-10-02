@@ -9391,6 +9391,11 @@ components:
     model.TbK8sClusterInfo:
       type: object
       properties:
+        connectionConfig:
+          type: object
+          description: ConnectionConfig shows connection info to cloud service provider
+          allOf:
+          - $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
           type: string
           example: alibaba-ap-northeast-2

@@ -82,6 +82,12 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 		return emptyObj, err
 	}
 
+	connectionConfig, err := common.GetConnConfig(req.ConnectionName)
+	if err != nil {
+		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+		log.Error().Err(err).Msg("")
+	}
+
 	/*
 	 * Build RequestBody for model.SpiderClusterReq{}
 	 */
@@ -265,6 +271,7 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 		CspResourceId:           spClusterRes.ClusterInfo.IId.SystemId,
 		Name:                    reqId,
 		ConnectionName:          req.ConnectionName,
+		ConnectionConfig:        connectionConfig,
 		Description:             req.Description,
 		CspViewK8sClusterDetail: spClusterRes.ClusterInfo,
 	}
