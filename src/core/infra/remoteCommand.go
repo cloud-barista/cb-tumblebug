@@ -684,7 +684,17 @@ func runSCPWithBastion(bastionInfo model.SshInfo, targetInfo model.SshInfo, file
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(bastionSigner),
 		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: ssh.FixedHostKey(bastionPublicKey),
+	}
+
+	// Read the allowed host key for the bastion host
+	bastionPublicKeyBytes, err := ioutil.ReadFile("bastion_hostkey.pub")
+	if err != nil {
+		return fmt.Errorf("failed to read bastion host key: %v", err)
+	}
+	bastionPublicKey, err := ssh.ParsePublicKey(bastionPublicKeyBytes)
+	if err != nil {
+		return fmt.Errorf("failed to parse bastion host key: %v", err)
 	}
 
 	// Parse the private key for the target host
@@ -699,7 +709,17 @@ func runSCPWithBastion(bastionInfo model.SshInfo, targetInfo model.SshInfo, file
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(targetSigner),
 		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: ssh.FixedHostKey(targetPublicKey),
+	}
+
+	// Read the allowed host key for the target host
+	targetPublicKeyBytes, err := ioutil.ReadFile("target_hostkey.pub")
+	if err != nil {
+		return fmt.Errorf("failed to read target host key: %v", err)
+	}
+	targetPublicKey, err := ssh.ParsePublicKey(targetPublicKeyBytes)
+	if err != nil {
+		return fmt.Errorf("failed to parse target host key: %v", err)
 	}
 
 	// Setup the bastion host connection
