@@ -75,8 +75,8 @@ func RestPostSubnet(c echo.Context) error {
 
 // RestGetSubnet godoc
 // @ID GetSubnet
-// @Summary Get Subnet (metadata)
-// @Description Get Subnet (metadata)
+// @Summary Get Subnet
+// @Description Get Subnet
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
@@ -128,8 +128,8 @@ type RestGetAllSubnetResponse struct {
 
 // RestGetListSubnet godoc
 // @ID GetAllSubnet
-// @Summary List all subnets (metadata)
-// @Description List all subnets (metadata)
+// @Summary List all subnets
+// @Description List all subnets
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
@@ -199,14 +199,17 @@ type RestGetAllSubnetResponse struct {
 
 // RestDelSubnet godoc
 // @ID DelSubnet
-// @Summary Delete Subnet
+// @Summary Delete Subnet (supporting actions: refine, force)
 // @Description Delete Subnet
+// @Description - refine: delete information of subnet if there's no info/resource in Spider/CSP
+// @Description - force: delete subnet regardless of the status of info/resource in Spider/CSP
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
 // @Param subnetId path string true "Subnet ID"
+// @Param action query string false "Action" Enums(refine, force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId} [delete]
@@ -234,11 +237,35 @@ func RestDelSubnet(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	// [Process]
-	resp, err := resource.DeleteSubnet(nsId, vNetId, subnetId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	paramAction := c.QueryParam("action")
+	action, vaild := resource.ParseNetworkAction(paramAction)
+	if !vaild {
+		errMsg := fmt.Errorf("invalid action (%s)", action)
+		log.Warn().Err(errMsg).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	var resp model.SimpleMsg
+	var err error
+	switch action {
+	case resource.ActionNone, resource.ActionForce:
+		// [Process]
+		resp, err = resource.DeleteSubnet(nsId, vNetId, subnetId, action.String())
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		}
+	case resource.ActionRefine:
+		// [Process]
+		resp, err = resource.RefineSubnet(nsId, vNetId, subnetId)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		}
+	default:
+		errMsg := fmt.Errorf("invalid action (%s)", action)
+		log.Warn().Err(errMsg).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
 	// [Output]

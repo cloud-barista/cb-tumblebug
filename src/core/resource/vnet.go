@@ -41,12 +41,13 @@ const (
 	NetworkOnReading     NetworkStatus = "Reading"     // The network information is being read.
 	NetworkOnUpdating    NetworkStatus = "Updating"    // The network is being updated.
 	NetworkOnDeleting    NetworkStatus = "Deleting"    // The network is being deleted.
+	// NetworkOnRefinining  NetworkStatus = "Refining"    // The network is being refined.
 
 	// Register/deregister operations
 	NetworkOnRegistering   NetworkStatus = "Registering"  // The network is being registered.
 	NetworkOnDeregistering NetworkStatus = "Dergistering" // The network is being registered.
 
-	// Available status
+	// NetworkAvailable status
 	NetworkAvailable NetworkStatus = "Available" // The network is fully created and ready for use.
 
 	// In Use status
@@ -55,7 +56,7 @@ const (
 	// Unknwon status
 	NetworkUnknown NetworkStatus = "Unknown" // The network status is unknown.
 
-	// Error Handling
+	// NetworkError Handling
 	NetworkError              NetworkStatus = "Error"              // An error occurred during a CRUD operation.
 	NetworkErrorOnConfiguring NetworkStatus = "ErrorOnConfiguring" // An error occurred during the configuring operation.
 	NetworkErrorOnReading     NetworkStatus = "ErrorOnReading"     // An error occurred during the reading operation.
@@ -63,6 +64,55 @@ const (
 	NetworkErrorOnDeleting    NetworkStatus = "ErrorOnDeleting"    // An error occurred during the deleting operation.
 	NetworkErrorOnRegistering NetworkStatus = "ErrorOnRegistering" // An error occurred during the registering operation.
 )
+
+type NetworkAction string
+
+const (
+	ActionNone        NetworkAction = ""
+	ActionRefine      NetworkAction = "refine"
+	ActionForce       NetworkAction = "force"
+	ActionWithSubnets NetworkAction = "withsubnets"
+	// add additional actions here
+)
+
+var (
+	stringToNetworkAction = map[string]NetworkAction{
+		"":            ActionNone,
+		"refine":      ActionRefine,
+		"force":       ActionForce,
+		"withsubnets": ActionWithSubnets,
+	}
+
+	actionsToDeleteSubnet = map[NetworkAction]bool{
+		ActionRefine: true,
+		ActionForce:  true,
+		// add additional actions here
+	}
+
+	actionsToDeleteVNet = map[NetworkAction]bool{
+		ActionRefine:      true,
+		ActionForce:       true,
+		ActionWithSubnets: true,
+		// add additional actions here
+	}
+)
+
+func ParseNetworkAction(s string) (NetworkAction, bool) {
+	action, ok := stringToNetworkAction[strings.ToLower(s)]
+	return action, ok
+}
+
+func (na NetworkAction) String() string {
+	return string(na)
+}
+
+func (na NetworkAction) IsValidToDeleteSubnet() bool {
+	return actionsToDeleteSubnet[na]
+}
+
+func (na NetworkAction) IsValidToDeleteVNet() bool {
+	return actionsToDeleteVNet[na]
+}
 
 // TbVNetReqStructLevelValidation is a function to validate 'TbVNetReq' object.
 func TbVNetReqStructLevelValidation(sl validator.StructLevel) {
@@ -286,9 +336,9 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	var vNetInfo model.TbVNetInfo
 	var err error = nil
 
-	// Set the resource type
-	resourceType := model.StrVNet
-	childResourceType := model.StrSubnet
+	/*
+	 *	Validate the input parameters
+	 */
 
 	// Validate the input parameters
 	err = common.CheckString(nsId)
@@ -306,7 +356,11 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 		return emptyRet, err
 	}
 
-	// Set the vNet object
+	// Set the resource type
+	resourceType := model.StrVNet
+	childResourceType := model.StrSubnet
+
+	// Set the vNet object in advance
 	uid := common.GenUid()
 	vNetInfo.ResourceType = resourceType
 	vNetInfo.Name = vNetReq.Name
@@ -316,21 +370,6 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	vNetInfo.Description = vNetReq.Description
 	// todo: restore the tag list later
 	// vNetInfo.TagList = vNetReq.TagList
-
-	// Set a vNetKey for the vNet object
-	vNetKey := common.GenResourceKey(nsId, resourceType, vNetInfo.Id)
-	// Check if the vNet already exists or not
-	exists, err := CheckResource(nsId, resourceType, vNetInfo.Id)
-	if exists {
-		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("already exists, vNet: %s", vNetInfo.Id)
-		return emptyRet, err
-	}
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("failed to check if the vNet (%s) exists or not", vNetInfo.Id)
-		return emptyRet, err
-	}
 
 	// Note: Set subnetInfoList in vNetInfo in advance
 	//       since each subnet uid must be consistent
@@ -349,10 +388,27 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 
 	log.Debug().Msgf("vNetInfo: %+v", vNetInfo)
 
-	// [Set status]
-	vNetInfo.Status = string(NetworkOnConfiguring)
+	// Set a vNetKey for the vNet object
+	vNetKey := common.GenResourceKey(nsId, resourceType, vNetInfo.Id)
+	// Check if the vNet already exists or not
+	exists, err := CheckResource(nsId, resourceType, vNetInfo.Id)
+	if exists {
+		log.Error().Err(err).Msg("")
+		err := fmt.Errorf("already exists, vNet: %s", vNetInfo.Id)
+		return emptyRet, err
+	}
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		err := fmt.Errorf("failed to check if the vNet (%s) exists or not", vNetInfo.Id)
+		return emptyRet, err
+	}
 
-	// Save the current operation status and the vNet object
+	/*
+	 *	Create vNet with at least one subnet
+	 */
+
+	// [Set and store status]
+	vNetInfo.Status = string(NetworkOnConfiguring)
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -364,7 +420,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 		return emptyRet, err
 	}
 
-	// Set request body to create a vNet and subnets
+	// [Via Spider] Create a vNet and subnets
 	spReqt := spiderCreateVPCRequest{}
 	spReqt.ConnectionName = vNetReq.ConnectionName
 	spReqt.ReqInfo.Name = vNetInfo.Uid
@@ -391,7 +447,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	// API to create a vNet
 	url := fmt.Sprintf("%s/vpc", model.SpiderRestUrl)
 
-	// Defer function to ensure cleanup object
+	// Cleanup object when something goes wrong
 	defer func() {
 		// Only if this operation fails, the vNet will be deleted
 		if err != nil && vNetInfo.Status == string(NetworkOnConfiguring) {
@@ -470,7 +526,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 		}
 	}
 
-	// [Set status]
+	// [Set and store status]
 	if len(vNetInfo.SubnetInfoList) == 0 {
 		vNetInfo.Status = string(NetworkAvailable)
 	} else if len(vNetInfo.SubnetInfoList) > 0 {
@@ -482,7 +538,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 
 	log.Debug().Msgf("vNetInfo: %+v", vNetInfo)
 
-	// Save vNet object into the key-value store
+	// Store vNet object into the key-value store
 	value, err := json.Marshal(vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -494,7 +550,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 		return emptyRet, err
 	}
 
-	// Save subnet objects into the key-value store
+	// Store subnet objects into the key-value store
 	for _, subnetInfo := range vNetInfo.SubnetInfoList {
 		// Set a subnetKey for the subnet object
 		subnetKey := common.GenChildResourceKey(nsId, childResourceType, vNetInfo.Id, subnetInfo.Id)
@@ -504,7 +560,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 			return emptyRet, err
 		}
 
-		// Save the subnet object into the key-value store
+		// Store the subnet object into the key-value store
 		err = kvstore.Put(subnetKey, string(value))
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -533,7 +589,6 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
 		}
-
 	}
 
 	// Check if the vNet info is stored
@@ -584,10 +639,9 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 	var emptyRet model.TbVNetInfo
 	var vNetInfo model.TbVNetInfo
 
-	// Set the resource type
-	resourceType := model.StrVNet
-	// Set a vNetKey for the vNet object
-	vNetKey := common.GenResourceKey(nsId, resourceType, vNetId)
+	/*
+	 *	Validate the input parameters
+	 */
 
 	// Check the input parameters
 	err := common.CheckString(nsId)
@@ -600,6 +654,11 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
+
+	// Set the resource type
+	resourceType := model.StrVNet
+	// Set a vNetKey for the vNet object
+	vNetKey := common.GenResourceKey(nsId, resourceType, vNetId)
 
 	// Read the stored vNet info
 	keyValue, err := kvstore.GetKv(vNetKey)
@@ -620,7 +679,11 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 		return emptyRet, err
 	}
 
-	// Get a vNet and subnets
+	/*
+	 *	Get vNet info
+	 */
+
+	// [Via Spider] Get a vNet and subnets
 	client := resty.New()
 	method := "GET"
 	spReqt := common.NoBody
@@ -655,32 +718,33 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 	// todo: restore the tag list later
 	// vNetInfo.TagList = spResp.TagList
 
-	// Save the current operation status and the vNet object
-	val, err := json.Marshal(vNetInfo)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
+	// TODO: Check if it's required or not to save the vNet object
+	// val, err := json.Marshal(vNetInfo)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return emptyRet, err
+	// }
 
-	err = kvstore.Put(vNetKey, string(val))
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
+	// err = kvstore.Put(vNetKey, string(val))
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return emptyRet, err
+	// }
 
 	return vNetInfo, nil
 }
 
 // DeleteVNet accepts vNet creation request, creates and returns an TB vNet object
-func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg, error) {
+func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg, error) {
 	log.Info().Msg("DeleteVNet")
 
 	// vNet object
 	var emptyRet model.SimpleMsg
 	var ret model.SimpleMsg
 
-	// Set the resource type
-	resourceType := model.StrVNet
+	/*
+	 *	Validate the input parameters
+	 */
 
 	// Check the input parameters
 	err := common.CheckString(nsId)
@@ -694,15 +758,15 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 		return emptyRet, err
 	}
 
-	// Validate options: withSubnets
-	if withSubnets != "" && withSubnets != "true" && withSubnets != "false" {
-		errMsg := fmt.Errorf("invalid option, withSubnets (%s)", withSubnets)
+	action, valid := ParseNetworkAction(actionParam)
+	if !valid {
+		errMsg := fmt.Errorf("invalid action (%s)", action)
 		log.Warn().Msgf(errMsg.Error())
 		return emptyRet, errMsg
 	}
-	if withSubnets == "" {
-		withSubnets = "false"
-	}
+
+	// Set the resource type
+	resourceType := model.StrVNet
 
 	// Set a vNetKey for the vNet object
 	vNetKey := common.GenResourceKey(nsId, resourceType, vNetId)
@@ -714,13 +778,31 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 	}
 	log.Debug().Msgf("subnetsKv: %+v", subnetsKv)
 
-	if withSubnets == "false" && len(subnetsKv) > 0 {
+	// normal case: action == ""
+	if action == ActionNone && len(subnetsKv) > 0 {
 		err := fmt.Errorf("the vNet (%s) is in-use, may have subnets", vNetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
-	// Delete the subnets associated with the vNet
+	// Set the subnet delete action
+	subnetDelAction := ActionNone
+	switch action {
+	case ActionNone, ActionWithSubnets:
+		subnetDelAction = ActionNone
+	case ActionForce:
+		subnetDelAction = ActionForce
+	default:
+		err := fmt.Errorf("invalid action (%s)", action)
+		log.Warn().Msgf(err.Error())
+		return emptyRet, err
+	}
+
+	/*
+	 *	Delete the vNet
+	 */
+
+	// First, delete the subnets associated with the vNet
 	for _, kv := range subnetsKv {
 		subnet := model.TbSubnetInfo{}
 		err = json.Unmarshal([]byte(kv.Value), &subnet)
@@ -728,14 +810,14 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
 		}
-		_, err := DeleteSubnet(nsId, vNetId, subnet.Id)
+		_, err := DeleteSubnet(nsId, vNetId, subnet.Id, subnetDelAction.String())
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
 		}
 	}
 
-	// Read the stored vNet info
+	// Read the stored vNet info, which includes the updated subnets
 	vNetKv, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -755,9 +837,9 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 		return emptyRet, err
 	}
 
-	// Set status to 'Deleting'
+	// [Set and store status]
 	vNetInfo.Status = string(NetworkOnDeleting)
-	// Save the status
+	// Store the status
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -775,6 +857,11 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 
 	// API to delete a vNet
 	url := fmt.Sprintf("%s/vpc/%s", model.SpiderRestUrl, vNetInfo.CspResourceName)
+	queryParam := ""
+	if action == ActionForce {
+		queryParam = "?force=true"
+	}
+	url += queryParam
 
 	var spResp spiderBooleanInfoResp
 
@@ -831,6 +918,190 @@ func DeleteVNet(nsId string, vNetId string, withSubnets string) (model.SimpleMsg
 	return ret, nil
 }
 
+func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
+	log.Info().Msg("RefineVNet")
+
+	/*
+	 *	[NOTE]
+	 *	"Refine" operates based on information managed by Tumblebug.
+	 *	Based on this information, it checks whether there is information/resource in Spider/CSP.
+	 *	It removes the information managed by Tumblebug if there's no information/resource.
+	 */
+
+	// vNet object
+	var emptyRet model.SimpleMsg
+	var ret model.SimpleMsg
+	var vNetInfo model.TbVNetInfo
+
+	// Set the resource type
+	resourceType := model.StrVNet
+
+	/*
+	 *	Validate the input parameters
+	 */
+
+	// Check the input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = common.CheckString(vNetId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// Set a vNetKey for the vNet object
+	vNetKey := common.GenResourceKey(nsId, resourceType, vNetId)
+
+	// Read the stored vNet info
+	keyValue, err := kvstore.GetKv(vNetKey)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	if keyValue == (kvstore.KeyValue{}) {
+		err := fmt.Errorf("does not exist, vNet: %s", vNetId)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	err = json.Unmarshal([]byte(keyValue.Value), &vNetInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	/*
+	 *	Check and refine the info of vNet and associated subnets
+	 */
+
+	// [Via Spider] Get a vNet
+	client := resty.New()
+	method := "GET"
+	spReqt := common.NoBody
+	var spResp spiderVPCInfo
+
+	// API to get a vNet
+	url := fmt.Sprintf("%s/vpc/%s", model.SpiderRestUrl, vNetInfo.CspResourceName)
+	queryParams := "?ConnectionName=" + vNetInfo.ConnectionName
+	url += queryParams
+
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(spReqt),
+		&spReqt,
+		&spResp,
+		common.MediumDuration,
+	)
+
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return emptyRet, err
+	// }
+
+	if err == nil {
+		err = fmt.Errorf("may not be refined, vNet info (id: %s) exists", vNetId)
+		log.Warn().Err(err).Msg("")
+		log.Info().Msgf("try to refine subnets once")
+
+		// Read the stored subnets
+		subnetKvList, err2 := kvstore.GetKvList(vNetKey + "/subnet")
+		if err2 != nil {
+			log.Warn().Err(err2).Msg("")
+			return emptyRet, err2
+		}
+
+		for _, subnetKv := range subnetKvList {
+			subnetInfo := model.TbSubnetInfo{}
+			err2 = json.Unmarshal([]byte(subnetKv.Value), &subnetInfo)
+			if err2 != nil {
+				log.Warn().Err(err2).Msg("")
+				// return emptyRet, err
+			}
+			log.Debug().Msgf("subnetInfo: %+v", subnetInfo)
+
+			_, err2 := RefineSubnet(nsId, vNetId, subnetInfo.Id)
+			if err2 != nil {
+				log.Warn().Err(err2).Msg("")
+				// return emptyRet, err
+			}
+		}
+
+		// [Output]
+		ret.Message = err.Error()
+		return ret, err
+	}
+
+	/*
+	 * In case of the VPC info/resource does not exist in Spider/CSP
+	 * delete the information of vNet and subnets from the key-value stores
+	 */
+
+	// Delete subnet objects from the key-value store
+	// Read the stored subnets
+	subnetKvList, err := kvstore.GetKvList(vNetKey + "/subnet")
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	for _, subnetKv := range subnetKvList {
+		// Save the subnet object into the key-value store
+		err = kvstore.Delete(subnetKv.Key)
+		if err != nil {
+			log.Warn().Err(err).Msg("")
+			// return emptyRet, err
+		}
+
+		err = label.RemoveLabel(model.StrSubnet, vNetInfo.Uid, subnetKv.Key)
+		if err != nil {
+			log.Warn().Err(err).Msg("")
+			// return emptyRet, err
+		}
+	}
+
+	// Delete the saved the vNet info
+	err = kvstore.Delete(vNetKey)
+	if err != nil {
+		log.Warn().Err(err).Msg("")
+		// return emptyRet, err
+	}
+
+	// Remove label info using RemoveLabel
+	// labels := map[string]string{
+	// 	"sys.manager":  model.StrManager,
+	// 	"namespace": nsId,
+	// }
+	err = label.RemoveLabel(model.StrVNet, vNetInfo.Uid, vNetKey)
+	if err != nil {
+		log.Warn().Err(err).Msg("")
+		// return emptyRet, err
+	}
+
+	// Get and check the subnet info still exists or not
+	vNetKv, err := kvstore.GetKv(vNetKey)
+	if err != nil {
+		log.Warn().Err(err).Msg("")
+		// return emptyRet, err
+	}
+	if vNetKv != (kvstore.KeyValue{}) {
+		err := fmt.Errorf("fail to refine the vNet info (%s)", vNetKv)
+		ret.Message = err.Error()
+		return ret, err
+	}
+
+	// [Output] the message
+	ret.Message = fmt.Sprintf("the vNet info (%s) has been refined", vNetId)
+
+	return ret, nil
+}
+
 // RegisterVNet accepts vNet registration request, register and returns an TB vNet object
 func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.TbVNetInfo, error) {
 	log.Info().Msg("RegisterVNet")
@@ -840,9 +1111,9 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 	var vNetInfo model.TbVNetInfo
 	var err error = nil
 
-	// Set the resource type
-	resourceType := model.StrVNet
-	childResourceType := model.StrSubnet
+	/*
+	 *	Validate the input parameters
+	 */
 
 	// Validate the input parameters
 	err = common.CheckString(nsId)
@@ -859,6 +1130,10 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
+
+	// Set the resource type
+	resourceType := model.StrVNet
+	childResourceType := model.StrSubnet
 
 	// Set the vNet object
 	uid := common.GenUid()
@@ -882,9 +1157,12 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 		return emptyRet, err
 	}
 
-	// [Set status]
-	vNetInfo.Status = string(NetworkOnRegistering)
+	/*
+	 *	Register vNet in the CSP, which has not been created by Tumblebug
+	 */
 
+	// [Set and store status]
+	vNetInfo.Status = string(NetworkOnRegistering)
 	// Save the current operation status and the vNet object
 	val, err := json.Marshal(vNetInfo)
 	if err != nil {
@@ -896,7 +1174,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 		return emptyRet, err
 	}
 
-	// Register a vNet that has already been created externally
+	// [Via Spider] Register vNet and subnets
 	var spReqt = spiderVPCRegisterRequest{}
 	spReqt.ConnectionName = vNetRegisterReq.ConnectionName
 	spReqt.ReqInfo.Name = vNetInfo.Uid
@@ -918,7 +1196,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 		spReqt = spiderVPCRegisterRequest{}
 	}
 
-	// Defer function to ensure cleanup object
+	// Clean up the vNet object when something goes wrong
 	defer func() {
 		// Only if this operation fails, the vNet will be deleted
 		if err != nil && vNetInfo.Status == string(NetworkOnRegistering) {
@@ -1043,9 +1321,8 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 
 	log.Debug().Msgf("vNetInfo: %+v", vNetInfo)
 
-	// [Set status]
+	// [Set and store status]
 	vNetInfo.Status = string(NetworkAvailable)
-
 	// Put vNet object into the key-value store
 	value, err := json.Marshal(vNetInfo)
 	if err != nil {
@@ -1109,8 +1386,9 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 	var emptyRet model.SimpleMsg
 	var ret model.SimpleMsg
 
-	// Set the resource type
-	resourceType := model.StrVNet
+	/*
+	 *	Validate the input parameters
+	 */
 
 	// Check the input parameters
 	err := common.CheckString(nsId)
@@ -1123,6 +1401,9 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
+
+	// Set the resource type
+	resourceType := model.StrVNet
 
 	// Validate options: withSubnets
 	if withSubnets != "" && withSubnets != "true" && withSubnets != "false" {
@@ -1150,6 +1431,10 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 		return emptyRet, err
 	}
 
+	/*
+	 *	Deregister the vNet
+	 */
+
 	// Delete the subnets associated with the vNet
 	for _, kv := range subnetsKv {
 		subnet := model.TbSubnetInfo{}
@@ -1158,7 +1443,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
 		}
-		_, err := DeleteSubnet(nsId, vNetId, subnet.Id)
+		_, err := DeregisterSubnet(nsId, vNetId, subnet.Id)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
@@ -1262,8 +1547,8 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 }
 
 /*
-The following functions are used for Designing VNets
-*/
+ * The following functions are used for Designing VNets
+ */
 
 // DesignVNets accepts a VNet design request, designs and returns a VNet design response
 func DesignVNets(reqt *model.VNetDesignRequest) (model.VNetDesignResponse, error) {

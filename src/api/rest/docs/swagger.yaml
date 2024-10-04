@@ -6166,8 +6166,12 @@ paths:
     delete:
       tags:
       - "[Infra Resource] Network Management"
-      summary: Delete VNet
-      description: Delete VNet
+      summary: "Delete VNet (supporting actions: withsubnet, refine, force)"
+      description: |-
+        Delete VNet
+        - withsubnets: delete VNet and its subnets
+        - refine: delete information of VNet and its subnets if there's no info/resource in Spider/CSP
+        - force: delete VNet and its subnets regardless of the status of info/resource in Spider/CSP
       operationId: DelVNet
       parameters:
       - name: nsId
@@ -6183,14 +6187,15 @@ paths:
         required: true
         schema:
           type: string
-      - name: withSubnets
+      - name: action
         in: query
-        description: Delete subnets as well
+        description: Action
         schema:
           type: string
           enum:
-          - "true"
-          - "false"
+          - withsubnets
+          - refine
+          - force
       responses:
         "200":
           description: OK
@@ -6208,8 +6213,8 @@ paths:
     get:
       tags:
       - "[Infra Resource] Network Management"
-      summary: List all subnets (metadata)
-      description: List all subnets (metadata)
+      summary: List all subnets
+      description: List all subnets
       operationId: GetAllSubnet
       parameters:
       - name: nsId
@@ -6295,8 +6300,8 @@ paths:
     get:
       tags:
       - "[Infra Resource] Network Management"
-      summary: Get Subnet (metadata)
-      description: Get Subnet (metadata)
+      summary: Get Subnet
+      description: Get Subnet
       operationId: GetSubnet
       parameters:
       - name: nsId
@@ -6340,8 +6345,11 @@ paths:
     delete:
       tags:
       - "[Infra Resource] Network Management"
-      summary: Delete Subnet
-      description: Delete Subnet
+      summary: "Delete Subnet (supporting actions: refine, force)"
+      description: |-
+        Delete Subnet
+        - refine: delete information of subnet if there's no info/resource in Spider/CSP
+        - force: delete subnet regardless of the status of info/resource in Spider/CSP
       operationId: DelSubnet
       parameters:
       - name: nsId
@@ -6363,6 +6371,14 @@ paths:
         required: true
         schema:
           type: string
+      - name: action
+        in: query
+        description: Action
+        schema:
+          type: string
+          enum:
+          - refine
+          - force
       responses:
         "200":
           description: OK

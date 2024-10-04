@@ -8155,7 +8155,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete VNet",
+                "description": "Delete VNet\n- withsubnets: delete VNet and its subnets\n- refine: delete information of VNet and its subnets if there's no info/resource in Spider/CSP\n- force: delete VNet and its subnets regardless of the status of info/resource in Spider/CSP",
                 "consumes": [
                     "application/json"
                 ],
@@ -8165,7 +8165,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Network Management"
                 ],
-                "summary": "Delete VNet",
+                "summary": "Delete VNet (supporting actions: withsubnet, refine, force)",
                 "operationId": "DelVNet",
                 "parameters": [
                     {
@@ -8185,12 +8185,13 @@ const docTemplate = `{
                     },
                     {
                         "enum": [
-                            "true",
-                            "false"
+                            "withsubnets",
+                            "refine",
+                            "force"
                         ],
                         "type": "string",
-                        "description": "Delete subnets as well",
-                        "name": "withSubnets",
+                        "description": "Action",
+                        "name": "action",
                         "in": "query"
                     }
                 ],
@@ -8212,7 +8213,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/resources/vNet/{vNetId}/subnet": {
             "get": {
-                "description": "List all subnets (metadata)",
+                "description": "List all subnets",
                 "consumes": [
                     "application/json"
                 ],
@@ -8222,7 +8223,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Network Management"
                 ],
-                "summary": "List all subnets (metadata)",
+                "summary": "List all subnets",
                 "operationId": "GetAllSubnet",
                 "parameters": [
                     {
@@ -8325,7 +8326,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}": {
             "get": {
-                "description": "Get Subnet (metadata)",
+                "description": "Get Subnet",
                 "consumes": [
                     "application/json"
                 ],
@@ -8335,7 +8336,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Network Management"
                 ],
-                "summary": "Get Subnet (metadata)",
+                "summary": "Get Subnet",
                 "operationId": "GetSubnet",
                 "parameters": [
                     {
@@ -8383,7 +8384,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete Subnet",
+                "description": "Delete Subnet\n- refine: delete information of subnet if there's no info/resource in Spider/CSP\n- force: delete subnet regardless of the status of info/resource in Spider/CSP",
                 "consumes": [
                     "application/json"
                 ],
@@ -8393,7 +8394,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Network Management"
                 ],
-                "summary": "Delete Subnet",
+                "summary": "Delete Subnet (supporting actions: refine, force)",
                 "operationId": "DelSubnet",
                 "parameters": [
                     {
@@ -8417,6 +8418,16 @@ const docTemplate = `{
                         "name": "subnetId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "refine",
+                            "force"
+                        ],
+                        "type": "string",
+                        "description": "Action",
+                        "name": "action",
+                        "in": "query"
                     }
                 ],
                 "responses": {
