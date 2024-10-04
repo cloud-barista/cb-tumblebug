@@ -15,7 +15,7 @@
 [![Slack](https://img.shields.io/badge/Slack-SIG--TB-brightgreen)](https://cloud-barista.slack.com/archives/CJQ7575PU)
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-45-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-46-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## CB-TB? ✨
@@ -660,6 +660,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/raccoon-mh"><img src="https://avatars.githubusercontent.com/u/130422754?v=4?s=100" width="100px;" alt="Minhyeok LEE"/><br /><sub><b>Minhyeok LEE</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/pulls?q=is%3Apr+reviewed-by%3Araccoon-mh" title="Reviewed Pull Requests">👀</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/SungWoongz"><img src="https://avatars.githubusercontent.com/u/99646153?v=4?s=100" width="100px;" alt="SungWoongz"/><br /><sub><b>SungWoongz</b></sub></a><br /><a href="#userTesting-SungWoongz" title="User Testing">📓</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/gabrilito1"><img src="https://avatars.githubusercontent.com/u/105322029?v=4?s=100" width="100px;" alt="Gabriel lima"/><br /><sub><b>Gabriel lima</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=gabrilito1" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/tharun634"><img src="https://avatars.githubusercontent.com/u/53267275?v=4?s=100" width="100px;" alt="Tharun K"/><br /><sub><b>Tharun K</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=tharun634" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
