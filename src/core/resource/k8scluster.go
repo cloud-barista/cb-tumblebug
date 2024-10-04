@@ -215,7 +215,6 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 	uid := common.GenUid()
 
 	requestBody := model.SpiderClusterReq{
-		NameSpace:      "", // should be empty string from Tumblebug
 		ConnectionName: req.ConnectionName,
 		ReqInfo: model.SpiderClusterReqInfo{
 			Name:               uid,
@@ -267,13 +266,13 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 		ResourceType:            model.StrK8s,
 		Id:                      reqId,
 		Uid:                     uid,
-		CspResourceName:         spClusterRes.ClusterInfo.IId.NameId,
-		CspResourceId:           spClusterRes.ClusterInfo.IId.SystemId,
+		CspResourceName:         spClusterRes.SpiderClusterInfo.IId.NameId,
+		CspResourceId:           spClusterRes.SpiderClusterInfo.IId.SystemId,
 		Name:                    reqId,
 		ConnectionName:          req.ConnectionName,
 		ConnectionConfig:        connectionConfig,
 		Description:             req.Description,
-		CspViewK8sClusterDetail: spClusterRes.ClusterInfo,
+		CspViewK8sClusterDetail: spClusterRes.SpiderClusterInfo,
 	}
 
 	if option == "register" && req.CspResourceId == "" {
@@ -429,7 +428,6 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 	}
 
 	requestBody := model.SpiderNodeGroupReq{
-		NameSpace:      "", // should be empty string from Tumblebug
 		ConnectionName: oldTbK8sCInfo.ConnectionName,
 		ReqInfo: model.SpiderNodeGroupReqInfo{
 			Name:         spName,
@@ -484,7 +482,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 		Name:                    oldTbK8sCInfo.Name,
 		ConnectionName:          oldTbK8sCInfo.ConnectionName,
 		Description:             oldTbK8sCInfo.Description,
-		CspViewK8sClusterDetail: spClusterRes.ClusterInfo,
+		CspViewK8sClusterDetail: spClusterRes.SpiderClusterInfo,
 	}
 
 	/*
@@ -775,7 +773,7 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 
 	var tbK8sCAutoscaleSizeRes model.TbChangeK8sNodeGroupAutoscaleSizeRes
 	tbK8sCAutoscaleSizeRes.TbK8sNodeGroupInfo = model.TbK8sNodeGroupInfo{
-		CspViewK8sNodeGroupDetail: spChangeAutoscaleSizeRes.NodeGroupInfo,
+		CspViewK8sNodeGroupDetail: spChangeAutoscaleSizeRes.SpiderNodeGroupInfo,
 	}
 
 	return tbK8sCAutoscaleSizeRes, nil
@@ -847,11 +845,9 @@ func GetK8sCluster(nsId string, k8sClusterId string) (model.TbK8sClusterInfo, er
 
 	// Create Request body for GetK8sCluster of CB-Spider
 	type JsonTemplate struct {
-		NameSpace      string
 		ConnectionName string
 	}
 	requestBody := JsonTemplate{
-		NameSpace:      "", // should be empty string from Tumblebug
 		ConnectionName: storedTbK8sCInfo.ConnectionName,
 	}
 
@@ -881,7 +877,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (model.TbK8sClusterInfo, er
 		Name:                    storedTbK8sCInfo.Name,
 		ConnectionName:          storedTbK8sCInfo.ConnectionName,
 		Description:             storedTbK8sCInfo.Description,
-		CspViewK8sClusterDetail: spClusterRes.ClusterInfo,
+		CspViewK8sClusterDetail: spClusterRes.SpiderClusterInfo,
 	}
 
 	/*
@@ -1116,7 +1112,6 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 
 	// Create Req body
 	type JsonTemplate struct {
-		NameSpace      string
 		ConnectionName string
 	}
 	requestBody := JsonTemplate{}
@@ -1128,7 +1123,6 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 		return false, err
 	}
 
-	requestBody.NameSpace = "" // should be empty string from Tumblebug
 	requestBody.ConnectionName = tbK8sCInfo.ConnectionName
 
 	client := resty.New()
@@ -1290,7 +1284,6 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.TbUpgradeK8sCl
 	spVersion := u.Version
 
 	requestBody := model.SpiderUpgradeClusterReq{
-		NameSpace:      "", // should be empty string from Tumblebug
 		ConnectionName: oldTbK8sCInfo.ConnectionName,
 		ReqInfo: model.SpiderUpgradeClusterReqInfo{
 			Version: spVersion,
@@ -1331,7 +1324,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.TbUpgradeK8sCl
 		Name:                    oldTbK8sCInfo.Name,
 		ConnectionName:          oldTbK8sCInfo.ConnectionName,
 		Description:             oldTbK8sCInfo.Description,
-		CspViewK8sClusterDetail: spClusterRes.ClusterInfo,
+		CspViewK8sClusterDetail: spClusterRes.SpiderClusterInfo,
 	}
 
 	/*
@@ -1392,8 +1385,8 @@ func convertSpiderNetworkInfoToTbK8sClusterNetworkInfo(spNetworkInfo model.Spide
 
 func convertSpiderNodeGroupInfoToTbK8sNodeGroupInfo(spNodeGroupInfo *model.SpiderNodeGroupInfo) model.TbK8sNodeGroupInfo {
 	tbNodeId := spNodeGroupInfo.IId.SystemId
-	tbCspImageName := spNodeGroupInfo.ImageIID.SystemId
-	tbCspSpecName := spNodeGroupInfo.VMSpecName
+	tbImageId := spNodeGroupInfo.ImageIID.SystemId
+	tbSpecId := spNodeGroupInfo.VMSpecName
 	tbRootDiskType := spNodeGroupInfo.RootDiskType
 	tbRootDiskSize := spNodeGroupInfo.RootDiskSize
 	tbSshKeyId := spNodeGroupInfo.KeyPairIID.SystemId
@@ -1411,8 +1404,8 @@ func convertSpiderNodeGroupInfoToTbK8sNodeGroupInfo(spNodeGroupInfo *model.Spide
 	tbKeyValueList := convertSpiderKeyValueListToTbKeyValueList(spNodeGroupInfo.KeyValueList)
 	tbK8sNodeGroupInfo := model.TbK8sNodeGroupInfo{
 		Id:              tbNodeId,
-		CspImageName:    tbCspImageName,
-		CspSpecName:     tbCspSpecName,
+		ImageId:         tbImageId,
+		SpecId:          tbSpecId,
 		RootDiskType:    tbRootDiskType,
 		RootDiskSize:    tbRootDiskSize,
 		SshKeyId:        tbSshKeyId,

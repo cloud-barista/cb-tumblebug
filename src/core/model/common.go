@@ -119,10 +119,10 @@ const (
 
 var StartTime string
 
-// Spider 2020-03-30 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/IId.go
+// Spider 2024-10-05 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/IId.go
 type IID struct {
-	NameId   string // NameID by user
-	SystemId string // SystemID by CloudOS
+	NameId   string `json:"NameId" validate:"required" example:"user-defined-name"`
+	SystemId string `json:"SystemId" validate:"required" example:"csp-defined-id"`
 }
 
 type SpiderConnectionName struct {
