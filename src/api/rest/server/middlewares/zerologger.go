@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -42,33 +43,35 @@ func Zerologger(skipPatterns [][]string) echo.MiddlewareFunc {
 		// HandleError:      true, // forwards error to the global error handler, so it can decide appropriate status code
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			if v.Error == nil {
-				log.Info().
-					Str("id", v.RequestID).
-					Str("client_ip", v.RemoteIP).
-					//Str("host", v.Host).
-					Str("method", v.Method).
-					Str("URI", v.URI).
-					//Str("user_agent", v.UserAgent).
-					Int("status", v.Status).
-					//Int64("latency", v.Latency.Nanoseconds()).
-					Str("latency_human", v.Latency.String()).
-					Str("bytes_in", v.ContentLength).
-					Int64("bytes_out", v.ResponseSize).
-					Msg("request")
+				if v.Method != http.MethodOptions {
+					log.Info().
+						Str("ID", v.RequestID).
+						Str("Method", v.Method).
+						Str("URI", v.URI).
+						Str("clientIP", v.RemoteIP).
+						//Str("host", v.Host).
+						//Str("user_agent", v.UserAgent).
+						Int("status", v.Status).
+						//Int64("latency", v.Latency.Nanoseconds()).
+						Str("latency", v.Latency.String()).
+						//Str("bytes_in", v.ContentLength).
+						//Int64("bytes_out", v.ResponseSize).
+						Msg("request")
+				}
 			} else {
 				log.Error().
 					Err(v.Error).
-					Str("id", v.RequestID).
-					Str("client_ip", v.RemoteIP).
-					// Str("host", v.Host).
-					Str("method", v.Method).
+					Str("ID", v.RequestID).
+					Str("Method", v.Method).
 					Str("URI", v.URI).
+					Str("clientIP", v.RemoteIP).
+					// Str("host", v.Host).
 					//Str("user_agent", v.UserAgent).
 					Int("status", v.Status).
 					// Int64("latency", v.Latency.Nanoseconds()).
-					Str("latency_human", v.Latency.String()).
-					Str("bytes_in", v.ContentLength).
-					Int64("bytes_out", v.ResponseSize).
+					Str("latency", v.Latency.String()).
+					//Str("bytes_in", v.ContentLength).
+					//Int64("bytes_out", v.ResponseSize).
 					Msg("request error")
 			}
 			return nil
