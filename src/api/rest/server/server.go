@@ -541,7 +541,7 @@ func RunServer() {
 
 	fmt.Println("\n ")
 
-	// A context for graceful shutdown (It is based on the signal package)selfEndpoint := os.Getenv("TB_SELF_ENDPOINT")
+	// A context for graceful shutdown (It is based on the signal package)
 	// NOTE -
 	// Use os.Interrupt Ctrl+C or Ctrl+Break on Windows
 	// Use syscall.KILL for Kill(can't be caught or ignored) (POSIX)
