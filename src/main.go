@@ -464,13 +464,5 @@ func main() {
 		wg.Done()
 	}()
 
-	// Note: Deprecated gRPC server
-	// Start gRPC Server
-	// go func() {
-	// 	grpcServer.RunServer()
-	// 	wg.Done()
-	// }()
-	// fmt.Println("RuntimeConf: ", common.RuntimeConf.Cloud)
-
 	wg.Wait()
 }
