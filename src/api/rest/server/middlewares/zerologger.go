@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -42,7 +43,7 @@ func Zerologger(skipPatterns [][]string) echo.MiddlewareFunc {
 		// HandleError:      true, // forwards error to the global error handler, so it can decide appropriate status code
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			if v.Error == nil {
-				if v.Method != "OPTIONS" {
+				if v.Method != http.MethodOptions {
 					log.Info().
 						Str("ID", v.RequestID).
 						Str("Method", v.Method).
