@@ -1280,6 +1280,8 @@ func LoadAssets() (model.IdList, error) {
 		}
 	}
 
+	startTime := time.Now()
+
 	connectionList, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot GetConnConfigList")
@@ -1290,14 +1292,21 @@ func LoadAssets() (model.IdList, error) {
 		return regiesteredIds, err
 	}
 
+	elapsedVerifyConnections := time.Now().Sub(startTime)
+	log.Info().Msgf("Verified all connections. Elapsed [%s]", elapsedVerifyConnections)
+	startTime = time.Now()
+
 	// LookupSpecList and LookupImageList of all connections in parallel
 	var specMap sync.Map
+
+	tmpSpecList := []model.TbSpecInfo{}
+
 	// ignoreConnectionMap is used to store connection names that failed to lookup specs
 	var ignoreConnectionMap sync.Map
 	// validRepresentativeConnectionMap is used to store connection names that valid representative connection
 	var validRepresentativeConnectionMap sync.Map
 
-	startTime := time.Now()
+	startTime = time.Now()
 	var wg sync.WaitGroup
 	for _, connConfig := range connectionList.Connectionconfig {
 		wg.Add(1)
@@ -1319,7 +1328,9 @@ func LoadAssets() (model.IdList, error) {
 					log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
 				} else {
 					key := GetProviderRegionZoneResourceKey(connConfig.ProviderName, connConfig.RegionDetail.RegionName, "", spec.Name)
+					tumblebugSpec.Namespace = model.SystemCommonNs
 					tumblebugSpec.Name = key
+					tumblebugSpec.Id = key
 					tumblebugSpec.ConnectionName = connConfig.ConfigName
 					tumblebugSpec.ProviderName = strings.ToLower(connConfig.ProviderName)
 					tumblebugSpec.RegionName = connConfig.RegionDetail.RegionName
@@ -1331,6 +1342,7 @@ func LoadAssets() (model.IdList, error) {
 					// instead of connConfig.RegionName, spec.Region will be used in the future
 					//log.Info().Msgf("specMap.Store(%s, spec)", key)
 					specMap.Store(key, tumblebugSpec)
+					tmpSpecList = append(tmpSpecList, tumblebugSpec)
 				}
 			}
 		}(connConfig)
@@ -1353,29 +1365,47 @@ func LoadAssets() (model.IdList, error) {
 	// 	}(connConfig)
 	// }
 	wg.Wait()
-	endTime := time.Now()
-	totalDuration := endTime.Sub(startTime)
 
-	log.Info().Msgf("LookupSpecList in parallel: %s", totalDuration)
+	elapsedLookupSpecList := time.Now().Sub(startTime)
+	log.Info().Msgf("Lookup Spec List is complete. Elapsed [%s]", elapsedLookupSpecList)
+	startTime = time.Now()
 
-	specMap.Range(func(key, value interface{}) bool {
-		specInfo := value.(model.TbSpecInfo)
-		//log.Info().Msgf("specMap.Range: %s value: %v", key, specInfo)
+	// specMap.Range(func(key, value interface{}) bool {
+	// 	specInfo := value.(model.TbSpecInfo)
+	// 	//log.Info().Msgf("specMap.Range: %s value: %v", key, specInfo)
 
-		_, errRegisterSpec := RegisterSpecWithInfo(model.SystemCommonNs, &specInfo, true)
-		if errRegisterSpec != nil {
-			log.Info().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
-		}
-		return true
-	})
+	// 	_, errRegisterSpec := RegisterSpecWithInfo(model.SystemCommonNs, &specInfo, true)
+	// 	if errRegisterSpec != nil {
+	// 		log.Info().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
+	// 	}
+	// 	return true
+	// })
+
+	err = RegisterSpecWithInfoInBulk(tmpSpecList)
+	if err != nil {
+		log.Info().Err(err).Msg("RegisterSpec WithInfo failed")
+	}
+	tmpSpecList = nil
+
+	elapsedRegisterSpecs := time.Now().Sub(startTime)
+	log.Info().Msgf("Registerd the Specs. Elapsed [%s]", elapsedRegisterSpecs)
+	startTime = time.Now()
+
+	err = RemoveDuplicateSpecsInSQL()
+	if err != nil {
+		log.Error().Err(err).Msg("RemoveDuplicateSpecsInSQL failed")
+	}
+	elapsedRemoveDuplicateSpecsInSQL := time.Now().Sub(startTime)
+	log.Info().Msgf("Remove Duplicate Specs In SQL. Elapsed [%s]", elapsedRemoveDuplicateSpecsInSQL)
+	startTime = time.Now()
 
 	// Read common specs and register spec objects
 	file, fileErr := os.Open("../assets/cloudspec.csv")
-	defer file.Close()
 	if fileErr != nil {
 		log.Error().Err(fileErr).Msg("")
 		return regiesteredIds, fileErr
 	}
+	defer file.Close()
 
 	rdr := csv.NewReader(bufio.NewReader(file))
 	rowsSpec, _ := rdr.ReadAll()
@@ -1402,11 +1432,11 @@ func LoadAssets() (model.IdList, error) {
 
 	// Read common specs and register spec objects
 	file, fileErr = os.Open("../assets/cloudimage.csv")
-	defer file.Close()
 	if fileErr != nil {
 		log.Error().Err(fileErr).Msg("")
 		return regiesteredIds, fileErr
 	}
+	defer file.Close()
 
 	rdr = csv.NewReader(bufio.NewReader(file))
 	rowsImg, _ := rdr.ReadAll()
@@ -1584,6 +1614,10 @@ func LoadAssets() (model.IdList, error) {
 	// 	wait.Wait()
 	// }(rowsSpec)
 
+	elapsedUpdateSpec := time.Now().Sub(startTime)
+	log.Info().Msgf("Updated the registered Specs according to the asset file. Elapsed [%s]", elapsedUpdateSpec)
+	startTime = time.Now()
+
 	// // waitSpecImg.Add(1)
 	// go func(rowsImg [][]string) {
 	// 	// defer waitSpecImg.Done()
@@ -1663,9 +1697,17 @@ func LoadAssets() (model.IdList, error) {
 	wait.Wait()
 	// }(rowsImg)
 
+	elapsedUpdateImg := time.Now().Sub(startTime)
+
 	// waitSpecImg.Wait()
 	// sort.Strings(regiesteredIds.IdList)
 	log.Info().Msgf("Registered Common Resources %d", len(regiesteredIds.IdList))
+
+	log.Info().Msgf("Verified all connections. Elapsed [%s]", elapsedVerifyConnections)
+	log.Info().Msgf("Lookup Spec List is complete. Elapsed [%s]", elapsedLookupSpecList)
+	log.Info().Msgf("Remove Duplicate Specs In SQL. Elapsed [%s]", elapsedRemoveDuplicateSpecsInSQL)
+	log.Info().Msgf("Updated the registered Specs according to the asset file. Elapsed [%s]", elapsedUpdateSpec)
+	log.Info().Msgf("Updated the registered Images according to the asset file. Elapsed [%s]", elapsedUpdateImg)
 
 	return regiesteredIds, nil
 }
