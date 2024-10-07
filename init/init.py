@@ -40,7 +40,7 @@ CRED_PATH = os.path.join(os.path.expanduser('~'), '.cloud-barista')
 ENC_FILE_PATH = os.path.join(CRED_PATH, CRED_FILE_NAME_ENC)
 KEY_FILE = os.path.join(CRED_PATH, ".tmp_enc_key")
 
-expected_completion_time_seconds = 600
+expected_completion_time_seconds = 200
 
 # Check for credential path
 if not os.path.exists(CRED_PATH):
