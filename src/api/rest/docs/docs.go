@@ -60,7 +60,7 @@ const docTemplate = `{
         },
         "/availableK8sClusterNodeImage": {
             "get": {
-                "description": "Get available kubernetes cluster node image",
+                "description": "(UNDER DEVELOPMENT!!!) Get available kubernetes cluster node image",
                 "consumes": [
                     "application/json"
                 ],
@@ -70,7 +70,7 @@ const docTemplate = `{
                 "tags": [
                     "[Kubernetes] Cluster Management"
                 ],
-                "summary": "Get available kubernetes cluster node image",
+                "summary": "(UNDER DEVELOPMENT!!!) Get available kubernetes cluster node image",
                 "operationId": "GetAvailableK8sClusterNodeImage",
                 "parameters": [
                     {
