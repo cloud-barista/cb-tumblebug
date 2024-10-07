@@ -50,8 +50,8 @@ func RestGetAvailableK8sClusterVersion(c echo.Context) error {
 // RestGetAvailableK8sClusterNodeImage func is a rest api wrapper for GetAvailableK8sClusterNodeImage.
 // RestGetAvailableK8sClusterNodeImage godoc
 // @ID GetAvailableK8sClusterNodeImage
-// @Summary Get available kubernetes cluster node image
-// @Description Get available kubernetes cluster node image
+// @Summary (UNDER DEVELOPMENT!!!) Get available kubernetes cluster node image
+// @Description (UNDER DEVELOPMENT!!!) Get available kubernetes cluster node image
 // @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
