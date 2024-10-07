@@ -71,6 +71,91 @@ func ConvertSpiderImageToTumblebugImage(spiderImage model.SpiderImageInfo) (mode
 	return tumblebugImage, nil
 }
 
+// GetImageInfoFromLookupImage
+func GetImageInfoFromLookupImage(nsId string, u model.TbImageReq) (model.TbImageInfo, error) {
+	content := model.TbImageInfo{}
+	res, err := LookupImage(u.ConnectionName, u.CspImageName)
+	if err != nil {
+		log.Trace().Err(err).Msg("")
+		return content, err
+	}
+	if res.IId.NameId == "" {
+		err := fmt.Errorf("spider returned empty IId.NameId without Error: %s", u.ConnectionName)
+		log.Error().Err(err).Msgf("Cannot LookupImage %s %v", u.CspImageName, res)
+		return content, err
+	}
+
+	content, err = ConvertSpiderImageToTumblebugImage(res)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return content, err
+	}
+	content.Namespace = nsId
+	content.ConnectionName = u.ConnectionName
+	content.Id = u.Name
+	content.Name = u.Name
+	content.AssociatedObjectList = []string{}
+
+	return content, nil
+}
+
+// RegisterImageWithInfoInBulk register a list of images in bulk
+func RegisterImageWithInfoInBulk(imageList []model.TbImageInfo) error {
+	// Insert in bulk
+	// batch size is 90 due to the limit of SQL
+	batchSize := 90
+
+	total := len(imageList)
+	for i := 0; i < total; i += batchSize {
+		end := i + batchSize
+		if end > total {
+			end = total
+		}
+		batch := imageList[i:end]
+
+		session := model.ORM.NewSession()
+		defer session.Close()
+		if err := session.Begin(); err != nil {
+			log.Error().Err(err).Msg("Failed to begin transaction")
+			return err
+		}
+
+		affected, err := session.Insert(&batch)
+		if err != nil {
+			session.Rollback()
+			log.Error().Err(err).Msg("Error inserting images in bulk")
+			return err
+		} else {
+			if err := session.Commit(); err != nil {
+				log.Error().Err(err).Msg("Failed to commit transaction")
+				return err
+			}
+			log.Trace().Msgf("Bulk insert success: %d records affected", affected)
+		}
+	}
+	return nil
+}
+
+// RemoveDuplicateImagesInSQL is to remove duplicate images in db to refine batch insert duplicates
+func RemoveDuplicateImagesInSQL() error {
+	sqlStr := `
+	DELETE FROM TbImageInfo
+	WHERE rowid NOT IN (
+		SELECT MAX(rowid)
+		FROM TbImageInfo
+		GROUP BY Namespace, Id
+	);
+	`
+	_, err := model.ORM.Exec(sqlStr)
+	if err != nil {
+		log.Error().Err(err).Msg("Error deleting duplicate images")
+		return err
+	}
+	log.Info().Msg("Duplicate images removed successfully")
+
+	return nil
+}
+
 // RegisterImageWithId accepts image creation request, creates and returns an TB image object
 func RegisterImageWithId(nsId string, u *model.TbImageReq, update bool, RDBonly bool) (model.TbImageInfo, error) {
 
@@ -136,15 +221,15 @@ func RegisterImageWithId(nsId string, u *model.TbImageReq, update bool, RDBonly 
 	if err != nil {
 		if update {
 			// If insert fails and update is true, attempt to update the existing record
-			_, updateErr := model.ORM.Update(content, &model.TbSpecInfo{Namespace: content.Namespace, Id: content.Id})
+			_, updateErr := model.ORM.Update(content, &model.TbImageInfo{Namespace: content.Namespace, Id: content.Id})
 			if updateErr != nil {
-				log.Error().Err(updateErr).Msg("Error updating spec after insert failure")
+				log.Error().Err(updateErr).Msg("Error updating image after insert failure")
 				return content, updateErr
 			} else {
 				log.Trace().Msg("SQL: Update success after insert failure")
 			}
 		} else {
-			log.Error().Err(err).Msg("Error inserting spec and update flag is false")
+			log.Error().Err(err).Msg("Error inserting image and update flag is false")
 			return content, err
 		}
 	} else {
@@ -456,7 +541,7 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate model.TbImageInfo, 
 
 	}
 	// "UPDATE `image` SET `id`='" + imageId + "', ... WHERE `namespace`='" + nsId + "' AND `id`='" + imageId + "';"
-	_, err := model.ORM.Update(&fieldsToUpdate, &model.TbSpecInfo{Namespace: nsId, Id: imageId})
+	_, err := model.ORM.Update(&fieldsToUpdate, &model.TbImageInfo{Namespace: nsId, Id: imageId})
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return fieldsToUpdate, err

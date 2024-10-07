@@ -349,7 +349,7 @@ func RemoveDuplicateSpecsInSQL() error {
 	sqlStr := `
 	DELETE FROM TbSpecInfo
 	WHERE rowid NOT IN (
-		SELECT MIN(rowid)
+		SELECT MAX(rowid)
 		FROM TbSpecInfo
 		GROUP BY Namespace, Id
 	);

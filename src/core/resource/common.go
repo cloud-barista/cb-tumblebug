@@ -1300,6 +1300,7 @@ func LoadAssets() (model.IdList, error) {
 	var specMap sync.Map
 
 	tmpSpecList := []model.TbSpecInfo{}
+	tmpImageList := []model.TbImageInfo{}
 
 	// ignoreConnectionMap is used to store connection names that failed to lookup specs
 	var ignoreConnectionMap sync.Map
@@ -1539,7 +1540,7 @@ func LoadAssets() (model.IdList, error) {
 
 				// Register Spec object
 				searchKey := GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
-				_, ok := specMap.Load(searchKey)
+				value, ok := specMap.Load(searchKey)
 				if ok {
 					// spiderSpec := value.(SpiderSpecInfo)
 					// //log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
@@ -1554,19 +1555,8 @@ func LoadAssets() (model.IdList, error) {
 					// // if errRegisterSpec != nil {
 					// // 	log.Info().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
 					// // }
+					specInfo := value.(model.TbSpecInfo)
 
-				} else {
-					errRegisterSpec = fmt.Errorf("Not Found spec from the fetched spec list: %s", searchKey)
-					log.Trace().Msgf(errRegisterSpec.Error())
-					// _, errRegisterSpec = RegisterSpecWithCspResourceId(model.SystemCommonNs, &specReqTmp, true)
-					// if errRegisterSpec != nil {
-					// 	log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspResourceId failed")
-					// }
-				}
-
-				if errRegisterSpec != nil {
-					regiesteredStatus += "  [Failed] " + errRegisterSpec.Error()
-				} else {
 					// Update registered Spec object with givn info from asset file
 					// Update registered Spec object with Cost info
 					costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
@@ -1580,30 +1570,40 @@ func LoadAssets() (model.IdList, error) {
 						evaluationScore01 = -99.9
 					}
 					expandedInfraType := expandInfraType(infraType)
-					specUpdateRequest :=
-						model.TbSpecInfo{
-							ProviderName:        providerName,
-							RegionName:          regionName,
-							CostPerHour:         float32(costPerHour),
-							RootDiskType:        rootDiskType,
-							RootDiskSize:        rootDiskSize,
-							AcceleratorType:     acceleratorType,
-							AcceleratorModel:    acceleratorModel,
-							AcceleratorCount:    uint8(acceleratorCount),
-							AcceleratorMemoryGB: float32(acceleratorMemoryGB),
-							Description:         description,
-							EvaluationScore01:   float32(evaluationScore01),
-							SystemLabel:         "from-assets",
-							InfraType:           expandedInfraType,
-						}
 
-					_, err3 := UpdateSpec(model.SystemCommonNs, specInfoId, specUpdateRequest)
-					if err3 != nil {
-						log.Error().Err(err3).Msg("UpdateSpec failed")
-						regiesteredStatus += "  [Failed] " + err3.Error()
-					}
+					specInfo.ProviderName = providerName
+					specInfo.RegionName = regionName
+					specInfo.CostPerHour = float32(costPerHour)
+					specInfo.RootDiskType = rootDiskType
+					specInfo.RootDiskSize = rootDiskSize
+					specInfo.AcceleratorType = acceleratorType
+					specInfo.AcceleratorModel = acceleratorModel
+					specInfo.AcceleratorCount = uint8(acceleratorCount)
+					specInfo.AcceleratorMemoryGB = float32(acceleratorMemoryGB)
+					specInfo.Description = description
+					specInfo.EvaluationScore01 = float32(evaluationScore01)
+					specInfo.SystemLabel = "from-assets"
+					specInfo.InfraType = expandedInfraType
+
+					// _, err3 := UpdateSpec(model.SystemCommonNs, specInfoId, specInfo)
+					// if err3 != nil {
+					// 	log.Error().Err(err3).Msg("UpdateSpec failed")
+					// 	regiesteredStatus += "  [Failed] " + err3.Error()
+					// }
+
+					tmpSpecList = append(tmpSpecList, specInfo)
+
 					//fmt.Printf("[%d] Registered Common Spec\n", i)
 					//common.PrintJsonPretty(updatedSpecInfo)
+
+				} else {
+					errRegisterSpec = fmt.Errorf("Not Found spec from the fetched spec list: %s", searchKey)
+					log.Trace().Msgf(errRegisterSpec.Error())
+					// _, errRegisterSpec = RegisterSpecWithCspResourceId(model.SystemCommonNs, &specReqTmp, true)
+					// if errRegisterSpec != nil {
+					// 	log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspResourceId failed")
+					// }
+					regiesteredStatus += "  [Failed] " + errRegisterSpec.Error()
 				}
 
 				regiesteredIds.AddItem(model.StrSpec + ": " + specInfoId + regiesteredStatus)
@@ -1613,6 +1613,26 @@ func LoadAssets() (model.IdList, error) {
 	}
 	// 	wait.Wait()
 	// }(rowsSpec)
+
+	log.Info().Msgf("tmpSpecList %d", len(tmpSpecList))
+
+	err = RegisterSpecWithInfoInBulk(tmpSpecList)
+	if err != nil {
+		log.Info().Err(err).Msg("RegisterSpec WithInfo failed")
+	}
+	tmpSpecList = nil
+
+	// elapsedRegisterUpdatedSpecs := time.Now().Sub(startTime)
+	// log.Info().Msgf("Registerd Updated Specs. Elapsed [%s]", elapsedRegisterUpdatedSpecs)
+	// startTime = time.Now()
+
+	err = RemoveDuplicateSpecsInSQL()
+	if err != nil {
+		log.Error().Err(err).Msg("RemoveDuplicateSpecsInSQL failed")
+	}
+	// elapsedRemoveDuplicateSpecsInSQLUpdated := time.Now().Sub(startTime)
+	// log.Info().Msgf("Remove Duplicate Specs In SQL. Elapsed [%s]", elapsedRemoveDuplicateSpecsInSQLUpdated)
+	// startTime = time.Now()
 
 	elapsedUpdateSpec := time.Now().Sub(startTime)
 	log.Info().Msgf("Updated the registered Specs according to the asset file. Elapsed [%s]", elapsedUpdateSpec)
@@ -1669,24 +1689,40 @@ func LoadAssets() (model.IdList, error) {
 					// Register Spec object
 					regiesteredStatus = ""
 
-					_, err1 := RegisterImageWithId(model.SystemCommonNs, &imageReqTmp, true, true)
+					tmpImageInfo, err1 := GetImageInfoFromLookupImage(model.SystemCommonNs, imageReqTmp)
 					if err1 != nil {
 						log.Info().Msgf("Provider: %s, Region: %s, CspResourceId: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err1.Error())
 						regiesteredStatus += "  [Failed] " + err1.Error()
 					} else {
 						// Update registered image object with OsType info
 						expandedInfraType := expandInfraType(infraType)
-						imageUpdateRequest := model.TbImageInfo{
-							GuestOS:     osType,
-							Description: description,
-							InfraType:   expandedInfraType,
-						}
-						_, err2 := UpdateImage(model.SystemCommonNs, imageInfoId, imageUpdateRequest, true)
-						if err2 != nil {
-							log.Error().Err(err2).Msg("UpdateImage failed")
-							regiesteredStatus += "  [Failed] " + err2.Error()
-						}
+
+						tmpImageInfo.GuestOS = osType
+						tmpImageInfo.Description = description
+						tmpImageInfo.InfraType = expandedInfraType
+
+						tmpImageList = append(tmpImageList, tmpImageInfo)
+
 					}
+
+					// _, err1 := RegisterImageWithId(model.SystemCommonNs, &imageReqTmp, true, true)
+					// if err1 != nil {
+					// 	log.Info().Msgf("Provider: %s, Region: %s, CspResourceId: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err1.Error())
+					// 	regiesteredStatus += "  [Failed] " + err1.Error()
+					// } else {
+					// 	// Update registered image object with OsType info
+					// 	expandedInfraType := expandInfraType(infraType)
+					// 	imageUpdateRequest := model.TbImageInfo{
+					// 		GuestOS:     osType,
+					// 		Description: description,
+					// 		InfraType:   expandedInfraType,
+					// 	}
+					// 	_, err2 := UpdateImage(model.SystemCommonNs, imageInfoId, imageUpdateRequest, true)
+					// 	if err2 != nil {
+					// 		log.Error().Err(err2).Msg("UpdateImage failed")
+					// 		regiesteredStatus += "  [Failed] " + err2.Error()
+					// 	}
+					// }
 
 					//regiesteredStatus = strings.Replace(regiesteredStatus, "\\", "", -1)
 					regiesteredIds.AddItem(model.StrImage + ": " + imageInfoId + regiesteredStatus)
@@ -1696,6 +1732,26 @@ func LoadAssets() (model.IdList, error) {
 	}
 	wait.Wait()
 	// }(rowsImg)
+
+	log.Info().Msgf("tmpImageList %d", len(tmpImageList))
+
+	err = RegisterImageWithInfoInBulk(tmpImageList)
+	if err != nil {
+		log.Info().Err(err).Msg("RegisterImage WithInfo failed")
+	}
+	tmpImageList = nil
+
+	// elapsedRegisterUpdatedImages := time.Now().Sub(startTime)
+	// log.Info().Msgf("Registerd Updated Images. Elapsed [%s]", elapsedRegisterUpdatedImages)
+	// startTime = time.Now()
+
+	err = RemoveDuplicateImagesInSQL()
+	if err != nil {
+		log.Error().Err(err).Msg("RemoveDuplicateImagesInSQL failed")
+	}
+	// elapsedRemoveDuplicateImagesInSQLUpdated := time.Now().Sub(startTime)
+	// log.Info().Msgf("Remove Duplicate Images In SQL. Elapsed [%s]", elapsedRemoveDuplicateImagesInSQLUpdated)
+	// startTime = time.Now()
 
 	elapsedUpdateImg := time.Now().Sub(startTime)
 
