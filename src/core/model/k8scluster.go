@@ -54,7 +54,6 @@ type SpiderClusterUnregisterReqInfoWrapper struct {
 
 // SpiderClusterReq is a wrapper struct to create JSON body of 'Create Cluster request'
 type SpiderClusterReq struct {
-	NameSpace      string // should be empty string from Tumblebug
 	ConnectionName string
 	ReqInfo        SpiderClusterReqInfo
 }
@@ -188,8 +187,7 @@ type TbChangeK8sNodeGroupAutoscaleSizeReq struct {
 
 // SpiderChangeAutoscaleSizeRes is a wrapper struct to get JSON body of 'Change Autoscale Size' response
 type SpiderChangeAutoscaleSizeRes struct {
-	ConnectionName string
-	NodeGroupInfo  SpiderNodeGroupInfo
+	SpiderNodeGroupInfo
 }
 
 // TbChangeK8sNodeGroupAutoscaleSizeRes is a struct to handle 'Change K8sNodeGroup's Autoscale Size' response from CB-Tumblebug.
@@ -268,8 +266,7 @@ const (
 
 // SpiderClusterRes is a wrapper struct to handle a Cluster information from the CB-Spider's REST API response
 type SpiderClusterRes struct {
-	ConnectionName string
-	ClusterInfo    SpiderClusterInfo
+	SpiderClusterInfo
 }
 
 // SpiderClusterInfo is a struct to handle Cluster information from the CB-Spider's REST API response
@@ -367,27 +364,28 @@ type TbK8sClusterNetworkInfo struct {
 
 // SpiderNodeGroupInfo is a struct to handle Cluster Node Group information from the CB-Spider's REST API response
 type SpiderNodeGroupInfo struct {
-	IId IID // {NameId, SystemId}
+	IId IID `json:"IId" validate:"required"` // {NameId, SystemId}
 
 	// VM config.
-	ImageIID     IID
-	VMSpecName   string
-	RootDiskType string // "SSD(gp2)", "Premium SSD", ...
-	RootDiskSize string // "", "default", "50", "1000" (GB)
-	KeyPairIID   IID
+	ImageIID     IID    `json:"ImageIID" validate:"required"`
+	VMSpecName   string `json:"VMSpecName" validate:"required" example:"t3.medium"`
+	RootDiskType string `json:"RootDiskType,omitempty" validate:"omitempty"`              // "SSD(gp2)", "Premium SSD", ...
+	RootDiskSize string `json:"RootDiskSize,omitempty" validate:"omitempty" example:"50"` // "", "default", "50", "1000" (GB)
+	KeyPairIID   IID    `json:"KeyPairIID" validate:"required"`
 
 	// Scaling config.
-	OnAutoScaling   bool // default: true
-	DesiredNodeSize int
-	MinNodeSize     int
-	MaxNodeSize     int
+	OnAutoScaling   bool `json:"OnAutoScaling" validate:"required" example:"true"`
+	DesiredNodeSize int  `json:"DesiredNodeSize" validate:"required" example:"2"`
+	MinNodeSize     int  `json:"MinNodeSize" validate:"required" example:"1"`
+	MaxNodeSize     int  `json:"MaxNodeSize" validate:"required" example:"3"`
 
 	// ---
 
-	Status SpiderNodeGroupStatus
-	Nodes  []IID
+	Status SpiderNodeGroupStatus `json:"Status" validate:"required" example:"Active"`
 
-	KeyValueList []KeyValue
+	Nodes []IID `json:"Nodes,omitempty" validate:"omitempty"`
+
+	KeyValueList []KeyValue `json:"KeyValueList,omitempty" validate:"omitempty"`
 }
 
 // TbK8sNodeGroupInfo is a struct to handle K8sCluster's Node Group information from the CB-Tumblebug's REST API response
