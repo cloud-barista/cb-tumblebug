@@ -372,27 +372,27 @@ func setConfig() {
 // addIndexes adds indexes to the tables for faster search
 func addIndexes() error {
 
-	_, err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_namespace ON tb_spec_info (Namespace)")
+	_, err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_namespace ON TbSpecInfo (Namespace)")
 	if err != nil {
 		return err
 	}
 
-	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_vcpu ON tb_spec_info (VCPU)")
+	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_vcpu ON TbSpecInfo (VCPU)")
 	if err != nil {
 		return err
 	}
 
-	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_memorygib ON tb_spec_info (MemoryGiB)")
+	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_memorygib ON TbSpecInfo (MemoryGiB)")
 	if err != nil {
 		return err
 	}
 
-	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_cspspecname ON tb_spec_info (CspSpecName)")
+	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_cspspecname ON TbSpecInfo (CspSpecName)")
 	if err != nil {
 		return err
 	}
 
-	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_costperhour ON tb_spec_info (CostPerHour)")
+	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_costperhour ON TbSpecInfo (CostPerHour)")
 	if err != nil {
 		return err
 	}

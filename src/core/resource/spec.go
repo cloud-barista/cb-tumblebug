@@ -307,6 +307,63 @@ func RegisterSpecWithInfo(nsId string, content *model.TbSpecInfo, update bool) (
 	return *content, nil
 }
 
+// RegisterSpecWithInfoInBulk register a list of specs in bulk
+func RegisterSpecWithInfoInBulk(specList []model.TbSpecInfo) error {
+	// Insert in bulk
+	// batch size is 90 due to the limit of SQL
+	batchSize := 90
+
+	total := len(specList)
+	for i := 0; i < total; i += batchSize {
+		end := i + batchSize
+		if end > total {
+			end = total
+		}
+		batch := specList[i:end]
+
+		session := model.ORM.NewSession()
+		defer session.Close()
+		if err := session.Begin(); err != nil {
+			log.Error().Err(err).Msg("Failed to begin transaction")
+			return err
+		}
+
+		affected, err := session.Insert(&batch)
+		if err != nil {
+			session.Rollback()
+			log.Error().Err(err).Msg("Error inserting specs in bulk")
+			return err
+		} else {
+			if err := session.Commit(); err != nil {
+				log.Error().Err(err).Msg("Failed to commit transaction")
+				return err
+			}
+			log.Trace().Msgf("Bulk insert success: %d records affected", affected)
+		}
+	}
+	return nil
+}
+
+// RemoveDuplicateSpecsInSQL is to remove duplicate specs in db to refine batch insert duplicates
+func RemoveDuplicateSpecsInSQL() error {
+	sqlStr := `
+	DELETE FROM TbSpecInfo
+	WHERE rowid NOT IN (
+		SELECT MIN(rowid)
+		FROM TbSpecInfo
+		GROUP BY Namespace, Id
+	);
+	`
+	_, err := model.ORM.Exec(sqlStr)
+	if err != nil {
+		log.Error().Err(err).Msg("Error deleting duplicate specs")
+		return err
+	}
+	log.Info().Msg("Duplicate specs removed successfully")
+
+	return nil
+}
+
 // Range struct is for 'FilterSpecsByRange'
 type Range struct {
 	Min float32 `json:"min"`

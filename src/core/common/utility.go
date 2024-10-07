@@ -787,7 +787,7 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 				filteredConnections.Connectionconfig = append(filteredConnections.Connectionconfig, connConfig)
 			}
 		}
-		log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
+		log.Info().Msgf("[%s] filtered connection config: %d", req.ProviderName, len(filteredConnections.Connectionconfig))
 		regionRepresentative := make(map[string]model.ConnConfig)
 		for _, connConfig := range allConnections.Connectionconfig {
 			prefix := req.ProviderName + "-" + connConfig.RegionDetail.RegionName
