@@ -7992,14 +7992,17 @@ components:
         vCPU:
           $ref: '#/components/schemas/model.Range'
     model.IID:
+      required:
+      - NameId
+      - SystemId
       type: object
       properties:
-        nameId:
+        NameId:
           type: string
-          description: NameID by user
-        systemId:
+          example: user-defined-name
+        SystemId:
           type: string
-          description: SystemID by CloudOS
+          example: csp-defined-id
     model.IdList:
       type: object
       properties:
@@ -8866,47 +8869,66 @@ components:
           allOf:
           - $ref: '#/components/schemas/model.IID'
     model.SpiderNodeGroupInfo:
+      required:
+      - DesiredNodeSize
+      - IId
+      - ImageIID
+      - KeyPairIID
+      - MaxNodeSize
+      - MinNodeSize
+      - OnAutoScaling
+      - Status
+      - VMSpecName
       type: object
       properties:
-        desiredNodeSize:
+        DesiredNodeSize:
           type: integer
-        iid:
+          example: 2
+        IId:
           type: object
           description: "{NameId, SystemId}"
           allOf:
           - $ref: '#/components/schemas/model.IID'
-        imageIID:
+        ImageIID:
           type: object
           description: VM config.
           allOf:
           - $ref: '#/components/schemas/model.IID'
-        keyPairIID:
+        KeyPairIID:
           $ref: '#/components/schemas/model.IID'
-        keyValueList:
+        KeyValueList:
           type: array
           items:
             $ref: '#/components/schemas/model.KeyValue'
-        maxNodeSize:
+        MaxNodeSize:
           type: integer
-        minNodeSize:
+          example: 3
+        MinNodeSize:
           type: integer
-        nodes:
+          example: 1
+        Nodes:
           type: array
           items:
             $ref: '#/components/schemas/model.IID'
-        onAutoScaling:
+        OnAutoScaling:
           type: boolean
           description: Scaling config.
-        rootDiskSize:
+          example: true
+        RootDiskSize:
           type: string
           description: "\"\", \"default\", \"50\", \"1000\" (GB)"
-        rootDiskType:
+          example: "50"
+        RootDiskType:
           type: string
           description: "\"SSD(gp2)\", \"Premium SSD\", ..."
-        status:
-          $ref: '#/components/schemas/model.SpiderNodeGroupStatus'
-        vmspecName:
+        Status:
+          type: object
+          example: Active
+          allOf:
+          - $ref: '#/components/schemas/model.SpiderNodeGroupStatus'
+        VMSpecName:
           type: string
+          example: t3.medium
     model.SpiderNodeGroupStatus:
       type: string
       enum:

@@ -10614,14 +10614,18 @@ const docTemplate = `{
         },
         "model.IID": {
             "type": "object",
+            "required": [
+                "NameId",
+                "SystemId"
+            ],
             "properties": {
-                "nameId": {
-                    "description": "NameID by user",
-                    "type": "string"
+                "NameId": {
+                    "type": "string",
+                    "example": "user-defined-name"
                 },
-                "systemId": {
-                    "description": "SystemID by CloudOS",
-                    "type": "string"
+                "SystemId": {
+                    "type": "string",
+                    "example": "csp-defined-id"
                 }
             }
         },
@@ -11912,11 +11916,23 @@ const docTemplate = `{
         },
         "model.SpiderNodeGroupInfo": {
             "type": "object",
+            "required": [
+                "DesiredNodeSize",
+                "IId",
+                "ImageIID",
+                "KeyPairIID",
+                "MaxNodeSize",
+                "MinNodeSize",
+                "OnAutoScaling",
+                "Status",
+                "VMSpecName"
+            ],
             "properties": {
-                "desiredNodeSize": {
-                    "type": "integer"
+                "DesiredNodeSize": {
+                    "type": "integer",
+                    "example": 2
                 },
-                "iid": {
+                "IId": {
                     "description": "{NameId, SystemId}",
                     "allOf": [
                         {
@@ -11924,7 +11940,7 @@ const docTemplate = `{
                         }
                     ]
                 },
-                "imageIID": {
+                "ImageIID": {
                     "description": "VM config.",
                     "allOf": [
                         {
@@ -11932,44 +11948,54 @@ const docTemplate = `{
                         }
                     ]
                 },
-                "keyPairIID": {
+                "KeyPairIID": {
                     "$ref": "#/definitions/model.IID"
                 },
-                "keyValueList": {
+                "KeyValueList": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.KeyValue"
                     }
                 },
-                "maxNodeSize": {
-                    "type": "integer"
+                "MaxNodeSize": {
+                    "type": "integer",
+                    "example": 3
                 },
-                "minNodeSize": {
-                    "type": "integer"
+                "MinNodeSize": {
+                    "type": "integer",
+                    "example": 1
                 },
-                "nodes": {
+                "Nodes": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.IID"
                     }
                 },
-                "onAutoScaling": {
+                "OnAutoScaling": {
                     "description": "Scaling config.",
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
-                "rootDiskSize": {
+                "RootDiskSize": {
                     "description": "\"\", \"default\", \"50\", \"1000\" (GB)",
-                    "type": "string"
+                    "type": "string",
+                    "example": "50"
                 },
-                "rootDiskType": {
+                "RootDiskType": {
                     "description": "\"SSD(gp2)\", \"Premium SSD\", ...",
                     "type": "string"
                 },
-                "status": {
-                    "$ref": "#/definitions/model.SpiderNodeGroupStatus"
+                "Status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.SpiderNodeGroupStatus"
+                        }
+                    ],
+                    "example": "Active"
                 },
-                "vmspecName": {
-                    "type": "string"
+                "VMSpecName": {
+                    "type": "string",
+                    "example": "t3.medium"
                 }
             }
         },
