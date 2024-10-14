@@ -6740,7 +6740,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts vaious input types as Image Key: [1. registerd ID: ({providerName}+{regionName}+{cspImageName}). 2. cspImageName. 3. GuestOS)]",
+                        "description": "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts vaious input types as Image Key: [1. registerd ID: ({providerName}+{regionName}+{GuestOS}). 2. cspImageName. 3. GuestOS)]",
                         "name": "imageId",
                         "in": "path",
                         "required": true
