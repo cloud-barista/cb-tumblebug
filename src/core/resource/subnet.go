@@ -1410,14 +1410,34 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 // GetFirstNZones returns the first N zones of the given connection
 func GetFirstNZones(connectionName string, firstN int) ([]string, int, error) {
 
+	// TODO: Update the validation logic
+	// It's a temporary validation logic due to the connection name pattern
+
 	// Splite the connectionName into provider and region
 	parts := strings.SplitN(connectionName, "-", 2)
 	provider := parts[0]
-	region := parts[1]
+	regionZone := parts[1]
 
 	// Get the region details
-	regionDetail, err := common.GetRegion(provider, region)
+	regionsObj, err := common.GetRegions(provider)
 	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, 0, err
+	}
+
+	// Try to match and get the region detail
+	var regionDetail model.RegionDetail
+	for _, region := range regionsObj.Regions {
+		exists := strings.HasPrefix(regionZone, region.RegionName)
+		if exists {
+			regionDetail = region
+			break
+		}
+	}
+	// Check if the region detail exists or not
+	if regionDetail.RegionName == "" && len(regionDetail.Zones) == 0 {
+		err := fmt.Errorf("invalid region/zone: %s", regionZone)
+		log.Error().Err(err).Msg("")
 		return nil, 0, err
 	}
 
@@ -1429,7 +1449,7 @@ func GetFirstNZones(connectionName string, firstN int) ([]string, int, error) {
 		length = firstN
 	}
 
-	if zones == nil || len(zones) == 0 {
+	if len(zones) == 0 {
 		return nil, 0, nil
 	}
 

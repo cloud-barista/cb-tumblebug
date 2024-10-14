@@ -10424,20 +10424,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.CspRegion": {
-            "type": "object",
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "neededVNets": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.NeededVNet"
-                    }
-                }
-            }
-        },
         "model.CustomImageStatus": {
             "type": "string",
             "enum": [
@@ -10915,6 +10901,20 @@ const docTemplate = `{
                 }
             }
         },
+        "model.McNetConfigurationDetails": {
+            "type": "object",
+            "properties": {
+                "csp": {
+                    "type": "string"
+                },
+                "regions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RegionDetails"
+                    }
+                }
+            }
+        },
         "model.McNlbInfo": {
             "type": "object",
             "properties": {
@@ -11190,20 +11190,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.NeededVNet": {
-            "type": "object",
-            "properties": {
-                "subnetCount": {
-                    "type": "integer"
-                },
-                "subnetSize": {
-                    "type": "integer"
-                },
-                "zoneSelectionMethod": {
-                    "type": "string"
-                }
-            }
-        },
         "model.NsInfo": {
             "type": "object",
             "properties": {
@@ -11392,6 +11378,20 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
+                    }
+                }
+            }
+        },
+        "model.RegionDetails": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "vNets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.VNetDetails"
                     }
                 }
             }
@@ -14431,6 +14431,20 @@ const docTemplate = `{
                 }
             }
         },
+        "model.VNetDetails": {
+            "type": "object",
+            "properties": {
+                "hostsPerSubnet": {
+                    "type": "string"
+                },
+                "subnetCount": {
+                    "type": "string"
+                },
+                "useFirstNZones": {
+                    "type": "string"
+                }
+            }
+        },
         "model.inspectOverview": {
             "type": "object",
             "properties": {
@@ -14547,16 +14561,16 @@ const docTemplate = `{
         "netutil.RestPostUtilToDesignVNetRequest": {
             "type": "object",
             "properties": {
-                "cspRegions": {
+                "desiredPrivateNetwork": {
+                    "type": "string"
+                },
+                "mcNetConfigurations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.CspRegion"
+                        "$ref": "#/definitions/model.McNetConfigurationDetails"
                     }
                 },
                 "supernettingEnabled": {
-                    "type": "string"
-                },
-                "targetPrivateNetwork": {
                     "type": "string"
                 }
             }
