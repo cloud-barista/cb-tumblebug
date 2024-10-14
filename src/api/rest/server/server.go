@@ -423,9 +423,9 @@ func RunServer() {
 	g.PUT("/:nsId/mci/:mciId/vm/:vmId/dataDisk", rest_resource.RestPutVmDataDisk)
 
 	g.POST("/:nsId/resources/image", rest_resource.RestPostImage)
-	g.GET("/:nsId/resources/image/:resourceId", rest_resource.RestGetResource)
+	g.GET("/:nsId/resources/image/:imageId", rest_resource.RestGetImage)
 	g.GET("/:nsId/resources/image", rest_resource.RestGetAllResources)
-	g.PUT("/:nsId/resources/image/:resourceId", rest_resource.RestPutImage)
+	g.PUT("/:nsId/resources/image/:imageId", rest_resource.RestPutImage)
 	g.DELETE("/:nsId/resources/image/:resourceId", rest_resource.RestDelResource)
 	g.DELETE("/:nsId/resources/image", rest_resource.RestDelAllResources)
 

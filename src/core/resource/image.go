@@ -552,7 +552,7 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate model.TbImageInfo, 
 	return fieldsToUpdate, nil
 }
 
-// GetImage accepts namespace Id and imageKey(Id,CspResourceId,GuestOS,...), and returns the TB image object
+// GetImage accepts namespace Id and imageKey(Id,CspResourceName,GuestOS,...), and returns the TB image object
 func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
@@ -577,9 +577,9 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 
 	// ex: img-487zeit5
 	image = model.TbImageInfo{Namespace: nsId, CspImageName: imageKey}
-	has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspResourceId) = ?", nsId, imageKey).Get(&image)
+	has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspImageName) = ?", nsId, imageKey).Get(&image)
 	if err != nil {
-		log.Info().Err(err).Msgf("Failed to get image %s by CspResourceId", imageKey)
+		log.Info().Err(err).Msgf("Failed to get image %s by CspImageName", imageKey)
 	}
 	if has {
 		return image, nil
@@ -595,5 +595,5 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 		return image, nil
 	}
 
-	return model.TbImageInfo{}, fmt.Errorf("The imageKey %s not found by any of ID, CspResourceId, GuestOS", imageKey)
+	return model.TbImageInfo{}, fmt.Errorf("The imageKey %s not found by any of ID, CspImageName, GuestOS", imageKey)
 }
