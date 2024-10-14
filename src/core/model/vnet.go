@@ -77,20 +77,25 @@ type BastionNode struct {
 
 // VNetDesignRequest is a struct to handle the utility function, DesignVNet()
 type VNetDesignRequest struct {
-	TargetPrivateNetwork string      `json:"targetPrivateNetwork"`
-	SupernettingEnabled  string      `json:"supernettingEnabled"`
-	CspRegions           []CspRegion `json:"cspRegions"`
+	DesiredPrivateNetwork string                      `json:"desiredPrivateNetwork"`
+	SupernettingEnabled   string                      `json:"supernettingEnabled"`
+	McNetConfigurations   []McNetConfigurationDetails `json:"mcNetConfigurations"`
 }
 
-type CspRegion struct {
-	ConnectionName string       `json:"connectionName"`
-	NeededVNets    []NeededVNet `json:"neededVNets"`
+type McNetConfigurationDetails struct {
+	Csp     string          `json:"csp"`
+	Regions []RegionDetails `json:"regions"`
 }
 
-type NeededVNet struct {
-	SubnetCount         int    `json:"subnetCount"`
-	SubnetSize          int    `json:"subnetSize"`
-	ZoneSelectionMethod string `json:"zoneSelectionMethod"`
+type RegionDetails struct {
+	Name  string        `json:"name"`
+	VNets []VNetDetails `json:"vNets"`
+}
+
+type VNetDetails struct {
+	SubnetCount    string `json:"subnetCount"`
+	HostsPerSubnet string `json:"hostsPerSubnet"`
+	UseFirstNZones string `json:"useFirstNZones"`
 }
 
 type VNetDesignResponse struct {

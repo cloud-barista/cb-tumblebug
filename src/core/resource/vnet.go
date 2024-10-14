@@ -1557,7 +1557,7 @@ func DesignVNets(reqt *model.VNetDesignRequest) (model.VNetDesignResponse, error
 	var vNetReqList []model.TbVNetReq
 	var allCIDRs []string
 
-	baseIP, _, err := net.ParseCIDR(reqt.TargetPrivateNetwork)
+	baseIP, _, err := net.ParseCIDR(reqt.DesiredPrivateNetwork)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.VNetDesignResponse{}, err
@@ -1566,62 +1566,91 @@ func DesignVNets(reqt *model.VNetDesignRequest) (model.VNetDesignResponse, error
 	nextAvailableIP := baseIP
 
 	idx := 0
-	for i, region := range reqt.CspRegions {
-		for j, vnet := range region.NeededVNets {
+	for _, mcNetConf := range reqt.McNetConfigurations {
+		for _, region := range mcNetConf.Regions {
+			for k, vnet := range region.VNets {
 
-			// Design a vNet
-			log.Debug().Msgf("Region %d, VNet %d:\n", i+1, j+1)
+				csp := mcNetConf.Csp
+				region := region.Name
+				connectionName := csp + "-" + region
+				connectionName = strings.ToLower(connectionName)
+				log.Debug().Msgf("CSP: %s, Region: %s", csp, region)
+				log.Debug().Msgf("connectionName: %s", connectionName)
 
-			// Calculate CIDR blocks for vNet and subnets
-			cidr, subnets, newNextAvailableIP, err := netutil.DeriveVNetAndSubnets(nextAvailableIP, vnet.SubnetSize, vnet.SubnetCount)
-			if err != nil {
-				log.Warn().Msgf("Error calculating subnets: %v", err)
-				continue
-			}
-			log.Debug().Msgf("vNet: %s", cidr)
-			vNetReq := model.TbVNetReq{
-				Name:           fmt.Sprintf("vnet%02d", idx),
-				ConnectionName: region.ConnectionName,
-				CidrBlock:      cidr,
-				Description:    fmt.Sprintf("vnet%02d designed by util/vNet/design", idx),
-			}
-
-			log.Debug().Msgf("Subnets:")
-			zones, length, err := GetFirstNZones(region.ConnectionName, 2)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-			}
-
-			for k, subnet := range subnets {
-				subnetReq := model.TbSubnetReq{}
-				subnetReq.IPv4_CIDR = subnet
-
-				// Note - Depending on the input, a few more subnets can be created
-				if k < vnet.SubnetCount {
-					subnetReq.Name = fmt.Sprintf("subnet%02d", k)
-					subnetReq.Description = fmt.Sprintf("subnet%02d designed by util/vNet/design", k)
-				} else {
-					subnetReq.Name = fmt.Sprintf("subnet%02d-reserved", k)
-					subnetReq.Description = fmt.Sprintf("subnet%02d-reserved designed by util/vNet/design", k)
+				// Convert string to integer and check if it's valid
+				subnetCount, err := strconv.Atoi(vnet.SubnetCount)
+				if err != nil {
+					log.Error().Err(err).Msg("Failed to convert SubnetCount to integer")
+					return model.VNetDesignResponse{}, err
 				}
 
-				// Zone selection method: firstTwoZones
-				if length > 0 {
-					subnetReq.Zone = zones[k%length]
-				} else {
-					subnetReq.Zone = ""
+				hostsPerSubent, err := strconv.Atoi(vnet.HostsPerSubnet)
+				if err != nil {
+					log.Error().Err(err).Msg("Failed to convert HostsPerSubnet to integer")
+					return model.VNetDesignResponse{}, err
 				}
 
-				// Add the subnet to the vNet
-				vNetReq.SubnetInfoList = append(vNetReq.SubnetInfoList, subnetReq)
+				useFirstNZones, err := strconv.Atoi(vnet.UseFirstNZones)
+				if err != nil {
+					log.Error().Err(err).Msg("Failed to convert UseFirstNZones to integer")
+					return model.VNetDesignResponse{}, err
+				}
+
+				// Design a vNet
+				log.Debug().Msgf("CSP: %s, Region %s, VNet %02d:\n", mcNetConf.Csp, region, k+1)
+
+				// Calculate CIDR blocks for vNet and subnets
+				cidr, subnets, newNextAvailableIP, err := netutil.DeriveVNetAndSubnets(nextAvailableIP, hostsPerSubent, subnetCount)
+				if err != nil {
+					log.Warn().Msgf("Error calculating subnets: %v", err)
+					continue
+				}
+				log.Debug().Msgf("vNet: %s", cidr)
+				vNetReq := model.TbVNetReq{
+					Name:           fmt.Sprintf("vnet%02d", idx),
+					ConnectionName: connectionName,
+					CidrBlock:      cidr,
+					Description:    fmt.Sprintf("vnet%02d designed by util/vNet/design", idx),
+				}
+
+				log.Debug().Msgf("Subnets:")
+				zones, length, err := GetFirstNZones(connectionName, useFirstNZones)
+				if err != nil {
+					log.Error().Err(err).Msg("")
+				}
+
+				for l, subnet := range subnets {
+					subnetReq := model.TbSubnetReq{}
+					subnetReq.IPv4_CIDR = subnet
+
+					// Note - Depending on the input, a few more subnets can be created
+					if l < subnetCount {
+						subnetReq.Name = fmt.Sprintf("subnet%02d", l)
+						subnetReq.Description = fmt.Sprintf("subnet%02d designed by util/vNet/design", l)
+					} else {
+						subnetReq.Name = fmt.Sprintf("subnet%02d-reserved", l)
+						subnetReq.Description = fmt.Sprintf("subnet%02d-reserved designed by util/vNet/design", l)
+					}
+
+					// Zone selection method: firstNZones
+					if length > 0 {
+						subnetReq.Zone = zones[l%length]
+					} else {
+						subnetReq.Zone = ""
+					}
+
+					// Add the subnet to the vNet
+					vNetReq.SubnetInfoList = append(vNetReq.SubnetInfoList, subnetReq)
+				}
+				nextAvailableIP = newNextAvailableIP
+
+				// Keep all CIDRs for supernetting
+				allCIDRs = append(allCIDRs, cidr)
+
+				// Add the vNet to the list
+				vNetReqList = append(vNetReqList, vNetReq)
+				idx++
 			}
-			nextAvailableIP = newNextAvailableIP
-
-			// Keep all CIDRs for supernetting
-			allCIDRs = append(allCIDRs, cidr)
-
-			// Add the vNet to the list
-			vNetReqList = append(vNetReqList, vNetReq)
 		}
 	}
 	vNetDesignResp.VNetReqList = vNetReqList
