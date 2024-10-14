@@ -6717,7 +6717,7 @@
         },
         "/ns/{nsId}/resources/image/{imageId}": {
             "get": {
-                "description": "Get image",
+                "description": "GetImage returns an image object if there are matched images for the given namespace and imageKey(Id, CspResourceName, GuestOS,...)",
                 "consumes": [
                     "application/json"
                 ],
@@ -6740,7 +6740,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Image ID ({providerName}+{regionName}+{cspImageName})",
+                        "description": "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts vaious input types as Image Key: [1. registerd ID: ({providerName}+{regionName}+{GuestOS}). 2. cspImageName. 3. GuestOS)]",
                         "name": "imageId",
                         "in": "path",
                         "required": true

@@ -5097,7 +5097,8 @@ paths:
       tags:
       - "[Infra Resource] Image Management"
       summary: Get image
-      description: Get image
+      description: "GetImage returns an image object if there are matched images for\
+        \ the given namespace and imageKey(Id, CspResourceName, GuestOS,...)"
       operationId: GetImage
       parameters:
       - name: nsId
@@ -5109,7 +5110,10 @@ paths:
           default: system
       - name: imageId
         in: path
-        description: "Image ID ({providerName}+{regionName}+{cspImageName})"
+        description: "(Note: imageId param will be refined in next release, enabled\
+          \ for temporal support) This param accepts vaious input types as Image Key:\
+          \ [1. registerd ID: ({providerName}+{regionName}+{GuestOS}). 2. cspImageName.\
+          \ 3. GuestOS)]"
         required: true
         schema:
           type: string

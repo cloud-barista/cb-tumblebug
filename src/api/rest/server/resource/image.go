@@ -215,19 +215,24 @@ func RestFetchImages(c echo.Context) error {
 // RestGetImage godoc
 // @ID GetImage
 // @Summary Get image
-// @Description Get image
+// @Description GetImage returns an image object if there are matched images for the given namespace and imageKey(Id, CspResourceName, GuestOS,...)
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param imageId path string true "Image ID ({providerName}+{regionName}+{cspImageName})"
+// @Param imageId path string true "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts vaious input types as Image Key: [1. registerd ID: ({providerName}+{regionName}+{GuestOS}). 2. cspImageName. 3. GuestOS)]"
 // @Success 200 {object} model.TbImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [get]
 func RestGetImage(c echo.Context) error {
-	// This is a dummy function for Swagger.
-	return nil
+	nsId := c.Param("nsId")
+	imageKey := c.Param("imageId")
+	imageKey = strings.ReplaceAll(imageKey, " ", "+")
+	imageKey = strings.ReplaceAll(imageKey, "%2B", "+")
+
+	content, err := resource.GetImage(nsId, imageKey)
+	return common.EndRequestWithLog(c, err, content)
 }
 
 // Response structure for RestGetAllImage
