@@ -23,5 +23,11 @@ clean:
 	rm -v cb-tumblebug cb-tumblebug-arm
 
 swag swagger:
+	@echo ""
+	@echo "This commend requires swag binary."
+	@echo "If you don't have it, please install swag first with the following commend"
+	@echo "- go install github.com/swaggo/swag/cmd/swag@latest"
+	@echo ""
+
 	~/go/bin/swag i -o ./api/rest/docs
 	../scripts/misc/convert-swagger-version.sh
