@@ -656,9 +656,7 @@ const docTemplate = `{
                         "description": "Request body (various formats) - see [https://documenter.getpostman.com/view/24786935/2s9Ykq8Lpf#231eec23-b0ab-4966-83ce-a0ef92ead7bc] for more details",
                         "name": "Request",
                         "in": "body",
-                        "schema": {
-                            "type": "object"
-                        }
+                        "schema": {}
                     }
                 ],
                 "responses": {
