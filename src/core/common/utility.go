@@ -104,7 +104,7 @@ func GetFuncName() string {
 func CheckString(name string) error {
 
 	if name == "" {
-		err := fmt.Errorf("The provided string is empty")
+		err := fmt.Errorf("CheckString: The name cannot be an empty string.")
 		return err
 	}
 

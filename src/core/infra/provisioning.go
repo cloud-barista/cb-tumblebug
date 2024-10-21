@@ -866,11 +866,13 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 	emptyMci := &model.TbMciInfo{}
 	err := common.CheckString(nsId)
 	if err != nil {
+		err := fmt.Errorf("invalid namespace. %w", err)
 		log.Error().Err(err).Msg("")
 		return emptyMci, err
 	}
 	check, err := CheckMci(nsId, req.Name)
 	if err != nil {
+		err := fmt.Errorf("invalid mci name. %w", err)
 		log.Error().Err(err).Msg("")
 		return emptyMci, err
 	}
