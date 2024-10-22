@@ -312,7 +312,7 @@ func ControlMciAsync(nsId string, mciId string, action string, force bool) error
 			wg.Add(1)
 
 			// Avoid concurrent requests to CSP.
-			time.Sleep(time.Duration(3) * time.Second)
+			time.Sleep(time.Millisecond * 800)
 
 			go ControlVmAsync(&wg, nsId, mciId, vmId, action, results)
 		}
