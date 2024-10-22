@@ -395,15 +395,15 @@ func GetSpec(nsId string, specKey string) (model.TbSpecInfo, error) {
 
 	// ex: img-487zeit5
 	spec = model.TbSpecInfo{Namespace: nsId, CspSpecName: specKey}
-	has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspResourceName) = ?", nsId, specKey).Get(&spec)
+	has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspSpecName) = ?", nsId, specKey).Get(&spec)
 	if err != nil {
-		log.Info().Err(err).Msgf("Failed to get spec %s by CspResourceName", specKey)
+		log.Info().Err(err).Msgf("Failed to get spec %s by CspSpecName", specKey)
 	}
 	if has {
 		return spec, nil
 	}
 
-	return model.TbSpecInfo{}, fmt.Errorf("The specKey %s not found by any of ID, CspResourceName", specKey)
+	return model.TbSpecInfo{}, fmt.Errorf("The specKey %s not found by any of ID, CspSpecName", specKey)
 }
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
