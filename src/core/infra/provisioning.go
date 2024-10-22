@@ -400,7 +400,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbVmReq, newSu
 		}
 
 		// Avoid concurrent requests to CSP.
-		time.Sleep(time.Millisecond * 800)
+		time.Sleep(time.Millisecond * 1000)
 
 		wg.Add(1)
 		go CreateVm(&wg, nsId, mciId, &vmInfoData, option)
@@ -727,7 +727,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 			}
 
 			// Avoid concurrent requests to CSP.
-			time.Sleep(time.Millisecond * 800)
+			time.Sleep(time.Millisecond * 1000)
 
 			wg.Add(1)
 			go CreateVm(&wg, nsId, mciId, &vmInfoData, option)
