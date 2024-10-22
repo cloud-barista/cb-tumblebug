@@ -337,6 +337,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbVmReq, newSu
 		}
 		vmInfoData.ResourceType = model.StrVM
 		vmInfoData.Id = vmInfoData.Name
+		vmInfoData.Uid = common.GenUid()
 
 		vmInfoData.Description = vmRequest.Description
 		vmInfoData.PublicIP = "empty"
@@ -1531,7 +1532,7 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 	_, err = SetBastionNodes(nsId, mciId, vmInfoData.Id, "")
 	if err != nil {
 		// just log error and continue
-		log.Info().Err(err).Msg("")
+		log.Debug().Err(err).Msg("")
 	}
 
 	return nil
