@@ -11702,12 +11702,9 @@
                     "example": "subnet-xxxxx"
                 },
                 "vnet": {
+                    "description": "Zone              string `json:\"zone,omitempty\" example:\"ap-northeast-2a\"`",
                     "type": "string",
                     "example": "vpc-xxxxx"
-                },
-                "zone": {
-                    "type": "string",
-                    "example": "ap-northeast-2a"
                 }
             }
         },

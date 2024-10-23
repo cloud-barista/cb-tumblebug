@@ -8737,10 +8737,9 @@ components:
           example: subnet-xxxxx
         vnet:
           type: string
+          description: "Zone              string `json:\"zone,omitempty\" example:\"\
+            ap-northeast-2a\"`"
           example: vpc-xxxxx
-        zone:
-          type: string
-          example: ap-northeast-2a
     model.SitesInfo:
       type: object
       properties:
