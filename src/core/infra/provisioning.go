@@ -1345,7 +1345,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 			requestBody.ReqInfo.VMSpecName, err = resource.GetCspResourceName(model.SystemCommonNs, model.StrSpec, vmInfoData.SpecId)
 			log.Info().Msgf("Use the common VMSpecName: %s", requestBody.ReqInfo.VMSpecName)
 
-			if requestBody.ReqInfo.ImageName == "" || err != nil {
+			if requestBody.ReqInfo.VMSpecName == "" || err != nil {
 				errAgg += err.Error()
 				err = fmt.Errorf(errAgg)
 
