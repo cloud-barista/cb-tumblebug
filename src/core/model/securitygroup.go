@@ -100,7 +100,9 @@ type TbSecurityGroupInfo struct {
 	// Name is human-readable string to represent the object
 	Name string `json:"name" example:"aws-ap-southeast-1"`
 
-	ConnectionName       string               `json:"connectionName"`
+	ConnectionName   string     `json:"connectionName"`
+	ConnectionConfig ConnConfig `json:"connectionConfig"`
+
 	VNetId               string               `json:"vNetId"`
 	Description          string               `json:"description"`
 	FirewallRules        []TbFirewallRuleInfo `json:"firewallRules"`

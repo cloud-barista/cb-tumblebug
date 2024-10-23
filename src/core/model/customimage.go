@@ -83,9 +83,11 @@ type TbCustomImageInfo struct {
 	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
 
 	// Name is human-readable string to represent the object
-	Name                 string            `json:"name" example:"aws-ap-southeast-1"`
-	Namespace            string            `json:"namespace,omitempty" example:"default"` // required to save in RDB
-	ConnectionName       string            `json:"connectionName" example:"aws-ap-southeast-1"`
+	Name             string     `json:"name" example:"aws-ap-southeast-1"`
+	Namespace        string     `json:"namespace,omitempty" example:"default"` // required to save in RDB
+	ConnectionName   string     `json:"connectionName" example:"aws-ap-southeast-1"`
+	ConnectionConfig ConnConfig `json:"connectionConfig"`
+
 	SourceVmId           string            `json:"sourceVmId" example:"aws-ap-southeast-1-1"`
 	Description          string            `json:"description"`
 	CreationDate         time.Time         `json:"creationDate,omitempty" example:"2022-10-18T08:12:48Z"`

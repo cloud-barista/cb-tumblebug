@@ -68,8 +68,10 @@ type TbSshKeyInfo struct {
 	// Name is human-readable string to represent the object
 	Name string `json:"name" example:"aws-ap-southeast-1"`
 
-	ConnectionName string `json:"connectionName,omitempty"`
-	Description    string `json:"description,omitempty"`
+	ConnectionName   string     `json:"connectionName,omitempty"`
+	ConnectionConfig ConnConfig `json:"connectionConfig"`
+
+	Description string `json:"description,omitempty"`
 
 	Fingerprint          string     `json:"fingerprint,omitempty"`
 	Username             string     `json:"username,omitempty"`

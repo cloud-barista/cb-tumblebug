@@ -12271,6 +12271,9 @@ const docTemplate = `{
                         "/ns/default/mci/mci01/vm/aws-ap-southeast-1-1"
                     ]
                 },
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
                 "connectionName": {
                     "type": "string",
                     "example": "aws-ap-southeast-1"
@@ -12383,6 +12386,9 @@ const docTemplate = `{
                     "example": [
                         "/ns/default/mci/mci01/vm/aws-ap-southeast-1-1"
                     ]
+                },
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
                 },
                 "connectionName": {
                     "type": "string",
@@ -13117,6 +13123,9 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -13405,6 +13414,9 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -13683,6 +13695,9 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -13795,6 +13810,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/model.BastionNode"
                     }
                 },
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -13896,6 +13914,9 @@ const docTemplate = `{
                 },
                 "cidrBlock": {
                     "type": "string"
+                },
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
                 },
                 "connectionName": {
                     "type": "string"

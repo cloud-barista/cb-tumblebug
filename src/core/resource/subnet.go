@@ -280,6 +280,11 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 	subnetInfo.Uid = uid
 	subnetInfo.ResourceType = resourceType
 	subnetInfo.ConnectionName = vNetInfo.ConnectionName
+	subnetInfo.ConnectionConfig, err = common.GetConnConfig(subnetInfo.ConnectionName)
+	if err != nil {
+		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+		log.Error().Err(err).Msg("")
+	}
 	subnetInfo.CspVNetId = vNetInfo.CspResourceId
 	subnetInfo.CspVNetName = vNetInfo.CspResourceName
 

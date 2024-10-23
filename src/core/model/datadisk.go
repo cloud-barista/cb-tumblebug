@@ -117,8 +117,10 @@ type TbDataDiskInfo struct {
 	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
 
 	// Name is human-readable string to represent the object
-	Name                 string     `json:"name" example:"aws-ap-southeast-1"`
-	ConnectionName       string     `json:"connectionName,omitempty" example:"aws-ap-southeast-1"`
+	Name             string     `json:"name" example:"aws-ap-southeast-1"`
+	ConnectionName   string     `json:"connectionName,omitempty" example:"aws-ap-southeast-1"`
+	ConnectionConfig ConnConfig `json:"connectionConfig"`
+
 	DiskType             string     `json:"diskType" example:"standard"`
 	DiskSize             string     `json:"diskSize" example:"77"`
 	Status               DiskStatus `json:"status" example:"Available"` // Available, Unavailable, Attached, ...
