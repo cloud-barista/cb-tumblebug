@@ -267,10 +267,10 @@ type CheckVmDynamicReqInfo struct {
 
 //
 
-// SpiderVMReqInfoWrapper is struct from CB-Spider (VMHandler.go) for wrapping SpiderVMInfo
+// SpiderVMReqInfoWrapper is struct from CB-Spider (VMHandler.go) for wrapping SpiderVMReqInfo
 type SpiderVMReqInfoWrapper struct {
 	ConnectionName string
-	ReqInfo        SpiderVMInfo
+	ReqInfo        SpiderVMReqInfo
 }
 
 type SpiderImageType string
@@ -281,8 +281,8 @@ const (
 )
 
 // Ref: cb-spider/cloud-control-manager/cloud-driver/interfaces/resources/VMHandler.go
-// SpiderVMInfo is struct from CB-Spider for VM information
-type SpiderVMInfo struct {
+// SpiderVMReqInfo is struct from CB-Spider for VM request information
+type SpiderVMReqInfo struct {
 	// Fields for request
 	Name               string
 	ImageName          string
@@ -292,6 +292,19 @@ type SpiderVMInfo struct {
 	KeyPairName        string
 	CSPid              string // VM ID given by CSP (required for registering VM)
 	DataDiskNames      []string
+
+	// Fields for both request and response
+	VMSpecName   string // instance type or flavour, etc... ex) t2.micro or f1.micro
+	VMUserId     string // ex) user1
+	VMUserPasswd string
+	RootDiskType string // "SSD(gp2)", "Premium SSD", ...
+	RootDiskSize string // "default", "50", "1000" (GB)
+	ImageType    SpiderImageType
+}
+
+// Ref: cb-spider/cloud-control-manager/cloud-driver/interfaces/resources/VMHandler.go
+// SpiderVMInfo is struct from CB-Spider for VM information
+type SpiderVMInfo struct {
 
 	// Fields for both request and response
 	VMSpecName   string // instance type or flavour, etc... ex) t2.micro or f1.micro
