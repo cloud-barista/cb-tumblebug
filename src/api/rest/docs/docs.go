@@ -13817,14 +13817,19 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "cspResourceId": {
-                    "description": "CspVNetId is vNet resource identifier managed by CSP",
+                    "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
-                    "example": "csp-45eb41e14121c550a"
+                    "example": "csp-06eb41e14121c550a"
                 },
                 "cspResourceName": {
                     "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
+                },
+                "cspVNetId": {
+                    "description": "CspVNetId is vNet resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-45eb41e14121c550a"
                 },
                 "cspVNetName": {
                     "description": "CspVNetName is identifier to handle CSP vNet resource",

@@ -10286,13 +10286,17 @@ components:
           type: string
         cspResourceId:
           type: string
-          description: CspVNetId is vNet resource identifier managed by CSP
-          example: csp-45eb41e14121c550a
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
         cspResourceName:
           type: string
           description: CspResourceName is name assigned to the CSP resource. This
             name is internally used to handle the resource.
           example: we12fawefadf1221edcf
+        cspVNetId:
+          type: string
+          description: CspVNetId is vNet resource identifier managed by CSP
+          example: csp-45eb41e14121c550a
         cspVNetName:
           type: string
           description: CspVNetName is identifier to handle CSP vNet resource
