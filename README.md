@@ -78,7 +78,7 @@ the titles of Issues, Pull Requests, and Commits, while accommodating local lang
 
 ## Prerequisites 🌍
 
-### Envionment
+### Environment
 
 - Linux (recommend: `Ubuntu 22.04`)
 - Docker and Docker Compose 
