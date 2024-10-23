@@ -54,7 +54,7 @@ type TbSubnetInfo struct { // Tumblebug
 	// CspVNetName is identifier to handle CSP vNet resource
 	CspVNetName string `json:"cspVNetName,omitempty" example:"we12fawefadf1221edcf"`
 	// CspVNetId is vNet resource identifier managed by CSP
-	CspVNetId    string        `json:"cspResourceId,omitempty" example:"csp-45eb41e14121c550a"`
+	CspVNetId    string        `json:"cspVNetId,omitempty" example:"csp-45eb41e14121c550a"`
 	Status       string        `json:"status"`
 	IPv4_CIDR    string        `json:"ipv4_CIDR"`
 	Zone         string        `json:"zone,omitempty"`
