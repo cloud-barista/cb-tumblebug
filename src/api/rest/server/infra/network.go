@@ -142,12 +142,15 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*networkSiteModel.SitesInf
 
 			// Get the last subnet
 			subnetCount := len(vNetInfo.SubnetInfoList)
+			if subnetCount == 0 {
+				log.Warn().Msgf("No subnets found for VNet ID: %s", vNetId)
+				continue
+			}
 			lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
-			lastSubnetIdFromCSP := lastSubnet.CspResourceId
 
 			// Set VNet and the last subnet IDs
 			site.VNet = vm.CspVNetId
-			site.Subnet = lastSubnetIdFromCSP
+			site.Subnet = lastSubnet.CspResourceId
 
 			sitesInAws = append(sitesInAws, site)
 
@@ -155,6 +158,10 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*networkSiteModel.SitesInf
 			// Parse vNet and resource group names
 			parts := strings.Split(vm.CspVNetId, "/")
 			log.Debug().Msgf("parts: %+v", parts)
+			if len(parts) < 9 {
+				log.Warn().Msgf("Invalid VNet ID format for Azure VM ID: %s", vm.Id)
+				continue
+			}
 			parsedResourceGroupName := parts[4]
 			parsedVirtualNetworkName := parts[8]
 
@@ -174,6 +181,10 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*networkSiteModel.SitesInf
 
 			// Get the last subnet CIDR block
 			subnetCount := len(vNetInfo.SubnetInfoList)
+			if subnetCount == 0 {
+				log.Warn().Msgf("No subnets found for VNet ID: %s", vNetId)
+				continue
+			}
 			lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
 			lastSubnetCidr := lastSubnet.IPv4_CIDR
 

@@ -22,9 +22,9 @@ var ProviderNames = map[string]string{
 
 // SiteDetail struct represents the structure for detailed site information
 type SiteDetail struct {
-	CSP               string `json:"csp" example:"aws"`
-	Region            string `json:"region" example:"ap-northeast-2"`
-	Zone              string `json:"zone,omitempty" example:"ap-northeast-2a"`
+	CSP    string `json:"csp" example:"aws"`
+	Region string `json:"region" example:"ap-northeast-2"`
+	// Zone              string `json:"zone,omitempty" example:"ap-northeast-2a"`
 	VNet              string `json:"vnet" example:"vpc-xxxxx"`
 	Subnet            string `json:"subnet,omitempty" example:"subnet-xxxxx"`
 	GatewaySubnetCidr string `json:"gatewaySubnetCidr,omitempty" example:"xxx.xxx.xxx.xxx/xx"`
