@@ -1555,7 +1555,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 	_, err = SetBastionNodes(nsId, mciId, vmInfoData.Id, "")
 	if err != nil {
 		// just log error and continue
-		log.Debug().Err(err).Msg("")
+		log.Debug().Msg(err.Error())
 	}
 
 	// set initial TargetAction, TargetStatus
