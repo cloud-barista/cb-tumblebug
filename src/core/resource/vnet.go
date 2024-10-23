@@ -391,7 +391,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 		})
 	}
 
-	log.Debug().Msgf("vNetInfo: %+v", vNetInfo)
+	log.Debug().Msgf("vNetInfo(initial): %+v", vNetInfo)
 
 	// Set a vNetKey for the vNet object
 	vNetKey := common.GenResourceKey(nsId, resourceType, vNetInfo.Id)
@@ -541,7 +541,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 		log.Warn().Msgf("The status of the vNet (%s) is unknown", vNetInfo.Id)
 	}
 
-	log.Debug().Msgf("vNetInfo: %+v", vNetInfo)
+	log.Debug().Msgf("vNetInfo(filled): %+v", vNetInfo)
 
 	// Store vNet object into the key-value store
 	value, err := json.Marshal(vNetInfo)
@@ -683,6 +683,8 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
+
+	log.Debug().Msgf("vNetInfo: %+v", vNetInfo)
 
 	/*
 	 *	Get vNet info
