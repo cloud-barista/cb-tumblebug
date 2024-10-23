@@ -100,10 +100,12 @@ func CreateMciVm(nsId string, mciId string, vmInfoData *model.TbVmInfo) (*model.
 	//goroutin
 	var wg sync.WaitGroup
 	wg.Add(1)
-
 	option := "create"
-	go AddVmToMci(&wg, nsId, mciId, vmInfoData, option)
+	go CreateVmObject(&wg, nsId, mciId, vmInfoData)
+	wg.Wait()
 
+	wg.Add(1)
+	go CreateVm(&wg, nsId, mciId, vmInfoData, option)
 	wg.Wait()
 
 	vmStatus, err := FetchVmStatus(nsId, mciId, vmInfoData.Id)
@@ -274,6 +276,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbVmReq, newSu
 		subGroupInfoData.ResourceType = model.StrSubGroup
 		subGroupInfoData.Id = tentativeVmId
 		subGroupInfoData.Name = tentativeVmId
+		subGroupInfoData.Uid = common.GenUid()
 		subGroupInfoData.SubGroupSize = vmRequest.SubGroupSize
 
 		key := common.GenMciSubGroupKey(nsId, mciId, vmRequest.Name)
@@ -323,14 +326,13 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbVmReq, newSu
 		vmInfoData := model.TbVmInfo{}
 
 		if subGroupSize == 0 { // for VM (not in a group)
-			vmInfoData.Name = vmRequest.Name
+			vmInfoData.Name = common.ToLower(vmRequest.Name)
 		} else { // for VM (in a group)
 			if i == subGroupSize+vmStartIndex {
 				break
 			}
-			vmInfoData.SubGroupId = vmRequest.Name
-			// TODO: Enhancement Required. Need to check existing subGroup. Need to update it if exist.
-			vmInfoData.Name = vmRequest.Name + "-" + strconv.Itoa(i)
+			vmInfoData.SubGroupId = common.ToLower(vmRequest.Name)
+			vmInfoData.Name = common.ToLower(vmRequest.Name) + "-" + strconv.Itoa(i)
 
 			log.Debug().Msg("vmInfoData.Name: " + vmInfoData.Name)
 
@@ -339,7 +341,6 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbVmReq, newSu
 		vmInfoData.Id = vmInfoData.Name
 		vmInfoData.Uid = common.GenUid()
 
-		vmInfoData.Description = vmRequest.Description
 		vmInfoData.PublicIP = "empty"
 		vmInfoData.PublicDNS = "empty"
 
@@ -353,29 +354,57 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbVmReq, newSu
 			err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
 			log.Error().Err(err).Msg("")
 		}
+		vmInfoData.Location = vmInfoData.ConnectionConfig.RegionDetail.Location
 		vmInfoData.SpecId = vmRequest.SpecId
 		vmInfoData.ImageId = vmRequest.ImageId
 		vmInfoData.VNetId = vmRequest.VNetId
 		vmInfoData.SubnetId = vmRequest.SubnetId
-		//vmInfoData.VnicId = vmRequest.VnicId
-		//vmInfoData.PublicIpId = vmRequest.PublicIpId
 		vmInfoData.SecurityGroupIds = vmRequest.SecurityGroupIds
 		vmInfoData.DataDiskIds = vmRequest.DataDiskIds
 		vmInfoData.SshKeyId = vmRequest.SshKeyId
 		vmInfoData.Description = vmRequest.Description
-
+		vmInfoData.VmUserName = vmRequest.VmUserName
+		vmInfoData.VmUserPassword = vmRequest.VmUserPassword
 		vmInfoData.RootDiskType = vmRequest.RootDiskType
 		vmInfoData.RootDiskSize = vmRequest.RootDiskSize
 
-		vmInfoData.VmUserName = vmRequest.VmUserName
-		vmInfoData.VmUserPassword = vmRequest.VmUserPassword
+		vmInfoData.Label = vmRequest.Label
+
+		vmInfoData.CspResourceId = vmRequest.CspResourceId
 
 		wg.Add(1)
-		// option != register
-		go AddVmToMci(&wg, nsId, mciId, &vmInfoData, "")
-
+		go CreateVmObject(&wg, nsId, mciId, &vmInfoData)
 	}
+	wg.Wait()
 
+	option := "create"
+
+	for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
+		vmInfoData := model.TbVmInfo{}
+
+		if subGroupSize == 0 { // for VM (not in a group)
+			vmInfoData.Name = common.ToLower(vmRequest.Name)
+		} else { // for VM (in a group)
+			if i == subGroupSize+vmStartIndex {
+				break
+			}
+			vmInfoData.SubGroupId = common.ToLower(vmRequest.Name)
+			vmInfoData.Name = common.ToLower(vmRequest.Name) + "-" + strconv.Itoa(i)
+		}
+		vmInfoData.Id = vmInfoData.Name
+		vmId := vmInfoData.Id
+		vmInfoData, err := GetVmObject(nsId, mciId, vmId)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return nil, err
+		}
+
+		// Avoid concurrent requests to CSP.
+		time.Sleep(time.Millisecond * 1000)
+
+		wg.Add(1)
+		go CreateVm(&wg, nsId, mciId, &vmInfoData, option)
+	}
 	wg.Wait()
 
 	//Update MCI status
@@ -472,7 +501,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 	targetStatus := model.StatusRunning
 
 	mciId := req.Name
-	vmRequest := req.Vm
+	vmRequests := req.Vm
 
 	log.Info().Msg("Create MCI object")
 	key := common.GenMciKey(nsId, mciId, "")
@@ -523,7 +552,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 	}
 
 	// Check whether VM names meet requirement.
-	for _, k := range vmRequest {
+	for _, k := range vmRequests {
 		err = common.CheckString(k.Name)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -562,10 +591,10 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 
 	vmStartIndex := 1
 
-	for _, k := range vmRequest {
+	for _, vmRequest := range vmRequests {
 
 		// subGroup handling
-		subGroupSize, err := strconv.Atoi(k.SubGroupSize)
+		subGroupSize, err := strconv.Atoi(vmRequest.SubGroupSize)
 		if err != nil {
 			subGroupSize = 1
 		}
@@ -574,16 +603,14 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 		if subGroupSize > 0 {
 
 			log.Info().Msg("Create MCI subGroup object")
-			key := common.GenMciSubGroupKey(nsId, mciId, k.Name)
-
-			uidSubGroup := common.GenUid()
+			key := common.GenMciSubGroupKey(nsId, mciId, vmRequest.Name)
 
 			subGroupInfoData := model.TbSubGroupInfo{}
 			subGroupInfoData.ResourceType = model.StrSubGroup
-			subGroupInfoData.Id = common.ToLower(k.Name)
-			subGroupInfoData.Name = common.ToLower(k.Name)
-			subGroupInfoData.Uid = uidSubGroup
-			subGroupInfoData.SubGroupSize = k.SubGroupSize
+			subGroupInfoData.Id = common.ToLower(vmRequest.Name)
+			subGroupInfoData.Name = common.ToLower(vmRequest.Name)
+			subGroupInfoData.Uid = common.GenUid()
+			subGroupInfoData.SubGroupSize = vmRequest.SubGroupSize
 
 			for i := vmStartIndex; i < subGroupSize+vmStartIndex; i++ {
 				subGroupInfoData.VmId = append(subGroupInfoData.VmId, subGroupInfoData.Id+"-"+strconv.Itoa(i))
@@ -620,13 +647,13 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 			vmInfoData := model.TbVmInfo{}
 
 			if subGroupSize == 0 { // for VM (not in a group)
-				vmInfoData.Name = common.ToLower(k.Name)
+				vmInfoData.Name = common.ToLower(vmRequest.Name)
 			} else { // for VM (in a group)
 				if i == subGroupSize+vmStartIndex {
 					break
 				}
-				vmInfoData.SubGroupId = common.ToLower(k.Name)
-				vmInfoData.Name = common.ToLower(k.Name) + "-" + strconv.Itoa(i)
+				vmInfoData.SubGroupId = common.ToLower(vmRequest.Name)
+				vmInfoData.Name = common.ToLower(vmRequest.Name) + "-" + strconv.Itoa(i)
 
 				log.Debug().Msg("vmInfoData.Name: " + vmInfoData.Name)
 
@@ -642,36 +669,68 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 			vmInfoData.TargetAction = targetAction
 			vmInfoData.TargetStatus = targetStatus
 
-			vmInfoData.ConnectionName = k.ConnectionName
-			vmInfoData.ConnectionConfig, err = common.GetConnConfig(k.ConnectionName)
+			vmInfoData.ConnectionName = vmRequest.ConnectionName
+			vmInfoData.ConnectionConfig, err = common.GetConnConfig(vmRequest.ConnectionName)
 			if err != nil {
 				err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
 				log.Error().Err(err).Msg("")
 			}
-			vmInfoData.SpecId = k.SpecId
-			vmInfoData.ImageId = k.ImageId
-			vmInfoData.VNetId = k.VNetId
-			vmInfoData.SubnetId = k.SubnetId
-			vmInfoData.SecurityGroupIds = k.SecurityGroupIds
-			vmInfoData.DataDiskIds = k.DataDiskIds
-			vmInfoData.SshKeyId = k.SshKeyId
-			vmInfoData.Description = k.Description
-			vmInfoData.VmUserName = k.VmUserName
-			vmInfoData.VmUserPassword = k.VmUserPassword
-			vmInfoData.RootDiskType = k.RootDiskType
-			vmInfoData.RootDiskSize = k.RootDiskSize
+			vmInfoData.Location = vmInfoData.ConnectionConfig.RegionDetail.Location
+			vmInfoData.SpecId = vmRequest.SpecId
+			vmInfoData.ImageId = vmRequest.ImageId
+			vmInfoData.VNetId = vmRequest.VNetId
+			vmInfoData.SubnetId = vmRequest.SubnetId
+			vmInfoData.SecurityGroupIds = vmRequest.SecurityGroupIds
+			vmInfoData.DataDiskIds = vmRequest.DataDiskIds
+			vmInfoData.SshKeyId = vmRequest.SshKeyId
+			vmInfoData.Description = vmRequest.Description
+			vmInfoData.VmUserName = vmRequest.VmUserName
+			vmInfoData.VmUserPassword = vmRequest.VmUserPassword
+			vmInfoData.RootDiskType = vmRequest.RootDiskType
+			vmInfoData.RootDiskSize = vmRequest.RootDiskSize
 
-			vmInfoData.Label = k.Label
+			vmInfoData.Label = vmRequest.Label
 
-			vmInfoData.CspResourceId = k.CspResourceId
-
-			// Avoid concurrent requests to CSP.
-			time.Sleep(time.Duration(i) * time.Second)
+			vmInfoData.CspResourceId = vmRequest.CspResourceId
 
 			wg.Add(1)
-			go AddVmToMci(&wg, nsId, mciId, &vmInfoData, option)
-			//AddVmToMci(nsId, req.Id, vmInfoData)
+			go CreateVmObject(&wg, nsId, mciId, &vmInfoData)
+		}
+	}
+	wg.Wait()
 
+	for _, vmRequest := range vmRequests {
+		// subGroup handling
+		subGroupSize, err := strconv.Atoi(vmRequest.SubGroupSize)
+		if err != nil {
+			subGroupSize = 1
+		}
+
+		for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
+			vmInfoData := model.TbVmInfo{}
+
+			if subGroupSize == 0 { // for VM (not in a group)
+				vmInfoData.Name = common.ToLower(vmRequest.Name)
+			} else { // for VM (in a group)
+				if i == subGroupSize+vmStartIndex {
+					break
+				}
+				vmInfoData.SubGroupId = common.ToLower(vmRequest.Name)
+				vmInfoData.Name = common.ToLower(vmRequest.Name) + "-" + strconv.Itoa(i)
+			}
+			vmInfoData.Id = vmInfoData.Name
+			vmId := vmInfoData.Id
+			vmInfoData, err := GetVmObject(nsId, mciId, vmId)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				return nil, err
+			}
+
+			// Avoid concurrent requests to CSP.
+			time.Sleep(time.Millisecond * 1000)
+
+			wg.Add(1)
+			go CreateVm(&wg, nsId, mciId, &vmInfoData, option)
 		}
 	}
 	wg.Wait()
@@ -811,7 +870,7 @@ func CreateSystemMciDynamic(option string) (*model.TbMciInfo, error) {
 		for _, v := range connections.Connectionconfig {
 
 			vmReq := &model.TbVmDynamicReq{}
-			vmReq.CommonImage = "ubuntu18.04"                // temporal default value. will be changed
+			vmReq.CommonImage = "ubuntu22.04"                // temporal default value. will be changed
 			vmReq.CommonSpec = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
 
 			deploymentPlan := model.DeploymentPlan{}
@@ -1133,8 +1192,8 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	return vmReq, nil
 }
 
-// AddVmToMci is func to add VM to MCI
-func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.TbVmInfo, option string) error {
+// CreateVmObject is func to add VM to MCI
+func CreateVmObject(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.TbVmInfo) error {
 	log.Debug().Msg("Start to add VM To MCI")
 	//goroutin
 	defer wg.Done()
@@ -1149,6 +1208,13 @@ func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model
 		return fmt.Errorf("AddVmToMci: Cannot find mciId. Key: %s", key)
 	}
 
+	configTmp, err := common.GetConnConfig(vmInfoData.ConnectionName)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	vmInfoData.Location = configTmp.RegionDetail.Location
+
 	// Make VM object
 	key = common.GenMciKey(nsId, mciId, vmInfoData.Id)
 	val, _ := json.Marshal(vmInfoData)
@@ -1158,88 +1224,13 @@ func AddVmToMci(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model
 		return err
 	}
 
-	configTmp, err := common.GetConnConfig(vmInfoData.ConnectionName)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-	vmInfoData.Location = configTmp.RegionDetail.Location
-
-	//AddVmInfoToMci(nsId, mciId, *vmInfoData)
-	// Update VM object
-	val, _ = json.Marshal(vmInfoData)
-	err = kvstore.Put(key, string(val))
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-
-	//instanceIds, publicIPs := CreateVm(&vmInfoData)
-	err = CreateVm(nsId, mciId, vmInfoData, option)
-
-	if err != nil {
-		vmInfoData.Status = model.StatusFailed
-		vmInfoData.SystemMessage = err.Error()
-		UpdateVmInfo(nsId, mciId, *vmInfoData)
-		log.Error().Err(err).Msg("")
-		return err
-	}
-
-	// set initial TargetAction, TargetStatus
-	vmInfoData.TargetAction = model.ActionComplete
-	vmInfoData.TargetStatus = model.StatusComplete
-
-	// get and set current vm status
-	vmStatusInfoTmp, err := FetchVmStatus(nsId, mciId, vmInfoData.Id)
-
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-
-	vmInfoData.Status = vmStatusInfoTmp.Status
-
-	// Monitoring Agent Installation Status (init: notInstalled)
-	vmInfoData.MonAgentStatus = "notInstalled"
-	vmInfoData.NetworkAgentStatus = "notInstalled"
-
-	// set CreatedTime
-	t := time.Now()
-	vmInfoData.CreatedTime = t.Format("2006-01-02 15:04:05")
-	log.Debug().Msg(vmInfoData.CreatedTime)
-
-	UpdateVmInfo(nsId, mciId, *vmInfoData)
-
-	// Store label info using CreateOrUpdateLabel
-	labels := map[string]string{
-		model.LabelManager:         model.StrManager,
-		model.LabelNamespace:       nsId,
-		model.LabelLabelType:       model.StrVM,
-		model.LabelId:              vmInfoData.Id,
-		model.LabelName:            vmInfoData.Name,
-		model.LabelUid:             vmInfoData.Uid,
-		model.LabelCspResourceId:   vmInfoData.CspResourceId,
-		model.LabelCspResourceName: vmInfoData.CspResourceName,
-		model.LabelSubGroupId:      vmInfoData.SubGroupId,
-		model.LabelMciId:           mciId,
-		model.LabelCreatedTime:     vmInfoData.CreatedTime,
-		model.LabelConnectionName:  vmInfoData.ConnectionName,
-	}
-	for key, value := range vmInfoData.Label {
-		labels[key] = value
-	}
-	err = label.CreateOrUpdateLabel(model.StrVM, vmInfoData.Uid, key, labels)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-
 	return nil
-
 }
 
 // CreateVm is func to create VM (option = "register" for register existing VM)
-func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option string) error {
+func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.TbVmInfo, option string) error {
+	//goroutin
+	defer wg.Done()
 
 	var err error = nil
 	switch {
@@ -1262,15 +1253,23 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 	default:
 	}
 	if err != nil {
+		vmInfoData.Status = model.StatusFailed
+		vmInfoData.SystemMessage = err.Error()
+		UpdateVmInfo(nsId, mciId, *vmInfoData)
 		log.Error().Err(err).Msg("")
 		return err
 	}
+
+	vmKey := common.GenMciKey(nsId, mciId, vmInfoData.Id)
 
 	// in case of registering existing CSP VM
 	if option == "register" {
 		// CspResourceId is required
 		if vmInfoData.CspResourceId == "" {
 			err := fmt.Errorf("vmInfoData.CspResourceId is empty (required for register VM)")
+			vmInfoData.Status = model.StatusFailed
+			vmInfoData.SystemMessage = err.Error()
+			UpdateVmInfo(nsId, mciId, *vmInfoData)
 			log.Error().Err(err).Msg("")
 			return err
 		}
@@ -1318,6 +1317,10 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 					errAgg += err.Error()
 					err = fmt.Errorf(errAgg)
 					log.Error().Err(err).Msgf("Not found %s both from ns %s and SystemCommonNs", vmInfoData.ImageId, nsId)
+
+					vmInfoData.Status = model.StatusFailed
+					vmInfoData.SystemMessage = err.Error()
+					UpdateVmInfo(nsId, mciId, *vmInfoData)
 					return err
 				} else {
 					log.Info().Msgf("Use the CommonImage: %s in SystemCommonNs", requestBody.ReqInfo.ImageName)
@@ -1345,7 +1348,12 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 			if requestBody.ReqInfo.ImageName == "" || err != nil {
 				errAgg += err.Error()
 				err = fmt.Errorf(errAgg)
+
+				vmInfoData.Status = model.StatusFailed
+				vmInfoData.SystemMessage = err.Error()
+				UpdateVmInfo(nsId, mciId, *vmInfoData)
 				log.Error().Err(err).Msg("")
+
 				return err
 			}
 		}
@@ -1360,11 +1368,17 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 		subnetInfo, err := resource.GetSubnet(nsId, vmInfoData.VNetId, vmInfoData.SubnetId)
 		if err != nil {
 			log.Error().Err(err).Msg("Cannot find the Subnet ID: " + vmInfoData.SubnetId)
+			vmInfoData.Status = model.StatusFailed
+			vmInfoData.SystemMessage = err.Error()
+			UpdateVmInfo(nsId, mciId, *vmInfoData)
 			return err
 		}
 
 		requestBody.ReqInfo.SubnetName = subnetInfo.CspResourceName
 		if requestBody.ReqInfo.SubnetName == "" {
+			vmInfoData.Status = model.StatusFailed
+			vmInfoData.SystemMessage = err.Error()
+			UpdateVmInfo(nsId, mciId, *vmInfoData)
 			log.Error().Err(err).Msg("")
 			return err
 		}
@@ -1373,6 +1387,9 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 		for _, v := range vmInfoData.SecurityGroupIds {
 			CspResourceId, err := resource.GetCspResourceName(nsId, model.StrSecurityGroup, v)
 			if CspResourceId == "" {
+				vmInfoData.Status = model.StatusFailed
+				vmInfoData.SystemMessage = err.Error()
+				UpdateVmInfo(nsId, mciId, *vmInfoData)
 				log.Error().Err(err).Msg("")
 				return err
 			}
@@ -1387,6 +1404,9 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 			if v != "" {
 				CspResourceId, err := resource.GetCspResourceName(nsId, model.StrDataDisk, v)
 				if err != nil || CspResourceId == "" {
+					vmInfoData.Status = model.StatusFailed
+					vmInfoData.SystemMessage = err.Error()
+					UpdateVmInfo(nsId, mciId, *vmInfoData)
 					log.Error().Err(err).Msg("")
 					return err
 				}
@@ -1397,6 +1417,9 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 
 		requestBody.ReqInfo.KeyPairName, err = resource.GetCspResourceName(nsId, model.StrSSHKey, vmInfoData.SshKeyId)
 		if requestBody.ReqInfo.KeyPairName == "" {
+			vmInfoData.Status = model.StatusFailed
+			vmInfoData.SystemMessage = err.Error()
+			UpdateVmInfo(nsId, mciId, *vmInfoData)
 			log.Error().Err(err).Msg("")
 			return err
 		}
@@ -1428,7 +1451,11 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("Spider returned an error")
+		err = fmt.Errorf("Error from Spider while creating VM: %v", err)
+		vmInfoData.Status = model.StatusFailed
+		vmInfoData.SystemMessage = err.Error()
+		UpdateVmInfo(nsId, mciId, *vmInfoData)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -1485,7 +1512,6 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 		}
 
 	} else {
-		vmKey := common.GenMciKey(nsId, mciId, vmInfoData.Id)
 
 		if customImageFlag == false {
 			resource.UpdateAssociatedObjectList(nsId, model.StrImage, vmInfoData.ImageId, model.StrAdd, vmKey)
@@ -1522,17 +1548,73 @@ func CreateVm(nsId string, mciId string, vmInfoData *model.TbVmInfo, option stri
 
 		vmInfoData.DataDiskIds = append(vmInfoData.DataDiskIds, dataDisk.Id)
 
-		vmKey := common.GenMciKey(nsId, mciId, vmInfoData.Id)
 		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDisk.Id, model.StrAdd, vmKey)
 	}
-
-	UpdateVmInfo(nsId, mciId, *vmInfoData)
 
 	// Assign a Bastion if none (randomly)
 	_, err = SetBastionNodes(nsId, mciId, vmInfoData.Id, "")
 	if err != nil {
 		// just log error and continue
 		log.Debug().Err(err).Msg("")
+	}
+
+	// set initial TargetAction, TargetStatus
+	vmInfoData.TargetAction = model.ActionComplete
+	vmInfoData.TargetStatus = model.StatusComplete
+
+	// get and set current vm status
+	vmStatusInfoTmp, err := FetchVmStatus(nsId, mciId, vmInfoData.Id)
+
+	if err != nil {
+		err = fmt.Errorf("cannot Fetch Vm Status from CSP: %v", err)
+		vmInfoData.Status = model.StatusFailed
+		vmInfoData.SystemMessage = err.Error()
+		UpdateVmInfo(nsId, mciId, *vmInfoData)
+
+		log.Error().Err(err).Msg("")
+
+		return err
+	}
+
+	vmInfoData.Status = vmStatusInfoTmp.Status
+
+	// Monitoring Agent Installation Status (init: notInstalled)
+	vmInfoData.MonAgentStatus = "notInstalled"
+	vmInfoData.NetworkAgentStatus = "notInstalled"
+
+	// set CreatedTime
+	t := time.Now()
+	vmInfoData.CreatedTime = t.Format("2006-01-02 15:04:05")
+	log.Debug().Msg(vmInfoData.CreatedTime)
+
+	UpdateVmInfo(nsId, mciId, *vmInfoData)
+
+	// Store label info using CreateOrUpdateLabel
+	labels := map[string]string{
+		model.LabelManager:         model.StrManager,
+		model.LabelNamespace:       nsId,
+		model.LabelLabelType:       model.StrVM,
+		model.LabelId:              vmInfoData.Id,
+		model.LabelName:            vmInfoData.Name,
+		model.LabelUid:             vmInfoData.Uid,
+		model.LabelCspResourceId:   vmInfoData.CspResourceId,
+		model.LabelCspResourceName: vmInfoData.CspResourceName,
+		model.LabelSubGroupId:      vmInfoData.SubGroupId,
+		model.LabelMciId:           mciId,
+		model.LabelCreatedTime:     vmInfoData.CreatedTime,
+		model.LabelConnectionName:  vmInfoData.ConnectionName,
+	}
+	for key, value := range vmInfoData.Label {
+		labels[key] = value
+	}
+	err = label.CreateOrUpdateLabel(model.StrVM, vmInfoData.Uid, vmKey, labels)
+	if err != nil {
+		err = fmt.Errorf("cannot create label object: %v", err)
+		vmInfoData.Status = model.StatusFailed
+		vmInfoData.SystemMessage = err.Error()
+		UpdateVmInfo(nsId, mciId, *vmInfoData)
+
+		log.Error().Err(err).Msg("")
 	}
 
 	return nil

@@ -37,11 +37,11 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 		log.Error().Err(err).Msg("failed to get label data from kvstore")
 	}
 
-	log.Debug().Str("labelData", string(labelData)).Msg("Fetched label data")
+	// log.Debug().Str("labelData", string(labelData)).Msg("Fetched label data")
 
-	if len(labelData) == 0 {
-		log.Debug().Msg("labelData is empty")
-	}
+	// if len(labelData) == 0 {
+	// 	log.Debug().Msg("labelData is empty")
+	// }
 	var labelInfo model.LabelInfo
 
 	if err == nil && len(labelData) > 0 {

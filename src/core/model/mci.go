@@ -105,6 +105,13 @@ type TbMciReq struct {
 	Vm []TbVmReq `json:"vm" validate:"required"`
 }
 
+// ResourceStatusInfo is struct for status information of a resource
+type ResourceStatusInfo struct {
+	Status       string `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
+}
+
 // TbMciInfo is struct for MCI info
 type TbMciInfo struct {
 	// ResourceType is the type of the resource
