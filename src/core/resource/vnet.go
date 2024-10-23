@@ -367,6 +367,11 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	vNetInfo.Id = vNetReq.Name
 	vNetInfo.Uid = uid
 	vNetInfo.ConnectionName = vNetReq.ConnectionName
+	vNetInfo.ConnectionConfig, err = common.GetConnConfig(vNetInfo.ConnectionName)
+	if err != nil {
+		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+		log.Error().Err(err).Msg("")
+	}
 	vNetInfo.Description = vNetReq.Description
 	// todo: restore the tag list later
 	// vNetInfo.TagList = vNetReq.TagList

@@ -217,7 +217,8 @@ type TbNLBInfo struct {
 	// Name is human-readable string to represent the object
 	Name string `json:"name" example:"aws-ap-southeast-1"`
 
-	ConnectionName string `json:"connectionName"`
+	ConnectionName   string     `json:"connectionName"`
+	ConnectionConfig ConnConfig `json:"connectionConfig"`
 
 	Type  string // PUBLIC(V) | INTERNAL
 	Scope string // REGION(V) | GLOBAL

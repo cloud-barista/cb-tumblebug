@@ -47,8 +47,10 @@ type TbSubnetInfo struct { // Tumblebug
 	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
 
 	// Name is human-readable string to represent the object
-	Name           string `json:"name" example:"aws-ap-southeast-1"`
-	ConnectionName string `json:"connectionName"`
+	Name             string     `json:"name" example:"aws-ap-southeast-1"`
+	ConnectionName   string     `json:"connectionName"`
+	ConnectionConfig ConnConfig `json:"connectionConfig"`
+
 	// CspVNetName is identifier to handle CSP vNet resource
 	CspVNetName string `json:"cspVNetName,omitempty" example:"we12fawefadf1221edcf"`
 	// CspVNetId is vNet resource identifier managed by CSP

@@ -49,8 +49,10 @@ type TbVNetInfo struct {
 	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
 
 	// Name is human-readable string to represent the object
-	Name                 string         `json:"name" example:"aws-ap-southeast-1"`
-	ConnectionName       string         `json:"connectionName"`
+	Name             string     `json:"name" example:"aws-ap-southeast-1"`
+	ConnectionName   string     `json:"connectionName"`
+	ConnectionConfig ConnConfig `json:"connectionConfig"`
+
 	CidrBlock            string         `json:"cidrBlock"`
 	SubnetInfoList       []TbSubnetInfo `json:"subnetInfoList"`
 	Description          string         `json:"description"`

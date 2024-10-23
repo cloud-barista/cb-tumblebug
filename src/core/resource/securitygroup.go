@@ -229,6 +229,11 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 	content.Description = u.Description
 	content.KeyValueList = tempSpiderSecurityInfo.KeyValueList
 	content.AssociatedObjectList = []string{}
+	content.ConnectionConfig, err = common.GetConnConfig(content.ConnectionName)
+	if err != nil {
+		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+		log.Error().Err(err).Msg("")
+	}
 
 	// content.FirewallRules = tempSpiderSecurityInfo.SecurityRules
 	tempTbFirewallRules := []model.TbFirewallRuleInfo{}

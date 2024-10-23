@@ -9129,6 +9129,8 @@ components:
           - /ns/default/mci/mci01/vm/aws-ap-southeast-1-1
           items:
             type: string
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
           type: string
           example: aws-ap-southeast-1
@@ -9213,6 +9215,8 @@ components:
           - /ns/default/mci/mci01/vm/aws-ap-southeast-1-1
           items:
             type: string
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
           type: string
           example: aws-ap-southeast-1
@@ -9777,6 +9781,8 @@ components:
           type: array
           items:
             type: string
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
           type: string
         createdTime:
@@ -9985,6 +9991,8 @@ components:
           type: array
           items:
             type: string
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
           type: string
         cspResourceId:
@@ -10186,6 +10194,8 @@ components:
           type: array
           items:
             type: string
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
           type: string
         cspResourceId:
@@ -10270,6 +10280,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.BastionNode'
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
           type: string
         cspResourceId:
@@ -10345,6 +10357,8 @@ components:
             type: string
         cidrBlock:
           type: string
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
         connectionName:
           type: string
         cspResourceId:

@@ -153,6 +153,11 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 	content.Description = u.Description
 	content.KeyValueList = tempSpiderKeyPairInfo.KeyValueList
 	content.AssociatedObjectList = []string{}
+	content.ConnectionConfig, err = common.GetConnConfig(content.ConnectionName)
+	if err != nil {
+		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+		log.Error().Err(err).Msg("")
+	}
 
 	if option == "register" {
 		if u.CspResourceId == "" {
