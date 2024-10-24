@@ -186,10 +186,15 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (m
 			}
 		}
 
-		spSpecName, err := GetCspResourceName(nsId, model.StrSpec, v.SpecId)
+		spSpecName := ""
+		spSpecName, err = GetCspResourceName(nsId, model.StrSpec, v.SpecId)
 		if err != nil {
-			log.Err(err).Msg("Failed to Create a K8sCluster")
-			return emptyObj, err
+			log.Info().Err(err)
+			spSpecName, err = GetCspResourceName(model.SystemCommonNs, model.StrSpec, v.SpecId)
+			if err != nil {
+				log.Err(err).Msg("Failed to Create a K8sCluster")
+				return emptyObj, err
+			}
 		}
 
 		spKpName, err := GetCspResourceName(nsId, model.StrSSHKey, v.SshKeyId)
@@ -876,6 +881,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (model.TbK8sClusterInfo, er
 		CspResourceId:           storedTbK8sCInfo.CspResourceId,
 		Name:                    storedTbK8sCInfo.Name,
 		ConnectionName:          storedTbK8sCInfo.ConnectionName,
+		ConnectionConfig:        storedTbK8sCInfo.ConnectionConfig,
 		Description:             storedTbK8sCInfo.Description,
 		CspViewK8sClusterDetail: spClusterRes.SpiderClusterInfo,
 	}
