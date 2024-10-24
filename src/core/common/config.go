@@ -147,11 +147,6 @@ func UpdateConfig(u *model.ConfigReq) (model.ConfigInfo, error) {
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
-	keyValue, _ := kvstore.GetKv(key)
-
-	fmt.Println("UpdateConfig(); ===========================")
-	fmt.Println("UpdateConfig(); Key: " + keyValue.Key + "\nValue: " + keyValue.Value)
-	fmt.Println("UpdateConfig(); ===========================")
 
 	UpdateGlobalVariable(content.Id)
 
