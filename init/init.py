@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import subprocess
 import requests
 import yaml
-from tqdm import tqdm
+from alive_progress import alive_bar
 from tabulate import tabulate
 from colorama import Fore, Style, init
 from getpass import getpass
@@ -40,7 +40,7 @@ CRED_PATH = os.path.join(os.path.expanduser('~'), '.cloud-barista')
 ENC_FILE_PATH = os.path.join(CRED_PATH, CRED_FILE_NAME_ENC)
 KEY_FILE = os.path.join(CRED_PATH, ".tmp_enc_key")
 
-expected_completion_time_seconds = 200
+expected_completion_time_seconds = 100
 
 # Check for credential path
 if not os.path.exists(CRED_PATH):
@@ -171,6 +171,7 @@ def register_credential(provider, credentials):
                 "encryptedClientAesKeyByPublicKey": encrypted_aes_key
             }
 
+            print(Fore.YELLOW + f"- Registering and validating credentials for {provider.upper()}...")
             # Step 4: Register the encrypted credentials
             response = requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/credential", json=credential_payload, headers=HEADERS)
 
@@ -223,7 +224,7 @@ def print_credential_info(response):
 
 
 # Register credentials to TumblebugServer using ThreadPoolExecutor
-with ThreadPoolExecutor(max_workers=5) as executor:
+with ThreadPoolExecutor(max_workers=20) as executor:
     future_to_provider = {executor.submit(register_credential, provider, credentials): provider for provider, credentials in cred_data.items()}
     for future in as_completed(future_to_provider):
         provider, message, color = future.result()
@@ -234,7 +235,7 @@ with ThreadPoolExecutor(max_workers=5) as executor:
             print(color + f"- {provider.upper()}: {message}")
             print_credential_info(message)
 
-print(Fore.YELLOW + "\nLoading common Specs and Images...")
+print(Fore.YELLOW + f"\nLoading common Specs and Images... (Estimated: {expected_completion_time_seconds}s)")
 print(Fore.RESET)
 
 # Function to perform the HTTP request and handle exceptions
@@ -266,12 +267,23 @@ thread = threading.Thread(target=load_resources)
 thread.start()
 
 # Expected duration and progress bar
-with tqdm(total=expected_completion_time_seconds, desc="Progress", unit='s') as pbar:
-    while not event.is_set():
-        time.sleep(1)
-        pbar.update(1)
-    pbar.update(expected_completion_time_seconds - pbar.n)  # Ensure the progress bar completes
+update_interval = 0.1  # Update interval in seconds
+step_multiplier = 10  # Increase this to make the bar move faster visually
+total_steps = expected_completion_time_seconds * step_multiplier
 
+# Progress bar with 'smooth' style and manual updates enabled
+with alive_bar(total_steps, bar="smooth", manual=True, stats=False, elapsed=False) as bar:
+    elapsed_steps = 0  # Track the number of elapsed steps
+    while not event.is_set():  # Continue until the event signals completion
+        time.sleep(update_interval)  # Wait for the specified update interval
+        elapsed_steps += 1  # Increment the step count
+
+        # Update the bar text with elapsed and expected time
+        # bar.text = f"Expected: {expected_completion_time_seconds}s"
+        bar(elapsed_steps / total_steps)  # Update the progress bar manually
+
+    # Ensure the bar reaches 100% when the task completes
+    bar(1.0)
 # Wait for the thread to complete
 thread.join()
 
@@ -302,7 +314,7 @@ elif response_json:
             else:
                 successful_images += 1
 
-    print(Fore.CYAN + f"\nLoading completed ({minutes:.2f} minutes)")
+    print(Fore.CYAN + f"\nLoading completed (elapsed: {duration}s)")
     print(Fore.RESET + "Registered Common specs")
     print(Fore.GREEN + f"- Successful: {successful_specs}" + Fore.RESET + f", Failed: {failed_specs}")
     print(Fore.RESET + "Registered Common images")
