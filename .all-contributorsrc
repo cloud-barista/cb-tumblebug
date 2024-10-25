@@ -444,6 +444,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "eltociear",
+      "name": "Ikko Eltociear Ashimine",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22633385?v=4",
+      "profile": "https://wavee.world/invitation/b96d00e6-b802-4a1b-8a66-2e3854a01ffd",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
