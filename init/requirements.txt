@@ -5,7 +5,7 @@ requests==2.32.2
 PyYAML==6.0.1
 
 # Used for displaying progress bars
-tqdm==4.66.3
+alive-progress==3.1.5
 
 # Used for coloring and styling console output
 colorama==0.4.6
