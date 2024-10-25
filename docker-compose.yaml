@@ -7,7 +7,7 @@ networks:
 services:
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.9.18
+    image: cloudbaristaorg/cb-tumblebug:0.9.19
     container_name: cb-tumblebug
     build:
       context: .
@@ -111,7 +111,7 @@ services:
 
   # CB-Spider
   cb-spider:
-    image: cloudbaristaorg/cb-spider:0.9.7
+    image: cloudbaristaorg/cb-spider:0.9.8
     container_name: cb-spider
     # build:
     #   context: ../cb-spider
@@ -145,7 +145,7 @@ services:
 
   # cb-mapui
   cb-mapui:
-    image: cloudbaristaorg/cb-mapui:0.9.8
+    image: cloudbaristaorg/cb-mapui:0.9.10
     container_name: cb-mapui
     # build:
     #   context: ../cb-mapui
