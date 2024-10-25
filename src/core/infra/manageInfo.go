@@ -36,6 +36,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var mciInfoMutex sync.Mutex
+
 // [MCI and VM object information managemenet]
 
 // ListMciId is func to list MCI ID
@@ -415,6 +417,7 @@ func GetMciAccessInfo(nsId string, mciId string, option string) (*model.MciAcces
 			wg.Add(1)
 			go func(nsId string, mciId string, vmId string, option string, chanResults chan model.MciVmAccessInfo) {
 				defer wg.Done()
+				common.RandomSleep(0, len(vmList)/2)
 				vmInfo, err := GetVmCurrentPublicIp(nsId, mciId, vmId)
 				vmAccessInfo := model.MciVmAccessInfo{}
 				if err != nil {
@@ -1327,6 +1330,8 @@ func GetMciVmStatus(nsId string, mciId string, vmId string) (*model.TbVmStatusIn
 
 // UpdateMciInfo is func to update MCI Info (without VM info in MCI)
 func UpdateMciInfo(nsId string, mciInfoData model.TbMciInfo) {
+	mciInfoMutex.Lock()
+	defer mciInfoMutex.Unlock()
 
 	mciInfoData.Vm = nil
 
@@ -1352,6 +1357,9 @@ func UpdateMciInfo(nsId string, mciInfoData model.TbMciInfo) {
 
 // UpdateVmInfo is func to update VM Info
 func UpdateVmInfo(nsId string, mciId string, vmInfoData model.TbVmInfo) {
+	mciInfoMutex.Lock()
+	defer mciInfoMutex.Unlock()
+
 	key := common.GenMciKey(nsId, mciId, vmInfoData.Id)
 
 	// Check existence of the key. If no key, no update.
