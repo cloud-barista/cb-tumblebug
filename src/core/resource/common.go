@@ -1691,7 +1691,7 @@ func LoadAssets() (model.IdList, error) {
 
 					tmpImageInfo, err1 := GetImageInfoFromLookupImage(model.SystemCommonNs, imageReqTmp)
 					if err1 != nil {
-						log.Info().Msgf("Provider: %s, Region: %s, CspResourceId: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err1.Error())
+						log.Info().Msgf("lookup failure, Provider: %s, Region: %s, CspImageName: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err1.Error())
 						regiesteredStatus += "  [Failed] " + err1.Error()
 					} else {
 						// Update registered image object with OsType info

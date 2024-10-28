@@ -93,6 +93,8 @@ GCP,all,https://www.googleapis.com/compute/v1/projects/deeplearning-platform-rel
 GCP,all,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2,,,vm
 ALIBABA,all,ubuntu_18_04_x64_20G_alibase_20240223.vhd,Ubuntu 18.04,,,vm
 ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240819.vhd,Ubuntu 20.04,,,vm
+ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240925.vhd,Ubuntu 20.04,,,vm
+ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240807.vhd,Ubuntu 22.04,,,vm
 ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240926.vhd,Ubuntu 22.04,,,vm
 ALIBABA,all,aliyun_3_x64_20G_alibase_20240819.vhd,Alibaba Cloud Linux 3.2104,,,vm|k8s
 TENCENT,all,img-pi0ii46r,Ubuntu 18.04,,,vm|k8s
