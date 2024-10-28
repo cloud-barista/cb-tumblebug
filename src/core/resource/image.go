@@ -296,52 +296,31 @@ func RegisterImageWithInfo(nsId string, content *model.TbImageInfo, update bool)
 // LookupImageList accepts Spider conn config,
 // lookups and returns the list of all images in the region of conn config
 // in the form of the list of Spider image objects
-func LookupImageList(connConfig string) (model.SpiderImageList, error) {
+func LookupImageList(connConfigName string) (model.SpiderImageList, error) {
 
-	if connConfig == "" {
-		content := model.SpiderImageList{}
-		err := fmt.Errorf("LookupImage() called with empty connConfig.")
-		log.Error().Err(err).Msg("")
-		return content, err
-	}
-
+	var callResult model.SpiderImageList
+	client := resty.New()
 	url := model.SpiderRestUrl + "/vmimage"
-
-	// Create Req body
+	method := "GET"
 	requestBody := model.SpiderConnectionName{}
-	requestBody.ConnectionName = connConfig
+	requestBody.ConnectionName = connConfigName
 
-	client := resty.New().SetCloseConnection(true)
-	client.SetAllowGetMethodPayload(true)
-
-	resp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody).
-		SetResult(&model.SpiderImageList{}). // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-		Get(url)
+	err := common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		common.ShortDuration,
+	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		content := model.SpiderImageList{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return content, err
+		log.Err(err).Msg("Failed to Lookup Image List from Spider")
+		return callResult, err
 	}
-
-	log.Debug().Msg(string(resp.Body()))
-
-	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		content := model.SpiderImageList{}
-		return content, err
-	}
-
-	temp := resp.Result().(*model.SpiderImageList)
-	return *temp, nil
-
+	return callResult, nil
 }
 
 // LookupImage accepts Spider conn config and CSP image ID, lookups and returns the Spider image object
