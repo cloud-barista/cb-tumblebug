@@ -80,15 +80,22 @@ func GenRandomPassword(length int) string {
 }
 
 // RandomSleep is func to make a caller waits for during random time seconds (random value within x~y)
-func RandomSleep(from int, to int) {
-	if from > to {
-		tmp := from
-		from = to
-		to = tmp
+func RandomSleep(from, to int) {
+	const minSleepTime = 1
+
+	if from == 0 && to == 0 {
+		from = minSleepTime
+		to = minSleepTime
+	} else if from > to {
+		from, to = to, from
 	}
+
 	t := to - from
-	rand.Seed(time.Now().UnixNano())
-	n := rand.Intn(t * 1000)
+	if t == 0 {
+		t = minSleepTime
+	}
+
+	n := rand.Intn(t*1000) + from*1000
 	time.Sleep(time.Duration(n) * time.Millisecond)
 }
 
