@@ -92,8 +92,8 @@ GCP,all,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debia
 GCP,all,https://www.googleapis.com/compute/v1/projects/deeplearning-platform-release/global/images/tf-2-15-cu121-v20240417-debian-11,Debian 11,"Google, Deep Learning VM for TensorFlow 2.15 with CUDA 12.1, M120, Debian 11, Python 3.10, with TensorFlow 2.15 for CUDA 12.1 with Intel MKL-DNN preinstalled",,vm
 GCP,all,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2,,,vm
 ALIBABA,all,ubuntu_18_04_x64_20G_alibase_20240223.vhd,Ubuntu 18.04,,,vm
-ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240723.vhd,Ubuntu 20.04,,,vm
-ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240710.vhd,Ubuntu 22.04,,,vm
+ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240819.vhd,Ubuntu 20.04,,,vm
+ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240926.vhd,Ubuntu 22.04,,,vm
 ALIBABA,all,aliyun_3_x64_20G_alibase_20240819.vhd,Alibaba Cloud Linux 3.2104,,,vm|k8s
 TENCENT,all,img-pi0ii46r,Ubuntu 18.04,,,vm|k8s
 TENCENT,all,img-22trbn9x,Ubuntu 20.04,,,vm|k8s
