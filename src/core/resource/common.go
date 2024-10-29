@@ -1099,6 +1099,7 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 		resourceType == model.StrSSHKey ||
 		resourceType == model.StrSpec ||
 		resourceType == model.StrVNet ||
+		resourceType == model.StrVPN ||
 		resourceType == model.StrSecurityGroup ||
 		resourceType == model.StrDataDisk {
 		//resourceType == "subnet" ||

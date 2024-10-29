@@ -2976,7 +2976,7 @@ paths:
   /ns/{nsId}/mci/{mciId}/site:
     get:
       tags:
-      - "[Infra Resource] Network Management"
+      - "[Infra Resource] Site-to-site VPN Management (under development)"
       summary: Get sites in MCI
       description: Get sites in MCI
       operationId: GetSitesInMci
@@ -3722,6 +3722,130 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: vmReq
+  /ns/{nsId}/mci/{mciId}/vpn:
+    get:
+      tags:
+      - "[Infra Resource] Site-to-site VPN Management (under development)"
+      summary: Get all site-to-site VPNs
+      description: Get all site-to-site VPNs
+      operationId: GetAllSiteToSiteVpn
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: option
+        in: query
+        description: Option
+        schema:
+          type: string
+          default: IdList
+          enum:
+          - InfoList
+          - IdList
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.VpnIdList'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[Infra Resource] Site-to-site VPN Management (under development)"
+      summary: Create a site-to-site VPN
+      description: |-
+        Create a site-to-site VPN
+
+        The supported CSP sets are as follows:
+
+        - GCP and AWS (Note: It will take about `20 minutes`.)
+
+        - GCP and Azure (Note: It will take about `40 minutes`.)
+      operationId: PostSiteToSiteVpn
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: action
+        in: query
+        description: Action
+        schema:
+          type: string
+          enum:
+          - retry
+      requestBody:
+        description: Sites info for VPN configuration
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.RestPostVpnRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: vpnReq
   /ns/{nsId}/mci/{mciId}/vpn/{vpnId}:
     get:
       tags:
@@ -3752,37 +3876,145 @@ paths:
         schema:
           type: string
           default: vpn01
-      - name: detail
-        in: query
-        description: "Resource info by detail (refined, raw)"
-        schema:
-          type: string
-          default: refined
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.Response'
+                $ref: '#/components/schemas/model.VPNInfo'
         "400":
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.Response'
+                $ref: '#/components/schemas/model.SimpleMsg'
         "500":
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.Response'
+                $ref: '#/components/schemas/model.SimpleMsg'
         "503":
           description: Service Unavailable
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.Response'
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[Infra Resource] Site-to-site VPN Management (under development)"
+      summary: (To be provided) Update a site-to-site VPN
+      description: (To be provided) Update a site-to-site VPN
+      operationId: PutSiteToSiteVpn
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vpnId
+        in: path
+        description: VPN ID
+        required: true
+        schema:
+          type: string
+          default: vpn01
+      requestBody:
+        description: Resources info for VPN tunnel configuration between GCP and AWS
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.RestPostVpnRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: vpnReq
+    delete:
+      tags:
+      - "[Infra Resource] Site-to-site VPN Management (under development)"
+      summary: "Delete a site-to-site VPN (Currently, GCP-AWS is supported)"
+      description: "Delete a site-to-site VPN (Currently, GCP-AWS is supported)"
+      operationId: DeleteSiteToSiteVpn
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vpnId
+        in: path
+        description: VPN ID
+        required: true
+        schema:
+          type: string
+          default: vpn01
+      responses:
+        "200":
+          description: OK
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/x-json-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/mci/{mciId}/vpn/{vpnId}/request/{requestId}:
     get:
       tags:
@@ -3830,19 +4062,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.Response'
+                $ref: '#/components/schemas/model.SimpleMsg'
         "500":
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.Response'
+                $ref: '#/components/schemas/model.SimpleMsg'
         "503":
           description: Service Unavailable
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.Response'
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/mciDynamic:
     post:
       tags:
@@ -7097,182 +7329,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /stream-response/ns/{nsId}/mci/{mciId}/vpn/{vpnId}:
-    put:
-      tags:
-      - "[Infra Resource] Site-to-site VPN Management (under development)"
-      summary: (To be provided) Update a site-to-site VPN
-      description: (To be provided) Update a site-to-site VPN
-      operationId: PutSiteToSiteVpn
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: mciId
-        in: path
-        description: MCI ID
-        required: true
-        schema:
-          type: string
-          default: mci01
-      - name: vpnId
-        in: path
-        description: VPN ID
-        required: true
-        schema:
-          type: string
-          default: vpn01
-      requestBody:
-        description: Resources info for VPN tunnel configuration between GCP and AWS
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.RestPostVpnGcpToAwsRequest'
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "400":
-          description: Bad Request
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: vpnReq
-    post:
-      tags:
-      - "[Infra Resource] Site-to-site VPN Management (under development)"
-      summary: "Create a site-to-site VPN (Currently, GCP-AWS is supported)"
-      description: "Create a site-to-site VPN (Currently, GCP-AWS is supported)"
-      operationId: PostSiteToSiteVpn
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: mciId
-        in: path
-        description: MCI ID
-        required: true
-        schema:
-          type: string
-          default: mci01
-      - name: vpnId
-        in: path
-        description: VPN ID
-        required: true
-        schema:
-          type: string
-          default: vpn01
-      requestBody:
-        description: Sites info for VPN configuration
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.RestPostVpnRequest'
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "400":
-          description: Bad Request
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: vpnReq
-    delete:
-      tags:
-      - "[Infra Resource] Site-to-site VPN Management (under development)"
-      summary: "Delete a site-to-site VPN (Currently, GCP-AWS is supported)"
-      description: "Delete a site-to-site VPN (Currently, GCP-AWS is supported)"
-      operationId: DeleteSiteToSiteVpn
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: mciId
-        in: path
-        description: MCI ID
-        required: true
-        schema:
-          type: string
-          default: mci01
-      - name: vpnId
-        in: path
-        description: VPN ID
-        required: true
-        schema:
-          type: string
-          default: vpn01
-      responses:
-        "200":
-          description: OK
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "400":
-          description: Bad Request
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
   /systemMci:
     post:
       tags:
@@ -8692,14 +8748,16 @@ components:
         success:
           type: boolean
           example: true
-    model.RestPostVpnGcpToAwsRequest:
-      type: object
-      properties:
-        tfVars:
-          $ref: '#/components/schemas/model.TfVarsGcpAwsVpnTunnel'
     model.RestPostVpnRequest:
+      required:
+      - name
+      - site1
+      - site2
       type: object
       properties:
+        name:
+          type: string
+          example: vpn01
         site1:
           $ref: '#/components/schemas/model.SiteDetail'
         site2:
@@ -8720,6 +8778,9 @@ components:
     model.SiteDetail:
       type: object
       properties:
+        connectionName:
+          type: string
+          example: aws-ap-northeast-2
         csp:
           type: string
           example: aws
@@ -10741,36 +10802,6 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
-    model.TfVarsGcpAwsVpnTunnel:
-      required:
-      - aws-region
-      - aws-subnet-id
-      - aws-vpc-id
-      - gcp-region
-      - gcp-vpc-network-name
-      type: object
-      properties:
-        aws-region:
-          type: string
-          example: ap-northeast-2
-          default: ap-northeast-2
-        aws-subnet-id:
-          type: string
-          example: subnet-xxxxx
-        aws-vpc-id:
-          type: string
-          example: vpc-xxxxx
-        gcp-region:
-          type: string
-          example: asia-northeast3
-          default: asia-northeast3
-        gcp-vpc-network-name:
-          type: string
-          example: vpc01
-          default: vpc01
-        resource-group-id:
-          type: string
-          example: ""
     model.VNetDetails:
       type: object
       properties:
@@ -10780,6 +10811,69 @@ components:
           type: string
         useFirstNZones:
           type: string
+    model.VPNGatewayInfo:
+      type: object
+      properties:
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        description:
+          type: string
+        details:
+          type: object
+        status:
+          type: string
+    model.VPNInfo:
+      type: object
+      properties:
+        description:
+          type: string
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: vpn01
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: vpn01
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        status:
+          type: string
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+        vpnGatewayInfo:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.VPNGatewayInfo'
+    model.VpnIdList:
+      type: object
+      properties:
+        vpnIdList:
+          type: array
+          items:
+            type: string
+    model.VpnInfoList:
+      type: object
+      properties:
+        vpnInfoList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.VPNInfo'
     model.inspectOverview:
       type: object
       properties:

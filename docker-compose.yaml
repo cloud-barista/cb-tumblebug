@@ -166,7 +166,7 @@ services:
 
   # # mc-terrarium (PoC): resource extentions such as VPN for CB-Tumblebug by using OpenTofu
   # mc-terrarium:
-  #   image: cloudbaristaorg/mc-terrarium:0.0.9
+  #   image: cloudbaristaorg/mc-terrarium:0.0.10
   #   container_name: mc-terrarium
   #   # build:
   #   #   context: .
@@ -184,7 +184,7 @@ services:
   #     - ${HOME}/.cloud-barista/secrets:/app/secrets:ro       # GCP credentials
   #     - ./container-volume/mc-terrarium-container/.terrarium:/app/.terrarium
   #   environment:
-  #     # - TERRARIUM_ROOT=/app
+  #     - TERRARIUM_ROOT=/app
   #     # - TERRARIUM_SELF_ENDPOINT=localhost:8055
   #     # - TERRARIUM_API_ALLOW_ORIGINS=*
   #     # - TERRARIUM_API_AUTH_ENABLED=true

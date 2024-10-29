@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	networkSiteModel "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/model"
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/common/logger"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -28,7 +27,7 @@ var epTerrarium string
 func init() {
 	setConfig()
 	tbApiBase = viper.GetString("tumblebug.endpoint") + "/tumblebug"   // ex) "http://localhost:1323/tumblebug"
-	epTerrarium = viper.GetString("terrarium.endpoint") + "/terrarium" // ex) "http://localhost:8888/terrarium"
+	epTerrarium = viper.GetString("terrarium.endpoint") + "/terrarium" // ex) "http://localhost:8055/terrarium"
 }
 
 // setConfig get cloud settings from a config file
@@ -568,7 +567,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-	initRes := new(networkSiteModel.Response)
+	initRes := new(model.Response)
 	if err := json.Unmarshal(respBytes, initRes); err != nil {
 		log.Error().Err(err).Msg("")
 		return

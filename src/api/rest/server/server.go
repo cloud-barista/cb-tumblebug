@@ -276,9 +276,6 @@ func RunServer() {
 	// Route for NameSpace subgroup
 	g := e.Group("/tumblebug/ns", common.NsValidation())
 
-	// Route for stream response subgroup
-	streamResponseGroup := e.Group("/tumblebug/stream-response/ns", common.NsValidation())
-
 	//Namespace Management
 	g.POST("", rest_common.RestPostNs)
 	g.GET("/:nsId", rest_common.RestGetNs)
@@ -352,14 +349,20 @@ func RunServer() {
 	g.GET("/:nsId/benchmarkLatency/mci/:mciId", rest_infra.RestGetBenchmarkLatency)
 
 	// VPN Sites info
-	g.GET("/:nsId/mci/:mciId/site", rest_infra.RestGetSitesInMci)
+	g.GET("/:nsId/mci/:mciId/site", rest_resource.RestGetSitesInMci)
 
 	// Site-to-stie VPN management
-	streamResponseGroup.POST("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestPostSiteToSiteVpn)
-	g.GET("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestGetSiteToSiteVpn)
-	streamResponseGroup.PUT("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestPutSiteToSiteVpn)
-	streamResponseGroup.DELETE("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestDeleteSiteToSiteVpn)
-	g.GET("/:nsId/mci/:mciId/vpn/:vpnId/request/:requestId", rest_infra.RestGetRequestStatusOfSiteToSiteVpn)
+	// Route for stream response subgroup
+	// streamResponseGroup := e.Group("/tumblebug/stream-response/ns", common.NsValidation())
+	g.GET("/:nsId/mci/:mciId/vpn", rest_resource.RestGetAllSiteToSiteVpn)
+	vpnGroup := g.Group("/:nsId/mci/:mciId/vpn")
+	terrariumURL := model.TerrariumRestUrl + "/readyz"
+	vpnGroup.Use(middlewares.CheckReadiness(terrariumURL, apiUser, apiPass))
+	vpnGroup.POST("", rest_resource.RestPostSiteToSiteVpn)
+	vpnGroup.GET("/:vpnId", rest_resource.RestGetSiteToSiteVpn)
+	// g.PUT("/:vpnId", rest_resource.RestPutSiteToSiteVpn)
+	vpnGroup.DELETE("/:vpnId", rest_resource.RestDeleteSiteToSiteVpn)
+	vpnGroup.GET("/:vpnId/request/:requestId", rest_resource.RestGetRequestStatusOfSiteToSiteVpn)
 	// TBD
 	// g.POST("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestPostVpnGcpToAws)
 	// g.PUT("/:nsId/mci/:mciId/vpn/:vpnId", rest_infra.RestPutVpnGcpToAws)
