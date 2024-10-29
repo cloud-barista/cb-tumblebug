@@ -4982,7 +4982,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a site-to-site VPN\n\nThe supported CSP sets are as follows:\n\n- GCP and AWS (Note: It will take about ` + "`" + `20 minutes` + "`" + `.)\n\n- GCP and Azure (Note: It will take about ` + "`" + `40 minutes` + "`" + `.)",
+                "description": "Create a site-to-site VPN\n\nThe supported CSP sets are as follows:\n\n- GCP and AWS (Note: It will take about ` + "`" + `15 minutes` + "`" + `.)\n\n- GCP and Azure (Note: It will take about ` + "`" + `30 minutes` + "`" + `.)",
                 "consumes": [
                     "application/json"
                 ],

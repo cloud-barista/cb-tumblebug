@@ -3787,9 +3787,9 @@ paths:
 
         The supported CSP sets are as follows:
 
-        - GCP and AWS (Note: It will take about `20 minutes`.)
+        - GCP and AWS (Note: It will take about `15 minutes`.)
 
-        - GCP and Azure (Note: It will take about `40 minutes`.)
+        - GCP and Azure (Note: It will take about `30 minutes`.)
       operationId: PostSiteToSiteVpn
       parameters:
       - name: nsId
