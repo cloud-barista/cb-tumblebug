@@ -33,6 +33,7 @@ services:
       # - TB_SELF_ENDPOINT=xxx.xxx.xxx.xxx:1323
       - TB_SPIDER_REST_URL=http://cb-spider:1024/spider
       - TB_ETCD_ENDPOINTS=http://cb-tumblebug-etcd:2379
+      - TB_TERRARIUM_REST_URL=http://mc-terrarium:8055/terrarium
       # - TB_ETCD_AUTH_ENABLED=true
       # - TB_ETCD_USERNAME=default
       # - TB_ETCD_PASSWORD=default
@@ -162,6 +163,49 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  # # mc-terrarium (PoC): resource extentions such as VPN for CB-Tumblebug by using OpenTofu
+  # mc-terrarium:
+  #   image: cloudbaristaorg/mc-terrarium:0.0.9
+  #   container_name: mc-terrarium
+  #   # build:
+  #   #   context: .
+  #   #   dockerfile: Dockerfile    
+  #   networks:
+  #     - external_network
+  #   ports:
+  #     - target: 8055
+  #       published: 8055
+  #       protocol: tcp
+  #   env_file:
+  #     - ${HOME}/.cloud-barista/secrets/credentials           # AWS credentials
+  #     - ${HOME}/.cloud-barista/secrets/credential-azure.env  # Azure credentials
+  #   volumes:
+  #     - ${HOME}/.cloud-barista/secrets:/app/secrets:ro       # GCP credentials
+  #     - ./container-volume/mc-terrarium-container/.terrarium:/app/.terrarium
+  #   environment:
+  #     # - TERRARIUM_ROOT=/app
+  #     # - TERRARIUM_SELF_ENDPOINT=localhost:8055
+  #     # - TERRARIUM_API_ALLOW_ORIGINS=*
+  #     # - TERRARIUM_API_AUTH_ENABLED=true
+  #     # - TERRARIUM_API_USERNAME=default
+  #     # - TERRARIUM_API_PASSWORD=default
+  #     # - TERRARIUM_LOGFILE_PATH=/app/log/terrarium.log
+  #     # - TERRARIUM_LOGFILE_MAXSIZE=1000
+  #     # - TERRARIUM_LOGFILE_MAXBACKUPS=3
+  #     # - TERRARIUM_LOGFILE_MAXAGE=30
+  #     # - TERRARIUM_LOGFILE_COMPRESS=false
+  #     - TERRARIUM_LOGLEVEL=info
+  #     # - TERRARIUM_LOGWRITER=both
+  #     # - TERRARIUM_NODE_ENV=production
+  #     # - TERRARIUM_AUTOCONTROL_DURATION_MS=10000
+  #   healthcheck:
+  #     test: [ "CMD", "curl", "-f", "http://localhost:8055/terrarium/readyz" ]
+  #     interval: 5m
+  #     timeout: 5s
+  #     retries: 3
+  #     start_period: 10s
+
 
   # # Swagger UI
   # swagger-ui:
