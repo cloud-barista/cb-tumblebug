@@ -10,7 +10,7 @@ tumblebug:
       reqBody: mciDynamic.json
 
 terrarium:
-  endpoint: http://localhost:8888
+  endpoint: http://localhost:8055
   auth:
     info: auth.json
   demo:

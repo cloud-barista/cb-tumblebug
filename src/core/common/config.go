@@ -206,7 +206,7 @@ func InitConfig(id string) error {
 		model.DragonflyRestUrl = NVL(os.Getenv("TB_DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
 		log.Debug().Msg("<TB_DRAGONFLY_REST_URL> " + model.DragonflyRestUrl)
 	case model.StrTerrariumRestUrl:
-		model.TerrariumRestUrl = NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8888/terrarium")
+		model.TerrariumRestUrl = NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8055/terrarium")
 		log.Debug().Msg("<TB_TERRARIUM_REST_URL> " + model.TerrariumRestUrl)
 	case model.StrDBUrl:
 		model.DBUrl = NVL(os.Getenv("TB_SQLITE_URL"), "localhost:3306")

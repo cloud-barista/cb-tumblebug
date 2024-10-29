@@ -3952,7 +3952,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra Resource] Network Management"
+                    "[Infra Resource] Site-to-site VPN Management (under development)"
                 ],
                 "summary": "Get sites in MCI",
                 "operationId": "GetSitesInMci",
@@ -4911,6 +4911,153 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/mci/{mciId}/vpn": {
+            "get": {
+                "description": "Get all site-to-site VPNs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Site-to-site VPN Management (under development)"
+                ],
+                "summary": "Get all site-to-site VPNs",
+                "operationId": "GetAllSiteToSiteVpn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "InfoList",
+                            "IdList"
+                        ],
+                        "type": "string",
+                        "default": "IdList",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.VpnIdList"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a site-to-site VPN\n\nThe supported CSP sets are as follows:\n\n- GCP and AWS (Note: It will take about ` + "`" + `20 minutes` + "`" + `.)\n\n- GCP and Azure (Note: It will take about ` + "`" + `40 minutes` + "`" + `.)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/x-json-stream"
+                ],
+                "tags": [
+                    "[Infra Resource] Site-to-site VPN Management (under development)"
+                ],
+                "summary": "Create a site-to-site VPN",
+                "operationId": "PostSiteToSiteVpn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Sites info for VPN configuration",
+                        "name": "vpnReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RestPostVpnRequest"
+                        }
+                    },
+                    {
+                        "enum": [
+                            "retry"
+                        ],
+                        "type": "string",
+                        "description": "Action",
+                        "name": "action",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mci/{mciId}/vpn/{vpnId}": {
             "get": {
                 "description": "Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)",
@@ -4949,38 +5096,172 @@ const docTemplate = `{
                         "name": "vpnId",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "refined",
-                        "description": "Resource info by detail (refined, raw)",
-                        "name": "detail",
-                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Response"
+                            "$ref": "#/definitions/model.VPNInfo"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.Response"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.Response"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
-                            "$ref": "#/definitions/model.Response"
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "(To be provided) Update a site-to-site VPN",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/x-json-stream"
+                ],
+                "tags": [
+                    "[Infra Resource] Site-to-site VPN Management (under development)"
+                ],
+                "summary": "(To be provided) Update a site-to-site VPN",
+                "operationId": "PutSiteToSiteVpn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vpn01",
+                        "description": "VPN ID",
+                        "name": "vpnId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Resources info for VPN tunnel configuration between GCP and AWS",
+                        "name": "vpnReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RestPostVpnRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a site-to-site VPN (Currently, GCP-AWS is supported)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/x-json-stream"
+                ],
+                "tags": [
+                    "[Infra Resource] Site-to-site VPN Management (under development)"
+                ],
+                "summary": "Delete a site-to-site VPN (Currently, GCP-AWS is supported)",
+                "operationId": "DeleteSiteToSiteVpn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vpn01",
+                        "description": "VPN ID",
+                        "name": "vpnId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -5043,19 +5324,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.Response"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.Response"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
-                            "$ref": "#/definitions/model.Response"
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }
@@ -9368,224 +9649,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/stream-response/ns/{nsId}/mci/{mciId}/vpn/{vpnId}": {
-            "put": {
-                "description": "(To be provided) Update a site-to-site VPN",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/x-json-stream"
-                ],
-                "tags": [
-                    "[Infra Resource] Site-to-site VPN Management (under development)"
-                ],
-                "summary": "(To be provided) Update a site-to-site VPN",
-                "operationId": "PutSiteToSiteVpn",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mci01",
-                        "description": "MCI ID",
-                        "name": "mciId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "vpn01",
-                        "description": "VPN ID",
-                        "name": "vpnId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Resources info for VPN tunnel configuration between GCP and AWS",
-                        "name": "vpnReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.RestPostVpnGcpToAwsRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a site-to-site VPN (Currently, GCP-AWS is supported)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/x-json-stream"
-                ],
-                "tags": [
-                    "[Infra Resource] Site-to-site VPN Management (under development)"
-                ],
-                "summary": "Create a site-to-site VPN (Currently, GCP-AWS is supported)",
-                "operationId": "PostSiteToSiteVpn",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mci01",
-                        "description": "MCI ID",
-                        "name": "mciId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "vpn01",
-                        "description": "VPN ID",
-                        "name": "vpnId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Sites info for VPN configuration",
-                        "name": "vpnReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.RestPostVpnRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a site-to-site VPN (Currently, GCP-AWS is supported)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/x-json-stream"
-                ],
-                "tags": [
-                    "[Infra Resource] Site-to-site VPN Management (under development)"
-                ],
-                "summary": "Delete a site-to-site VPN (Currently, GCP-AWS is supported)",
-                "operationId": "DeleteSiteToSiteVpn",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mci01",
-                        "description": "MCI ID",
-                        "name": "mciId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "vpn01",
-                        "description": "VPN ID",
-                        "name": "vpnId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/systemMci": {
             "post": {
                 "description": "Create System MCI Dynamically for Special Purpose",
@@ -11646,17 +11709,18 @@ const docTemplate = `{
                 }
             }
         },
-        "model.RestPostVpnGcpToAwsRequest": {
-            "type": "object",
-            "properties": {
-                "tfVars": {
-                    "$ref": "#/definitions/model.TfVarsGcpAwsVpnTunnel"
-                }
-            }
-        },
         "model.RestPostVpnRequest": {
             "type": "object",
+            "required": [
+                "name",
+                "site1",
+                "site2"
+            ],
             "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "vpn01"
+                },
                 "site1": {
                     "$ref": "#/definitions/model.SiteDetail"
                 },
@@ -11688,6 +11752,10 @@ const docTemplate = `{
         "model.SiteDetail": {
             "type": "object",
             "properties": {
+                "connectionName": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                },
                 "csp": {
                     "type": "string",
                     "example": "aws"
@@ -14413,45 +14481,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.TfVarsGcpAwsVpnTunnel": {
-            "type": "object",
-            "required": [
-                "aws-region",
-                "aws-subnet-id",
-                "aws-vpc-id",
-                "gcp-region",
-                "gcp-vpc-network-name"
-            ],
-            "properties": {
-                "aws-region": {
-                    "type": "string",
-                    "default": "ap-northeast-2",
-                    "example": "ap-northeast-2"
-                },
-                "aws-subnet-id": {
-                    "type": "string",
-                    "example": "subnet-xxxxx"
-                },
-                "aws-vpc-id": {
-                    "type": "string",
-                    "example": "vpc-xxxxx"
-                },
-                "gcp-region": {
-                    "type": "string",
-                    "default": "asia-northeast3",
-                    "example": "asia-northeast3"
-                },
-                "gcp-vpc-network-name": {
-                    "type": "string",
-                    "default": "vpc01",
-                    "example": "vpc01"
-                },
-                "resource-group-id": {
-                    "type": "string",
-                    "example": ""
-                }
-            }
-        },
         "model.VNetDetails": {
             "type": "object",
             "properties": {
@@ -14463,6 +14492,92 @@ const docTemplate = `{
                 },
                 "useFirstNZones": {
                     "type": "string"
+                }
+            }
+        },
+        "model.VPNGatewayInfo": {
+            "type": "object",
+            "properties": {
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "details": {},
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.VPNInfo": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "vpn01"
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "vpn01"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
+                },
+                "vpnGatewayInfo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.VPNGatewayInfo"
+                    }
+                }
+            }
+        },
+        "model.VpnIdList": {
+            "type": "object",
+            "properties": {
+                "vpnIdList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "model.VpnInfoList": {
+            "type": "object",
+            "properties": {
+                "vpnInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.VPNInfo"
+                    }
                 }
             }
         },

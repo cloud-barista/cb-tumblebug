@@ -99,6 +99,7 @@ const (
 	StrSpec                  string = "spec"
 	StrVNet                  string = "vNet"
 	StrSubnet                string = "subnet"
+	StrVPN                   string = "vpn"
 	StrDataDisk              string = "dataDisk"
 	StrNLB                   string = "nlb"
 	StrVM                    string = "vm"
