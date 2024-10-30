@@ -30,7 +30,7 @@
 				"VMSpecName": "'${SPEC_NAME[$INDEX,$REGION]}'", 
 				"KeyPairName": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
 			} 
-		}' | jq ''
+		}' | jq '.'
 #}
 
 #spider_create_mci

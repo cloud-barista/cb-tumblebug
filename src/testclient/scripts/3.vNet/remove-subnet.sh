@@ -10,7 +10,7 @@ function CallTB() {
 
     resp=$(
         curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}/subnet/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}-${CIDRDiff} -H 'Content-Type: application/json' 
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
 }
 

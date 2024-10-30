@@ -22,6 +22,6 @@ echo "####################################################################"
 source ../common-functions.sh
 # getCloudIndex $CSP
 
-curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/spec | jq ''
+curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/spec | jq '.'
 
 printElapsed $@

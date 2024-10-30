@@ -3,7 +3,7 @@
 function CallTB() {
 	echo "- Get spec in ${ResourceRegionNativeName}"
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/spec/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq ''
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/spec/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq '.'
 }
 
 #function get_spec() {

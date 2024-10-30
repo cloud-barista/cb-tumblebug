@@ -13,7 +13,7 @@ function CallTB() {
 			"guestOS": "Ubuntu"
 		}
 EOF
-	); echo ${resp} | jq ''
+	); echo ${resp} | jq '.'
 	echo ""
 
 	if [ -n "${CONTAINER_IMAGE_NAME[$INDEX,$REGION]}" ]; then
@@ -29,7 +29,7 @@ EOF
 			    "guestOS": "Ubuntu"
 		    }
 EOF
-	    ); echo ${resp} | jq ''
+	    ); echo ${resp} | jq '.'
 	fi
 
 }

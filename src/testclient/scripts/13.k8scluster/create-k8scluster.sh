@@ -20,8 +20,10 @@ fi
 
 K8SNODEGROUPNAME="ng${INDEX}${REGION}"
 
-if [ "${CSP}" == "azure" ]; then
-    NODEIMAGEID="" # In azure, image designation is not supported
+echo "CSP=${CSP}"
+if [ "${CSP}" == "azure" ] || [ "${CSP}" == "nhncloud" ]; then
+    	NODEIMAGEID="" # In azure, image designation is not supported
+	echo "NODEIMAGEID=${NODEIMAGEID}"
 else
     if [ -n "${CONTAINER_IMAGE_NAME[$INDEX,$REGION]}" ]; then
 	    NODEIMAGEID="k8s-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
@@ -108,13 +110,13 @@ req=$(cat <<EOF
                 ${K8SNODEGROUPLIST}
         }
 EOF
-        ); echo ${req} | jq ''
+        ); echo ${req} | jq '.'
 
 resp=$(
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster -H 'Content-Type: application/json' -d @- <<EOF
 		${req}
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
    
 # nodeGroupList.Name: 12 or fewer characters in Linux, 8 or fewer characters in Windows, only lowercase

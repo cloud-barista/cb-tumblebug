@@ -32,7 +32,7 @@ VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd
 	}
 EOF
 )
-echo "${VAR1}" | jq ''
+echo "${VAR1}" | jq '.'
 echo ""
 
 LAUNCHCMD="cd Xonotic/; nohup ./xonotic-linux64-dedicated 1>server.log 2>&1 &"

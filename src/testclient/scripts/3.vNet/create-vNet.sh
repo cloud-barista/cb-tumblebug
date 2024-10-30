@@ -47,13 +47,13 @@ END
 		} ]
 	}
 EOF
-	); echo ${req} | jq ''
+	); echo ${req} | jq '.'
 
 	resp=$(
         	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet -H 'Content-Type: application/json' -d @- <<EOF
 			${req}
 EOF
-	); echo ${resp} | jq ''
+	); echo ${resp} | jq '.'
 	echo ""
 }
 

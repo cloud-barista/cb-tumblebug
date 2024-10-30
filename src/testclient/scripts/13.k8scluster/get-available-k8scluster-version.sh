@@ -19,5 +19,5 @@ REGIONNAME="ap-south-1"
 
 resp=$(
 	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/availableK8sClusterVersion?providerName=${PROVIDERNAME}\&regionName=${REGIONNAME}
-	); echo ${resp} | jq ''
+	); echo ${resp} | jq '.'
     echo ""

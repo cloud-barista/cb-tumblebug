@@ -9,7 +9,7 @@ function CallTB() {
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
 			"diskType": "default",
 			"diskSize": "77"
-		}' | jq ''
+		}' | jq '.'
 }
 
 #function create_dataDisk() {

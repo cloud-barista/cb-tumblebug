@@ -8,7 +8,7 @@
     echo "## 11. dataDisk: List ID"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/dataDisk?option=id | jq ''
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/dataDisk?option=id | jq '.'
     echo ""
 #}
 

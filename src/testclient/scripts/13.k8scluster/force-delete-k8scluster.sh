@@ -15,5 +15,5 @@ echo "K8SCLUSTERID=${K8SCLUSTERID}"
 
 resp=$(
 	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}?force=true
-	); echo ${resp} | jq ''
+	); echo ${resp} | jq '.'
     echo ""

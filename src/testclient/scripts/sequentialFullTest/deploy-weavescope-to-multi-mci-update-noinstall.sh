@@ -98,7 +98,7 @@ echo "WHOLE_PrivateIPList: $WHOLE_PRIVIPLIST"
 #     curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d \
 #     '{
 #     "command": "sudo apt-get update > /dev/null;  sudo apt install docker.io -y; sudo curl -L git.io/scope -o /usr/local/bin/scope; sudo chmod a+x /usr/local/bin/scope"
-#     }' | jq ''
+#     }' | jq '.'
 #     echo ""
 # done
 

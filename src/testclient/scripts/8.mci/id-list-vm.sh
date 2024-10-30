@@ -14,7 +14,7 @@ fi
 
 echo "${MCIID}"
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=id | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=id | jq '.'
 
 
 #get_mci

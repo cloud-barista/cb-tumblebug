@@ -3,7 +3,7 @@
 function CallTB() {
 	echo "- Delete vNet in ${ResourceRegionNativeName}"
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true&action=withsubnets | jq ''
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true&action=withsubnets | jq '.'
 }
 
 #function delete_vNet() {

@@ -16,7 +16,7 @@ function CallTB() {
 			"IPv4_CIDR": "10.${CIDRDiff}.128.0/18"			
 		}
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
 }
 

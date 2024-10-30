@@ -36,7 +36,7 @@ function CallTB() {
 			} ]
 		}
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
 }
 

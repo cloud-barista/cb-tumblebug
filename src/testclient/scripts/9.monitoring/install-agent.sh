@@ -9,4 +9,4 @@ echo "####################################################################"
 curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/monitoring/install/mci/$MCIID -H 'Content-Type: application/json' -d \
 	'{
 			"command": "echo -n [CMD] Works! [Hostname: ; hostname ; echo -n ]"
-	}' | jq ''
+	}' | jq '.'

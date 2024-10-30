@@ -102,7 +102,7 @@ for MCIID in "$@"; do
     curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d \
         '{
         "command": "sudo apt-get update > /dev/null;  sudo apt install docker.io -y; sudo curl -L ${ScopeInstallFile} -o /usr/local/bin/scope; sudo chmod a+x /usr/local/bin/scope"
-        }' | jq ''
+        }' | jq '.'
     echo ""
 done
 

@@ -9,7 +9,7 @@ function CallTB() {
 			"resourceType": "securityGroup"
 		}
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
 }
 

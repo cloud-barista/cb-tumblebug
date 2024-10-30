@@ -8,7 +8,7 @@
     echo "## 6. customImage: List"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/customImage?option=id | jq '' #|| return 1
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/customImage?option=id | jq '.' #|| return 1
 #}
 
 #list_customImage

@@ -15,5 +15,5 @@ echo "K8SCLUSTERID=${K8SCLUSTERID}"
 
 resp=$(
 	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}
-	); echo ${resp} | jq ''
+	); echo ${resp} | jq '.'
     echo ""

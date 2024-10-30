@@ -15,5 +15,5 @@ VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd
 	}
 EOF
 )
-echo "${VAR1}" | jq ''
+echo "${VAR1}" | jq '.'
 echo ""

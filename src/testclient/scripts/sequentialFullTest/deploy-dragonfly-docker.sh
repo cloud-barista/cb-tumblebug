@@ -20,7 +20,7 @@ echo "CMD: $CMD"
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mci/$MCIID -H 'Content-Type: application/json' -d \
 		'{
 			"command"        : "[${CMD}]"
-		}' | jq '' #|| return 1
+		}' | jq '.' #|| return 1
 
 	MCIINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=status`
 	MASTERIP=$(jq -r '.status.masterIp' <<< "$MCIINFO")

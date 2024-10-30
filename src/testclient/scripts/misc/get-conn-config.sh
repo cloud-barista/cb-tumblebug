@@ -4,7 +4,7 @@ function CallTB() {
 	echo "- Get conn config in ${ResourceRegionNativeName}"
 
 	# for Cloud Connection Config Info
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/connConfig/${CONN_CONFIG[$INDEX,$REGION]} | jq ''
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/connConfig/${CONN_CONFIG[$INDEX,$REGION]} | jq '.'
 }
 
 #function get_cloud() {

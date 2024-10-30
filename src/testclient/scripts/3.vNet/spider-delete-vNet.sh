@@ -5,7 +5,7 @@ function CallSpider() {
 
     resp=$(
         curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/vpc/$NSID-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"}' 
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
 }
 

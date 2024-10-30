@@ -18,5 +18,5 @@ PROVIDERNAME="nhncloud"
 
 resp=$(
 	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/checkNodeGroupsOnK8sCreation?providerName=${PROVIDERNAME}
-	); echo ${resp} | jq ''
+	); echo ${resp} | jq '.'
     echo ""

@@ -14,5 +14,5 @@ if [ -z "$USERCMD" ]; then
 	exit
 fi
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/monitoring/mci/$MCIID/metric/$USERCMD | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/monitoring/mci/$MCIID/metric/$USERCMD | jq '.'
 

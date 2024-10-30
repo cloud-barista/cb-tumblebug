@@ -17,7 +17,7 @@ source ../init.sh
 echo "${MCIID}"
 
 GetMCIOption=status
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=${GetMCIOption} | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=${GetMCIOption} | jq '.'
 
 echo -e "${BOLD}"
 echo -e "Table: All VMs in the MCI : ${MCIID}"

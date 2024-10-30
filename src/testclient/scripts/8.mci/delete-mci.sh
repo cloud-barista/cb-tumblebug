@@ -13,7 +13,7 @@ echo "${INDEX} ${REGION} ${MCIID}"
 
 echo ""
 echo "Delete [MCI: $MCIID]"
-curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=${OPTION} | jq ''
+curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID}?option=${OPTION} | jq '.'
 
 #}
 

@@ -3,7 +3,7 @@
 function CallTB() {
 	echo "- Delete securityGroup in ${ResourceRegionNativeName}"
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/securityGroup/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true | jq ''
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/securityGroup/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true | jq '.'
 }
 
 #function delete_securityGroup() {

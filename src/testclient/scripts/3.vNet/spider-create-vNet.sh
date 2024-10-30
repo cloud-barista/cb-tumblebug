@@ -19,7 +19,7 @@ function CallSpider() {
                 }
             }
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
 }
 

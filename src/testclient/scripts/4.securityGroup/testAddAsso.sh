@@ -22,7 +22,7 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/testAddObjectAssociation/securityGroup/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq ''
+	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/testAddObjectAssociation/securityGroup/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq '.'
 #}
 
 #get_sshKey

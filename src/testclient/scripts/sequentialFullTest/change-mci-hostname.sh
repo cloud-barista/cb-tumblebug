@@ -42,7 +42,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	} 
 EOF
 	)
-    echo "${VAR1}" | jq ''
+    echo "${VAR1}" | jq '.'
 
 done
 wait

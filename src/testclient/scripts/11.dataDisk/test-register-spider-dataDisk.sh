@@ -8,7 +8,7 @@ function CallTB() {
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
 			"cspResourceId": ""
-		}' | jq ''
+		}' | jq '.'
 }
 
 #function register_dataDisk() {

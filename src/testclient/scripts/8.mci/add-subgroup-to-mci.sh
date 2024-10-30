@@ -53,7 +53,7 @@
 			"vmUserPassword": "",
 			"rootDiskType": "'${RootDiskType}'",
 			"rootDiskSize": "'${RootDiskSize}'"
-		}' | jq '' 
+		}' | jq '.' 
 #}
 
 #add-vm-to-mci

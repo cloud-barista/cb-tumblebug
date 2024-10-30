@@ -59,7 +59,7 @@
 			"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"description": "description",
 			"vmUserPassword": ""
-		}' | jq '' 
+		}' | jq '.' 
 		
 
 	done

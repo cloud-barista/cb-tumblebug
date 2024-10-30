@@ -23,16 +23,16 @@ echo "===================================================================="
 
 req=$(cat << EOF
 	{
-		"onAutoScaling": "false"
+		"onAutoScaling": "true"
 	}
 EOF
-	); echo ${req} | jq ''
+	); echo ${req} | jq '.'
 
 
 resp=$(
 	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}/k8snodegroup/${K8SNODEGROUPNAME}/onautoscaling -H 'Content-Type: application/json' -d @- <<EOF
 		${req}
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
 

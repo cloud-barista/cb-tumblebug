@@ -10,5 +10,5 @@ cd $SCRIPT_DIR
 
 source ../init.sh
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/loadAssets | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/loadAssets | jq '.'
 echo ""
