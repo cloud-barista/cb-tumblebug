@@ -91,7 +91,7 @@ type TbMciReq struct {
 	Name string `json:"name" validate:"required" example:"mci01"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"no" default:"yes" enums:"yes,no"` // yes or no
+	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
 
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label"`
@@ -130,8 +130,8 @@ type TbMciInfo struct {
 	TargetStatus string          `json:"targetStatus"`
 	TargetAction string          `json:"targetAction"`
 
-	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
+	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:no)
+	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
 
 	// ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)
 	ConfigureCloudAdaptiveNetwork string `json:"configureCloudAdaptiveNetwork" example:"yes" default:"no" enums:"yes,no"` // yes or no
@@ -196,7 +196,7 @@ type TbScaleOutSubGroupReq struct {
 type TbMciDynamicReq struct {
 	Name string `json:"name" validate:"required" example:"mci01"`
 
-	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:no)
 	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
 
 	// Label is for describing the object by keywords
