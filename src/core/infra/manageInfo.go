@@ -255,7 +255,7 @@ func ListSubGroupId(nsId string, mciId string) ([]string, error) {
 		return nil, err
 	}
 
-	log.Debug().Msg("[ListSubGroupId]")
+	//log.Debug().Msg("[ListSubGroupId]")
 	key := common.GenMciKey(nsId, mciId, "")
 	key += "/"
 
@@ -608,7 +608,7 @@ func ListVmInfo(nsId string, mciId string, vmId string) (*model.TbVmInfo, error)
 	vmKeyValue, err := kvstore.GetKv(vmKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CoreGetMciVmInfo(); kvstore.GetKv() returned an error.")
+		err = fmt.Errorf("kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -635,7 +635,7 @@ func ListVmInfo(nsId string, mciId string, vmId string) (*model.TbVmInfo, error)
 
 // GetMciObject is func to retrieve MCI object from database (no current status update)
 func GetMciObject(nsId string, mciId string) (model.TbMciInfo, error) {
-	log.Debug().Msg("[GetMciObject]" + mciId)
+	//log.Debug().Msg("[GetMciObject]" + mciId)
 	key := common.GenMciKey(nsId, mciId, "")
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
