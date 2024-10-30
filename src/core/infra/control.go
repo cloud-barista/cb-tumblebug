@@ -188,7 +188,7 @@ func HandleMciVmAction(nsId string, mciId string, vmId string, action string, fo
 		return err.Error(), err
 	}
 
-	log.Debug().Msg("[VM action: " + action)
+	log.Info().Msg("[VM control request] " + action)
 
 	mci, err := GetMciStatus(nsId, mciId)
 	if err != nil {
@@ -517,7 +517,9 @@ func CheckAllowedTransition(nsId string, mciId string, vmId model.OptionalParame
 
 		// duplicated action
 		if strings.EqualFold(vm.Status, targetStatus) {
-			return errors.New(action + " is not allowed for VM under " + vm.Status)
+			if !strings.EqualFold(action, model.ActionReboot) {
+				return errors.New(action + " is not allowed for VM under " + vm.Status)
+			}
 		}
 		// redundant action
 		if strings.EqualFold(vm.Status, model.StatusTerminated) {

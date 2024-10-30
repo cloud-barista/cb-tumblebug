@@ -1028,7 +1028,7 @@ func ListK8sClusterId(nsId string) ([]string, error) {
 
 // ListK8sCluster returns the list of TB K8sCluster objects of given nsId
 func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{}, error) {
-	log.Info().Msg("ListK8sCluster")
+	//log.Info().Msg("ListK8sCluster")
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1036,9 +1036,9 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{
 		return nil, err
 	}
 
-	log.Debug().Msg("[Get] K8sCluster list")
+	//log.Debug().Msg("[Get] K8sCluster list")
 	k := fmt.Sprintf("/ns/%s/k8scluster", nsId)
-	log.Debug().Msg(k)
+	//log.Debug().Msg(k)
 
 	/*
 	 * Get model.TbK8sClusterInfo objects from kvstore

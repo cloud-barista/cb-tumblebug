@@ -167,7 +167,7 @@ func CheckVm(nsId string, mciId string, vmId string) (bool, error) {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	log.Debug().Msg("[Check vm] " + mciId + ", " + vmId)
+	//log.Debug().Msg("[Check vm] " + mciId + ", " + vmId)
 
 	key := common.GenMciKey(nsId, mciId, vmId)
 

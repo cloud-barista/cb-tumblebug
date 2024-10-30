@@ -468,9 +468,9 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 		return nil, err
 	}
 
-	log.Debug().Msg("[Get] " + resourceType + " list")
+	//log.Debug().Msg("[Get] " + resourceType + " list")
 	key := "/ns/" + nsId + "/resources/" + resourceType
-	log.Debug().Msg(key)
+	//log.Debug().Msg(key)
 
 	keyValue, err := kvstore.GetKvList(key)
 	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
