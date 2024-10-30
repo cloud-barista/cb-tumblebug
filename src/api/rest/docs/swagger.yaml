@@ -635,6 +635,7 @@ paths:
           - k8s
           - vNet
           - subnet
+          - vpn
           - securityGroup
           - sshKey
           - dataDisk
@@ -684,6 +685,7 @@ paths:
           - k8s
           - vNet
           - subnet
+          - vpn
           - securityGroup
           - sshKey
           - dataDisk
@@ -742,6 +744,7 @@ paths:
           - k8s
           - vNet
           - subnet
+          - vpn
           - securityGroup
           - sshKey
           - dataDisk
@@ -7301,6 +7304,7 @@ paths:
           - k8s
           - vNet
           - subnet
+          - vpn
           - securityGroup
           - sshKey
           - dataDisk
@@ -9652,7 +9656,7 @@ components:
         installMonAgent:
           type: string
           description: "InstallMonAgent Option for CB-Dragonfly agent installation\
-            \ ([yes/no] default:yes)"
+            \ ([yes/no] default:no)"
           example: "no"
           default: "no"
           enum:
@@ -9696,9 +9700,9 @@ components:
         installMonAgent:
           type: string
           description: "InstallMonAgent Option for CB-Dragonfly agent installation\
-            \ ([yes/no] default:yes)"
-          example: "yes"
-          default: "yes"
+            \ ([yes/no] default:no)"
+          example: "no"
+          default: "no"
           enum:
           - "yes"
           - "no"
@@ -9762,7 +9766,7 @@ components:
           description: "InstallMonAgent Option for CB-Dragonfly agent installation\
             \ ([yes/no] default:yes)"
           example: "no"
-          default: "yes"
+          default: "no"
           enum:
           - "yes"
           - "no"

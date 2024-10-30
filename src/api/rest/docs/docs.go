@@ -849,6 +849,7 @@ const docTemplate = `{
                             "k8s",
                             "vNet",
                             "subnet",
+                            "vpn",
                             "securityGroup",
                             "sshKey",
                             "dataDisk"
@@ -911,6 +912,7 @@ const docTemplate = `{
                             "k8s",
                             "vNet",
                             "subnet",
+                            "vpn",
                             "securityGroup",
                             "sshKey",
                             "dataDisk"
@@ -984,6 +986,7 @@ const docTemplate = `{
                             "k8s",
                             "vNet",
                             "subnet",
+                            "vpn",
                             "securityGroup",
                             "sshKey",
                             "dataDisk"
@@ -9609,6 +9612,7 @@ const docTemplate = `{
                             "k8s",
                             "vNet",
                             "subnet",
+                            "vpn",
                             "securityGroup",
                             "sshKey",
                             "dataDisk"
@@ -12942,7 +12946,7 @@ const docTemplate = `{
                     "example": "Made in CB-TB"
                 },
                 "installMonAgent": {
-                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:no)",
                     "type": "string",
                     "default": "no",
                     "enum": [
@@ -12997,14 +13001,14 @@ const docTemplate = `{
                     "example": "aws-ap-southeast-1"
                 },
                 "installMonAgent": {
-                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:no)",
                     "type": "string",
-                    "default": "yes",
+                    "default": "no",
                     "enum": [
                         "yes",
                         "no"
                     ],
-                    "example": "yes"
+                    "example": "no"
                 },
                 "label": {
                     "description": "Label is for describing the object by keywords",
@@ -13081,7 +13085,7 @@ const docTemplate = `{
                 "installMonAgent": {
                     "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
                     "type": "string",
-                    "default": "yes",
+                    "default": "no",
                     "enum": [
                         "yes",
                         "no"
