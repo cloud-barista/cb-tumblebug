@@ -957,30 +957,62 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 	}
 
 	//If not, generate default resources dynamically.
+	// Parallel processing of VM requests
+	var wg sync.WaitGroup
+	var mutex sync.Mutex
+	errChan := make(chan error, len(vmRequest)) // Error channel to collect errors
+
 	for _, k := range vmRequest {
-		vmReq, err := getVmReqFromDynamicReq(reqID, nsId, &k)
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to prefare resources for dynamic MCI creation")
-			// Rollback created default resources
-			time.Sleep(5 * time.Second)
-			log.Info().Msg("Try rollback created default resources")
-			rollbackResult, rollbackErr := resource.DelAllSharedResources(nsId)
-			if rollbackErr != nil {
-				err = fmt.Errorf("Failed in rollback operation: %w", rollbackErr)
-			} else {
-				ids := strings.Join(rollbackResult.IdList, ", ")
-				err = fmt.Errorf("Rollback results [%s]: %w", ids, err)
+		wg.Add(1)
+
+		// Launch a goroutine for each VM request
+		go func(vmReq model.TbVmDynamicReq) {
+			defer wg.Done()
+
+			req, err := getVmReqFromDynamicReq(reqID, nsId, &vmReq)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to prepare resources for dynamic MCI creation")
+				errChan <- err
+				return
 			}
-			return emptyMci, err
-		}
-		mciReq.Vm = append(mciReq.Vm, *vmReq)
+
+			// Safely append to the shared mciReq.Vm slice
+			mutex.Lock()
+			mciReq.Vm = append(mciReq.Vm, *req)
+			mutex.Unlock()
+		}(k)
 	}
 
-	common.PrintJsonPretty(mciReq)
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Prepared all resources for provisioning MCI:" + mciReq.Name, Info: mciReq, Time: time.Now()})
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Start provisioning", Time: time.Now()})
+	// Wait for all goroutines to complete
+	wg.Wait()
+	close(errChan) // Close the error channel after processing
 
-	// Run create MCI with the generated MCI request (option != register)
+	// Check for any errors from the goroutines
+	for err := range errChan {
+		if err != nil {
+			// Rollback if any error occurs
+			log.Info().Msg("Rolling back created default resources")
+			time.Sleep(5 * time.Second)
+			if rollbackResult, rollbackErr := resource.DelAllSharedResources(nsId); rollbackErr != nil {
+				return emptyMci, fmt.Errorf("failed in rollback operation: %w", rollbackErr)
+			} else {
+				ids := strings.Join(rollbackResult.IdList, ", ")
+				return emptyMci, fmt.Errorf("rollback results [%s]: %w", ids, err)
+			}
+		}
+	}
+
+	// Log the prepared MCI request and update the progress
+	common.PrintJsonPretty(mciReq)
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{
+		Title: "Prepared all resources for provisioning MCI: " + mciReq.Name,
+		Info:  mciReq, Time: time.Now(),
+	})
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{
+		Title: "Start instance provisioning", Time: time.Now(),
+	})
+
+	// Run create MCI with the generated MCI request
 	option := "create"
 	if deployOption == "hold" {
 		option = "hold"

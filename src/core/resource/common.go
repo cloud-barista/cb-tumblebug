@@ -71,11 +71,11 @@ func init() {
 	validate.RegisterStructValidation(TbVNetReqStructLevelValidation, model.TbVNetReq{})
 }
 
-// DelAllResources deletes all TB Resource object of given resourceType
+// DelAllResources deletes all TB Resource objects of the given resourceType.
 func DelAllResources(nsId string, resourceType string, subString string, forceFlag string) (model.IdList, error) {
-
 	deletedResources := model.IdList{}
-	deleteStatus := ""
+	var mutex sync.Mutex  // Protect shared slice access
+	var wg sync.WaitGroup // Synchronize all goroutines
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -89,27 +89,59 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 	}
 
 	if len(resourceIdList) == 0 {
-		errString := "There is no " + resourceType + " resource in " + nsId
+		errString := fmt.Sprintf("There is no %s resource in %s", resourceType, nsId)
 		err := fmt.Errorf(errString)
 		log.Error().Err(err).Msg("")
 		return deletedResources, err
 	}
 
-	for _, v := range resourceIdList {
-		// if subString is provided, check the resourceId contains the subString.
-		if subString == "" || strings.Contains(v, subString) {
+	// Channel to capture errors
+	errChan := make(chan error, len(resourceIdList))
 
-			deleteStatus = "[Done] "
+	// Process each resourceId concurrently
+	for _, v := range resourceIdList {
+		// Increment WaitGroup counter
+		wg.Add(1)
+
+		// Launch a goroutine for each resource deletion
+		go func(resourceId string) {
+			defer wg.Done()
+			common.RandomSleep(0, len(resourceIdList)/10)
+
+			// Check if the resourceId matches the subString criteria
+			if subString != "" && !strings.Contains(resourceId, subString) {
+				return
+			}
+
+			// Attempt to delete the resource
+			deleteStatus := "[Done] "
 			errString := ""
 
-			err := DelResource(nsId, resourceType, v, forceFlag)
+			err := DelResource(nsId, resourceType, resourceId, forceFlag)
 			if err != nil {
 				deleteStatus = "[Failed] "
 				errString = " (" + err.Error() + ")"
+				errChan <- err // Send error to the error channel
 			}
-			deletedResources.IdList = append(deletedResources.IdList, deleteStatus+resourceType+": "+v+errString)
+
+			// Safely append the result to deletedResources.IdList using mutex
+			mutex.Lock()
+			deletedResources.IdList = append(deletedResources.IdList, deleteStatus+resourceType+": "+resourceId+errString)
+			mutex.Unlock()
+		}(v) // Pass loop variable as an argument to avoid race conditions
+	}
+
+	// Wait for all goroutines to complete
+	wg.Wait()
+	close(errChan) // Close the error channel
+
+	// Collect any errors from the error channel
+	for err := range errChan {
+		if err != nil {
+			log.Info().Err(err).Msg("error deleting resource")
 		}
 	}
+
 	return deletedResources, nil
 }
 
