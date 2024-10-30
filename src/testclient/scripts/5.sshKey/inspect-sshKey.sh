@@ -7,7 +7,7 @@ function CallTB() {
 		'{ 
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 			"resourceType": "sshKey"
-		}' | jq ''
+		}' | jq '.'
 }
 
 #function inspect_sshKey() {

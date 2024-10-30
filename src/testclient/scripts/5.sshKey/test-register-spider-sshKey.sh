@@ -12,7 +12,7 @@ function CallTB() {
 			"username": "cb-user",
 			"publicKey": "",
 			"privateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIE....Kplg==\n-----END RSA PRIVATE KEY-----"
-		}' | jq ''
+		}' | jq '.'
 }
 
 #function register_sshKey() {

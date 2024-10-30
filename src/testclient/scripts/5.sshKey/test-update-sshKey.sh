@@ -6,7 +6,7 @@ function CallTB() {
 	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
 		'{ 
 			"description": "UpdateSshKey() test"
-		}' | jq ''
+		}' | jq '.'
 }
 
 #function update_sshKey() {

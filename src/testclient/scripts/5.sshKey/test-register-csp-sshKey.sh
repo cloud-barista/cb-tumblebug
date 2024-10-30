@@ -12,7 +12,7 @@ function CallTB() {
 			"username": "test-username",
 			"publicKey": "test-public-key",
 			"privateKey": "test-private-key"
-		}' | jq ''
+		}' | jq '.'
 }
 
 #function register_sshKey() {

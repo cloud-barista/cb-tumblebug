@@ -4,7 +4,7 @@ function CallTB() {
 	echo "- Get region in ${ResourceRegionNativeName}"
 
 	# for Cloud Region Info
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/region/${RegionNativeName[$INDEX,$REGION]} | jq ''
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/region/${RegionNativeName[$INDEX,$REGION]} | jq '.'
 }
 
 #function get_cloud() {

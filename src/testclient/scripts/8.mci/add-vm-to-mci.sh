@@ -35,4 +35,4 @@ curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mci/$MCIID
 			"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"description": "description",
 			"vmUserPassword": ""
-		}' | jq ''
+		}' | jq '.'

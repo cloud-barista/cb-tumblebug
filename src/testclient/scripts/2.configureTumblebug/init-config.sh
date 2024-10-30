@@ -10,7 +10,7 @@
 
     VAR=${OPTION01}
 
-    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/config/$VAR | jq ''
+    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/config/$VAR | jq '.'
     echo ""
 #}
 

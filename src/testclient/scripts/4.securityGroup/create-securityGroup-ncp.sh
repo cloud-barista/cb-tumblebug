@@ -12,7 +12,7 @@ function CallTB() {
 			"cspResourceId": "1333707"
 		}
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
 }
 

@@ -27,5 +27,5 @@ resp=$(
 		}
 	}
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""

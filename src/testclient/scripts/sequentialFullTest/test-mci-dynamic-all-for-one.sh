@@ -83,7 +83,7 @@ mciName=$MainMciName
 firstSpecId=""
 if [ "${option}" == "delete" ]; then
     echo "Terminate and Delete [$mciName]"
-    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mci/${mciName}?option=terminate | jq ''
+    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mci/${mciName}?option=terminate | jq '.'
 elif [ "${option}" == "create" ]; then
 
     i=0
@@ -126,7 +126,7 @@ elif [ "${option}" == "create" ]; then
 EOF
             )
 
-            echo "${VAR1}" | jq ''
+            echo "${VAR1}" | jq '.'
 
 
             endTime=$SECONDS
@@ -186,7 +186,7 @@ EOF
 EOF
                     )
 
-                    echo "${VAR1}" | jq ''
+                    echo "${VAR1}" | jq '.'
 
                 endTime=$SECONDS
                 elapsedTime=$(($endTime-$startTime))

@@ -104,7 +104,7 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
         startTime=$SECONDS
         if [ "${option}" == "delete" ]; then
             echo "Terminate and Delete [$mciName]"
-            curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mci/${mciName}?option=terminate | jq ''
+            curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mci/${mciName}?option=terminate | jq '.'
 
 
         elif [ "${option}" == "create" ]; then
@@ -128,7 +128,7 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
 EOF
             )
 
-            echo "${VAR1}" | jq ''
+            echo "${VAR1}" | jq '.'
 
         fi
         endTime=$SECONDS

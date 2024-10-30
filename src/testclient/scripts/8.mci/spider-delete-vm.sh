@@ -21,7 +21,7 @@
 	curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/vm/alibaba-ap-northeast-1-shson-01 -H 'Content-Type: application/json' -d \
 		'{ 
 			"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
-		}' | jq ''
+		}' | jq '.'
 #}
 
 #spider_delete_mci

@@ -5,6 +5,8 @@ echo "## 2. Namespace: Create (-x option for NameSpace Name)"
 echo "####################################################################"
 
 SCRIPT_DIR=`dirname ${BASH_SOURCE[0]-$0}`
+
+echo $SCRIPT_DIR
 cd $SCRIPT_DIR
 
 source $TB_ROOT_PATH/src/testclient/scripts/init.sh
@@ -17,14 +19,18 @@ if [ -z "$NSID" ]; then
 	NSID="default"
 fi
 
-resp=$(
-    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns -H 'Content-Type: application/json' -d @- <<EOF
-        {
-			"name": "$NSID",
-			"description": "NameSpace for General Testing"
-		}
+req=$(cat <<EOF
+	{
+		"name": "$NSID",
+		"description": "NameSpace for General Testing"
+	}
 EOF
-)
-echo ${resp} | jq ''
-echo ""
+	); echo ${req} | jq '.'
+
+resp=$(
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns -H 'Content-Type: application/json' -d @- <<EOF
+		${req}
+EOF
+	); echo ${resp} | jq '.'
+	echo ""
 

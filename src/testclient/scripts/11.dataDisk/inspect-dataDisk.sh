@@ -7,7 +7,7 @@ function CallTB() {
 		'{ 
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 			"resourceType": "dataDisk"
-		}' | jq ''
+		}' | jq '.'
 }
 
 #function inspect_dataDisk() {

@@ -36,4 +36,4 @@ EOF
 
 fi
 
-echo "${VAR1}" | jq ''
+echo "${VAR1}" | jq '.'

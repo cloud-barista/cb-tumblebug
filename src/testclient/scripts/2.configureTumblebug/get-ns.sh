@@ -8,5 +8,5 @@ source ../init.sh
 
 NSID=${OPTION01:-default}
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID | jq '.'
 echo ""

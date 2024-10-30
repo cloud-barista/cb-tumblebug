@@ -70,7 +70,7 @@ for rowi in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 			echo "${CommandToAddHosts}"
 
 			VAR1=$(ssh -i ./sshkey-tmp/$KEYFILENAME.pem $USERNAME@$publicIP -o StrictHostKeyChecking=no "$CommandToAddHosts")
-			echo "${VAR1}" | jq ''
+			echo "${VAR1}" | jq '.'
 
 		done
 	} &

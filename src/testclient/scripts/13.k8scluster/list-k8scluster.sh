@@ -8,4 +8,4 @@ source ../init.sh
 
 echo "NSID: "${NSID}
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster | jq '.'

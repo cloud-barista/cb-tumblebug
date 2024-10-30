@@ -3,7 +3,7 @@
 function CallTB() {
 	echo "- Get image in ${ResourceRegionNativeName}"
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/image/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq ''
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/image/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq '.'
     echo ""
 }
 

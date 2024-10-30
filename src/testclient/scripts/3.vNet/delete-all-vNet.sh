@@ -3,7 +3,7 @@
 function CallTB() {
 	echo "- Delete all vNets"
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet | jq ''
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet | jq '.'
 }
 
 #function delete_vNet() {

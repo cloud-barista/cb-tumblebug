@@ -29,7 +29,7 @@ if [ -z "$HostedZoneID" ]; then
 	echo "[Warning] Provide your HostedZones.Id (ex: /hostedzone/XXXX9210PL5XXXOY9B7T) to -x parameter"
 	echo "Please retrieve HostedZones.Id from AWS Routh 53"
 	echo "You can provide RecordName to -x parameter"
-	echo `aws route53 list-hosted-zones` | jq ''
+	echo `aws route53 list-hosted-zones` | jq '.'
 	exit
 fi
 
@@ -41,7 +41,7 @@ echo "VMARRAY: $VMARRAY"
 PublicIP=""
 VMID=""
 
-aws route53 list-hosted-zones | jq ''
+aws route53 list-hosted-zones | jq '.'
 
 for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	_jq() {
@@ -70,7 +70,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
         }
     ]
 	}')
-	echo $Result | jq ''
+	echo $Result | jq '.'
 	ChangeStatus=$(echo $Result | jq '.ChangeInfo.Status | @base64' | base64 -di)
 	ChangeInfoID=$(echo $Result | jq '.ChangeInfo.Id | @base64' | base64 -di)
 	echo "$ChangeStatus $ChangeInfoID"
@@ -79,7 +79,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 
 	for ((try = 1; try <= 20; try++)); do
 		Result=$(aws route53 get-change --id ${ChangeInfoID})
-		echo $Result | jq ''
+		echo $Result | jq '.'
 		ChangeStatus=$(echo $Result | jq '.ChangeInfo.Status | @base64' | base64 -di)
 		ChangeInfoID=$(echo $Result | jq '.ChangeInfo.Id | @base64' | base64 -di)
 		echo "$ChangeStatus $ChangeInfoID"

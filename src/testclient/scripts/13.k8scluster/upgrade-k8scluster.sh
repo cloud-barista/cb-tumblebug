@@ -33,12 +33,12 @@ req=$(cat << EOF
 		"version": "${VERSION}"
 	}
 EOF
-	); echo ${req} | jq ''
+	); echo ${req} | jq '.'
 
 resp=$(
 	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}/upgrade -H 'Content-Type: application/json' -d @- <<EOF
 		${req}
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
 

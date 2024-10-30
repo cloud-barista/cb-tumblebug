@@ -62,4 +62,4 @@ curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mci -H 'Co
 					"rootDiskSize": "'${RootDiskSize}'"
 				}
 			]
-		}' | jq ''
+		}' | jq '.'

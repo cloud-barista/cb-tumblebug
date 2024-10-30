@@ -9,7 +9,7 @@ function CallTB() {
 			"resourceType": "vNet"
 		}
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
 }
 

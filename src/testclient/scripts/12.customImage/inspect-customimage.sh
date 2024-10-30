@@ -7,7 +7,7 @@ function CallTB() {
 		'{ 
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 			"resourceType": "customImage"
-		}' | jq ''
+		}' | jq '.'
 }
 
 #function inspect_customImage() {

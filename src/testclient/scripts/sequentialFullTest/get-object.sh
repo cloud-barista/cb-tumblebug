@@ -15,4 +15,4 @@
 
     KEY=${1}
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/object?key=$KEY | jq '' 
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/object?key=$KEY | jq '.' 

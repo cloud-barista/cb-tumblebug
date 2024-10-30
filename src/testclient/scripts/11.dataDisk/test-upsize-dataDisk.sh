@@ -7,7 +7,7 @@ function CallTB() {
 		'{
 			"diskSize": "81",
 			"description": "UpsizeDataDisk() test"
-		}' | jq ''
+		}' | jq '.'
 }
 
 #function update_dataDisk() {

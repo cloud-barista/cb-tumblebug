@@ -13,5 +13,5 @@ else
 	MCIID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 fi
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID} | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID} | jq '.'
 

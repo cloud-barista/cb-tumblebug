@@ -6,4 +6,4 @@ echo "####################################################################"
 
 source ../init.sh
 
-curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/policy/mci/${MCIID} | jq ''
+curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/policy/mci/${MCIID} | jq '.'

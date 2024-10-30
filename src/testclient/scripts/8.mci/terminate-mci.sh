@@ -17,7 +17,7 @@ source ../init.sh
 echo "${MCIID}"
 
 ControlCmd=terminate
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/mci/${MCIID}?action=${ControlCmd} | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/control/mci/${MCIID}?action=${ControlCmd} | jq '.'
 
 
 #just_terminate_mci

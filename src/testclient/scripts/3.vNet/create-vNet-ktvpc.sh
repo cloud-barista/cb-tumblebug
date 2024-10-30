@@ -11,7 +11,7 @@ function CallTB() {
 			"cspResourceId": "60e5d9da-55cd-47be-a0d9-6cf67c54f15c"
 		}
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
 }
 

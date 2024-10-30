@@ -17,7 +17,7 @@ echo "NSID: "${NSID}
 echo "K8SCLUSTERID=${K8SCLUSTERID}"
 
 GetK8sClusterOption=status
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}?option=${GetK8sClusterOption} | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}?option=${GetK8sClusterOption} | jq '.'
 
 echo -e "${BOLD}"
 

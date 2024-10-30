@@ -8,7 +8,7 @@
     echo "## 5. sshKey: List ID"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey?option=id | jq ''
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey?option=id | jq '.'
     echo ""
 #}
 

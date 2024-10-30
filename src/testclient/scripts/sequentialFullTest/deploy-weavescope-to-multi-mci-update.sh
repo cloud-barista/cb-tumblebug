@@ -106,7 +106,7 @@ for MCIID in "$@"; do
 	}
 EOF
     )
-    echo "${VAR1}" | jq ''
+    echo "${VAR1}" | jq '.'
     echo ""
 done
 

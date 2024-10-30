@@ -24,7 +24,7 @@ echo " This will retrieve verified SSH username"
 MCIINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${MCIID})
 VMARRAY=$(jq '.vm' <<<"$MCIINFO")
 
-echo "$VMARRAY" | jq ''
+echo "$VMARRAY" | jq '.'
 
 echo ""
 echo "[GENERATED PRIVATE KEY (PEM, PPK)]"

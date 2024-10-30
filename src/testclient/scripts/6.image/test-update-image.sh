@@ -21,7 +21,7 @@
 			"description": "UpdateImage() test"
 		}
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
 #}
 

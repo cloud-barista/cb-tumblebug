@@ -8,7 +8,7 @@
     echo "## 4. SecurityGroup: List"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/securityGroup | jq ''
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/securityGroup | jq '.'
 #}
 
 #list_securityGroup

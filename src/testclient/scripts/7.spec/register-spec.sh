@@ -11,7 +11,7 @@ function CallTB() {
 			"cspSpecName": "${SPEC_NAME[$INDEX,$REGION]}"
 		}
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.'
     echo ""
 }
 

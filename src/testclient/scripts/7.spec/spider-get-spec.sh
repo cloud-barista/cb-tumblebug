@@ -3,7 +3,7 @@
 function CallSpider() {
 	echo "- Get spec in ${ResourceRegionNativeName}"
 	
-	curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/vmspec/${SPEC_NAME[$INDEX,$REGION]} -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'" }' | jq ''
+	curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/vmspec/${SPEC_NAME[$INDEX,$REGION]} -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'" }' | jq '.'
 }
 
 #function spider_get_spec() {
