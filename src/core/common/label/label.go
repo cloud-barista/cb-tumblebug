@@ -259,7 +259,7 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]interface{}
 		labelData := kv.Value
 
 		log.Info().Str("labelKey", labelKey).Msg("Processing label entry")
-		log.Debug().Str("labelKey", labelKey).Str("labelData", string(labelData)).Msg("Fetched label data")
+		//log.Debug().Str("labelKey", labelKey).Str("labelData", string(labelData)).Msg("Fetched label data")
 
 		var labelInfo model.LabelInfo
 		err = json.Unmarshal([]byte(labelData), &labelInfo)
@@ -283,7 +283,7 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]interface{}
 				continue // Skip this entry and continue with the next
 			}
 
-			log.Debug().Str("resourceKey", labelInfo.ResourceKey).Str("resourceData", string(resourceData)).Msg("Fetched resource data")
+			//log.Debug().Str("resourceKey", labelInfo.ResourceKey).Str("resourceData", string(resourceData)).Msg("Fetched resource data")
 
 			err = json.Unmarshal([]byte(resourceData), resource)
 			if err != nil {
