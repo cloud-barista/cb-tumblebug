@@ -15,18 +15,20 @@ limitations under the License.
 package resource
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
 
-// RestGetAvailableK8sClusterVersion func is a rest api wrapper for GetAvailableK8sClusterVersion.
-// RestGetAvailableK8sClusterVersion godoc
-// @ID GetAvailableK8sClusterVersion
+// RestGetAvailableK8sVersion func is a rest api wrapper for GetAvailableK8sVersion.
+// RestGetAvailableK8sVersion godoc
+// @ID GetAvailableK8sVersion
 // @Summary Get available kubernetes cluster version
 // @Description Get available kubernetes cluster version
 // @Tags [Kubernetes] Cluster Management
@@ -37,19 +39,19 @@ import (
 // @Success 200 {object} model.K8sClusterVersionDetailAvailable
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /availableK8sClusterVersion [get]
-func RestGetAvailableK8sClusterVersion(c echo.Context) error {
+// @Router /availableK8sVersion [get]
+func RestGetAvailableK8sVersion(c echo.Context) error {
 
 	providerName := c.QueryParam("providerName")
 	regionName := c.QueryParam("regionName")
 
-	content, err := common.GetAvailableK8sClusterVersion(providerName, regionName)
+	content, err := common.GetAvailableK8sVersion(providerName, regionName)
 	return common.EndRequestWithLog(c, err, content)
 }
 
-// RestGetAvailableK8sClusterNodeImage func is a rest api wrapper for GetAvailableK8sClusterNodeImage.
-// RestGetAvailableK8sClusterNodeImage godoc
-// @ID GetAvailableK8sClusterNodeImage
+// RestGetAvailableK8sNodeImage func is a rest api wrapper for GetAvailableK8sNodeImage.
+// RestGetAvailableK8sNodeImage godoc
+// @ID GetAvailableK8sNodeImage
 // @Summary (UNDER DEVELOPMENT!!!) Get available kubernetes cluster node image
 // @Description (UNDER DEVELOPMENT!!!) Get available kubernetes cluster node image
 // @Tags [Kubernetes] Cluster Management
@@ -60,19 +62,19 @@ func RestGetAvailableK8sClusterVersion(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterNodeImageDetailAvailable
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /availableK8sClusterNodeImage [get]
-func RestGetAvailableK8sClusterNodeImage(c echo.Context) error {
+// @Router /availableK8sNodeImage [get]
+func RestGetAvailableK8sNodeImage(c echo.Context) error {
 
 	providerName := c.QueryParam("providerName")
 	regionName := c.QueryParam("regionName")
 
-	content, err := common.GetAvailableK8sClusterNodeImage(providerName, regionName)
+	content, err := common.GetAvailableK8sNodeImage(providerName, regionName)
 	return common.EndRequestWithLog(c, err, content)
 }
 
-// RestCheckNodeGroupsOnK8sCreation func is a rest api wrapper for CheckNodeGroupsOnK8sCreation.
-// RestCheckNodeGroupsOnK8sCreation godoc
-// @ID CheckNodeGroupsOnK8sCreation
+// RestCheckK8sNodeGroupsOnK8sCreation func is a rest api wrapper for GetModelK8sNodeGroupsOnK8sCreation.
+// RestCheckK8sNodeGroupsOnK8sCreation godoc
+// @ID CheckK8sNodeGroupsOnK8sCreation
 // @Summary Check whether nodegroups are required during the k8scluster creation
 // @Description Check whether nodegroups are required during the k8scluster creation
 // @Tags [Kubernetes] Cluster Management
@@ -82,12 +84,54 @@ func RestGetAvailableK8sClusterNodeImage(c echo.Context) error {
 // @Success 200 {object} model.K8sClusterNodeGroupsOnCreation
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /checkNodeGroupsOnK8sCreation [get]
-func RestCheckNodeGroupsOnK8sCreation(c echo.Context) error {
+// @Router /checkK8sNodeGroupsOnK8sCreation [get]
+func RestCheckK8sNodeGroupsOnK8sCreation(c echo.Context) error {
 
 	providerName := c.QueryParam("providerName")
 
-	content, err := common.CheckNodeGroupsOnK8sCreation(providerName)
+	content, err := common.GetModelK8sNodeGroupsOnK8sCreation(providerName)
+	return common.EndRequestWithLog(c, err, content)
+}
+
+// RestCheckK8sNodeImageDesignation func is a rest api wrapper for GetK8sNodeImageDesignation.
+// RestCheckK8sNodeImageDesignation godoc
+// @ID CheckK8sNodeImageDesignation
+// @Summary Check whether node image designation is possible to create a k8scluster
+// @Description Check whether node image designation is possible to create a k8scluster
+// @Tags [Kubernetes] Cluster Management
+// @Accept  json
+// @Produce  json
+// @Param providerName query string true "Name of the CSP to retrieve"
+// @Success 200 {object} model.K8sClusterNodeImageDesignation
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /checkK8sNodeImageDesignation [get]
+func RestCheckK8sNodeImageDesignation(c echo.Context) error {
+
+	providerName := c.QueryParam("providerName")
+
+	content, err := common.GetModelK8sNodeImageDesignation(providerName)
+	return common.EndRequestWithLog(c, err, content)
+}
+
+// RestGetRequiredK8sSubnetCount func is a rest api wrapper for GetModelK8sRequiredSubnetCount.
+// RestGetRequiredK8sSubnetCount godoc
+// @ID GetRequiredK8sSubnetCount
+// @Summary Get the required subnet count to create a k8scluster
+// @Description Get the required subnet count to create a k8scluster
+// @Tags [Kubernetes] Cluster Management
+// @Accept  json
+// @Produce  json
+// @Param providerName query string true "Name of the CSP to retrieve"
+// @Success 200 {object} model.K8sClusterRequiredSubnetCount
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /requiredK8sSubnetCount [get]
+func RestGetRequiredK8sSubnetCount(c echo.Context) error {
+
+	providerName := c.QueryParam("providerName")
+
+	content, err := common.GetModelK8sRequiredSubnetCount(providerName)
 	return common.EndRequestWithLog(c, err, content)
 }
 
@@ -203,6 +247,7 @@ func RestPostK8sNodeGroup(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
 // @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(ng-01)
+// @Param option query string false "Option for K8sNodeGroup deletion" Enums(force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName} [delete]
@@ -212,9 +257,9 @@ func RestDeleteK8sNodeGroup(c echo.Context) error {
 	k8sClusterId := c.Param("k8sClusterId")
 	k8sNodeGroupName := c.Param("k8sNodeGroupName")
 
-	forceFlag := c.QueryParam("force")
+	optionFlag := c.QueryParam("option")
 
-	res, err := resource.RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, forceFlag)
+	res, err := resource.RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, optionFlag)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
@@ -404,6 +449,7 @@ func RestGetAllK8sCluster(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
+// @Param option query string false "Option for K8sCluster deletion" Enums(force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/k8scluster/{k8sClusterId} [delete]
@@ -412,9 +458,9 @@ func RestDeleteK8sCluster(c echo.Context) error {
 	nsId := c.Param("nsId")
 	k8sClusterId := c.Param("k8sClusterId")
 
-	forceFlag := c.QueryParam("force")
+	optionFlag := c.QueryParam("option")
 
-	res, err := resource.DeleteK8sCluster(nsId, k8sClusterId, forceFlag)
+	res, err := resource.DeleteK8sCluster(nsId, k8sClusterId, optionFlag)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
@@ -440,6 +486,7 @@ func RestDeleteK8sCluster(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
+// @Param option query string false "Option for K8sCluster deletion" Enums(force)
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/k8scluster [delete]
@@ -447,10 +494,10 @@ func RestDeleteAllK8sCluster(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	forceFlag := c.QueryParam("force")
+	optionFlag := c.QueryParam("option")
 	subString := c.QueryParam("match")
 
-	output, err := resource.DeleteAllK8sCluster(nsId, subString, forceFlag)
+	output, err := resource.DeleteAllK8sCluster(nsId, subString, optionFlag)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
@@ -496,4 +543,124 @@ func RestPutUpgradeK8sCluster(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, content)
+}
+
+// RestPostK8sClusterDynamicCheckRequest godoc
+// @ID PostK8sClusterDynamicCheckRequest
+// @Summary Check available ConnectionConfig list for creating K8sCluster Dynamically
+// @Description Check available ConnectionConfig list before create K8sCluster Dynamically from common spec and image
+// @Tags [Kubernetes] Cluster Management
+// @Accept  json
+// @Produce  json
+// @Param k8sclusterReq body model.K8sClusterConnectionConfigCandidatesReq true "Details for K8sCluster dynamic request information"
+// @Success 200 {object} model.CheckK8sClusterDynamicReqInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /k8sclusterDynamicCheckRequest [post]
+func RestPostK8sClusterDynamicCheckRequest(c echo.Context) error {
+
+	req := &model.K8sClusterConnectionConfigCandidatesReq{}
+	if err := c.Bind(req); err != nil {
+		return common.EndRequestWithLog(c, err, nil)
+	}
+
+	result, err := infra.CheckK8sClusterDynamicReq(req)
+	return common.EndRequestWithLog(c, err, result)
+}
+
+// RestPostK8sClusterDynamic godoc
+// @ID PostK8sClusterDynamic
+// @Summary Create K8sCluster Dynamically
+// @Description Create K8sCluster Dynamically from common spec and image
+// @Tags [Kubernetes] Cluster Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param k8sclusterReq body model.TbK8sClusterDynamicReq true "Request body to provision K8sCluster dynamically. <br> Must include commonSpec and commonImage info. <br> (ex: {name: k8scluster-01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sclusterRecommendNode and /k8sclusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
+// @Param option query string false "Option for K8sCluster creation" Enums(hold)
+// @Param x-request-id header string false "Custom request ID"
+// @Success 200 {object} model.TbK8sClusterInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/k8sclusterDynamic [post]
+func RestPostK8sClusterDynamic(c echo.Context) error {
+	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+
+	nsId := c.Param("nsId")
+	optionFlag := c.QueryParam("option")
+
+	req := &model.TbK8sClusterDynamicReq{}
+	if err := c.Bind(req); err != nil {
+		log.Warn().Err(err).Msg("invalid request")
+		return common.EndRequestWithLog(c, err, nil)
+	}
+
+	result, err := infra.CreateK8sClusterDynamic(reqID, nsId, req, optionFlag)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to create K8sCluster dynamically")
+		return common.EndRequestWithLog(c, err, nil)
+	}
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestGetControlK8sCluster godoc
+// @ID GetControlK8sCluster
+// @Summary Control the creation of K8sCluster (continue, withdraw)
+// @Description Control the creation of K8sCluster (continue, withdraw)
+// @Tags [Kubernetes] Cluster Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
+// @Param action query string true "Action to K8sCluster" Enums(continue, withdraw)
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/control/k8scluster/{k8sClusterId} [get]
+func RestGetControlK8sCluster(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	k8sClusterId := c.Param("k8sClusterId")
+
+	action := c.QueryParam("action")
+	returnObj := model.SimpleMsg{}
+
+	if action == "continue" || action == "withdraw" {
+
+		resultString, err := resource.HandleK8sClusterAction(nsId, k8sClusterId, action)
+		if err != nil {
+			return common.EndRequestWithLog(c, err, returnObj)
+		}
+		returnObj.Message = resultString
+		return common.EndRequestWithLog(c, err, returnObj)
+
+	} else {
+		err := fmt.Errorf("'action' should be one of these: continue, withdraw")
+		return common.EndRequestWithLog(c, err, returnObj)
+	}
+}
+
+// RestRecommendNode godoc
+// @ID RecommendNode
+// @Summary Recommend K8sCluster's Node plan (filter and priority)
+// @Description Recommend K8sCluster's Node plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
+// @Tags [Kubernetes] Cluster Management
+// @Accept  json
+// @Produce  json
+// @Param deploymentPlan body model.DeploymentPlan false "Recommend K8sCluster's Node plan (filter and priority)"
+// @Success 200 {object} []model.TbSpecInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /k8sclusterRecommendNode [post]
+func RestRecommendNode(c echo.Context) error {
+
+	nsId := model.SystemCommonNs
+
+	u := &model.DeploymentPlan{}
+	if err := c.Bind(u); err != nil {
+		return common.EndRequestWithLog(c, err, nil)
+	}
+
+	content, err := infra.RecommendVm(nsId, *u)
+	return common.EndRequestWithLog(c, err, content)
 }

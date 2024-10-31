@@ -4,7 +4,9 @@
 # The file is in YAML format and contains the following fields:
 # k8scluster: Top level key
 #   <csp>: Name of the CSP
-#     nodeGroupsOnCreation:
+#     nodeGroupsOnCreation: [true/false]
+#     nodeImageDesignation: [true/false]
+#     requiredSubnetCount: [required number of subnets to create a kubernetes cluster, default value is 1]
 #     version:
 #       - region: [region1, region2, common(special keyword: most of regions)]
 #
@@ -13,6 +15,7 @@ k8scluster:
   azure:
     nodeGroupsOnCreation: true
     nodeImageDesignation: false
+    requiredSubnetCount: 1
     version:
       - region: [westeurope,westus]
         available:
@@ -43,6 +46,7 @@ k8scluster:
   gcp:
     nodeGroupsOnCreation: true
     nodeImageDesignation: true
+    requiredSubnetCount: 1
     version:
       - region: [common]
         available:
@@ -67,6 +71,7 @@ k8scluster:
   alibaba:
     nodeGroupsOnCreation: false
     nodeImageDesignation: true
+    requiredSubnetCount: 1
     version:
       # ServiceUnavailable or NotSupportedSLB
       - region: [me-east-1, cn-zhangjiakou, cn-hangzhou, cn-shenzhen, cn-chengdu, ap-south-1, ap-sourtheast-2]
@@ -90,6 +95,7 @@ k8scluster:
   nhncloud:
     nodeGroupsOnCreation: true
     nodeImageDesignation: true
+    requiredSubnetCount: 1
     version:
       - region: [kr1, kr2]
         available:
@@ -112,6 +118,7 @@ k8scluster:
   tencent:
     nodeGroupsOnCreation: false
     nodeImageDesignation: true
+    requiredSubnetCount: 1
     version:
       - region: [common]
         available:

@@ -381,9 +381,11 @@ func RunServer() {
 	g.PUT("/:nsId/monitoring/status/mci/:mciId/vm/:vmId", rest_infra.RestPutMonitorAgentStatusInstalled)
 
 	// K8sCluster
-	e.GET("/tumblebug/availableK8sClusterVersion", rest_resource.RestGetAvailableK8sClusterVersion)
-	e.GET("/tumblebug/availableK8sClusterNodeImage", rest_resource.RestGetAvailableK8sClusterNodeImage)
-	e.GET("/tumblebug/checkNodeGroupsOnK8sCreation", rest_resource.RestCheckNodeGroupsOnK8sCreation)
+	e.GET("/tumblebug/availableK8sVersion", rest_resource.RestGetAvailableK8sVersion)
+	e.GET("/tumblebug/availableK8sNodeImage", rest_resource.RestGetAvailableK8sNodeImage)
+	e.GET("/tumblebug/checkK8sNodeGroupsOnK8sCreation", rest_resource.RestCheckK8sNodeGroupsOnK8sCreation)
+	e.GET("/tumblebug/checkK8sNodeImageDesignation", rest_resource.RestCheckK8sNodeImageDesignation)
+	e.GET("/tumblebug/requiredK8sSubnetCount", rest_resource.RestGetRequiredK8sSubnetCount)
 	g.POST("/:nsId/k8scluster", rest_resource.RestPostK8sCluster)
 	g.POST("/:nsId/k8scluster/:k8sClusterId/k8snodegroup", rest_resource.RestPostK8sNodeGroup)
 	g.DELETE("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName", rest_resource.RestDeleteK8sNodeGroup)
@@ -396,6 +398,11 @@ func RunServer() {
 	g.DELETE("/:nsId/k8scluster/:k8sClusterId", rest_resource.RestDeleteK8sCluster)
 	g.DELETE("/:nsId/k8scluster", rest_resource.RestDeleteAllK8sCluster)
 	g.PUT("/:nsId/k8scluster/:k8sClusterId/upgrade", rest_resource.RestPutUpgradeK8sCluster)
+
+	e.POST("/tumblebug/k8sclusterRecommendNode", rest_resource.RestRecommendNode)
+	e.POST("/tumblebug/k8sclusterDynamicCheckRequest", rest_resource.RestPostK8sClusterDynamicCheckRequest)
+	g.POST("/:nsId/k8sclusterDynamic", rest_resource.RestPostK8sClusterDynamic)
+	g.GET("/:nsId/control/k8scluster/:k8sClusterId", rest_resource.RestGetControlK8sCluster)
 
 	// Network Load Balancer
 	g.POST("/:nsId/mci/:mciId/mcSwNlb", rest_infra.RestPostMcNLB)
