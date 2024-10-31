@@ -36,13 +36,13 @@ paths:
                 type: object
       security:
       - Bearer: []
-  /availableK8sClusterNodeImage:
+  /availableK8sNodeImage:
     get:
       tags:
       - "[Kubernetes] Cluster Management"
       summary: (UNDER DEVELOPMENT!!!) Get available kubernetes cluster node image
       description: (UNDER DEVELOPMENT!!!) Get available kubernetes cluster node image
-      operationId: GetAvailableK8sClusterNodeImage
+      operationId: GetAvailableK8sNodeImage
       parameters:
       - name: providerName
         in: query
@@ -75,13 +75,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /availableK8sClusterVersion:
+  /availableK8sVersion:
     get:
       tags:
       - "[Kubernetes] Cluster Management"
       summary: Get available kubernetes cluster version
       description: Get available kubernetes cluster version
-      operationId: GetAvailableK8sClusterVersion
+      operationId: GetAvailableK8sVersion
       parameters:
       - name: providerName
         in: query
@@ -114,13 +114,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /checkNodeGroupsOnK8sCreation:
+  /checkK8sNodeGroupsOnK8sCreation:
     get:
       tags:
       - "[Kubernetes] Cluster Management"
       summary: Check whether nodegroups are required during the k8scluster creation
       description: Check whether nodegroups are required during the k8scluster creation
-      operationId: CheckNodeGroupsOnK8sCreation
+      operationId: CheckK8sNodeGroupsOnK8sCreation
       parameters:
       - name: providerName
         in: query
@@ -135,6 +135,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.K8sClusterNodeGroupsOnCreation'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /checkK8sNodeImageDesignation:
+    get:
+      tags:
+      - "[Kubernetes] Cluster Management"
+      summary: Check whether node image designation is possible to create a k8scluster
+      description: Check whether node image designation is possible to create a k8scluster
+      operationId: CheckK8sNodeImageDesignation
+      parameters:
+      - name: providerName
+        in: query
+        description: Name of the CSP to retrieve
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sClusterNodeImageDesignation'
         "404":
           description: Not Found
           content:
@@ -613,6 +646,78 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /k8sclusterDynamicCheckRequest:
+    post:
+      tags:
+      - "[Kubernetes] Cluster Management"
+      summary: Check available ConnectionConfig list for creating K8sCluster Dynamically
+      description: Check available ConnectionConfig list before create K8sCluster
+        Dynamically from common spec and image
+      operationId: PostK8sClusterDynamicCheckRequest
+      requestBody:
+        description: Details for K8sCluster dynamic request information
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.K8sClusterConnectionConfigCandidatesReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.CheckK8sClusterDynamicReqInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: k8sclusterReq
+  /k8sclusterRecommendNode:
+    post:
+      tags:
+      - "[Kubernetes] Cluster Management"
+      summary: Recommend K8sCluster's Node plan (filter and priority)
+      description: Recommend K8sCluster's Node plan (filter and priority) Find details
+        from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
+      operationId: RecommendNode
+      requestBody:
+        description: Recommend K8sCluster's Node plan (filter and priority)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.DeploymentPlan'
+        required: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/model.TbSpecInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: deploymentPlan
   /label/{labelType}/{uid}:
     get:
       tags:
@@ -1486,6 +1591,56 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: mciCmdReq
+  /ns/{nsId}/control/k8scluster/{k8sClusterId}:
+    get:
+      tags:
+      - "[Kubernetes] Cluster Management"
+      summary: "Control the creation of K8sCluster (continue, withdraw)"
+      description: "Control the creation of K8sCluster (continue, withdraw)"
+      operationId: GetControlK8sCluster
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterId
+        in: path
+        description: K8sCluster ID
+        required: true
+        schema:
+          type: string
+          default: k8scluster-01
+      - name: action
+        in: query
+        description: Action to K8sCluster
+        required: true
+        schema:
+          type: string
+          enum:
+          - continue
+          - withdraw
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/control/mci/{mciId}:
     get:
       tags:
@@ -1887,6 +2042,13 @@ paths:
         description: Delete resources containing matched ID-substring only
         schema:
           type: string
+      - name: option
+        in: query
+        description: Option for K8sCluster deletion
+        schema:
+          type: string
+          enum:
+          - force
       responses:
         "200":
           description: OK
@@ -1962,6 +2124,13 @@ paths:
         schema:
           type: string
           default: k8scluster-01
+      - name: option
+        in: query
+        description: Option for K8sCluster deletion
+        schema:
+          type: string
+          enum:
+          - force
       responses:
         "200":
           description: OK
@@ -2053,6 +2222,13 @@ paths:
         schema:
           type: string
           default: ng-01
+      - name: option
+        in: query
+        description: Option for K8sNodeGroup deletion
+        schema:
+          type: string
+          enum:
+          - force
       responses:
         "200":
           description: OK
@@ -2227,6 +2403,64 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: upgradeK8sClusterReq
+  /ns/{nsId}/k8sclusterDynamic:
+    post:
+      tags:
+      - "[Kubernetes] Cluster Management"
+      summary: Create K8sCluster Dynamically
+      description: Create K8sCluster Dynamically from common spec and image
+      operationId: PostK8sClusterDynamic
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: option
+        in: query
+        description: Option for K8sCluster creation
+        schema:
+          type: string
+          enum:
+          - hold
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      requestBody:
+        description: "Request body to provision K8sCluster dynamically. <br> Must\
+          \ include commonSpec and commonImage info. <br> (ex: {name: k8scluster-01,\
+          \ commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]})\
+          \ <br> You can use /k8sclusterRecommendNode and /k8sclusterDynamicCheckRequest\
+          \ to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.TbK8sClusterDynamicReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.TbK8sClusterInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: k8sclusterReq
   /ns/{nsId}/mci:
     get:
       tags:
@@ -7275,6 +7509,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /requiredK8sSubnetCount:
+    get:
+      tags:
+      - "[Kubernetes] Cluster Management"
+      summary: Get the required subnet count to create a k8scluster
+      description: Get the required subnet count to create a k8scluster
+      operationId: GetRequiredK8sSubnetCount
+      parameters:
+      - name: providerName
+        in: query
+        description: Name of the CSP to retrieve
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sClusterRequiredSubnetCount'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /resources/{labelType}:
     get:
       tags:
@@ -7793,6 +8060,15 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/model.RegionDetail'
+    model.CheckK8sClusterDynamicReqInfo:
+      required:
+      - reqCheck
+      type: object
+      properties:
+        reqCheck:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.CheckNodeDynamicReqInfo'
     model.CheckMciDynamicReqInfo:
       required:
       - reqCheck
@@ -7802,6 +8078,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.CheckVmDynamicReqInfo'
+    model.CheckNodeDynamicReqInfo:
+      type: object
+      properties:
+        connectionConfigCandidates:
+          type: array
+          description: ConnectionConfigCandidates will provide ConnectionConfig options
+          items:
+            type: string
+        image:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.TbImageInfo'
+        region:
+          $ref: '#/components/schemas/model.RegionDetail'
+        spec:
+          $ref: '#/components/schemas/model.TbSpecInfo'
+        systemMessage:
+          type: string
+          description: Latest system message such as error message
+          example: Failed because ...
     model.CheckVmDynamicReqInfo:
       type: object
       properties:
@@ -8108,15 +8404,31 @@ components:
           type: string
         tumblebugOverview:
           $ref: '#/components/schemas/model.inspectOverview'
+    model.K8sClusterConnectionConfigCandidatesReq:
+      required:
+      - commonSpec
+      type: object
+      properties:
+        commonSpec:
+          type: array
+          description: CommonSpec is field for id of a spec in common namespace
+          example:
+          - azure+koreacentral+Standard_B2s
+          items:
+            type: string
     model.K8sClusterDetail:
       type: object
       properties:
+        node_image_designation:
+          type: boolean
         node_images:
           type: array
           items:
             $ref: '#/components/schemas/model.K8sClusterNodeImageDetail'
         nodegroups_on_creation:
           type: boolean
+        required_subnet_count:
+          type: integer
         root_disks:
           type: array
           items:
@@ -8133,6 +8445,12 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/model.K8sClusterDetail'
     model.K8sClusterNodeGroupsOnCreation:
+      type: object
+      properties:
+        result:
+          type: string
+          example: "true"
+    model.K8sClusterNodeImageDesignation:
       type: object
       properties:
         result:
@@ -8156,6 +8474,12 @@ components:
           type: string
         name:
           type: string
+    model.K8sClusterRequiredSubnetCount:
+      type: object
+      properties:
+        result:
+          type: string
+          example: "1"
     model.K8sClusterRootDiskDetail:
       type: object
       properties:
@@ -9498,6 +9822,77 @@ components:
           type: string
         name:
           type: string
+    model.TbK8sClusterDynamicReq:
+      required:
+      - commonImage
+      - commonSpec
+      - name
+      type: object
+      properties:
+        commonImage:
+          type: string
+          description: CommonImage is field for id of a image in common namespace
+          example: "default, azure+koreacentrall+ubuntu20.04"
+        commonSpec:
+          type: string
+          description: CommonSpec is field for id of a spec in common namespace
+          example: azure+koreacentral+standard_b2s
+        connectionName:
+          type: string
+          description: |-
+            if ConnectionName is given, the VM tries to use associtated credential.
+            if not, it will use predefined ConnectionName in Spec objects
+          default: azure-koreacentral
+        description:
+          type: string
+          example: Description
+        desiredNodeSize:
+          type: string
+          example: "1"
+          default: "1"
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+        maxNodeSize:
+          type: string
+          example: "3"
+          default: "2"
+        minNodeSize:
+          type: string
+          example: "1"
+          default: "1"
+        name:
+          type: string
+          description: K8sCluster name if it is not empty.
+          example: k8scluster-01
+        nodeGroupName:
+          type: string
+          description: NodeGroup name if it is not empty
+          example: nodegroup-01
+        onAutoScaling:
+          type: string
+          example: "true"
+          default: "true"
+        rootDiskSize:
+          type: string
+          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
+          example: "default, 30, 42, ..."
+          default: default
+        rootDiskType:
+          type: string
+          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
+            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
+            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
+            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT:\
+            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
+          example: "default, TYPE1, ..."
+          default: default
+        version:
+          type: string
+          description: K8s Clsuter version
+          example: "1.29"
     model.TbK8sClusterInfo:
       type: object
       properties:
@@ -9581,6 +9976,11 @@ components:
           description: (3) NodeGroupInfo List
           items:
             $ref: '#/components/schemas/model.TbK8sNodeGroupReq'
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
         name:
           type: string
           description: (1) K8sCluster Info
@@ -9597,6 +9997,11 @@ components:
           - subnet-01
           items:
             type: string
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the k8scluster in a keyword (any
+            string can be used) for special System purpose
+          example: ""
         vNetId:
           type: string
           description: (2) Network Info
