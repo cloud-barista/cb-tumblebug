@@ -425,10 +425,10 @@ AWS,all,p4d.24xlarge,32.77,99.88,,,,,,,,,,default,default,gpu,NVIDIA A100,8,320,
 AWS,all,p5.48xlarge,98.32,99.98,,,,,,,,,,default,default,gpu,NVIDIA H100,8,640,,vm
 azure,all,Standard_B1s,0.0132,33.85,,,,,,,,,,default,default,,,,,,vm
 azure,all,Standard_B1ms,0.0264,33.85,,,,,,,,,,default,default,,,,,,vm
-azure,all,Standard_B2s,0.0528,33.85,,,,,,,,,,default,default,,,,,,vm
-azure,all,Standard_B2ms,0.106,33.85,,,,,,,,,,default,default,,,,,,vm
-azure,all,Standard_B4ms,0.211,33.85,,,,,,,,,,default,default,,,,,,vm
-azure,all,Standard_B8ms,0.422,33.85,,,,,,,,,,default,default,,,,,,vm
+azure,all,Standard_B2s,0.0528,33.85,,,,,,,,,,default,default,,,,,,vm|k8s
+azure,all,Standard_B2ms,0.106,33.85,,,,,,,,,,default,default,,,,,,vm|k8s
+azure,all,Standard_B4ms,0.211,33.85,,,,,,,,,,default,default,,,,,,vm|k8s
+azure,all,Standard_B8ms,0.422,33.85,,,,,,,,,,default,default,,,,,,vm|k8s
 azure,all,Standard_A1_v2,0.05,34.73,,,,,,,,,,StandardSSD,default,,,,,,vm
 azure,all,NV24s_v3,2.42,47.12,,,,,,,,,,default,default,gpu,NVIDIA M60,2,16,,vm
 azure,all,NV36ads_A10_v5,4.52,67.18,,,,,,,,,,default,default,gpu,NVIDIA A10G,1,24,,vm
