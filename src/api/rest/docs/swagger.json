@@ -51,7 +51,7 @@
                 }
             }
         },
-        "/availableK8sClusterNodeImage": {
+        "/availableK8sNodeImage": {
             "get": {
                 "description": "(UNDER DEVELOPMENT!!!) Get available kubernetes cluster node image",
                 "consumes": [
@@ -64,7 +64,7 @@
                     "[Kubernetes] Cluster Management"
                 ],
                 "summary": "(UNDER DEVELOPMENT!!!) Get available kubernetes cluster node image",
-                "operationId": "GetAvailableK8sClusterNodeImage",
+                "operationId": "GetAvailableK8sNodeImage",
                 "parameters": [
                     {
                         "type": "string",
@@ -103,7 +103,7 @@
                 }
             }
         },
-        "/availableK8sClusterVersion": {
+        "/availableK8sVersion": {
             "get": {
                 "description": "Get available kubernetes cluster version",
                 "consumes": [
@@ -116,7 +116,7 @@
                     "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Get available kubernetes cluster version",
-                "operationId": "GetAvailableK8sClusterVersion",
+                "operationId": "GetAvailableK8sVersion",
                 "parameters": [
                     {
                         "type": "string",
@@ -155,7 +155,7 @@
                 }
             }
         },
-        "/checkNodeGroupsOnK8sCreation": {
+        "/checkK8sNodeGroupsOnK8sCreation": {
             "get": {
                 "description": "Check whether nodegroups are required during the k8scluster creation",
                 "consumes": [
@@ -168,7 +168,7 @@
                     "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Check whether nodegroups are required during the k8scluster creation",
-                "operationId": "CheckNodeGroupsOnK8sCreation",
+                "operationId": "CheckK8sNodeGroupsOnK8sCreation",
                 "parameters": [
                     {
                         "type": "string",
@@ -183,6 +183,51 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.K8sClusterNodeGroupsOnCreation"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/checkK8sNodeImageDesignation": {
+            "get": {
+                "description": "Check whether node image designation is possible to create a k8scluster",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Kubernetes] Cluster Management"
+                ],
+                "summary": "Check whether node image designation is possible to create a k8scluster",
+                "operationId": "CheckK8sNodeImageDesignation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the CSP to retrieve",
+                        "name": "providerName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterNodeImageDesignation"
                         }
                     },
                     "404": {
@@ -801,6 +846,102 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.K8sClusterInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/k8sclusterDynamicCheckRequest": {
+            "post": {
+                "description": "Check available ConnectionConfig list before create K8sCluster Dynamically from common spec and image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Kubernetes] Cluster Management"
+                ],
+                "summary": "Check available ConnectionConfig list for creating K8sCluster Dynamically",
+                "operationId": "PostK8sClusterDynamicCheckRequest",
+                "parameters": [
+                    {
+                        "description": "Details for K8sCluster dynamic request information",
+                        "name": "k8sclusterReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterConnectionConfigCandidatesReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.CheckK8sClusterDynamicReqInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/k8sclusterRecommendNode": {
+            "post": {
+                "description": "Recommend K8sCluster's Node plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Kubernetes] Cluster Management"
+                ],
+                "summary": "Recommend K8sCluster's Node plan (filter and priority)",
+                "operationId": "RecommendNode",
+                "parameters": [
+                    {
+                        "description": "Recommend K8sCluster's Node plan (filter and priority)",
+                        "name": "deploymentPlan",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/model.DeploymentPlan"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.TbSpecInfo"
+                            }
                         }
                     },
                     "404": {
@@ -1982,6 +2123,71 @@
                 }
             }
         },
+        "/ns/{nsId}/control/k8scluster/{k8sClusterId}": {
+            "get": {
+                "description": "Control the creation of K8sCluster (continue, withdraw)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Kubernetes] Cluster Management"
+                ],
+                "summary": "Control the creation of K8sCluster (continue, withdraw)",
+                "operationId": "GetControlK8sCluster",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "k8scluster-01",
+                        "description": "K8sCluster ID",
+                        "name": "k8sClusterId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "continue",
+                            "withdraw"
+                        ],
+                        "type": "string",
+                        "description": "Action to K8sCluster",
+                        "name": "action",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/control/mci/{mciId}": {
             "get": {
                 "description": "Control the lifecycle of MCI (refine, suspend, resume, reboot, terminate)",
@@ -2507,6 +2713,15 @@
                         "description": "Delete resources containing matched ID-substring only",
                         "name": "match",
                         "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "force"
+                        ],
+                        "type": "string",
+                        "description": "Option for K8sCluster deletion",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2607,6 +2822,15 @@
                         "name": "k8sClusterId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "force"
+                        ],
+                        "type": "string",
+                        "description": "Option for K8sCluster deletion",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2726,6 +2950,15 @@
                         "name": "k8sNodeGroupName",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "force"
+                        ],
+                        "type": "string",
+                        "description": "Option for K8sNodeGroup deletion",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2932,6 +3165,76 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/k8sclusterDynamic": {
+            "post": {
+                "description": "Create K8sCluster Dynamically from common spec and image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Kubernetes] Cluster Management"
+                ],
+                "summary": "Create K8sCluster Dynamically",
+                "operationId": "PostK8sClusterDynamic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body to provision K8sCluster dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8scluster-01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sclusterRecommendNode and /k8sclusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570",
+                        "name": "k8sclusterReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.TbK8sClusterDynamicReq"
+                        }
+                    },
+                    {
+                        "enum": [
+                            "hold"
+                        ],
+                        "type": "string",
+                        "description": "Option for K8sCluster creation",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.TbK8sClusterInfo"
                         }
                     },
                     "404": {
@@ -9581,6 +9884,51 @@
                 }
             }
         },
+        "/requiredK8sSubnetCount": {
+            "get": {
+                "description": "Get the required subnet count to create a k8scluster",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Kubernetes] Cluster Management"
+                ],
+                "summary": "Get the required subnet count to create a k8scluster",
+                "operationId": "GetRequiredK8sSubnetCount",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the CSP to retrieve",
+                        "name": "providerName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterRequiredSubnetCount"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/resources/{labelType}": {
             "get": {
                 "description": "Get resources based on a label selector. The label selector supports the following operators:\n- `=` : Selects resources where the label key equals the specified value (e.g., `env=production`).\n- `!=` : Selects resources where the label key does not equal the specified value (e.g., `tier!=frontend`).\n- `in` : Selects resources where the label key is in the specified set of values (e.g., `region in (us-west, us-east)`).\n- `notin` : Selects resources where the label key is not in the specified set of values (e.g., `env notin (production, staging)`).\n- `exists` : Selects resources where the label key exists (e.g., `env exists`).\n- `!exists` : Selects resources where the label key does not exist (e.g., `env !exists`).",
@@ -10296,6 +10644,20 @@
                 }
             }
         },
+        "model.CheckK8sClusterDynamicReqInfo": {
+            "type": "object",
+            "required": [
+                "reqCheck"
+            ],
+            "properties": {
+                "reqCheck": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CheckNodeDynamicReqInfo"
+                    }
+                }
+            }
+        },
         "model.CheckMciDynamicReqInfo": {
             "type": "object",
             "required": [
@@ -10307,6 +10669,35 @@
                     "items": {
                         "$ref": "#/definitions/model.CheckVmDynamicReqInfo"
                     }
+                }
+            }
+        },
+        "model.CheckNodeDynamicReqInfo": {
+            "type": "object",
+            "properties": {
+                "connectionConfigCandidates": {
+                    "description": "ConnectionConfigCandidates will provide ConnectionConfig options",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "image": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbImageInfo"
+                    }
+                },
+                "region": {
+                    "$ref": "#/definitions/model.RegionDetail"
+                },
+                "spec": {
+                    "$ref": "#/definitions/model.TbSpecInfo"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
                 }
             }
         },
@@ -10750,9 +11141,30 @@
                 }
             }
         },
+        "model.K8sClusterConnectionConfigCandidatesReq": {
+            "type": "object",
+            "required": [
+                "commonSpec"
+            ],
+            "properties": {
+                "commonSpec": {
+                    "description": "CommonSpec is field for id of a spec in common namespace",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "azure+koreacentral+Standard_B2s"
+                    ]
+                }
+            }
+        },
         "model.K8sClusterDetail": {
             "type": "object",
             "properties": {
+                "node_image_designation": {
+                    "type": "boolean"
+                },
                 "node_images": {
                     "type": "array",
                     "items": {
@@ -10761,6 +11173,9 @@
                 },
                 "nodegroups_on_creation": {
                     "type": "boolean"
+                },
+                "required_subnet_count": {
+                    "type": "integer"
                 },
                 "root_disks": {
                     "type": "array",
@@ -10796,6 +11211,15 @@
                 }
             }
         },
+        "model.K8sClusterNodeImageDesignation": {
+            "type": "object",
+            "properties": {
+                "result": {
+                    "type": "string",
+                    "example": "true"
+                }
+            }
+        },
         "model.K8sClusterNodeImageDetail": {
             "type": "object",
             "properties": {
@@ -10821,6 +11245,15 @@
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "model.K8sClusterRequiredSubnetCount": {
+            "type": "object",
+            "properties": {
+                "result": {
+                    "type": "string",
+                    "example": "1"
                 }
             }
         },
@@ -12744,6 +13177,89 @@
                 }
             }
         },
+        "model.TbK8sClusterDynamicReq": {
+            "type": "object",
+            "required": [
+                "commonImage",
+                "commonSpec",
+                "name"
+            ],
+            "properties": {
+                "commonImage": {
+                    "description": "CommonImage is field for id of a image in common namespace",
+                    "type": "string",
+                    "example": "default, azure+koreacentrall+ubuntu20.04"
+                },
+                "commonSpec": {
+                    "description": "CommonSpec is field for id of a spec in common namespace",
+                    "type": "string",
+                    "example": "azure+koreacentral+standard_b2s"
+                },
+                "connectionName": {
+                    "description": "if ConnectionName is given, the VM tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
+                    "type": "string",
+                    "default": "azure-koreacentral"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Description"
+                },
+                "desiredNodeSize": {
+                    "type": "string",
+                    "default": "1",
+                    "example": "1"
+                },
+                "label": {
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "maxNodeSize": {
+                    "type": "string",
+                    "default": "2",
+                    "example": "3"
+                },
+                "minNodeSize": {
+                    "type": "string",
+                    "default": "1",
+                    "example": "1"
+                },
+                "name": {
+                    "description": "K8sCluster name if it is not empty.",
+                    "type": "string",
+                    "example": "k8scluster-01"
+                },
+                "nodeGroupName": {
+                    "description": "NodeGroup name if it is not empty",
+                    "type": "string",
+                    "example": "nodegroup-01"
+                },
+                "onAutoScaling": {
+                    "type": "string",
+                    "default": "true",
+                    "example": "true"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
+                    "type": "string",
+                    "default": "default",
+                    "example": "default, 30, 42, ..."
+                },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
+                    "type": "string",
+                    "default": "default",
+                    "example": "default, TYPE1, ..."
+                },
+                "version": {
+                    "description": "K8s Clsuter version",
+                    "type": "string",
+                    "example": "1.29"
+                }
+            }
+        },
         "model.TbK8sClusterInfo": {
             "type": "object",
             "properties": {
@@ -12845,6 +13361,13 @@
                         "$ref": "#/definitions/model.TbK8sNodeGroupReq"
                     }
                 },
+                "label": {
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "name": {
                     "description": "(1) K8sCluster Info",
                     "type": "string",
@@ -12867,6 +13390,11 @@
                     "example": [
                         "subnet-01"
                     ]
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the k8scluster in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": ""
                 },
                 "vNetId": {
                     "description": "(2) Network Info",
