@@ -232,6 +232,23 @@ func GenResourceKey(nsId string, resourceType string, resourceId string) string 
 	}
 }
 
+// GenK8sClusterKey is func to generate a key from K8sCluster ID
+func GenK8sClusterKey(nsId string, k8sClusterId string) string {
+	err := CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return "/invalidKey"
+	}
+
+	err = CheckString(k8sClusterId)
+	if err != nil {
+		log.Err(err).Msg("Failed to Generate K8sCluster Key")
+		return "/invalidKey"
+	}
+
+	return fmt.Sprintf("/ns/%s/k8scluster/%s", nsId, k8sClusterId)
+}
+
 // GenChildResourceKey is func to generate a key from resource type and id
 func GenChildResourceKey(nsId string, resourceType string, parentResourceId string, resourceId string) string {
 
@@ -1288,8 +1305,8 @@ func getK8sClusterDetail(providerName string) *model.K8sClusterDetail {
 	return k8sClusterDetail
 }
 
-// GetAvailableK8sClusterVersion is func to get available kubernetes cluster versions for provider and region from model.K8sClusterInfo
-func GetAvailableK8sClusterVersion(providerName string, regionName string) (*[]model.K8sClusterVersionDetailAvailable, error) {
+// GetAvailableK8sVersion is func to get available kubernetes cluster versions for provider and region from model.K8sClusterInfo
+func GetAvailableK8sVersion(providerName string, regionName string) (*[]model.K8sClusterVersionDetailAvailable, error) {
 	//
 	// Check available K8sCluster version in k8sclusterinfo.yaml
 	//
@@ -1337,8 +1354,8 @@ func GetAvailableK8sClusterVersion(providerName string, regionName string) (*[]m
 	return nil, fmt.Errorf("no entry for provider(%s):region(%s)", providerName, regionName)
 }
 
-// GetAvailableK8sClusterNodeImage is func to get available kubernetes cluster node images for provider and region from model.K8sClusterInfo
-func GetAvailableK8sClusterNodeImage(providerName string, regionName string) (*[]model.K8sClusterNodeImageDetailAvailable, error) {
+// GetAvailableK8sNodeImage is func to get available kubernetes cluster node images for provider and region from model.K8sClusterInfo
+func GetAvailableK8sNodeImage(providerName string, regionName string) (*[]model.K8sClusterNodeImageDetailAvailable, error) {
 	//
 	// Check available K8sCluster node image in k8sclusterinfo.yaml
 	//
@@ -1388,10 +1405,10 @@ func GetAvailableK8sClusterNodeImage(providerName string, regionName string) (*[
 	return nil, fmt.Errorf("no available kubernetes cluster node image for region(%s) of provider(%s)", regionName, providerName)
 }
 
-// CheckNodeGroupsOnK8sCreation is func to check whether nodegroups are required during the k8scluster creation
-func CheckNodeGroupsOnK8sCreation(providerName string) (*model.K8sClusterNodeGroupsOnCreation, error) {
+// GetK8sNodeGroupsOnK8sCreation is func to get whether nodegroups are required during the k8scluster creation
+func GetK8sNodeGroupsOnK8sCreation(providerName string) (bool, error) {
 	//
-	// Check nodeGroupsOnCreation field in k8sclusterinfo.yaml
+	// Get nodeGroupsOnCreation field in k8sclusterinfo.yaml
 	//
 
 	providerName = strings.ToLower(providerName)
@@ -1399,11 +1416,85 @@ func CheckNodeGroupsOnK8sCreation(providerName string) (*model.K8sClusterNodeGro
 	// Get model.K8sClusterDetail for providerName
 	k8sClusterDetail := getK8sClusterDetail(providerName)
 	if k8sClusterDetail == nil {
-		return nil, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
+		return false, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
+	}
+
+	return k8sClusterDetail.NodeGroupsOnCreation, nil
+}
+
+// GetModelK8sNodeGroupsOnK8sCreation is to convert a NodeGroupsOnK8sCreation value to model.K8sClusterNodeGroupsOnK8sCreation
+func GetModelK8sNodeGroupsOnK8sCreation(providerName string) (*model.K8sClusterNodeGroupsOnCreation, error) {
+	k8sNodeGroupsOnK8sCreation, err := GetK8sNodeGroupsOnK8sCreation(providerName)
+	if err != nil {
+		return nil, err
 	}
 
 	return &model.K8sClusterNodeGroupsOnCreation{
-		Result: strconv.FormatBool(k8sClusterDetail.NodeGroupsOnCreation),
+		Result: strconv.FormatBool(k8sNodeGroupsOnK8sCreation),
+	}, nil
+}
+
+// GetK8sNodeImageDesignation is func to get whether node image designation is possible to create a k8scluster
+func GetK8sNodeImageDesignation(providerName string) (bool, error) {
+	//
+	// Get nodeGroupsOnCreation field in k8sclusterinfo.yaml
+	//
+
+	providerName = strings.ToLower(providerName)
+
+	// Get model.K8sClusterDetail for providerName
+	k8sClusterDetail := getK8sClusterDetail(providerName)
+	if k8sClusterDetail == nil {
+		return false, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
+	}
+
+	return k8sClusterDetail.NodeImageDesignation, nil
+}
+
+// GetModelK8sNodeImageDesignation is to convert a NodeImageDesignation value to model.K8sClusterNodeImageDesignation
+func GetModelK8sNodeImageDesignation(providerName string) (*model.K8sClusterNodeImageDesignation, error) {
+	k8sNodeImageDesignation, err := GetK8sNodeImageDesignation(providerName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.K8sClusterNodeImageDesignation{
+		Result: strconv.FormatBool(k8sNodeImageDesignation),
+	}, nil
+}
+
+// GetK8sRequiredSubnetCount is func to get the required subnet count to create a k8scluster
+func GetK8sRequiredSubnetCount(providerName string) (int, error) {
+	//
+	// Get requiredSubnetCount field in k8sclusterinfo.yaml
+	//
+
+	providerName = strings.ToLower(providerName)
+
+	// Get model.K8sClusterDetail for providerName
+	k8sClusterDetail := getK8sClusterDetail(providerName)
+	if k8sClusterDetail == nil {
+		return 0, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
+	}
+
+	// Set default value is 1
+	requiredSubnetCount := 1
+	if k8sClusterDetail.RequiredSubnetCount > 1 {
+		requiredSubnetCount = k8sClusterDetail.RequiredSubnetCount
+	}
+
+	return requiredSubnetCount, nil
+}
+
+// GetModelK8sRequiredSubnetCount is func to get the required subnet count to create a k8scluster
+func GetModelK8sRequiredSubnetCount(providerName string) (*model.K8sClusterRequiredSubnetCount, error) {
+	k8sRequiredSubnetCount, err := GetK8sRequiredSubnetCount(providerName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.K8sClusterRequiredSubnetCount{
+		Result: strconv.FormatInt(int64(k8sRequiredSubnetCount), 10),
 	}, nil
 }
 

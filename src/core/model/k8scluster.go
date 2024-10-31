@@ -96,6 +96,12 @@ type TbK8sClusterReq struct { // Tumblebug
 	// Fields for "Register existing K8sCluster" feature
 	// @description CspResourceId is required to register a k8s cluster from CSP (option=register)
 	CspResourceId string `json:"cspResourceId" example:"required when option is register"`
+
+	// Label is for describing the object by keywords
+	Label map[string]string `json:"label"`
+
+	// SystemLabel is for describing the k8scluster in a keyword (any string can be used) for special System purpose
+	SystemLabel string `json:"systemLabel" example:"" default:""`
 }
 
 // 2023-11-13 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/api-runtime/rest-runtime/ClusterRest.go#L441
@@ -449,4 +455,65 @@ type SpiderAddonsInfo struct {
 // TbK8sAddonsInfo is a struct to handle K8sCluster Addons information from the CB-Tumblebug's REST API response
 type TbK8sAddonsInfo struct {
 	KeyValueList []KeyValue `json:"keyValueList"`
+}
+
+// K8sClusterConnectionConfigCandidatesReq is struct for a request to check requirements to create a new K8sCluster instance dynamically (with default resource option)
+type K8sClusterConnectionConfigCandidatesReq struct {
+	// CommonSpec is field for id of a spec in common namespace
+	CommonSpecs []string `json:"commonSpec" validate:"required" example:"azure+koreacentral+Standard_B2s"`
+}
+
+// CheckK8sClusterDynamicReqInfo is struct to check requirements to create a new K8sCluster instance dynamically (with default resource option)
+type CheckK8sClusterDynamicReqInfo struct {
+	ReqCheck []CheckNodeDynamicReqInfo `json:"reqCheck" validate:"required"`
+}
+
+// CheckNodeDynamicReqInfo is struct to check requirements to create a new server instance dynamically (with default resource option)
+type CheckNodeDynamicReqInfo struct {
+
+	// ConnectionConfigCandidates will provide ConnectionConfig options
+	ConnectionConfigCandidates []string `json:"connectionConfigCandidates" default:""`
+
+	Spec   TbSpecInfo    `json:"spec" default:""`
+	Image  []TbImageInfo `json:"image" default:""`
+	Region RegionDetail  `json:"region" default:""`
+
+	// Latest system message such as error message
+	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
+
+}
+
+// TbK8sClusterDynamicReq is struct for requirements to create K8sCluster dynamically (with default resource option)
+type TbK8sClusterDynamicReq struct {
+	// K8sCluster name if it is not empty.
+	Name string `json:"name" validate:"required" example:"k8scluster-01"`
+
+	// K8s Clsuter version
+	Version string `json:"version" example:"1.29"`
+
+	// Label is for describing the object by keywords
+	Label map[string]string `json:"label"`
+
+	Description string `json:"description" example:"Description"`
+
+	// NodeGroup name if it is not empty
+	NodeGroupName string `json:"nodeGroupName" example:"nodegroup-01"`
+
+	// CommonSpec is field for id of a spec in common namespace
+	CommonSpec string `json:"commonSpec" validate:"required" example:"azure+koreacentral+standard_b2s"`
+
+	// CommonImage is field for id of a image in common namespace
+	CommonImage string `json:"commonImage" validate:"required" example:"default, azure+koreacentrall+ubuntu20.04"`
+
+	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
+	RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..." default:"default"` // "default", Integer (GB): ["50", ..., "1000"]
+
+	OnAutoScaling   string `json:"onAutoScaling,omitempty" default:"true" example:"true"`
+	DesiredNodeSize string `json:"desiredNodeSize,omitempty" default:"1" example:"1"`
+	MinNodeSize     string `json:"minNodeSize,omitempty" default:"1" example:"1"`
+	MaxNodeSize     string `json:"maxNodeSize,omitempty" default:"2" example:"3"`
+
+	// if ConnectionName is given, the VM tries to use associtated credential.
+	// if not, it will use predefined ConnectionName in Spec objects
+	ConnectionName string `json:"connectionName,omitempty" default:"azure-koreacentral"`
 }

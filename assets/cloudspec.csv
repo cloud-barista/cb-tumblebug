@@ -565,11 +565,11 @@ IBM,jp-tok,bx2-2x8,0.096,34.18,,,,,,,,,,default,default,,,,,,vm
 IBM,us-east,bx2-2x8,0.096,34.18,,,,,,,,,,default,default,,,,,,vm
 IBM,us-south,bx2-2x8,0.096,34.18,,,,,,,,,,default,default,,,,,,vm
 TENCENT,all,S3.SMALL2,0.04,59.98,,,,,,,,,,default,default,,,,,,vm
-TENCENT,all,SA2.MEDIUM4,0.04,59.98,,,,,,,,,,default,default,,,,,,vm
-TENCENT,all,S2.MEDIUM4,0.04,59.98,,,,,,,,,,default,default,,,,,,vm
-TENCENT,all,S5.MEDIUM4,0.03,59.98,,,,,,,,,,default,default,,,,,,vm
-TENCENT,all,S3.MEDIUM8,0.04,59.98,,,,,,,,,,default,default,,,,,,vm
-TENCENT,all,S8.MEDIUM8,0.04,59.98,,,,,,,,,,default,default,,,,,,vm
+TENCENT,all,SA2.MEDIUM4,0.04,59.98,,,,,,,,,,default,default,,,,,,vm|k8s
+TENCENT,all,S2.MEDIUM4,0.04,59.98,,,,,,,,,,default,default,,,,,,vm|k8s
+TENCENT,all,S5.MEDIUM4,0.03,59.98,,,,,,,,,,default,default,,,,,,vm|k8s
+TENCENT,all,S3.MEDIUM8,0.04,59.98,,,,,,,,,,default,default,,,,,,vm|k8s
+TENCENT,all,S8.MEDIUM8,0.04,59.98,,,,,,,,,,default,default,,,,,,vm|k8s
 TENCENT,all,PNV4.7XLARGE116,1.71,64.18,,,,,,,,,,default,default,gpu,NVIDIA A10,1,24,,vm
 NCP,KR,SPSVRSSD00000005,,,,,,,,,,,,default,default,,,,,,vm
 NCP,KR,SPSVRSSD00000007,,,,,,,,,,,,default,default,,,,,,vm

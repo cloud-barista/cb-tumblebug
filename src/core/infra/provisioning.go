@@ -17,6 +17,7 @@ package infra
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -945,7 +946,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 	// Check whether VM names meet requirement.
 	errStr := ""
 	for i, k := range vmRequest {
-		err = checkCommonResAvailable(&k)
+		err = checkCommonResAvailableForVmDynamicReq(&k)
 		if err != nil {
 			log.Error().Err(err).Msgf("[%d] Failed to find common resource for MCI provision", i)
 			errStr += "{[" + strconv.Itoa(i+1) + "] " + err.Error() + "} "
@@ -1044,8 +1045,8 @@ func CreateMciVmDynamic(nsId string, mciId string, req *model.TbVmDynamicReq) (*
 	return CreateMciGroupVm(nsId, mciId, vmReq, true)
 }
 
-// checkCommonResAvailable is func to check common resources availability
-func checkCommonResAvailable(req *model.TbVmDynamicReq) error {
+// checkCommonResAvailableForVmDynamicReq is func to check common resources availability for VmDynamicReq
+func checkCommonResAvailableForVmDynamicReq(req *model.TbVmDynamicReq) error {
 
 	vmRequest := req
 	// Check whether VM names meet requirement.
@@ -1650,4 +1651,372 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 	}
 
 	return nil
+}
+
+func filterCheckMciDynamicReqInfoToCheckK8sClusterDynamicReqInfo(mciDReqInfo *model.CheckMciDynamicReqInfo) *model.CheckK8sClusterDynamicReqInfo {
+	k8sDReqInfo := model.CheckK8sClusterDynamicReqInfo{}
+
+	if mciDReqInfo != nil {
+		for _, k := range mciDReqInfo.ReqCheck {
+			if strings.Contains(k.Spec.InfraType, model.StrK8s) ||
+				strings.Contains(k.Spec.InfraType, model.StrKubernetes) {
+
+				imageListForK8s := []model.TbImageInfo{}
+				for _, i := range k.Image {
+					if strings.Contains(i.InfraType, model.StrK8s) ||
+						strings.Contains(i.InfraType, model.StrKubernetes) {
+						imageListForK8s = append(imageListForK8s, i)
+					}
+				}
+
+				nodeDReqInfo := model.CheckNodeDynamicReqInfo{
+					ConnectionConfigCandidates: k.ConnectionConfigCandidates,
+					Spec:                       k.Spec,
+					Image:                      imageListForK8s,
+					Region:                     k.Region,
+					SystemMessage:              k.SystemMessage,
+				}
+
+				k8sDReqInfo.ReqCheck = append(k8sDReqInfo.ReqCheck, nodeDReqInfo)
+			}
+		}
+	}
+
+	return &k8sDReqInfo
+}
+
+// CheckK8sClusterDynamicReq is func to check request info to create K8sCluster obeject and deploy requested Nodes in a dynamic way
+func CheckK8sClusterDynamicReq(req *model.K8sClusterConnectionConfigCandidatesReq) (*model.CheckK8sClusterDynamicReqInfo, error) {
+	if len(req.CommonSpecs) != 1 {
+		err := fmt.Errorf("Only one CommonSpec should be defined.")
+		log.Error().Err(err).Msg("")
+		return &model.CheckK8sClusterDynamicReqInfo{}, err
+	}
+
+	mciCCCReq := model.MciConnectionConfigCandidatesReq{
+		CommonSpecs: req.CommonSpecs,
+	}
+	mciDReqInfo, err := CheckMciDynamicReq(&mciCCCReq)
+
+	k8sDReqInfo := filterCheckMciDynamicReqInfoToCheckK8sClusterDynamicReqInfo(mciDReqInfo)
+
+	return k8sDReqInfo, err
+}
+
+func filterDigitsAndDots(input string) string {
+	re := regexp.MustCompile(`[^0-9.]`)
+	return re.ReplaceAllString(input, "")
+}
+
+func getK8sRecommendVersion(providerName, regionName, reqVersion string) (string, error) {
+	availableVersion, err := common.GetAvailableK8sVersion(providerName, regionName)
+	if err != nil {
+		err := fmt.Errorf("No available K8sCluster version.")
+		log.Error().Err(err).Msg("")
+		return "", err
+	}
+
+	recVersion := model.StrEmpty
+	versionIdList := []string{}
+	for _, verDetail := range *availableVersion {
+		versionIdList = append(versionIdList, verDetail.Id)
+		if strings.EqualFold(reqVersion, verDetail.Id) {
+			recVersion = verDetail.Id
+			break
+		} else {
+			availVersion := filterDigitsAndDots(verDetail.Id)
+			filteredReqVersion := filterDigitsAndDots(reqVersion)
+			if strings.HasPrefix(availVersion, filteredReqVersion) {
+				recVersion = availVersion
+				break
+			}
+		}
+	}
+
+	if strings.EqualFold(recVersion, model.StrEmpty) {
+		return "", fmt.Errorf("Available K8sCluster Version(k8sclusterinfo.yaml) for Provider/Region(%s/%s): %s",
+			providerName, regionName, strings.Join(versionIdList, ", "))
+	}
+
+	return recVersion, nil
+}
+
+// checkCommonResAvailableForK8sClusterDynamicReq is func to check common resources availability for K8sClusterDynamicReq
+func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.TbK8sClusterDynamicReq) error {
+	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.CommonSpec)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	connName := specInfo.ConnectionName
+	// If ConnectionName is specified by the request, Use ConnectionName from the request
+	if dReq.ConnectionName != "" {
+		connName = dReq.ConnectionName
+	}
+
+	// validate the GetConnConfig for spec
+	connConfig, err := common.GetConnConfig(connName)
+	if err != nil {
+		err := fmt.Errorf("Failed to get ConnectionName (" + connName + ") for Spec (" + dReq.CommonSpec + ") is not found.")
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	niDesignation, err := common.GetK8sNodeImageDesignation(connConfig.ProviderName)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	}
+
+	if niDesignation == false {
+		// if node image designation is not supported by CSP, CommonImage should be "default" or ""(blank)
+		if !(strings.EqualFold(dReq.CommonImage, "default") || strings.EqualFold(dReq.CommonImage, "")) {
+			err := fmt.Errorf("The NodeImageDesignation is not supported by CSP(%s). CommonImage's value should be \"default\" or \"\"", connConfig.ProviderName)
+			log.Error().Err(err).Msg("")
+			return err
+		}
+	}
+
+	// In K8sCluster, allows dReq.CommonImage to be set to "default" or ""
+	if strings.EqualFold(dReq.CommonImage, "default") ||
+		strings.EqualFold(dReq.CommonImage, "") {
+		// do nothing
+	} else {
+		osType := strings.ReplaceAll(dReq.CommonImage, " ", "")
+		imageId := resource.GetProviderRegionZoneResourceKey(connConfig.ProviderName, connConfig.RegionDetail.RegionName, "", osType)
+		// incase of user provided image id completely (e.g. aws+ap-northeast-2+ubuntu22.04)
+		if strings.Contains(dReq.CommonImage, "+") {
+			imageId = dReq.CommonImage
+		}
+		_, err = resource.GetImage(model.SystemCommonNs, imageId)
+		if err != nil {
+			err := fmt.Errorf("Failed to get Image " + dReq.CommonImage + " from " + connName)
+			log.Error().Err(err).Msg("")
+			return err
+		}
+	}
+
+	return nil
+}
+
+// getK8sClusterReqFromDynamicReq is func to get TbK8sClusterReq from TbK8sClusterDynamicReq
+func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8sClusterDynamicReq) (*model.TbK8sClusterReq, error) {
+	onDemand := true
+
+	emptyK8sReq := &model.TbK8sClusterReq{}
+	k8sReq := &model.TbK8sClusterReq{}
+	k8sngReq := &model.TbK8sNodeGroupReq{}
+
+	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.CommonSpec)
+	if err != nil {
+		log.Err(err).Msg("")
+		return emptyK8sReq, err
+	}
+	k8sngReq.SpecId = specInfo.Id
+
+	k8sRecVersion, err := getK8sRecommendVersion(specInfo.ProviderName, specInfo.RegionName, dReq.Version)
+	if err != nil {
+		log.Err(err).Msg("")
+		return emptyK8sReq, err
+	}
+
+	// If ConnectionName is specified by the request, Use ConnectionName from the request
+	k8sReq.ConnectionName = specInfo.ConnectionName
+	if dReq.ConnectionName != "" {
+		k8sReq.ConnectionName = dReq.ConnectionName
+	}
+
+	// validate the GetConnConfig for spec
+	connection, err := common.GetConnConfig(k8sReq.ConnectionName)
+	if err != nil {
+		err := fmt.Errorf("Failed to Get ConnectionName (" + k8sReq.ConnectionName + ") for Spec (" + dReq.CommonSpec + ") is not found.")
+		log.Err(err).Msg("")
+		return emptyK8sReq, err
+	}
+
+	k8sNgOnCreation, err := common.GetK8sNodeGroupsOnK8sCreation(connection.ProviderName)
+	if err != nil {
+		log.Err(err).Msgf("Failed to Get Nodegroups on K8sCluster Creation")
+		return emptyK8sReq, err
+	}
+
+	// In K8sCluster, allows dReq.CommonImage to be set to "default" or ""
+	if strings.EqualFold(dReq.CommonImage, "default") ||
+		strings.EqualFold(dReq.CommonImage, "") {
+		// do nothing
+	} else {
+		osType := strings.ReplaceAll(dReq.CommonImage, " ", "")
+		k8sngReq.ImageId = resource.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.RegionDetail.RegionName, "", osType)
+		// incase of user provided image id completely (e.g. aws+ap-northeast-2+ubuntu22.04)
+		if strings.Contains(dReq.CommonImage, "+") {
+			k8sngReq.ImageId = dReq.CommonImage
+		}
+		_, err = resource.GetImage(model.SystemCommonNs, k8sngReq.ImageId)
+		if err != nil {
+			err := fmt.Errorf("Failed to get the Image " + k8sngReq.ImageId + " from " + k8sReq.ConnectionName)
+			log.Err(err).Msg("")
+			return emptyK8sReq, err
+		}
+	}
+	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
+	resourceName := nsId + model.StrSharedResourceName + k8sReq.ConnectionName
+
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
+
+	k8sReq.VNetId = resourceName
+	_, err = resource.GetResource(nsId, model.StrVNet, k8sReq.VNetId)
+	if err != nil {
+		if !onDemand {
+			err := fmt.Errorf("Failed to get the vNet " + k8sReq.VNetId + " from " + k8sReq.ConnectionName)
+			log.Err(err).Msg("Failed to get the vNet")
+			return emptyK8sReq, err
+		}
+
+		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
+
+		err2 := resource.CreateSharedResource(nsId, model.StrVNet, k8sReq.ConnectionName)
+		if err2 != nil {
+			log.Err(err2).Msg("Failed to create new default vNet " + k8sReq.VNetId + " from " + k8sReq.ConnectionName)
+			return emptyK8sReq, err2
+		} else {
+			log.Info().Msg("Created new default vNet: " + k8sReq.VNetId)
+		}
+	} else {
+		log.Info().Msg("Found and utilize default vNet: " + k8sReq.VNetId)
+	}
+	k8sReq.SubnetIds = append(k8sReq.SubnetIds, resourceName)
+	k8sReq.SubnetIds = append(k8sReq.SubnetIds, resourceName+"-01")
+
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
+
+	k8sngReq.SshKeyId = resourceName
+	_, err = resource.GetResource(nsId, model.StrSSHKey, k8sngReq.SshKeyId)
+	if err != nil {
+		if !onDemand {
+			err := fmt.Errorf("Failed to get the SSHKey " + k8sngReq.SshKeyId + " from " + k8sReq.ConnectionName)
+			log.Err(err).Msg("Failed to get the SSHKey")
+			return emptyK8sReq, err
+		}
+
+		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
+
+		err2 := resource.CreateSharedResource(nsId, model.StrSSHKey, k8sReq.ConnectionName)
+		if err2 != nil {
+			log.Err(err2).Msg("Failed to create new default SSHKey " + k8sngReq.SshKeyId + " from " + k8sReq.ConnectionName)
+			return emptyK8sReq, err2
+		} else {
+			log.Info().Msg("Created new default SSHKey: " + k8sReq.VNetId)
+		}
+	} else {
+		log.Info().Msg("Found and utilize default SSHKey: " + k8sReq.VNetId)
+	}
+
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
+
+	securityGroup := resourceName
+	k8sReq.SecurityGroupIds = append(k8sReq.SecurityGroupIds, securityGroup)
+	_, err = resource.GetResource(nsId, model.StrSecurityGroup, securityGroup)
+	if err != nil {
+		if !onDemand {
+			err := fmt.Errorf("Failed to get the securityGroup " + securityGroup + " from " + k8sReq.ConnectionName)
+			log.Err(err).Msg("Failed to get the securityGroup")
+			return emptyK8sReq, err
+		}
+
+		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
+
+		err2 := resource.CreateSharedResource(nsId, model.StrSecurityGroup, k8sReq.ConnectionName)
+		if err2 != nil {
+			log.Err(err2).Msg("Failed to create new default securityGroup " + securityGroup + " from " + k8sReq.ConnectionName)
+			return emptyK8sReq, err2
+		} else {
+			log.Info().Msg("Created new default securityGroup: " + securityGroup)
+		}
+	} else {
+		log.Info().Msg("Found and utilize default securityGroup: " + securityGroup)
+	}
+
+	k8sngReq.Name = dReq.NodeGroupName
+	if k8sngReq.Name == "" {
+		k8sngReq.Name = common.GenUid()
+	}
+	k8sngReq.RootDiskType = dReq.RootDiskType
+	k8sngReq.RootDiskSize = dReq.RootDiskSize
+	k8sngReq.OnAutoScaling = dReq.OnAutoScaling
+	k8sngReq.DesiredNodeSize = dReq.DesiredNodeSize
+	k8sngReq.MinNodeSize = dReq.MinNodeSize
+	k8sngReq.MaxNodeSize = dReq.MaxNodeSize
+
+	k8sReq.Description = dReq.Description
+	k8sReq.Name = dReq.Name
+	if k8sReq.Name == "" {
+		k8sReq.Name = common.GenUid()
+	}
+	k8sReq.Version = k8sRecVersion
+	if k8sNgOnCreation {
+		k8sReq.K8sNodeGroupList = append(k8sReq.K8sNodeGroupList, *k8sngReq)
+	} else {
+		log.Info().Msg("Need to Add NodeGroups To Use This K8sCluster")
+	}
+	k8sReq.Label = dReq.Label
+
+	common.PrintJsonPretty(k8sReq)
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Prepared resources for K8sCluster:" + k8sReq.Name, Info: k8sReq, Time: time.Now()})
+
+	return k8sReq, nil
+}
+
+// CreateK8sClusterDynamic is func to create K8sCluster obeject and deploy requested K8sCluster and NodeGroup in a dynamic way
+func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.TbK8sClusterDynamicReq, deployOption string) (*model.TbK8sClusterInfo, error) {
+	emptyK8sCluster := &model.TbK8sClusterInfo{}
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Err(err).Msg("")
+		return emptyK8sCluster, err
+	}
+	check, err := resource.CheckK8sCluster(nsId, dReq.Name)
+	if err != nil {
+		log.Err(err).Msg("")
+		return emptyK8sCluster, err
+	}
+	if check {
+		err := fmt.Errorf("already exists")
+		log.Err(err).Msgf("Failed to Create K8sCluster(%s) Dynamically", dReq.Name)
+		return emptyK8sCluster, err
+	}
+
+	err = checkCommonResAvailableForK8sClusterDynamicReq(dReq)
+	if err != nil {
+		log.Err(err).Msgf("Failed to find common resource for K8sCluster provision")
+		return emptyK8sCluster, err
+	}
+
+	//If not, generate default resources dynamically.
+	k8sReq, err := getK8sClusterReqFromDynamicReq(reqID, nsId, dReq)
+	if err != nil {
+		log.Err(err).Msg("Failed to prefare resources for dynamic K8sCluster creation")
+		// Rollback created default resources
+		time.Sleep(5 * time.Second)
+		log.Info().Msg("Try rollback created default resources")
+		rollbackResult, rollbackErr := resource.DelAllSharedResources(nsId)
+		if rollbackErr != nil {
+			err = fmt.Errorf("Failed in rollback operation: %w", rollbackErr)
+		} else {
+			ids := strings.Join(rollbackResult.IdList, ", ")
+			err = fmt.Errorf("Rollback results [%s]: %w", ids, err)
+		}
+		return emptyK8sCluster, err
+	}
+
+	common.PrintJsonPretty(k8sReq)
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Prepared all resources for provisioning K8sCluster:" + k8sReq.Name, Info: k8sReq, Time: time.Now()})
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Start provisioning", Time: time.Now()})
+
+	// Run create K8sCluster with the generated K8sCluster request (option != register)
+	option := "create"
+	if deployOption == "hold" {
+		option = "hold"
+	}
+
+	return resource.CreateK8sCluster(nsId, k8sReq, option)
 }
