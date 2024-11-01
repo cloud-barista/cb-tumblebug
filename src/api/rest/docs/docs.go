@@ -930,7 +930,7 @@ const docTemplate = `{
                     "[Kubernetes] Cluster Management"
                 ],
                 "summary": "Recommend K8sCluster's Node plan (filter and priority)",
-                "operationId": "RecommendNode",
+                "operationId": "RecommendK8sNode",
                 "parameters": [
                     {
                         "description": "Recommend K8sCluster's Node plan (filter and priority)",
@@ -3213,7 +3213,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Request body to provision K8sCluster dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8scluster-01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sclusterRecommendNode and /k8sclusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570",
+                        "description": "Request body to provision K8sCluster dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8scluster-01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sclusterRecommendNode and /k8sclusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
                         "name": "k8sclusterReq",
                         "in": "body",
                         "required": true,
@@ -11161,7 +11161,7 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "azure+koreacentral+Standard_B2s"
+                        "tencent+ap-seoul+S2.MEDIUM4"
                     ]
                 }
             }
@@ -13195,17 +13195,17 @@ const docTemplate = `{
                 "commonImage": {
                     "description": "CommonImage is field for id of a image in common namespace",
                     "type": "string",
-                    "example": "default, azure+koreacentrall+ubuntu20.04"
+                    "example": "default, tencent+ap-seoul+ubuntu20.04"
                 },
                 "commonSpec": {
                     "description": "CommonSpec is field for id of a spec in common namespace",
                     "type": "string",
-                    "example": "azure+koreacentral+standard_b2s"
+                    "example": "tencent+ap-seoul+S2.MEDIUM4"
                 },
                 "connectionName": {
                     "description": "if ConnectionName is given, the VM tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
                     "type": "string",
-                    "default": "azure-koreacentral"
+                    "default": "tencent-ap-seoul"
                 },
                 "description": {
                     "type": "string",
