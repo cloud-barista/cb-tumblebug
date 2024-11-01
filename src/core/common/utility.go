@@ -1498,92 +1498,39 @@ func GetModelK8sRequiredSubnetCount(providerName string) (*model.K8sClusterRequi
 	}, nil
 }
 
-/*
-func isValidSpecForK8sCluster(spec *resource.TbSpecInfo) bool {
-	//
-	// Check for Provider
-	//
-
-	providerName := strings.ToLower(spec.ProviderName)
-
-	var k8sClusterDetail *common.model.K8sClusterDetail = nil
-	for provider, detail := range common.RuntimeK8sClusterInfo.CSPs {
-		provider = strings.ToLower(provider)
-		if provider == providerName {
-			k8sClusterDetail = &detail
-			break
-		}
-	}
-	if k8sClusterDetail == nil {
-		return false
-	}
-
-	//
-	// Check for Region
-	//
-
-	regionName := strings.ToLower(spec.RegionName)
-
-	// Check for Version
-	isExist := false
-	for _, versionDetail := range k8sClusterDetail.Version {
-		for _, region := range versionDetail.Region {
-			region = strings.ToLower(region)
-			if region == "all" || region == regionName {
-				if len(versionDetail.Available) > 0 {
-					isExist = true
-					break
-				}
-			}
-		}
-		if isExist == true {
-			break
-		}
-	}
-	if isExist == false {
-		return false
-	}
-
-	// Check for NodeImage
-	isExist = false
-	for _, nodeImageDetail := range k8sClusterDetail.NodeImage {
-		for _, region := range nodeImageDetail.Region {
-			region = strings.ToLower(region)
-			if region == "all" || region == regionName {
-				if len(nodeImageDetail.Available) > 0 {
-					isExist = true
-					break
-				}
-			}
-		}
-		if isExist == true {
-			break
-		}
-	}
-	if isExist == false {
-		return false
-	}
-
-	// Check for RootDisk
-	isExist = false
-	for _, rootDiskDetail := range k8sClusterDetail.RootDisk {
-		for _, region := range rootDiskDetail.Region {
-			region = strings.ToLower(region)
-			if region == "all" || region == regionName {
-				if len(rootDiskDetail.Type) > 0 {
-					isExist = true
-					break
-				}
-			}
-		}
-		if isExist == true {
-			break
-		}
-	}
-	if isExist == false {
-		return false
-	}
-
-	return true
+func FilterDigitsAndDots(input string) string {
+	re := regexp.MustCompile(`[^0-9.]`)
+	return re.ReplaceAllString(input, "")
 }
-*/
+
+func CompareVersions(version1, version2 string) int {
+	v1Parts := strings.Split(version1, ".")
+	v2Parts := strings.Split(version2, ".")
+
+	// Adjust length by appending 0 if necessary
+	maxLength := len(v1Parts)
+	if len(v2Parts) > maxLength {
+		maxLength = len(v2Parts)
+	}
+
+	for i := 0; i < maxLength; i++ {
+		var v1, v2 int
+
+		// If a part is missing, treat it as 0
+		if i < len(v1Parts) {
+			v1, _ = strconv.Atoi(v1Parts[i])
+		}
+		if i < len(v2Parts) {
+			v2, _ = strconv.Atoi(v2Parts[i])
+		}
+
+		// Compare each part
+		if v1 > v2 {
+			return 1
+		} else if v1 < v2 {
+			return -1
+		}
+	}
+
+	return 0
+}

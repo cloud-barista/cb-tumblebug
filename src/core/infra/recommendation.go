@@ -617,6 +617,39 @@ func RecommendVmPerformance(nsId string, specList *[]model.TbSpecInfo) ([]model.
 	return result, nil
 }
 
+// RecommendK8sNode is func to recommend a node for K8sCluster
+func RecommendK8sNode(nsId string, plan model.DeploymentPlan) ([]model.TbSpecInfo, error) {
+	emptyObjList := []model.TbSpecInfo{}
+
+	limitOrig := plan.Limit
+	plan.Limit = strconv.Itoa(math.MaxInt)
+
+	tbSpecInfoListForVm, err := RecommendVm(nsId, plan)
+	if err != nil {
+		return emptyObjList, err
+	}
+
+	limitNum, err := strconv.Atoi(limitOrig)
+	if err != nil {
+		limitNum = math.MaxInt
+	}
+
+	tbSpecInfoListForK8s := []model.TbSpecInfo{}
+	count := 0
+	for _, tbSpecInfo := range tbSpecInfoListForVm {
+		if strings.Contains(tbSpecInfo.InfraType, model.StrK8s) ||
+			strings.Contains(tbSpecInfo.InfraType, model.StrKubernetes) {
+			tbSpecInfoListForK8s = append(tbSpecInfoListForK8s, tbSpecInfo)
+			count++
+			if count == limitNum {
+				break
+			}
+		}
+	}
+
+	return tbSpecInfoListForK8s, nil
+}
+
 // // GetRecommendList is func to get recommendation list
 // func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize string) ([]TbVmPriority, error) {
 

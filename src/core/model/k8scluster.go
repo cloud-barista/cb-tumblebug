@@ -460,7 +460,7 @@ type TbK8sAddonsInfo struct {
 // K8sClusterConnectionConfigCandidatesReq is struct for a request to check requirements to create a new K8sCluster instance dynamically (with default resource option)
 type K8sClusterConnectionConfigCandidatesReq struct {
 	// CommonSpec is field for id of a spec in common namespace
-	CommonSpecs []string `json:"commonSpec" validate:"required" example:"azure+koreacentral+Standard_B2s"`
+	CommonSpecs []string `json:"commonSpec" validate:"required" example:"tencent+ap-seoul+S2.MEDIUM4"`
 }
 
 // CheckK8sClusterDynamicReqInfo is struct to check requirements to create a new K8sCluster instance dynamically (with default resource option)
@@ -500,10 +500,10 @@ type TbK8sClusterDynamicReq struct {
 	NodeGroupName string `json:"nodeGroupName" example:"nodegroup-01"`
 
 	// CommonSpec is field for id of a spec in common namespace
-	CommonSpec string `json:"commonSpec" validate:"required" example:"azure+koreacentral+standard_b2s"`
+	CommonSpec string `json:"commonSpec" validate:"required" example:"tencent+ap-seoul+S2.MEDIUM4"`
 
 	// CommonImage is field for id of a image in common namespace
-	CommonImage string `json:"commonImage" validate:"required" example:"default, azure+koreacentrall+ubuntu20.04"`
+	CommonImage string `json:"commonImage" validate:"required" example:"default, tencent+ap-seoul+ubuntu20.04"`
 
 	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
 	RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..." default:"default"` // "default", Integer (GB): ["50", ..., "1000"]
@@ -515,5 +515,5 @@ type TbK8sClusterDynamicReq struct {
 
 	// if ConnectionName is given, the VM tries to use associtated credential.
 	// if not, it will use predefined ConnectionName in Spec objects
-	ConnectionName string `json:"connectionName,omitempty" default:"azure-koreacentral"`
+	ConnectionName string `json:"connectionName,omitempty" default:"tencent-ap-seoul"`
 }

@@ -576,7 +576,7 @@ func RestPostK8sClusterDynamicCheckRequest(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param k8sclusterReq body model.TbK8sClusterDynamicReq true "Request body to provision K8sCluster dynamically. <br> Must include commonSpec and commonImage info. <br> (ex: {name: k8scluster-01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sclusterRecommendNode and /k8sclusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
+// @Param k8sclusterReq body model.TbK8sClusterDynamicReq true "Request body to provision K8sCluster dynamically. <br> Must include commonSpec and commonImage info. <br> (ex: {name: k8scluster-01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sclusterRecommendNode and /k8sclusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
 // @Param option query string false "Option for K8sCluster creation" Enums(hold)
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} model.TbK8sClusterInfo
@@ -640,8 +640,8 @@ func RestGetControlK8sCluster(c echo.Context) error {
 	}
 }
 
-// RestRecommendNode godoc
-// @ID RecommendNode
+// RestRecommendK8sNode godoc
+// @ID RecommendK8sNode
 // @Summary Recommend K8sCluster's Node plan (filter and priority)
 // @Description Recommend K8sCluster's Node plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
 // @Tags [Kubernetes] Cluster Management
@@ -652,7 +652,7 @@ func RestGetControlK8sCluster(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /k8sclusterRecommendNode [post]
-func RestRecommendNode(c echo.Context) error {
+func RestRecommendK8sNode(c echo.Context) error {
 
 	nsId := model.SystemCommonNs
 
@@ -661,6 +661,6 @@ func RestRecommendNode(c echo.Context) error {
 		return common.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := infra.RecommendVm(nsId, *u)
+	content, err := infra.RecommendK8sNode(nsId, *u)
 	return common.EndRequestWithLog(c, err, content)
 }
