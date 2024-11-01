@@ -688,7 +688,7 @@ paths:
       summary: Recommend K8sCluster's Node plan (filter and priority)
       description: Recommend K8sCluster's Node plan (filter and priority) Find details
         from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
-      operationId: RecommendNode
+      operationId: RecommendK8sNode
       requestBody:
         description: Recommend K8sCluster's Node plan (filter and priority)
         content:
@@ -2435,7 +2435,7 @@ paths:
           \ include commonSpec and commonImage info. <br> (ex: {name: k8scluster-01,\
           \ commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]})\
           \ <br> You can use /k8sclusterRecommendNode and /k8sclusterDynamicCheckRequest\
-          \ to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
+          \ to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
         content:
           application/json:
             schema:
@@ -8413,7 +8413,7 @@ components:
           type: array
           description: CommonSpec is field for id of a spec in common namespace
           example:
-          - azure+koreacentral+Standard_B2s
+          - tencent+ap-seoul+S2.MEDIUM4
           items:
             type: string
     model.K8sClusterDetail:
@@ -9832,17 +9832,17 @@ components:
         commonImage:
           type: string
           description: CommonImage is field for id of a image in common namespace
-          example: "default, azure+koreacentrall+ubuntu20.04"
+          example: "default, tencent+ap-seoul+ubuntu20.04"
         commonSpec:
           type: string
           description: CommonSpec is field for id of a spec in common namespace
-          example: azure+koreacentral+standard_b2s
+          example: tencent+ap-seoul+S2.MEDIUM4
         connectionName:
           type: string
           description: |-
             if ConnectionName is given, the VM tries to use associtated credential.
             if not, it will use predefined ConnectionName in Spec objects
-          default: azure-koreacentral
+          default: tencent-ap-seoul
         description:
           type: string
           example: Description
