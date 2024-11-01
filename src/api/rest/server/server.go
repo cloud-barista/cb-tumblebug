@@ -399,7 +399,7 @@ func RunServer() {
 	g.DELETE("/:nsId/k8scluster", rest_resource.RestDeleteAllK8sCluster)
 	g.PUT("/:nsId/k8scluster/:k8sClusterId/upgrade", rest_resource.RestPutUpgradeK8sCluster)
 
-	e.POST("/tumblebug/k8sclusterRecommendNode", rest_resource.RestRecommendNode)
+	e.POST("/tumblebug/k8sclusterRecommendNode", rest_resource.RestRecommendK8sNode)
 	e.POST("/tumblebug/k8sclusterDynamicCheckRequest", rest_resource.RestPostK8sClusterDynamicCheckRequest)
 	g.POST("/:nsId/k8sclusterDynamic", rest_resource.RestPostK8sClusterDynamic)
 	g.GET("/:nsId/control/k8scluster/:k8sClusterId", rest_resource.RestGetControlK8sCluster)

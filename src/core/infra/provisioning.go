@@ -17,7 +17,6 @@ package infra
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -1669,15 +1668,17 @@ func filterCheckMciDynamicReqInfoToCheckK8sClusterDynamicReqInfo(mciDReqInfo *mo
 					}
 				}
 
-				nodeDReqInfo := model.CheckNodeDynamicReqInfo{
-					ConnectionConfigCandidates: k.ConnectionConfigCandidates,
-					Spec:                       k.Spec,
-					Image:                      imageListForK8s,
-					Region:                     k.Region,
-					SystemMessage:              k.SystemMessage,
-				}
+				if len(imageListForK8s) > 0 {
+					nodeDReqInfo := model.CheckNodeDynamicReqInfo{
+						ConnectionConfigCandidates: k.ConnectionConfigCandidates,
+						Spec:                       k.Spec,
+						Image:                      imageListForK8s,
+						Region:                     k.Region,
+						SystemMessage:              k.SystemMessage,
+					}
 
-				k8sDReqInfo.ReqCheck = append(k8sDReqInfo.ReqCheck, nodeDReqInfo)
+					k8sDReqInfo.ReqCheck = append(k8sDReqInfo.ReqCheck, nodeDReqInfo)
+				}
 			}
 		}
 	}
@@ -1703,11 +1704,6 @@ func CheckK8sClusterDynamicReq(req *model.K8sClusterConnectionConfigCandidatesRe
 	return k8sDReqInfo, err
 }
 
-func filterDigitsAndDots(input string) string {
-	re := regexp.MustCompile(`[^0-9.]`)
-	return re.ReplaceAllString(input, "")
-}
-
 func getK8sRecommendVersion(providerName, regionName, reqVersion string) (string, error) {
 	availableVersion, err := common.GetAvailableK8sVersion(providerName, regionName)
 	if err != nil {
@@ -1718,17 +1714,29 @@ func getK8sRecommendVersion(providerName, regionName, reqVersion string) (string
 
 	recVersion := model.StrEmpty
 	versionIdList := []string{}
-	for _, verDetail := range *availableVersion {
-		versionIdList = append(versionIdList, verDetail.Id)
-		if strings.EqualFold(reqVersion, verDetail.Id) {
-			recVersion = verDetail.Id
-			break
-		} else {
-			availVersion := filterDigitsAndDots(verDetail.Id)
-			filteredReqVersion := filterDigitsAndDots(reqVersion)
-			if strings.HasPrefix(availVersion, filteredReqVersion) {
-				recVersion = availVersion
+
+	if reqVersion == "" {
+		for _, verDetail := range *availableVersion {
+			versionIdList = append(versionIdList, verDetail.Id)
+			filteredRecVersion := common.FilterDigitsAndDots(recVersion)
+			filteredAvailVersion := common.FilterDigitsAndDots(verDetail.Id)
+			if common.CompareVersions(filteredRecVersion, filteredAvailVersion) < 0 {
+				recVersion = verDetail.Id
+			}
+		}
+	} else {
+		for _, verDetail := range *availableVersion {
+			versionIdList = append(versionIdList, verDetail.Id)
+			if strings.EqualFold(reqVersion, verDetail.Id) {
+				recVersion = verDetail.Id
 				break
+			} else {
+				availVersion := common.FilterDigitsAndDots(verDetail.Id)
+				filteredReqVersion := common.FilterDigitsAndDots(reqVersion)
+				if strings.HasPrefix(availVersion, filteredReqVersion) {
+					recVersion = availVersion
+					break
+				}
 			}
 		}
 	}
@@ -1943,10 +1951,21 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8s
 	k8sngReq.RootDiskType = dReq.RootDiskType
 	k8sngReq.RootDiskSize = dReq.RootDiskSize
 	k8sngReq.OnAutoScaling = dReq.OnAutoScaling
+	if k8sngReq.OnAutoScaling == "" {
+		k8sngReq.OnAutoScaling = "true"
+	}
 	k8sngReq.DesiredNodeSize = dReq.DesiredNodeSize
+	if k8sngReq.DesiredNodeSize == "" {
+		k8sngReq.DesiredNodeSize = "1"
+	}
 	k8sngReq.MinNodeSize = dReq.MinNodeSize
+	if k8sngReq.MinNodeSize == "" {
+		k8sngReq.MinNodeSize = "1"
+	}
 	k8sngReq.MaxNodeSize = dReq.MaxNodeSize
-
+	if k8sngReq.MaxNodeSize == "" {
+		k8sngReq.MaxNodeSize = "2"
+	}
 	k8sReq.Description = dReq.Description
 	k8sReq.Name = dReq.Name
 	if k8sReq.Name == "" {
