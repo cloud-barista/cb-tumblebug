@@ -17,7 +17,7 @@ description="Made in CB-TB"
 label="DynamicVM"
 
 echo 
-maxIterations=3
+maxIterations=30
 
 specIdArray=(
 aws+ap-northeast-1+t2.small
@@ -27,12 +27,8 @@ aws+ap-south-1+t2.small
 aws+ap-southeast-1+t2.small
 aws+ap-southeast-2+t2.small
 aws+ca-central-1+t2.small
-aws+eu-central-1+t2.small
 aws+eu-west-1+t2.small
-aws+eu-west-2+t2.small
-aws+eu-west-3+t2.small
 aws+sa-east-1+t2.small
-aws+us-east-2+t2.small
 aws+us-west-1+t2.small
 aws+us-west-2+t2.small
 gcp+asia-east1+g1-small
@@ -45,6 +41,15 @@ gcp+asia-southeast1+g1-small
 gcp+asia-southeast2+g1-small
 gcp+australia-southeast1+g1-small
 gcp+europe-central2+g1-small
+azure+australiacentral+standard_b1s
+azure+australiaeast+standard_b1s
+azure+canadacentral+standard_b1s
+azure+centralus+standard_b1s
+azure+eastus2+standard_b1s
+azure+japaneast+standard_b1s
+azure+ukwest+standard_b1s
+azure+koreacentral+standard_b1ms
+azure+koreasouth+standard_b1ms
 )
 
 specArray="[]"
@@ -76,7 +81,7 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
             if [ "${option}" == "create" ]; then
                 echo "[$i] connection: $connectionName / specId: $specId / image: $commonImage / replica: $subGroupSizeInput "
             elif [ "${option}" == "delete" ]; then
-                echo "[$i] mciName: $mciName "
+                echo "[$i] mciName: $mciName (connection: $connectionName specId: $specId) "
             fi
             ((i++))
 
@@ -136,31 +141,36 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
 done
 
 # Construct the request body with the accumulated JSON array
-requestBody=$(jq -n --arg name "$mciName" --argjson vm "$vmArray" '{name: $name, vm: $vm}')
+installMonAgent="no"
+requestBody=$(jq -n --arg name "$mciName" --arg installMonAgent "$installMonAgent" --argjson vm "$vmArray" '{name: $name, installMonAgent: $installMonAgent , vm: $vm}')
 echo "requestBody: $requestBody"
 
 if [ "${option}" == "delete" ]; then
     echo "Terminate and Delete [$mciName]"
     curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mci/${mciName}?option=terminate | jq '.'
 elif [ "${option}" == "create" ]; then
-    echo "Create MCI dynamic [$mciName]"
+    echo "Provisioning MC-Infra dynamically: [$mciName]"
     response=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mciDynamic -H 'Content-Type: application/json' -d "$requestBody")
-    echo "${response}" | jq '.'
+    #echo "${response}" | jq '.'
 
 
     mciResponse=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mci/${mciName})
 
-    echo -e "${BOLD}MCI Status Summary: ${mciName}${NC}"
-    echo "$mciResponse" | jq '.status'
 
     echo -e "${BOLD}Table: All VMs in the MCI : ${mciName}${NC} ${BLUE} ${BOLD}"
     echo "$mciResponse" |
         jq '.vm | sort_by(.connectionName)' |
-        jq -r '(["CloudRegion", "SpecName", "ID(TB)", "ID(CSP)", "Status", "PublicIP", "PrivateIP", "DateTime(Created)"] | 
+        jq -r '(["CloudRegion", "ID(TB)", "Status", "PublicIP", "PrivateIP", "DateTime(Created)"] | 
             (., map(length*"-"))), 
-            (.[] | [.connectionName, .cspSpecName, .id, .cspResourceId, .status, .publicIP, .privateIP, .createdTime]) | @tsv' |
+            (.[] | [.connectionName, .id, .status, .publicIP, .privateIP, .createdTime]) | @tsv' |
         column -t
     echo -e "${NC}"
+
+    echo ""
+
+    echo -e "${BOLD}MC-Infra: ${mciName} Status Summary ${NC}"
+    echo "$mciResponse" | jq '.status'
+
 fi
 
 echo "Done!"
