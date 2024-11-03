@@ -126,8 +126,16 @@ Open source packages used in this project
   If not, you can use the following script to install them (note: this script is not intended for production environments):
 
   ```bash
-  cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-  ./scripts/installDocker.sh
+  # download and install docker with docker compose
+  curl -sSL get.docker.com | sh
+  
+  # optional: add user to docker groupd
+  sudo groupadd docker
+  sudo usermod -aG docker ${USER}
+  newgrp docker
+
+  # test the docker works
+  docker run hello-world
   ```
     
 - Start All Components Using Docker Compose:
