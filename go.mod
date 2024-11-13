@@ -3,7 +3,7 @@ module github.com/cloud-barista/cb-tumblebug
 go 1.23.0
 
 require (
-	github.com/cloud-barista/mc-terrarium v0.0.10
+	github.com/cloud-barista/mc-terrarium v0.0.12
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/validator/v10 v10.17.0
 	github.com/go-resty/resty/v2 v2.13.1

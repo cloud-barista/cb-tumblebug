@@ -384,7 +384,10 @@ github.com/cespare/xxhash/v2 v2.2.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XL
 github.com/cloud-barista/cb-log v0.6.4 h1:HblyslcRLeD2tib4UcZszJ8ZNfB4W0CRVvbKlf9uY78=
 github.com/cloud-barista/cb-log v0.6.4/go.mod h1:nGgfTFMPwl1MpCO3FBjexUkNdOYA0BNJoyM9Pd0lMms=
 github.com/cloud-barista/cb-tumblebug/src v0.0.0-20230724172618-8f225d0127e8/go.mod h1:XQuz7L64MNUu04FmG5gB0z41VcrfaLuQP80EGyQTDgo=
-github.com/cloud-barista/mc-terrarium v0.0.10/go.mod h1:iQxZNRa04d7mHA0h5dEPfF7ch1SBUS/ZFGUynKsKJ6I=
+github.com/cloud-barista/mc-terrarium v0.0.11 h1:qfwie72bzJzYSca24BugO23Iv9aq4gIqiik1BTWUl7g=
+github.com/cloud-barista/mc-terrarium v0.0.11/go.mod h1:iQxZNRa04d7mHA0h5dEPfF7ch1SBUS/ZFGUynKsKJ6I=
+github.com/cloud-barista/mc-terrarium v0.0.12 h1:A8vGrm7bF6xBwta9uy5BguMEzUUn3X1WvP7xaacJ014=
+github.com/cloud-barista/mc-terrarium v0.0.12/go.mod h1:iQxZNRa04d7mHA0h5dEPfF7ch1SBUS/ZFGUynKsKJ6I=
 github.com/cncf/udpa/go v0.0.0-20220112060539-c52dc94e7fbe/go.mod h1:6pvJx4me5XPnfI9Z40ddWsdw2W/uZgQLFXToKeRcDiI=
 github.com/cncf/xds/go v0.0.0-20230607035331-e9ce68804cb4/go.mod h1:eXthEFrGJvWHgFFCl3hGmgk+/aYT6PnTQLykKQRLhEs=
 github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f h1:JOrtw2xFKzlg+cbHpyrpLDmnN1HqhBfnX7WDiW7eG2c=

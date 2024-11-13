@@ -338,7 +338,7 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 	}
 
 	// Validate the VPN sites
-	ok, err := resource.IsValidCspSet(vpnReq.Site1.CSP, vpnReq.Site2.CSP)
+	ok, err := resource.IsValidCspSetForVPN(vpnReq.Site1.CSP, vpnReq.Site2.CSP)
 	if !ok {
 		log.Warn().Err(err).Msg("")
 		res := model.SimpleMsg{
