@@ -744,6 +744,7 @@ paths:
           - securityGroup
           - sshKey
           - dataDisk
+          - sqlDb
       - name: uid
         in: path
         description: Resource uid
@@ -794,6 +795,7 @@ paths:
           - securityGroup
           - sshKey
           - dataDisk
+          - sqlDb
       - name: uid
         in: path
         description: Resource uid
@@ -853,6 +855,7 @@ paths:
           - securityGroup
           - sshKey
           - dataDisk
+          - sqlDb
       - name: uid
         in: path
         description: Resource uid
@@ -6206,6 +6209,266 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/sqlDb:
+    get:
+      tags:
+      - "[Infra Resource] SQL Database Management (under development)"
+      summary: Get all SQL Databases
+      description: Get all SQL Databases
+      operationId: GetAllSqlDb
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: option
+        in: query
+        description: Option
+        schema:
+          type: string
+          default: IdList
+          enum:
+          - InfoList
+          - IdList
+      responses:
+        "200":
+          description: OK" /////////////
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.VpnIdList'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[Infra Resource] SQL Database Management (under development)"
+      summary: Create a SQL Databases
+      description: |
+        Create a SQL Databases
+
+        - Supported CSPs: AWS (Upcoming CSPs: Azure, GCP, NCP)
+
+        - Please check the values ​​required for each CSP through the `requiredCSPResource` property.
+      operationId: PostSqlDb
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: action
+        in: query
+        description: Action
+        schema:
+          type: string
+          enum:
+          - retry
+      requestBody:
+        description: Request body to create a SQL database
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.RestPostSqlDbRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SqlDBInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: sqlDbReq
+  /ns/{nsId}/resources/sqlDb/{sqlDbId}:
+    get:
+      tags:
+      - "[Infra Resource] SQL Database Management (under development)"
+      summary: Get resource info of a SQL datatbase
+      description: Get resource info of a SQL datatbase
+      operationId: GetSqlDb
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: sqlDbId
+        in: path
+        description: SQL DB ID
+        required: true
+        schema:
+          type: string
+          default: sqldb01
+      - name: detail
+        in: query
+        description: "Resource info by detail (refined, raw)"
+        schema:
+          type: string
+          default: refined
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SqlDBInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    delete:
+      tags:
+      - "[Infra Resource] SQL Database Management (under development)"
+      summary: Delete a SQL datatbase
+      description: Delete a SQL datatbase
+      operationId: DeleteSqlDb
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: sqlDbId
+        in: path
+        description: SQL DB ID
+        required: true
+        schema:
+          type: string
+          default: sqldb01
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/sqlDb/{sqlDbId}/request/{requestId}:
+    get:
+      tags:
+      - "[Infra Resource] SQL Database Management (under development)"
+      summary: Check the status of a specific request by its ID
+      description: Check the status of a specific request by its ID
+      operationId: GetRequestStatusOfSqlDb
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: sqlDbId
+        in: path
+        description: SQL DB ID
+        required: true
+        schema:
+          type: string
+          default: sqldb01
+      - name: requestId
+        in: path
+        description: Request ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.Response'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/sshKey:
     get:
       tags:
@@ -7575,6 +7838,7 @@ paths:
           - securityGroup
           - sshKey
           - dataDisk
+          - sqlDb
       - name: labelSelector
         in: query
         description: "Label selector query. Example: env=production,tier=backend"
@@ -8978,6 +9242,39 @@ components:
           type: integer
         vm:
           type: integer
+    model.RequiredAWSResource:
+      type: object
+      properties:
+        subnet1ID:
+          type: string
+          example: subnet-xxxx
+        subnet2ID:
+          type: string
+          example: subnet-xxxx in different AZ
+        vNetID:
+          type: string
+          example: vpc-xxxxx
+    model.RequiredAzureResource:
+      type: object
+      properties:
+        resourceGroup:
+          type: string
+          example: rg-xxxx
+    model.RequiredCSPResource:
+      type: object
+      properties:
+        aws:
+          $ref: '#/components/schemas/model.RequiredAWSResource'
+        azure:
+          $ref: '#/components/schemas/model.RequiredAzureResource'
+        ncp:
+          $ref: '#/components/schemas/model.RequiredNCPResource'
+    model.RequiredNCPResource:
+      type: object
+      properties:
+        subnetID:
+          type: string
+          example: subnet-xxxx
     model.ResourceCountOverview:
       type: object
       properties:
@@ -9076,6 +9373,48 @@ components:
         success:
           type: boolean
           example: true
+    model.RestPostSqlDbRequest:
+      required:
+      - connectionName
+      - csp
+      - dbAdminPassword
+      - dbAdminUsername
+      - dbEnginePort
+      - dbEngineVersion
+      - dbInstanceSpec
+      - name
+      - region
+      type: object
+      properties:
+        connectionName:
+          type: string
+          example: aws-ap-northeast-2
+        csp:
+          type: string
+          example: aws
+        dbAdminPassword:
+          type: string
+          example: Password1234!
+        dbAdminUsername:
+          type: string
+          example: mydbadmin
+        dbEnginePort:
+          type: integer
+          example: 3306
+        dbEngineVersion:
+          type: string
+          example: 8.0.39
+        dbInstanceSpec:
+          type: string
+          example: db.t3.micro
+        name:
+          type: string
+          example: sqldb01
+        region:
+          type: string
+          example: ap-northeast-2
+        requiredCSPResource:
+          $ref: '#/components/schemas/model.RequiredCSPResource'
     model.RestPostVpnRequest:
       required:
       - name
@@ -9387,6 +9726,44 @@ components:
           description: GHz
         count:
           type: string
+    model.SqlDBInfo:
+      type: object
+      properties:
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        description:
+          type: string
+        details:
+          type: object
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: sqldb01
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: sqldb01
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        status:
+          type: string
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
     model.SshCmdResult:
       type: object
       properties:

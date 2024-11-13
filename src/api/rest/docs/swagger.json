@@ -986,7 +986,8 @@
                             "vpn",
                             "securityGroup",
                             "sshKey",
-                            "dataDisk"
+                            "dataDisk",
+                            "sqlDb"
                         ],
                         "type": "string",
                         "description": "Label Type",
@@ -1049,7 +1050,8 @@
                             "vpn",
                             "securityGroup",
                             "sshKey",
-                            "dataDisk"
+                            "dataDisk",
+                            "sqlDb"
                         ],
                         "type": "string",
                         "description": "Label Type",
@@ -1123,7 +1125,8 @@
                             "vpn",
                             "securityGroup",
                             "sshKey",
-                            "dataDisk"
+                            "dataDisk",
+                            "sqlDb"
                         ],
                         "type": "string",
                         "description": "Label Type",
@@ -8154,6 +8157,329 @@
                 }
             }
         },
+        "/ns/{nsId}/resources/sqlDb": {
+            "get": {
+                "description": "Get all SQL Databases",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] SQL Database Management (under development)"
+                ],
+                "summary": "Get all SQL Databases",
+                "operationId": "GetAllSqlDb",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "InfoList",
+                            "IdList"
+                        ],
+                        "type": "string",
+                        "default": "IdList",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK\" /////////////",
+                        "schema": {
+                            "$ref": "#/definitions/model.VpnIdList"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a SQL Databases\n\n- Supported CSPs: AWS (Upcoming CSPs: Azure, GCP, NCP)\n\n- Please check the values ​​required for each CSP through the `requiredCSPResource` property.\n",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] SQL Database Management (under development)"
+                ],
+                "summary": "Create a SQL Databases",
+                "operationId": "PostSqlDb",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body to create a SQL database",
+                        "name": "sqlDbReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RestPostSqlDbRequest"
+                        }
+                    },
+                    {
+                        "enum": [
+                            "retry"
+                        ],
+                        "type": "string",
+                        "description": "Action",
+                        "name": "action",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SqlDBInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/sqlDb/{sqlDbId}": {
+            "get": {
+                "description": "Get resource info of a SQL datatbase",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] SQL Database Management (under development)"
+                ],
+                "summary": "Get resource info of a SQL datatbase",
+                "operationId": "GetSqlDb",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "sqldb01",
+                        "description": "SQL DB ID",
+                        "name": "sqlDbId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "refined",
+                        "description": "Resource info by detail (refined, raw)",
+                        "name": "detail",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SqlDBInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a SQL datatbase",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] SQL Database Management (under development)"
+                ],
+                "summary": "Delete a SQL datatbase",
+                "operationId": "DeleteSqlDb",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "sqldb01",
+                        "description": "SQL DB ID",
+                        "name": "sqlDbId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/sqlDb/{sqlDbId}/request/{requestId}": {
+            "get": {
+                "description": "Check the status of a specific request by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] SQL Database Management (under development)"
+                ],
+                "summary": "Check the status of a specific request by its ID",
+                "operationId": "GetRequestStatusOfSqlDb",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "sqldb01",
+                        "description": "SQL DB ID",
+                        "name": "sqlDbId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Request ID",
+                        "name": "requestId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/sshKey": {
             "get": {
                 "description": "List all SSH Keys or SSH Keys' ID",
@@ -9956,7 +10282,8 @@
                             "vpn",
                             "securityGroup",
                             "sshKey",
-                            "dataDisk"
+                            "dataDisk",
+                            "sqlDb"
                         ],
                         "type": "string",
                         "description": "Label Type",
@@ -11992,6 +12319,55 @@
                 }
             }
         },
+        "model.RequiredAWSResource": {
+            "type": "object",
+            "properties": {
+                "subnet1ID": {
+                    "type": "string",
+                    "example": "subnet-xxxx"
+                },
+                "subnet2ID": {
+                    "type": "string",
+                    "example": "subnet-xxxx in different AZ"
+                },
+                "vNetID": {
+                    "type": "string",
+                    "example": "vpc-xxxxx"
+                }
+            }
+        },
+        "model.RequiredAzureResource": {
+            "type": "object",
+            "properties": {
+                "resourceGroup": {
+                    "type": "string",
+                    "example": "rg-xxxx"
+                }
+            }
+        },
+        "model.RequiredCSPResource": {
+            "type": "object",
+            "properties": {
+                "aws": {
+                    "$ref": "#/definitions/model.RequiredAWSResource"
+                },
+                "azure": {
+                    "$ref": "#/definitions/model.RequiredAzureResource"
+                },
+                "ncp": {
+                    "$ref": "#/definitions/model.RequiredNCPResource"
+                }
+            }
+        },
+        "model.RequiredNCPResource": {
+            "type": "object",
+            "properties": {
+                "subnetID": {
+                    "type": "string",
+                    "example": "subnet-xxxx"
+                }
+            }
+        },
         "model.ResourceCountOverview": {
             "type": "object",
             "properties": {
@@ -12136,6 +12512,61 @@
                 "success": {
                     "type": "boolean",
                     "example": true
+                }
+            }
+        },
+        "model.RestPostSqlDbRequest": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "csp",
+                "dbAdminPassword",
+                "dbAdminUsername",
+                "dbEnginePort",
+                "dbEngineVersion",
+                "dbInstanceSpec",
+                "name",
+                "region"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                },
+                "csp": {
+                    "type": "string",
+                    "example": "aws"
+                },
+                "dbAdminPassword": {
+                    "type": "string",
+                    "example": "Password1234!"
+                },
+                "dbAdminUsername": {
+                    "type": "string",
+                    "example": "mydbadmin"
+                },
+                "dbEnginePort": {
+                    "type": "integer",
+                    "example": 3306
+                },
+                "dbEngineVersion": {
+                    "type": "string",
+                    "example": "8.0.39"
+                },
+                "dbInstanceSpec": {
+                    "type": "string",
+                    "example": "db.t3.micro"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "sqldb01"
+                },
+                "region": {
+                    "type": "string",
+                    "example": "ap-northeast-2"
+                },
+                "requiredCSPResource": {
+                    "$ref": "#/definitions/model.RequiredCSPResource"
                 }
             }
         },
@@ -12584,6 +13015,53 @@
                 },
                 "count": {
                     "type": "string"
+                }
+            }
+        },
+        "model.SqlDBInfo": {
+            "type": "object",
+            "properties": {
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "details": {},
+                "id": {
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "sqldb01"
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "sqldb01"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
                 }
             }
         },

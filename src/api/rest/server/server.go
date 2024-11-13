@@ -496,6 +496,17 @@ func RunServer() {
 	g.POST("/:nsId/registerCspResource/vNet/:vNetId/subnet", rest_resource.RestPostRegisterSubnet)
 	g.DELETE("/:nsId/deregisterCspResource/vNet/:vNetId/subnet/:subnetId", rest_resource.RestDeleteDeregisterSubnet)
 
+	// SQL database management
+	// g.GET("/:nsId/resources/sqlDb", rest_resource.)
+	sqlDbGroup := g.Group("/:nsId/resources/sqlDb")
+	terrariumURL = model.TerrariumRestUrl + "/readyz"
+	sqlDbGroup.Use(middlewares.CheckReadiness(terrariumURL, apiUser, apiPass))
+	sqlDbGroup.POST("", rest_resource.RestPostSqlDb)
+	sqlDbGroup.GET("/:sqlDbId", rest_resource.RestGetSqlDb)
+	sqlDbGroup.DELETE("/:sqlDbId", rest_resource.RestDeleteSqlDb)
+	sqlDbGroup.GET("/:sqlDbId/request/:requestId", rest_resource.RestGetRequestStatusOfSqlDb)
+	// sqlDbGroup.PUT("//:sqlDbId", rest_resource.RestPutSqlDs)
+
 	/*
 		g.POST("/:nsId/resources/publicIp", resource.RestPostPublicIp)
 		g.GET("/:nsId/resources/publicIp/:publicIpId", resource.RestGetPublicIp)

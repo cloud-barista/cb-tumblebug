@@ -37,7 +37,7 @@ const (
 	maxWaitDuration = 120 * time.Second
 )
 
-var validCspSet = map[string]bool{
+var validCspSetForVPN = map[string]bool{
 	"aws,gcp":   true,
 	"gcp,aws":   true,
 	"gcp,azure": true,
@@ -50,14 +50,14 @@ var validCspSet = map[string]bool{
 	// Add more CSP sets here
 }
 
-func IsValidCspSet(csp1, csp2 string) (bool, error) {
-	if !validCspSet[csp1+","+csp2] {
+func IsValidCspSetForVPN(csp1, csp2 string) (bool, error) {
+	if !validCspSetForVPN[csp1+","+csp2] {
 		return false, fmt.Errorf("currently not supported, VPN between %s and %s", csp1, csp2)
 	}
 	return true, nil
 }
 
-func whichCspSet(csp1, csp2 string) string {
+func whichCspSetForVPN(csp1, csp2 string) string {
 	return csp1 + "," + csp2
 }
 
@@ -184,7 +184,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	ok, err := IsValidCspSet(vpnReq.Site1.CSP, vpnReq.Site2.CSP)
+	ok, err := IsValidCspSetForVPN(vpnReq.Site1.CSP, vpnReq.Site2.CSP)
 	if !ok {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -285,7 +285,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 	// Set a terrarium ID
 	trId := vpnInfo.Uid
 
-	cspSet := whichCspSet(vpnReq.Site1.CSP, vpnReq.Site2.CSP)
+	cspSet := whichCspSetForVPN(vpnReq.Site1.CSP, vpnReq.Site2.CSP)
 
 	// Check the CSPs of the sites
 	switch cspSet {
@@ -451,7 +451,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
 		defer cancel()
 
-		ret, err := retrieveVPNInfo(ctx, trId, "gcp-aws", expectedCompletionDuration)
+		ret, err := retrieveEnrichmentsInfoInTerrarium(ctx, trId, "vpn/gcp-aws", expectedCompletionDuration)
 		if err != nil {
 			log.Err(err).Msg("")
 			return emptyRet, err
@@ -642,7 +642,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
 		defer cancel()
 
-		ret, err := retrieveVPNInfo(ctx, trId, "gcp-azure", expectedCompletionDuration)
+		ret, err := retrieveEnrichmentsInfoInTerrarium(ctx, trId, "vpn/gcp-azure", expectedCompletionDuration)
 		if err != nil {
 			log.Err(err).Msg("")
 			return emptyRet, err
@@ -723,7 +723,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 	return vpnInfo, nil
 }
 
-func retrieveVPNInfo(ctx context.Context, trId string, cspPair string, expectedCompletionDuration time.Duration) (model.Response, error) {
+func retrieveEnrichmentsInfoInTerrarium(ctx context.Context, trId string, enrichments string, expectedCompletionDuration time.Duration) (model.Response, error) {
 
 	var emptyRet model.Response
 
@@ -750,7 +750,7 @@ func retrieveVPNInfo(ctx context.Context, trId string, cspPair string, expectedC
 		err := common.ExecuteHttpRequest(
 			client,
 			"GET",
-			fmt.Sprintf("%s/tr/%s/vpn/%s?detail=refined", epTerrarium, trId, cspPair),
+			fmt.Sprintf("%s/tr/%s/%s?detail=refined", epTerrarium, trId, enrichments),
 			nil,
 			common.SetUseBody(requestBody),
 			&requestBody,
@@ -759,7 +759,7 @@ func retrieveVPNInfo(ctx context.Context, trId string, cspPair string, expectedC
 		)
 
 		if err == nil {
-			log.Info().Msg("VPN retrieval successful.")
+			log.Info().Msgf("successfully retrieve the enrichments (%s)", enrichments)
 			return *resRetrieving, nil
 		}
 
@@ -768,7 +768,7 @@ func retrieveVPNInfo(ctx context.Context, trId string, cspPair string, expectedC
 
 		minutes := int(elapsedTime.Minutes())
 		seconds := int(elapsedTime.Seconds()) % 60
-		log.Info().Msgf("[Elapsed time: %dm%ds] Creating VPN, retrying in %s...", minutes, seconds, currentWaitDuration)
+		log.Info().Msgf("[Elapsed time: %dm%ds] Creating enrichments (%s), retrying in %s...", minutes, seconds, enrichments, currentWaitDuration)
 
 		select {
 		case <-ctx.Done():

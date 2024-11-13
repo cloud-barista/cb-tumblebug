@@ -100,6 +100,7 @@ const (
 	StrVNet                  string = "vNet"
 	StrSubnet                string = "subnet"
 	StrVPN                   string = "vpn"
+	StrSqlDB                 string = "sqlDb"
 	StrDataDisk              string = "dataDisk"
 	StrNLB                   string = "nlb"
 	StrVM                    string = "vm"
