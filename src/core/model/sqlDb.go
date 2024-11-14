@@ -19,9 +19,9 @@ type RestPostSqlDbRequest struct {
 	ConnectionName      string              `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
 	CSP                 string              `json:"csp" validate:"required" example:"aws"`
 	Region              string              `json:"region" validate:"required" example:"ap-northeast-2"`
-	DBInstanceSpec      string              `json:"dbInstanceSpec" validate:"required" example:"db.t3.micro"`
+	DBInstanceSpec      string              `json:"dbInstanceSpec,omitempty" validate:"required" example:"db.t3.micro"`
 	DBEnginePort        int                 `json:"dbEnginePort,omitempty" validate:"required" example:"3306"`
-	DBEngineVersion     string              `json:"dbEngineVersion" validate:"required" example:"8.0.39"`
+	DBEngineVersion     string              `json:"dbEngineVersion,omitempty" validate:"required" example:"8.0.39"`
 	DBAdminUsername     string              `json:"dbAdminUsername" validate:"required" example:"mydbadmin"`
 	DBAdminPassword     string              `json:"dbAdminPassword" validate:"required" example:"Password1234!"`
 	RequiredCSPResource RequiredCSPResource `json:"requiredCSPResource,omitempty"`
@@ -40,11 +40,11 @@ type RequiredAWSResource struct {
 }
 
 type RequiredAzureResource struct {
-	ResourceGroup string `json:"resourceGroup,omitempty" example:"rg-xxxx"`
+	ResourceGroup string `json:"resourceGroup,omitempty" example:"koreacentral"`
 }
 
 type RequiredNCPResource struct {
-	SubnetID string `json:"subnetID,omitempty" example:"subnet-xxxx"`
+	SubnetID string `json:"subnetID,omitempty" example:"123456"`
 }
 
 type SqlDBInfo struct {

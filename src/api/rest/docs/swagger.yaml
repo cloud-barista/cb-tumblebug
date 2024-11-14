@@ -6213,8 +6213,8 @@ paths:
     get:
       tags:
       - "[Infra Resource] SQL Database Management (under development)"
-      summary: Get all SQL Databases
-      description: Get all SQL Databases
+      summary: Get all SQL Databases (TBD)
+      description: Get all SQL Databases (TBD)
       operationId: GetAllSqlDb
       parameters:
       - name: nsId
@@ -6265,9 +6265,12 @@ paths:
       description: |
         Create a SQL Databases
 
-        - Supported CSPs: AWS (Upcoming CSPs: Azure, GCP, NCP)
+        Supported CSPs: AWS, Azure, GCP, NCP
+        - Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncpvpc-kr
 
-        - Please check the values ​​required for each CSP through the `requiredCSPResource` property.
+        - Note - Please check the `requiredCSPResource` property which includes CSP specific values.
+
+        - Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/110
       operationId: PostSqlDb
       parameters:
       - name: nsId
@@ -6398,59 +6401,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/resources/sqlDb/{sqlDbId}/request/{requestId}:
-    get:
-      tags:
-      - "[Infra Resource] SQL Database Management (under development)"
-      summary: Check the status of a specific request by its ID
-      description: Check the status of a specific request by its ID
-      operationId: GetRequestStatusOfSqlDb
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: sqlDbId
-        in: path
-        description: SQL DB ID
-        required: true
-        schema:
-          type: string
-          default: sqldb01
-      - name: requestId
-        in: path
-        description: Request ID
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.Response'
         "400":
           description: Bad Request
           content:
@@ -9259,7 +9209,7 @@ components:
       properties:
         resourceGroup:
           type: string
-          example: rg-xxxx
+          example: koreacentral
     model.RequiredCSPResource:
       type: object
       properties:
@@ -9274,7 +9224,7 @@ components:
       properties:
         subnetID:
           type: string
-          example: subnet-xxxx
+          example: "123456"
     model.ResourceCountOverview:
       type: object
       properties:

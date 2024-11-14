@@ -15,11 +15,9 @@ limitations under the License.
 package resource
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
@@ -195,6 +193,16 @@ func CreateSqlDb(nsId string, sqlDbReq *model.RestPostSqlDbRequest, retry string
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
 		}
+
+		sqlDBInfo.Name = sqlDbReq.Name
+		sqlDBInfo.Id = sqlDbReq.Name
+		sqlDBInfo.Description = "SQL DB at " + sqlDbReq.Region + " in " + sqlDbReq.CSP
+		sqlDBInfo.ConnectionName = sqlDbReq.ConnectionName
+		sqlDBInfo.ConnectionConfig, err = common.GetConnConfig(sqlDBInfo.ConnectionName)
+		if err != nil {
+			err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+			log.Error().Err(err).Msg("")
+		}
 	}
 
 	// [Set and store status]
@@ -228,42 +236,38 @@ func CreateSqlDb(nsId string, sqlDbReq *model.RestPostSqlDbRequest, retry string
 	// Set a terrarium ID
 	trId := sqlDBInfo.Uid
 
-	// Check the CSPs of the sites
-	switch sqlDbReq.CSP {
-	case "aws":
-		if !retried {
-			// Issue a terrarium
-			method := "POST"
-			url := fmt.Sprintf("%s/tr", epTerrarium)
-			reqTr := new(terrariumModel.TerrariumInfo)
-			reqTr.Id = trId
-			reqTr.Description = "SQL DB at " + sqlDbReq.Region + " in " + sqlDbReq.CSP
+	if !retried {
+		// Issue a terrarium
+		method := "POST"
+		url := fmt.Sprintf("%s/tr", epTerrarium)
+		reqTr := new(terrariumModel.TerrariumInfo)
+		reqTr.Id = trId
+		reqTr.Description = "SQL DB at " + sqlDbReq.Region + " in " + sqlDbReq.CSP
 
-			resTrInfo := new(terrariumModel.TerrariumInfo)
+		resTrInfo := new(terrariumModel.TerrariumInfo)
 
-			err = common.ExecuteHttpRequest(
-				client,
-				method,
-				url,
-				nil,
-				common.SetUseBody(*reqTr),
-				reqTr,
-				resTrInfo,
-				common.VeryShortDuration,
-			)
+		err = common.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			common.SetUseBody(*reqTr),
+			reqTr,
+			resTrInfo,
+			common.VeryShortDuration,
+		)
 
-			if err != nil {
-				log.Err(err).Msg("")
-				return emptyRet, err
-			}
-
-			log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
-			log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
+		if err != nil {
+			log.Err(err).Msg("")
+			return emptyRet, err
 		}
 
+		log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
+		log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
+
 		// init env
-		method := "POST"
-		url := fmt.Sprintf("%s/tr/%s/sql-db/env", epTerrarium, trId)
+		method = "POST"
+		url = fmt.Sprintf("%s/tr/%s/sql-db/env", epTerrarium, trId)
 		queryParams := "provider=" + sqlDbReq.CSP
 		url += "?" + queryParams
 
@@ -288,10 +292,16 @@ func CreateSqlDb(nsId string, sqlDbReq *model.RestPostSqlDbRequest, retry string
 
 		log.Debug().Msgf("resInit: %+v", resTerrariumEnv.Message)
 		log.Trace().Msgf("resInit: %+v", resTerrariumEnv.Detail)
+	}
 
+	/*
+	 * [Via Terrarium] Generate the infracode for the SQL DB of each CSP
+	 */
+	switch sqlDbReq.CSP {
+	case "aws":
 		// generate infracode
-		method = "POST"
-		url = fmt.Sprintf("%s/tr/%s/sql-db/infracode", epTerrarium, trId)
+		method := "POST"
+		url := fmt.Sprintf("%s/tr/%s/sql-db/infracode", epTerrarium, trId)
 		reqInfracode := new(terrariumModel.CreateInfracodeOfSqlDbRequest)
 		reqInfracode.TfVars.TerrariumID = trId
 		reqInfracode.TfVars.CSPRegion = sqlDbReq.Region
@@ -327,20 +337,29 @@ func CreateSqlDb(nsId string, sqlDbReq *model.RestPostSqlDbRequest, retry string
 		log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
 		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
 
-		// check the infracode by plan
-		method = "POST"
-		url = fmt.Sprintf("%s/tr/%s/sql-db/plan", epTerrarium, trId)
-		requestBody = common.NoBody
-		resPlan := new(model.Response)
+	case "azure":
+		// generate infracode
+		method := "POST"
+		url := fmt.Sprintf("%s/tr/%s/sql-db/infracode", epTerrarium, trId)
+		reqInfracode := new(terrariumModel.CreateInfracodeOfSqlDbRequest)
+		reqInfracode.TfVars.TerrariumID = trId
+		reqInfracode.TfVars.CSPRegion = sqlDbReq.Region
+		reqInfracode.TfVars.DBInstanceSpec = sqlDbReq.DBInstanceSpec
+		reqInfracode.TfVars.DBEngineVersion = sqlDbReq.DBEngineVersion
+		reqInfracode.TfVars.DBAdminPassword = sqlDbReq.DBAdminPassword
+		reqInfracode.TfVars.DBAdminUsername = sqlDbReq.DBAdminUsername
+		reqInfracode.TfVars.CSPResourceGroup = sqlDbReq.RequiredCSPResource.Azure.ResourceGroup
+
+		resInfracode := new(model.Response)
 
 		err = common.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(requestBody),
-			&requestBody,
-			resPlan,
+			common.SetUseBody(*reqInfracode),
+			reqInfracode,
+			resInfracode,
 			common.VeryShortDuration,
 		)
 
@@ -348,26 +367,31 @@ func CreateSqlDb(nsId string, sqlDbReq *model.RestPostSqlDbRequest, retry string
 			log.Err(err).Msg("")
 			return emptyRet, err
 		}
-		log.Debug().Msgf("resPlan: %+v", resPlan.Message)
-		log.Trace().Msgf("resPlan: %+v", resPlan.Detail)
+		log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
+		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
 
-		// apply
-		// wait until the task is completed
-		// or response immediately with requestId as it is a time-consuming task
-		// and provide seperate api to check the status
-		method = "POST"
-		url = fmt.Sprintf("%s/tr/%s/sql-db", epTerrarium, trId)
-		requestBody = common.NoBody
-		resApply := new(model.Response)
+	case "gcp":
+		// generate infracode
+		method := "POST"
+		url := fmt.Sprintf("%s/tr/%s/sql-db/infracode", epTerrarium, trId)
+		reqInfracode := new(terrariumModel.CreateInfracodeOfSqlDbRequest)
+		reqInfracode.TfVars.TerrariumID = trId
+		reqInfracode.TfVars.CSPRegion = sqlDbReq.Region
+		reqInfracode.TfVars.DBInstanceSpec = sqlDbReq.DBInstanceSpec
+		reqInfracode.TfVars.DBEngineVersion = sqlDbReq.DBEngineVersion
+		reqInfracode.TfVars.DBAdminUsername = sqlDbReq.DBAdminUsername
+		reqInfracode.TfVars.DBAdminPassword = sqlDbReq.DBAdminPassword
+
+		resInfracode := new(model.Response)
 
 		err = common.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(requestBody),
-			&requestBody,
-			resApply,
+			common.SetUseBody(*reqInfracode),
+			reqInfracode,
+			resInfracode,
 			common.VeryShortDuration,
 		)
 
@@ -375,237 +399,118 @@ func CreateSqlDb(nsId string, sqlDbReq *model.RestPostSqlDbRequest, retry string
 			log.Err(err).Msg("")
 			return emptyRet, err
 		}
-		log.Debug().Msgf("resApply: %+v", resApply.Message)
-		log.Trace().Msgf("resApply: %+v", resApply.Detail)
+		log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
+		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
 
-		/*
-		 * [Via Terrarium] Retrieve the SQL DB info recursively until the SQL DB is created
-		 */
+	case "ncp":
+		// generate infracode
+		method := "POST"
+		url := fmt.Sprintf("%s/tr/%s/sql-db/infracode", epTerrarium, trId)
+		reqInfracode := new(terrariumModel.CreateInfracodeOfSqlDbRequest)
+		reqInfracode.TfVars.TerrariumID = trId
+		reqInfracode.TfVars.CSPRegion = sqlDbReq.Region
+		reqInfracode.TfVars.DBAdminUsername = sqlDbReq.DBAdminUsername
+		reqInfracode.TfVars.DBAdminPassword = sqlDbReq.DBAdminPassword
+		reqInfracode.TfVars.CSPSubnet1ID = sqlDbReq.RequiredCSPResource.NCP.SubnetID
 
-		// Recursively call the function to get the SQL DB info
-		// An expected completion duration is 15 minutes
-		expectedCompletionDuration := 15 * time.Minute
+		resInfracode := new(model.Response)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
-		defer cancel()
+		err = common.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			common.SetUseBody(*reqInfracode),
+			reqInfracode,
+			resInfracode,
+			common.VeryShortDuration,
+		)
 
-		ret, err := retrieveEnrichmentsInfoInTerrarium(ctx, trId, "sql-db", expectedCompletionDuration)
 		if err != nil {
 			log.Err(err).Msg("")
 			return emptyRet, err
 		}
-
-		// Set the SQL DB info
-		var trSqlDBInfo terrariumModel.OutputAWSSqlDbInfo
-		jsonData, err := json.Marshal(ret.Object)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
-		err = json.Unmarshal(jsonData, &trSqlDBInfo)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
-
-		sqlDBInfo.CspResourceId = trSqlDBInfo.AWS.InstanceIdentifier
-		// sqlDBInfo.CspResourceName
-		sqlDBInfo.Details = trSqlDBInfo.AWS
-
-	// case "azure,gcp":
-
-	// 	if !retried {
-	// 		// issue a terrarium
-	// 		method := "POST"
-	// 		url := fmt.Sprintf("%s/tr", epTerrarium)
-	// 		reqTr := new(terrariumModel.TerrariumInfo)
-	// 		reqTr.Id = trId
-	// 		reqTr.Description = "VPN between GCP and Azure"
-
-	// 		resTrInfo := new(terrariumModel.TerrariumInfo)
-
-	// 		err = common.ExecuteHttpRequest(
-	// 			client,
-	// 			method,
-	// 			url,
-	// 			nil,
-	// 			common.SetUseBody(*reqTr),
-	// 			reqTr,
-	// 			resTrInfo,
-	// 			common.VeryShortDuration,
-	// 		)
-
-	// 		if err != nil {
-	// 			log.Err(err).Msg("")
-	// 			return emptyRet, err
-	// 		}
-
-	// 		log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
-	// 		log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
-
-	// 		// init env
-	// 		method = "POST"
-	// 		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-azure/env", epTerrarium, trId)
-	// 		requestBody := common.NoBody
-	// 		resTerrariumEnv := new(model.Response)
-
-	// 		err = common.ExecuteHttpRequest(
-	// 			client,
-	// 			method,
-	// 			url,
-	// 			nil,
-	// 			common.SetUseBody(requestBody),
-	// 			&requestBody,
-	// 			resTerrariumEnv,
-	// 			common.VeryShortDuration,
-	// 		)
-
-	// 		if err != nil {
-	// 			log.Err(err).Msg("")
-	// 			return emptyRet, err
-	// 		}
-
-	// 		log.Debug().Msgf("resInit: %+v", resTerrariumEnv.Message)
-	// 		log.Trace().Msgf("resInit: %+v", resTerrariumEnv.Detail)
-	// 	}
-
-	// 	// generate infracode
-	// 	method := "POST"
-	// 	url := fmt.Sprintf("%s/tr/%s/vpn/gcp-azure/infracode", epTerrarium, trId)
-	// 	reqInfracode := new(terrariumModel.CreateInfracodeOfGcpAzureVpnRequest)
-
-	// 	if vpnReq.Site1.CSP == "azure" {
-	// 		// Site1 is Azure
-	// 		reqInfracode.TfVars.AzureRegion = vpnReq.Site1.Region
-	// 		reqInfracode.TfVars.AzureVirtualNetworkName = vpnReq.Site1.VNet
-	// 		reqInfracode.TfVars.AzureResourceGroupName = vpnReq.Site1.ResourceGroup
-	// 		reqInfracode.TfVars.AzureGatewaySubnetCidrBlock = vpnReq.Site1.GatewaySubnetCidr
-	// 		// Site2 is GCP
-	// 		reqInfracode.TfVars.GcpRegion = vpnReq.Site2.Region
-	// 		reqInfracode.TfVars.GcpVpcNetworkName = vpnReq.Site2.VNet
-	// 	} else {
-	// 		// Site1 is GCP
-	// 		reqInfracode.TfVars.GcpRegion = vpnReq.Site1.Region
-	// 		reqInfracode.TfVars.GcpVpcNetworkName = vpnReq.Site1.VNet
-	// 		// site2 is Azure
-	// 		reqInfracode.TfVars.AzureRegion = vpnReq.Site2.Region
-	// 		reqInfracode.TfVars.AzureVirtualNetworkName = vpnReq.Site2.VNet
-	// 		reqInfracode.TfVars.AzureResourceGroupName = vpnReq.Site2.ResourceGroup
-	// 		reqInfracode.TfVars.AzureGatewaySubnetCidrBlock = vpnReq.Site2.GatewaySubnetCidr
-	// 	}
-
-	// 	resInfracode := new(model.Response)
-
-	// 	err = common.ExecuteHttpRequest(
-	// 		client,
-	// 		method,
-	// 		url,
-	// 		nil,
-	// 		common.SetUseBody(*reqInfracode),
-	// 		reqInfracode,
-	// 		resInfracode,
-	// 		common.VeryShortDuration,
-	// 	)
-
-	// 	if err != nil {
-	// 		log.Err(err).Msg("")
-	// 		return emptyRet, err
-	// 	}
-
-	// 	log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
-	// 	log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
-
-	// 	// check the infracode by plan
-	// 	method = "POST"
-	// 	url = fmt.Sprintf("%s/tr/%s/vpn/gcp-azure/plan", epTerrarium, trId)
-	// 	requestBody := common.NoBody
-	// 	resPlan := new(model.Response)
-
-	// 	err = common.ExecuteHttpRequest(
-	// 		client,
-	// 		method,
-	// 		url,
-	// 		nil,
-	// 		common.SetUseBody(requestBody),
-	// 		&requestBody,
-	// 		resPlan,
-	// 		common.VeryShortDuration,
-	// 	)
-
-	// 	if err != nil {
-	// 		log.Err(err).Msg("")
-	// 		return emptyRet, err
-	// 	}
-
-	// 	log.Debug().Msgf("resPlan: %+v", resPlan.Message)
-	// 	log.Trace().Msgf("resPlan: %+v", resPlan.Detail)
-
-	// 	// apply
-	// 	// wait until the task is completed
-	// 	// or response immediately with requestId as it is a time-consuming task
-	// 	// and provide seperate api to check the status
-	// 	method = "POST"
-	// 	url = fmt.Sprintf("%s/tr/%s/vpn/gcp-azure", epTerrarium, trId)
-	// 	requestBody = common.NoBody
-	// 	resApply := new(model.Response)
-
-	// 	err = common.ExecuteHttpRequest(
-	// 		client,
-	// 		method,
-	// 		url,
-	// 		nil,
-	// 		common.SetUseBody(requestBody),
-	// 		&requestBody,
-	// 		resApply,
-	// 		common.VeryShortDuration,
-	// 	)
-
-	// 	if err != nil {
-	// 		log.Err(err).Msg("")
-	// 		return emptyRet, err
-	// 	}
-
-	// 	log.Debug().Msgf("resApply: %+v", resApply.Message)
-	// 	log.Trace().Msgf("resApply: %+v", resApply.Detail)
-
-	// 	/*
-	// 	 * [Via Terrarium] Retrieve the VPN info recursively until the VPN is created
-	// 	 */
-
-	// 	// Recursively call the function to get the VPN info
-	// 	// An expected completion duration is 15 minutes
-	// 	expectedCompletionDuration := 30 * time.Minute
-
-	// 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
-	// 	defer cancel()
-
-	// 	ret, err := retrieveVPNInfo(ctx, trId, "gcp-azure", expectedCompletionDuration)
-	// 	if err != nil {
-	// 		log.Err(err).Msg("")
-	// 		return emptyRet, err
-	// 	}
-
-	// 	// Set the VPN info
-	// 	var trVpnInfo terrariumModel.OutputGcpAzureVpnInfo
-	// 	jsonData, err := json.Marshal(ret.Object)
-	// 	if err != nil {
-	// 		log.Error().Err(err).Msg("")
-	// 	}
-	// 	err = json.Unmarshal(jsonData, &trVpnInfo)
-	// 	if err != nil {
-	// 		log.Error().Err(err).Msg("")
-	// 	}
-
-	// 	sqlDBInfo.VPNGatewayInfo[0].CspResourceId = trVpnInfo.Azure.VirtualNetworkGateway.ID
-	// 	sqlDBInfo.VPNGatewayInfo[0].CspResourceName = trVpnInfo.Azure.VirtualNetworkGateway.Name
-	// 	sqlDBInfo.VPNGatewayInfo[0].Details = trVpnInfo.Azure
-	// 	sqlDBInfo.VPNGatewayInfo[1].CspResourceId = trVpnInfo.GCP.HaVpnGateway.ID
-	// 	sqlDBInfo.VPNGatewayInfo[1].CspResourceName = trVpnInfo.GCP.HaVpnGateway.Name
-	// 	sqlDBInfo.VPNGatewayInfo[1].Details = trVpnInfo.GCP
+		log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
+		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
 
 	default:
 		log.Warn().Msgf("not valid CSP: %s", sqlDbReq.CSP)
 	}
 
-	// [Set and store status]
+	/*
+	 * [Via Terrarium] Check the infracode
+	 */
+
+	// check the infracode (by `tofu plan`)
+	method := "POST"
+	url := fmt.Sprintf("%s/tr/%s/sql-db/plan", epTerrarium, trId)
+	requestBody := common.NoBody
+	resPlan := new(model.Response)
+
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		resPlan,
+		common.VeryShortDuration,
+	)
+
+	if err != nil {
+		log.Err(err).Msg("")
+		return emptyRet, err
+	}
+	log.Debug().Msgf("resPlan: %+v", resPlan.Message)
+	log.Trace().Msgf("resPlan: %+v", resPlan.Detail)
+
+	// apply
+	// wait until the task is completed
+	// or response immediately with requestId as it is a time-consuming task
+	// and provide seperate api to check the status
+	method = "POST"
+	url = fmt.Sprintf("%s/tr/%s/sql-db", epTerrarium, trId)
+	requestBody = common.NoBody
+	resApply := new(model.Response)
+
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		resApply,
+		common.VeryShortDuration,
+	)
+
+	if err != nil {
+		log.Err(err).Msg("")
+		return emptyRet, err
+	}
+	log.Debug().Msgf("resApply: %+v", resApply.Message)
+	log.Trace().Msgf("resApply: %+v", resApply.Detail)
+
+	// Set the SQL DB info
+	var trSqlDBInfo terrariumModel.OutputSQLDBInfo
+	jsonData, err := json.Marshal(resApply.Object)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	}
+	err = json.Unmarshal(jsonData, &trSqlDBInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	}
+
+	sqlDBInfo.CspResourceId = trSqlDBInfo.SQLDBDetail.InstanceResourceID
+	sqlDBInfo.CspResourceName = trSqlDBInfo.SQLDBDetail.InstanceName
+	sqlDBInfo.Details = trSqlDBInfo.SQLDBDetail
+
+	/*
+	 * Set opeartion status and store sqlDBInfo
+	 */
+
 	sqlDBInfo.Status = string(SqlDBAvailable)
 
 	log.Debug().Msgf("SQL DB Info(final): %+v", sqlDBInfo)
@@ -783,7 +688,7 @@ func GetSqlDb(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 
 	// switch enrichments {
 	// case "vpn/gcp-aws":
-	var trVpnInfo terrariumModel.OutputAWSSqlDbInfo
+	var trVpnInfo terrariumModel.OutputSQLDBInfo
 	jsonData, err := json.Marshal(resResourceInfo.Object)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -793,8 +698,9 @@ func GetSqlDb(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 		log.Error().Err(err).Msg("")
 	}
 
-	sqlDBInfo.CspResourceId = trVpnInfo.AWS.InstanceIdentifier
-	sqlDBInfo.Details = trVpnInfo.AWS
+	sqlDBInfo.CspResourceId = trVpnInfo.SQLDBDetail.InstanceResourceID
+	sqlDBInfo.CspResourceName = trVpnInfo.SQLDBDetail.InstanceName
+	sqlDBInfo.Details = trVpnInfo.SQLDBDetail
 
 	// case "vpn/gcp-azure":
 	// 	var trVpnInfo terrariumModel.OutputGcpAzureVpnInfo
