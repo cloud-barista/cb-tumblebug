@@ -12,6 +12,31 @@
 #
 
 k8scluster:
+  aws:
+    nodeGroupsOnCreation: false
+    nodeImageDesignation: true
+    requiredSubnetCount: 2
+    version:
+      - region: [common]
+        available:
+          - name: 1.31
+            id: 1.31
+          - name: 1.30
+            id: 1.30
+          - name: 1.29
+            id: 1.29
+          - name: 1.28
+            id: 1.28
+          - name: 1.27
+            id: 1.27
+    rootDisk:
+      - region: [common]
+        type:
+          - name: default
+            id: default
+        size:
+          min: 10
+          max: 40
   azure:
     nodeGroupsOnCreation: true
     nodeImageDesignation: false
@@ -50,14 +75,14 @@ k8scluster:
     version:
       - region: [common]
         available:
+          - name: 1.31
+            id: 1.31.1-gke.1846000
           - name: 1.30
-            id: 1.30.3-gke.1225000
+            id: 1.30.5-gke.1443001
           - name: 1.29
-            id: 1.29.7-gke.1104000
+            id: 1.29.9-gke.1496000
           - name: 1.28
-            id: 1.28.12-gke.1052000
-          - name: 1.27
-            id: 1.27.16-gke.1051000
+            id: 1.28.14-gke.1340000
       - region: [africa-south1]
         # addnodegroup unavailble
     rootDisk:
