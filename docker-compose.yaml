@@ -166,7 +166,7 @@ services:
 
   # # mc-terrarium (PoC): resource extentions such as VPN for CB-Tumblebug by using OpenTofu
   # mc-terrarium:
-  #   image: cloudbaristaorg/mc-terrarium:0.0.10
+  #   image: cloudbaristaorg/mc-terrarium:0.0.16
   #   container_name: mc-terrarium
   #   # build:
   #   #   context: .
@@ -180,6 +180,7 @@ services:
   #   env_file:
   #     - ${HOME}/.cloud-barista/secrets/credentials           # AWS credentials
   #     - ${HOME}/.cloud-barista/secrets/credential-azure.env  # Azure credentials
+  #     - ${HOME}/.cloud-barista/secrets/credential-ncp.env    # NCP credentials
   #   volumes:
   #     - ${HOME}/.cloud-barista/secrets:/app/secrets:ro       # GCP credentials
   #     - ./container-volume/mc-terrarium-container/.terrarium:/app/.terrarium

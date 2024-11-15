@@ -218,8 +218,8 @@ import (
 
 // RestGetAllSqlDb godoc
 // @ID GetAllSqlDb
-// @Summary Get all SQL Databases
-// @Description Get all SQL Databases
+// @Summary Get all SQL Databases (TBD)
+// @Description Get all SQL Databases (TBD)
 // @Tags [Infra Resource] SQL Database Management (under development)
 // @Accept  json
 // @Produce  json
@@ -278,7 +278,6 @@ func RestGetAllSqlDb(c echo.Context) error {
 	// }
 
 	return c.JSON(http.StatusOK, model.VpnInfoList{})
-
 }
 
 // RestPostSqlDb godoc
@@ -286,9 +285,12 @@ func RestGetAllSqlDb(c echo.Context) error {
 // @Summary Create a SQL Databases
 // @Description Create a SQL Databases
 // @Description
-// @Description - Supported CSPs: AWS (Upcoming CSPs: Azure, GCP, NCP)
+// @Description Supported CSPs: AWS, Azure, GCP, NCP
+// @Description - Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncpvpc-kr
 // @Description
-// @Description - Please check the values ​​required for each CSP through the `requiredCSPResource` property.
+// @Description - Note - Please check the `requiredCSPResource` property which includes CSP specific values.
+// @Description
+// @Description - Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/110
 // @Description
 // @Tags [Infra Resource] SQL Database Management (under development)
 // @Accept  json
@@ -569,52 +571,52 @@ func RestDeleteSqlDb(c echo.Context) error {
 // 	// return nil
 // }
 
-// RestGetRequestStatusOfSqlDb godoc
-// @ID GetRequestStatusOfSqlDb
-// @Summary Check the status of a specific request by its ID
-// @Description Check the status of a specific request by its ID
-// @Tags [Infra Resource] SQL Database Management (under development)
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param sqlDbId path string true "SQL DB ID" default(sqldb01)
-// @Param requestId path string true "Request ID"
-// @Success 200 {object} model.Response "OK"
-// @Failure 400 {object} model.SimpleMsg "Bad Request"
-// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/resources/sqlDb/{sqlDbId}/request/{requestId} [get]
-func RestGetRequestStatusOfSqlDb(c echo.Context) error {
+// // RestGetRequestStatusOfSqlDb godoc
+// // @ID GetRequestStatusOfSqlDb
+// // @Summary Check the status of a specific request by its ID
+// // @Description Check the status of a specific request by its ID
+// // @Tags [Infra Resource] SQL Database Management (under development)
+// // @Accept  json
+// // @Produce  json
+// // @Param nsId path string true "Namespace ID" default(default)
+// // @Param sqlDbId path string true "SQL DB ID" default(sqldb01)
+// // @Param requestId path string true "Request ID"
+// // @Success 200 {object} model.Response "OK"
+// // @Failure 400 {object} model.SimpleMsg "Bad Request"
+// // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
+// // @Router /ns/{nsId}/resources/sqlDb/{sqlDbId}/request/{requestId} [get]
+// func RestGetRequestStatusOfSqlDb(c echo.Context) error {
 
-	nsId := c.Param("nsId")
-	err := common.CheckString(nsId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
+// 	nsId := c.Param("nsId")
+// 	err := common.CheckString(nsId)
+// 	if err != nil {
+// 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+// 		log.Warn().Err(err).Msgf(errMsg.Error())
+// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+// 	}
 
-	sqlDbId := c.Param("sqlDbId")
-	err = common.CheckString(sqlDbId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid sqlDbId (%s)", sqlDbId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-	reqId := c.Param("requestId")
-	if reqId == "" {
-		errMsg := fmt.Errorf("invalid reqId (%s)", reqId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-	reqId = strings.TrimSpace(reqId)
+// 	sqlDbId := c.Param("sqlDbId")
+// 	err = common.CheckString(sqlDbId)
+// 	if err != nil {
+// 		errMsg := fmt.Errorf("invalid sqlDbId (%s)", sqlDbId)
+// 		log.Warn().Err(err).Msgf(errMsg.Error())
+// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+// 	}
+// 	reqId := c.Param("requestId")
+// 	if reqId == "" {
+// 		errMsg := fmt.Errorf("invalid reqId (%s)", reqId)
+// 		log.Warn().Err(err).Msgf(errMsg.Error())
+// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+// 	}
+// 	reqId = strings.TrimSpace(reqId)
 
-	var resp model.Response
-	resp, err = resource.GetRequestStatusOfSqlDb(nsId, sqlDbId, reqId)
-	if err != nil {
-		log.Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
-	}
+// 	var resp model.Response
+// 	resp, err = resource.GetRequestStatusOfSqlDb(nsId, sqlDbId, reqId)
+// 	if err != nil {
+// 		log.Err(err).Msg("")
+// 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+// 	}
 
-	return c.JSON(http.StatusOK, resp)
-}
+// 	return c.JSON(http.StatusOK, resp)
+// }

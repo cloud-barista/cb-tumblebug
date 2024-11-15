@@ -19,6 +19,10 @@ github.com/cloud-barista/mc-terrarium v0.0.9 h1:bJrGg0VZyflw1ncyrD8/6qzMW0YiK2LD
 github.com/cloud-barista/mc-terrarium v0.0.9/go.mod h1:iQxZNRa04d7mHA0h5dEPfF7ch1SBUS/ZFGUynKsKJ6I=
 github.com/cloud-barista/mc-terrarium v0.0.10 h1:WrK/bHyiQZ9ZxRLVoUTY4c3CVH7z+vEzdh7yxo9X4ZM=
 github.com/cloud-barista/mc-terrarium v0.0.10/go.mod h1:iQxZNRa04d7mHA0h5dEPfF7ch1SBUS/ZFGUynKsKJ6I=
+github.com/cloud-barista/mc-terrarium v0.0.15 h1:1yJjCsNMwYZJyYSku9HQPOdj1PwAf5ybYI+DqB1TKsc=
+github.com/cloud-barista/mc-terrarium v0.0.15/go.mod h1:iQxZNRa04d7mHA0h5dEPfF7ch1SBUS/ZFGUynKsKJ6I=
+github.com/cloud-barista/mc-terrarium v0.0.16 h1:0TpSnFk5IpStpQc1YJSbMzB8q1jgVZ639Cjh7YAyxh4=
+github.com/cloud-barista/mc-terrarium v0.0.16/go.mod h1:iQxZNRa04d7mHA0h5dEPfF7ch1SBUS/ZFGUynKsKJ6I=
 github.com/cockroachdb/apd v1.1.0/go.mod h1:8Sl8LxpKi29FqWXR16WEFZRNSz3SoPzUzeMeY4+DwBQ=
 github.com/coreos/go-semver v0.3.1 h1:yi21YpKnrx1gt5R+la8n5WgS0kCrsPp33dmEyHReZr4=
 github.com/coreos/go-semver v0.3.1/go.mod h1:irMmmIw/7yzSRPWryHsK7EYSg09caPQL03VsM8rvUec=

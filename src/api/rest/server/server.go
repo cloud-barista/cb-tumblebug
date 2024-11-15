@@ -504,7 +504,7 @@ func RunServer() {
 	sqlDbGroup.POST("", rest_resource.RestPostSqlDb)
 	sqlDbGroup.GET("/:sqlDbId", rest_resource.RestGetSqlDb)
 	sqlDbGroup.DELETE("/:sqlDbId", rest_resource.RestDeleteSqlDb)
-	sqlDbGroup.GET("/:sqlDbId/request/:requestId", rest_resource.RestGetRequestStatusOfSqlDb)
+	// sqlDbGroup.GET("/:sqlDbId/request/:requestId", rest_resource.RestGetRequestStatusOfSqlDb)
 	// sqlDbGroup.PUT("//:sqlDbId", rest_resource.RestPutSqlDs)
 
 	/*

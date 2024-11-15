@@ -8166,7 +8166,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/resources/sqlDb": {
             "get": {
-                "description": "Get all SQL Databases",
+                "description": "Get all SQL Databases (TBD)",
                 "consumes": [
                     "application/json"
                 ],
@@ -8176,7 +8176,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] SQL Database Management (under development)"
                 ],
-                "summary": "Get all SQL Databases",
+                "summary": "Get all SQL Databases (TBD)",
                 "operationId": "GetAllSqlDb",
                 "parameters": [
                     {
@@ -8227,7 +8227,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a SQL Databases\n\n- Supported CSPs: AWS (Upcoming CSPs: Azure, GCP, NCP)\n\n- Please check the values ​​required for each CSP through the ` + "`" + `requiredCSPResource` + "`" + ` property.\n",
+                "description": "Create a SQL Databases\n\nSupported CSPs: AWS, Azure, GCP, NCP\n- Note - ` + "`" + `connectionName` + "`" + ` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncpvpc-kr\n\n- Note - Please check the ` + "`" + `requiredCSPResource` + "`" + ` property which includes CSP specific values.\n\n- Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/110\n",
                 "consumes": [
                     "application/json"
                 ],
@@ -8397,73 +8397,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/resources/sqlDb/{sqlDbId}/request/{requestId}": {
-            "get": {
-                "description": "Check the status of a specific request by its ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] SQL Database Management (under development)"
-                ],
-                "summary": "Check the status of a specific request by its ID",
-                "operationId": "GetRequestStatusOfSqlDb",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "sqldb01",
-                        "description": "SQL DB ID",
-                        "name": "sqlDbId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Request ID",
-                        "name": "requestId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.Response"
                         }
                     },
                     "400": {
@@ -12348,7 +12281,7 @@ const docTemplate = `{
             "properties": {
                 "resourceGroup": {
                     "type": "string",
-                    "example": "rg-xxxx"
+                    "example": "koreacentral"
                 }
             }
         },
@@ -12371,7 +12304,7 @@ const docTemplate = `{
             "properties": {
                 "subnetID": {
                     "type": "string",
-                    "example": "subnet-xxxx"
+                    "example": "123456"
                 }
             }
         },
