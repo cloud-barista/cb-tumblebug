@@ -248,6 +248,20 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 		return emptyObj, err
 	}
 
+	var createErr error
+	defer func() {
+		if createErr != nil {
+			log.Err(createErr).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
+
+			if tbK8sCInfo != nil {
+				err := deleteK8sClusterInfo(nsId, k8sClusterId)
+				if err != nil {
+					log.Err(err).Msgf("")
+				}
+			}
+		}
+	}()
+
 	// hold option will hold the K8sCluster creation process until the user releases it.
 	if option == "hold" {
 		key := common.GenK8sClusterKey(nsId, k8sClusterId)
@@ -263,9 +277,9 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 			} else if value == "withdraw" {
 				holdingK8sClusterMap.Delete(key)
 				DeleteK8sCluster(nsId, k8sClusterId, "force")
-				err := fmt.Errorf("Withdrawed K8sCluster creation")
+				createErr = fmt.Errorf("Withdrawed K8sCluster creation")
 				log.Error().Err(err).Msg("")
-				return nil, err
+				return nil, createErr
 			}
 
 			log.Info().Msgf("K8sCluster: %s (holding)", key)
@@ -275,31 +289,30 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 	}
 
 	// Validate
-	err = validateAtCreateK8sCluster(req)
-	if err != nil {
+	createErr = validateAtCreateK8sCluster(req)
+	if createErr != nil {
 		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-		return emptyObj, err
+		return emptyObj, createErr
 	}
 
 	// Build RequestBody for model.SpiderClusterReq{}
 	spVersion := req.Version
 
-	spVPCName, err := GetCspResourceName(nsId, model.StrVNet, req.VNetId)
-	if spVPCName == "" {
-		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-		return emptyObj, err
+	var spVPCName string
+	spVPCName, createErr = GetCspResourceName(nsId, model.StrVNet, req.VNetId)
+	if spVPCName == "" || createErr != nil {
+		return emptyObj, createErr
 	}
 
-	tmpInf, err := GetResource(nsId, model.StrVNet, req.VNetId)
-	if err != nil {
-		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-		return emptyObj, err
+	var tmpInf interface{}
+	tmpInf, createErr = GetResource(nsId, model.StrVNet, req.VNetId)
+	if createErr != nil {
+		return emptyObj, createErr
 	}
 	tbVNetInfo := model.TbVNetInfo{}
-	err = common.CopySrcToDest(&tmpInf, &tbVNetInfo)
-	if err != nil {
-		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-		return emptyObj, err
+	createErr = common.CopySrcToDest(&tmpInf, &tbVNetInfo)
+	if createErr != nil {
+		return emptyObj, createErr
 	}
 
 	var spSnName string
@@ -318,10 +331,10 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 		if found == true {
 			spSubnetNames = append(spSubnetNames, spSnName)
 
-			k8sRequiredSubnetCount, err := common.GetK8sRequiredSubnetCount(connConfig.ProviderName)
-			if err != nil {
-				log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-				return emptyObj, err
+			var k8sRequiredSubnetCount int
+			k8sRequiredSubnetCount, createErr = common.GetK8sRequiredSubnetCount(connConfig.ProviderName)
+			if createErr != nil {
+				return emptyObj, createErr
 			}
 
 			if k8sRequiredSubnetCount <= len(spSubnetNames) {
@@ -330,17 +343,16 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 		}
 	}
 	if len(spSubnetNames) == 0 {
-		err := fmt.Errorf("no valid subnets in vnet(%s)", req.VNetId)
-		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-		return emptyObj, err
+		createErr = fmt.Errorf("no valid subnets in vnet(%s)", req.VNetId)
+		return emptyObj, createErr
 	}
 
 	var spSecurityGroupNames []string
 	for _, v := range req.SecurityGroupIds {
-		spSgName, err := GetCspResourceName(nsId, model.StrSecurityGroup, v)
-		if spSgName == "" {
-			log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-			return emptyObj, err
+		var spSgName string
+		spSgName, createErr = GetCspResourceName(nsId, model.StrSecurityGroup, v)
+		if spSgName == "" || createErr != nil {
+			return emptyObj, createErr
 		}
 
 		spSecurityGroupNames = append(spSecurityGroupNames, spSgName)
@@ -349,10 +361,9 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 	var spNodeGroupList []model.SpiderNodeGroupReqInfo
 	for _, v := range req.K8sNodeGroupList {
 		spName := v.Name
-		err := common.CheckString(spName)
-		if err != nil {
-			log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-			return emptyObj, err
+		createErr = common.CheckString(spName)
+		if createErr != nil {
+			return emptyObj, createErr
 		}
 
 		spImgName := "" // Some CSPs do not require ImageName for creating a k8s cluster
@@ -360,17 +371,16 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 			spImgName = ""
 		} else {
 			spImgName, err = GetCspResourceName(nsId, model.StrImage, v.ImageId)
-			if spImgName == "" || err != nil {
+			if spImgName == "" || createErr != nil {
 				log.Warn().Msgf("Not found the Image %s in ns %s, find it from SystemCommonNs", v.ImageId, nsId)
 				errAgg := err.Error()
 				// If cannot find the resource, use common resource
 				spImgName, err = GetCspResourceName(model.SystemCommonNs, model.StrImage, v.ImageId)
 				if spImgName == "" || err != nil {
 					errAgg += err.Error()
-					err = fmt.Errorf(errAgg)
-					log.Err(err).Msgf("Not found the Image %s both from ns %s and SystemCommonNs", v.ImageId, nsId)
-					log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-					return emptyObj, err
+					createErr = fmt.Errorf(errAgg)
+					log.Err(createErr).Msgf("Not found the Image %s both from ns %s and SystemCommonNs", v.ImageId, nsId)
+					return emptyObj, createErr
 				} else {
 					log.Info().Msgf("Use the CommonImage %s in SystemCommonNs", spImgName)
 				}
@@ -388,10 +398,9 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 			spSpecName, err = GetCspResourceName(model.SystemCommonNs, model.StrSpec, v.SpecId)
 			if spSpecName == "" || err != nil {
 				errAgg += err.Error()
-				err = fmt.Errorf(errAgg)
-				log.Err(err).Msgf("Not found the Spec %s both from ns %s and SystemCommonNs", v.SpecId, nsId)
-				log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-				return emptyObj, err
+				createErr = fmt.Errorf(errAgg)
+				log.Err(createErr).Msgf("Not found the Spec %s both from ns %s and SystemCommonNs", v.SpecId, nsId)
+				return emptyObj, createErr
 			} else {
 				log.Info().Msgf("Use the CommonSpec %s in SystemCommonNs", spSpecName)
 			}
@@ -399,10 +408,10 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 			log.Info().Msgf("Use the Spec %s in ns %s", spSpecName, nsId)
 		}
 
-		spKpName, err := GetCspResourceName(nsId, model.StrSSHKey, v.SshKeyId)
-		if spKpName == "" {
-			log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-			return emptyObj, err
+		var spKpName string
+		spKpName, createErr = GetCspResourceName(nsId, model.StrSSHKey, v.SshKeyId)
+		if spKpName == "" || createErr != nil {
+			return emptyObj, createErr
 		}
 
 		spNodeGroupList = append(spNodeGroupList, model.SpiderNodeGroupReqInfo{
@@ -447,7 +456,7 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 
 	var spClusterRes model.SpiderClusterRes
 
-	err = common.ExecuteHttpRequest(
+	createErr = common.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -458,9 +467,8 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 		common.MediumDuration,
 	)
 
-	if err != nil {
-		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-		return emptyObj, err
+	if createErr != nil {
+		return emptyObj, createErr
 	}
 
 	// Update model.TbK8sClusterInfo object
@@ -493,16 +501,47 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 		model.LabelConnectionName:  tbK8sCInfo.ConnectionName,
 	}
 	k8sClusterKey := common.GenK8sClusterKey(nsId, k8sClusterId)
-	err = label.CreateOrUpdateLabel(model.StrK8s, uid, k8sClusterKey, labels)
-	if err != nil {
-		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-		return emptyObj, err
+	createErr = label.CreateOrUpdateLabel(model.StrK8s, uid, k8sClusterKey, labels)
+	if createErr != nil {
+		return emptyObj, createErr
 	}
 
 	return tbK8sCInfo, nil
 }
 
-// AddK8sNodeGroup adds a NodeGroup
+/*
+// CheckK8sNodeGroup returns the existence of the K8sNodeGroup in K8sCluster object in bool form.
+func CheckK8sNodeGroup(nsId string, k8sClusterId string, k8sNodeGroupName string) (bool, error) {
+
+	check, err := resource.CheckK8sCluster(nsId, k8sClusterId)
+  if err != nil {
+		log.Err(err).Msg("Failed to Check K8sNodeGroup")
+		return false, err
+  }
+
+	err = common.CheckString(k8sNodeGroupName)
+	if err != nil {
+		log.Err(err).Msg("Failed to Check K8sNodeGroup")
+		return false, err
+	}
+
+  log.Debug().Msgf("[Check K8sNodeGroup] %s:%s", k8sClusterId, k8sNodeGroupName)
+
+	key := common.GenK8sClusterKey(nsId, k8sClusterId)
+
+	keyValue, err := kvstore.GetKv(key)
+	if err != nil {
+		log.Err(err).Msg("Failed to Check K8sNodeGroup")
+		return false, err
+	}
+	if keyValue != (kvstore.KeyValue{}) {
+		return true, nil
+	}
+	return false, nil
+}
+*/
+
+// AddK8sNodeGroup adds a K8sNodeGroup
 func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupReq) (*model.TbK8sClusterInfo, error) {
 	log.Info().Msg("AddK8sNodeGroup")
 
@@ -947,10 +986,10 @@ func CheckK8sCluster(nsId string, k8sClusterId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
-		err := fmt.Errorf("CheckK8sCluster failed; nsId given is empty.")
+		err := fmt.Errorf("nsId given is empty.")
 		return false, err
 	} else if k8sClusterId == "" {
-		err := fmt.Errorf("CheckK8sCluster failed; k8sClusterId given is empty.")
+		err := fmt.Errorf("k8sClusterId given is empty.")
 		return false, err
 	}
 
