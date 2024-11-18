@@ -8,7 +8,7 @@ require (
 	github.com/go-playground/validator/v10 v10.17.0
 	github.com/go-resty/resty/v2 v2.13.1
 	github.com/go-sql-driver/mysql v1.8.1
-	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/jedib0t/go-pretty/v6 v6.5.6
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/m-cmp/mc-iam-manager v0.2.7
