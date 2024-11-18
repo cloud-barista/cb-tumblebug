@@ -30,6 +30,7 @@ import (
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/net/context"
 )
 
 // TbMciReqStructLevelValidation is func to validate fields in TbMciReqStruct
@@ -1141,6 +1142,35 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 		return &model.TbVmReq{}, err
 	}
 
+	/*
+	 * [Critial Section]
+	 * - Verify and create vNets in parallel
+	 * - Use distributed-lock, considering running multiple cb-tumblebugs.
+	 */
+
+	// Generate a resource key for vNet
+	vNetKey := common.GenResourceKey(nsId, model.StrVNet, resourceName)
+
+	// Create a persistent session
+	ctx := context.TODO()
+	session, err := kvstore.NewSession(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create etcd session")
+	}
+	defer session.Close()
+
+	lock, err := kvstore.NewLock(ctx, session, vNetKey)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get lock")
+	}
+	// Lock
+	err = lock.Lock(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to acquire lock")
+	}
+	// Unlock the lock when the function exits
+	defer lock.Unlock(ctx)
+
 	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
 
 	vmReq.VNetId = resourceName
@@ -1163,6 +1193,12 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 		log.Info().Msg("Found and utilize default vNet: " + vmReq.VNetId)
 	}
 	vmReq.SubnetId = resourceName
+
+	// Unlock the lock
+	err = lock.Unlock(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to release lock")
+	}
 
 	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
 	vmReq.SshKeyId = resourceName
