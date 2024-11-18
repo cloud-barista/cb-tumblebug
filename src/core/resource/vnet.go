@@ -908,12 +908,12 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 		return emptyRet, err
 	}
 
-	// Remove label info using RemoveLabel
+	// Remove label info using DeleteLabelObject
 	// labels := map[string]string{
 	// 	model.LabelManager:  model.StrManager,
 	// 	"namespace": nsId,
 	// }
-	err = label.RemoveLabel(model.StrVNet, vNetInfo.Uid, vNetKey)
+	err = label.DeleteLabelObject(model.StrVNet, vNetInfo.Uid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1066,7 +1066,7 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 			// return emptyRet, err
 		}
 
-		err = label.RemoveLabel(model.StrSubnet, vNetInfo.Uid, subnetKv.Key)
+		err = label.DeleteLabelObject(model.StrSubnet, vNetInfo.Uid)
 		if err != nil {
 			log.Warn().Err(err).Msg("")
 			// return emptyRet, err
@@ -1080,12 +1080,12 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 		// return emptyRet, err
 	}
 
-	// Remove label info using RemoveLabel
+	// Remove label info using DeleteLabelObject
 	// labels := map[string]string{
 	// 	"sys.manager":  model.StrManager,
 	// 	"namespace": nsId,
 	// }
-	err = label.RemoveLabel(model.StrVNet, vNetInfo.Uid, vNetKey)
+	err = label.DeleteLabelObject(model.StrVNet, vNetInfo.Uid)
 	if err != nil {
 		log.Warn().Err(err).Msg("")
 		// return emptyRet, err
@@ -1536,12 +1536,12 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 		return emptyRet, err
 	}
 
-	// Remove label info using RemoveLabel
+	// Remove label info using DeleteLabelObject
 	// labels := map[string]string{
 	// 	model.LabelManager:  model.StrManager,
 	// 	"namespace": nsId,
 	// }
-	err = label.RemoveLabel(model.StrVNet, vNetInfo.Uid, vNetKey)
+	err = label.DeleteLabelObject(model.StrVNet, vNetInfo.Uid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err

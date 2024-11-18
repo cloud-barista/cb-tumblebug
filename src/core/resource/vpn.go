@@ -1178,8 +1178,8 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 		return emptyRet, err
 	}
 
-	// Remove label info using RemoveLabel
-	err = label.RemoveLabel(model.StrVPN, vpnInfo.Uid, vpnKey)
+	// Remove label info using DeleteLabelObject
+	err = label.DeleteLabelObject(model.StrVPN, vpnInfo.Uid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
