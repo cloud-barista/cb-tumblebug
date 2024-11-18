@@ -201,8 +201,8 @@ type RestGetAllSubnetResponse struct {
 // @ID DelSubnet
 // @Summary Delete Subnet (supporting actions: refine, force)
 // @Description Delete Subnet
-// @Description - refine: delete information of subnet if there's no info/resource in Spider/CSP
-// @Description - force: delete subnet regardless of the status of info/resource in Spider/CSP
+// @Description - refine: delete a subnet `object` if there's no resource on CSP or no inforamation on Spider
+// @Description - force: force: delete a subnet `resource` on a CSP regardless of the current resource status (e.g., attempt to delete even if in use)
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json

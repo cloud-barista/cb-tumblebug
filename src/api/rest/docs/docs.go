@@ -9228,7 +9228,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete Subnet\n- refine: delete information of subnet if there's no info/resource in Spider/CSP\n- force: delete subnet regardless of the status of info/resource in Spider/CSP",
+                "description": "Delete Subnet\n- refine: delete a subnet ` + "`" + `object` + "`" + ` if there's no resource on CSP or no inforamation on Spider\n- force: force: delete a subnet ` + "`" + `resource` + "`" + ` on a CSP regardless of the current resource status (e.g., attempt to delete even if in use)",
                 "consumes": [
                     "application/json"
                 ],
