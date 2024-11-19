@@ -14,36 +14,36 @@ limitations under the License.
 // Package mci is to handle REST API for mci
 package model
 
-type RestPostSqlDbRequest struct {
-	Name                string              `json:"name" validate:"required" example:"sqldb01"`
-	ConnectionName      string              `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
-	CSP                 string              `json:"csp" validate:"required" example:"aws"`
-	Region              string              `json:"region" validate:"required" example:"ap-northeast-2"`
-	DBInstanceSpec      string              `json:"dbInstanceSpec,omitempty" validate:"required" example:"db.t3.micro"`
-	DBEnginePort        int                 `json:"dbEnginePort,omitempty" validate:"required" example:"3306"`
-	DBEngineVersion     string              `json:"dbEngineVersion,omitempty" validate:"required" example:"8.0.39"`
-	DBAdminUsername     string              `json:"dbAdminUsername" validate:"required" example:"mydbadmin"`
-	DBAdminPassword     string              `json:"dbAdminPassword" validate:"required" example:"Password1234!"`
-	RequiredCSPResource RequiredCSPResource `json:"requiredCSPResource,omitempty"`
+type RestPostSqlDBRequest struct {
+	Name                string                      `json:"name" validate:"required" example:"sqldb01"`
+	ConnectionName      string                      `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
+	CSP                 string                      `json:"csp" validate:"required" example:"aws"`
+	Region              string                      `json:"region" validate:"required" example:"ap-northeast-2"`
+	DBInstanceSpec      string                      `json:"dbInstanceSpec,omitempty" validate:"required" example:"db.t3.micro"`
+	DBEnginePort        int                         `json:"dbEnginePort,omitempty" validate:"required" example:"3306"`
+	DBEngineVersion     string                      `json:"dbEngineVersion,omitempty" validate:"required" example:"8.0.39"`
+	DBAdminUsername     string                      `json:"dbAdminUsername" validate:"required" example:"mydbadmin"`
+	DBAdminPassword     string                      `json:"dbAdminPassword" validate:"required" example:"Password1234!"`
+	RequiredCSPResource RequiredCSPResourceForSqlDB `json:"requiredCSPResource,omitempty"`
 }
 
-type RequiredCSPResource struct {
-	AWS   RequiredAWSResource   `json:"aws,omitempty"`
-	Azure RequiredAzureResource `json:"azure,omitempty"`
-	NCP   RequiredNCPResource   `json:"ncp,omitempty"`
+type RequiredCSPResourceForSqlDB struct {
+	AWS   RequiredAWSResourceForSqlDB   `json:"aws,omitempty"`
+	Azure RequiredAzureResourceForSqlDB `json:"azure,omitempty"`
+	NCP   RequiredNCPResourceForSqlDB   `json:"ncp,omitempty"`
 }
 
-type RequiredAWSResource struct {
+type RequiredAWSResourceForSqlDB struct {
 	VNetID    string `json:"vNetID,omitempty" example:"vpc-xxxxx"`
 	Subnet1ID string `json:"subnet1ID,omitempty" example:"subnet-xxxx"`
 	Subnet2ID string `json:"subnet2ID,omitempty" example:"subnet-xxxx in different AZ"`
 }
 
-type RequiredAzureResource struct {
+type RequiredAzureResourceForSqlDB struct {
 	ResourceGroup string `json:"resourceGroup,omitempty" example:"koreacentral"`
 }
 
-type RequiredNCPResource struct {
+type RequiredNCPResourceForSqlDB struct {
 	SubnetID string `json:"subnetID,omitempty" example:"123456"`
 }
 

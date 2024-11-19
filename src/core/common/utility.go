@@ -223,6 +223,7 @@ func GenResourceKey(nsId string, resourceType string, resourceId string) string 
 		resourceType == model.StrVNet ||
 		resourceType == model.StrVPN ||
 		resourceType == model.StrSqlDB ||
+		resourceType == model.StrObjectStorage ||
 		resourceType == model.StrSecurityGroup ||
 		resourceType == model.StrDataDisk {
 		//resourceType == "publicIp" ||

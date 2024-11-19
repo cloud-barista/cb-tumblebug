@@ -745,6 +745,7 @@ paths:
           - sshKey
           - dataDisk
           - sqlDb
+          - objectStorage
       - name: uid
         in: path
         description: Resource uid
@@ -796,6 +797,7 @@ paths:
           - sshKey
           - dataDisk
           - sqlDb
+          - objectStorage
       - name: uid
         in: path
         description: Resource uid
@@ -856,6 +858,7 @@ paths:
           - sshKey
           - dataDisk
           - sqlDb
+          - objectStorage
       - name: uid
         in: path
         description: Resource uid
@@ -5688,6 +5691,216 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/objectStorage:
+    get:
+      tags:
+      - "[Infra Resource] Object Storage Management (under development)"
+      summary: Get all Object Storages (TBD)
+      description: Get all Object Storages (TBD)
+      operationId: GetAllObjectStorage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: option
+        in: query
+        description: Option
+        schema:
+          type: string
+          default: IdList
+          enum:
+          - InfoList
+          - IdList
+      responses:
+        "200":
+          description: OK" /////////////
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.VpnIdList'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[Infra Resource] Object Storage Management (under development)"
+      summary: Create a Object Storages
+      description: |
+        Create a Object Storages
+
+        Supported CSPs: AWS, Azure
+        - Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral
+
+        - Note - Please check the `requiredCSPResource` property which includes CSP specific values.
+
+        - Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/117
+      operationId: PostObjectStorage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: action
+        in: query
+        description: Action
+        schema:
+          type: string
+          enum:
+          - retry
+      requestBody:
+        description: Request body to create a Object Storage
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.RestPostObjectStorageRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObjectStorageInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: objectStorageReq
+  /ns/{nsId}/resources/objectStorage/{objectStorageId}:
+    get:
+      tags:
+      - "[Infra Resource] Object Storage Management (under development)"
+      summary: Get resource info of a Object Storage
+      description: Get resource info of a Object Storage
+      operationId: GetObjectStorage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: objectStorageId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: objectstorage01
+      - name: detail
+        in: query
+        description: "Resource info by detail (refined, raw)"
+        schema:
+          type: string
+          default: refined
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObjectStorageInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    delete:
+      tags:
+      - "[Infra Resource] Object Storage Management (under development)"
+      summary: Delete a Object Storage
+      description: Delete a Object Storage
+      operationId: DeleteObjectStorage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: objectStorageId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: objectstorage01
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/searchImage:
     post:
       tags:
@@ -6292,7 +6505,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.RestPostSqlDbRequest'
+              $ref: '#/components/schemas/model.RestPostSqlDBRequest'
         required: true
       responses:
         "200":
@@ -7789,6 +8002,7 @@ paths:
           - sshKey
           - dataDisk
           - sqlDb
+          - objectStorage
       - name: labelSelector
         in: query
         description: "Label selector query. Example: env=production,tier=backend"
@@ -9010,6 +9224,44 @@ components:
         name:
           type: string
           example: default
+    model.ObjectStorageInfo:
+      type: object
+      properties:
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        description:
+          type: string
+        details:
+          type: object
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: sqldb01
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: sqldb01
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        status:
+          type: string
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
     model.Operation:
       type: object
       properties:
@@ -9192,7 +9444,7 @@ components:
           type: integer
         vm:
           type: integer
-    model.RequiredAWSResource:
+    model.RequiredAWSResourceForSqlDB:
       type: object
       properties:
         subnet1ID:
@@ -9204,22 +9456,37 @@ components:
         vNetID:
           type: string
           example: vpc-xxxxx
-    model.RequiredAzureResource:
+    model.RequiredAzureResourceForObjectStorage:
       type: object
       properties:
         resourceGroup:
           type: string
           example: koreacentral
-    model.RequiredCSPResource:
+    model.RequiredAzureResourceForSqlDB:
+      type: object
+      properties:
+        resourceGroup:
+          type: string
+          example: koreacentral
+    model.RequiredCSPResourceForObjectStorage:
+      type: object
+      properties:
+        azure:
+          type: object
+          description: "AWS   RequiredAWSResourceForObjectStorage   `json:\"aws,omitempty\"\
+            `"
+          allOf:
+          - $ref: '#/components/schemas/model.RequiredAzureResourceForObjectStorage'
+    model.RequiredCSPResourceForSqlDB:
       type: object
       properties:
         aws:
-          $ref: '#/components/schemas/model.RequiredAWSResource'
+          $ref: '#/components/schemas/model.RequiredAWSResourceForSqlDB'
         azure:
-          $ref: '#/components/schemas/model.RequiredAzureResource'
+          $ref: '#/components/schemas/model.RequiredAzureResourceForSqlDB'
         ncp:
-          $ref: '#/components/schemas/model.RequiredNCPResource'
-    model.RequiredNCPResource:
+          $ref: '#/components/schemas/model.RequiredNCPResourceForSqlDB'
+    model.RequiredNCPResourceForSqlDB:
       type: object
       properties:
         subnetID:
@@ -9323,7 +9590,29 @@ components:
         success:
           type: boolean
           example: true
-    model.RestPostSqlDbRequest:
+    model.RestPostObjectStorageRequest:
+      required:
+      - connectionName
+      - csp
+      - name
+      - region
+      type: object
+      properties:
+        connectionName:
+          type: string
+          example: aws-ap-northeast-2
+        csp:
+          type: string
+          example: aws
+        name:
+          type: string
+          example: objectstorage01
+        region:
+          type: string
+          example: ap-northeast-2
+        requiredCSPResource:
+          $ref: '#/components/schemas/model.RequiredCSPResourceForObjectStorage'
+    model.RestPostSqlDBRequest:
       required:
       - connectionName
       - csp
@@ -9364,7 +9653,7 @@ components:
           type: string
           example: ap-northeast-2
         requiredCSPResource:
-          $ref: '#/components/schemas/model.RequiredCSPResource'
+          $ref: '#/components/schemas/model.RequiredCSPResourceForSqlDB'
     model.RestPostVpnRequest:
       required:
       - name
