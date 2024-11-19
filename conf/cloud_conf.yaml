@@ -16,7 +16,7 @@ cloud:
       timeout: "-1"
       threshold: "3"
     k8scluster:
-      enable: "n"
+      enable: "y"
   azure:
     enable: "y"
     nlb:

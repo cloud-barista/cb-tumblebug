@@ -131,7 +131,7 @@ type SpiderNodeGroupReqInfo struct {
 
 // TbK8sNodeGroupReq is a struct to handle requests related to K8sNodeGroup toward CB-Tumblebug.
 type TbK8sNodeGroupReq struct {
-	Name         string `json:"name" example:"ng-01"`
+	Name         string `json:"name" example:"k8snodegroup-01"`
 	ImageId      string `json:"imageId" example:"image-01"`
 	SpecId       string `json:"specId" example:"spec-01"`
 	RootDiskType string `json:"rootDiskType" example:"cloud_essd" enum:"default, TYPE1, ..."` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
@@ -143,6 +143,11 @@ type TbK8sNodeGroupReq struct {
 	DesiredNodeSize string `json:"desiredNodeSize" example:"1"`
 	MinNodeSize     string `json:"minNodeSize" example:"1"`
 	MaxNodeSize     string `json:"maxNodeSize" example:"3"`
+
+	// Label is for describing the object by keywords
+	Label map[string]string `json:"label"`
+
+	Description string `json:"description" example:"Description"`
 }
 
 // SpiderSetAutoscalingReq is a wrapper struct to create JSON body of 'Set Autoscaling On/Off' request.
@@ -489,15 +494,15 @@ type TbK8sClusterDynamicReq struct {
 	Name string `json:"name" validate:"required" example:"k8scluster-01"`
 
 	// K8s Clsuter version
-	Version string `json:"version" example:"1.29"`
+	Version string `json:"version,omitempty" example:"1.29"`
 
 	// Label is for describing the object by keywords
-	Label map[string]string `json:"label"`
+	Label map[string]string `json:"label,omitempty"`
 
-	Description string `json:"description" example:"Description"`
+	Description string `json:"description,omitempty" example:"Description"`
 
 	// NodeGroup name if it is not empty
-	NodeGroupName string `json:"nodeGroupName" example:"nodegroup-01"`
+	NodeGroupName string `json:"nodeGroupName,omitempty" example:"k8snodegroup-01"`
 
 	// CommonSpec is field for id of a spec in common namespace
 	CommonSpec string `json:"commonSpec" validate:"required" example:"tencent+ap-seoul+S2.MEDIUM4"`
@@ -516,4 +521,29 @@ type TbK8sClusterDynamicReq struct {
 	// if ConnectionName is given, the VM tries to use associtated credential.
 	// if not, it will use predefined ConnectionName in Spec objects
 	ConnectionName string `json:"connectionName,omitempty" default:"tencent-ap-seoul"`
+}
+
+// TbK8sNodeGroupDynamicReq is struct for requirements to create K8sNodeGroup dynamically (with default resource option)
+type TbK8sNodeGroupDynamicReq struct {
+	// K8sNodeGroup name if it is not empty.
+	Name string `json:"name" validate:"required" example:"k8snodegroup-01"`
+
+	// Label is for describing the object by keywords
+	Label map[string]string `json:"label,omitempty"`
+
+	Description string `json:"description,omitempty" example:"Description"`
+
+	// CommonSpec is field for id of a spec in common namespace
+	CommonSpec string `json:"commonSpec" validate:"required" example:"tencent+ap-seoul+S2.MEDIUM4"`
+
+	// CommonImage is field for id of a image in common namespace
+	CommonImage string `json:"commonImage" validate:"required" example:"default, tencent+ap-seoul+ubuntu20.04"`
+
+	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
+	RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..." default:"default"` // "default", Integer (GB): ["50", ..., "1000"]
+
+	OnAutoScaling   string `json:"onAutoScaling,omitempty" default:"true" example:"true"`
+	DesiredNodeSize string `json:"desiredNodeSize,omitempty" default:"1" example:"1"`
+	MinNodeSize     string `json:"minNodeSize,omitempty" default:"1" example:"1"`
+	MaxNodeSize     string `json:"maxNodeSize,omitempty" default:"2" example:"3"`
 }

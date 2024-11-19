@@ -402,6 +402,7 @@ func RunServer() {
 	e.POST("/tumblebug/k8sclusterRecommendNode", rest_resource.RestRecommendK8sNode)
 	e.POST("/tumblebug/k8sclusterDynamicCheckRequest", rest_resource.RestPostK8sClusterDynamicCheckRequest)
 	g.POST("/:nsId/k8sclusterDynamic", rest_resource.RestPostK8sClusterDynamic)
+	g.POST("/:nsId/k8scluster/:k8sClusterId/k8snodegroupDynamic", rest_resource.RestPostK8sNodeGroupDynamic)
 	g.GET("/:nsId/control/k8scluster/:k8sClusterId", rest_resource.RestGetControlK8sCluster)
 
 	// Network Load Balancer
