@@ -30,7 +30,7 @@ import (
 // // @ID GetSitesInMci
 // // @Summary Get sites in MCI
 // // @Description Get sites in MCI
-// // @Tags [Infra Resource] SQL Database Management (under development)
+// // @Tags [Infra Resource] Object Storage Management (under development)
 // // @Accept  json
 // // @Produce  json
 // // @Param nsId path string true "Namespace ID" default(default)
@@ -216,11 +216,11 @@ import (
 // 	return sitesInfo, nil
 // }
 
-// RestGetAllSqlDb godoc
-// @ID GetAllSqlDb
-// @Summary Get all SQL Databases (TBD)
-// @Description Get all SQL Databases (TBD)
-// @Tags [Infra Resource] SQL Database Management (under development)
+// RestGetAllObjectStorage godoc
+// @ID GetAllObjectStorage
+// @Summary Get all Object Storages (TBD)
+// @Description Get all Object Storages (TBD)
+// @Tags [Infra Resource] Object Storage Management (under development)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -230,8 +230,8 @@ import (
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/resources/sqlDb [get]
-func RestGetAllSqlDB(c echo.Context) error {
+// @Router /ns/{nsId}/resources/objectStorage [get]
+func RestGetAllObjectStorage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -280,30 +280,30 @@ func RestGetAllSqlDB(c echo.Context) error {
 	return c.JSON(http.StatusOK, model.VpnInfoList{})
 }
 
-// RestPostSqlDB godoc
-// @ID PostSqlDb
-// @Summary Create a SQL Databases
-// @Description Create a SQL Databases
+// RestPostObjectStorage godoc
+// @ID PostObjectStorage
+// @Summary Create a Object Storages
+// @Description Create a Object Storages
 // @Description
-// @Description Supported CSPs: AWS, Azure, GCP, NCP
-// @Description - Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncpvpc-kr
+// @Description Supported CSPs: AWS, Azure
+// @Description - Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral
 // @Description
 // @Description - Note - Please check the `requiredCSPResource` property which includes CSP specific values.
 // @Description
-// @Description - Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/110
+// @Description - Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/117
 // @Description
-// @Tags [Infra Resource] SQL Database Management (under development)
+// @Tags [Infra Resource] Object Storage Management (under development)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param sqlDbReq body model.RestPostSqlDBRequest true "Request body to create a SQL database"
+// @Param objectStorageReq body model.RestPostObjectStorageRequest true "Request body to create a Object Storage"
 // @Param action query string false "Action" Enums(retry)
-// @Success 200 {object} model.SqlDBInfo "OK"
+// @Success 200 {object} model.ObjectStorageInfo "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/resources/sqlDb [post]
-func RestPostSqlDB(c echo.Context) error {
+// @Router /ns/{nsId}/resources/objectStorage [post]
+func RestPostObjectStorage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -320,16 +320,16 @@ func RestPostSqlDB(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	// Bind the request body to RestPostSqlDbRequest struct
-	sqlDbReq := new(model.RestPostSqlDBRequest)
-	if err := c.Bind(sqlDbReq); err != nil {
+	// Bind the request body to RestPostObjectStorageRequest struct
+	objectStorageReq := new(model.RestPostObjectStorageRequest)
+	if err := c.Bind(objectStorageReq); err != nil {
 		log.Warn().Err(err).Msgf("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	// Validate the CSP is supported
-	sqlDbReq.CSP = strings.ToLower(sqlDbReq.CSP)
-	ok, err := resource.IsValidCspForSqlDB(sqlDbReq.CSP)
+	objectStorageReq.CSP = strings.ToLower(objectStorageReq.CSP)
+	ok, err := resource.IsValidCspForObjectStorage(objectStorageReq.CSP)
 	if !ok {
 		log.Warn().Err(err).Msg("")
 		res := model.SimpleMsg{
@@ -338,15 +338,15 @@ func RestPostSqlDB(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, res)
 	}
 
-	err = common.CheckString(sqlDbReq.Name)
+	err = common.CheckString(objectStorageReq.Name)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid sqlDbName (%s)", sqlDbReq.Name)
+		errMsg := fmt.Errorf("invalid objectStorageName (%s)", objectStorageReq.Name)
 		log.Warn().Err(err).Msgf(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	var resp model.SqlDBInfo
-	resp, err = resource.CreateSqlDB(nsId, sqlDbReq, action)
+	var resp model.ObjectStorageInfo
+	resp, err = resource.CreateObjectStorage(nsId, objectStorageReq, action)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -356,22 +356,22 @@ func RestPostSqlDB(c echo.Context) error {
 
 }
 
-// RestGetSqlDB godoc
-// @ID GetSqlDb
-// @Summary Get resource info of a SQL datatbase
-// @Description Get resource info of a SQL datatbase
-// @Tags [Infra Resource] SQL Database Management (under development)
+// RestGetObjectStorage godoc
+// @ID GetObjectStorage
+// @Summary Get resource info of a Object Storage
+// @Description Get resource info of a Object Storage
+// @Tags [Infra Resource] Object Storage Management (under development)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param sqlDbId path string true "SQL DB ID" default(sqldb01)
+// @Param objectStorageId path string true "Object Storage ID" default(objectstorage01)
 // @Param detail query string false "Resource info by detail (refined, raw)" default(refined)
-// @Success 200 {object} model.SqlDBInfo "OK"
+// @Success 200 {object} model.ObjectStorageInfo "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/resources/sqlDb/{sqlDbId} [get]
-func RestGetSqlDB(c echo.Context) error {
+// @Router /ns/{nsId}/resources/objectStorage/{objectStorageId} [get]
+func RestGetObjectStorage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -381,10 +381,10 @@ func RestGetSqlDB(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	sqlDbId := c.Param("sqlDbId")
-	err = common.CheckString(sqlDbId)
+	objectStorageId := c.Param("objectStorageId")
+	err = common.CheckString(objectStorageId)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid sqlDbId (%s)", sqlDbId)
+		errMsg := fmt.Errorf("invalid objectStorageId (%s)", objectStorageId)
 		log.Warn().Err(err).Msgf(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
@@ -413,10 +413,10 @@ func RestGetSqlDB(c echo.Context) error {
 	// 	detail = DetailOptions.Refined
 	// }
 
-	var resp model.SqlDBInfo
+	var resp model.ObjectStorageInfo
 	// currently, only support detail=refined
 	detail := "refined"
-	resp, err = resource.GetSqlDB(nsId, sqlDbId, detail)
+	resp, err = resource.GetObjectStorage(nsId, objectStorageId, detail)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -425,21 +425,21 @@ func RestGetSqlDB(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
-// RestDeleteSqlDB godoc
-// @ID DeleteSqlDb
-// @Summary Delete a SQL datatbase
-// @Description Delete a SQL datatbase
-// @Tags [Infra Resource] SQL Database Management (under development)
+// RestDeleteObjectStorage godoc
+// @ID DeleteObjectStorage
+// @Summary Delete a Object Storage
+// @Description Delete a Object Storage
+// @Tags [Infra Resource] Object Storage Management (under development)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param sqlDbId path string true "SQL DB ID" default(sqldb01)
+// @Param objectStorageId path string true "Object Storage ID" default(objectstorage01)
 // @Success 200 {object} model.SimpleMsg "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/resources/sqlDb/{sqlDbId} [delete]
-func RestDeleteSqlDB(c echo.Context) error {
+// @Router /ns/{nsId}/resources/objectStorage/{objectStorageId} [delete]
+func RestDeleteObjectStorage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -449,15 +449,15 @@ func RestDeleteSqlDB(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	sqlDbId := c.Param("sqlDbId")
-	err = common.CheckString(sqlDbId)
+	objectStorageId := c.Param("objectStorageId")
+	err = common.CheckString(objectStorageId)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid sqlDbId (%s)", sqlDbId)
+		errMsg := fmt.Errorf("invalid objectStorageId (%s)", objectStorageId)
 		log.Warn().Err(err).Msgf(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	resp, err := resource.DeleteSqlDB(nsId, sqlDbId)
+	resp, err := resource.DeleteObjectStorage(nsId, objectStorageId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
@@ -466,23 +466,23 @@ func RestDeleteSqlDB(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
-// // RestPutSqlDb godoc
-// // @ID PutSqlDb
-// // @Summary (To be provided) Update the SQL database
-// // @Description (To be provided) Update the SQL database
-// // @Tags [Infra Resource] SQL Database Management (under development)
+// // RestPutObjectStorage godoc
+// // @ID PutObjectStorage
+// // @Summary (To be provided) Update the Object Storage
+// // @Description (To be provided) Update the Object Storage
+// // @Tags [Infra Resource] Object Storage Management (under development)
 // // @Accept  json
 // // @Produce  json-stream
 // // @Param nsId path string true "Namespace ID" default(default)
 //// // @Param mciId path string true "MCI ID" default(mci01)
-// // @Param vpnId path string true "SQL DB ID" default(sqldb01)
+// // @Param vpnId path string true "Object Storage ID" default(objectstorage01)
 // // @Param vpnReq body model.RestPostVpnRequest true "Resources info for VPN tunnel configuration between GCP and AWS"
 // // @Success 200 {object} model.SimpleMsg "OK"
 // // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// // @Router /ns/{nsId}/resources/sqlDb/{SqlDbId} [put]
-// func RestPutSqlDB(c echo.Context) error {
+// // @Router /ns/{nsId}/resources/qqlDb/{ObjectStorageId} [put]
+// func RestPutObjectStorage(c echo.Context) error {
 
 // 	nsId := c.Param("nsId")
 // 	err := common.CheckString(nsId)
@@ -571,22 +571,22 @@ func RestDeleteSqlDB(c echo.Context) error {
 // 	// return nil
 // }
 
-// // RestGetRequestStatusOfSqlDb godoc
-// // @ID GetRequestStatusOfSqlDb
+// // RestGetRequestStatusOfObjectStorage godoc
+// // @ID GetRequestStatusOfObjectStorage
 // // @Summary Check the status of a specific request by its ID
 // // @Description Check the status of a specific request by its ID
-// // @Tags [Infra Resource] SQL Database Management (under development)
+// // @Tags [Infra Resource] Object Storage Management (under development)
 // // @Accept  json
 // // @Produce  json
 // // @Param nsId path string true "Namespace ID" default(default)
-// // @Param sqlDbId path string true "SQL DB ID" default(sqldb01)
+// // @Param objectStorageId path string true "Object Storage ID" default(objectstorage01)
 // // @Param requestId path string true "Request ID"
 // // @Success 200 {object} model.Response "OK"
 // // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// // @Router /ns/{nsId}/resources/sqlDb/{sqlDbId}/request/{requestId} [get]
-// func RestGetRequestStatusOfSqlDB(c echo.Context) error {
+// // @Router /ns/{nsId}/resources/objectStorage/{objectStorageId}/request/{requestId} [get]
+// func RestGetRequestStatusOfObjectStorage(c echo.Context) error {
 
 // 	nsId := c.Param("nsId")
 // 	err := common.CheckString(nsId)
@@ -596,10 +596,10 @@ func RestDeleteSqlDB(c echo.Context) error {
 // 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 // 	}
 
-// 	sqlDbId := c.Param("sqlDbId")
-// 	err = common.CheckString(sqlDbId)
+// 	objectStorageId := c.Param("objectStorageId")
+// 	err = common.CheckString(objectStorageId)
 // 	if err != nil {
-// 		errMsg := fmt.Errorf("invalid sqlDbId (%s)", sqlDbId)
+// 		errMsg := fmt.Errorf("invalid objectStorageId (%s)", objectStorageId)
 // 		log.Warn().Err(err).Msgf(errMsg.Error())
 // 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 // 	}
@@ -612,7 +612,7 @@ func RestDeleteSqlDB(c echo.Context) error {
 // 	reqId = strings.TrimSpace(reqId)
 
 // 	var resp model.Response
-// 	resp, err = resource.GetRequestStatusOfSqlDB(nsId, sqlDbId, reqId)
+// 	resp, err = resource.GetRequestStatusOfObjectStorage(nsId, objectStorageId, reqId)
 // 	if err != nil {
 // 		log.Err(err).Msg("")
 // 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})

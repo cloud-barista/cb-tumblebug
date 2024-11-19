@@ -166,7 +166,7 @@ services:
 
   # # mc-terrarium (PoC): resource extentions such as VPN for CB-Tumblebug by using OpenTofu
   # mc-terrarium:
-  #   image: cloudbaristaorg/mc-terrarium:0.0.16
+  #   image: cloudbaristaorg/mc-terrarium:0.0.18
   #   container_name: mc-terrarium
   #   # build:
   #   #   context: .

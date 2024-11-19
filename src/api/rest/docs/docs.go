@@ -994,7 +994,8 @@ const docTemplate = `{
                             "securityGroup",
                             "sshKey",
                             "dataDisk",
-                            "sqlDb"
+                            "sqlDb",
+                            "objectStorage"
                         ],
                         "type": "string",
                         "description": "Label Type",
@@ -1058,7 +1059,8 @@ const docTemplate = `{
                             "securityGroup",
                             "sshKey",
                             "dataDisk",
-                            "sqlDb"
+                            "sqlDb",
+                            "objectStorage"
                         ],
                         "type": "string",
                         "description": "Label Type",
@@ -1133,7 +1135,8 @@ const docTemplate = `{
                             "securityGroup",
                             "sshKey",
                             "dataDisk",
-                            "sqlDb"
+                            "sqlDb",
+                            "objectStorage"
                         ],
                         "type": "string",
                         "description": "Label Type",
@@ -7468,6 +7471,262 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/objectStorage": {
+            "get": {
+                "description": "Get all Object Storages (TBD)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management (under development)"
+                ],
+                "summary": "Get all Object Storages (TBD)",
+                "operationId": "GetAllObjectStorage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "InfoList",
+                            "IdList"
+                        ],
+                        "type": "string",
+                        "default": "IdList",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK\" /////////////",
+                        "schema": {
+                            "$ref": "#/definitions/model.VpnIdList"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a Object Storages\n\nSupported CSPs: AWS, Azure\n- Note - ` + "`" + `connectionName` + "`" + ` example: aws-ap-northeast-2, azure-koreacentral\n\n- Note - Please check the ` + "`" + `requiredCSPResource` + "`" + ` property which includes CSP specific values.\n\n- Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/117\n",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management (under development)"
+                ],
+                "summary": "Create a Object Storages",
+                "operationId": "PostObjectStorage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body to create a Object Storage",
+                        "name": "objectStorageReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RestPostObjectStorageRequest"
+                        }
+                    },
+                    {
+                        "enum": [
+                            "retry"
+                        ],
+                        "type": "string",
+                        "description": "Action",
+                        "name": "action",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ObjectStorageInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/objectStorage/{objectStorageId}": {
+            "get": {
+                "description": "Get resource info of a Object Storage",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management (under development)"
+                ],
+                "summary": "Get resource info of a Object Storage",
+                "operationId": "GetObjectStorage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "objectstorage01",
+                        "description": "Object Storage ID",
+                        "name": "objectStorageId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "refined",
+                        "description": "Resource info by detail (refined, raw)",
+                        "name": "detail",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ObjectStorageInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a Object Storage",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management (under development)"
+                ],
+                "summary": "Delete a Object Storage",
+                "operationId": "DeleteObjectStorage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "objectstorage01",
+                        "description": "Object Storage ID",
+                        "name": "objectStorageId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/searchImage": {
             "post": {
                 "description": "Search image",
@@ -8254,7 +8513,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.RestPostSqlDbRequest"
+                            "$ref": "#/definitions/model.RestPostSqlDBRequest"
                         }
                     },
                     {
@@ -10223,7 +10482,8 @@ const docTemplate = `{
                             "securityGroup",
                             "sshKey",
                             "dataDisk",
-                            "sqlDb"
+                            "sqlDb",
+                            "objectStorage"
                         ],
                         "type": "string",
                         "description": "Label Type",
@@ -11989,6 +12249,53 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ObjectStorageInfo": {
+            "type": "object",
+            "properties": {
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "details": {},
+                "id": {
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "sqldb01"
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "sqldb01"
+                },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
+                }
+            }
+        },
         "model.Operation": {
             "type": "object",
             "properties": {
@@ -12259,7 +12566,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.RequiredAWSResource": {
+        "model.RequiredAWSResourceForSqlDB": {
             "type": "object",
             "properties": {
                 "subnet1ID": {
@@ -12276,7 +12583,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.RequiredAzureResource": {
+        "model.RequiredAzureResourceForObjectStorage": {
             "type": "object",
             "properties": {
                 "resourceGroup": {
@@ -12285,21 +12592,43 @@ const docTemplate = `{
                 }
             }
         },
-        "model.RequiredCSPResource": {
+        "model.RequiredAzureResourceForSqlDB": {
             "type": "object",
             "properties": {
-                "aws": {
-                    "$ref": "#/definitions/model.RequiredAWSResource"
-                },
-                "azure": {
-                    "$ref": "#/definitions/model.RequiredAzureResource"
-                },
-                "ncp": {
-                    "$ref": "#/definitions/model.RequiredNCPResource"
+                "resourceGroup": {
+                    "type": "string",
+                    "example": "koreacentral"
                 }
             }
         },
-        "model.RequiredNCPResource": {
+        "model.RequiredCSPResourceForObjectStorage": {
+            "type": "object",
+            "properties": {
+                "azure": {
+                    "description": "AWS   RequiredAWSResourceForObjectStorage   ` + "`" + `json:\"aws,omitempty\"` + "`" + `",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.RequiredAzureResourceForObjectStorage"
+                        }
+                    ]
+                }
+            }
+        },
+        "model.RequiredCSPResourceForSqlDB": {
+            "type": "object",
+            "properties": {
+                "aws": {
+                    "$ref": "#/definitions/model.RequiredAWSResourceForSqlDB"
+                },
+                "azure": {
+                    "$ref": "#/definitions/model.RequiredAzureResourceForSqlDB"
+                },
+                "ncp": {
+                    "$ref": "#/definitions/model.RequiredNCPResourceForSqlDB"
+                }
+            }
+        },
+        "model.RequiredNCPResourceForSqlDB": {
             "type": "object",
             "properties": {
                 "subnetID": {
@@ -12455,7 +12784,37 @@ const docTemplate = `{
                 }
             }
         },
-        "model.RestPostSqlDbRequest": {
+        "model.RestPostObjectStorageRequest": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "csp",
+                "name",
+                "region"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                },
+                "csp": {
+                    "type": "string",
+                    "example": "aws"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "objectstorage01"
+                },
+                "region": {
+                    "type": "string",
+                    "example": "ap-northeast-2"
+                },
+                "requiredCSPResource": {
+                    "$ref": "#/definitions/model.RequiredCSPResourceForObjectStorage"
+                }
+            }
+        },
+        "model.RestPostSqlDBRequest": {
             "type": "object",
             "required": [
                 "connectionName",
@@ -12506,7 +12865,7 @@ const docTemplate = `{
                     "example": "ap-northeast-2"
                 },
                 "requiredCSPResource": {
-                    "$ref": "#/definitions/model.RequiredCSPResource"
+                    "$ref": "#/definitions/model.RequiredCSPResourceForSqlDB"
                 }
             }
         },

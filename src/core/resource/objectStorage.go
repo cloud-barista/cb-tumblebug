@@ -28,43 +28,43 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// SqlDBStatus represents the status of a network resource.
-type SqlDBStatus string
+// ObjectStorageStatus represents the status of a network resource.
+type ObjectStorageStatus string
 
 const (
 
 	// CRUD operations
-	SqlDBOnConfiguring SqlDBStatus = "Configuring" // Resources are being configured.
-	// SqlDBOnReading     SqlDBStatus = "Reading"     // The network information is being read.
-	// SqlDBOnUpdating    SqlDBStatus = "Updating"    // The network is being updated.
-	SqlDBOnDeleting SqlDBStatus = "Deleting" // The network is being deleted.
-	// // NetworkOnRefinining  SqlDBStatus = "Refining"    // The network is being refined.
+	ObjectStorageOnConfiguring ObjectStorageStatus = "Configuring" // Resources are being configured.
+	// ObjectStorageOnReading     ObjectStorageStatus = "Reading"     // The network information is being read.
+	// ObjectStorageOnUpdating    ObjectStorageStatus = "Updating"    // The network is being updated.
+	ObjectStorageOnDeleting ObjectStorageStatus = "Deleting" // The network is being deleted.
+	// // ObjectStorageOnRefinining  ObjectStorageStatus = "Refining"    // The network is being refined.
 
 	// // Register/deregister operations
-	// SqlDBOnRegistering   SqlDBStatus = "Registering"  // The network is being registered.
-	// SqlDBOnDeregistering SqlDBStatus = "Dergistering" // The network is being registered.
+	// ObjectStorageOnRegistering   ObjectStorageStatus = "Registering"  // The network is being registered.
+	// ObjectStorageOnDeregistering ObjectStorageStatus = "Dergistering" // The network is being registered.
 
 	// NetworkAvailable status
-	SqlDBAvailable SqlDBStatus = "Available" // The network is fully created and ready for use.
+	ObjectStorageAvailable ObjectStorageStatus = "Available" // The network is fully created and ready for use.
 
 	// // In Use status
-	// SqlDBInUse SqlDBStatus = "InUse" // The network is currently in use.
+	// ObjectStorageInUse ObjectStorageStatus = "InUse" // The network is currently in use.
 
 	// // Unknwon status
-	// SqlDBUnknown SqlDBStatus = "Unknown" // The network status is unknown.
+	// ObjectStorageUnknown ObjectStorageStatus = "Unknown" // The network status is unknown.
 
-	// // NetworkError Handling
-	// SqlDBError              SqlDBStatus = "Error"              // An error occurred during a CRUD operation.
-	// SqlDBErrorOnConfiguring SqlDBStatus = "ErrorOnConfiguring" // An error occurred during the configuring operation.
-	// SqlDBErrorOnReading     SqlDBStatus = "ErrorOnReading"     // An error occurred during the reading operation.
-	// SqlDBErrorOnUpdating    SqlDBStatus = "ErrorOnUpdating"    // An error occurred during the updating operation.
-	// SqlDBErrorOnDeleting    SqlDBStatus = "ErrorOnDeleting"    // An error occurred during the deleting operation.
-	// SqlDBErrorOnRegistering SqlDBStatus = "ErrorOnRegistering" // An error occurred during the registering operation.
+	// // ObjectStorageError Handling
+	// ObjectStorageError              ObjectStorageStatus = "Error"              // An error occurred during a CRUD operation.
+	// ObjectStorageErrorOnConfiguring ObjectStorageStatus = "ErrorOnConfiguring" // An error occurred during the configuring operation.
+	// ObjectStorageErrorOnReading     ObjectStorageStatus = "ErrorOnReading"     // An error occurred during the reading operation.
+	// ObjectStorageErrorOnUpdating    ObjectStorageStatus = "ErrorOnUpdating"    // An error occurred during the updating operation.
+	// ObjectStorageErrorOnDeleting    ObjectStorageStatus = "ErrorOnDeleting"    // An error occurred during the deleting operation.
+	// ObjectStorageErrorOnRegistering ObjectStorageStatus = "ErrorOnRegistering" // An error occurred during the registering operation.
 )
 
-type SqlDBAction string
+type ObjectStorageAction string
 
-var validCspForSqlDB = map[string]bool{
+var validCspForObjectStorage = map[string]bool{
 	"aws":   true,
 	"azure": true,
 	"gcp":   true,
@@ -76,23 +76,23 @@ var validCspForSqlDB = map[string]bool{
 	// Add more CSPs here
 }
 
-func IsValidCspForSqlDB(csp string) (bool, error) {
-	if !validCspForSqlDB[csp] {
+func IsValidCspForObjectStorage(csp string) (bool, error) {
+	if !validCspForObjectStorage[csp] {
 		return false, fmt.Errorf("currently not supported CSP, %s", csp)
 	}
 	return true, nil
 }
 
-// func whichCspForSqlDB(csp1, csp2 string) string {
+// func whichCspForObjectStorage(csp1, csp2 string) string {
 // 	return csp1 + "," + csp2
 // }
 
-// CreateSqlDB creates a SQL database via Terrarium
-func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string) (model.SqlDBInfo, error) {
+// CreateObjectStorage creates a SQL database via Terrarium
+func CreateObjectStorage(nsId string, objectStorageReq *model.RestPostObjectStorageRequest, retry string) (model.ObjectStorageInfo, error) {
 
-	// SQL DB objects
-	var emptyRet model.SqlDBInfo
-	var sqlDBInfo model.SqlDBInfo
+	// Object Storage objects
+	var emptyRet model.ObjectStorageInfo
+	var objectStorageInfo model.ObjectStorageInfo
 	var err error = nil
 	var retried bool = (retry == "retry")
 
@@ -105,100 +105,83 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = common.CheckString(sqlDbReq.Name)
+	err = common.CheckString(objectStorageReq.Name)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	ok, err := IsValidCspForSqlDB(sqlDbReq.CSP)
+	ok, err := IsValidCspForObjectStorage(objectStorageReq.CSP)
 	if !ok {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
 	// Check the CSPs of the sites
-	switch sqlDbReq.CSP {
+	switch objectStorageReq.CSP {
 	case "aws":
-		// Check the required CSP resources
-		if sqlDbReq.RequiredCSPResource.AWS.VNetID == "" {
-			err = fmt.Errorf("required AWS VNetID is empty")
-			log.Error().Err(err).Msg("")
-			return emptyRet, err
-		}
-		if sqlDbReq.RequiredCSPResource.AWS.Subnet1ID == "" {
-			err = fmt.Errorf("required AWS subnet1ID is empty")
-			log.Error().Err(err).Msg("")
-			return emptyRet, err
-		}
-		if sqlDbReq.RequiredCSPResource.AWS.Subnet2ID == "" {
-			err = fmt.Errorf("required AWS subnet2ID is empty")
-			log.Error().Err(err).Msg("")
-			return emptyRet, err
-		}
-
 		// TODO: Check if the subnets are in the different AZs
 		//
 
-	case "ncp":
+	case "azure":
 		// Check the required CSP resources
-		if sqlDbReq.RequiredCSPResource.NCP.SubnetID == "" {
-			err = fmt.Errorf("required NCP subnetID is empty")
+		if objectStorageReq.RequiredCSPResource.Azure.ResourceGroup == "" {
+			err = fmt.Errorf("required Azure resource group is empty")
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
 		}
 	}
 
 	// Set the resource type
-	resourceType := model.StrSqlDB
+	resourceType := model.StrObjectStorage
 
-	// Set the SQL DB object in advance
+	// Set the Object Storage object in advance
 	uid := common.GenUid()
-	sqlDBInfo.ResourceType = resourceType
-	sqlDBInfo.Name = sqlDbReq.Name
-	sqlDBInfo.Id = sqlDbReq.Name
-	sqlDBInfo.Uid = uid
-	sqlDBInfo.Description = "SQL DB at " + sqlDbReq.Region + " in " + sqlDbReq.CSP
-	sqlDBInfo.ConnectionName = sqlDbReq.ConnectionName
-	sqlDBInfo.ConnectionConfig, err = common.GetConnConfig(sqlDBInfo.ConnectionName)
+	objectStorageInfo.ResourceType = resourceType
+	objectStorageInfo.Name = objectStorageReq.Name
+	objectStorageInfo.Id = objectStorageReq.Name
+	objectStorageInfo.Uid = uid
+	objectStorageInfo.Description = "Object Storage at " + objectStorageReq.Region + " in " + objectStorageReq.CSP
+	objectStorageInfo.ConnectionName = objectStorageReq.ConnectionName
+	objectStorageInfo.ConnectionConfig, err = common.GetConnConfig(objectStorageInfo.ConnectionName)
 	if err != nil {
 		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
 		log.Error().Err(err).Msg("")
 	}
 
-	// Set a sqlDBKey for the SQL DB object
-	sqlDBKey := common.GenResourceKey(nsId, resourceType, sqlDBInfo.Id)
-	// Check if the SQL DB resource already exists or not
-	exists, err := CheckResource(nsId, resourceType, sqlDBInfo.Id)
+	// Set a objectStorageKey for the Object Storage object
+	objectStorageKey := common.GenResourceKey(nsId, resourceType, objectStorageInfo.Id)
+	// Check if the Object Storage resource already exists or not
+	exists, err := CheckResource(nsId, resourceType, objectStorageInfo.Id)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("failed to check if the resource type, %s (%s) exists or not", resourceType, sqlDBInfo.Id)
+		err := fmt.Errorf("failed to check if the resource type, %s (%s) exists or not", resourceType, objectStorageInfo.Id)
 		return emptyRet, err
 	}
-	// For retry, read the stored SQL DB info if exists
+	// For retry, read the stored Object Storage info if exists
 	if exists {
 		if !retried {
-			err := fmt.Errorf("already exists, SQL DB: %s", sqlDBInfo.Id)
+			err := fmt.Errorf("already exists, Object Storage: %s", objectStorageInfo.Id)
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
 		}
 
-		// Read the stored SQL DB info
-		sqlDBKv, err := kvstore.GetKv(sqlDBKey)
+		// Read the stored Object Storage info
+		objectStorageKv, err := kvstore.GetKv(objectStorageKey)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
 		}
-		err = json.Unmarshal([]byte(sqlDBKv.Value), &sqlDBInfo)
+		err = json.Unmarshal([]byte(objectStorageKv.Value), &objectStorageInfo)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
 		}
 
-		sqlDBInfo.Name = sqlDbReq.Name
-		sqlDBInfo.Id = sqlDbReq.Name
-		sqlDBInfo.Description = "SQL DB at " + sqlDbReq.Region + " in " + sqlDbReq.CSP
-		sqlDBInfo.ConnectionName = sqlDbReq.ConnectionName
-		sqlDBInfo.ConnectionConfig, err = common.GetConnConfig(sqlDBInfo.ConnectionName)
+		objectStorageInfo.Name = objectStorageReq.Name
+		objectStorageInfo.Id = objectStorageReq.Name
+		objectStorageInfo.Description = "Object Storage at " + objectStorageReq.Region + " in " + objectStorageReq.CSP
+		objectStorageInfo.ConnectionName = objectStorageReq.ConnectionName
+		objectStorageInfo.ConnectionConfig, err = common.GetConnConfig(objectStorageInfo.ConnectionName)
 		if err != nil {
 			err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
 			log.Error().Err(err).Msg("")
@@ -206,22 +189,22 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 	}
 
 	// [Set and store status]
-	sqlDBInfo.Status = string(SqlDBOnConfiguring)
-	val, err := json.Marshal(sqlDBInfo)
+	objectStorageInfo.Status = string(ObjectStorageOnConfiguring)
+	val, err := json.Marshal(objectStorageInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = kvstore.Put(sqlDBKey, string(val))
+	err = kvstore.Put(objectStorageKey, string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
-	log.Debug().Msgf("SQL DB Info(initial): %+v", sqlDBInfo)
+	log.Debug().Msgf("Object Storage Info(initial): %+v", objectStorageInfo)
 
 	/*
-	 * [Via Terrarium] Create a SQL DB
+	 * [Via Terrarium] Create a Object Storage
 	 */
 
 	// Initialize resty client with basic auth
@@ -234,7 +217,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 	epTerrarium := model.TerrariumRestUrl
 
 	// Set a terrarium ID
-	trId := sqlDBInfo.Uid
+	trId := objectStorageInfo.Uid
 
 	if !retried {
 		// Issue a terrarium
@@ -242,7 +225,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 		url := fmt.Sprintf("%s/tr", epTerrarium)
 		reqTr := new(terrariumModel.TerrariumInfo)
 		reqTr.Id = trId
-		reqTr.Description = "SQL DB at " + sqlDbReq.Region + " in " + sqlDbReq.CSP
+		reqTr.Description = "Object Storage at " + objectStorageReq.Region + " in " + objectStorageReq.CSP
 
 		resTrInfo := new(terrariumModel.TerrariumInfo)
 
@@ -267,8 +250,8 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 
 		// init env
 		method = "POST"
-		url = fmt.Sprintf("%s/tr/%s/sql-db/env", epTerrarium, trId)
-		queryParams := "provider=" + sqlDbReq.CSP
+		url = fmt.Sprintf("%s/tr/%s/object-storage/env", epTerrarium, trId)
+		queryParams := "provider=" + objectStorageReq.CSP
 		url += "?" + queryParams
 
 		requestBody := common.NoBody
@@ -295,27 +278,17 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 	}
 
 	/*
-	 * [Via Terrarium] Generate the infracode for the SQL DB of each CSP
+	 * [Via Terrarium] Generate the infracode for the Object Storage of each CSP
 	 */
-	switch sqlDbReq.CSP {
+	switch objectStorageReq.CSP {
 	case "aws":
 		// generate infracode
 		method := "POST"
-		url := fmt.Sprintf("%s/tr/%s/sql-db/infracode", epTerrarium, trId)
-		reqInfracode := new(terrariumModel.CreateInfracodeOfSqlDbRequest)
+		url := fmt.Sprintf("%s/tr/%s/object-storage/infracode", epTerrarium, trId)
+		reqInfracode := new(terrariumModel.CreateInfracodeOfObjectStorageRequest)
 		reqInfracode.TfVars.TerrariumID = trId
-		reqInfracode.TfVars.CSPRegion = sqlDbReq.Region
+		reqInfracode.TfVars.CSPRegion = objectStorageReq.Region
 		// reqInfracode.TfVars.CSPResourceGroup
-		reqInfracode.TfVars.DBInstanceSpec = sqlDbReq.DBInstanceSpec
-		reqInfracode.TfVars.DBEngineVersion = sqlDbReq.DBEngineVersion
-		reqInfracode.TfVars.DBAdminPassword = sqlDbReq.DBAdminPassword
-		reqInfracode.TfVars.DBAdminUsername = sqlDbReq.DBAdminUsername
-		reqInfracode.TfVars.CSPVNetID = sqlDbReq.RequiredCSPResource.AWS.VNetID
-		reqInfracode.TfVars.CSPSubnet1ID = sqlDbReq.RequiredCSPResource.AWS.Subnet1ID
-		reqInfracode.TfVars.CSPSubnet2ID = sqlDbReq.RequiredCSPResource.AWS.Subnet2ID
-		reqInfracode.TfVars.DBEnginePort = sqlDbReq.DBEnginePort
-		reqInfracode.TfVars.EgressCIDRBlock = "0.0.0.0/0"
-		reqInfracode.TfVars.IngressCIDRBlock = "0.0.0.0/0"
 
 		resInfracode := new(model.Response)
 
@@ -340,15 +313,11 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 	case "azure":
 		// generate infracode
 		method := "POST"
-		url := fmt.Sprintf("%s/tr/%s/sql-db/infracode", epTerrarium, trId)
-		reqInfracode := new(terrariumModel.CreateInfracodeOfSqlDbRequest)
+		url := fmt.Sprintf("%s/tr/%s/object-storage/infracode", epTerrarium, trId)
+		reqInfracode := new(terrariumModel.CreateInfracodeOfObjectStorageRequest)
 		reqInfracode.TfVars.TerrariumID = trId
-		reqInfracode.TfVars.CSPRegion = sqlDbReq.Region
-		reqInfracode.TfVars.DBInstanceSpec = sqlDbReq.DBInstanceSpec
-		reqInfracode.TfVars.DBEngineVersion = sqlDbReq.DBEngineVersion
-		reqInfracode.TfVars.DBAdminPassword = sqlDbReq.DBAdminPassword
-		reqInfracode.TfVars.DBAdminUsername = sqlDbReq.DBAdminUsername
-		reqInfracode.TfVars.CSPResourceGroup = sqlDbReq.RequiredCSPResource.Azure.ResourceGroup
+		reqInfracode.TfVars.CSPRegion = objectStorageReq.Region
+		reqInfracode.TfVars.CSPResourceGroup = objectStorageReq.RequiredCSPResource.Azure.ResourceGroup
 
 		resInfracode := new(model.Response)
 
@@ -370,71 +339,64 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 		log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
 		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
 
-	case "gcp":
-		// generate infracode
-		method := "POST"
-		url := fmt.Sprintf("%s/tr/%s/sql-db/infracode", epTerrarium, trId)
-		reqInfracode := new(terrariumModel.CreateInfracodeOfSqlDbRequest)
-		reqInfracode.TfVars.TerrariumID = trId
-		reqInfracode.TfVars.CSPRegion = sqlDbReq.Region
-		reqInfracode.TfVars.DBInstanceSpec = sqlDbReq.DBInstanceSpec
-		reqInfracode.TfVars.DBEngineVersion = sqlDbReq.DBEngineVersion
-		reqInfracode.TfVars.DBAdminUsername = sqlDbReq.DBAdminUsername
-		reqInfracode.TfVars.DBAdminPassword = sqlDbReq.DBAdminPassword
+	// case "gcp":
+	// 	// generate infracode
+	// 	method := "POST"
+	// 	url := fmt.Sprintf("%s/tr/%s/object-storage/infracode", epTerrarium, trId)
+	// 	reqInfracode := new(terrariumModel.CreateInfracodeOfObjectStorageRequest)
+	// 	reqInfracode.TfVars.TerrariumID = trId
+	// 	reqInfracode.TfVars.CSPRegion = objectStorageReq.Region
 
-		resInfracode := new(model.Response)
+	// 	resInfracode := new(model.Response)
 
-		err = common.ExecuteHttpRequest(
-			client,
-			method,
-			url,
-			nil,
-			common.SetUseBody(*reqInfracode),
-			reqInfracode,
-			resInfracode,
-			common.VeryShortDuration,
-		)
+	// 	err = common.ExecuteHttpRequest(
+	// 		client,
+	// 		method,
+	// 		url,
+	// 		nil,
+	// 		common.SetUseBody(*reqInfracode),
+	// 		reqInfracode,
+	// 		resInfracode,
+	// 		common.VeryShortDuration,
+	// 	)
 
-		if err != nil {
-			log.Err(err).Msg("")
-			return emptyRet, err
-		}
-		log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
-		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
+	// 	if err != nil {
+	// 		log.Err(err).Msg("")
+	// 		return emptyRet, err
+	// 	}
+	// 	log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
+	// 	log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
 
-	case "ncp":
-		// generate infracode
-		method := "POST"
-		url := fmt.Sprintf("%s/tr/%s/sql-db/infracode", epTerrarium, trId)
-		reqInfracode := new(terrariumModel.CreateInfracodeOfSqlDbRequest)
-		reqInfracode.TfVars.TerrariumID = trId
-		reqInfracode.TfVars.CSPRegion = sqlDbReq.Region
-		reqInfracode.TfVars.DBAdminUsername = sqlDbReq.DBAdminUsername
-		reqInfracode.TfVars.DBAdminPassword = sqlDbReq.DBAdminPassword
-		reqInfracode.TfVars.CSPSubnet1ID = sqlDbReq.RequiredCSPResource.NCP.SubnetID
+	// case "ncp":
+	// 	// generate infracode
+	// 	method := "POST"
+	// 	url := fmt.Sprintf("%s/tr/%s/object-storage/infracode", epTerrarium, trId)
+	// 	reqInfracode := new(terrariumModel.CreateInfracodeOfObjectStorageRequest)
+	// 	reqInfracode.TfVars.TerrariumID = trId
+	// 	reqInfracode.TfVars.CSPRegion = objectStorageReq.Region
 
-		resInfracode := new(model.Response)
+	// 	resInfracode := new(model.Response)
 
-		err = common.ExecuteHttpRequest(
-			client,
-			method,
-			url,
-			nil,
-			common.SetUseBody(*reqInfracode),
-			reqInfracode,
-			resInfracode,
-			common.VeryShortDuration,
-		)
+	// 	err = common.ExecuteHttpRequest(
+	// 		client,
+	// 		method,
+	// 		url,
+	// 		nil,
+	// 		common.SetUseBody(*reqInfracode),
+	// 		reqInfracode,
+	// 		resInfracode,
+	// 		common.VeryShortDuration,
+	// 	)
 
-		if err != nil {
-			log.Err(err).Msg("")
-			return emptyRet, err
-		}
-		log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
-		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
+	// 	if err != nil {
+	// 		log.Err(err).Msg("")
+	// 		return emptyRet, err
+	// 	}
+	// 	log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
+	// 	log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
 
 	default:
-		log.Warn().Msgf("not valid CSP: %s", sqlDbReq.CSP)
+		log.Warn().Msgf("not valid CSP: %s", objectStorageReq.CSP)
 	}
 
 	/*
@@ -443,7 +405,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 
 	// check the infracode (by `tofu plan`)
 	method := "POST"
-	url := fmt.Sprintf("%s/tr/%s/sql-db/plan", epTerrarium, trId)
+	url := fmt.Sprintf("%s/tr/%s/object-storage/plan", epTerrarium, trId)
 	requestBody := common.NoBody
 	resPlan := new(model.Response)
 
@@ -470,7 +432,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 	// or response immediately with requestId as it is a time-consuming task
 	// and provide seperate api to check the status
 	method = "POST"
-	url = fmt.Sprintf("%s/tr/%s/sql-db", epTerrarium, trId)
+	url = fmt.Sprintf("%s/tr/%s/object-storage", epTerrarium, trId)
 	requestBody = common.NoBody
 	resApply := new(model.Response)
 
@@ -492,52 +454,52 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 	log.Debug().Msgf("resApply: %+v", resApply.Message)
 	log.Trace().Msgf("resApply: %+v", resApply.Detail)
 
-	// Set the SQL DB info
-	var trSqlDBInfo terrariumModel.OutputSQLDBInfo
+	// Set the Object Storage info
+	var trObjectStorageInfo terrariumModel.OutputObjectStorageInfo
 	jsonData, err := json.Marshal(resApply.Object)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	}
-	err = json.Unmarshal(jsonData, &trSqlDBInfo)
+	err = json.Unmarshal(jsonData, &trObjectStorageInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	}
 
-	sqlDBInfo.CspResourceId = trSqlDBInfo.SQLDBDetail.InstanceResourceID
-	sqlDBInfo.CspResourceName = trSqlDBInfo.SQLDBDetail.InstanceName
-	sqlDBInfo.Details = trSqlDBInfo.SQLDBDetail
+	objectStorageInfo.CspResourceId = ""
+	objectStorageInfo.CspResourceName = trObjectStorageInfo.ObjectStorageDetail.StorageName
+	objectStorageInfo.Details = trObjectStorageInfo.ObjectStorageDetail
 
 	/*
-	 * Set opeartion status and store sqlDBInfo
+	 * Set opeartion status and store objectStorageInfo
 	 */
 
-	sqlDBInfo.Status = string(SqlDBAvailable)
+	objectStorageInfo.Status = string(ObjectStorageAvailable)
 
-	log.Debug().Msgf("SQL DB Info(final): %+v", sqlDBInfo)
+	log.Debug().Msgf("Object Storage Info(final): %+v", objectStorageInfo)
 
-	value, err := json.Marshal(sqlDBInfo)
+	value, err := json.Marshal(objectStorageInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = kvstore.Put(sqlDBKey, string(value))
+	err = kvstore.Put(objectStorageKey, string(value))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
-	// Check if the SQL DB info is stored
-	sqlDBKv, err := kvstore.GetKv(sqlDBKey)
+	// Check if the Object Storage info is stored
+	objectStorageKv, err := kvstore.GetKv(objectStorageKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if sqlDBKv == (kvstore.KeyValue{}) {
-		err := fmt.Errorf("does not exist, SQL DB: %s", sqlDBInfo.Id)
+	if objectStorageKv == (kvstore.KeyValue{}) {
+		err := fmt.Errorf("does not exist, Object Storage: %s", objectStorageInfo.Id)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = json.Unmarshal([]byte(sqlDBKv.Value), &sqlDBInfo)
+	err = json.Unmarshal([]byte(objectStorageKv.Value), &objectStorageInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -547,29 +509,29 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 	labels := map[string]string{
 		model.LabelManager:         model.StrManager,
 		model.LabelNamespace:       nsId,
-		model.LabelLabelType:       model.StrSqlDB,
-		model.LabelId:              sqlDBInfo.Id,
-		model.LabelName:            sqlDBInfo.Name,
-		model.LabelUid:             sqlDBInfo.Uid,
-		model.LabelCspResourceId:   sqlDBInfo.CspResourceId,
-		model.LabelCspResourceName: sqlDBInfo.CspResourceName,
-		model.LabelStatus:          sqlDBInfo.Status,
-		model.LabelDescription:     sqlDBInfo.Description,
+		model.LabelLabelType:       model.StrObjectStorage,
+		model.LabelId:              objectStorageInfo.Id,
+		model.LabelName:            objectStorageInfo.Name,
+		model.LabelUid:             objectStorageInfo.Uid,
+		model.LabelCspResourceId:   objectStorageInfo.CspResourceId,
+		model.LabelCspResourceName: objectStorageInfo.CspResourceName,
+		model.LabelStatus:          objectStorageInfo.Status,
+		model.LabelDescription:     objectStorageInfo.Description,
 	}
-	err = label.CreateOrUpdateLabel(model.StrSqlDB, sqlDBInfo.Uid, sqlDBKey, labels)
+	err = label.CreateOrUpdateLabel(model.StrObjectStorage, objectStorageInfo.Uid, objectStorageKey, labels)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
-	return sqlDBInfo, nil
+	return objectStorageInfo, nil
 }
 
-// GetSqlDB returns a SQL DB via Terrarium
-func GetSqlDB(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, error) {
+// GetObjectStorage returns a Object Storage via Terrarium
+func GetObjectStorage(nsId string, objectStorageId string, detail string) (model.ObjectStorageInfo, error) {
 
-	var emptyRet model.SqlDBInfo
-	var sqlDBInfo model.SqlDBInfo
+	var emptyRet model.ObjectStorageInfo
+	var objectStorageInfo model.ObjectStorageInfo
 	var err error = nil
 	/*
 	 * Validate the input parameters
@@ -580,7 +542,7 @@ func GetSqlDB(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = common.CheckString(sqlDbId)
+	err = common.CheckString(objectStorageId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -596,30 +558,30 @@ func GetSqlDB(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 	}
 
 	// Set the resource type
-	resourceType := model.StrSqlDB
+	resourceType := model.StrObjectStorage
 
-	// Set a sqlDBKey for the SQL DB object
-	sqlDBKey := common.GenResourceKey(nsId, resourceType, sqlDbId)
-	// Check if the SQL DB resource already exists or not
-	exists, err := CheckResource(nsId, resourceType, sqlDbId)
+	// Set a objectStorageKey for the Object Storage object
+	objectStorageKey := common.GenResourceKey(nsId, resourceType, objectStorageId)
+	// Check if the Object Storage resource already exists or not
+	exists, err := CheckResource(nsId, resourceType, objectStorageId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("failed to check if the SQL DB(%s) exists or not", sqlDbId)
+		err := fmt.Errorf("failed to check if the Object Storage(%s) exists or not", objectStorageId)
 		return emptyRet, err
 	}
 	if !exists {
-		err := fmt.Errorf("does not exist, SQL DB: %s", sqlDbId)
+		err := fmt.Errorf("does not exist, Object Storage: %s", objectStorageId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
-	// Read the stored SQL DB info
-	sqlDBKv, err := kvstore.GetKv(sqlDBKey)
+	// Read the stored Object Storage info
+	objectStorageKv, err := kvstore.GetKv(objectStorageKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = json.Unmarshal([]byte(sqlDBKv.Value), &sqlDBInfo)
+	err = json.Unmarshal([]byte(objectStorageKv.Value), &objectStorageInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -631,7 +593,7 @@ func GetSqlDB(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 	apiPass := os.Getenv("TB_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
-	trId := sqlDBInfo.Uid
+	trId := objectStorageInfo.Uid
 
 	// set endpoint
 	epTerrarium := model.TerrariumRestUrl
@@ -661,7 +623,7 @@ func GetSqlDB(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 	log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
 	log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
 
-	// e.g. "sql-db"
+	// e.g. "object-storage"
 	enrichments := resTrInfo.Enrichments
 
 	// Get resource info
@@ -686,59 +648,59 @@ func GetSqlDB(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 		return emptyRet, err
 	}
 
-	var trSqlDBInfo terrariumModel.OutputSQLDBInfo
+	var trObjectStorageInfo terrariumModel.OutputObjectStorageInfo
 	jsonData, err := json.Marshal(resResourceInfo.Object)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	}
-	err = json.Unmarshal(jsonData, &trSqlDBInfo)
+	err = json.Unmarshal(jsonData, &trObjectStorageInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	}
 
-	sqlDBInfo.CspResourceId = trSqlDBInfo.SQLDBDetail.InstanceResourceID
-	sqlDBInfo.CspResourceName = trSqlDBInfo.SQLDBDetail.InstanceName
-	sqlDBInfo.Details = trSqlDBInfo.SQLDBDetail
+	objectStorageInfo.CspResourceId = ""
+	objectStorageInfo.CspResourceName = trObjectStorageInfo.ObjectStorageDetail.StorageName
+	objectStorageInfo.Details = trObjectStorageInfo.ObjectStorageDetail
 
-	log.Debug().Msgf("SQL DB Info(final): %+v", sqlDBInfo)
+	log.Debug().Msgf("Object Storage Info(final): %+v", objectStorageInfo)
 
-	value, err := json.Marshal(sqlDBInfo)
+	value, err := json.Marshal(objectStorageInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = kvstore.Put(sqlDBKey, string(value))
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-
-	// Check if the SQL DB info is stored
-	sqlDBKv, err = kvstore.GetKv(sqlDBKey)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-	if sqlDBKv == (kvstore.KeyValue{}) {
-		err := fmt.Errorf("does not exist, SQL DB: %s", sqlDBInfo.Id)
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
-	}
-	err = json.Unmarshal([]byte(sqlDBKv.Value), &sqlDBInfo)
+	err = kvstore.Put(objectStorageKey, string(value))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
-	return sqlDBInfo, nil
+	// Check if the Object Storage info is stored
+	objectStorageKv, err = kvstore.GetKv(objectStorageKey)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	if objectStorageKv == (kvstore.KeyValue{}) {
+		err := fmt.Errorf("does not exist, Object Storage: %s", objectStorageInfo.Id)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = json.Unmarshal([]byte(objectStorageKv.Value), &objectStorageInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	return objectStorageInfo, nil
 }
 
-// DeleteSqlDB deletes a SQL database via Terrarium
-func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
+// DeleteObjectStorage deletes a SQL database via Terrarium
+func DeleteObjectStorage(nsId string, objectStorageId string) (model.SimpleMsg, error) {
 
 	// VPN objects
 	var emptyRet model.SimpleMsg
-	var sqlDBInfo model.SqlDBInfo
+	var objectStorageInfo model.ObjectStorageInfo
 	var err error = nil
 
 	/*
@@ -750,50 +712,50 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = common.CheckString(sqlDbId)
+	err = common.CheckString(objectStorageId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
 	// Set the resource type
-	resourceType := model.StrSqlDB
+	resourceType := model.StrObjectStorage
 
-	// Set a sqlDbKey for the SQL DB object
-	sqlDbKey := common.GenResourceKey(nsId, resourceType, sqlDbId)
-	// Check if the SQL DB resource already exists or not
-	exists, err := CheckResource(nsId, resourceType, sqlDbId)
+	// Set a objectStorageKey for the Object Storage object
+	objectStorageKey := common.GenResourceKey(nsId, resourceType, objectStorageId)
+	// Check if the Object Storage resource already exists or not
+	exists, err := CheckResource(nsId, resourceType, objectStorageId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("failed to check if the SQL DB (%s) exists or not", sqlDbId)
+		err := fmt.Errorf("failed to check if the Object Storage (%s) exists or not", objectStorageId)
 		return emptyRet, err
 	}
 	if !exists {
-		err := fmt.Errorf("does not exist, SQL DB: %s", sqlDbId)
+		err := fmt.Errorf("does not exist, Object Storage: %s", objectStorageId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
-	// Read the stored SQL DB info
-	sqlDBKv, err := kvstore.GetKv(sqlDbKey)
+	// Read the stored Object Storage info
+	objectStorageKv, err := kvstore.GetKv(objectStorageKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = json.Unmarshal([]byte(sqlDBKv.Value), &sqlDBInfo)
+	err = json.Unmarshal([]byte(objectStorageKv.Value), &objectStorageInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
 	// [Set and store status]
-	sqlDBInfo.Status = string(SqlDBOnDeleting)
-	val, err := json.Marshal(sqlDBInfo)
+	objectStorageInfo.Status = string(ObjectStorageOnDeleting)
+	val, err := json.Marshal(objectStorageInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = kvstore.Put(sqlDbKey, string(val))
+	err = kvstore.Put(objectStorageKey, string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -805,7 +767,7 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 	apiPass := os.Getenv("TB_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
-	trId := sqlDBInfo.Uid
+	trId := objectStorageInfo.Uid
 
 	// set endpoint
 	epTerrarium := model.TerrariumRestUrl
@@ -912,14 +874,14 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 	log.Trace().Msgf("resDeleteTr: %+v", resDeleteTr.Detail)
 
 	// [Set and store status]
-	err = kvstore.Delete(sqlDbKey)
+	err = kvstore.Delete(objectStorageKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
 	// Remove label info using DeleteLabelObject
-	err = label.DeleteLabelObject(model.StrSqlDB, sqlDBInfo.Uid)
+	err = label.DeleteLabelObject(model.StrObjectStorage, objectStorageInfo.Uid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -932,11 +894,11 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 	return res, nil
 }
 
-// GetRequestStatusOfSqlDB checks the status of a specific request
-func GetRequestStatusOfSqlDB(nsId string, sqlDbId string, reqId string) (model.Response, error) {
+// GetRequestStatusOfObjectStorage checks the status of a specific request
+func GetRequestStatusOfObjectStorage(nsId string, objectStorageId string, reqId string) (model.Response, error) {
 
 	var emptyRet model.Response
-	var sqlDBInfo model.SqlDBInfo
+	var objectStorageInfo model.ObjectStorageInfo
 	var err error = nil
 
 	/*
@@ -948,37 +910,37 @@ func GetRequestStatusOfSqlDB(nsId string, sqlDbId string, reqId string) (model.R
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = common.CheckString(sqlDbId)
+	err = common.CheckString(objectStorageId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
 	// Set the resource type
-	resourceType := model.StrSqlDB
+	resourceType := model.StrObjectStorage
 
-	// Set a sqlDBKey for the SQL DB object
-	sqlDBKey := common.GenResourceKey(nsId, resourceType, sqlDbId)
-	// Check if the SQL DB resource already exists or not
-	exists, err := CheckResource(nsId, resourceType, sqlDbId)
+	// Set a objectStorageKey for the Object Storage object
+	objectStorageKey := common.GenResourceKey(nsId, resourceType, objectStorageId)
+	// Check if the Object Storage resource already exists or not
+	exists, err := CheckResource(nsId, resourceType, objectStorageId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("failed to check if the SQL DB(%s) exists or not", sqlDbId)
+		err := fmt.Errorf("failed to check if the Object Storage(%s) exists or not", objectStorageId)
 		return emptyRet, err
 	}
 	if !exists {
-		err := fmt.Errorf("does not exist, SQL DB: %s", sqlDbId)
+		err := fmt.Errorf("does not exist, Object Storage: %s", objectStorageId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
-	// Read the stored SQL DB info
-	sqlDBKv, err := kvstore.GetKv(sqlDBKey)
+	// Read the stored Object Storage info
+	objectStorageKv, err := kvstore.GetKv(objectStorageKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	err = json.Unmarshal([]byte(sqlDBKv.Value), &sqlDBInfo)
+	err = json.Unmarshal([]byte(objectStorageKv.Value), &objectStorageInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -990,7 +952,7 @@ func GetRequestStatusOfSqlDB(nsId string, sqlDbId string, reqId string) (model.R
 	apiPass := os.Getenv("TB_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
-	trId := sqlDBInfo.Uid
+	trId := objectStorageInfo.Uid
 
 	// set endpoint
 	epTerrarium := model.TerrariumRestUrl

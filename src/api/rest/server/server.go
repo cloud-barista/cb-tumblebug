@@ -501,11 +501,22 @@ func RunServer() {
 	sqlDbGroup := g.Group("/:nsId/resources/sqlDb")
 	terrariumURL = model.TerrariumRestUrl + "/readyz"
 	sqlDbGroup.Use(middlewares.CheckReadiness(terrariumURL, apiUser, apiPass))
-	sqlDbGroup.POST("", rest_resource.RestPostSqlDb)
-	sqlDbGroup.GET("/:sqlDbId", rest_resource.RestGetSqlDb)
-	sqlDbGroup.DELETE("/:sqlDbId", rest_resource.RestDeleteSqlDb)
-	// sqlDbGroup.GET("/:sqlDbId/request/:requestId", rest_resource.RestGetRequestStatusOfSqlDb)
-	// sqlDbGroup.PUT("//:sqlDbId", rest_resource.RestPutSqlDs)
+	sqlDbGroup.POST("", rest_resource.RestPostSqlDB)
+	sqlDbGroup.GET("/:sqlDbId", rest_resource.RestGetSqlDB)
+	sqlDbGroup.DELETE("/:sqlDbId", rest_resource.RestDeleteSqlDB)
+	// sqlDbGroup.GET("/:sqlDbId/request/:requestId", rest_resource.RestGetRequestStatusOfSqlDB)
+	// sqlDbGroup.PUT("//:sqlDbId", rest_resource.RestPutSqlDB)
+
+	// Object Storage management
+	// g.GET("/:nsId/resources/objectStorage", rest_resource.)
+	objectStorageGroup := g.Group("/:nsId/resources/objectStorage")
+	terrariumURL = model.TerrariumRestUrl + "/readyz"
+	objectStorageGroup.Use(middlewares.CheckReadiness(terrariumURL, apiUser, apiPass))
+	objectStorageGroup.POST("", rest_resource.RestPostObjectStorage)
+	objectStorageGroup.GET("/:objectStorageId", rest_resource.RestGetObjectStorage)
+	objectStorageGroup.DELETE("/:objectStorageId", rest_resource.RestDeleteObjectStorage)
+	// objectStorageGroup.GET("/:objectStorageId/request/:requestId", rest_resource.RestGetRequestStatusOfObjectStorage)
+	// objectStorageGroup.PUT("//:objectStorageId", rest_resource.RestPutObjectStorage)
 
 	/*
 		g.POST("/:nsId/resources/publicIp", resource.RestPostPublicIp)

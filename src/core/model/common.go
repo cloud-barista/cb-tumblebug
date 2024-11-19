@@ -101,6 +101,7 @@ const (
 	StrSubnet                string = "subnet"
 	StrVPN                   string = "vpn"
 	StrSqlDB                 string = "sqlDb"
+	StrObjectStorage         string = "objectStorage"
 	StrDataDisk              string = "dataDisk"
 	StrNLB                   string = "nlb"
 	StrVM                    string = "vm"
