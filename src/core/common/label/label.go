@@ -103,6 +103,12 @@ func RemoveLabel(labelType, uid, key string) error {
 		return err
 	}
 
+	if labelData == "" {
+		err = fmt.Errorf("does not exist, label object for %s", labelKey)
+		log.Warn().Msg(err.Error())
+		return err
+	}
+
 	var labelInfo model.LabelInfo
 	err = json.Unmarshal([]byte(labelData), &labelInfo)
 	if err != nil {

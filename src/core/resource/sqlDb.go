@@ -942,8 +942,8 @@ func DeleteSqlDb(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 		return emptyRet, err
 	}
 
-	// Remove label info using RemoveLabel
-	err = label.RemoveLabel(model.StrSqlDB, sqlDBInfo.Uid, sqlDbKey)
+	// Remove label info using DeleteLabelObject
+	err = label.DeleteLabelObject(model.StrSqlDB, sqlDBInfo.Uid)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
