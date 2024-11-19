@@ -164,7 +164,7 @@ const docTemplate = `{
         },
         "/checkK8sNodeGroupsOnK8sCreation": {
             "get": {
-                "description": "Check whether nodegroups are required during the k8scluster creation",
+                "description": "Check whether nodegroups are required during the K8sCluster creation",
                 "consumes": [
                     "application/json"
                 ],
@@ -174,7 +174,7 @@ const docTemplate = `{
                 "tags": [
                     "[Kubernetes] Cluster Management"
                 ],
-                "summary": "Check whether nodegroups are required during the k8scluster creation",
+                "summary": "Check whether nodegroups are required during the K8sCluster creation",
                 "operationId": "CheckK8sNodeGroupsOnK8sCreation",
                 "parameters": [
                     {
@@ -209,7 +209,7 @@ const docTemplate = `{
         },
         "/checkK8sNodeImageDesignation": {
             "get": {
-                "description": "Check whether node image designation is possible to create a k8scluster",
+                "description": "Check whether node image designation is possible to create a K8sCluster",
                 "consumes": [
                     "application/json"
                 ],
@@ -219,7 +219,7 @@ const docTemplate = `{
                 "tags": [
                     "[Kubernetes] Cluster Management"
                 ],
-                "summary": "Check whether node image designation is possible to create a k8scluster",
+                "summary": "Check whether node image designation is possible to create a K8sCluster",
                 "operationId": "CheckK8sNodeImageDesignation",
                 "parameters": [
                     {
@@ -834,6 +834,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/k8sClusterDynamicCheckRequest": {
+            "post": {
+                "description": "Check available ConnectionConfig list before create K8sCluster Dynamically from common spec and image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Kubernetes] Cluster Management"
+                ],
+                "summary": "Check available ConnectionConfig list for creating K8sCluster Dynamically",
+                "operationId": "PostK8sClusterDynamicCheckRequest",
+                "parameters": [
+                    {
+                        "description": "Details for K8sCluster dynamic request information",
+                        "name": "k8sClusterConnectionConfigCandidatesReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sClusterConnectionConfigCandidatesReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.CheckK8sClusterDynamicReqInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/k8sClusterInfo": {
             "get": {
                 "description": "Get kubernetes cluster information",
@@ -870,54 +917,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/k8sclusterDynamicCheckRequest": {
-            "post": {
-                "description": "Check available ConnectionConfig list before create K8sCluster Dynamically from common spec and image",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Kubernetes] Cluster Management"
-                ],
-                "summary": "Check available ConnectionConfig list for creating K8sCluster Dynamically",
-                "operationId": "PostK8sClusterDynamicCheckRequest",
-                "parameters": [
-                    {
-                        "description": "Details for K8sCluster dynamic request information",
-                        "name": "k8sclusterReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.K8sClusterConnectionConfigCandidatesReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.CheckK8sClusterDynamicReqInfo"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/k8sclusterRecommendNode": {
+        "/k8sClusterRecommendNode": {
             "post": {
                 "description": "Recommend K8sCluster's Node plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234",
                 "consumes": [
@@ -2136,7 +2136,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/control/k8scluster/{k8sClusterId}": {
+        "/ns/{nsId}/control/k8sCluster/{k8sClusterId}": {
             "get": {
                 "description": "Control the creation of K8sCluster (continue, withdraw)",
                 "consumes": [
@@ -2555,7 +2555,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/k8scluster": {
+        "/ns/{nsId}/k8sCluster": {
             "get": {
                 "description": "List all K8sClusters or K8sClusters' ID",
                 "consumes": [
@@ -2753,7 +2753,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/k8scluster/{k8sClusterId}": {
+        "/ns/{nsId}/k8sCluster/{k8sClusterId}": {
             "get": {
                 "description": "Get K8sCluster",
                 "consumes": [
@@ -2862,7 +2862,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup": {
+        "/ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup": {
             "post": {
                 "description": "Add a K8sNodeGroup",
                 "consumes": [
@@ -2925,7 +2925,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}": {
+        "/ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}": {
             "delete": {
                 "description": "Remove a K8sNodeGroup",
                 "consumes": [
@@ -2958,7 +2958,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "ng-01",
+                        "default": "k8snodegroup-01",
                         "description": "K8sNodeGroup Name",
                         "name": "k8sNodeGroupName",
                         "in": "path",
@@ -2990,7 +2990,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}/autoscalesize": {
+        "/ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/autoscaleSize": {
             "put": {
                 "description": "Change a K8sNodeGroup's Autoscale Size",
                 "consumes": [
@@ -3061,7 +3061,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}/onautoscaling": {
+        "/ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/onAutoScaling": {
             "put": {
                 "description": "Set a K8sNodeGroup's Autoscaling On/Off",
                 "consumes": [
@@ -3132,7 +3132,76 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/k8scluster/{k8sClusterId}/upgrade": {
+        "/ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroupDynamic": {
+            "post": {
+                "description": "Create K8sNodeGroup Dynamically from common spec and image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Kubernetes] Cluster Management"
+                ],
+                "summary": "Create K8sNodeGroup Dynamically",
+                "operationId": "PostK8sNodeGroupDynamic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "k8scluster-01",
+                        "description": "K8sCluster ID",
+                        "name": "k8sClusterId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body to provision K8sNodeGroup dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8snodegroup-01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
+                        "name": "k8sNodeGroupDynamicReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.TbK8sNodeGroupDynamicReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.TbK8sNodeGroupInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/k8sCluster/{k8sClusterId}/upgrade": {
             "put": {
                 "description": "Upgrade a K8sCluster's version",
                 "consumes": [
@@ -3195,7 +3264,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/k8sclusterDynamic": {
+        "/ns/{nsId}/k8sClusterDynamic": {
             "post": {
                 "description": "Create K8sCluster Dynamically from common spec and image",
                 "consumes": [
@@ -3219,8 +3288,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Request body to provision K8sCluster dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8scluster-01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sclusterRecommendNode and /k8sclusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
-                        "name": "k8sclusterReq",
+                        "description": "Request body to provision K8sCluster dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8scluster-01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
+                        "name": "k8sClusterDyanmicReq",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -10411,7 +10480,7 @@ const docTemplate = `{
         },
         "/requiredK8sSubnetCount": {
             "get": {
-                "description": "Get the required subnet count to create a k8scluster",
+                "description": "Get the required subnet count to create a K8sCluster",
                 "consumes": [
                     "application/json"
                 ],
@@ -10421,7 +10490,7 @@ const docTemplate = `{
                 "tags": [
                     "[Kubernetes] Cluster Management"
                 ],
-                "summary": "Get the required subnet count to create a k8scluster",
+                "summary": "Get the required subnet count to create a K8sCluster",
                 "operationId": "GetRequiredK8sSubnetCount",
                 "parameters": [
                     {
@@ -14011,7 +14080,7 @@ const docTemplate = `{
                 "nodeGroupName": {
                     "description": "NodeGroup name if it is not empty",
                     "type": "string",
-                    "example": "nodegroup-01"
+                    "example": "k8snodegroup-01"
                 },
                 "onAutoScaling": {
                     "type": "string",
@@ -14184,9 +14253,121 @@ const docTemplate = `{
                 }
             }
         },
+        "model.TbK8sNodeGroupDynamicReq": {
+            "type": "object",
+            "required": [
+                "commonImage",
+                "commonSpec",
+                "name"
+            ],
+            "properties": {
+                "commonImage": {
+                    "description": "CommonImage is field for id of a image in common namespace",
+                    "type": "string",
+                    "example": "default, tencent+ap-seoul+ubuntu20.04"
+                },
+                "commonSpec": {
+                    "description": "CommonSpec is field for id of a spec in common namespace",
+                    "type": "string",
+                    "example": "tencent+ap-seoul+S2.MEDIUM4"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Description"
+                },
+                "desiredNodeSize": {
+                    "type": "string",
+                    "default": "1",
+                    "example": "1"
+                },
+                "label": {
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "maxNodeSize": {
+                    "type": "string",
+                    "default": "2",
+                    "example": "3"
+                },
+                "minNodeSize": {
+                    "type": "string",
+                    "default": "1",
+                    "example": "1"
+                },
+                "name": {
+                    "description": "K8sNodeGroup name if it is not empty.",
+                    "type": "string",
+                    "example": "k8snodegroup-01"
+                },
+                "onAutoScaling": {
+                    "type": "string",
+                    "default": "true",
+                    "example": "true"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
+                    "type": "string",
+                    "default": "default",
+                    "example": "default, 30, 42, ..."
+                },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
+                    "type": "string",
+                    "default": "default",
+                    "example": "default, TYPE1, ..."
+                }
+            }
+        },
+        "model.TbK8sNodeGroupInfo": {
+            "type": "object",
+            "properties": {
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "cspViewK8sNodeGroupDetail": {
+                    "$ref": "#/definitions/model.SpiderNodeGroupInfo"
+                },
+                "id": {
+                    "description": "Id is unique identifier for the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "label": {
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "description": "Name is human-readable string to represent the object",
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "uid": {
+                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
+                }
+            }
+        },
         "model.TbK8sNodeGroupReq": {
             "type": "object",
             "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Description"
+                },
                 "desiredNodeSize": {
                     "type": "string",
                     "example": "1"
@@ -14194,6 +14375,13 @@ const docTemplate = `{
                 "imageId": {
                     "type": "string",
                     "example": "image-01"
+                },
+                "label": {
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "maxNodeSize": {
                     "type": "string",
@@ -14205,7 +14393,7 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string",
-                    "example": "ng-01"
+                    "example": "k8snodegroup-01"
                 },
                 "onAutoScaling": {
                     "description": "autoscale config.",

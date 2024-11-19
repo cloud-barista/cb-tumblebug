@@ -118,8 +118,8 @@ paths:
     get:
       tags:
       - "[Kubernetes] Cluster Management"
-      summary: Check whether nodegroups are required during the k8scluster creation
-      description: Check whether nodegroups are required during the k8scluster creation
+      summary: Check whether nodegroups are required during the K8sCluster creation
+      description: Check whether nodegroups are required during the K8sCluster creation
       operationId: CheckK8sNodeGroupsOnK8sCreation
       parameters:
       - name: providerName
@@ -151,8 +151,8 @@ paths:
     get:
       tags:
       - "[Kubernetes] Cluster Management"
-      summary: Check whether node image designation is possible to create a k8scluster
-      description: Check whether node image designation is possible to create a k8scluster
+      summary: Check whether node image designation is possible to create a K8sCluster
+      description: Check whether node image designation is possible to create a K8sCluster
       operationId: CheckK8sNodeImageDesignation
       parameters:
       - name: providerName
@@ -620,33 +620,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /k8sClusterInfo:
-    get:
-      tags:
-      - "[Kubernetes] Cluster Management"
-      summary: Get kubernetes cluster information
-      description: Get kubernetes cluster information
-      operationId: GetK8sClusterInfo
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.K8sClusterInfo'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-  /k8sclusterDynamicCheckRequest:
+  /k8sClusterDynamicCheckRequest:
     post:
       tags:
       - "[Kubernetes] Cluster Management"
@@ -680,8 +654,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: k8sclusterReq
-  /k8sclusterRecommendNode:
+      x-codegen-request-body-name: k8sClusterConnectionConfigCandidatesReq
+  /k8sClusterInfo:
+    get:
+      tags:
+      - "[Kubernetes] Cluster Management"
+      summary: Get kubernetes cluster information
+      description: Get kubernetes cluster information
+      operationId: GetK8sClusterInfo
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sClusterInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /k8sClusterRecommendNode:
     post:
       tags:
       - "[Kubernetes] Cluster Management"
@@ -1597,7 +1597,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: mciCmdReq
-  /ns/{nsId}/control/k8scluster/{k8sClusterId}:
+  /ns/{nsId}/control/k8sCluster/{k8sClusterId}:
     get:
       tags:
       - "[Kubernetes] Cluster Management"
@@ -1922,7 +1922,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: mciCmdReq
-  /ns/{nsId}/k8scluster:
+  /ns/{nsId}/k8sCluster:
     get:
       tags:
       - "[Kubernetes] Cluster Management"
@@ -2068,7 +2068,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/k8scluster/{k8sClusterId}:
+  /ns/{nsId}/k8sCluster/{k8sClusterId}:
     get:
       tags:
       - "[Kubernetes] Cluster Management"
@@ -2150,7 +2150,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup:
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup:
     post:
       tags:
       - "[Kubernetes] Cluster Management"
@@ -2199,7 +2199,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: k8sNodeGroupReq
-  /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}:
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}:
     delete:
       tags:
       - "[Kubernetes] Cluster Management"
@@ -2227,7 +2227,7 @@ paths:
         required: true
         schema:
           type: string
-          default: ng-01
+          default: k8snodegroup-01
       - name: option
         in: query
         description: Option for K8sNodeGroup deletion
@@ -2248,7 +2248,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}/autoscalesize:
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/autoscaleSize:
     put:
       tags:
       - "[Kubernetes] Cluster Management"
@@ -2304,7 +2304,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: changeK8sNodeGroupAutoscaleSizeReq
-  /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}/onautoscaling:
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/onAutoScaling:
     put:
       tags:
       - "[Kubernetes] Cluster Management"
@@ -2360,7 +2360,65 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: setK8sNodeGroupAutoscalingReq
-  /ns/{nsId}/k8scluster/{k8sClusterId}/upgrade:
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroupDynamic:
+    post:
+      tags:
+      - "[Kubernetes] Cluster Management"
+      summary: Create K8sNodeGroup Dynamically
+      description: Create K8sNodeGroup Dynamically from common spec and image
+      operationId: PostK8sNodeGroupDynamic
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterId
+        in: path
+        description: K8sCluster ID
+        required: true
+        schema:
+          type: string
+          default: k8scluster-01
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      requestBody:
+        description: "Request body to provision K8sNodeGroup dynamically. <br> Must\
+          \ include commonSpec and commonImage info. <br> (ex: {name: k8snodegroup-01,\
+          \ commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]})\
+          \ <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest\
+          \ to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.TbK8sNodeGroupDynamicReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.TbK8sNodeGroupInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: k8sNodeGroupDynamicReq
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/upgrade:
     put:
       tags:
       - "[Kubernetes] Cluster Management"
@@ -2409,7 +2467,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: upgradeK8sClusterReq
-  /ns/{nsId}/k8sclusterDynamic:
+  /ns/{nsId}/k8sClusterDynamic:
     post:
       tags:
       - "[Kubernetes] Cluster Management"
@@ -2440,7 +2498,7 @@ paths:
         description: "Request body to provision K8sCluster dynamically. <br> Must\
           \ include commonSpec and commonImage info. <br> (ex: {name: k8scluster-01,\
           \ commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]})\
-          \ <br> You can use /k8sclusterRecommendNode and /k8sclusterDynamicCheckRequest\
+          \ <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest\
           \ to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
         content:
           application/json:
@@ -2466,7 +2524,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: k8sclusterReq
+      x-codegen-request-body-name: k8sClusterDyanmicReq
   /ns/{nsId}/mci:
     get:
       tags:
@@ -7939,8 +7997,8 @@ paths:
     get:
       tags:
       - "[Kubernetes] Cluster Management"
-      summary: Get the required subnet count to create a k8scluster
-      description: Get the required subnet count to create a k8scluster
+      summary: Get the required subnet count to create a K8sCluster
+      description: Get the required subnet count to create a K8sCluster
       operationId: GetRequiredK8sSubnetCount
       parameters:
       - name: providerName
@@ -10486,7 +10544,7 @@ components:
         nodeGroupName:
           type: string
           description: NodeGroup name if it is not empty
-          example: nodegroup-01
+          example: k8snodegroup-01
         onAutoScaling:
           type: string
           example: "true"
@@ -10625,15 +10683,112 @@ components:
         version:
           type: string
           example: 1.30.1-aliyun.1
+    model.TbK8sNodeGroupDynamicReq:
+      required:
+      - commonImage
+      - commonSpec
+      - name
+      type: object
+      properties:
+        commonImage:
+          type: string
+          description: CommonImage is field for id of a image in common namespace
+          example: "default, tencent+ap-seoul+ubuntu20.04"
+        commonSpec:
+          type: string
+          description: CommonSpec is field for id of a spec in common namespace
+          example: tencent+ap-seoul+S2.MEDIUM4
+        description:
+          type: string
+          example: Description
+        desiredNodeSize:
+          type: string
+          example: "1"
+          default: "1"
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+        maxNodeSize:
+          type: string
+          example: "3"
+          default: "2"
+        minNodeSize:
+          type: string
+          example: "1"
+          default: "1"
+        name:
+          type: string
+          description: K8sNodeGroup name if it is not empty.
+          example: k8snodegroup-01
+        onAutoScaling:
+          type: string
+          example: "true"
+          default: "true"
+        rootDiskSize:
+          type: string
+          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
+          example: "default, 30, 42, ..."
+          default: default
+        rootDiskType:
+          type: string
+          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
+            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
+            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
+            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT:\
+            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
+          example: "default, TYPE1, ..."
+          default: default
+    model.TbK8sNodeGroupInfo:
+      type: object
+      properties:
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        cspViewK8sNodeGroupDetail:
+          $ref: '#/components/schemas/model.SpiderNodeGroupInfo'
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
     model.TbK8sNodeGroupReq:
       type: object
       properties:
+        description:
+          type: string
+          example: Description
         desiredNodeSize:
           type: string
           example: "1"
         imageId:
           type: string
           example: image-01
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
         maxNodeSize:
           type: string
           example: "3"
@@ -10642,7 +10797,7 @@ components:
           example: "1"
         name:
           type: string
-          example: ng-01
+          example: k8snodegroup-01
         onAutoScaling:
           type: string
           description: autoscale config.
