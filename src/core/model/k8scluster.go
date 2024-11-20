@@ -304,8 +304,8 @@ type TbK8sClusterInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 
-	// Id is unique identifier for the object
-	Id string `json:"id" example:"aws-ap-southeast-1"`
+	// Id is unique identifier for the object, same as Name
+	Id string `json:"id" example:"k8scluster-01"`
 	// Uid is universally unique identifier for the object, used for labelSelector
 	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
 	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
@@ -314,7 +314,7 @@ type TbK8sClusterInfo struct {
 	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
 
 	// Name is human-readable string to represent the object
-	Name           string `json:"name" example:"aws-ap-southeast-1"`
+	Name           string `json:"name" example:"k8scluster-01"`
 	ConnectionName string `json:"connectionName" example:"alibaba-ap-northeast-2"`
 
 	// ConnectionConfig shows connection info to cloud service provider
