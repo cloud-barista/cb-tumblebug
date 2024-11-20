@@ -291,7 +291,7 @@ func RestDeleteK8sNodeGroup(c echo.Context) error {
 // @Success 200 {object} model.TbSetK8sNodeGroupAutoscalingRes
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/onAutoScaling [put]
+// @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/onAutoscaling [put]
 func RestPutSetK8sNodeGroupAutoscaling(c echo.Context) error {
 
 	nsId := c.Param("nsId")
