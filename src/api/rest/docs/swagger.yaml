@@ -2304,7 +2304,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: changeK8sNodeGroupAutoscaleSizeReq
-  /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/onAutoScaling:
+  /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/onAutoscaling:
     put:
       tags:
       - "[Kubernetes] Cluster Management"

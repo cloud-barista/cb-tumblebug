@@ -3061,7 +3061,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/onAutoScaling": {
+        "/ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/onAutoscaling": {
             "put": {
                 "description": "Set a K8sNodeGroup's Autoscaling On/Off",
                 "consumes": [
