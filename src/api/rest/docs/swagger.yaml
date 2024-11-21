@@ -10594,8 +10594,8 @@ components:
           example: My K8sCluster
         id:
           type: string
-          description: Id is unique identifier for the object
-          example: aws-ap-southeast-1
+          description: "Id is unique identifier for the object, same as Name"
+          example: k8scluster-01
         label:
           type: object
           additionalProperties:
@@ -10604,7 +10604,7 @@ components:
         name:
           type: string
           description: Name is human-readable string to represent the object
-          example: aws-ap-southeast-1
+          example: k8scluster-01
         resourceType:
           type: string
           description: ResourceType is the type of the resource
