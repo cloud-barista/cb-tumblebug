@@ -386,24 +386,24 @@ func RunServer() {
 	e.GET("/tumblebug/checkK8sNodeGroupsOnK8sCreation", rest_resource.RestCheckK8sNodeGroupsOnK8sCreation)
 	e.GET("/tumblebug/checkK8sNodeImageDesignation", rest_resource.RestCheckK8sNodeImageDesignation)
 	e.GET("/tumblebug/requiredK8sSubnetCount", rest_resource.RestGetRequiredK8sSubnetCount)
-	g.POST("/:nsId/k8scluster", rest_resource.RestPostK8sCluster)
-	g.POST("/:nsId/k8scluster/:k8sClusterId/k8snodegroup", rest_resource.RestPostK8sNodeGroup)
-	g.DELETE("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName", rest_resource.RestDeleteK8sNodeGroup)
-	g.PUT("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName/onautoscaling", rest_resource.RestPutSetK8sNodeGroupAutoscaling)
-	g.PUT("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName/autoscalesize", rest_resource.RestPutChangeK8sNodeGroupAutoscaleSize)
-	g.GET("/:nsId/k8scluster/:k8sClusterId", rest_resource.RestGetK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
+	g.POST("/:nsId/k8sCluster", rest_resource.RestPostK8sCluster)
+	g.POST("/:nsId/k8sCluster/:k8sClusterId/k8sNodeGroup", rest_resource.RestPostK8sNodeGroup)
+	g.DELETE("/:nsId/k8sCluster/:k8sClusterId/k8sNodeGroup/:k8sNodeGroupName", rest_resource.RestDeleteK8sNodeGroup)
+	g.PUT("/:nsId/k8sCluster/:k8sClusterId/k8sNodeGroup/:k8sNodeGroupName/onAutoscaling", rest_resource.RestPutSetK8sNodeGroupAutoscaling)
+	g.PUT("/:nsId/k8sCluster/:k8sClusterId/k8sNodeGroup/:k8sNodeGroupName/autoscaleSize", rest_resource.RestPutChangeK8sNodeGroupAutoscaleSize)
+	g.GET("/:nsId/k8sCluster/:k8sClusterId", rest_resource.RestGetK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
-	g.GET("/:nsId/k8scluster", rest_resource.RestGetAllK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
+	g.GET("/:nsId/k8sCluster", rest_resource.RestGetAllK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
-	g.DELETE("/:nsId/k8scluster/:k8sClusterId", rest_resource.RestDeleteK8sCluster)
-	g.DELETE("/:nsId/k8scluster", rest_resource.RestDeleteAllK8sCluster)
-	g.PUT("/:nsId/k8scluster/:k8sClusterId/upgrade", rest_resource.RestPutUpgradeK8sCluster)
+	g.DELETE("/:nsId/k8sCluster/:k8sClusterId", rest_resource.RestDeleteK8sCluster)
+	g.DELETE("/:nsId/k8sCluster", rest_resource.RestDeleteAllK8sCluster)
+	g.PUT("/:nsId/k8sCluster/:k8sClusterId/upgrade", rest_resource.RestPutUpgradeK8sCluster)
 
-	e.POST("/tumblebug/k8sclusterRecommendNode", rest_resource.RestRecommendK8sNode)
-	e.POST("/tumblebug/k8sclusterDynamicCheckRequest", rest_resource.RestPostK8sClusterDynamicCheckRequest)
-	g.POST("/:nsId/k8sclusterDynamic", rest_resource.RestPostK8sClusterDynamic)
-	g.POST("/:nsId/k8scluster/:k8sClusterId/k8snodegroupDynamic", rest_resource.RestPostK8sNodeGroupDynamic)
-	g.GET("/:nsId/control/k8scluster/:k8sClusterId", rest_resource.RestGetControlK8sCluster)
+	e.POST("/tumblebug/k8sClusterRecommendNode", rest_resource.RestRecommendK8sNode)
+	e.POST("/tumblebug/k8sClusterDynamicCheckRequest", rest_resource.RestPostK8sClusterDynamicCheckRequest)
+	g.POST("/:nsId/k8sClusterDynamic", rest_resource.RestPostK8sClusterDynamic)
+	g.POST("/:nsId/k8sCluster/:k8sClusterId/k8sNodeGroupDynamic", rest_resource.RestPostK8sNodeGroupDynamic)
+	g.GET("/:nsId/control/k8sCluster/:k8sClusterId", rest_resource.RestGetControlK8sCluster)
 
 	// Network Load Balancer
 	g.POST("/:nsId/mci/:mciId/mcSwNlb", rest_infra.RestPostMcNLB)
