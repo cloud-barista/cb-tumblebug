@@ -1081,8 +1081,8 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{
 
 	if kv != nil {
 		for _, v := range kv {
-			tbK8sCInfo := model.TbK8sClusterInfo{}
-			err = json.Unmarshal([]byte(v.Value), &tbK8sCInfo)
+			storedTbK8sCInfo := model.TbK8sClusterInfo{}
+			err = json.Unmarshal([]byte(v.Value), &storedTbK8sCInfo)
 			if err != nil {
 				log.Err(err).Msg("Failed to List K8sCluster")
 				return nil, err
@@ -1096,7 +1096,14 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{
 					continue
 				}
 			}
-			tbK8sCInfoList = append(tbK8sCInfoList, tbK8sCInfo)
+
+			tbK8sCInfo, err := GetK8sCluster(nsId, storedTbK8sCInfo.Id)
+			if err != nil {
+				log.Err(err).Msg("Failed to List K8sCluster")
+				continue
+			}
+
+			tbK8sCInfoList = append(tbK8sCInfoList, *tbK8sCInfo)
 		}
 	}
 
