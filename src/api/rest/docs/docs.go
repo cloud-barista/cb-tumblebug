@@ -14139,9 +14139,9 @@ const docTemplate = `{
                     "example": "My K8sCluster"
                 },
                 "id": {
-                    "description": "Id is unique identifier for the object",
+                    "description": "Id is unique identifier for the object, same as Name",
                     "type": "string",
-                    "example": "aws-ap-southeast-1"
+                    "example": "k8scluster-01"
                 },
                 "label": {
                     "description": "Label is for describing the object by keywords",
@@ -14153,7 +14153,7 @@ const docTemplate = `{
                 "name": {
                     "description": "Name is human-readable string to represent the object",
                     "type": "string",
-                    "example": "aws-ap-southeast-1"
+                    "example": "k8scluster-01"
                 },
                 "resourceType": {
                     "description": "ResourceType is the type of the resource",
