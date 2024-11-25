@@ -101,6 +101,11 @@ func RunServer() {
 	APILogSkipPatterns := [][]string{
 		{"/tumblebug/api"},
 		{"/mci", "option=status"},
+		{"/k8scluster"},
+		{"/resources/vNet"},
+		{"/resources/securityGroup"},
+		{"/resources/vpn"},
+		{"/resources/sshKey"},
 	}
 	e.Use(middlewares.Zerologger(APILogSkipPatterns))
 

@@ -13,14 +13,6 @@ github.com/Masterminds/semver/v3 v3.1.1/go.mod h1:VPu/7SZ7ePZ3QOrcuXROw5FAcLl4a0
 github.com/chzyer/logex v1.2.0/go.mod h1:9+9sk7u7pGNWYMkh0hdiL++6OeibzJccyQU4p4MedaY=
 github.com/chzyer/readline v1.5.0/go.mod h1:x22KAscuvRqlLoK9CsoYsmxoXZMMFVyOl86cAH8qUic=
 github.com/chzyer/test v0.0.0-20210722231415-061457976a23/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
-github.com/cloud-barista/mc-terrarium v0.0.10 h1:WrK/bHyiQZ9ZxRLVoUTY4c3CVH7z+vEzdh7yxo9X4ZM=
-github.com/cloud-barista/mc-terrarium v0.0.10/go.mod h1:iQxZNRa04d7mHA0h5dEPfF7ch1SBUS/ZFGUynKsKJ6I=
-github.com/cloud-barista/mc-terrarium v0.0.15 h1:1yJjCsNMwYZJyYSku9HQPOdj1PwAf5ybYI+DqB1TKsc=
-github.com/cloud-barista/mc-terrarium v0.0.15/go.mod h1:iQxZNRa04d7mHA0h5dEPfF7ch1SBUS/ZFGUynKsKJ6I=
-github.com/cloud-barista/mc-terrarium v0.0.16 h1:0TpSnFk5IpStpQc1YJSbMzB8q1jgVZ639Cjh7YAyxh4=
-github.com/cloud-barista/mc-terrarium v0.0.16/go.mod h1:iQxZNRa04d7mHA0h5dEPfF7ch1SBUS/ZFGUynKsKJ6I=
-github.com/cloud-barista/mc-terrarium v0.0.17 h1:W6kyGc2dIKrOMnw0UAOoI66G/bX9Tj/wG4pY9TN9uqI=
-github.com/cloud-barista/mc-terrarium v0.0.17/go.mod h1:iQxZNRa04d7mHA0h5dEPfF7ch1SBUS/ZFGUynKsKJ6I=
 github.com/cloud-barista/mc-terrarium v0.0.18 h1:uDzFOIOoIb7hSXJ5ovrrx8+/hqjHeyNNMU3EDfv8If0=
 github.com/cloud-barista/mc-terrarium v0.0.18/go.mod h1:iQxZNRa04d7mHA0h5dEPfF7ch1SBUS/ZFGUynKsKJ6I=
 github.com/cockroachdb/apd v1.1.0/go.mod h1:8Sl8LxpKi29FqWXR16WEFZRNSz3SoPzUzeMeY4+DwBQ=

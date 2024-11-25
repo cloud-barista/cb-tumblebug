@@ -989,18 +989,15 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 				return nil, err
 			}
 
-			fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
 			switch {
 			case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 				err := fmt.Errorf(string(resp.Body()))
-				fmt.Println("body: ", string(resp.Body()))
 				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 
 			updatedSpiderMyImage := resp.Result().(*model.SpiderMyImageInfo)
 			res.Status = updatedSpiderMyImage.Status
-			fmt.Printf("res.Status: %s \n", res.Status) // for debug
 			UpdateResourceObject(nsId, model.StrCustomImage, res)
 
 			return res, nil
@@ -1095,6 +1092,7 @@ func GenSpecMapKey(region, specName string) string {
 	return strings.ToLower(fmt.Sprintf("%s-%s", region, specName))
 }
 
+// GenResourceKey generates a Resource key for concatenating providerName, regionName, zoneName, resourceName
 func GetProviderRegionZoneResourceKey(providerName, regionName, zoneName, resourceName string) string {
 
 	div := "+"
@@ -1108,6 +1106,28 @@ func GetProviderRegionZoneResourceKey(providerName, regionName, zoneName, resour
 	}
 
 	return strings.ToLower(fmt.Sprintf("%s%s%s%s%s%s%s", providerName, div, regionName, div, zoneName, div, resourceName))
+}
+
+// ResolveProviderRegionZoneResourceKey resolves the Resource key into providerName, regionName, zoneName, resourceName
+func ResolveProviderRegionZoneResourceKey(key string) (providerName string, regionName string, zoneName string, resourceName string, err error) {
+
+	div := "+"
+
+	split := strings.Split(key, div)
+
+	if len(split) == 1 {
+		return "", "", "", "", fmt.Errorf("ResourceKey dose not contain div(%s)", div)
+	}
+
+	if len(split) == 2 {
+		return split[0], "", "", split[1], nil
+	}
+
+	if len(split) == 3 {
+		return split[0], split[1], "", split[2], nil
+	}
+
+	return split[0], split[1], split[2], split[3], nil
 }
 
 // CheckResource returns the existence of the TB Resource resource in bool form.

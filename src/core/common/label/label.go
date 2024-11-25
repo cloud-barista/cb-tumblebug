@@ -250,7 +250,7 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]interface{}
 	keyValue = kvutil.FilterKvListBy(keyValue, listKey, 1)
 
 	// Log the number of filtered label entries
-	log.Info().Int("numLabelEntries", len(keyValue)).Str("listKey", listKey).Msg("Fetched and filtered list of label entries")
+	//log.Debug().Int("numLabelEntries", len(keyValue)).Str("listKey", listKey).Msg("Fetched and filtered list of label entries")
 
 	// Get the appropriate resource type constructor
 	resourceConstructor, exists := model.ResourceTypeRegistry[labelType]
@@ -264,7 +264,7 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]interface{}
 		labelKey := kv.Key
 		labelData := kv.Value
 
-		log.Info().Str("labelKey", labelKey).Msg("Processing label entry")
+		log.Debug().Str("labelKey", labelKey).Msg("Processing label entry")
 		//log.Debug().Str("labelKey", labelKey).Str("labelData", string(labelData)).Msg("Fetched label data")
 
 		var labelInfo model.LabelInfo
@@ -301,6 +301,6 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]interface{}
 		}
 	}
 
-	log.Info().Int("numMatchedResources", len(matchedResources)).Str("labelType", labelType).Msg("Matched resources found")
+	//log.Debug().Int("numMatchedResources", len(matchedResources)).Str("labelType", labelType).Msg("Matched resources found")
 	return matchedResources, nil
 }
