@@ -946,7 +946,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 	// Check whether VM names meet requirement.
 	errStr := ""
 	for i, k := range vmRequest {
-		err = checkCommonResAvailableForVmDynamicReq(&k)
+		err = checkCommonResAvailableForVmDynamicReq(&k, nsId)
 		if err != nil {
 			log.Error().Err(err).Msgf("[%d] Failed to find common resource for MCI provision", i)
 			errStr += "{[" + strconv.Itoa(i+1) + "] " + err.Error() + "} "
@@ -1046,7 +1046,7 @@ func CreateMciVmDynamic(nsId string, mciId string, req *model.TbVmDynamicReq) (*
 }
 
 // checkCommonResAvailableForVmDynamicReq is func to check common resources availability for VmDynamicReq
-func checkCommonResAvailableForVmDynamicReq(req *model.TbVmDynamicReq) error {
+func checkCommonResAvailableForVmDynamicReq(req *model.TbVmDynamicReq, nsId string) error {
 
 	vmRequest := req
 	// Check whether VM names meet requirement.
@@ -1076,20 +1076,20 @@ func checkCommonResAvailableForVmDynamicReq(req *model.TbVmDynamicReq) error {
 		return err
 	}
 
-	osType := strings.ReplaceAll(k.CommonImage, " ", "")
-	vmReq.ImageId = resource.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.RegionDetail.RegionName, "", osType)
-	// incase of user provided image id completely (e.g. aws+ap-northeast-2+ubuntu22.04)
-	if strings.Contains(k.CommonImage, "+") {
-		vmReq.ImageId = k.CommonImage
-	}
-	_, err = resource.GetImage(model.SystemCommonNs, vmReq.ImageId)
-	if err != nil {
-		err := fmt.Errorf("Failed to get Image " + k.CommonImage + " from " + vmReq.ConnectionName)
-		log.Error().Err(err).Msg("")
-		return err
+	// 1) try if there is matched custom image in the namespace
+	_, err = resource.GetImage(nsId, k.CommonImage)
+	if err == nil {
+		return nil
 	}
 
-	return nil
+	// 2) try if there is a matched image with modified ImageId by osType in the CommonImage list
+	modifiedImageKey := resource.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.RegionDetail.RegionName, "", k.CommonImage)
+	_, err = resource.GetImage(model.SystemCommonNs, modifiedImageKey)
+	if err == nil {
+		return nil
+	}
+
+	return err
 }
 
 // getVmReqForDynamicMci is func to getVmReqFromDynamicReq
@@ -1129,17 +1129,15 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	resourceName := nsId + model.StrSharedResourceName + vmReq.ConnectionName
 
 	vmReq.SpecId = specInfo.Id
-	osType := strings.ReplaceAll(k.CommonImage, " ", "")
-	vmReq.ImageId = resource.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.RegionDetail.RegionName, "", osType)
-	// incase of user provided image id completely (e.g. aws+ap-northeast-2+ubuntu22.04)
-	if strings.Contains(k.CommonImage, "+") {
-		vmReq.ImageId = k.CommonImage
-	}
-	_, err = resource.GetImage(model.SystemCommonNs, vmReq.ImageId)
+	vmReq.ImageId = k.CommonImage
+	_, err = resource.GetImage(nsId, k.CommonImage)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the Image " + vmReq.ImageId + " from " + vmReq.ConnectionName)
-		log.Error().Err(err).Msg("")
-		return &model.TbVmReq{}, err
+		// set modifiedImageKey if there is no matched custom image in the namespace
+		modifiedImageKey := resource.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.RegionDetail.RegionName, "", k.CommonImage)
+		_, err = resource.GetImage(model.SystemCommonNs, modifiedImageKey)
+		if err == nil {
+			vmReq.ImageId = modifiedImageKey
+		}
 	}
 
 	/*
@@ -1157,7 +1155,11 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create etcd session")
 	}
-	defer session.Close()
+	defer func() {
+		if err := session.Close(); err != nil {
+			log.Error().Err(err).Msg("Failed to close etcd session")
+		}
+	}()
 
 	lock, err := kvstore.NewLock(ctx, session, vNetKey)
 	if err != nil {
@@ -1168,8 +1170,12 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to acquire lock")
 	}
-	// Unlock the lock when the function exits
-	defer lock.Unlock(ctx)
+	// Ensure the lock is released when the function exits
+	defer func() {
+		if err := lock.Unlock(ctx); err != nil {
+			log.Error().Err(err).Msg("Failed to release lock")
+		}
+	}()
 
 	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
 
@@ -1297,6 +1303,7 @@ func CreateVmObject(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *m
 
 // CreateVm is func to create VM (option = "register" for register existing VM)
 func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.TbVmInfo, option string) error {
+	log.Info().Msgf("Start to create VM: %s", vmInfoData.Name)
 	//goroutin
 	defer wg.Done()
 

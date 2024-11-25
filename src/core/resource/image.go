@@ -543,35 +543,83 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 	// make comparison case-insensitive
 	nsId = strings.ToLower(nsId)
 	imageKey = strings.ToLower(imageKey)
+	imageKey = strings.ReplaceAll(imageKey, " ", "")
 
-	// ex: tencent+ap-jakarta+ubuntu22.04
-	image := model.TbImageInfo{Namespace: nsId, Id: imageKey}
-	has, err := model.ORM.Where("LOWER(Namespace) = ? AND LOWER(Id) = ?", nsId, imageKey).Get(&image)
+	providerName, regionName, _, resourceName, err := ResolveProviderRegionZoneResourceKey(imageKey)
 	if err != nil {
-		log.Info().Err(err).Msgf("Failed to get image %s by ID", imageKey)
-	}
-	if has {
-		return image, nil
-	}
+		// imageKey does not include information for providerName, regionName
+		image := model.TbImageInfo{Namespace: nsId, Id: imageKey}
 
-	// ex: img-487zeit5
-	image = model.TbImageInfo{Namespace: nsId, CspImageName: imageKey}
-	has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspImageName) = ?", nsId, imageKey).Get(&image)
-	if err != nil {
-		log.Info().Err(err).Msgf("Failed to get image %s by CspImageName", imageKey)
-	}
-	if has {
-		return image, nil
-	}
+		// 1) Check if the image is a custom image
+		// ex: custom-img-487zeit5
+		tempInterface, err := GetResource(nsId, model.StrCustomImage, imageKey)
+		customImage := model.TbCustomImageInfo{}
+		if err == nil {
+			err = common.CopySrcToDest(&tempInterface, &customImage)
+			if err != nil {
+				log.Error().Err(err).Msg("TbCustomImageInfo CopySrcToDest error")
+				return model.TbImageInfo{}, err
+			}
+			image.CspImageName = customImage.CspResourceName
+			image.SystemLabel = model.StrCustomImage
+			return image, nil
+		}
 
-	// ex: Ubuntu22.04
-	image = model.TbImageInfo{Namespace: nsId, GuestOS: imageKey}
-	has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(GuestOS) LIKE ?", nsId, imageKey).Get(&image)
-	if err != nil {
-		log.Info().Err(err).Msgf("Failed to get image %s by GuestOS type", imageKey)
-	}
-	if has {
-		return image, nil
+		// 2) Check if the image is a registered image in the given namespace
+		// ex: img-487zeit5
+		image = model.TbImageInfo{Namespace: nsId, Id: imageKey}
+		has, err := model.ORM.Where("LOWER(Namespace) = ? AND LOWER(Id) = ?", nsId, imageKey).Get(&image)
+		if err != nil {
+			log.Info().Err(err).Msgf("Cannot get image %s by ID from %s", imageKey, nsId)
+		}
+		if has {
+			return image, nil
+		}
+
+	} else {
+		// imageKey includes information for providerName, regionName
+
+		// 1) Check if the image is a registered image in the common namespace model.SystemCommonNs by ImageId
+		// ex: tencent+ap-jakarta+ubuntu22.04 or tencent+ap-jakarta+img-487zeit5
+		image := model.TbImageInfo{Namespace: model.SystemCommonNs, Id: imageKey}
+		has, err := model.ORM.Where("LOWER(Namespace) = ? AND LOWER(Id) = ?", model.SystemCommonNs, imageKey).Get(&image)
+		if err != nil {
+			log.Info().Err(err).Msgf("Cannot get image %s by ID from %s", imageKey, model.SystemCommonNs)
+		}
+		if has {
+			return image, nil
+		}
+
+		// 2) Check if the image is a registered image in the common namespace model.SystemCommonNs by CspImageName
+		// ex: tencent+ap-jakarta+img-487zeit5
+		image = model.TbImageInfo{Namespace: model.SystemCommonNs, CspImageName: resourceName}
+		has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspImageName) = ? AND LOWER(Id) LIKE ? AND LOWER(Id) LIKE ?",
+			model.SystemCommonNs,
+			resourceName,
+			"%"+strings.ToLower(providerName)+"%",
+			"%"+strings.ToLower(regionName)+"%").Get(&image)
+		if err != nil {
+			log.Info().Err(err).Msgf("Cannot get image %s by CspImageName", resourceName)
+		}
+		if has {
+			return image, nil
+		}
+
+		// 3) Check if the image is a registered image in the common namespace model.SystemCommonNs by GuestOS
+		// ex: tencent+ap-jakarta+Ubuntu22.04
+		image = model.TbImageInfo{Namespace: model.SystemCommonNs, GuestOS: resourceName}
+		has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(GuestOS) LIKE ? AND LOWER(Id) LIKE ? AND LOWER(Id) LIKE ?",
+			model.SystemCommonNs,
+			"%"+strings.ToLower(resourceName)+"%",
+			"%"+strings.ToLower(providerName)+"%",
+			"%"+strings.ToLower(regionName)+"%").Get(&image)
+		if err != nil {
+			log.Info().Err(err).Msgf("Failed to get image %s by GuestOS type", resourceName)
+		}
+		if has {
+			return image, nil
+		}
+
 	}
 
 	return model.TbImageInfo{}, fmt.Errorf("The imageKey %s not found by any of ID, CspImageName, GuestOS", imageKey)
