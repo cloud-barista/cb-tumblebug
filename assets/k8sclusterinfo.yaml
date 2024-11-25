@@ -9,6 +9,7 @@
 #     requiredSubnetCount: [required number of subnets to create a kubernetes cluster, default value is 1]
 #     version:
 #       - region: [region1, region2, common(special keyword: most of regions)]
+#     nodeGroupNamingRule: [regular expression or no restriction if empty]
 #
 
 k8scluster:
@@ -41,6 +42,7 @@ k8scluster:
     nodeGroupsOnCreation: true
     nodeImageDesignation: false
     requiredSubnetCount: 1
+    nodeGroupNamingRule: ^[a-z][a-z0-9]*$
     version:
       - region: [westeurope,westus]
         available:

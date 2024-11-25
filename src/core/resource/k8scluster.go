@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -1396,6 +1397,24 @@ func validateAtCreateK8sCluster(tbK8sClusterReq *model.TbK8sClusterReq) error {
 			err := fmt.Errorf("Need to Set Empty K8sNodeGroupList")
 			log.Err(err).Msgf("Provider(%s)", connConfig.ProviderName)
 			return err
+		}
+	}
+
+	// Validate K8sNodeGroup's Naming Rule
+	k8sNgNamingRule, err := common.GetK8sNodeGroupNamingRule(connConfig.ProviderName)
+	if err != nil {
+		log.Err(err).Msgf("Failed to Get Nodegroup's Naming Rule")
+		return err
+	}
+
+	if len(tbK8sClusterReq.K8sNodeGroupList) > 0 {
+		re := regexp.MustCompile(k8sNgNamingRule)
+		for _, ng := range tbK8sClusterReq.K8sNodeGroupList {
+			if re.MatchString(ng.Name) == false {
+				err := fmt.Errorf("K8sNodeGroup's Name(%s) should be match regular expression(%s)", ng.Name, k8sNgNamingRule)
+				log.Err(err).Msgf("Provider(%s)", connConfig.ProviderName)
+				return err
+			}
 		}
 	}
 
