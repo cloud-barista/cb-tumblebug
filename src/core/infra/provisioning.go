@@ -30,6 +30,7 @@ import (
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	"golang.org/x/net/context"
 )
 
@@ -957,6 +958,20 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 		return emptyMci, err
 	}
 
+	// Create a persistent session for distributed lock
+	ctx := context.TODO()
+	session, err := kvstore.NewSession(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create a session for dist-lock")
+	}
+	defer func() {
+		err := session.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close a session for dist-lock")
+		}
+	}()
+	log.Debug().Msgf("Created a session for dist-lock: %v", session)
+
 	//If not, generate default resources dynamically.
 	// Parallel processing of VM requests
 	var wg sync.WaitGroup
@@ -970,7 +985,8 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 		go func(vmReq model.TbVmDynamicReq) {
 			defer wg.Done()
 
-			req, err := getVmReqFromDynamicReq(reqID, nsId, &vmReq)
+			req, err := getVmReqFromDynamicReq(ctx, session, reqID, nsId, &vmReq)
+			// req, err := getVmReqFromDynamicReq(reqID, nsId, &vmReq)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to prepare resources for dynamic MCI creation")
 				errChan <- err
@@ -1036,7 +1052,9 @@ func CreateMciVmDynamic(nsId string, mciId string, req *model.TbVmDynamicReq) (*
 		return emptyMci, err
 	}
 
-	vmReq, err := getVmReqFromDynamicReq("", nsId, req)
+	ctx := context.TODO()
+
+	vmReq, err := getVmReqFromDynamicReq(ctx, nil, "", nsId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyMci, err
@@ -1093,7 +1111,7 @@ func checkCommonResAvailableForVmDynamicReq(req *model.TbVmDynamicReq, nsId stri
 }
 
 // getVmReqForDynamicMci is func to getVmReqFromDynamicReq
-func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq) (*model.TbVmReq, error) {
+func getVmReqFromDynamicReq(ctx context.Context, session *concurrency.Session, reqID string, nsId string, req *model.TbVmDynamicReq) (*model.TbVmReq, error) {
 
 	onDemand := true
 
@@ -1146,36 +1164,32 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	 * - Use distributed-lock, considering running multiple cb-tumblebugs.
 	 */
 
-	// Generate a resource key for vNet
-	vNetKey := common.GenResourceKey(nsId, model.StrVNet, resourceName)
+	var lock *concurrency.Mutex
+	if session != nil {
+		// Generate a resource key for vNet
+		vNetKey := common.GenResourceKey(nsId, model.StrVNet, resourceName)
+		lockKey := "/dist-lock/" + vNetKey
 
-	// Create a persistent session
-	ctx := context.TODO()
-	session, err := kvstore.NewSession(ctx)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to create etcd session")
-	}
-	defer func() {
-		if err := session.Close(); err != nil {
-			log.Error().Err(err).Msg("Failed to close etcd session")
+		lock, err = kvstore.NewLock(ctx, session, lockKey)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to get a dist-lock")
 		}
-	}()
+		log.Debug().Msgf("Created a dist-lock: %v", lock)
 
-	lock, err := kvstore.NewLock(ctx, session, vNetKey)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get lock")
-	}
-	// Lock
-	err = lock.Lock(ctx)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to acquire lock")
-	}
-	// Ensure the lock is released when the function exits
-	defer func() {
-		if err := lock.Unlock(ctx); err != nil {
-			log.Error().Err(err).Msg("Failed to release lock")
+		// Lock
+		err = lock.Lock(ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to acquire a dist-lock")
 		}
-	}()
+		// Unlock the lock when the function exits
+		defer func() {
+			err := lock.Unlock(ctx)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to release a dist-lock")
+			}
+		}()
+		log.Debug().Msgf("Acquired a dist-lock: %v", lock)
+	}
 
 	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
 
@@ -1200,10 +1214,13 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	}
 	vmReq.SubnetId = resourceName
 
-	// Unlock the lock
-	err = lock.Unlock(ctx)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to release lock")
+	if session != nil {
+		// Unlock the lock
+		err := lock.Unlock(ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to release the dist-lock")
+		}
+		log.Debug().Msgf("Released the dist-lock: %v", lock)
 	}
 
 	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
