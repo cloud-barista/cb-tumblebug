@@ -1618,7 +1618,7 @@ paths:
         required: true
         schema:
           type: string
-          default: k8scluster-01
+          default: k8scluster01
       - name: action
         in: query
         description: Action to K8sCluster
@@ -2089,7 +2089,7 @@ paths:
         required: true
         schema:
           type: string
-          default: k8scluster-01
+          default: k8scluster01
       responses:
         "200":
           description: OK
@@ -2129,7 +2129,7 @@ paths:
         required: true
         schema:
           type: string
-          default: k8scluster-01
+          default: k8scluster01
       - name: option
         in: query
         description: Option for K8sCluster deletion
@@ -2171,7 +2171,7 @@ paths:
         required: true
         schema:
           type: string
-          default: k8scluster-01
+          default: k8scluster01
       requestBody:
         description: Details of the K8sNodeGroup object
         content:
@@ -2220,14 +2220,14 @@ paths:
         required: true
         schema:
           type: string
-          default: k8scluster-01
+          default: k8scluster01
       - name: k8sNodeGroupName
         in: path
         description: K8sNodeGroup Name
         required: true
         schema:
           type: string
-          default: k8snodegroup-01
+          default: k8snodegroup01
       - name: option
         in: query
         description: Option for K8sNodeGroup deletion
@@ -2269,14 +2269,14 @@ paths:
         required: true
         schema:
           type: string
-          default: k8scluster-01
+          default: k8scluster01
       - name: k8sNodeGroupName
         in: path
         description: K8sNodeGroup Name
         required: true
         schema:
           type: string
-          default: ng-01
+          default: nodegroup01
       requestBody:
         description: Details of the TbChangeK8sNodeGroupAutoscaleSizeReq object
         content:
@@ -2325,14 +2325,14 @@ paths:
         required: true
         schema:
           type: string
-          default: k8scluster-01
+          default: k8scluster01
       - name: k8sNodeGroupName
         in: path
         description: K8sNodeGroup Name
         required: true
         schema:
           type: string
-          default: ng-01
+          default: nodegroup01
       requestBody:
         description: Details of the TbSetK8sNodeGroupAutoscalingReq object
         content:
@@ -2381,7 +2381,7 @@ paths:
         required: true
         schema:
           type: string
-          default: k8scluster-01
+          default: k8scluster01
       - name: x-request-id
         in: header
         description: Custom request ID
@@ -2389,7 +2389,7 @@ paths:
           type: string
       requestBody:
         description: "Request body to provision K8sNodeGroup dynamically. <br> Must\
-          \ include commonSpec and commonImage info. <br> (ex: {name: k8snodegroup-01,\
+          \ include commonSpec and commonImage info. <br> (ex: {name: k8snodegroup01,\
           \ commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]})\
           \ <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest\
           \ to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
@@ -2439,7 +2439,7 @@ paths:
         required: true
         schema:
           type: string
-          default: k8scluster-01
+          default: k8scluster01
       requestBody:
         description: Details of the TbUpgradeK8sClusterReq object
         content:
@@ -2496,7 +2496,7 @@ paths:
           type: string
       requestBody:
         description: "Request body to provision K8sCluster dynamically. <br> Must\
-          \ include commonSpec and commonImage info. <br> (ex: {name: k8scluster-01,\
+          \ include commonSpec and commonImage info. <br> (ex: {name: k8scluster01,\
           \ commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]})\
           \ <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest\
           \ to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
@@ -8911,6 +8911,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.K8sClusterNodeImageDetail'
+        nodegroup_naming_rule:
+          type: string
         nodegroups_on_creation:
           type: boolean
         required_subnet_count:

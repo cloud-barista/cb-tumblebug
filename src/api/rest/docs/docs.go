@@ -2161,7 +2161,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "k8scluster-01",
+                        "default": "k8scluster01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -2778,7 +2778,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "k8scluster-01",
+                        "default": "k8scluster01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -2830,7 +2830,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "k8scluster-01",
+                        "default": "k8scluster01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -2887,7 +2887,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "k8scluster-01",
+                        "default": "k8scluster01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -2950,7 +2950,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "k8scluster-01",
+                        "default": "k8scluster01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -2958,7 +2958,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "k8snodegroup-01",
+                        "default": "k8snodegroup01",
                         "description": "K8sNodeGroup Name",
                         "name": "k8sNodeGroupName",
                         "in": "path",
@@ -3015,7 +3015,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "k8scluster-01",
+                        "default": "k8scluster01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -3023,7 +3023,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "ng-01",
+                        "default": "nodegroup01",
                         "description": "K8sNodeGroup Name",
                         "name": "k8sNodeGroupName",
                         "in": "path",
@@ -3086,7 +3086,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "k8scluster-01",
+                        "default": "k8scluster01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -3094,7 +3094,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "ng-01",
+                        "default": "nodegroup01",
                         "description": "K8sNodeGroup Name",
                         "name": "k8sNodeGroupName",
                         "in": "path",
@@ -3157,14 +3157,14 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "k8scluster-01",
+                        "default": "k8scluster01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Request body to provision K8sNodeGroup dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8snodegroup-01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
+                        "description": "Request body to provision K8sNodeGroup dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8snodegroup01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
                         "name": "k8sNodeGroupDynamicReq",
                         "in": "body",
                         "required": true,
@@ -3226,7 +3226,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "k8scluster-01",
+                        "default": "k8scluster01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -3288,7 +3288,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Request body to provision K8sCluster dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8scluster-01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
+                        "description": "Request body to provision K8sCluster dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8scluster01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
                         "name": "k8sClusterDyanmicReq",
                         "in": "body",
                         "required": true,
@@ -11766,6 +11766,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.K8sClusterNodeImageDetail"
                     }
+                },
+                "nodegroup_naming_rule": {
+                    "type": "string"
                 },
                 "nodegroups_on_creation": {
                     "type": "boolean"
