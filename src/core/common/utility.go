@@ -1500,6 +1500,44 @@ func GetModelK8sRequiredSubnetCount(providerName string) (*model.K8sClusterRequi
 	}, nil
 }
 
+const DefaultNamingRule = "^.*$" // Wildcard Pattern
+
+// GetK8sNodeGroupNamingRule is func to get nodegroup's naming rule
+func GetK8sNodeGroupNamingRule(providerName string) (string, error) {
+	//
+	// Get nodeGroupNamingRule field in k8sclusterinfo.yaml
+	//
+
+	providerName = strings.ToLower(providerName)
+
+	// Get model.K8sClusterDetail for providerName
+	k8sClusterDetail := getK8sClusterDetail(providerName)
+	if k8sClusterDetail == nil {
+		return "", fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
+	}
+
+	namingRule := k8sClusterDetail.NodeGroupNamingRule
+	if strings.EqualFold(namingRule, "") {
+		namingRule = DefaultNamingRule
+	}
+
+	return namingRule, nil
+}
+
+/*
+// GetModelK8sK8sNodeGroupNamingRule is to convert a K8sNodeGroupNamingRule value to model.K8sClusterK8sNodeGroupNamingRule
+func GetModelK8sNodeGroupNamingRule(providerName string) (*model.K8sClusterNodeGroupsOnCreation, error) {
+	k8sNodeGroupNamingRule, err := GetK8sNodeGroupNamingRule(providerName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.K8sClusterNodeGroupsOnCreation{
+		Result: k8sNodeGroupNamingRule,
+	}, nil
+}
+*/
+
 func FilterDigitsAndDots(input string) string {
 	re := regexp.MustCompile(`[^0-9.]`)
 	return re.ReplaceAllString(input, "")

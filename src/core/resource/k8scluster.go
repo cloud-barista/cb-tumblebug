@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -26,7 +27,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
-	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
@@ -1057,21 +1057,7 @@ func ListK8sClusterId(nsId string) ([]string, error) {
 func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{}, error) {
 	log.Info().Msg("ListK8sCluster")
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Err(err).Msg("Failed to List K8sCluster")
-		return nil, err
-	}
-
-	//log.Debug().Msg("[Get] K8sCluster list")
-	k := fmt.Sprintf("/ns/%s/k8scluster", nsId)
-	//log.Debug().Msg(k)
-
-	// Get model.TbK8sClusterInfo objects from kvstore
-
-	kv, err := kvstore.GetKvList(k)
-	kv = kvutil.FilterKvListBy(kv, k, 1)
-
+	k8sIdList, err := ListK8sClusterId(nsId)
 	if err != nil {
 		log.Err(err).Msg("Failed to List K8sCluster")
 		return nil, err
@@ -1079,32 +1065,42 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{
 
 	tbK8sCInfoList := []model.TbK8sClusterInfo{}
 
-	if kv != nil {
-		for _, v := range kv {
-			storedTbK8sCInfo := model.TbK8sClusterInfo{}
-			err = json.Unmarshal([]byte(v.Value), &storedTbK8sCInfo)
-			if err != nil {
-				log.Err(err).Msg("Failed to List K8sCluster")
-				return nil, err
-			}
-			// Check the JSON body includes both filterKey and filterVal strings. (assume key and value)
-			if filterKey != "" {
-				// If not includes both, do not append current item to the list result.
-				itemValueForCompare := strings.ToLower(v.Value)
-				if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) &&
-					strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
-					continue
-				}
-			}
+	for _, id := range k8sIdList {
+		k := common.GenK8sClusterKey(nsId, id)
+		kv, err := kvstore.GetKv(k)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+		}
 
-			tbK8sCInfo, err := GetK8sCluster(nsId, storedTbK8sCInfo.Id)
-			if err != nil {
-				log.Err(err).Msg("Failed to List K8sCluster")
+		if kv == (kvstore.KeyValue{}) {
+			err = fmt.Errorf("%s cannot be found", k)
+			log.Err(err).Msg("Failed to List K8sCluster")
+			return nil, err
+		}
+
+		storedTbK8sCInfo := model.TbK8sClusterInfo{}
+		err = json.Unmarshal([]byte(kv.Value), &storedTbK8sCInfo)
+		if err != nil {
+			log.Err(err).Msg("Failed to List K8sCluster")
+			return nil, err
+		}
+		// Check the JSON body includes both filterKey and filterVal strings. (assume key and value)
+		if filterKey != "" {
+			// If not includes both, do not append current item to the list result.
+			itemValueForCompare := strings.ToLower(kv.Value)
+			if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) &&
+				strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
 				continue
 			}
-
-			tbK8sCInfoList = append(tbK8sCInfoList, *tbK8sCInfo)
 		}
+
+		tbK8sCInfo, err := GetK8sCluster(nsId, storedTbK8sCInfo.Id)
+		if err != nil {
+			log.Err(err).Msg("Failed to List K8sCluster")
+			continue
+		}
+
+		tbK8sCInfoList = append(tbK8sCInfoList, *tbK8sCInfo)
 	}
 
 	return tbK8sCInfoList, nil
@@ -1401,6 +1397,24 @@ func validateAtCreateK8sCluster(tbK8sClusterReq *model.TbK8sClusterReq) error {
 			err := fmt.Errorf("Need to Set Empty K8sNodeGroupList")
 			log.Err(err).Msgf("Provider(%s)", connConfig.ProviderName)
 			return err
+		}
+	}
+
+	// Validate K8sNodeGroup's Naming Rule
+	k8sNgNamingRule, err := common.GetK8sNodeGroupNamingRule(connConfig.ProviderName)
+	if err != nil {
+		log.Err(err).Msgf("Failed to Get Nodegroup's Naming Rule")
+		return err
+	}
+
+	if len(tbK8sClusterReq.K8sNodeGroupList) > 0 {
+		re := regexp.MustCompile(k8sNgNamingRule)
+		for _, ng := range tbK8sClusterReq.K8sNodeGroupList {
+			if re.MatchString(ng.Name) == false {
+				err := fmt.Errorf("K8sNodeGroup's Name(%s) should be match regular expression(%s)", ng.Name, k8sNgNamingRule)
+				log.Err(err).Msgf("Provider(%s)", connConfig.ProviderName)
+				return err
+			}
 		}
 	}
 

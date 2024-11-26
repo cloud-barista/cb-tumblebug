@@ -74,6 +74,7 @@ type K8sClusterDetail struct {
 	NodeGroupsOnCreation bool                        `mapstructure:"nodeGroupsOnCreation" json:"nodegroups_on_creation"`
 	NodeImageDesignation bool                        `mapstructure:"nodeImageDesignation" json:"node_image_designation"`
 	RequiredSubnetCount  int                         `mapstructure:"requiredSubnetCount" json:"required_subnet_count"`
+	NodeGroupNamingRule  string                      `mapstructure:"nodeGroupNamingRule" json:"nodegroup_naming_rule"`
 	Version              []K8sClusterVersionDetail   `mapstructure:"version" json:"versions"`
 	NodeImage            []K8sClusterNodeImageDetail `mapstructure:"nodeImage" json:"node_images"`
 	RootDisk             []K8sClusterRootDiskDetail  `mapstructure:"rootDisk" json:"root_disks"`
