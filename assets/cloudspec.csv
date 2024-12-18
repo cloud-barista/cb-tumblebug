@@ -605,12 +605,6 @@ NHNCLOUD,all,g2.v100.c4m90,,,,,,,,,,,,default,default,gpu,NVIDIA V100,1,32,,vm|k
 NHNCLOUD,all,g2.v100.c8m180,,,,,,,,,,,,default,default,gpu,NVIDIA V100,2,64,,vm|k8s
 NHNCLOUD,all,g2.v100.c16m360,,,,,,,,,,,,default,default,gpu,NVIDIA V100,4,128,,vm|k8s
 NHNCLOUD,all,g2.v100.c32m720,,,,,,,,,,,,default,default,gpu,NVIDIA V100,8,256,,vm|k8s
-KTCLOUD,kor-central,d3530ad2-462b-43ad-97d5-e1087b952b7d!_disk20GB,,,,,,,,,,,,default,default,,,,,,vm
-KTCLOUD,kor-central,b6b360db-dcbf-48d4-b571-89a6e19bc4b4!_disk20GB,,,,,,,,,,,,default,default,,,,,,vm
-KTCLOUD,kor-seoul,d3530ad2-462b-43ad-97d5-e1087b952b7d!_disk20GB,,,,,,,,,,,,default,default,,,,,,vm
-KTCLOUD,kor-seoul,b6b360db-dcbf-48d4-b571-89a6e19bc4b4!_disk20GB,,,,,,,,,,,,default,default,,,,,,vm
-KTCLOUD,kor-seoul,c308f760-068a-4cdd-abc9-edb581d18e58!_disk20GB,,,,,,,,,,,,default,default,,,,,,vm
-KTCLOUD,kor-seoul,c219de89-e664-49f0-aa64-d533b93dd2cf!_disk20GB,,,,,,,,,,,,default,default,,,,,,vm
 KTCLOUDVPC,all,4x16.itl,,,,,,,,,,,,default,default,,,,,,vm
 KTCLOUDVPC,all,8x16.itl,,,,,,,,,,,,default,default,,,,,,vm
 KTCLOUDVPC,all,16x32.itl,,,,,,,,,,,,default,default,,,,,,vm
