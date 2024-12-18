@@ -1620,30 +1620,6 @@ cloud:
         - eu-es-1
         - eu-es-2
         - eu-es-3
-  ktcloud:
-    description: KT Cloud (Classic without VPC)
-    driver: ktcloud-driver-v1.0.so
-    region:
-      KOR-Seoul:
-        id: KOR-Seoul
-        description: Seoul (South Korea)
-        location:
-          display: Seoul (South Korea)
-          latitude: 37.466535
-          longitude: 126.877969
-        zone:
-        - 95e2f517-d64a-4866-8585-5177c256f7c7
-        - d7d0177e-6cda-404a-a46f-a5b356d2874e
-      KOR-Central:
-        id: KOR-Central
-        description: Cheonan (South Korea)
-        location:
-          display: Cheonan (South Korea)
-          latitude: 36.802725
-          longitude: 127.177481
-        zone:
-        - 9845bd17-d438-4bde-816d-1b12f37d5080
-        - eceb5d65-6571-4696-875f-5a17949f3317
   ktcloudvpc:
     description: KT Cloud (VPC)
     driver: ktcloudvpc-driver-v1.0.so

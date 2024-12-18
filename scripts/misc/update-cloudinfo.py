@@ -44,7 +44,6 @@ csp_connection_names = {
     'tencent': 'tencent-ap-singapore',
     'ncp': 'ncp-kr',
     'ncpvpc': 'ncpvpc-kr',
-    'ktcloud': 'ktcloud-kor-central',
     'ktcloudvpc': 'ktcloudvpc-kr1',
     'nhncloud': 'nhncloud-kr1'
     # Add more CSPs here
