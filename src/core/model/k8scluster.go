@@ -82,7 +82,7 @@ type TbK8sClusterReq struct { // Tumblebug
 	Description    string `json:"description" example:"My K8sCluster"`
 
 	// (1) K8sCluster Info
-	Name    string `json:"name" validate:"required" example:"k8scluster-01"`
+	Name    string `json:"name" validate:"required" example:"k8scluster01"`
 	Version string `json:"version" example:"1.30.1-aliyun.1"`
 
 	// (2) Network Info
@@ -131,7 +131,7 @@ type SpiderNodeGroupReqInfo struct {
 
 // TbK8sNodeGroupReq is a struct to handle requests related to K8sNodeGroup toward CB-Tumblebug.
 type TbK8sNodeGroupReq struct {
-	Name         string `json:"name" example:"k8snodegroup-01"`
+	Name         string `json:"name" example:"k8snodegroup01"`
 	ImageId      string `json:"imageId" example:"image-01"`
 	SpecId       string `json:"specId" example:"spec-01"`
 	RootDiskType string `json:"rootDiskType" example:"cloud_essd" enum:"default, TYPE1, ..."` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
@@ -305,7 +305,7 @@ type TbK8sClusterInfo struct {
 	ResourceType string `json:"resourceType"`
 
 	// Id is unique identifier for the object, same as Name
-	Id string `json:"id" example:"k8scluster-01"`
+	Id string `json:"id" example:"k8scluster01"`
 	// Uid is universally unique identifier for the object, used for labelSelector
 	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
 	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
@@ -314,7 +314,7 @@ type TbK8sClusterInfo struct {
 	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
 
 	// Name is human-readable string to represent the object
-	Name           string `json:"name" example:"k8scluster-01"`
+	Name           string `json:"name" example:"k8scluster01"`
 	ConnectionName string `json:"connectionName" example:"alibaba-ap-northeast-2"`
 
 	// ConnectionConfig shows connection info to cloud service provider
@@ -491,7 +491,7 @@ type CheckNodeDynamicReqInfo struct {
 // TbK8sClusterDynamicReq is struct for requirements to create K8sCluster dynamically (with default resource option)
 type TbK8sClusterDynamicReq struct {
 	// K8sCluster name if it is not empty.
-	Name string `json:"name" validate:"required" example:"k8scluster-01"`
+	Name string `json:"name" validate:"required" example:"k8scluster01"`
 
 	// K8s Clsuter version
 	Version string `json:"version,omitempty" example:"1.29"`
@@ -502,7 +502,7 @@ type TbK8sClusterDynamicReq struct {
 	Description string `json:"description,omitempty" example:"Description"`
 
 	// NodeGroup name if it is not empty
-	NodeGroupName string `json:"nodeGroupName,omitempty" example:"k8snodegroup-01"`
+	NodeGroupName string `json:"nodeGroupName,omitempty" example:"k8snodegroup01"`
 
 	// CommonSpec is field for id of a spec in common namespace
 	CommonSpec string `json:"commonSpec" validate:"required" example:"tencent+ap-seoul+S2.MEDIUM4"`
@@ -526,7 +526,7 @@ type TbK8sClusterDynamicReq struct {
 // TbK8sNodeGroupDynamicReq is struct for requirements to create K8sNodeGroup dynamically (with default resource option)
 type TbK8sNodeGroupDynamicReq struct {
 	// K8sNodeGroup name if it is not empty.
-	Name string `json:"name" validate:"required" example:"k8snodegroup-01"`
+	Name string `json:"name" validate:"required" example:"k8snodegroup01"`
 
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label,omitempty"`
@@ -546,4 +546,17 @@ type TbK8sNodeGroupDynamicReq struct {
 	DesiredNodeSize string `json:"desiredNodeSize,omitempty" default:"1" example:"1"`
 	MinNodeSize     string `json:"minNodeSize,omitempty" default:"1" example:"1"`
 	MaxNodeSize     string `json:"maxNodeSize,omitempty" default:"2" example:"3"`
+}
+
+// TbK8sClusterContainerCmdReq is struct for remote command
+type TbK8sClusterContainerCmdReq struct {
+	Command []string `json:"command" validate:"required" example:"echo hello"`
+}
+
+// TbK8sClusterContainerCmdResult is struct for K8sClusterContainerCmd Result
+type TbK8sClusterContainerCmdResult struct {
+	Command map[int]string `json:"command"`
+	Stdout  map[int]string `json:"stdout"`
+	Stderr  map[int]string `json:"stderr"`
+	Err     error          `json:"err"`
 }

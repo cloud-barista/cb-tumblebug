@@ -15,6 +15,7 @@ limitations under the License.
 package resource
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -30,6 +31,12 @@ import (
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/remotecommand"
 )
 
 // TbK8sClusterReqStructLevelValidation is a function to validate 'model.TbK8sClusterReq' object.
@@ -1457,4 +1464,142 @@ func validateK8sVersion(providerName, regionName, version string) error {
 	}
 
 	return nil
+}
+
+// RemoteCommandToK8sClusterContainer is func to command to specified Container in K8sCluster by Kubernetes API
+func RemoteCommandToK8sClusterContainer(nsId string, k8sClusterId string, k8sClusterNamespace string, k8sClusterPodName string, k8sClusterContainerName string, req *model.TbK8sClusterContainerCmdReq) (*model.TbK8sClusterContainerCmdResult, error) {
+	log.Info().Msg("RemoteCommandToK8sClusterContainer")
+
+	emptyObj := &model.TbK8sClusterContainerCmdResult{}
+
+	err := validate.Struct(req)
+	if err != nil {
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			log.Err(err).Msgf("Failed to Run Remote Command to K8sCluster(%s)'s Pod(%s)", k8sClusterId, k8sClusterPodName)
+			return emptyObj, err
+		}
+
+		return emptyObj, err
+	}
+
+	if len(req.Command) <= 0 {
+		err := fmt.Errorf("empty commands")
+		log.Err(err).Msgf("Failed to Run Remote Command to K8sCluster(%s)'s Pod(%s)", k8sClusterId, k8sClusterPodName)
+		return emptyObj, err
+	}
+
+	check, err := CheckK8sCluster(nsId, k8sClusterId)
+	if err != nil {
+		log.Err(err).Msgf("Failed to Run Remote Command to K8sCluster(%s)'s Pod(%s)", k8sClusterId, k8sClusterPodName)
+		return emptyObj, err
+	}
+
+	if !check {
+		err = fmt.Errorf("The K8sCluster(%s) does not exist", k8sClusterId)
+		return emptyObj, err
+	}
+
+	// Execute commands
+	commandMap, stdoutMap, stderrMap, err := runRemoteCommandToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName, k8sClusterNamespace, k8sClusterContainerName, req.Command)
+	return &model.TbK8sClusterContainerCmdResult{
+		Command: commandMap,
+		Stdout:  stdoutMap,
+		Stderr:  stderrMap,
+		Err:     err,
+	}, nil
+}
+
+func getKubeconfigFromK8sClusterInfo(nsId, k8sClusterId string) (string, error) {
+	log.Debug().Msg("[Get Kubeconfig from K8sClusterInfo] " + k8sClusterId)
+
+	tbK8sCInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
+	if err != nil {
+		err = fmt.Errorf("failed to get kubeconfig from K8sClusterInfo(%s): %v", k8sClusterId, err)
+		return "", err
+	}
+
+	if tbK8sCInfo.CspViewK8sClusterDetail.Status != model.SpiderClusterActive {
+		// Check K8sCluster's Status again
+		newTbK8sCInfo, err := GetK8sCluster(nsId, k8sClusterId)
+		if err != nil {
+			err = fmt.Errorf("failed to get kubeconfig from K8sClusterInfo(%s): %v", k8sClusterId, err)
+			return "", err
+		}
+
+		if newTbK8sCInfo.CspViewK8sClusterDetail.Status != model.SpiderClusterActive {
+			err = fmt.Errorf("failed to get kubeconfig from K8sClusterInfo(%s): K8sCluster is not active", k8sClusterId)
+			return "", err
+		}
+	}
+
+	return tbK8sCInfo.CspViewK8sClusterDetail.AccessInfo.Kubeconfig, nil
+}
+
+func runRemoteCommandToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName, k8sClusterNamespace, k8sClusterContainerName string, commands []string) (map[int]string, map[int]string, map[int]string, error) {
+	commandMap := make(map[int]string)
+	stdoutMap := make(map[int]string)
+	stderrMap := make(map[int]string)
+
+	// Check whether K8sCluster is active
+	kubeconfig, err := getKubeconfigFromK8sClusterInfo(nsId, k8sClusterId)
+	if err != nil {
+		log.Err(err).Msgf("failed to run remote commands To K8sCluster(%s)'s container(%s)", k8sClusterId, k8sClusterContainerName)
+		return commandMap, stdoutMap, stderrMap, err
+	}
+
+	// Access K8sCluster via kubeconfig
+	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
+	if err != nil {
+		log.Err(err).Msgf("failed to run remote commands To K8sCluster(%s)'s container(%s)", k8sClusterId, k8sClusterContainerName)
+		return commandMap, stdoutMap, stderrMap, err
+	}
+
+	cset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Err(err).Msgf("failed to run remote commands To K8sCluster(%s)'s container(%s)", k8sClusterId, k8sClusterContainerName)
+		return commandMap, stdoutMap, stderrMap, err
+	}
+
+	for i, cmd := range commands {
+		// Split the command string into individual arguments
+		cmdArgs := strings.Fields(cmd)
+
+		podExecOptions := &corev1.PodExecOptions{
+			Container: k8sClusterContainerName,
+			Command:   cmdArgs,
+			Stdout:    true,
+			Stderr:    true,
+		}
+
+		req := cset.CoreV1().RESTClient().
+			Post().
+			Namespace(k8sClusterNamespace).
+			Resource("pods").
+			Name(k8sClusterPodName).
+			SubResource("exec").
+			VersionedParams(podExecOptions, scheme.ParameterCodec)
+
+		var stdout, stderr bytes.Buffer
+
+		executor, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
+		if err != nil {
+			log.Err(err).Msgf("failed to run some remote command(%s) to K8sCluster(%s)'s Container(%s)", cmd, k8sClusterId, k8sClusterContainerName)
+		} else {
+			err = executor.Stream(remotecommand.StreamOptions{
+				Stdout: &stdout,
+				Stderr: &stderr,
+				Tty:    false,
+			})
+			if err != nil {
+				log.Err(err).Msgf("failed to run some remote command(%s) to K8sCluster(%s)'s Container(%s)", cmd, k8sClusterId, k8sClusterContainerName)
+				return commandMap, stdoutMap, stderrMap, err
+			}
+		}
+
+		commandMap[i] = cmd
+		stdoutMap[i] = stdout.String()
+		stderrMap[i] = stderr.String()
+	}
+
+	return commandMap, stdoutMap, stderrMap, nil
 }
