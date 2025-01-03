@@ -410,6 +410,8 @@ func RunServer() {
 	g.POST("/:nsId/k8sCluster/:k8sClusterId/k8sNodeGroupDynamic", rest_resource.RestPostK8sNodeGroupDynamic)
 	g.GET("/:nsId/control/k8sCluster/:k8sClusterId", rest_resource.RestGetControlK8sCluster)
 
+	g.POST("/:nsId/cmd/k8sCluster/:k8sClusterId", rest_resource.RestPostCmdK8sCluster)
+
 	// Network Load Balancer
 	g.POST("/:nsId/mci/:mciId/mcSwNlb", rest_infra.RestPostMcNLB)
 	g.POST("/:nsId/mci/:mciId/nlb", rest_infra.RestPostNLB)
