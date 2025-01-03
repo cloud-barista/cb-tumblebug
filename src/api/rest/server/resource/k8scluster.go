@@ -705,6 +705,9 @@ func RestRecommendK8sNode(c echo.Context) error {
 // @ID PostCmdK8sCluster
 // @Summary Send a command to specified Container in K8sCluster
 // @Description Send a command to specified Container in K8sCluster
+// @Description [note] This feature is not intended for general use 
+// @Description This API is provided as an exceptional and limited function for specific purposes such as migration. 
+// @Description Kubernetes resource information required as input for this API is not currently provided, and its availability in the future is uncertain.
 // @Tags [Kubernetes] Cluster's Container Remote Command
 // @Accept  json
 // @Produce  json
