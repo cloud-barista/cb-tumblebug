@@ -123,12 +123,12 @@ NCP,DEN,SPSW0LINUX000130,Ubuntu 18.04,,,vm
 NCPVPC,all,SW.VSVR.OS.LNX64.UBNTU.SVR2004.B050,Ubuntu 20.04,,,vm
 NHNCLOUD,KR1,b7bd50d9-bdc2-460d-8b6a-358436ae3897,Ubuntu 20.04,Ubuntu Server 20.04.6 LTS (2024.05.21),,vm
 NHNCLOUD,KR1,280399f1-af96-41b7-b13b-2fae3752e97f,Ubuntu 22.04,Ubuntu Server 22.04.4 LTS (2024.05.21),,vm
-NHNCLOUD,KR1,da37257b-34eb-48b2-9940-a07264c6ed23,Ubuntu 20.04,Ubuntu Server 20.04.6 LTS - Container (2024.08.20),,k8s
-NHNCLOUD,KR1,7bb44280-c653-45d9-86fe-48a71aabf20d,Ubuntu 22.04,Ubuntu Server 22.04.4 LTS - Container (2024.08.20),,k8s
+NHNCLOUD,KR1,875175ea-59ae-4298-b355-ab95c5b92a1f,Ubuntu 20.04 Container,Ubuntu Server 20.04.6 LTS - Container (2024.11.19),,k8s
+NHNCLOUD,KR1,9cc342b9-14d5-4e20-9ffd-19f21d339656,Ubuntu 22.04 Container,Ubuntu Server 22.04.5 LTS - Container (2024.11.19),,k8s
 NHNCLOUD,KR2,b850cadf-7015-49c1-8e01-1c709289a8b8,Ubuntu 20.04,Ubuntu Server 20.04.6 LTS (2024.05.21),,vm
 NHNCLOUD,KR2,84f1a13e-462e-49dd-9598-023fb2ca5d86,Ubuntu 22.04,Ubuntu Server 22.04.4 LTS (2024.05.21),,vm
-NHNCLOUD,KR2,7042a062-9bf5-4bed-b850-f14d88338ee2,Ubuntu 20.04,Ubuntu Server 20.04.6 LTS - Container (2024.08.20),,k8s
-NHNCLOUD,KR2,8b70ca65-5efa-4b14-8539-3f408dae205f,Ubuntu 22.04,Ubuntu Server 22.04.4 LTS - Container (2024.08.20),,k8s
+NHNCLOUD,KR2,61945852-0924-45ef-8431-58700fd2c98d,Ubuntu 20.04 Container,Ubuntu Server 20.04.6 LTS - Container (2024.11.19),,k8s
+NHNCLOUD,KR2,c2891660-07b9-4959-bc99-b8e9c2cefa76,Ubuntu 22.04 Container,Ubuntu Server 22.04.5 LTS - Container (2024.11.19),,k8s
 NHNCLOUD,JP1,d4923746-1cd2-4d4d-9974-ccaa5c120933,Ubuntu 20.04,,,vm
 NHNCLOUD,JP1,b82b6275-68f8-4ff5-8857-66c1735a22cc,Ubuntu 22.04,,,vm
 KTCLOUDVPC,KR1,eeeedf84-c661-49eb-9758-5df1495a1e2e,Ubuntu 22.04,,,vm
