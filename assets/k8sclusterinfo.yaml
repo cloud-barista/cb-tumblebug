@@ -78,13 +78,13 @@ k8scluster:
       - region: [common]
         available:
           - name: 1.31
-            id: 1.31.1-gke.1846000
+            id: 1.31.1-gke.2105000
           - name: 1.30
-            id: 1.30.5-gke.1443001
+            id: 1.30.6-gke.1125000
           - name: 1.29
-            id: 1.29.9-gke.1496000
+            id: 1.29.10-gke.1280000
           - name: 1.28
-            id: 1.28.14-gke.1340000
+            id: 1.28.15-gke.1342000
       - region: [africa-south1]
         # addnodegroup unavailble
     rootDisk:
