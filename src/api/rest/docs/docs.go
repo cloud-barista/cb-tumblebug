@@ -2053,6 +2053,97 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/cmd/k8sCluster/{k8sClusterId}": {
+            "post": {
+                "description": "Send a command to specified Container in K8sCluster\n[note] This feature is not intended for general use\nThis API is provided as an exceptional and limited function for specific purposes such as migration.\nKubernetes resource information required as input for this API is not currently provided, and its availability in the future is uncertain.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Kubernetes] Cluster's Container Remote Command"
+                ],
+                "summary": "Send a command to specified Container in K8sCluster",
+                "operationId": "PostCmdK8sCluster",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "k8scluster01",
+                        "description": "K8sCluster ID",
+                        "name": "k8sClusterId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mynamespace",
+                        "description": "Namespace in K8sCluster to apply the command",
+                        "name": "k8sClusterNamespace",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mypod",
+                        "description": "Pod Name in K8sCluster to apply the command",
+                        "name": "k8sClusterPodName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Container Name in K8sCluster to apply the command",
+                        "name": "k8sClusterContainerName",
+                        "in": "query"
+                    },
+                    {
+                        "description": "K8sCluster's Container Command Request",
+                        "name": "k8sClusterContainerCmdReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.TbK8sClusterContainerCmdReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.TbK8sClusterContainerCmdResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/cmd/mci/{mciId}": {
             "post": {
                 "description": "Send a command to specified MCI",
@@ -3023,7 +3114,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "nodegroup01",
+                        "default": "k8snodegroup01",
                         "description": "K8sNodeGroup Name",
                         "name": "k8sNodeGroupName",
                         "in": "path",
@@ -3094,7 +3185,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "nodegroup01",
+                        "default": "k8snodegroup01",
                         "description": "K8sNodeGroup Name",
                         "name": "k8sNodeGroupName",
                         "in": "path",
@@ -14026,6 +14117,47 @@ const docTemplate = `{
                 }
             }
         },
+        "model.TbK8sClusterContainerCmdReq": {
+            "type": "object",
+            "required": [
+                "command"
+            ],
+            "properties": {
+                "command": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "echo hello"
+                    ]
+                }
+            }
+        },
+        "model.TbK8sClusterContainerCmdResult": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "err": {},
+                "stderr": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "stdout": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "model.TbK8sClusterDynamicReq": {
             "type": "object",
             "required": [
@@ -14078,12 +14210,12 @@ const docTemplate = `{
                 "name": {
                     "description": "K8sCluster name if it is not empty.",
                     "type": "string",
-                    "example": "k8scluster-01"
+                    "example": "k8scluster01"
                 },
                 "nodeGroupName": {
                     "description": "NodeGroup name if it is not empty",
                     "type": "string",
-                    "example": "k8snodegroup-01"
+                    "example": "k8snodegroup01"
                 },
                 "onAutoScaling": {
                     "type": "string",
@@ -14144,7 +14276,7 @@ const docTemplate = `{
                 "id": {
                     "description": "Id is unique identifier for the object, same as Name",
                     "type": "string",
-                    "example": "k8scluster-01"
+                    "example": "k8scluster01"
                 },
                 "label": {
                     "description": "Label is for describing the object by keywords",
@@ -14156,7 +14288,7 @@ const docTemplate = `{
                 "name": {
                     "description": "Name is human-readable string to represent the object",
                     "type": "string",
-                    "example": "k8scluster-01"
+                    "example": "k8scluster01"
                 },
                 "resourceType": {
                     "description": "ResourceType is the type of the resource",
@@ -14220,7 +14352,7 @@ const docTemplate = `{
                 "name": {
                     "description": "(1) K8sCluster Info",
                     "type": "string",
-                    "example": "k8scluster-01"
+                    "example": "k8scluster01"
                 },
                 "securityGroupIds": {
                     "type": "array",
@@ -14303,7 +14435,7 @@ const docTemplate = `{
                 "name": {
                     "description": "K8sNodeGroup name if it is not empty.",
                     "type": "string",
-                    "example": "k8snodegroup-01"
+                    "example": "k8snodegroup01"
                 },
                 "onAutoScaling": {
                     "type": "string",
@@ -14396,7 +14528,7 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string",
-                    "example": "k8snodegroup-01"
+                    "example": "k8snodegroup01"
                 },
                 "onAutoScaling": {
                     "description": "autoscale config.",

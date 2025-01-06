@@ -1531,6 +1531,83 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/cmd/k8sCluster/{k8sClusterId}:
+    post:
+      tags:
+      - "[Kubernetes] Cluster's Container Remote Command"
+      summary: Send a command to specified Container in K8sCluster
+      description: |-
+        Send a command to specified Container in K8sCluster
+        [note] This feature is not intended for general use
+        This API is provided as an exceptional and limited function for specific purposes such as migration.
+        Kubernetes resource information required as input for this API is not currently provided, and its availability in the future is uncertain.
+      operationId: PostCmdK8sCluster
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterId
+        in: path
+        description: K8sCluster ID
+        required: true
+        schema:
+          type: string
+          default: k8scluster01
+      - name: k8sClusterNamespace
+        in: query
+        description: Namespace in K8sCluster to apply the command
+        required: true
+        schema:
+          type: string
+          default: mynamespace
+      - name: k8sClusterPodName
+        in: query
+        description: Pod Name in K8sCluster to apply the command
+        required: true
+        schema:
+          type: string
+          default: mypod
+      - name: k8sClusterContainerName
+        in: query
+        description: Container Name in K8sCluster to apply the command
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      requestBody:
+        description: K8sCluster's Container Command Request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.TbK8sClusterContainerCmdReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.TbK8sClusterContainerCmdResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: k8sClusterContainerCmdReq
   /ns/{nsId}/cmd/mci/{mciId}:
     post:
       tags:
@@ -2276,7 +2353,7 @@ paths:
         required: true
         schema:
           type: string
-          default: nodegroup01
+          default: k8snodegroup01
       requestBody:
         description: Details of the TbChangeK8sNodeGroupAutoscaleSizeReq object
         content:
@@ -2332,7 +2409,7 @@ paths:
         required: true
         schema:
           type: string
-          default: nodegroup01
+          default: k8snodegroup01
       requestBody:
         description: Details of the TbSetK8sNodeGroupAutoscalingReq object
         content:
@@ -10498,6 +10575,34 @@ components:
           type: string
         name:
           type: string
+    model.TbK8sClusterContainerCmdReq:
+      required:
+      - command
+      type: object
+      properties:
+        command:
+          type: array
+          example:
+          - echo hello
+          items:
+            type: string
+    model.TbK8sClusterContainerCmdResult:
+      type: object
+      properties:
+        command:
+          type: object
+          additionalProperties:
+            type: string
+        err:
+          type: object
+        stderr:
+          type: object
+          additionalProperties:
+            type: string
+        stdout:
+          type: object
+          additionalProperties:
+            type: string
     model.TbK8sClusterDynamicReq:
       required:
       - commonImage
@@ -10542,11 +10647,11 @@ components:
         name:
           type: string
           description: K8sCluster name if it is not empty.
-          example: k8scluster-01
+          example: k8scluster01
         nodeGroupName:
           type: string
           description: NodeGroup name if it is not empty
-          example: k8snodegroup-01
+          example: k8snodegroup01
         onAutoScaling:
           type: string
           example: "true"
@@ -10597,7 +10702,7 @@ components:
         id:
           type: string
           description: "Id is unique identifier for the object, same as Name"
-          example: k8scluster-01
+          example: k8scluster01
         label:
           type: object
           additionalProperties:
@@ -10606,7 +10711,7 @@ components:
         name:
           type: string
           description: Name is human-readable string to represent the object
-          example: k8scluster-01
+          example: k8scluster01
         resourceType:
           type: string
           description: ResourceType is the type of the resource
@@ -10660,7 +10765,7 @@ components:
         name:
           type: string
           description: (1) K8sCluster Info
-          example: k8scluster-01
+          example: k8scluster01
         securityGroupIds:
           type: array
           example:
@@ -10723,7 +10828,7 @@ components:
         name:
           type: string
           description: K8sNodeGroup name if it is not empty.
-          example: k8snodegroup-01
+          example: k8snodegroup01
         onAutoScaling:
           type: string
           example: "true"
@@ -10799,7 +10904,7 @@ components:
           example: "1"
         name:
           type: string
-          example: k8snodegroup-01
+          example: k8snodegroup01
         onAutoScaling:
           type: string
           description: autoscale config.
