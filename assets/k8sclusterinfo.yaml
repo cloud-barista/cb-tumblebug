@@ -147,6 +147,8 @@ k8scluster:
     nodeImageDesignation: true
     requiredSubnetCount: 1
     version:
+      # Unavailable (CanNotAccess)
+      - region: [ap-hongkong]
       - region: [common]
         available:
           - name: 1.28
