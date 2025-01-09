@@ -147,16 +147,16 @@ k8scluster:
     nodeImageDesignation: true
     requiredSubnetCount: 1
     version:
-      # Unavailable (CanNotAccess)
-      - region: [ap-hongkong]
+      # ServiceUnavailable
+      - region: [ap-mumbai, eu-moscow, na-toronto]
+      # ServiceCanNotAccess
+      - region: [ap-beijing, ap-chengdu, ap-chongqing, ap-guangzhou, ap-hongkong, ap-nanjing, ap-shanghai]
       - region: [common]
         available:
+          - name: 1.30
+            id: 1.30.0
           - name: 1.28
             id: 1.28.3
-          - name: 1.26
-            id: 1.26.1
-          - name: 1.24
-            id: 1.24.4
     rootDisk:
       - region: [common]
         type:
