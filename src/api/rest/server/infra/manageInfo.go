@@ -235,7 +235,8 @@ func RestDelAllMci(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
-// @Param option query string false "Option for MCI" Enums(default, status, idsInDetail)
+// @Param option query string false "Option for MCI" Enums(default, status, idsInDetail, accessinfo)
+// @Param accessInfoOption query string false "(For option=accessinfo) accessInfoOption (showSshKey)"
 // @success 200 {object} JSONResult{[DEFAULT]=model.TbVmInfo,[STATUS]=model.TbVmStatusInfo,[IDNAME]=model.TbIdNameInDetailInfo} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -247,6 +248,7 @@ func RestGetMciVm(c echo.Context) error {
 	vmId := c.Param("vmId")
 
 	option := c.QueryParam("option")
+	accessInfoOption := c.QueryParam("accessInfoOption")
 
 	switch option {
 	case "status":
@@ -255,6 +257,10 @@ func RestGetMciVm(c echo.Context) error {
 
 	case "idsInDetail":
 		result, err := infra.GetVmIdNameInDetail(nsId, mciId, vmId)
+		return common.EndRequestWithLog(c, err, result)
+
+	case "accessinfo":
+		result, err := infra.GetMciVmAccessInfo(nsId, mciId, vmId, accessInfoOption)
 		return common.EndRequestWithLog(c, err, result)
 
 	default:

@@ -3743,6 +3743,12 @@ paths:
           - default
           - status
           - idsInDetail
+          - accessinfo
+      - name: accessInfoOption
+        in: query
+        description: (For option=accessinfo) accessInfoOption (showSshKey)
+        schema:
+          type: string
       responses:
         "200":
           description: Different return structures by the given option param
@@ -9283,6 +9289,8 @@ components:
     model.MciVmAccessInfo:
       type: object
       properties:
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
         privateIP:
           type: string
         privateKey:

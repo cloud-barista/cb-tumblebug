@@ -440,13 +440,14 @@ type MciSubGroupAccessInfo struct {
 
 // MciVmAccessInfo is struct for MciVmAccessInfo
 type MciVmAccessInfo struct {
-	VmId           string `json:"vmId"`
-	PublicIP       string `json:"publicIP"`
-	PrivateIP      string `json:"privateIP"`
-	SSHPort        string `json:"sshPort"`
-	PrivateKey     string `json:"privateKey,omitempty"`
-	VmUserName     string `json:"vmUserName,omitempty"`
-	VmUserPassword string `json:"vmUserPassword,omitempty"`
+	VmId             string     `json:"vmId"`
+	PublicIP         string     `json:"publicIP"`
+	PrivateIP        string     `json:"privateIP"`
+	SSHPort          string     `json:"sshPort"`
+	PrivateKey       string     `json:"privateKey,omitempty"`
+	VmUserName       string     `json:"vmUserName,omitempty"`
+	VmUserPassword   string     `json:"vmUserPassword,omitempty"`
+	ConnectionConfig ConnConfig `json:"connectionConfig"`
 }
 
 // TbVmIdNameInDetailInfo is struct for details related with ID and Name
