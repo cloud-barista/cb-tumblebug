@@ -4909,11 +4909,18 @@ const docTemplate = `{
                         "enum": [
                             "default",
                             "status",
-                            "idsInDetail"
+                            "idsInDetail",
+                            "accessinfo"
                         ],
                         "type": "string",
                         "description": "Option for MCI",
                         "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "(For option=accessinfo) accessInfoOption (showSshKey)",
+                        "name": "accessInfoOption",
                         "in": "query"
                     }
                 ],
@@ -12299,6 +12306,9 @@ const docTemplate = `{
         "model.MciVmAccessInfo": {
             "type": "object",
             "properties": {
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
                 "privateIP": {
                     "type": "string"
                 },

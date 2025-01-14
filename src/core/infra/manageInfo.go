@@ -419,6 +419,7 @@ func GetMciAccessInfo(nsId string, mciId string, option string) (*model.MciAcces
 				defer wg.Done()
 				common.RandomSleep(0, len(vmList)/2)
 				vmInfo, err := GetVmCurrentPublicIp(nsId, mciId, vmId)
+
 				vmAccessInfo := model.MciVmAccessInfo{}
 				if err != nil {
 					log.Info().Err(err).Msg("")
@@ -431,6 +432,13 @@ func GetMciAccessInfo(nsId string, mciId string, option string) (*model.MciAcces
 					vmAccessInfo.SSHPort = vmInfo.SSHPort
 				}
 				vmAccessInfo.VmId = vmId
+
+				vmObject, err := GetVmObject(nsId, mciId, vmId)
+				if err != nil {
+					log.Info().Err(err).Msg("")
+				} else {
+					vmAccessInfo.ConnectionConfig = vmObject.ConnectionConfig
+				}
 
 				_, verifiedUserName, privateKey, err := GetVmSshKey(nsId, mciId, vmId)
 				if err != nil {
@@ -458,6 +466,68 @@ func GetMciAccessInfo(nsId string, mciId string, option string) (*model.MciAcces
 
 		output.MciSubGroupAccessInfo = append(output.MciSubGroupAccessInfo, subGroupAccessInfo)
 	}
+
+	return output, nil
+}
+
+// GetMciVmAccessInfo is func to retrieve MCI Access information
+func GetMciVmAccessInfo(nsId string, mciId string, vmId string, option string) (*model.MciVmAccessInfo, error) {
+
+	output := &model.MciVmAccessInfo{}
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return output, err
+	}
+
+	err = common.CheckString(mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return output, err
+	}
+	check, _ := CheckMci(nsId, mciId)
+
+	if !check {
+		err := fmt.Errorf("The mci %s does not exist.", mciId)
+		return output, err
+	}
+
+	output.VmId = vmId
+
+	vmInfo, err := GetVmCurrentPublicIp(nsId, mciId, vmId)
+
+	vmAccessInfo := &model.MciVmAccessInfo{}
+	if err != nil {
+		log.Info().Err(err).Msg("")
+		return output, err
+	} else {
+		vmAccessInfo.PublicIP = vmInfo.PublicIp
+		vmAccessInfo.PrivateIP = vmInfo.PrivateIp
+		vmAccessInfo.SSHPort = vmInfo.SSHPort
+	}
+	vmAccessInfo.VmId = vmId
+
+	vmObject, err := GetVmObject(nsId, mciId, vmId)
+	if err != nil {
+		log.Info().Err(err).Msg("")
+		return output, err
+	} else {
+		vmAccessInfo.ConnectionConfig = vmObject.ConnectionConfig
+	}
+
+	_, verifiedUserName, privateKey, err := GetVmSshKey(nsId, mciId, vmId)
+	if err != nil {
+		log.Info().Err(err).Msg("")
+		return output, err
+	} else {
+		if strings.EqualFold(option, "showSshKey") {
+			vmAccessInfo.PrivateKey = privateKey
+		}
+		vmAccessInfo.VmUserName = verifiedUserName
+	}
+
+	output = vmAccessInfo
 
 	return output, nil
 }
