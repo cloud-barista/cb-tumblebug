@@ -9,6 +9,9 @@
 #     requiredSubnetCount: [required number of subnets to create a kubernetes cluster, default value is 1]
 #     version:
 #       - region: [region1, region2, common(special keyword: most of regions)]
+#         available:
+#           - name: "1.30" [available version name (use double quotes)]
+#             id: "1.30" [available version name (use double quotes)]
 #     nodeGroupNamingRule: [regular expression or no restriction if empty]
 #
 
@@ -20,16 +23,16 @@ k8scluster:
     version:
       - region: [common]
         available:
-          - name: 1.31
-            id: 1.31
-          - name: 1.30
-            id: 1.30
-          - name: 1.29
-            id: 1.29
-          - name: 1.28
-            id: 1.28
-          - name: 1.27
-            id: 1.27
+          - name: "1.31"
+            id: "1.31"
+          - name: "1.30"
+            id: "1.30"
+          - name: "1.29"
+            id: "1.29"
+          - name: "1.28"
+            id: "1.28"
+          - name: "1.27"
+            id: "1.27"
     rootDisk:
       - region: [common]
         type:
@@ -46,22 +49,22 @@ k8scluster:
     version:
       - region: [westeurope,westus]
         available:
-          - name: 1.29
-            id: 1.29.4
-          - name: 1.28
-            id: 1.28.9
-          - name: 1.27
-            id: 1.27.13
+          - name: "1.29"
+            id: "1.29.4"
+          - name: "1.28"
+            id: "1.28.9"
+          - name: "1.27"
+            id: "1.27.13"
       - region: [westindia]
         # no available version
       - region: [common]
         available:
-          - name: 1.29
-            id: 1.29.5
-          - name: 1.28
-            id: 1.28.10
-          - name: 1.27
-            id: 1.27.14
+          - name: "1.29"
+            id: "1.29.5"
+          - name: "1.28"
+            id: "1.28.10"
+          - name: "1.27"
+            id: "1.27.14"
     rootDisk:
       - region: [common]
         type:
@@ -77,14 +80,14 @@ k8scluster:
     version:
       - region: [common]
         available:
-          - name: 1.31
-            id: 1.31.1-gke.2105000
-          - name: 1.30
-            id: 1.30.6-gke.1125000
-          - name: 1.29
-            id: 1.29.10-gke.1280000
-          - name: 1.28
-            id: 1.28.15-gke.1342000
+          - name: "1.31"
+            id: "1.31.1-gke.2105000"
+          - name: "1.30"
+            id: "1.30.6-gke.1125000"
+          - name: "1.29"
+            id: "1.29.10-gke.1280000"
+          - name: "1.28"
+            id: "1.28.15-gke.1342000"
       - region: [africa-south1]
         # addnodegroup unavailble
     rootDisk:
@@ -105,12 +108,12 @@ k8scluster:
       # ap-northeast-1,ap-northeast-2,ap-southeast-1,ap-southeast-3,ap-southeast-5,us-west-1,us-east-1,eu-central-1,eu-west-1,cn-beijing,cn-hongkong,cn-shanghai,cn-huhehaote,cn-heyuan,cn-wulanchabu,cn-guangzhou
       - region: [common] 
         available:
-          - name: 1.31
-            id: 1.31.1-aliyun.1
-          - name: 1.30
-            id: 1.30.7-aliyun.1
-          - name: 1.28
-            id: 1.28.15-aliyun.1
+          - name: "1.31"
+            id: "1.31.1-aliyun.1"
+          - name: "1.30"
+            id: "1.30.7-aliyun.1"
+          - name: "1.28"
+            id: "1.28.15-aliyun.1"
     rootDisk:
       - region: [common]
         type:
@@ -126,14 +129,14 @@ k8scluster:
     version:
       - region: [kr1, kr2]
         available:
-          - name: 1.29
-            id: v1.29.3
-          - name: 1.28
-            id: v1.28.3
-          - name: 1.27
-            id: v1.27.3
-          - name: 1.26
-            id: v1.26.3
+          - name: "1.29"
+            id: "v1.29.3"
+          - name: "1.28"
+            id: "v1.28.3"
+          - name: "1.27"
+            id: "v1.27.3"
+          - name: "1.26"
+            id: "v1.26.3"
     rootDisk:
       - region: [common]
         type:
@@ -153,10 +156,10 @@ k8scluster:
       - region: [ap-beijing, ap-chengdu, ap-chongqing, ap-guangzhou, ap-hongkong, ap-nanjing, ap-shanghai]
       - region: [common]
         available:
-          - name: 1.30
-            id: 1.30.0
-          - name: 1.28
-            id: 1.28.3
+          - name: "1.30"
+            id: "1.30.0"
+          - name: "1.28"
+            id: "1.28.3"
     rootDisk:
       - region: [common]
         type:
