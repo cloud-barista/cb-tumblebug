@@ -216,8 +216,16 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   - Encrypting Credentials
     ```bash
     init/encCredential.sh
-    ```
+    ``` 
+    When executing the script, you have two options: 1) enter your password or 2) let the system generate a random passkey.
+
+    Option 1: Entering your password:
+
     ![Image](https://github.com/user-attachments/assets/8f051ce8-9282-4e6d-a8ae-af5c831622c7)
+    
+    Option 2: Letting the system generate a random passkey, which MUST be securely stored in a safe location:
+
+    ![Image](https://github.com/user-attachments/assets/807511ee-05d9-481e-a191-d1aad2e9aeb2)
 
   If you need to update your credentials, decrypt the encrypted file using `decCredential.sh`, make the necessary changes to `credentials.yaml`, and then re-encrypt it.
 
@@ -225,7 +233,14 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     ```bash
     init/decCredential.sh
     ```
+    Option 1: If encrypted using option 1, please use the same password to decrypt the file:
+
     ![Image](https://github.com/user-attachments/assets/600921fb-cdff-4313-ae4d-266ddd31809b)
+    
+    Option 2: If encrypted using option 2, enter the passkey to decrypt the file:
+
+    ![Image](https://github.com/user-attachments/assets/2bb029a4-8dd9-4e1a-8cad-af70ca72e9fd)
+
 
 - (INIT) Register all multi-cloud connection information and common resources
 
