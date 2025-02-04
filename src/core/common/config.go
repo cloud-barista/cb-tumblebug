@@ -248,15 +248,13 @@ func GetConfig(id string) (model.ConfigInfo, error) {
 	res := model.ConfigInfo{}
 
 	check, err := CheckConfig(id)
-	errString := id + " config is not found from Key-value store. Envirionment variable will be used."
-
 	if !check {
-		err := fmt.Errorf(errString)
+		err = fmt.Errorf("config '%s' not found in key-value store: no configuration data exists, will fallback to environment variables", id)
 		return res, err
 	}
 
 	if err != nil {
-		err := fmt.Errorf(errString)
+		err := fmt.Errorf("failed to check config '%s': configuration validation error - %v", id, err)
 		return res, err
 	}
 
@@ -264,7 +262,7 @@ func GetConfig(id string) (model.ConfigInfo, error) {
 
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
-		err := fmt.Errorf(errString)
+		err := fmt.Errorf("failed to retrieve config '%s' from key-value store: %v (path: %s)", id, err, key)
 		return res, err
 	}
 
@@ -272,7 +270,7 @@ func GetConfig(id string) (model.ConfigInfo, error) {
 
 	err = json.Unmarshal([]byte(keyValue.Value), &res)
 	if err != nil {
-		err := fmt.Errorf(errString)
+		err := fmt.Errorf("failed to parse config '%s': invalid JSON format in key-value store - %v (raw value: %s)", id, err, keyValue.Value)
 		return res, err
 	}
 	return res, nil
