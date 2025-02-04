@@ -69,7 +69,7 @@ func limitConcurrentRequests(requestKey string, limit int) bool {
 	currentCount := count.(int)
 
 	if currentCount >= limit {
-		fmt.Printf("[%s] requests for %s \n", currentCount, requestKey)
+		fmt.Printf("[%d] requests for %s \n", currentCount, requestKey)
 		return false
 	}
 
