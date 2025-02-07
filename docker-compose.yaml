@@ -144,7 +144,7 @@ services:
 
   # cb-mapui
   cb-mapui:
-    image: cloudbaristaorg/cb-mapui:0.10.1
+    image: cloudbaristaorg/cb-mapui:0.10.2
     container_name: cb-mapui
     # build:
     #   context: ../cb-mapui
