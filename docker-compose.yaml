@@ -17,10 +17,10 @@ services:
       - external_network
     ports:
       - 1323:1323
-    depends_on: 
+    depends_on:
       - cb-tumblebug-etcd
       # - cb-tumblebug-etcd-conf
-      - cb-spider      
+      - cb-spider
     volumes:
       - ./conf/:/app/conf/
       - ./container-volume/cb-tumblebug-container/meta_db/:/app/meta_db/
@@ -36,14 +36,14 @@ services:
       # - TB_ETCD_AUTH_ENABLED=false
       # - TB_ETCD_USERNAME=default
       # - TB_ETCD_PASSWORD=default
-      # - TB_SQLITE_URL=localhost:3306 
-      # - TB_SQLITE_DATABASE=cb_tumblebug 
-      # - TB_SQLITE_USER=cb_tumblebug 
-      # - TB_SQLITE_PASSWORD=cb_tumblebug 
+      # - TB_SQLITE_URL=localhost:3306
+      # - TB_SQLITE_DATABASE=cb_tumblebug
+      # - TB_SQLITE_USER=cb_tumblebug
+      # - TB_SQLITE_PASSWORD=cb_tumblebug
       # - TB_ALLOW_ORIGINS=*
       # - TB_AUTH_ENABLED=true
       # - TB_API_USERNAME=default
-      # - TB_API_PASSWORD=default
+      # - TB_API_PASSWORD=$$2a$$10$$4PKzCuJ6fPYsbCF.HR//ieLjaCzBAdwORchx62F2JRXQsuR3d9T0q
       # - TB_AUTOCONTROL_DURATION_MS=10000
       # - TB_DRAGONFLY_REST_URL=http://cb-dragonfly:9090/dragonfly
       # - TB_DEFAULT_NAMESPACE=default
@@ -57,7 +57,7 @@ services:
       # - TB_LOGWRITER=both
       # - TB_NODE_ENV=development
     healthcheck: # for CB-Tumblebug
-      test: [ "CMD", "curl", "-f", "http://localhost:1323/tumblebug/readyz" ]
+      test: ["CMD", "curl", "-f", "http://localhost:1323/tumblebug/readyz"]
       interval: 1m
       timeout: 5s
       retries: 3
@@ -72,7 +72,7 @@ services:
     ports:
       - 2379:2379
       - 2380:2380
-    volumes: 
+    volumes:
       - ./container-volume/etcd/data:/etcd-data
     entrypoint: /usr/local/bin/etcd
     command:
@@ -103,7 +103,7 @@ services:
       - --auth-token
       - simple
     healthcheck: # for etcd
-      test: [ "CMD", "/usr/local/bin/etcd", "--version"]
+      test: ["CMD", "/usr/local/bin/etcd", "--version"]
       interval: 1m
       timeout: 5s
       retries: 3
@@ -115,10 +115,10 @@ services:
     container_name: cb-spider
     # build:
     #   context: ../cb-spider
-    #   dockerfile: Dockerfile    
+    #   dockerfile: Dockerfile
     networks:
       - internal_network
-      - external_network    # for outbound access (not ideal for security) 
+      - external_network # for outbound access (not ideal for security)
     # expose:
     #   - 1024
     ports:
@@ -136,7 +136,7 @@ services:
       - SPIDER_HISCALL_LOG_LEVEL=error
       - ID_TRANSFORM_MODE=OFF
     healthcheck: # for CB-Spider
-      test: [ "CMD", "curl", "-f", "http://localhost:1024/spider/readyz" ]
+      test: ["CMD", "curl", "-f", "http://localhost:1024/spider/readyz"]
       interval: 1m
       timeout: 5s
       retries: 3
@@ -168,7 +168,7 @@ services:
   #   container_name: mc-terrarium
   #   # build:
   #   #   context: .
-  #   #   dockerfile: Dockerfile    
+  #   #   dockerfile: Dockerfile
   #   networks:
   #     - external_network
   #   ports:
@@ -205,7 +205,6 @@ services:
   #     retries: 3
   #     start_period: 10s
 
-
   # # Swagger UI
   # swagger-ui:
   #   image: swaggerapi/swagger-ui
@@ -219,7 +218,7 @@ services:
   #     - ./src/api/rest/docs/swagger.yaml:/swagger.yaml
   #   environment:
   #     # Options: https://github.com/swagger-api/swagger-ui/blob/37b8c1a8b67200dd425216ab8f97b725a429a5c0/docs/usage/configuration.md#docker
-  #     - SWAGGER_JSON=/swagger.yaml 
+  #     - SWAGGER_JSON=/swagger.yaml
   #     - QUERY_CONFIG_ENABLED=true
   #   logging:
   #     # Disable logging
@@ -256,4 +255,3 @@ services:
   #     timeout: 10s
   #     retries: 3
   #     start_period: 10s
-
