@@ -7,7 +7,7 @@ networks:
 services:
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.10.5
+    image: cloudbaristaorg/cb-tumblebug:0.10.6
     container_name: cb-tumblebug
     build:
       context: .
@@ -111,7 +111,7 @@ services:
 
   # CB-Spider
   cb-spider:
-    image: cloudbaristaorg/cb-spider:0.10.1
+    image: cloudbaristaorg/cb-spider:0.10.2
     container_name: cb-spider
     # build:
     #   context: ../cb-spider
