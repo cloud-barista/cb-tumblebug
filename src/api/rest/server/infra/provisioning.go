@@ -17,7 +17,7 @@ package infra
 import (
 	"net/http"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
@@ -43,12 +43,12 @@ func RestPostMci(c echo.Context) error {
 
 	req := &model.TbMciReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	option := "create"
 	result, err := infra.CreateMci(nsId, req, option)
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestPostRegisterCSPNativeVM godoc
@@ -70,12 +70,12 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 
 	req := &model.TbMciReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	option := "register"
 	result, err := infra.CreateMci(nsId, req, option)
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestPostSystemMci godoc
@@ -96,11 +96,11 @@ func RestPostSystemMci(c echo.Context) error {
 
 	req := &model.TbMciDynamicReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.CreateSystemMciDynamic(option)
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestPostMciDynamic godoc
@@ -127,13 +127,13 @@ func RestPostMciDynamic(c echo.Context) error {
 	req := &model.TbMciDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		log.Warn().Err(err).Msg("invalid request")
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.CreateMciDynamic(reqID, nsId, req, option)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create MCI dynamically")
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	return c.JSON(http.StatusOK, result)
 }
@@ -159,11 +159,11 @@ func RestPostMciVmDynamic(c echo.Context) error {
 
 	req := &model.TbVmDynamicReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.CreateMciVmDynamic(nsId, mciId, req)
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestPostMciDynamicCheckRequest godoc
@@ -182,11 +182,11 @@ func RestPostMciDynamicCheckRequest(c echo.Context) error {
 
 	req := &model.MciConnectionConfigCandidatesReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.CheckMciDynamicReq(req)
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestPostMciVm godoc
@@ -210,10 +210,10 @@ func RestPostMciVm(c echo.Context) error {
 
 	vmInfoData := &model.TbVmReq{}
 	if err := c.Bind(vmInfoData); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	result, err := infra.CreateMciGroupVm(nsId, mciId, vmInfoData, true)
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestPostMciSubGroupScaleOut godoc
@@ -239,9 +239,9 @@ func RestPostMciSubGroupScaleOut(c echo.Context) error {
 
 	scaleOutReq := &model.TbScaleOutSubGroupReq{}
 	if err := c.Bind(scaleOutReq); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.ScaleOutMciSubGroup(nsId, mciId, subgroupId, scaleOutReq.NumVMsToAdd)
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }

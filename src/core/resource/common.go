@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -349,15 +350,15 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	method := "DELETE"
 	//client.SetTimeout(60 * time.Second)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {

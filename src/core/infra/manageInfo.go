@@ -28,6 +28,7 @@ import (
 	"sync"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -789,15 +790,15 @@ func GetVmIdNameInDetail(nsId string, mciId string, vmId string) (*model.TbIdNam
 	method := "GET"
 	client.SetTimeout(5 * time.Minute)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -1068,15 +1069,15 @@ func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (model.TbVmSta
 	requestBody.ConnectionName = temp.ConnectionName
 	callResult := statusResponse{}
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -1202,15 +1203,15 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.TbVmStatusInfo
 		retrycheck := 2
 		for i := 0; i < retrycheck; i++ {
 			errorInfo.Status = model.StatusFailed
-			err := common.ExecuteHttpRequest(
+			err := clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,
 				nil,
-				common.SetUseBody(requestBody),
+				clientManager.SetUseBody(requestBody),
 				&requestBody,
 				&callResult,
-				common.MediumDuration,
+				clientManager.MediumDuration,
 			)
 			if err != nil {
 				errorInfo.SystemMessage = err.Error()
@@ -1553,15 +1554,15 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 
 	}
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -1607,15 +1608,15 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	}
 	var callResultSpiderVMInfo model.SpiderVMInfo
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBodyConnection),
+		clientManager.SetUseBody(requestBodyConnection),
 		&requestBodyConnection,
 		&callResultSpiderVMInfo,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {

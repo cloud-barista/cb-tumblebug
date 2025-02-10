@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/labstack/echo/v4"
 )
 
@@ -24,19 +24,19 @@ func RequestIdAndDetailsIssuer(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		//log.Trace().Msgf("(Request ID middleware) Request ID: %s", reqID)
-		if _, ok := common.RequestMap.Load(reqID); ok {
+		if _, ok := clientManager.RequestMap.Load(reqID); ok {
 			return fmt.Errorf("the X-Request-Id is already in use")
 		}
 
 		// Set "X-Request-Id" in response header
 		c.Response().Header().Set(echo.HeaderXRequestID, reqID)
 
-		details := common.RequestDetails{
+		details := clientManager.RequestDetails{
 			StartTime:   time.Now(),
 			Status:      "Handling",
-			RequestInfo: common.ExtractRequestInfo(c.Request()),
+			RequestInfo: clientManager.ExtractRequestInfo(c.Request()),
 		}
-		common.RequestMap.Store(reqID, details)
+		clientManager.RequestMap.Store(reqID, details)
 
 		// log.Debug().Msg("End - Request ID middleware")
 

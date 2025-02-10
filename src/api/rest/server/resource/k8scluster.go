@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -46,7 +47,7 @@ func RestGetAvailableK8sVersion(c echo.Context) error {
 	regionName := c.QueryParam("regionName")
 
 	content, err := common.GetAvailableK8sVersion(providerName, regionName)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetAvailableK8sNodeImage func is a rest api wrapper for GetAvailableK8sNodeImage.
@@ -69,7 +70,7 @@ func RestGetAvailableK8sNodeImage(c echo.Context) error {
 	regionName := c.QueryParam("regionName")
 
 	content, err := common.GetAvailableK8sNodeImage(providerName, regionName)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestCheckK8sNodeGroupsOnK8sCreation func is a rest api wrapper for GetModelK8sNodeGroupsOnK8sCreation.
@@ -90,7 +91,7 @@ func RestCheckK8sNodeGroupsOnK8sCreation(c echo.Context) error {
 	providerName := c.QueryParam("providerName")
 
 	content, err := common.GetModelK8sNodeGroupsOnK8sCreation(providerName)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestCheckK8sNodeImageDesignation func is a rest api wrapper for GetK8sNodeImageDesignation.
@@ -111,7 +112,7 @@ func RestCheckK8sNodeImageDesignation(c echo.Context) error {
 	providerName := c.QueryParam("providerName")
 
 	content, err := common.GetModelK8sNodeImageDesignation(providerName)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetRequiredK8sSubnetCount func is a rest api wrapper for GetModelK8sRequiredSubnetCount.
@@ -132,7 +133,7 @@ func RestGetRequiredK8sSubnetCount(c echo.Context) error {
 	providerName := c.QueryParam("providerName")
 
 	content, err := common.GetModelK8sRequiredSubnetCount(providerName)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestPostK8sCluster func is a rest api wrapper for CreateK8sCluster.
@@ -561,11 +562,11 @@ func RestPostK8sClusterDynamicCheckRequest(c echo.Context) error {
 
 	req := &model.K8sClusterConnectionConfigCandidatesReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.CheckK8sClusterDynamicReq(req)
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestPostK8sClusterDynamic godoc
@@ -592,13 +593,13 @@ func RestPostK8sClusterDynamic(c echo.Context) error {
 	req := &model.TbK8sClusterDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		log.Warn().Err(err).Msg("invalid request")
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.CreateK8sClusterDynamic(reqID, nsId, req, optionFlag)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create K8sCluster dynamically")
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	return c.JSON(http.StatusOK, result)
 }
@@ -627,14 +628,14 @@ func RestPostK8sNodeGroupDynamic(c echo.Context) error {
 	req := &model.TbK8sNodeGroupDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		log.Warn().Err(err).Msg("invalid request")
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	log.Debug().Msgf("reqID: %s, nsId: %s, k8sClusterId: %s, req: %v\n", reqID, nsId, k8sClusterId, req)
 	result, err := infra.CreateK8sNodeGroupDynamic(reqID, nsId, k8sClusterId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create K8sNodeGroup dynamically")
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	return c.JSON(http.StatusOK, result)
 }
@@ -665,14 +666,14 @@ func RestGetControlK8sCluster(c echo.Context) error {
 
 		resultString, err := resource.HandleK8sClusterAction(nsId, k8sClusterId, action)
 		if err != nil {
-			return common.EndRequestWithLog(c, err, returnObj)
+			return clientManager.EndRequestWithLog(c, err, returnObj)
 		}
 		returnObj.Message = resultString
-		return common.EndRequestWithLog(c, err, returnObj)
+		return clientManager.EndRequestWithLog(c, err, returnObj)
 
 	} else {
 		err := fmt.Errorf("'action' should be one of these: continue, withdraw")
-		return common.EndRequestWithLog(c, err, returnObj)
+		return clientManager.EndRequestWithLog(c, err, returnObj)
 	}
 }
 
@@ -694,19 +695,19 @@ func RestRecommendK8sNode(c echo.Context) error {
 
 	u := &model.DeploymentPlan{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := infra.RecommendK8sNode(nsId, *u)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestPostCmdK8sCluster godoc
 // @ID PostCmdK8sCluster
 // @Summary Send a command to specified Container in K8sCluster
 // @Description Send a command to specified Container in K8sCluster
-// @Description [note] This feature is not intended for general use 
-// @Description This API is provided as an exceptional and limited function for specific purposes such as migration. 
+// @Description [note] This feature is not intended for general use
+// @Description This API is provided as an exceptional and limited function for specific purposes such as migration.
 // @Description Kubernetes resource information required as input for this API is not currently provided, and its availability in the future is uncertain.
 // @Tags [Kubernetes] Cluster's Container Remote Command
 // @Accept  json
@@ -732,9 +733,9 @@ func RestPostCmdK8sCluster(c echo.Context) error {
 
 	req := &model.TbK8sClusterContainerCmdReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.RemoteCommandToK8sClusterContainer(nsId, k8sClusterId, k8sClusterNamespace, k8sClusterPodName, k8sClusterContainerName, req)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }

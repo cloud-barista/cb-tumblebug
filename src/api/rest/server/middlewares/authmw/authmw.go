@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v4"
 	echojwt "github.com/labstack/echo-jwt"
@@ -23,18 +23,18 @@ func InitJwtAuthMw(iamEndpoint string, pubkeyUrl string) error {
 
 	method := "GET"
 	url := fmt.Sprintf("%s/alive", iamEndpoint)
-	requestBody := common.NoBody
+	requestBody := clientManager.NoBody
 	var resReadyz map[string]string
 
-	err := common.ExecuteHttpRequest(
+	err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&resReadyz,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {

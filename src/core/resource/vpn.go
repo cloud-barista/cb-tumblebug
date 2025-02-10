@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -301,15 +302,15 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 
 			resTrInfo := new(terrariumModel.TerrariumInfo)
 
-			err = common.ExecuteHttpRequest(
+			err = clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,
 				nil,
-				common.SetUseBody(*reqTr),
+				clientManager.SetUseBody(*reqTr),
 				reqTr,
 				resTrInfo,
-				common.VeryShortDuration,
+				clientManager.VeryShortDuration,
 			)
 
 			if err != nil {
@@ -323,18 +324,18 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 			// init env
 			method = "POST"
 			url = fmt.Sprintf("%s/tr/%s/vpn/gcp-aws/env", epTerrarium, trId)
-			requestBody := common.NoBody
+			requestBody := clientManager.NoBody
 			resTerrariumEnv := new(model.Response)
 
-			err = common.ExecuteHttpRequest(
+			err = clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,
 				nil,
-				common.SetUseBody(requestBody),
+				clientManager.SetUseBody(requestBody),
 				&requestBody,
 				resTerrariumEnv,
-				common.VeryShortDuration,
+				clientManager.VeryShortDuration,
 			)
 
 			if err != nil {
@@ -371,15 +372,15 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 
 		resInfracode := new(model.Response)
 
-		err = common.ExecuteHttpRequest(
+		err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(*reqInfracode),
+			clientManager.SetUseBody(*reqInfracode),
 			reqInfracode,
 			resInfracode,
-			common.VeryShortDuration,
+			clientManager.VeryShortDuration,
 		)
 
 		if err != nil {
@@ -392,18 +393,18 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 		// check the infracode by plan
 		method = "POST"
 		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-aws/plan", epTerrarium, trId)
-		requestBody := common.NoBody
+		requestBody := clientManager.NoBody
 		resPlan := new(model.Response)
 
-		err = common.ExecuteHttpRequest(
+		err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(requestBody),
+			clientManager.SetUseBody(requestBody),
 			&requestBody,
 			resPlan,
-			common.VeryShortDuration,
+			clientManager.VeryShortDuration,
 		)
 
 		if err != nil {
@@ -419,18 +420,18 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 		// and provide seperate api to check the status
 		method = "POST"
 		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-aws", epTerrarium, trId)
-		requestBody = common.NoBody
+		requestBody = clientManager.NoBody
 		resApply := new(model.Response)
 
-		err = common.ExecuteHttpRequest(
+		err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(requestBody),
+			clientManager.SetUseBody(requestBody),
 			&requestBody,
 			resApply,
-			common.VeryShortDuration,
+			clientManager.VeryShortDuration,
 		)
 
 		if err != nil {
@@ -487,15 +488,15 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 
 			resTrInfo := new(terrariumModel.TerrariumInfo)
 
-			err = common.ExecuteHttpRequest(
+			err = clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,
 				nil,
-				common.SetUseBody(*reqTr),
+				clientManager.SetUseBody(*reqTr),
 				reqTr,
 				resTrInfo,
-				common.VeryShortDuration,
+				clientManager.VeryShortDuration,
 			)
 
 			if err != nil {
@@ -509,18 +510,18 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 			// init env
 			method = "POST"
 			url = fmt.Sprintf("%s/tr/%s/vpn/gcp-azure/env", epTerrarium, trId)
-			requestBody := common.NoBody
+			requestBody := clientManager.NoBody
 			resTerrariumEnv := new(model.Response)
 
-			err = common.ExecuteHttpRequest(
+			err = clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,
 				nil,
-				common.SetUseBody(requestBody),
+				clientManager.SetUseBody(requestBody),
 				&requestBody,
 				resTerrariumEnv,
-				common.VeryShortDuration,
+				clientManager.VeryShortDuration,
 			)
 
 			if err != nil {
@@ -559,15 +560,15 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 
 		resInfracode := new(model.Response)
 
-		err = common.ExecuteHttpRequest(
+		err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(*reqInfracode),
+			clientManager.SetUseBody(*reqInfracode),
 			reqInfracode,
 			resInfracode,
-			common.VeryShortDuration,
+			clientManager.VeryShortDuration,
 		)
 
 		if err != nil {
@@ -581,18 +582,18 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 		// check the infracode by plan
 		method = "POST"
 		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-azure/plan", epTerrarium, trId)
-		requestBody := common.NoBody
+		requestBody := clientManager.NoBody
 		resPlan := new(model.Response)
 
-		err = common.ExecuteHttpRequest(
+		err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(requestBody),
+			clientManager.SetUseBody(requestBody),
 			&requestBody,
 			resPlan,
-			common.VeryShortDuration,
+			clientManager.VeryShortDuration,
 		)
 
 		if err != nil {
@@ -609,18 +610,18 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 		// and provide seperate api to check the status
 		method = "POST"
 		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-azure", epTerrarium, trId)
-		requestBody = common.NoBody
+		requestBody = clientManager.NoBody
 		resApply := new(model.Response)
 
-		err = common.ExecuteHttpRequest(
+		err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(requestBody),
+			clientManager.SetUseBody(requestBody),
 			&requestBody,
 			resApply,
-			common.VeryShortDuration,
+			clientManager.VeryShortDuration,
 		)
 
 		if err != nil {
@@ -736,7 +737,7 @@ func retrieveEnrichmentsInfoInTerrarium(ctx context.Context, trId string, enrich
 	// Set Terrarium endpoint
 	epTerrarium := model.TerrariumRestUrl
 
-	requestBody := common.NoBody
+	requestBody := clientManager.NoBody
 	resRetrieving := new(model.Response)
 
 	// Set the start time and the expected end time
@@ -747,15 +748,15 @@ func retrieveEnrichmentsInfoInTerrarium(ctx context.Context, trId string, enrich
 	currentWaitDuration := maxWaitDuration
 
 	for {
-		err := common.ExecuteHttpRequest(
+		err := clientManager.ExecuteHttpRequest(
 			client,
 			"GET",
 			fmt.Sprintf("%s/tr/%s/%s?detail=refined", epTerrarium, trId, enrichments),
 			nil,
-			common.SetUseBody(requestBody),
+			clientManager.SetUseBody(requestBody),
 			&requestBody,
 			resRetrieving,
-			common.VeryShortDuration,
+			clientManager.VeryShortDuration,
 		)
 
 		if err == nil {
@@ -868,18 +869,18 @@ func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string) (m
 	// Get the terrarium info
 	method := "GET"
 	url := fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
-	requestBody := common.NoBody
+	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resTrInfo,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -896,18 +897,18 @@ func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string) (m
 	// Get resource info
 	method = "GET"
 	url = fmt.Sprintf("%s/tr/%s/%s?detail=%s", epTerrarium, trId, enrichments, detail)
-	requestBody = common.NoBody
+	requestBody = clientManager.NoBody
 	resResourceInfo := new(model.Response)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resResourceInfo,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -1073,18 +1074,18 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 	// Get the terrarium info
 	method := "GET"
 	url := fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
-	requestBody := common.NoBody
+	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resTrInfo,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -1099,18 +1100,18 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 	// delete enrichments
 	method = "DELETE"
 	url = fmt.Sprintf("%s/tr/%s/%s", epTerrarium, trId, enrichments)
-	requestBody = common.NoBody
+	requestBody = clientManager.NoBody
 	resDeleteEnrichments := new(model.Response)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resDeleteEnrichments,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -1124,18 +1125,18 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 	// delete env
 	method = "DELETE"
 	url = fmt.Sprintf("%s/tr/%s/%s/env", epTerrarium, trId, enrichments)
-	requestBody = common.NoBody
+	requestBody = clientManager.NoBody
 	resDeleteEnv := new(model.Response)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resDeleteEnv,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -1149,18 +1150,18 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 	// delete terrarium
 	method = "DELETE"
 	url = fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
-	requestBody = common.NoBody
+	requestBody = clientManager.NoBody
 	resDeleteTr := new(model.Response)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resDeleteTr,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -1263,18 +1264,18 @@ func GetRequestStatusOfSiteToSiteVpn(nsId string, mciId string, vpnId string, re
 	// Get the terrarium info
 	method := "GET"
 	url := fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
-	requestBody := common.NoBody
+	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resTrInfo,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -1289,18 +1290,18 @@ func GetRequestStatusOfSiteToSiteVpn(nsId string, mciId string, vpnId string, re
 	// Get resource info
 	method = "GET"
 	url = fmt.Sprintf("%s/tr/%s/%s/request/%s", epTerrarium, trId, enrichments, reqId)
-	reqReqStatus := common.NoBody
+	reqReqStatus := clientManager.NoBody
 	resReqStatus := new(model.Response)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(reqReqStatus),
+		clientManager.SetUseBody(reqReqStatus),
 		&reqReqStatus,
 		resReqStatus,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {

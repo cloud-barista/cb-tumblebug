@@ -32,6 +32,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
@@ -296,15 +297,15 @@ func CheckConnConfigAvailable(connConfigName string) (bool, error) {
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = connConfigName
 
-	err := ExecuteHttpRequest(
+	err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		ShortDuration,
+		clientManager.ShortDuration,
 	)
 
 	if err != nil {
@@ -322,17 +323,17 @@ func CheckSpiderReady() error {
 	client := resty.New()
 	url := model.SpiderRestUrl + "/readyz"
 	method := "GET"
-	requestBody := NoBody
+	requestBody := clientManager.NoBody
 
-	err := ExecuteHttpRequest(
+	err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -437,15 +438,15 @@ func RegisterCloudInfo(providerName string) error {
 	var callResult model.CloudDriverInfo
 	requestBody := model.CloudDriverInfo{ProviderName: strings.ToUpper(providerName), DriverName: driverName, DriverLibFileName: driverName}
 
-	err := ExecuteHttpRequest(
+	err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -489,15 +490,15 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	}
 	requestBody.KeyValueInfoList = keyValueInfoList
 
-	err := ExecuteHttpRequest(
+	err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -515,15 +516,15 @@ func RegisterRegionZone(providerName string, regionName string) error {
 		requestBody.AvailableZoneList = RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones
 		requestBody.KeyValueInfoList = keyValueInfoList
 
-		err := ExecuteHttpRequest(
+		err := clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			SetUseBody(requestBody),
+			clientManager.SetUseBody(requestBody),
 			&requestBody,
 			&callResult,
-			MediumDuration,
+			clientManager.MediumDuration,
 		)
 
 		if err != nil {
@@ -676,15 +677,15 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 
 	//PrintJsonPretty(requestBody)
 
-	err = ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -900,15 +901,15 @@ func RegisterConnectionConfig(connConfig model.ConnConfig) (model.ConnConfig, er
 	requestBody.CredentialName = connConfig.CredentialName
 	requestBody.RegionName = connConfig.RegionZoneInfoName
 
-	err := ExecuteHttpRequest(
+	err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -948,17 +949,17 @@ func RegisterConnectionConfig(connConfig model.ConnConfig) (model.ConnConfig, er
 	url = model.SpiderRestUrl + "/region/" + connection.RegionZoneInfoName
 	method = "GET"
 	var callResultRegion model.SpiderRegionZoneInfo
-	requestNoBody := NoBody
+	requestNoBody := clientManager.NoBody
 
-	err = ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		SetUseBody(requestNoBody),
+		clientManager.SetUseBody(requestNoBody),
 		&requestNoBody,
 		&callResultRegion,
-		MediumDuration,
+		clientManager.MediumDuration,
 	)
 	if err != nil {
 		log.Error().Err(err).Msg("")

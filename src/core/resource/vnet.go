@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -486,15 +487,15 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 		}
 	}()
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(spReqt),
+		clientManager.SetUseBody(spReqt),
 		&spReqt,
 		&spResp,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -693,7 +694,7 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 	// [Via Spider] Get a vNet and subnets
 	client := resty.New()
 	method := "GET"
-	spReqt := common.NoBody
+	spReqt := clientManager.NoBody
 	var spResp spiderVPCInfo
 
 	// API to create a vNet
@@ -701,15 +702,15 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 	queryParams := "?ConnectionName=" + vNetInfo.ConnectionName
 	url += queryParams
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(spReqt),
+		clientManager.SetUseBody(spReqt),
 		&spReqt,
 		&spResp,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -875,15 +876,15 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 	client := resty.New()
 	method := "DELETE"
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(spReqt),
+		clientManager.SetUseBody(spReqt),
 		&spReqt,
 		&spResp,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -988,7 +989,7 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	// [Via Spider] Get a vNet
 	client := resty.New()
 	method := "GET"
-	spReqt := common.NoBody
+	spReqt := clientManager.NoBody
 	var spResp spiderVPCInfo
 
 	// API to get a vNet
@@ -996,15 +997,15 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	queryParams := "?ConnectionName=" + vNetInfo.ConnectionName
 	url += queryParams
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(spReqt),
+		clientManager.SetUseBody(spReqt),
 		&spReqt,
 		&spResp,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	// if err != nil {
@@ -1237,15 +1238,15 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 		}
 	}()
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(spReqt),
+		clientManager.SetUseBody(spReqt),
 		&spReqt,
 		&spResp,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -1503,15 +1504,15 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 	client := resty.New()
 	method := "DELETE"
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(spReqt),
+		clientManager.SetUseBody(spReqt),
 		&spReqt,
 		&spResp,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {

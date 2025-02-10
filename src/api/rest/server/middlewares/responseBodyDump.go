@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog/log"
@@ -36,14 +36,14 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 			// Dump the response body if content type is "application/json" or "application/json; charset=UTF-8"
 			if contentType == echo.MIMEApplicationJSONCharsetUTF8 || contentType == echo.MIMEApplicationJSON {
 				// Load or check the request by ID
-				v, ok := common.RequestMap.Load(reqID)
+				v, ok := clientManager.RequestMap.Load(reqID)
 				if !ok {
 					log.Error().Msg("Request ID not found in common.RequestMap")
 					return
 				}
 
 				// Ensure the loaded value is of the correct type
-				details, ok := v.(common.RequestDetails)
+				details, ok := v.(clientManager.RequestDetails)
 				if !ok {
 					log.Error().Msg("Loaded value from common.RequestMap is not of type common.RequestDetails")
 					return
@@ -115,7 +115,7 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 				}
 
 				// Store details of the request
-				common.RequestMap.Store(reqID, details)
+				clientManager.RequestMap.Store(reqID, details)
 			}
 			// log.Debug().Msg("Start - BodyDump() middleware")
 		},

@@ -15,7 +15,7 @@ limitations under the License.
 package infra
 
 import (
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
@@ -45,11 +45,11 @@ func RestPostNLB(c echo.Context) error {
 
 	u := &model.TbNLBReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := infra.CreateNLB(nsId, mciId, u, optionFlag)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestPostMcNLB godoc
@@ -73,11 +73,11 @@ func RestPostMcNLB(c echo.Context) error {
 
 	u := &model.TbNLBReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := infra.CreateMcSwNlb(nsId, mciId, u, "")
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 /*
@@ -127,7 +127,7 @@ func RestGetNLB(c echo.Context) error {
 	resourceId := c.Param("resourceId")
 
 	res, err := infra.GetNLB(nsId, mciId, resourceId)
-	return common.EndRequestWithLog(c, err, res)
+	return clientManager.EndRequestWithLog(c, err, res)
 }
 
 // Response structure for RestGetAllNLB
@@ -164,12 +164,12 @@ func RestGetAllNLB(c echo.Context) error {
 		content := model.IdList{}
 		var err error
 		content.IdList, err = infra.ListNLBId(nsId, mciId)
-		return common.EndRequestWithLog(c, err, content)
+		return clientManager.EndRequestWithLog(c, err, content)
 	} else {
 
 		resourceList, err := infra.ListNLB(nsId, mciId, filterKey, filterVal)
 		if err != nil {
-			return common.EndRequestWithLog(c, err, nil)
+			return clientManager.EndRequestWithLog(c, err, nil)
 		}
 
 		var content struct {
@@ -177,7 +177,7 @@ func RestGetAllNLB(c echo.Context) error {
 		}
 
 		content.NLB = resourceList.([]model.TbNLBInfo) // type assertion (interface{} -> array)
-		return common.EndRequestWithLog(c, err, content)
+		return clientManager.EndRequestWithLog(c, err, content)
 	}
 }
 
@@ -204,7 +204,7 @@ func RestDelNLB(c echo.Context) error {
 
 	err := infra.DelNLB(nsId, mciId, resourceId, forceFlag)
 	content := map[string]string{"message": "The NLB " + resourceId + " has been deleted"}
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestDelAllNLB godoc
@@ -229,7 +229,7 @@ func RestDelAllNLB(c echo.Context) error {
 	subString := c.QueryParam("match")
 
 	content, err := infra.DelAllNLB(nsId, mciId, subString, forceFlag)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetNLBHealth godoc
@@ -253,7 +253,7 @@ func RestGetNLBHealth(c echo.Context) error {
 	resourceId := c.Param("resourceId")
 
 	content, err := infra.GetNLBHealth(nsId, mciId, resourceId)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // The REST APIs below are for dev/test only
@@ -284,7 +284,7 @@ func RestAddNLBVMs(c echo.Context) error {
 		return err
 	}
 	content, err := infra.AddNLBVMs(nsId, mciId, resourceId, u)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestRemoveNLBVMs godoc
@@ -314,5 +314,5 @@ func RestRemoveNLBVMs(c echo.Context) error {
 
 	err := infra.RemoveNLBVMs(nsId, mciId, resourceId, u)
 	content := map[string]string{"message": "Removed VMs from the NLB " + resourceId}
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }

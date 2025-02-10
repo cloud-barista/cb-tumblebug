@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
@@ -113,15 +114,15 @@ func LookupMyImage(connConfig string, myImageId string) (model.SpiderMyImageInfo
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = connConfig
 
-	err := common.ExecuteHttpRequest(
+	err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -220,15 +221,15 @@ func RegisterCustomImageWithId(nsId string, u *model.TbCustomImageReq) (model.Tb
 	}
 	callResult := model.SpiderMyImageInfo{}
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {

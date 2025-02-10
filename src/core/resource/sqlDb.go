@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -246,15 +247,15 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 
 		resTrInfo := new(terrariumModel.TerrariumInfo)
 
-		err = common.ExecuteHttpRequest(
+		err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(*reqTr),
+			clientManager.SetUseBody(*reqTr),
 			reqTr,
 			resTrInfo,
-			common.VeryShortDuration,
+			clientManager.VeryShortDuration,
 		)
 
 		if err != nil {
@@ -271,18 +272,18 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 		queryParams := "provider=" + sqlDbReq.CSP
 		url += "?" + queryParams
 
-		requestBody := common.NoBody
+		requestBody := clientManager.NoBody
 		resTerrariumEnv := new(model.Response)
 
-		err = common.ExecuteHttpRequest(
+		err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(requestBody),
+			clientManager.SetUseBody(requestBody),
 			&requestBody,
 			resTerrariumEnv,
-			common.VeryShortDuration,
+			clientManager.VeryShortDuration,
 		)
 
 		if err != nil {
@@ -319,15 +320,15 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 
 		resInfracode := new(model.Response)
 
-		err = common.ExecuteHttpRequest(
+		err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(*reqInfracode),
+			clientManager.SetUseBody(*reqInfracode),
 			reqInfracode,
 			resInfracode,
-			common.VeryShortDuration,
+			clientManager.VeryShortDuration,
 		)
 
 		if err != nil {
@@ -352,15 +353,15 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 
 		resInfracode := new(model.Response)
 
-		err = common.ExecuteHttpRequest(
+		err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(*reqInfracode),
+			clientManager.SetUseBody(*reqInfracode),
 			reqInfracode,
 			resInfracode,
-			common.VeryShortDuration,
+			clientManager.VeryShortDuration,
 		)
 
 		if err != nil {
@@ -384,15 +385,15 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 
 		resInfracode := new(model.Response)
 
-		err = common.ExecuteHttpRequest(
+		err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(*reqInfracode),
+			clientManager.SetUseBody(*reqInfracode),
 			reqInfracode,
 			resInfracode,
-			common.VeryShortDuration,
+			clientManager.VeryShortDuration,
 		)
 
 		if err != nil {
@@ -415,15 +416,15 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 
 		resInfracode := new(model.Response)
 
-		err = common.ExecuteHttpRequest(
+		err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
 			nil,
-			common.SetUseBody(*reqInfracode),
+			clientManager.SetUseBody(*reqInfracode),
 			reqInfracode,
 			resInfracode,
-			common.VeryShortDuration,
+			clientManager.VeryShortDuration,
 		)
 
 		if err != nil {
@@ -444,18 +445,18 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 	// check the infracode (by `tofu plan`)
 	method := "POST"
 	url := fmt.Sprintf("%s/tr/%s/sql-db/plan", epTerrarium, trId)
-	requestBody := common.NoBody
+	requestBody := clientManager.NoBody
 	resPlan := new(model.Response)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resPlan,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -471,18 +472,18 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 	// and provide seperate api to check the status
 	method = "POST"
 	url = fmt.Sprintf("%s/tr/%s/sql-db", epTerrarium, trId)
-	requestBody = common.NoBody
+	requestBody = clientManager.NoBody
 	resApply := new(model.Response)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resApply,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -639,18 +640,18 @@ func GetSqlDB(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 	// Get the terrarium info
 	method := "GET"
 	url := fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
-	requestBody := common.NoBody
+	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resTrInfo,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -667,18 +668,18 @@ func GetSqlDB(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 	// Get resource info
 	method = "GET"
 	url = fmt.Sprintf("%s/tr/%s/%s?detail=%s", epTerrarium, trId, enrichments, detail)
-	requestBody = common.NoBody
+	requestBody = clientManager.NoBody
 	resResourceInfo := new(model.Response)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resResourceInfo,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -813,18 +814,18 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 	// Get the terrarium info
 	method := "GET"
 	url := fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
-	requestBody := common.NoBody
+	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resTrInfo,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -839,18 +840,18 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 	// delete enrichments
 	method = "DELETE"
 	url = fmt.Sprintf("%s/tr/%s/%s", epTerrarium, trId, enrichments)
-	requestBody = common.NoBody
+	requestBody = clientManager.NoBody
 	resDeleteEnrichments := new(model.Response)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resDeleteEnrichments,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -864,18 +865,18 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 	// delete env
 	method = "DELETE"
 	url = fmt.Sprintf("%s/tr/%s/%s/env", epTerrarium, trId, enrichments)
-	requestBody = common.NoBody
+	requestBody = clientManager.NoBody
 	resDeleteEnv := new(model.Response)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resDeleteEnv,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -889,18 +890,18 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 	// delete terrarium
 	method = "DELETE"
 	url = fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
-	requestBody = common.NoBody
+	requestBody = clientManager.NoBody
 	resDeleteTr := new(model.Response)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resDeleteTr,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -998,18 +999,18 @@ func GetRequestStatusOfSqlDB(nsId string, sqlDbId string, reqId string) (model.R
 	// Get the terrarium info
 	method := "GET"
 	url := fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
-	requestBody := common.NoBody
+	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		resTrInfo,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -1024,18 +1025,18 @@ func GetRequestStatusOfSqlDB(nsId string, sqlDbId string, reqId string) (model.R
 	// Get resource info
 	method = "GET"
 	url = fmt.Sprintf("%s/tr/%s/%s/request/%s", epTerrarium, trId, enrichments, reqId)
-	reqReqStatus := common.NoBody
+	reqReqStatus := clientManager.NoBody
 	resReqStatus := new(model.Response)
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(reqReqStatus),
+		clientManager.SetUseBody(reqReqStatus),
 		&reqReqStatus,
 		resReqStatus,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {

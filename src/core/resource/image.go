@@ -25,6 +25,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 
@@ -305,15 +306,15 @@ func LookupImageList(connConfigName string) (model.SpiderImageList, error) {
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = connConfigName
 
-	err := common.ExecuteHttpRequest(
+	err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		common.ShortDuration,
+		clientManager.ShortDuration,
 	)
 
 	if err != nil {
@@ -346,15 +347,15 @@ func LookupImage(connConfig string, imageId string) (model.SpiderImageInfo, erro
 	requestBody.ConnectionName = connConfig
 	callResult := model.SpiderImageInfo{}
 
-	err := common.ExecuteHttpRequest(
+	err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {

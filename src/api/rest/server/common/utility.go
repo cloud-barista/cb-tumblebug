@@ -26,6 +26,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/rs/zerolog/log"
@@ -128,7 +129,7 @@ func RestCheckHTTPVersion(c echo.Context) error {
 func RestGetPublicKeyForCredentialEncryption(c echo.Context) error {
 
 	result, err := common.GetPublicKeyForCredentialEncryption()
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestRegisterCredential is a REST API handler for registering credentials.
@@ -147,11 +148,11 @@ func RestRegisterCredential(c echo.Context) error {
 
 	u := &model.CredentialReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := common.RegisterCredential(*u)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
@@ -173,7 +174,7 @@ func RestGetConnConfig(c echo.Context) error {
 	connConfigName := c.Param("connConfigName")
 
 	content, err := common.GetConnConfig(connConfigName)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
@@ -208,7 +209,7 @@ func RestGetConnConfigList(c echo.Context) error {
 	}
 
 	content, err := common.GetConnConfigList(filterCredentialHolder, filterVerifiedBool, filterRegionRepresentativeBool)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetProviderList func is a rest api wrapper for GetProviderList.
@@ -226,7 +227,7 @@ func RestGetConnConfigList(c echo.Context) error {
 func RestGetProviderList(c echo.Context) error {
 
 	content, err := common.GetProviderList()
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
@@ -250,7 +251,7 @@ func RestGetRegion(c echo.Context) error {
 	regionName := c.Param("regionName")
 
 	content, err := common.GetRegion(providerName, regionName)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetRegions func is a rest api wrapper for GetRegion.
@@ -271,7 +272,7 @@ func RestGetRegions(c echo.Context) error {
 	providerName := c.Param("providerName")
 
 	content, err := common.GetRegions(providerName)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetRegionListFromCsp func is a rest api wrapper for RetrieveRegionListFromCsp.
@@ -289,7 +290,7 @@ func RestGetRegions(c echo.Context) error {
 func RestGetRegionListFromCsp(c echo.Context) error {
 
 	content, err := common.RetrieveRegionListFromCsp()
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
@@ -308,7 +309,7 @@ func RestGetRegionListFromCsp(c echo.Context) error {
 func RestGetCloudInfo(c echo.Context) error {
 
 	content, err := common.GetCloudInfo()
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetK8sClusterInfo func is a rest api wrapper for K8sClsuterInfo.
@@ -326,7 +327,7 @@ func RestGetCloudInfo(c echo.Context) error {
 func RestGetK8sClusterInfo(c echo.Context) error {
 
 	content, err := common.GetK8sClusterInfo()
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // ObjectList struct consists of object IDs
@@ -476,7 +477,7 @@ func RestInspectResources(c echo.Context) error {
 	// 	content, err = infra.InspectVMs(u.ConnectionName)
 	// }
 	content, err = infra.InspectResources(u.ConnectionName, u.ResourceType)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
@@ -494,7 +495,7 @@ func RestInspectResources(c echo.Context) error {
 func RestInspectResourcesOverview(c echo.Context) error {
 
 	content, err := infra.InspectResourcesOverview()
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // Request struct for RestRegisterCspNativeResources
@@ -522,13 +523,13 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 
 	u := &RestRegisterCspNativeResourcesRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	option := c.QueryParam("option")
 	mciFlag := c.QueryParam("mciFlag")
 
 	content, err := infra.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.MciName, option, mciFlag)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
@@ -556,13 +557,13 @@ func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 
 	u := &RestRegisterCspNativeResourcesRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	option := c.QueryParam("option")
 	mciFlag := c.QueryParam("mciFlag")
 
 	content, err := infra.RegisterCspNativeResourcesAll(u.NsId, u.MciName, option, mciFlag)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestForwardAnyReqToAny godoc
@@ -581,7 +582,7 @@ func RestForwardAnyReqToAny(c echo.Context) error {
 	reqPath := c.Param("*")
 	reqPath, err := url.PathUnescape(reqPath)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	log.Info().Msgf("reqPath: %s", reqPath)
@@ -591,13 +592,13 @@ func RestForwardAnyReqToAny(c echo.Context) error {
 	if c.Request().Body != nil {
 		bodyBytes, err := io.ReadAll(c.Request().Body)
 		if err != nil {
-			return common.EndRequestWithLog(c, fmt.Errorf("Failed to read request body: %v", err), nil)
+			return clientManager.EndRequestWithLog(c, fmt.Errorf("Failed to read request body: %v", err), nil)
 		}
 		requestBody = bodyBytes
 	} else {
-		requestBody = common.NoBody
+		requestBody = clientManager.NoBody
 	}
 
-	content, err := common.ForwardRequestToAny(reqPath, method, requestBody)
-	return common.EndRequestWithLog(c, err, content)
+	content, err := clientManager.ForwardRequestToAny(reqPath, method, requestBody)
+	return clientManager.EndRequestWithLog(c, err, content)
 }

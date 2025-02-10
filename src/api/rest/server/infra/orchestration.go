@@ -17,7 +17,7 @@ package infra
 import (
 	"fmt"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
@@ -45,11 +45,11 @@ func RestPostMciPolicy(c echo.Context) error {
 
 	req := &model.MciPolicyReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := infra.CreateMciPolicy(nsId, mciId, req)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetMciPolicy godoc
@@ -73,14 +73,14 @@ func RestGetMciPolicy(c echo.Context) error {
 	result, err := infra.GetMciPolicyObject(nsId, mciId)
 	if err != nil {
 		errorMessage := fmt.Errorf("Error to find MciPolicyObject : " + mciId + "ERROR : " + err.Error())
-		return common.EndRequestWithLog(c, errorMessage, nil)
+		return clientManager.EndRequestWithLog(c, errorMessage, nil)
 	}
 
 	if result.Id == "" {
 		errorMessage := fmt.Errorf("Failed to find MciPolicyObject : " + mciId)
-		return common.EndRequestWithLog(c, errorMessage, nil)
+		return clientManager.EndRequestWithLog(c, errorMessage, nil)
 	}
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // Response structure for RestGetAllMciPolicy
@@ -107,12 +107,12 @@ func RestGetAllMciPolicy(c echo.Context) error {
 
 	result, err := infra.GetAllMciPolicyObject(nsId)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content := RestGetAllMciPolicyResponse{}
 	content.MciPolicy = result
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 /*
@@ -154,7 +154,7 @@ func RestDelMciPolicy(c echo.Context) error {
 
 	err := infra.DelMciPolicy(nsId, mciId)
 	result := map[string]string{"message": "Deleted the MCI Policy info"}
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestDelAllMciPolicy godoc
@@ -172,5 +172,5 @@ func RestDelAllMciPolicy(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	result, err := infra.DelAllMciPolicy(nsId)
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }

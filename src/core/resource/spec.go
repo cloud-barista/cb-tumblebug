@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
@@ -85,15 +86,15 @@ func LookupSpecList(connConfig string) (model.SpiderSpecList, error) {
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = connConfig
 
-	err := common.ExecuteHttpRequest(
+	err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -130,15 +131,15 @@ func LookupSpec(connConfig string, specName string) (model.SpiderSpecInfo, error
 	requestBody.ConnectionName = connConfig
 	callResult := model.SpiderSpecInfo{}
 
-	err := common.ExecuteHttpRequest(
+	err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {

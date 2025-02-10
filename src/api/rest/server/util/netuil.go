@@ -3,7 +3,7 @@ package netutil
 import (
 	"net/http"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -76,16 +76,16 @@ func RestPostUtilToDesignNetwork(c echo.Context) error {
 	// Bind the request body to SubnettingRequest struct
 	subnettingReq := new(netutil.SubnettingRequest)
 	if err := c.Bind(subnettingReq); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	// Subnetting as many as requested rules
 	networkConfig, err := netutil.SubnettingBy(*subnettingReq)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	return common.EndRequestWithLog(c, err, networkConfig)
+	return clientManager.EndRequestWithLog(c, err, networkConfig)
 }
 
 type RestPostUtilToValidateNetworkRequest struct {
@@ -109,18 +109,18 @@ func RestPostUtilToValidateNetwork(c echo.Context) error {
 	// Bind the request body to SubnettingRequest struct
 	req := new(netutil.NetworkConfig)
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	// Validate the network configuration
 	netConf := req.NetworkConfiguration
 	err := netutil.ValidateNetwork(netConf)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	okMessage := model.SimpleMsg{}
 	okMessage.Message = "Network configuration is valid."
 
-	return common.EndRequestWithLog(c, err, okMessage)
+	return clientManager.EndRequestWithLog(c, err, okMessage)
 }

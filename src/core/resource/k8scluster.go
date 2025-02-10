@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -463,15 +464,15 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 
 	var spClusterRes model.SpiderClusterRes
 
-	createErr = common.ExecuteHttpRequest(
+	createErr = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&spClusterRes,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if createErr != nil {
@@ -674,15 +675,15 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 
 	var spClusterRes model.SpiderClusterRes
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&spClusterRes,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -743,15 +744,15 @@ func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bo
 	method := "DELETE"
 
 	var ifRes interface{}
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&ifRes,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -817,15 +818,15 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 	method := "PUT"
 
 	var spSetAutoscalingRes model.SpiderSetAutoscalingRes
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&spSetAutoscalingRes,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -886,15 +887,15 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 	method := "PUT"
 
 	var spChangeAutoscaleSizeRes model.SpiderChangeAutoscaleSizeRes
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&spChangeAutoscaleSizeRes,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -951,15 +952,15 @@ func GetK8sCluster(nsId string, k8sClusterId string) (*model.TbK8sClusterInfo, e
 	}
 
 	var spClusterRes model.SpiderClusterRes
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&spClusterRes,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -1153,15 +1154,15 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 	method := "DELETE"
 
 	var ifRes interface{}
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&ifRes,
-		common.VeryShortDuration,
+		clientManager.VeryShortDuration,
 	)
 
 	log.Debug().Msgf("option=%s", option)
@@ -1297,15 +1298,15 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.TbUpgradeK8sCl
 	method := "PUT"
 
 	var spClusterRes model.SpiderClusterRes
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&spClusterRes,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {

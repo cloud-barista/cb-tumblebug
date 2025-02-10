@@ -3,7 +3,7 @@ package middlewares
 import (
 	"fmt"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
@@ -21,18 +21,18 @@ func CheckReadiness(url string, apiUser string, apiPass string) echo.MiddlewareF
 
 			// check readyz
 			method := "GET"
-			requestBody := common.NoBody
+			requestBody := clientManager.NoBody
 			resReadyz := new(model.Response)
 
-			err := common.ExecuteHttpRequest(
+			err := clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,
 				nil,
-				common.SetUseBody(requestBody),
+				clientManager.SetUseBody(requestBody),
 				&requestBody,
 				resReadyz,
-				common.VeryShortDuration,
+				clientManager.VeryShortDuration,
 			)
 
 			if err != nil {

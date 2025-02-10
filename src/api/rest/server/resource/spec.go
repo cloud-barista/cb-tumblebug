@@ -19,7 +19,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
@@ -58,19 +58,19 @@ func RestPostSpec(c echo.Context) error {
 		log.Debug().Msg("[Registering Spec with info]")
 		u := &model.TbSpecInfo{}
 		if err := c.Bind(u); err != nil {
-			return common.EndRequestWithLog(c, err, nil)
+			return clientManager.EndRequestWithLog(c, err, nil)
 		}
 		content, err := resource.RegisterSpecWithInfo(nsId, u, update)
-		return common.EndRequestWithLog(c, err, content)
+		return clientManager.EndRequestWithLog(c, err, content)
 
 	} else { // if action == "registerWithCspResourceId" { // The default mode.
 		log.Debug().Msg("[Registering Spec with cspSpecName]")
 		u := &model.TbSpecReq{}
 		if err := c.Bind(u); err != nil {
-			return common.EndRequestWithLog(c, err, nil)
+			return clientManager.EndRequestWithLog(c, err, nil)
 		}
 		content, err := resource.RegisterSpecWithCspResourceId(nsId, u, update)
-		return common.EndRequestWithLog(c, err, content)
+		return clientManager.EndRequestWithLog(c, err, content)
 
 	} /* else {
 		mapA := map[string]string{"message": "LookupSpec(specRequest) failed."}
@@ -102,11 +102,11 @@ func RestPutSpec(c echo.Context) error {
 
 	u := &model.TbSpecInfo{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.UpdateSpec(nsId, specId, *u)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // Request structure for RestLookupSpec
@@ -131,12 +131,12 @@ func RestLookupSpec(c echo.Context) error {
 
 	u := &RestLookupSpecRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	fmt.Println("[Lookup spec]: " + u.CspResourceId)
 	content, err := resource.LookupSpec(u.ConnectionName, u.CspResourceId)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
@@ -156,12 +156,12 @@ func RestLookupSpecList(c echo.Context) error {
 
 	u := &RestLookupSpecRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	log.Debug().Msg("[Lookup specs]")
 	content, err := resource.LookupSpecList(u.ConnectionName)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
@@ -183,7 +183,7 @@ func RestFetchSpecs(c echo.Context) error {
 
 	u := &RestLookupSpecRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	var connConfigCount, specCount uint
@@ -192,19 +192,19 @@ func RestFetchSpecs(c echo.Context) error {
 	if u.ConnectionName == "" {
 		connConfigCount, specCount, err = resource.FetchSpecsForAllConnConfigs(nsId)
 		if err != nil {
-			return common.EndRequestWithLog(c, err, nil)
+			return clientManager.EndRequestWithLog(c, err, nil)
 		}
 	} else {
 		connConfigCount = 1
 		specCount, err = resource.FetchSpecsForConnConfig(u.ConnectionName, nsId)
 		if err != nil {
-			return common.EndRequestWithLog(c, err, nil)
+			return clientManager.EndRequestWithLog(c, err, nil)
 		}
 	}
 
 	content := map[string]string{
 		"message": "Fetched " + fmt.Sprint(specCount) + " specs (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestFilterSpecsResponse is Response structure for RestFilterSpecs
@@ -231,14 +231,14 @@ func RestFilterSpecsByRange(c echo.Context) error {
 
 	u := &model.FilterSpecsByRangeRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	log.Debug().Msg("[Filter specs]")
 	content, err := resource.FilterSpecsByRange(nsId, *u)
 	result := RestFilterSpecsResponse{}
 	result.Spec = content
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestGetSpec godoc
@@ -264,7 +264,7 @@ func RestGetSpec(c echo.Context) error {
 
 	log.Debug().Msg("[Get spec]" + specId)
 	result, err := resource.GetSpec(nsId, specId)
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestDelSpec godoc
