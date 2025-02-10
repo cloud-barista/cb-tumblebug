@@ -15,7 +15,7 @@ limitations under the License.
 package infra
 
 import (
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
@@ -49,7 +49,7 @@ func RestPostInstallBenchmarkAgentToMci(c echo.Context) error {
 
 	resultArray, err := infra.InstallBenchmarkAgentToMci(nsId, mciId, req, option)
 	if err != nil {
-		common.EndRequestWithLog(c, err, nil)
+		clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content := model.MciSshCmdResult{}
@@ -57,7 +57,7 @@ func RestPostInstallBenchmarkAgentToMci(c echo.Context) error {
 		content.Results = append(content.Results, v)
 	}
 
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
@@ -91,7 +91,7 @@ func RestGetAllBenchmark(c echo.Context) error {
 	}
 
 	content, err := infra.RunAllBenchmarks(nsId, mciId, req.Host)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetLatencyBenchmark godoc
@@ -113,7 +113,7 @@ func RestGetBenchmarkLatency(c echo.Context) error {
 	mciId := c.Param("mciId")
 
 	content, err := infra.RunLatencyBenchmark(nsId, mciId, "")
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 type RestGetBenchmarkRequest struct {
@@ -147,5 +147,5 @@ func RestGetBenchmark(c echo.Context) error {
 	}
 
 	content, err := infra.CoreGetBenchmark(nsId, mciId, action, req.Host)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }

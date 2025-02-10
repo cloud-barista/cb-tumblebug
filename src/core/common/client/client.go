@@ -11,8 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package common is to include common methods for managing multi-cloud infra
-package common
+// Package client is to manage internal HTTP requests and caching
+package client
 
 import (
 	"bytes"

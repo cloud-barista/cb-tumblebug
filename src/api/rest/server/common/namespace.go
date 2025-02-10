@@ -18,22 +18,23 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 )
 
 func RestCheckNs(c echo.Context) error {
 
 	if err := Validate(c, []string{"nsId"}); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	content, err := common.CheckNs(nsId)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestDelAllNs godoc
@@ -50,7 +51,7 @@ func RestDelAllNs(c echo.Context) error {
 
 	err := common.DelAllNs()
 	content := map[string]string{"message": "All namespaces has been deleted"}
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestDelNs godoc
@@ -67,12 +68,12 @@ func RestDelAllNs(c echo.Context) error {
 func RestDelNs(c echo.Context) error {
 
 	if err := Validate(c, []string{"nsId"}); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	err := common.DelNs(c.Param("nsId"))
 	content := map[string]string{"message": "The ns " + c.Param("nsId") + " has been deleted"}
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // JSONResult's data field will be overridden by the specific type
@@ -109,11 +110,11 @@ func RestGetAllNs(c echo.Context) error {
 		content := model.IdList{}
 		var err error
 		content.IdList, err = common.ListNsId()
-		return common.EndRequestWithLog(c, err, content)
+		return clientManager.EndRequestWithLog(c, err, content)
 	} else {
 		nsList, err := common.ListNs()
 		content.Ns = nsList
-		return common.EndRequestWithLog(c, err, content)
+		return clientManager.EndRequestWithLog(c, err, content)
 	}
 }
 
@@ -132,11 +133,11 @@ func RestGetAllNs(c echo.Context) error {
 func RestGetNs(c echo.Context) error {
 
 	if err := Validate(c, []string{"nsId"}); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := common.GetNs(c.Param("nsId"))
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestPostNs godoc
@@ -155,11 +156,11 @@ func RestPostNs(c echo.Context) error {
 
 	u := &model.NsReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := common.CreateNs(u)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
@@ -180,9 +181,9 @@ func RestPutNs(c echo.Context) error {
 
 	u := &model.NsReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := common.UpdateNs(c.Param("nsId"), u)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }

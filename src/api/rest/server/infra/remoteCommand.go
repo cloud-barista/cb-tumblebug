@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
@@ -51,12 +52,12 @@ func RestPostCmdMci(c echo.Context) error {
 
 	req := &model.MciCmdReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	output, err := infra.RemoteCommandToMci(nsId, mciId, subGroupId, vmId, req)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result := model.MciSshCmdResult{}
@@ -69,7 +70,7 @@ func RestPostCmdMci(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, result)
 
-	// return common.EndRequestWithLog(c, err, result)
+	// return clientManager.EndRequestWithLog(c, err, result)
 
 }
 
@@ -103,28 +104,28 @@ func RestPostFileToMci(c echo.Context) error {
 
 	if targetPath == "" {
 		err := fmt.Errorf("target path is required")
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	// Validate the file
 	file, err := c.FormFile("file")
 	if err != nil {
 		err = fmt.Errorf("failed to read the file %v", err)
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	// File size validation
 	fileSizeLimit := int64(10 * 1024 * 1024) // (10MB limit)
 	if file.Size > fileSizeLimit {
 		err := fmt.Errorf("file too large, max size is %v", fileSizeLimit)
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	// Open the file and read it into memory
 	src, err := file.Open()
 	if err != nil {
 		err = fmt.Errorf("failed to open the file %v", err)
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	defer src.Close()
 
@@ -132,18 +133,18 @@ func RestPostFileToMci(c echo.Context) error {
 	fileBytes, err := io.ReadAll(src)
 	if err != nil {
 		err = fmt.Errorf("failed to read the file %v", err)
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	// Call the TransferFileToMci function
 	result, err := infra.TransferFileToMci(nsId, mciId, subGroupId, vmId, fileBytes, file.Filename, targetPath)
 	if err != nil {
 		err = fmt.Errorf("failed to transfer file to mci %v", err)
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	// Return the result
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestSetBastionNodes godoc
@@ -169,7 +170,7 @@ func RestSetBastionNodes(c echo.Context) error {
 	bastionVmId := c.Param("bastionVmId")
 
 	content, err := infra.SetBastionNodes(nsId, mciId, targetVmId, bastionVmId)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetBastionNodes godoc
@@ -193,7 +194,7 @@ func RestGetBastionNodes(c echo.Context) error {
 	targetVmId := c.Param("targetVmId")
 
 	content, err := infra.GetBastionNodes(nsId, mciId, targetVmId)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestRemoveBastionNodes godoc
@@ -217,5 +218,5 @@ func RestRemoveBastionNodes(c echo.Context) error {
 	bastionVmId := c.Param("bastionVmId")
 
 	content, err := infra.RemoveBastionNodes(nsId, mciId, bastionVmId)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }

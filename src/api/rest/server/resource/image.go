@@ -19,7 +19,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
@@ -65,21 +65,21 @@ func RestPostImage(c echo.Context) error {
 		log.Debug().Msg("[Registering Image with info]")
 		u := &model.TbImageInfo{}
 		if err := c.Bind(u); err != nil {
-			return common.EndRequestWithLog(c, err, nil)
+			return clientManager.EndRequestWithLog(c, err, nil)
 		}
 		content, err := resource.RegisterImageWithInfo(nsId, u, update)
-		return common.EndRequestWithLog(c, err, content)
+		return clientManager.EndRequestWithLog(c, err, content)
 	} else if action == "registerWithId" {
 		log.Debug().Msg("[Registering Image with ID]")
 		u := &model.TbImageReq{}
 		if err := c.Bind(u); err != nil {
-			return common.EndRequestWithLog(c, err, nil)
+			return clientManager.EndRequestWithLog(c, err, nil)
 		}
 		content, err := resource.RegisterImageWithId(nsId, u, update, false)
-		return common.EndRequestWithLog(c, err, content)
+		return clientManager.EndRequestWithLog(c, err, content)
 	} else {
 		err := fmt.Errorf("You must specify: action=registerWithInfo or action=registerWithId")
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 }
@@ -107,11 +107,11 @@ func RestPutImage(c echo.Context) error {
 
 	u := &model.TbImageInfo{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.UpdateImage(nsId, resourceId, *u, false)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // Request structure for RestLookupImage
@@ -136,12 +136,12 @@ func RestLookupImage(c echo.Context) error {
 
 	u := &RestLookupImageRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	log.Debug().Msg("[Lookup image]: " + u.CspImageName)
 	content, err := resource.LookupImage(u.ConnectionName, u.CspImageName)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
@@ -161,12 +161,12 @@ func RestLookupImageList(c echo.Context) error {
 
 	u := &RestLookupImageRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	log.Debug().Msg("[Lookup images]")
 	content, err := resource.LookupImageList(u.ConnectionName)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
@@ -188,7 +188,7 @@ func RestFetchImages(c echo.Context) error {
 
 	u := &RestLookupImageRequest{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	var connConfigCount, imageCount uint
@@ -197,19 +197,19 @@ func RestFetchImages(c echo.Context) error {
 	if u.ConnectionName == "" {
 		connConfigCount, imageCount, err = resource.FetchImagesForAllConnConfigs(nsId)
 		if err != nil {
-			return common.EndRequestWithLog(c, err, nil)
+			return clientManager.EndRequestWithLog(c, err, nil)
 		}
 	} else {
 		connConfigCount = 1
 		imageCount, err = resource.FetchImagesForConnConfig(u.ConnectionName, nsId)
 		if err != nil {
-			return common.EndRequestWithLog(c, err, nil)
+			return clientManager.EndRequestWithLog(c, err, nil)
 		}
 	}
 
 	content := map[string]string{
 		"message": "Fetched " + fmt.Sprint(imageCount) + " images (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetImage godoc
@@ -232,7 +232,7 @@ func RestGetImage(c echo.Context) error {
 	imageKey = strings.ReplaceAll(imageKey, "%2B", "+")
 
 	content, err := resource.GetImage(nsId, imageKey)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // Response structure for RestGetAllImage
@@ -324,5 +324,5 @@ func RestSearchImage(c echo.Context) error {
 	content, err := resource.SearchImage(nsId, u.Keywords...)
 	result := RestGetAllImageResponse{}
 	result.Image = content
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }

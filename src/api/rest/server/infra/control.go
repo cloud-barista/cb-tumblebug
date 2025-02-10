@@ -17,7 +17,7 @@ package infra
 import (
 	"fmt"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
@@ -55,14 +55,14 @@ func RestGetControlMci(c echo.Context) error {
 
 		resultString, err := infra.HandleMciAction(nsId, mciId, action, forceOption)
 		if err != nil {
-			return common.EndRequestWithLog(c, err, returnObj)
+			return clientManager.EndRequestWithLog(c, err, returnObj)
 		}
 		returnObj.Message = resultString
-		return common.EndRequestWithLog(c, err, returnObj)
+		return clientManager.EndRequestWithLog(c, err, returnObj)
 
 	} else {
 		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine, continue, withdraw")
-		return common.EndRequestWithLog(c, err, returnObj)
+		return clientManager.EndRequestWithLog(c, err, returnObj)
 	}
 }
 
@@ -101,14 +101,14 @@ func RestGetControlMciVm(c echo.Context) error {
 
 		resultString, err := infra.HandleMciVmAction(nsId, mciId, vmId, action, forceOption)
 		if err != nil {
-			return common.EndRequestWithLog(c, err, returnObj)
+			return clientManager.EndRequestWithLog(c, err, returnObj)
 		}
 		returnObj.Message = resultString
-		return common.EndRequestWithLog(c, err, returnObj)
+		return clientManager.EndRequestWithLog(c, err, returnObj)
 
 	} else {
 		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine")
-		return common.EndRequestWithLog(c, err, returnObj)
+		return clientManager.EndRequestWithLog(c, err, returnObj)
 	}
 }
 
@@ -140,7 +140,7 @@ func RestPostMciVmSnapshot(c echo.Context) error {
 
 	result, err := infra.CreateVmSnapshot(nsId, mciId, vmId, u.Name)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, model.SimpleMsg{Message: "Failed to create a snapshot"})
+		return clientManager.EndRequestWithLog(c, err, model.SimpleMsg{Message: "Failed to create a snapshot"})
 	}
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }

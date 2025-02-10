@@ -23,6 +23,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	"github.com/rs/zerolog/log"
+	// "github.com/go-resty/resty/v2"
 )
 
 // CreateOrUpdateLabel adds a new label or updates an existing label for the given resource,
@@ -304,3 +305,40 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]interface{}
 	//log.Debug().Int("numMatchedResources", len(matchedResources)).Str("labelType", labelType).Msg("Matched resources found")
 	return matchedResources, nil
 }
+
+// func UpdateCSPResourceLabel(cspType string, resourceKey string, labels map[string]string) error {
+
+// 	driverName := RuntimeCloudInfo.CSPs[providerName].Driver
+
+// 	client := resty.New()
+// 	url := model.SpiderRestUrl + "/driver"
+// 	method := "POST"
+// 	var callResult model.CloudDriverInfo
+// 	requestBody := model.CloudDriverInfo{ProviderName: strings.ToUpper(providerName), DriverName: driverName, DriverLibFileName: driverName}
+
+// 	err := ExecuteHttpRequest(
+// 		client,
+// 		method,
+// 		url,
+// 		nil,
+// 		SetUseBody(requestBody),
+// 		&requestBody,
+// 		&callResult,
+// 		MediumDuration,
+// 	)
+
+// 	if err != nil {
+// 		log.Error().Err(err).Msg("")
+// 		return err
+// 	}
+
+// 	for regionName, _ := range RuntimeCloudInfo.CSPs[providerName].Regions {
+// 		err := RegisterRegionZone(providerName, regionName)
+// 		if err != nil {
+// 			log.Error().Err(err).Msg("")
+// 			return err
+// 		}
+// 	}
+
+// 	return nil
+// }

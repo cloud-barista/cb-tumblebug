@@ -15,7 +15,7 @@ limitations under the License.
 package resource
 
 import (
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/labstack/echo/v4"
@@ -46,11 +46,11 @@ func RestPostFirewallRules(c echo.Context) error {
 
 	u := &TbFirewallRulesWrapper{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.CreateFirewallRules(nsId, securityGroupId, *&u.FirewallRules, false)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 /* function RestPutFirewallRules not yet implemented
@@ -119,9 +119,9 @@ func RestDelFirewallRules(c echo.Context) error {
 
 	u := &TbFirewallRulesWrapper{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.DeleteFirewallRules(nsId, securityGroupId, *&u.FirewallRules)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }

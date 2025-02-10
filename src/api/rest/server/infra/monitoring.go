@@ -15,7 +15,7 @@ limitations under the License.
 package infra
 
 import (
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
@@ -42,11 +42,11 @@ func RestPostInstallMonitorAgentToMci(c echo.Context) error {
 
 	req := &model.MciCmdReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	// mciTmpSystemLabel := model.DefaultSystemLabel
 	content, err := infra.InstallMonitorAgentToMci(nsId, mciId, model.StrMCI, req)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestPutMonitorAgentStatusInstalled godoc
@@ -72,11 +72,11 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 	// mciTmpSystemLabel := model.DefaultSystemLabel
 	err := infra.SetMonitoringAgentStatusInstalled(nsId, mciId, vmId)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.ListVmInfo(nsId, mciId, vmId)
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestGetMonitorData godoc
@@ -101,9 +101,9 @@ func RestGetMonitorData(c echo.Context) error {
 
 	req := &model.MciCmdReq{}
 	if err := c.Bind(req); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := infra.GetMonitoringData(nsId, mciId, metric)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }

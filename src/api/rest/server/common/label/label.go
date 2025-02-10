@@ -19,7 +19,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 )
@@ -46,7 +46,7 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 	// Parse the incoming request body to get the labels
 	var labelReq model.Label
 	if err := c.Bind(&labelReq); err != nil {
-		return common.EndRequestWithLog(c, fmt.Errorf("Invalid request body"), nil)
+		return clientManager.EndRequestWithLog(c, fmt.Errorf("Invalid request body"), nil)
 	}
 
 	// Get the resource key
@@ -55,10 +55,10 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 	// Create or update the label in the KV store
 	err := label.CreateOrUpdateLabel(labelType, uid, resourceKey, labelReq.Labels)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	return common.EndRequestWithLog(c, nil, map[string]string{"message": "Label created or updated successfully"})
+	return clientManager.EndRequestWithLog(c, nil, map[string]string{"message": "Label created or updated successfully"})
 }
 
 // RestRemoveLabel godoc
@@ -84,10 +84,10 @@ func RestRemoveLabel(c echo.Context) error {
 	// Remove the label from the KV store
 	err := label.RemoveLabel(labelType, uid, key)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	return common.EndRequestWithLog(c, nil, map[string]string{"message": "Label removed successfully"})
+	return clientManager.EndRequestWithLog(c, nil, map[string]string{"message": "Label removed successfully"})
 }
 
 // RestGetLabels godoc
@@ -111,10 +111,10 @@ func RestGetLabels(c echo.Context) error {
 	// Get the labels from the KV store
 	labelInfo, err := label.GetLabels(labelType, uid)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	return common.EndRequestWithLog(c, nil, labelInfo)
+	return clientManager.EndRequestWithLog(c, nil, labelInfo)
 }
 
 // ResourcesResponse is a struct to wrap the results of a label selector query
@@ -149,7 +149,7 @@ func RestGetResourcesByLabelSelector(c echo.Context) error {
 	// Get resources based on the label selector
 	resources, err := label.GetResourcesByLabelSelector(labelType, labelSelector)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	// Wrap the results in a JSON object
@@ -157,7 +157,7 @@ func RestGetResourcesByLabelSelector(c echo.Context) error {
 		Results: resources,
 	}
 
-	return common.EndRequestWithLog(c, nil, response)
+	return clientManager.EndRequestWithLog(c, nil, response)
 }
 
 // RestGetSystemLabelInfo godoc
@@ -182,5 +182,5 @@ func RestGetSystemLabelInfo(c echo.Context) error {
 		LabelTypes:   labelTypes,
 	}
 
-	return common.EndRequestWithLog(c, nil, systemLabelInfo)
+	return clientManager.EndRequestWithLog(c, nil, systemLabelInfo)
 }

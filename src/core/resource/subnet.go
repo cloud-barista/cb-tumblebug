@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -345,15 +346,15 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 		}
 	}()
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(spReqt),
+		clientManager.SetUseBody(spReqt),
 		&spReqt,
 		&spResp,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -532,18 +533,18 @@ func GetSubnet(nsId string, vNetId string, subnetId string) (model.TbSubnetInfo,
 	queryParams := "?ConnectionName=" + subnetInfo.ConnectionName
 	url += queryParams
 
-	spReqt := common.NoBody
+	spReqt := clientManager.NoBody
 	var spResp spiderSubnetInfo
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(spReqt),
+		clientManager.SetUseBody(spReqt),
 		&spReqt,
 		&spResp,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -732,15 +733,15 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 	client := resty.New()
 	method := "DELETE"
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(spReqt),
+		clientManager.SetUseBody(spReqt),
 		&spReqt,
 		&spResp,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -900,18 +901,18 @@ func RefineSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 	queryParams := "?ConnectionName=" + subnetInfo.ConnectionName
 	url += queryParams
 
-	spReqt := common.NoBody
+	spReqt := clientManager.NoBody
 	var spResp spiderSubnetInfo
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(spReqt),
+		clientManager.SetUseBody(spReqt),
 		&spReqt,
 		&spResp,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	// if err != nil {
@@ -1124,15 +1125,15 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubne
 		}
 	}()
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(spReqt),
+		clientManager.SetUseBody(spReqt),
 		&spReqt,
 		&spResp,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -1334,15 +1335,15 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 	client := resty.New()
 	method := "DELETE"
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(spReqt),
+		clientManager.SetUseBody(spReqt),
 		&spReqt,
 		&spResp,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {

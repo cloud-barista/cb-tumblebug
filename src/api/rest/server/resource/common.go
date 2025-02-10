@@ -20,7 +20,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 )
@@ -44,7 +44,7 @@ func RestDelAllResources(c echo.Context) error {
 	subString := c.QueryParam("match")
 
 	content, err := resource.DelAllResources(nsId, resourceType, subString, forceFlag)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestDelResource is a common function to handle 'DelResource' REST API requests.
@@ -64,7 +64,7 @@ func RestDelResource(c echo.Context) error {
 
 	err := resource.DelResource(nsId, resourceType, resourceId, forceFlag)
 	content := map[string]string{"message": "The " + resourceType + " " + resourceId + " has been deleted"}
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // Todo: need to reimplment the following invalid function
@@ -92,7 +92,7 @@ func RestDelResource(c echo.Context) error {
 
 // 	err := model.DelChildResource(nsId, childResourceType, parentResourceId, childResourceId, forceFlag)
 // 	content := map[string]string{"message": "The " + childResourceType + " " + childResourceId + " has been deleted"}
-// 	return common.EndRequestWithLog(c, err, content)
+// 	return clientManager.EndRequestWithLog(c, err, content)
 // }
 
 // RestGetAllResources is a common function to handle 'GetAllResources' REST API requests.
@@ -112,13 +112,13 @@ func RestGetAllResources(c echo.Context) error {
 		content := model.IdList{}
 		var err error
 		content.IdList, err = resource.ListResourceId(nsId, resourceType)
-		return common.EndRequestWithLog(c, err, content)
+		return clientManager.EndRequestWithLog(c, err, content)
 	} else {
 
 		resourceList, err := resource.ListResource(nsId, resourceType, filterKey, filterVal)
 		if err != nil {
 			err := fmt.Errorf("Failed to list " + resourceType + "s; " + err.Error())
-			return common.EndRequestWithLog(c, err, nil)
+			return clientManager.EndRequestWithLog(c, err, nil)
 		}
 
 		switch resourceType {
@@ -128,52 +128,52 @@ func RestGetAllResources(c echo.Context) error {
 			}
 
 			content.Image = resourceList.([]model.TbImageInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, err, content)
+			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrCustomImage:
 			var content struct {
 				Image []model.TbCustomImageInfo `json:"customImage"`
 			}
 
 			content.Image = resourceList.([]model.TbCustomImageInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, err, content)
+			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrSecurityGroup:
 			var content struct {
 				SecurityGroup []model.TbSecurityGroupInfo `json:"securityGroup"`
 			}
 
 			content.SecurityGroup = resourceList.([]model.TbSecurityGroupInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, err, content)
+			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrSpec:
 			var content struct {
 				Spec []model.TbSpecInfo `json:"spec"`
 			}
 
 			content.Spec = resourceList.([]model.TbSpecInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, err, content)
+			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrSSHKey:
 			var content struct {
 				SshKey []model.TbSshKeyInfo `json:"sshKey"`
 			}
 
 			content.SshKey = resourceList.([]model.TbSshKeyInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, err, content)
+			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrVNet:
 			var content struct {
 				VNet []model.TbVNetInfo `json:"vNet"`
 			}
 
 			content.VNet = resourceList.([]model.TbVNetInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, err, content)
+			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrDataDisk:
 			var content struct {
 				DataDisk []model.TbDataDiskInfo `json:"dataDisk"`
 			}
 
 			content.DataDisk = resourceList.([]model.TbDataDiskInfo) // type assertion (interface{} -> array)
-			return common.EndRequestWithLog(c, err, content)
+			return clientManager.EndRequestWithLog(c, err, content)
 		default:
 			err := fmt.Errorf("Not accepatble resourceType: " + resourceType)
-			return common.EndRequestWithLog(c, err, nil)
+			return clientManager.EndRequestWithLog(c, err, nil)
 
 		}
 	}
@@ -196,9 +196,9 @@ func RestGetResource(c echo.Context) error {
 	result, err := resource.GetResource(nsId, resourceType, resourceId)
 	if err != nil {
 		errorMessage := fmt.Errorf("Failed to find " + resourceType + " " + resourceId)
-		return common.EndRequestWithLog(c, errorMessage, nil)
+		return clientManager.EndRequestWithLog(c, errorMessage, nil)
 	}
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestCheckResource godoc
@@ -230,7 +230,7 @@ func RestCheckResource(c echo.Context) error {
 	content := JsonTemplate{}
 	content.Exists = exists
 
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestTestAddObjectAssociation is a REST API call handling function
@@ -247,7 +247,7 @@ func RestTestAddObjectAssociation(c echo.Context) error {
 
 	content, err := resource.UpdateAssociatedObjectList(nsId, resourceType, resourceId, model.StrAdd, "/test/vm/key")
 
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestTestDeleteObjectAssociation is a REST API call handling function
@@ -263,7 +263,7 @@ func RestTestDeleteObjectAssociation(c echo.Context) error {
 	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
 	content, err := resource.UpdateAssociatedObjectList(nsId, resourceType, resourceId, model.StrDelete, "/test/vm/key")
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestTestGetAssociatedObjectCount is a REST API call handling function
@@ -281,7 +281,7 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 	associatedObjectCount, err := resource.GetAssociatedObjectCount(nsId, resourceType, resourceId)
 	content := map[string]int{"associatedObjectCount": associatedObjectCount}
 
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestLoadAssets godoc
@@ -297,7 +297,7 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 func RestLoadAssets(c echo.Context) error {
 
 	content, err := resource.LoadAssets()
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestCreateSharedResource godoc
@@ -323,7 +323,7 @@ func RestCreateSharedResource(c echo.Context) error {
 
 	err := resource.CreateSharedResource(nsId, resType, connectionName)
 	content := map[string]string{"message": "Done"}
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestDelAllSharedResources godoc
@@ -342,7 +342,7 @@ func RestDelAllSharedResources(c echo.Context) error {
 	nsId := c.Param("nsId")
 
 	content, err := resource.DelAllSharedResources(nsId)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 /*

@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -1029,11 +1030,11 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 
 	// Log the prepared MCI request and update the progress
 	common.PrintJsonPretty(mciReq)
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{
 		Title: "Prepared all resources for provisioning MCI: " + mciReq.Name,
 		Info:  mciReq, Time: time.Now(),
 	})
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{
 		Title: "Start instance provisioning", Time: time.Now(),
 	})
 
@@ -1164,7 +1165,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 		}
 	}
 
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
 
 	vmReq.VNetId = resourceName
 	_, err = resource.GetResource(nsId, model.StrVNet, vmReq.VNetId)
@@ -1174,7 +1175,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 			log.Error().Err(err).Msg("Failed to get the vNet")
 			return &model.TbVmReq{}, err
 		}
-		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
+		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
 
 		// Check if the default vNet exists
 		_, err := resource.GetResource(nsId, model.StrVNet, vmReq.ConnectionName)
@@ -1194,7 +1195,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	}
 	vmReq.SubnetId = resourceName
 
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
 	vmReq.SshKeyId = resourceName
 	_, err = resource.GetResource(nsId, model.StrSSHKey, vmReq.SshKeyId)
 	if err != nil {
@@ -1203,7 +1204,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 			log.Error().Err(err).Msg("Failed to get the SSHKey")
 			return &model.TbVmReq{}, err
 		}
-		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
+		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
 
 		// Check if the default SSHKey exists
 		_, err := resource.GetResource(nsId, model.StrSSHKey, vmReq.ConnectionName)
@@ -1222,7 +1223,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 		log.Info().Msg("Found and utilize default SSHKey: " + vmReq.VNetId)
 	}
 
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
 	securityGroup := resourceName
 	vmReq.SecurityGroupIds = append(vmReq.SecurityGroupIds, securityGroup)
 	_, err = resource.GetResource(nsId, model.StrSecurityGroup, securityGroup)
@@ -1232,7 +1233,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 			log.Error().Err(err).Msg("Failed to get the securityGroup")
 			return &model.TbVmReq{}, err
 		}
-		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
+		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
 
 		// Check if the default security group exists
 		_, err := resource.GetResource(nsId, model.StrSecurityGroup, vmReq.ConnectionName)
@@ -1263,7 +1264,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	vmReq.VmUserPassword = k.VmUserPassword
 
 	common.PrintJsonPretty(vmReq)
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Prepared resources for VM:" + vmReq.Name, Info: vmReq, Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared resources for VM:" + vmReq.Name, Info: vmReq, Time: time.Now()})
 
 	return vmReq, nil
 }
@@ -1516,15 +1517,15 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 		url = model.SpiderRestUrl + "/regvm"
 	}
 
-	err = common.ExecuteHttpRequest(
+	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
-		common.SetUseBody(requestBody),
+		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		common.MediumDuration,
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -1935,7 +1936,7 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8s
 	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
 	resourceName := nsId + model.StrSharedResourceName + k8sReq.ConnectionName
 
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
 
 	k8sReq.VNetId = resourceName
 	_, err = resource.GetResource(nsId, model.StrVNet, k8sReq.VNetId)
@@ -1946,7 +1947,7 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8s
 			return emptyK8sReq, err
 		}
 
-		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
+		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
 
 		err2 := resource.CreateSharedResource(nsId, model.StrVNet, k8sReq.ConnectionName)
 		if err2 != nil {
@@ -1961,7 +1962,7 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8s
 	k8sReq.SubnetIds = append(k8sReq.SubnetIds, resourceName)
 	k8sReq.SubnetIds = append(k8sReq.SubnetIds, resourceName+"-01")
 
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
 
 	k8sngReq.SshKeyId = resourceName
 	_, err = resource.GetResource(nsId, model.StrSSHKey, k8sngReq.SshKeyId)
@@ -1972,7 +1973,7 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8s
 			return emptyK8sReq, err
 		}
 
-		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
+		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
 
 		err2 := resource.CreateSharedResource(nsId, model.StrSSHKey, k8sReq.ConnectionName)
 		if err2 != nil {
@@ -1985,7 +1986,7 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8s
 		log.Info().Msg("Found and utilize default SSHKey: " + k8sngReq.SshKeyId)
 	}
 
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
 
 	securityGroup := resourceName
 	k8sReq.SecurityGroupIds = append(k8sReq.SecurityGroupIds, securityGroup)
@@ -1997,7 +1998,7 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8s
 			return emptyK8sReq, err
 		}
 
-		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
+		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
 
 		err2 := resource.CreateSharedResource(nsId, model.StrSecurityGroup, k8sReq.ConnectionName)
 		if err2 != nil {
@@ -2046,7 +2047,7 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8s
 	k8sReq.Label = dReq.Label
 
 	common.PrintJsonPretty(k8sReq)
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Prepared resources for K8sCluster:" + k8sReq.Name, Info: k8sReq, Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared resources for K8sCluster:" + k8sReq.Name, Info: k8sReq, Time: time.Now()})
 
 	return k8sReq, nil
 }
@@ -2101,8 +2102,8 @@ func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.TbK8sCluster
 	*/
 
 	common.PrintJsonPretty(k8sReq)
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Prepared all resources for provisioning K8sCluster:" + k8sReq.Name, Info: k8sReq, Time: time.Now()})
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Start provisioning", Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared all resources for provisioning K8sCluster:" + k8sReq.Name, Info: k8sReq, Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Start provisioning", Time: time.Now()})
 
 	// Run create K8sCluster with the generated K8sCluster request (option != register)
 	option := "create"
@@ -2190,7 +2191,7 @@ func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo 
 	k8sNgReq.Label = dReq.Label
 
 	common.PrintJsonPretty(k8sNgReq)
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Prepared resources for K8sNodeGroup:" + k8sNgReq.Name, Info: k8sNgReq, Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared resources for K8sNodeGroup:" + k8sNgReq.Name, Info: k8sNgReq, Time: time.Now()})
 
 	return k8sNgReq, nil
 }
@@ -2245,8 +2246,8 @@ func CreateK8sNodeGroupDynamic(reqID string, nsId string, k8sClusterId string, d
 	}
 
 	common.PrintJsonPretty(k8sNgReq)
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Prepared all resources for provisioning K8sNodeGroup:" + k8sNgReq.Name, Info: k8sNgReq, Time: time.Now()})
-	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Start provisioning", Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared all resources for provisioning K8sNodeGroup:" + k8sNgReq.Name, Info: k8sNgReq, Time: time.Now()})
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Start provisioning", Time: time.Now()})
 
 	return resource.AddK8sNodeGroup(nsId, k8sClusterId, k8sNgReq)
 }

@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -47,11 +47,11 @@ func RestPostDataDisk(c echo.Context) error {
 
 	u := &model.TbDataDiskReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.CreateDataDisk(nsId, u, optionFlag)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestPutDataDisk godoc
@@ -75,11 +75,11 @@ func RestPutDataDisk(c echo.Context) error {
 
 	u := &model.TbDataDiskUpsizeReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.UpsizeDataDisk(nsId, dataDiskId, u)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetDataDisk godoc
@@ -189,13 +189,13 @@ func RestPutVmDataDisk(c echo.Context) error {
 	if forceStr != "" {
 		forceBool, err = strconv.ParseBool(forceStr)
 		if err != nil {
-			return common.EndRequestWithLog(c, fmt.Errorf("Invalid force value: %s", forceStr), nil)
+			return clientManager.EndRequestWithLog(c, fmt.Errorf("Invalid force value: %s", forceStr), nil)
 		}
 	}
 
 	u := &model.TbAttachDetachDataDiskReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	switch option {
@@ -203,11 +203,11 @@ func RestPutVmDataDisk(c echo.Context) error {
 		fallthrough
 	case model.DetachDataDisk:
 		result, err := infra.AttachDetachDataDisk(nsId, mciId, vmId, option, u.DataDiskId, forceBool)
-		return common.EndRequestWithLog(c, err, result)
+		return clientManager.EndRequestWithLog(c, err, result)
 
 	default:
 		err := fmt.Errorf("Supported options: %s, %s, %s", model.AttachDataDisk, model.DetachDataDisk, model.AvailableDataDisk)
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 }
 
@@ -233,15 +233,15 @@ func RestPostVmDataDisk(c echo.Context) error {
 
 	u := &model.TbDataDiskVmReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result, err := infra.ProvisionDataDisk(nsId, mciId, vmId, u)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	return common.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, err, result)
 }
 
 // RestGetVmDataDisk godoc
@@ -267,7 +267,7 @@ func RestGetVmDataDisk(c echo.Context) error {
 
 	result, err := infra.GetAvailableDataDisks(nsId, mciId, vmId, optionFlag)
 	if err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	var content interface{}
@@ -281,5 +281,5 @@ func RestGetVmDataDisk(c echo.Context) error {
 		}
 	}
 
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }

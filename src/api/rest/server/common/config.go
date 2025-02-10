@@ -28,6 +28,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 )
 
@@ -47,17 +48,17 @@ func RestInitConfig(c echo.Context) error {
 
 	if err := Validate(c, []string{"configId"}); err != nil {
 		log.Error().Err(err).Msg("")
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	err := common.InitConfig(c.Param("configId"))
 	if err != nil {
 		err := fmt.Errorf("Failed to init the config " + c.Param("configId"))
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	} else {
 		// return SendMessage(c, http.StatusOK, "The config "+c.Param("configId")+" has been initialized.")
 		content := map[string]string{"message": "The config " + c.Param("configId") + " has been initialized."}
-		return common.EndRequestWithLog(c, err, content)
+		return clientManager.EndRequestWithLog(c, err, content)
 	}
 }
 
@@ -83,9 +84,9 @@ func RestGetConfig(c echo.Context) error {
 	content, err := common.GetConfig(c.Param("configId"))
 	if err != nil {
 		err := fmt.Errorf("Failed to find the config " + c.Param("configId"))
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	} else {
-		return common.EndRequestWithLog(c, err, content)
+		return clientManager.EndRequestWithLog(c, err, content)
 	}
 }
 
@@ -112,7 +113,7 @@ func RestGetAllConfig(c echo.Context) error {
 
 	configList, err := common.ListConfig()
 	content.Config = configList
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestPostConfig godoc
@@ -131,12 +132,12 @@ func RestPostConfig(c echo.Context) error {
 
 	u := &model.ConfigReq{}
 	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, err, nil)
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	log.Debug().Msg("[Creating or Updating Config]")
 	content, err := common.UpdateConfig(u)
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
@@ -155,7 +156,7 @@ func RestInitAllConfig(c echo.Context) error {
 	err := common.InitAllConfig()
 	content := map[string]string{
 		"message": "All configs has been initialized"}
-	return common.EndRequestWithLog(c, err, content)
+	return clientManager.EndRequestWithLog(c, err, content)
 }
 
 // RestGetRequest godoc
@@ -173,7 +174,7 @@ func RestInitAllConfig(c echo.Context) error {
 func RestGetRequest(c echo.Context) error {
 	reqId := c.Param("reqId")
 
-	if details, ok := common.RequestMap.Load(reqId); ok {
+	if details, ok := clientManager.RequestMap.Load(reqId); ok {
 		return Send(c, http.StatusOK, details)
 	}
 
@@ -206,11 +207,11 @@ func RestGetAllRequests(c echo.Context) error {
 		timeLimit = time.Now().Add(-time.Duration(minutes) * time.Minute)
 	}
 
-	var allRequests []common.RequestDetails
+	var allRequests []clientManager.RequestDetails
 
 	// Filtering the requests
-	common.RequestMap.Range(func(key, value interface{}) bool {
-		if details, ok := value.(common.RequestDetails); ok {
+	clientManager.RequestMap.Range(func(key, value interface{}) bool {
+		if details, ok := value.(clientManager.RequestDetails); ok {
 			if (statusFilter == "" || strings.ToLower(details.Status) == statusFilter) &&
 				(methodFilter == "" || strings.ToLower(details.RequestInfo.Method) == methodFilter) &&
 				(urlFilter == "" || strings.Contains(strings.ToLower(details.RequestInfo.URL), urlFilter)) &&
@@ -239,7 +240,7 @@ func RestGetAllRequests(c echo.Context) error {
 		}
 	}
 
-	return Send(c, http.StatusOK, map[string][]common.RequestDetails{"requests": allRequests})
+	return Send(c, http.StatusOK, map[string][]clientManager.RequestDetails{"requests": allRequests})
 }
 
 // RestDeleteRequest godoc
@@ -255,8 +256,8 @@ func RestGetAllRequests(c echo.Context) error {
 func RestDeleteRequest(c echo.Context) error {
 	reqId := c.Param("reqId")
 
-	if _, ok := common.RequestMap.Load(reqId); ok {
-		common.RequestMap.Delete(reqId)
+	if _, ok := clientManager.RequestMap.Load(reqId); ok {
+		clientManager.RequestMap.Delete(reqId)
 		return SendMessage(c, http.StatusOK, "Request deleted successfully")
 	}
 
@@ -273,8 +274,8 @@ func RestDeleteRequest(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Router /requests [delete]
 func RestDeleteAllRequests(c echo.Context) error {
-	common.RequestMap.Range(func(key, value interface{}) bool {
-		common.RequestMap.Delete(key)
+	clientManager.RequestMap.Range(func(key, value interface{}) bool {
+		clientManager.RequestMap.Delete(key)
 		return true
 	})
 

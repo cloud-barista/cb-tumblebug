@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -439,15 +440,15 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 			requestBody := model.SpiderConnectionName{}
 			requestBody.ConnectionName = temp.ConnectionName
 
-			err = common.ExecuteHttpRequest(
+			err = clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,
 				nil,
-				common.SetUseBody(requestBody),
+				clientManager.SetUseBody(requestBody),
 				&requestBody,
 				&callResult,
-				common.MediumDuration,
+				clientManager.MediumDuration,
 			)
 			if err != nil {
 				log.Error().Err(err).Msg("")
