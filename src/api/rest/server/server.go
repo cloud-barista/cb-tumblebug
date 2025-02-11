@@ -26,6 +26,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/rs/zerolog/log"
 
@@ -142,7 +143,7 @@ func RunServer() {
 
 	allowedOrigins := os.Getenv("TB_ALLOW_ORIGINS")
 	if allowedOrigins == "" {
-		log.Fatal().Msgf("TB_ALLOW_ORIGINS env variable for CORS is " + allowedOrigins +
+		log.Fatal().Msg("TB_ALLOW_ORIGINS env variable for CORS is " + allowedOrigins +
 			". Please provide a proper value and source setup.env again. EXITING...")
 		// allowedOrigins = "*"
 	}
@@ -176,9 +177,13 @@ func RunServer() {
 				},
 				Validator: func(username, password string, c echo.Context) (bool, error) {
 					// Be careful to use constant time comparison to prevent timing attacks
-					if subtle.ConstantTimeCompare([]byte(username), []byte(apiUser)) == 1 &&
-						subtle.ConstantTimeCompare([]byte(password), []byte(apiPass)) == 1 {
-						return true, nil
+					if subtle.ConstantTimeCompare([]byte(username), []byte(apiUser)) == 1 {
+						// bcrypt verification
+						// log.Debug().Msgf("bcrypt.CompareHashAndPassword(%s, %s)", apiPass, password)
+						err := bcrypt.CompareHashAndPassword([]byte(apiPass), []byte(password))
+						if err == nil {
+							return true, nil
+						}
 					}
 					return false, nil
 				},

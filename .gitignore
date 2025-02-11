@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+cmd/bcrypt/bcrypt
 
 # Keys
 *.pem
