@@ -45,7 +45,7 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 				// Ensure the loaded value is of the correct type
 				details, ok := v.(clientManager.RequestDetails)
 				if !ok {
-					log.Error().Msg("Loaded value from common.RequestMap is not of type common.RequestDetails")
+					log.Error().Msg("Loaded value from common.RequestMap is not of type clientManager.RequestDetails")
 					return
 				}
 				//log.Trace().Msg("OK, common.RequestMap.Load(reqID)")

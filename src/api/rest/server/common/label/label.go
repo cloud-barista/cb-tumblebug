@@ -61,6 +61,36 @@ func RestCreateOrUpdateLabel(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, nil, map[string]string{"message": "Label created or updated successfully"})
 }
 
+// RestMergeCSPResourceLabel godoc
+// @ID MergeCSPResourceLabel
+// @Summary Fetch the labels in the CSP and merge them with the existing labels
+// @Description Fetch the labels in the CSP and merge them with the existing labels
+// @Tags [Infra Resource] Common Utility
+// @Accept  json
+// @Produce  json
+// @Param labelType path string true "Label Type" Enums(ns, mci, subGroup, vm, k8s, vNet, subnet, vpn, securityGroup, sshKey, dataDisk, sqlDb, objectStorage)
+// @Param uid path string true "Resource uid"
+// @Success 200 {object} model.SimpleMsg "Merged CSP labels successfully"
+// @Failure 400 {object} model.SimpleMsg "Invalid request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /mergeCSPLabel/{labelType}/{uid} [put]
+func RestMergeCSPResourceLabel(c echo.Context) error {
+
+	labelType := c.Param("labelType")
+	uid := c.Param("uid")
+
+	// Get the resource key
+	resourceKey := fmt.Sprintf("/%s/%s", labelType, uid)
+
+	// Create or update the label in the KV store
+	err := label.MergeCSPResourceLabel(labelType, uid, resourceKey)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, map[string]string{"message": "Merged CSP labels successfully"})
+}
+
 // RestRemoveLabel godoc
 // @ID RemoveLabel
 // @Summary Remove a label from a resource
