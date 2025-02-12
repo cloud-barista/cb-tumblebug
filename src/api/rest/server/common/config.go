@@ -167,7 +167,7 @@ func RestInitAllConfig(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param reqId path string true "Request ID acquired from X-Request-ID header"
-// @Success 200 {object} common.RequestDetails
+// @Success 200 {object} clientManager.RequestDetails
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /request/{reqId} [get]
@@ -193,7 +193,7 @@ func RestGetRequest(c echo.Context) error {
 // @Param url query string false "Filter by request URL"
 // @Param time query string false "Filter by time in minutes from now (to get recent requests)"
 // @Param savefile query string false "Option to save the results to a file (set 'true' to activate)"
-// @Success 200 {object} map[string][]common.RequestDetails
+// @Success 200 {object} map[string][]clientManager.RequestDetails
 // @Router /requests [get]
 func RestGetAllRequests(c echo.Context) error {
 	// Filter parameters

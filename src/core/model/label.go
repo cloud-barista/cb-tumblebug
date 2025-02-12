@@ -117,3 +117,22 @@ func GetLabelTypes() []string {
 		StrNamespace,
 	}
 }
+
+// CB-Spider models
+
+type SpiderTagAddRequest struct {
+	ConnectionName string `json:"ConnectionName" validate:"required" example:"aws-connection"`
+	ReqInfo        struct {
+		ResourceType string   `json:"ResourceType" validate:"required" example:"VPC"`
+		ResourceName string   `json:"ResourceName" validate:"required" example:"vpc-01"`
+		Tag          KeyValue `json:"Tag" validate:"required"`
+	} `json:"ReqInfo" validate:"required"`
+}
+
+type SpiderTagRemoveRequest struct {
+	ConnectionName string `json:"ConnectionName" validate:"required" example:"aws-connection"`
+	ReqInfo        struct {
+		ResourceType string `json:"ResourceType" validate:"required" example:"VPC"`
+		ResourceName string `json:"ResourceName" validate:"required" example:"vpc-01"`
+	} `json:"ReqInfo" validate:"required"`
+}

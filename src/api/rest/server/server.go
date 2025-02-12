@@ -296,6 +296,7 @@ func RunServer() {
 
 	// Resource Label
 	e.PUT("/tumblebug/label/:labelType/:uid", rest_label.RestCreateOrUpdateLabel)
+	e.PUT("/tumblebug/mergeCSPLabel/:labelType/:uid", rest_label.RestMergeCSPResourceLabel)
 	e.DELETE("/tumblebug/label/:labelType/:uid/:key", rest_label.RestRemoveLabel)
 	e.GET("/tumblebug/label/:labelType/:uid", rest_label.RestGetLabels)
 	e.GET("/tumblebug/resources/:labelType", rest_label.RestGetResourcesByLabelSelector)

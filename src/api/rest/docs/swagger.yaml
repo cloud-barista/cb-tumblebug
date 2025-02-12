@@ -1137,6 +1137,59 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: deploymentPlan
+  /mergeCSPLabel/{labelType}/{uid}:
+    put:
+      tags:
+      - "[Infra Resource] Common Utility"
+      summary: Fetch the labels in the CSP and merge them with the existing labels
+      description: Fetch the labels in the CSP and merge them with the existing labels
+      operationId: MergeCSPResourceLabel
+      parameters:
+      - name: labelType
+        in: path
+        description: Label Type
+        required: true
+        schema:
+          type: string
+          enum:
+          - ns
+          - mci
+          - subGroup
+          - vm
+          - k8s
+          - vNet
+          - subnet
+          - vpn
+          - securityGroup
+          - sshKey
+          - dataDisk
+          - sqlDb
+          - objectStorage
+      - name: uid
+        in: path
+        description: Resource uid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Merged CSP labels successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns:
     get:
       tags:
@@ -7986,7 +8039,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/common.RequestDetails'
+                $ref: '#/components/schemas/client.RequestDetails'
         "404":
           description: Not Found
           content:
@@ -8062,7 +8115,7 @@ paths:
                 additionalProperties:
                   type: array
                   items:
-                    $ref: '#/components/schemas/common.RequestDetails'
+                    $ref: '#/components/schemas/client.RequestDetails'
     delete:
       tags:
       - "[Admin] API Request Management"
@@ -8363,15 +8416,7 @@ components:
           type: string
         token:
           type: string
-    common.JSONResult:
-      type: object
-    common.NumberRequest:
-      type: object
-      properties:
-        number:
-          type: integer
-          example: 100
-    common.RequestDetails:
+    client.RequestDetails:
       type: object
       properties:
         endTime:
@@ -8385,7 +8430,7 @@ components:
           type: object
           description: Extracted information about the request.
           allOf:
-          - $ref: '#/components/schemas/common.RequestInfo'
+          - $ref: '#/components/schemas/client.RequestInfo'
         responseData:
           type: object
           description: The data sent back in response to the request.
@@ -8396,7 +8441,7 @@ components:
           type: string
           description: "The current status of the request (e.g., \"Handling\", \"\
             Error\", \"Success\")."
-    common.RequestInfo:
+    client.RequestInfo:
       type: object
       properties:
         body:
@@ -8414,6 +8459,14 @@ components:
         url:
           type: string
           description: The URL the request is made to.
+    common.JSONResult:
+      type: object
+    common.NumberRequest:
+      type: object
+      properties:
+        number:
+          type: integer
+          example: 100
     common.RestGetAllConfigResponse:
       type: object
       properties:

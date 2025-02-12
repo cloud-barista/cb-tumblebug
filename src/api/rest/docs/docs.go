@@ -1525,6 +1525,73 @@ const docTemplate = `{
                 }
             }
         },
+        "/mergeCSPLabel/{labelType}/{uid}": {
+            "put": {
+                "description": "Fetch the labels in the CSP and merge them with the existing labels",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Common Utility"
+                ],
+                "summary": "Fetch the labels in the CSP and merge them with the existing labels",
+                "operationId": "MergeCSPResourceLabel",
+                "parameters": [
+                    {
+                        "enum": [
+                            "ns",
+                            "mci",
+                            "subGroup",
+                            "vm",
+                            "k8s",
+                            "vNet",
+                            "subnet",
+                            "vpn",
+                            "securityGroup",
+                            "sshKey",
+                            "dataDisk",
+                            "sqlDb",
+                            "objectStorage"
+                        ],
+                        "type": "string",
+                        "description": "Label Type",
+                        "name": "labelType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource uid",
+                        "name": "uid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Merged CSP labels successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns": {
             "get": {
                 "description": "List all namespaces or namespaces' ID",
@@ -10443,7 +10510,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.RequestDetails"
+                            "$ref": "#/definitions/client.RequestDetails"
                         }
                     },
                     "404": {
@@ -10546,7 +10613,7 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#/definitions/common.RequestDetails"
+                                    "$ref": "#/definitions/client.RequestDetails"
                                 }
                             }
                         }
@@ -10954,19 +11021,7 @@ const docTemplate = `{
                 }
             }
         },
-        "common.JSONResult": {
-            "type": "object"
-        },
-        "common.NumberRequest": {
-            "type": "object",
-            "properties": {
-                "number": {
-                    "type": "integer",
-                    "example": 100
-                }
-            }
-        },
-        "common.RequestDetails": {
+        "client.RequestDetails": {
             "type": "object",
             "properties": {
                 "endTime": {
@@ -10981,7 +11036,7 @@ const docTemplate = `{
                     "description": "Extracted information about the request.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/common.RequestInfo"
+                            "$ref": "#/definitions/client.RequestInfo"
                         }
                     ]
                 },
@@ -10998,7 +11053,7 @@ const docTemplate = `{
                 }
             }
         },
-        "common.RequestInfo": {
+        "client.RequestInfo": {
             "type": "object",
             "properties": {
                 "body": {
@@ -11018,6 +11073,18 @@ const docTemplate = `{
                 "url": {
                     "description": "The URL the request is made to.",
                     "type": "string"
+                }
+            }
+        },
+        "common.JSONResult": {
+            "type": "object"
+        },
+        "common.NumberRequest": {
+            "type": "object",
+            "properties": {
+                "number": {
+                    "type": "integer",
+                    "example": 100
                 }
             }
         },

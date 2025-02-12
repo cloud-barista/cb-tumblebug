@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"strings"
 
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
+	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
-	// "github.com/go-resty/resty/v2"
 )
 
 // CreateOrUpdateLabel adds a new label or updates an existing label for the given resource,
@@ -62,6 +63,20 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 		}
 	}
 
+	// if kvstore key has LabelConnectionName, try ListCSPResourceLabel
+	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
+		lbs := ListCSPResourceLabel(labelType, uid, connectionName)
+		log.Info().Msgf("ListCSPResourceLabel: %v", lbs)
+
+		// Merge CSP labels with existing labels (existing labels have priority)
+		for key, value := range lbs {
+			// Only add if key doesn't exist in labelInfo.Labels
+			if _, exists := labelInfo.Labels[key]; !exists {
+				labelInfo.Labels[key] = value
+			}
+		}
+	}
+
 	// Save the updated model.LabelInfo back to the Key-Value store
 	updatedLabelData, err := json.Marshal(labelInfo)
 	if err != nil {
@@ -73,6 +88,10 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 		return fmt.Errorf("failed to put label info into kvstore: %w", err)
 	}
 
+	// if kvstore key has LabelConnectionName, try UpdateCSPResourceLabel
+	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
+		UpdateCSPResourceLabel(labelType, uid, labels, connectionName)
+	}
 	return nil
 }
 
@@ -119,6 +138,11 @@ func RemoveLabel(labelType, uid, key string) error {
 
 	// Remove the label
 	delete(labelInfo.Labels, key)
+
+	// if kvstore key has LabelConnectionName, try UpdateCSPResourceLabel
+	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
+		RemoveCSPResourceLabel(labelType, uid, key, connectionName)
+	}
 
 	// Save the updated model.LabelInfo back to the Key-Value store
 	updatedLabelData, err := json.Marshal(labelInfo)
@@ -306,39 +330,169 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]interface{}
 	return matchedResources, nil
 }
 
-// func UpdateCSPResourceLabel(cspType string, resourceKey string, labels map[string]string) error {
+// UpdateCSPResourceLabel best-effort updates the labels of a resource in the CSP
+func UpdateCSPResourceLabel(labelType, uid string, labels map[string]string, connectionName string) {
 
-// 	driverName := RuntimeCloudInfo.CSPs[providerName].Driver
+	client := resty.New()
+	url := model.SpiderRestUrl + "/tag"
+	method := "POST"
+	var callResult model.KeyValue
+	requestBody := model.SpiderTagAddRequest{}
+	requestBody.ConnectionName = connectionName
+	requestBody.ReqInfo.ResourceName = uid
+	requestBody.ReqInfo.ResourceType = convertTermToSpider(labelType)
 
-// 	client := resty.New()
-// 	url := model.SpiderRestUrl + "/driver"
-// 	method := "POST"
-// 	var callResult model.CloudDriverInfo
-// 	requestBody := model.CloudDriverInfo{ProviderName: strings.ToUpper(providerName), DriverName: driverName, DriverLibFileName: driverName}
+	for key, value := range labels {
+		requestBody.ReqInfo.Tag = model.KeyValue{
+			Key:   key,
+			Value: value,
+		}
 
-// 	err := ExecuteHttpRequest(
-// 		client,
-// 		method,
-// 		url,
-// 		nil,
-// 		SetUseBody(requestBody),
-// 		&requestBody,
-// 		&callResult,
-// 		MediumDuration,
-// 	)
+		err := clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			clientManager.SetUseBody(requestBody),
+			&requestBody,
+			&callResult,
+			clientManager.MediumDuration,
+		)
 
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return err
-// 	}
+		// this is a best-effort operation, so we don't return an error if it fails
+		// drop if we meet the first error
+		if err != nil {
+			break
+		}
+	}
+}
 
-// 	for regionName, _ := range RuntimeCloudInfo.CSPs[providerName].Regions {
-// 		err := RegisterRegionZone(providerName, regionName)
-// 		if err != nil {
-// 			log.Error().Err(err).Msg("")
-// 			return err
-// 		}
-// 	}
+// RemoveCSPResourceLabel best-effort removes the labels of a resource in the CSP
+func RemoveCSPResourceLabel(labelType, uid string, key string, connectionName string) {
 
-// 	return nil
-// }
+	client := resty.New()
+	url := fmt.Sprintf("%s/tag/%s", model.SpiderRestUrl, key)
+	method := "DELETE"
+	var callResult model.KeyValue
+	requestBody := model.SpiderTagRemoveRequest{}
+	requestBody.ConnectionName = connectionName
+	requestBody.ReqInfo.ResourceName = uid
+	requestBody.ReqInfo.ResourceType = convertTermToSpider(labelType)
+
+	clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
+
+}
+
+// MergeCSPResourceLabel merges the labels of a resource in the CSP with the existing labels
+func MergeCSPResourceLabel(labelType, uid string, resourceKey string) error {
+	// Construct the labelKey
+	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uid)
+
+	// Fetch the existing model.LabelInfo if it exists
+	labelData, err := kvstore.Get(labelKey)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get label data from kvstore")
+	}
+
+	// log.Debug().Str("labelData", string(labelData)).Msg("Fetched label data")
+
+	// if len(labelData) == 0 {
+	// 	log.Debug().Msg("labelData is empty")
+	// }
+	var labelInfo model.LabelInfo
+	err = json.Unmarshal([]byte(labelData), &labelInfo)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal existing label data: %w", err)
+	}
+
+	// if kvstore key has LabelConnectionName, try ListCSPResourceLabel
+	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
+		lbs := ListCSPResourceLabel(labelType, uid, connectionName)
+		log.Info().Msgf("ListCSPResourceLabel: %v", lbs)
+
+		// Merge CSP labels with existing labels (CSP labels have priority)
+		for key, value := range lbs {
+			labelInfo.Labels[key] = value
+		}
+	}
+
+	// Save the updated model.LabelInfo back to the Key-Value store
+	updatedLabelData, err := json.Marshal(labelInfo)
+	if err != nil {
+		return fmt.Errorf("failed to marshal updated label info: %w", err)
+	}
+
+	err = kvstore.Put(labelKey, string(updatedLabelData))
+	if err != nil {
+		return fmt.Errorf("failed to put label info into kvstore: %w", err)
+	}
+
+	// if kvstore key has LabelConnectionName, try UpdateCSPResourceLabel
+	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
+		UpdateCSPResourceLabel(labelType, uid, labelInfo.Labels, connectionName)
+	}
+	return nil
+}
+
+// ListCSPResourceLabel best-effort lists the labels of a resource in the CSP
+func ListCSPResourceLabel(labelType, uid string, connectionName string) (labels map[string]string) {
+
+	type jsonResult struct {
+		Result       []model.KeyValue `json:"tag"`
+		ResourceType string           `json:"resourceType"`
+	}
+	resourceType := convertTermToSpider(labelType)
+	resourceName := uid
+
+	client := resty.New()
+	url := fmt.Sprintf("%s/tag?ConnectionName=%s&ResourceType=%s&ResourceName=%s", model.SpiderRestUrl, connectionName, resourceType, resourceName)
+	method := "GET"
+	var callResult jsonResult
+	requestBody := clientManager.NoBody
+
+	err := clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
+	labels = make(map[string]string)
+
+	if err != nil {
+		log.Info().Err(err).Msg("Failed to list CSP resource label")
+		return labels
+	}
+
+	// Convert []model.KeyValue to map[string]string
+	for _, tag := range callResult.Result {
+		labels[tag.Key] = tag.Value
+	}
+
+	return labels
+
+}
+
+// convertTermToSpider converts internal label type to CSP resource type
+func convertTermToSpider(labelType string) string {
+	// Spider ResourceType Enum: all, image, vpc, subnet, sg, keypair, vm, nlb, disk, myimage, cluster, nodegroup
+	if labelType == model.StrVNet {
+		return model.StrVPC
+	} else if labelType == model.StrSecurityGroup {
+		return model.StrSG
+	} else {
+		return labelType
+	}
+}
