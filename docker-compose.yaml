@@ -5,6 +5,21 @@ networks:
     driver: bridge
 
 services:
+  reverse-proxy:
+    image: "traefik:v3.3"
+    container_name: "traefik"
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./conf/traefik.yaml:/etc/traefik/traefik.yaml
+      - ${HOME}/.certs/:/certs/
+    networks:
+      - external_network
+      - internal_network
+
   # CB-Tumblebug
   cb-tumblebug:
     image: cloudbaristaorg/cb-tumblebug:0.10.6
@@ -146,21 +161,36 @@ services:
   cb-mapui:
     image: cloudbaristaorg/cb-mapui:0.10.2
     container_name: cb-mapui
+    labels:
+      # Explicitly tell Traefik to expose this container
+      - traefik.enable=true
+      # The domain the service will respond to
+      - traefik.http.routers.cb-mapui.rule=Host(`cb-mapui.localhost`)
+      # Allow request only from the predefined entry point named "web"
+      # - traefik.http.routers.cb-mapui.entrypoints=web
+      # Allow request only from the predefined entry point named "websecure"
+      - traefik.http.routers.cb-mapui.entrypoints=websecure
+      - traefik.http.routers.cb-mapui.tls=true
+      # Requests to the service are forwarded via HTTP
+      - traefik.http.services.cb-mapui.loadbalancer.server.scheme=http
+      # The port the service listens on
+      - traefik.http.services.cb-mapui.loadbalancer.server.port=1324
     # build:
     #   context: ../cb-mapui
     #   dockerfile: Dockerfile
     networks:
-      - external_network
+      - internal_network
+      - external_network # Keep this for the time being to support legacy access methods (http://localhost:1324)
     ports:
       - target: 1324
         published: 1324
         protocol: tcp
-    healthcheck: # for cb-mapui
-      test: ["CMD", "nc", "-vz", "localhost", "1324"]
-      interval: 1m
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:1324"]
+    #   interval: 30s
+    #   timeout: 5s
+    #   retries: 3
+    #   start_period: 10s
 
   # # mc-terrarium (PoC): resource extentions such as VPN for CB-Tumblebug by using OpenTofu
   # mc-terrarium:

@@ -36,5 +36,10 @@ bcrypt: ## Generate bcrypt hash for given password (usage: make bcrypt PASSWORD=
 	fi
 	@echo "$(PASSWORD)" | ./cmd/bcrypt/bcrypt
 
+certs: ## Generate self-signed certificates (usage: `make certs` or `make certs DOMAIN=mydomain.com`)
+	@echo "Generating self-signed certificates..."
+	chmod +x scripts/certs/generate-certs.sh; \
+	scripts/certs/generate-certs.sh $(DOMAIN)
+
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
