@@ -1,0 +1,49 @@
+## TRAEFIK CONFIGURATION FOR LOCAL SSL
+
+# Version check configuration
+global:
+  checkNewVersion: true
+
+# Set log level for debugging SSL issues
+log:
+  level: WARN # Options: ERROR, WARN, INFO, DEBUG
+  # level: INFO
+
+# Dashboard configuration for monitoring
+api:
+  insecure: true # Warning: Only for local testing / enable dashboard without SSL
+  dashboard: true
+
+# Health check endpoint
+ping: {}
+
+## Configure providers for SSL testing
+providers:
+  docker:
+    exposedByDefault: false
+    watch: true
+  file:
+    fileName: /etc/traefik/traefik.yaml
+    watch: true
+
+# Port configuration
+# 80  -> HTTP
+# 443 -> HTTPS with SSL
+entryPoints:
+  web:
+    address: :80
+    # HTTP to HTTPS redirect configuration
+    # http:
+    #   redirections:
+    #     entryPoint:
+    #       to: websecure
+    #       scheme: https
+    #       permanent: true
+  websecure:
+    address: :443
+
+## SSL CERTIFICATE CONFIGURATION
+tls:
+  certificates:
+    - certFile: /certs/cert.crt # Public certificate
+      keyFile: /certs/cert.key # Private key
