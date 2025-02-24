@@ -36,5 +36,11 @@ bcrypt: ## Generate bcrypt hash for given password (usage: make bcrypt PASSWORD=
 	fi
 	@echo "$(PASSWORD)" | ./cmd/bcrypt/bcrypt
 
+certs: ## Generate self-signed certificates (usage: `make certs` or `make certs DOMAIN=mydomain.com IP=xxx.xxx.xxx.xxx CERT_DIR=~/.cloud-barista/certs`)
+	@echo "Generating self-signed certificates..."
+	@echo "DOMAIN=$(DOMAIN), IP=$(IP), CERT_DIR=$(CERT_DIR)"
+	chmod +x scripts/certs/generate-certs.sh; \
+	scripts/certs/generate-certs.sh DOMAIN=$(DOMAIN) IP=$(IP) CERT_DIR=$(CERT_DIR) 
+
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
