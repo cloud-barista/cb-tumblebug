@@ -362,6 +362,7 @@ func UpdateCSPResourceLabel(labelType, uid string, labels map[string]string, con
 		// this is a best-effort operation, so we don't return an error if it fails
 		// drop if we meet the first error
 		if err != nil {
+			log.Info().Err(err).Msg("Cannot update CSP label/tag")
 			break
 		}
 	}
