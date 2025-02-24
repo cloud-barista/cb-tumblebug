@@ -15,7 +15,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./conf/traefik.yaml:/etc/traefik/traefik.yaml
-      - ${HOME}/.certs/:/certs/
+      - ${HOME}/.cloud-barista/certs/:/certs/
     networks:
       - external_network
       - internal_network
@@ -164,12 +164,15 @@ services:
     labels:
       # Explicitly tell Traefik to expose this container
       - traefik.enable=true
-      # The domain the service will respond to
+      # Define the rule for routing requests to this service
+      # Note - Multiple hosts are supported (e.g., traefik.http.routers.cb-mapui.rule=Host(`cb-mapui.localhost`) || Host(`xxx.xxx.xxx.xxx`))
+      # Warn - (Please be careful) Public IP can be used for the rule (e.g., Host(`xxx.xxx.xxx.xxx`))
       - traefik.http.routers.cb-mapui.rule=Host(`cb-mapui.localhost`)
       # Allow request only from the predefined entry point named "web"
       # - traefik.http.routers.cb-mapui.entrypoints=web
       # Allow request only from the predefined entry point named "websecure"
       - traefik.http.routers.cb-mapui.entrypoints=websecure
+      # Enable HTTPS
       - traefik.http.routers.cb-mapui.tls=true
       # Requests to the service are forwarded via HTTP
       - traefik.http.services.cb-mapui.loadbalancer.server.scheme=http

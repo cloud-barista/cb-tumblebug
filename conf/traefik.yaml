@@ -44,6 +44,16 @@ entryPoints:
 
 ## SSL CERTIFICATE CONFIGURATION
 tls:
+  # Default certificates or fallback certificates used when Traefik couldn't find a certificate for a domain
+  # stores:
+  #   default:
+  #     defaultCertificate:
+  #       certFile: /certs/cert.crt
+  #       keyFile: /certs/cert.key
+  # Certificates for specific domains
   certificates:
     - certFile: /certs/cert.crt # Public certificate
       keyFile: /certs/cert.key # Private key
+  # options:
+  #   default:
+  #     sniStrict: true # Only allow the case where the Server Name Indication (SNI) matches the hostname
