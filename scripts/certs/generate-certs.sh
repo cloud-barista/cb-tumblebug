@@ -78,7 +78,7 @@ if [ -n "$IP" ]; then
   done
 fi
 
-# Join SAN entries with commas (쉼표를 정확히 삽입)
+# Join SAN entries with commas
 SAN_LIST="subjectAltName=$(IFS=','; echo "${SAN_ENTRIES[*]}")"
 
 echo "Subject Alternative Name (SAN) list: $SAN_LIST"
