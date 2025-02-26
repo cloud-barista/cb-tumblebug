@@ -103,6 +103,9 @@ type TbMciReq struct {
 	Description   string `json:"description" example:"Made in CB-TB"`
 
 	Vm []TbVmReq `json:"vm" validate:"required"`
+
+	// PostCommand is for the command to bootstrap the VMs
+	PostCommand MciCmdReq `json:"postCommand" validate:"omitempty"`
 }
 
 // ResourceStatusInfo is struct for status information of a resource
@@ -151,6 +154,9 @@ type TbMciInfo struct {
 
 	// List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.
 	NewVmList []string `json:"newVmList"`
+
+	// PostCommand is for the command to bootstrap the VMs
+	PostCommand MciCmdReq `json:"postCommand"`
 }
 
 // TbVmReq is struct to get requirements to create a new server instance
@@ -208,6 +214,9 @@ type TbMciDynamicReq struct {
 	Description string `json:"description" example:"Made in CB-TB"`
 
 	Vm []TbVmDynamicReq `json:"vm" validate:"required"`
+
+	// PostCommand is for the command to bootstrap the VMs
+	PostCommand MciCmdReq `json:"postCommand"`
 }
 
 // TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)

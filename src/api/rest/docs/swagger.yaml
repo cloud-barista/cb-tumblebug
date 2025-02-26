@@ -11014,6 +11014,11 @@ components:
         name:
           type: string
           example: mci01
+        postCommand:
+          type: object
+          description: PostCommand is for the command to bootstrap the VMs
+          allOf:
+          - $ref: '#/components/schemas/model.MciCmdReq'
         systemLabel:
           type: string
           description: SystemLabel is for describing the mci in a keyword (any string
@@ -11067,6 +11072,11 @@ components:
             type: string
         placementAlgo:
           type: string
+        postCommand:
+          type: object
+          description: PostCommand is for the command to bootstrap the VMs
+          allOf:
+          - $ref: '#/components/schemas/model.MciCmdReq'
         resourceType:
           type: string
           description: ResourceType is the type of the resource
@@ -11124,6 +11134,11 @@ components:
           example: mci01
         placementAlgo:
           type: string
+        postCommand:
+          type: object
+          description: PostCommand is for the command to bootstrap the VMs
+          allOf:
+          - $ref: '#/components/schemas/model.MciCmdReq'
         systemLabel:
           type: string
           description: SystemLabel is for describing the mci in a keyword (any string

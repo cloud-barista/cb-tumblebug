@@ -14664,6 +14664,14 @@ const docTemplate = `{
                     "type": "string",
                     "example": "mci01"
                 },
+                "postCommand": {
+                    "description": "PostCommand is for the command to bootstrap the VMs",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MciCmdReq"
+                        }
+                    ]
+                },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
                     "type": "string",
@@ -14729,6 +14737,14 @@ const docTemplate = `{
                 },
                 "placementAlgo": {
                     "type": "string"
+                },
+                "postCommand": {
+                    "description": "PostCommand is for the command to bootstrap the VMs",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MciCmdReq"
+                        }
+                    ]
                 },
                 "resourceType": {
                     "description": "ResourceType is the type of the resource",
@@ -14803,6 +14819,14 @@ const docTemplate = `{
                 },
                 "placementAlgo": {
                     "type": "string"
+                },
+                "postCommand": {
+                    "description": "PostCommand is for the command to bootstrap the VMs",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MciCmdReq"
+                        }
+                    ]
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
