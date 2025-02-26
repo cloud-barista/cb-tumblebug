@@ -124,7 +124,7 @@ func CreateMciVm(nsId string, mciId string, vmInfoData *model.TbVmInfo) (*model.
 
 	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mciId, mciTmp.InstallMonAgent)
 
-	if !strings.Contains(mciTmp.InstallMonAgent, "no") {
+	if strings.Contains(mciTmp.InstallMonAgent, "yes") {
 
 		// Sleep for 20 seconds for a safe DF agent installation.
 		fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe CB-Dragonfly Agent installation.\n\n")
@@ -428,7 +428,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbVmReq, newSu
 
 	// Install CB-Dragonfly monitoring agent
 
-	if !strings.Contains(mciTmp.InstallMonAgent, "no") {
+	if strings.Contains(mciTmp.InstallMonAgent, "yes") {
 
 		// Sleep for 60 seconds for a safe DF agent installation.
 		fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation.\n\n")
@@ -506,21 +506,24 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 
 	log.Info().Msg("Create MCI object")
 	key := common.GenMciKey(nsId, mciId, "")
-	mapA := map[string]string{
-		"resourceType":    model.StrMCI,
-		"id":              mciId,
-		"name":            req.Name,
-		"uid":             uid,
-		"description":     req.Description,
-		"status":          model.StatusCreating,
-		"targetAction":    targetAction,
-		"targetStatus":    targetStatus,
-		"installMonAgent": req.InstallMonAgent,
-		"systemLabel":     req.SystemLabel,
+
+	mciInfo := model.TbMciInfo{
+		ResourceType:    model.StrMCI,
+		Id:              mciId,
+		Name:            req.Name,
+		Uid:             uid,
+		Description:     req.Description,
+		Status:          model.StatusCreating,
+		TargetAction:    targetAction,
+		TargetStatus:    targetStatus,
+		InstallMonAgent: req.InstallMonAgent,
+		SystemLabel:     req.SystemLabel,
+		PostCommand:     req.PostCommand,
 	}
-	val, err := json.Marshal(mapA)
+
+	val, err := json.Marshal(mciInfo)
 	if err != nil {
-		err := fmt.Errorf("System Error: CreateMci json.Marshal(mapA) Error")
+		err := fmt.Errorf("System Error: CreateMci json.Marshal(mciInfo) Error")
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
@@ -759,11 +762,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 	log.Debug().Msg("[MCI has been created]" + mciId)
 
 	// Install CB-Dragonfly monitoring agent
-
-	mciTmp.InstallMonAgent = req.InstallMonAgent
-	UpdateMciInfo(nsId, mciTmp)
-
-	if !strings.Contains(mciTmp.InstallMonAgent, "no") && option != "register" {
+	if strings.Contains(mciTmp.InstallMonAgent, "yes") && option != "register" {
 
 		check := CheckDragonflyEndpoint()
 		if check != nil {
@@ -771,8 +770,6 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 		} else {
 			reqToMon := &model.MciCmdReq{}
 			reqToMon.UserName = "cb-user" // this MCI user name is temporal code. Need to improve.
-
-			fmt.Printf("\n===========================\n")
 			// Sleep for 60 seconds for a safe DF agent installation.
 			fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation.\n")
 			time.Sleep(60 * time.Second)
@@ -786,6 +783,21 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 			common.PrintJsonPretty(content)
 			//mciTmp.InstallMonAgent = "yes"
 		}
+	}
+
+	if len(mciTmp.PostCommand.Command) > 0 {
+		log.Info().Msgf("Wait for 5 seconds for a safe bootstrapping.")
+		time.Sleep(5 * time.Second)
+		log.Info().Msgf("BootstrappingCommand: %+v", mciTmp.PostCommand)
+		output, err := RemoteCommandToMci(nsId, mciId, "", "", &mciTmp.PostCommand)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+		}
+		result := model.MciSshCmdResult{}
+		for _, v := range output {
+			result.Results = append(result.Results, v)
+		}
+		common.PrintJsonPretty(result)
 	}
 
 	mciResult, err := GetMciInfo(nsId, mciId)
@@ -923,6 +935,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 	mciReq.SystemLabel = req.SystemLabel
 	mciReq.InstallMonAgent = req.InstallMonAgent
 	mciReq.Description = req.Description
+	mciReq.PostCommand = req.PostCommand
 
 	emptyMci := &model.TbMciInfo{}
 	err := common.CheckString(nsId)
