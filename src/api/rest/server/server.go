@@ -102,7 +102,7 @@ func RunServer() {
 	APILogSkipPatterns := [][]string{
 		{"/tumblebug/api"},
 		{"/mci", "option=status"},
-		{"/k8scluster"},
+		{"/k8sCluster"},
 		{"/resources/vNet"},
 		{"/resources/securityGroup"},
 		{"/resources/vpn"},

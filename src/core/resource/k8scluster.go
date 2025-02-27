@@ -1038,7 +1038,6 @@ func ListK8sClusterId(nsId string) ([]string, error) {
 	}
 
 	k := fmt.Sprintf("/ns/%s/", nsId)
-	log.Debug().Msg(k)
 
 	kv, err := kvstore.GetKvList(k)
 
