@@ -798,6 +798,9 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 			result.Results = append(result.Results, v)
 		}
 		common.PrintJsonPretty(result)
+
+		mciTmp.PostCommandResult = result
+		UpdateMciInfo(nsId, mciTmp)
 	}
 
 	mciResult, err := GetMciInfo(nsId, mciId)
