@@ -1037,8 +1037,6 @@ func ListK8sClusterId(nsId string) ([]string, error) {
 		return nil, err
 	}
 
-	log.Debug().Msg("[ListK8sClusterId] ns: " + nsId)
-	// key := "/ns/" + nsId + "/"
 	k := fmt.Sprintf("/ns/%s/", nsId)
 	log.Debug().Msg(k)
 
@@ -1063,7 +1061,7 @@ func ListK8sClusterId(nsId string) ([]string, error) {
 
 // ListK8sCluster returns the list of TB K8sCluster objects of given nsId
 func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{}, error) {
-	log.Info().Msg("ListK8sCluster")
+	// log.Info().Msg("ListK8sCluster")
 
 	k8sIdList, err := ListK8sClusterId(nsId)
 	if err != nil {

@@ -16,6 +16,7 @@ package infra
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -207,7 +208,7 @@ func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName stri
 	// Execute SSH
 	stdoutResults, stderrResults, err := runSSH(bastionSshInfo, targetSshInfo, cmds)
 	if err != nil {
-		fmt.Printf("Error executing commands: %s\n", err)
+		log.Err(err).Msg("Error executing commands")
 		return stdoutResults, stderrResults, err
 	}
 	return stdoutResults, stderrResults, nil
@@ -341,25 +342,39 @@ func VerifySshUserName(nsId string, mciId string, vmId string, vmIp string, sshP
 
 // CheckConnectivity func checks if given port is open and ready
 func CheckConnectivity(host string, port string) error {
-
-	// retry: 5 times, sleep: 5 seconds. timeout for each Dial: 20 seconds
 	retrycheck := 5
-	timeout := time.Second * time.Duration(20)
+	initialTimeout := 20 * time.Second
+	maxTimeout := 60 * time.Second
+
+	var lastErr error
 	for i := 0; i < retrycheck; i++ {
-		conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
-		conn.Close()
-
-		log.Debug().Msgf("[Check SSH Port] %v:%v", host, port)
-
-		if err != nil {
-			log.Err(err).Msg("SSH Port is NOT accessible yet. retry after 5 seconds sleep")
-		} else {
-			log.Debug().Msg("SSH Port is accessible")
-			return nil
+		timeout := time.Duration(float64(initialTimeout) * (1.5 * float64(i)))
+		if timeout > maxTimeout {
+			timeout = maxTimeout
 		}
-		time.Sleep(5 * time.Second)
+
+		log.Debug().Msgf("[Check SSH Port] %v:%v (Attempt %d/%d, Timeout: %v)",
+			host, port, i+1, retrycheck, timeout)
+
+		conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
+		if err != nil {
+			lastErr = err
+			waitTime := time.Duration(5*(i+1)) * time.Second
+			log.Warn().Err(err).Msgf("SSH Port is NOT accessible yet. Attempt %d/%d. Retrying in %v...",
+				i+1, retrycheck, waitTime)
+			time.Sleep(waitTime)
+			continue
+		}
+
+		if conn != nil {
+			conn.Close()
+		}
+
+		log.Info().Msgf("SSH Port is accessible after %d attempt(s)", i+1)
+		return nil
 	}
-	return fmt.Errorf("SSH Port is NOT not accessible (5 trials)")
+
+	return fmt.Errorf("SSH Port is NOT accessible after %d attempts: %v", retrycheck, lastErr)
 }
 
 // GetVmSshKey is func to get VM SShKey. Returns username, verifiedUsername, privateKey
@@ -447,7 +462,6 @@ func init() {
 
 // runSSH func execute a command by SSH
 func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string) (map[int]string, map[int]string, error) {
-
 	stdoutMap := make(map[int]string)
 	stderrMap := make(map[int]string)
 
@@ -464,6 +478,7 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string) 
 			ssh.PublicKeys(bastionSigner),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         30 * time.Second,
 	}
 
 	// Parse the private key for the target host
@@ -479,25 +494,129 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string) 
 			ssh.PublicKeys(targetSigner),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         30 * time.Second,
 	}
 
-	// Setup the bastion host connection
-	bastionClient, err := ssh.Dial("tcp", bastionInfo.EndPoint, bastionConfig)
+	targetHost, targetPort, err := net.SplitHostPort(targetInfo.EndPoint)
 	if err != nil {
-		return stdoutMap, stderrMap, err
+		return stdoutMap, stderrMap, fmt.Errorf("invalid target endpoint format: %v", err)
 	}
+
+	log.Info().Msgf("Attempting to connect to target host %s:%s via bastion", targetHost, targetPort)
+
+	retryCount := 5
+	initialTimeout := 20 * time.Second
+	maxTimeout := 60 * time.Second
+	var bastionClient *ssh.Client
+	var conn net.Conn
+	var lastErr error
+
+	for i := range retryCount {
+		timeout := min(time.Duration(float64(initialTimeout)*(1.5*float64(i))), maxTimeout)
+
+		log.Debug().Msgf("[Check Target via Bastion] %v:%v (Attempt %d/%d, Timeout: %v)",
+			targetHost, targetPort, i+1, retryCount, timeout)
+
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+
+		connCh := make(chan net.Conn, 1)
+		errCh := make(chan error, 1)
+		sshClientCh := make(chan *ssh.Client, 1)
+
+		go func() {
+			// Setup the bastion host connection
+			client, err := ssh.Dial("tcp", bastionInfo.EndPoint, bastionConfig)
+			if err != nil {
+				err = fmt.Errorf("failed to establish SSH connection to bastion host: %v", err)
+				errCh <- err
+				return
+			}
+
+			sshClientCh <- client
+
+			targetConn, err := client.Dial("tcp", targetInfo.EndPoint)
+			if err != nil {
+				client.Close()
+				errCh <- err
+				return
+			}
+
+			connCh <- targetConn
+		}()
+
+		select {
+		case conn = <-connCh:
+			bastionClient = <-sshClientCh
+			cancel()
+			log.Info().Msgf("Successfully connected to target host on attempt %d", i+1)
+			goto CONNECTION_ESTABLISHED
+		case err := <-errCh:
+			cancel()
+			lastErr = err
+			waitTime := time.Duration(5*(i+1)) * time.Second
+			log.Warn().Err(err).Msgf("Failed to connect to target host. Attempt %d/%d. Retrying in %v...",
+				i+1, retryCount, waitTime)
+			time.Sleep(waitTime)
+		case <-ctx.Done():
+			cancel()
+			lastErr = ctx.Err()
+			waitTime := time.Duration(5*(i+1)) * time.Second
+			log.Warn().Err(lastErr).Msgf("Connection timeout. Attempt %d/%d. Retrying in %v...",
+				i+1, retryCount, waitTime)
+			time.Sleep(waitTime)
+		}
+	}
+
+	return stdoutMap, stderrMap, fmt.Errorf("failed to connect to target host via bastion after %d attempts: %v", retryCount, lastErr)
+
+CONNECTION_ESTABLISHED:
 	defer bastionClient.Close()
+	defer conn.Close()
 
-	// Setup the actual SSH client through the bastion host
-	conn, err := bastionClient.Dial("tcp", targetInfo.EndPoint)
-	if err != nil {
-		return stdoutMap, stderrMap, err
+	log.Debug().Msgf("Establishing SSH connection to target host with user: %s", targetInfo.UserName)
+
+	if len(targetInfo.PrivateKey) == 0 {
+		return stdoutMap, stderrMap, fmt.Errorf("empty private key for target host")
 	}
 
-	ncc, chans, reqs, err := ssh.NewClientConn(conn, targetInfo.EndPoint, targetConfig)
-	if err != nil {
-		return stdoutMap, stderrMap, err
+	var ncc ssh.Conn
+	var chans <-chan ssh.NewChannel
+	var reqs <-chan *ssh.Request
+	sshRetryCount := 3
+	var lastSSHErr error
+
+	for i := 0; i < sshRetryCount; i++ {
+		ncc, chans, reqs, err = ssh.NewClientConn(conn, targetInfo.EndPoint, targetConfig)
+		if err == nil {
+			break
+		}
+
+		lastSSHErr = err
+		log.Warn().Err(err).Msgf("SSH authentication failed. Attempt %d/%d", i+1, sshRetryCount)
+
+		if strings.Contains(err.Error(), "handshake failed") ||
+			strings.Contains(err.Error(), "no supported methods remain") {
+			waitTime := time.Duration(3*(i+1)) * time.Second
+			log.Info().Msgf("Waiting for SSH daemon to initialize. Retrying in %v...", waitTime)
+			time.Sleep(waitTime)
+		} else {
+			break
+		}
 	}
+
+	if err != nil {
+		log.Error().Str("user", targetInfo.UserName).
+			Str("endpoint", targetInfo.EndPoint).
+			Err(lastSSHErr).Msg("SSH authentication failed")
+
+		if strings.Contains(lastSSHErr.Error(), "no supported methods remain") {
+			return stdoutMap, stderrMap, fmt.Errorf("SSH authentication failed. Please check: 1) private key is valid 2) user '%s' exists on target 3) authorized_keys is properly configured", targetInfo.UserName)
+		}
+
+		return stdoutMap, stderrMap, fmt.Errorf("failed to establish SSH connection to target host: %v", lastSSHErr)
+	}
+
+	log.Info().Msgf("SSH connection established successfully to %s as user %s", targetInfo.EndPoint, targetInfo.UserName)
 	client := ssh.NewClient(ncc, chans, reqs)
 	defer client.Close()
 
