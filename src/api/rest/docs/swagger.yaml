@@ -11077,6 +11077,12 @@ components:
           description: PostCommand is for the command to bootstrap the VMs
           allOf:
           - $ref: '#/components/schemas/model.MciCmdReq'
+        postCommandResult:
+          type: object
+          description: PostCommandResult is the result of the command for bootstraping
+            the VMs
+          allOf:
+          - $ref: '#/components/schemas/model.MciSshCmdResult'
         resourceType:
           type: string
           description: ResourceType is the type of the resource

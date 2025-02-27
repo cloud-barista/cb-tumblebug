@@ -14746,6 +14746,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "postCommandResult": {
+                    "description": "PostCommandResult is the result of the command for bootstraping the VMs",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MciSshCmdResult"
+                        }
+                    ]
+                },
                 "resourceType": {
                     "description": "ResourceType is the type of the resource",
                     "type": "string"

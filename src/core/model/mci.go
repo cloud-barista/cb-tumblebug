@@ -157,6 +157,9 @@ type TbMciInfo struct {
 
 	// PostCommand is for the command to bootstrap the VMs
 	PostCommand MciCmdReq `json:"postCommand"`
+
+	// PostCommandResult is the result of the command for bootstraping the VMs
+	PostCommandResult MciSshCmdResult `json:"postCommandResult"`
 }
 
 // TbVmReq is struct to get requirements to create a new server instance
