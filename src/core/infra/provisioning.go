@@ -789,7 +789,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 		log.Info().Msgf("Wait for 5 seconds for a safe bootstrapping.")
 		time.Sleep(5 * time.Second)
 		log.Info().Msgf("BootstrappingCommand: %+v", mciTmp.PostCommand)
-		output, err := RemoteCommandToMci(nsId, mciId, "", "", &mciTmp.PostCommand)
+		output, err := RemoteCommandToMci(nsId, mciId, "", "", "", &mciTmp.PostCommand)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}

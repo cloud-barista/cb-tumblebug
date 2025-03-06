@@ -38,6 +38,7 @@ import (
 // @Param mciCmdReq body model.MciCmdReq true "MCI Command Request"
 // @Param subGroupId query string false "subGroupId to apply the command only for VMs in subGroup of MCI" default(g1)
 // @Param vmId query string false "vmId to apply the command only for a VM in MCI" default(g1-1)
+// @Param labelSelector query string false "Target VM Label selector query. Example: sys.id=g1-1,role=worker"
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} model.MciSshCmdResult
 // @Failure 404 {object} model.SimpleMsg
@@ -49,22 +50,22 @@ func RestPostCmdMci(c echo.Context) error {
 	mciId := c.Param("mciId")
 	subGroupId := c.QueryParam("subGroupId")
 	vmId := c.QueryParam("vmId")
+	//Label selector query. Example: env=production,tier=backend
+	labelSelector := c.QueryParam("labelSelector")
 
 	req := &model.MciCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	output, err := infra.RemoteCommandToMci(nsId, mciId, subGroupId, vmId, req)
+	output, err := infra.RemoteCommandToMci(nsId, mciId, subGroupId, vmId, labelSelector, req)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	result := model.MciSshCmdResult{}
 
-	for _, v := range output {
-		result.Results = append(result.Results, v)
-	}
+	result.Results = append(result.Results, output...)
 
 	common.PrintJsonPretty(result)
 

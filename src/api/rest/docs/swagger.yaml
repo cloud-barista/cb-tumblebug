@@ -1695,6 +1695,11 @@ paths:
         schema:
           type: string
           default: g1-1
+      - name: labelSelector
+        in: query
+        description: "Label selector query. Example: env=production,tier=backend"
+        schema:
+          type: string
       - name: x-request-id
         in: header
         description: Custom request ID

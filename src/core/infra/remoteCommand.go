@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -50,7 +51,7 @@ func TbMciCmdReqStructLevelValidation(sl validator.StructLevel) {
 }
 
 // RemoteCommandToMci is func to command to all VMs in MCI by SSH
-func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId string, req *model.MciCmdReq) ([]model.SshCmdResult, error) {
+func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId string, labelSelector string, req *model.MciCmdReq) ([]model.SshCmdResult, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -116,7 +117,7 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 			return nil, err
 		}
 		if vmListInGroup == nil {
-			err := fmt.Errorf("No VM in " + subGroupId)
+			err := fmt.Errorf("there is no %s subGroup or VM in the subGroup ", subGroupId)
 			return nil, err
 		}
 		vmList = vmListInGroup
@@ -124,6 +125,51 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 
 	if vmId != "" {
 		vmList = []string{vmId}
+	}
+
+	// Apply label-based filtering if labelSelector is specified
+	if labelSelector != "" {
+		log.Info().Str("labelSelector", labelSelector).Msg("Filtering VMs by label selector")
+
+		// Add system label conditions
+		systemLabelConditions := fmt.Sprintf("sys.mciId=%s", mciId)
+
+		// Also add subGroupId condition if specified
+		if subGroupId != "" {
+			systemLabelConditions += fmt.Sprintf(",sys.subGroupId=%s", subGroupId)
+		}
+
+		labelSelector = systemLabelConditions + "," + labelSelector
+
+		log.Debug().Str("combinedLabelSelector", labelSelector).Msg("Combined label selector")
+
+		// Query resources using label selector
+		matchedResources, err := label.GetResourcesByLabelSelector(model.StrVM, labelSelector)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to get resources by label selector")
+			return nil, fmt.Errorf("label selector error: %v", err)
+		}
+
+		if len(matchedResources) == 0 {
+			log.Warn().Msg("No VMs matched the label selector criteria")
+			return nil, fmt.Errorf("no VMs matched the label selector: %s", labelSelector)
+		}
+
+		// Extract matching VM IDs only
+		filteredVmIds := make([]string, 0, len(matchedResources))
+		for _, resource := range matchedResources {
+			if vmInfo, ok := resource.(*model.TbVmInfo); ok {
+				filteredVmIds = append(filteredVmIds, vmInfo.Id)
+			}
+		}
+
+		log.Info().
+			Int("matchedVMsCount", len(filteredVmIds)).
+			Str("labelSelector", labelSelector).
+			Msg("VMs filtered by label selector")
+
+		// Replace VM list with label selector filtered VMs
+		vmList = filteredVmIds
 	}
 
 	// goroutine sync wg
@@ -1063,7 +1109,7 @@ func extractFunctionAndParams(funcCall string) (string, map[string]string, error
 	regex := regexp.MustCompile(`^\s*([a-zA-Z0-9]+)\((.*?)\)\s*$`)
 	matches := regex.FindStringSubmatch(funcCall)
 	if len(matches) < 3 {
-		return "", nil, errors.New("Built-in function error in command: no function found in command")
+		return "", nil, errors.New("built-in function error in command: no function found in command")
 	}
 
 	funcName := matches[1]
@@ -1076,10 +1122,12 @@ func extractFunctionAndParams(funcCall string) (string, map[string]string, error
 		kv := strings.SplitN(pair, "=", 2)
 		if len(kv) == 2 {
 			key := strings.TrimSpace(kv[0])
-			value := strings.TrimSpace(kv[1])
+			value := kv[1]
+
 			if strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'") {
-				value = strings.Trim(value, "'")
+				value = value[1 : len(value)-1]
 			}
+
 			params[key] = value
 		}
 	}
@@ -1116,46 +1164,60 @@ func splitParams(paramsPart string) []string {
 	return result
 }
 
-// extractFunctionAndParams is a helper function to find matching parenthesis
-func findMatchingParenthesis(command string, start int) int {
-	count := 1
-	for i := start; i < len(command); i++ {
-		switch command[i] {
-		case '(':
-			count++
-		case ')':
-			count--
-			if count == 0 {
-				return i
-			}
-		}
-	}
-	return -1
-}
-
-// processCommand is function to replace the keywords with actual values
+// processCommand processes a command string and replaces all $$Func(...) occurrences with their computed values
 func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, error) {
-	start := 0
-	for {
-		start = strings.Index(command[start:], "$$Func(")
-		if start == -1 {
+	// Keep track of the processed command throughout iterations
+	processedCommand := command
+
+	// Safety measure to prevent infinite loops
+	maxIterations := 100
+	iterCount := 0
+
+	for iterCount < maxIterations {
+		iterCount++
+
+		// Look for the next function call pattern
+		funcStartIndex := strings.Index(processedCommand, "$$Func(")
+		if funcStartIndex == -1 {
+			// No more function calls to process
 			break
 		}
-		start += 7 // Move past "$$Func("
-		end := findMatchingParenthesis(command, start)
-		if end == -1 {
-			return "", errors.New("Built-in function error in command: no matching parenthesis found")
+
+		// Start position of the actual function content (after $$Func()
+		contentStartIndex := funcStartIndex + 7
+
+		// Match parentheses to find the correct ending position
+		bracketCount := 1
+		contentEndIndex := -1
+
+		for i := contentStartIndex; i < len(processedCommand); i++ {
+			if processedCommand[i] == '(' {
+				bracketCount++
+			} else if processedCommand[i] == ')' {
+				bracketCount--
+				if bracketCount == 0 {
+					contentEndIndex = i
+					break
+				}
+			}
 		}
 
-		funcCall := command[start:end]
+		if contentEndIndex == -1 {
+			return "", errors.New("built-in function error in command: no matching parenthesis found")
+		}
 
+		// Extract the function call content
+		funcCall := processedCommand[contentStartIndex:contentEndIndex]
+
+		// Parse function name and parameters
 		funcName, params, err := extractFunctionAndParams(funcCall)
 		if err != nil {
 			return "", err
 		}
 
+		// Process different built-in functions
 		var replacement string
-		if strings.EqualFold(funcName, "GetPublicIP") {
+		if strings.EqualFold(funcName, "GetPublicIP") || strings.EqualFold(funcName, "GetPrivateIP") {
 			targetMciId := mciId
 			targetVmId := vmId
 			if val, ok := params["target"]; ok {
@@ -1176,15 +1238,19 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 			if post, ok := params["postfix"]; ok {
 				postfix = post
 			}
-			replacement, err = getPublicIP(nsId, targetMciId, targetVmId, prefix, postfix)
-
-			if err != nil {
-				return "", fmt.Errorf("Built-in function getPublicIP error: %s", err.Error())
+			if strings.EqualFold(funcName, "GetPublicIP") {
+				// Logic for GetPublicIP function
+				replacement, err = replaceWithPublicIP(nsId, targetMciId, targetVmId, prefix, postfix)
+			} else {
+				// Logic for GetPrivateIP function
+				replacement, err = replaceWithPrivateIP(nsId, targetMciId, targetVmId, prefix, postfix)
 			}
-
-		} else if strings.EqualFold(funcName, "GetPublicIPs") {
+			if err != nil {
+				return "", fmt.Errorf("built-in function getPublicIP error: %s", err.Error())
+			}
+		} else if strings.EqualFold(funcName, "GetPublicIPs") || strings.EqualFold(funcName, "GetPrivateIPs") {
+			// Logic for GetPublicIPs function
 			targetMciId := mciId
-
 			if val, ok := params["target"]; ok {
 				if strings.EqualFold(val, "this") {
 					targetMciId = mciId
@@ -1204,34 +1270,74 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 			if post, ok := params["postfix"]; ok {
 				postfix = post
 			}
-			replacement, err = getPublicIPs(nsId, targetMciId, separator, prefix, postfix)
-
-			if err != nil {
-				return "", fmt.Errorf("Built-in function getPublicIPs error: %s", err.Error())
+			if strings.EqualFold(funcName, "GetPublicIPs") {
+				replacement, err = replaceWithPublicIPs(nsId, targetMciId, separator, prefix, postfix)
+			} else {
+				replacement, err = replaceWithPrivateIPs(nsId, targetMciId, separator, prefix, postfix)
 			}
-
+			if err != nil {
+				return "", fmt.Errorf("built-in function getPublicIPs error: %s", err.Error())
+			}
 		} else if strings.EqualFold(funcName, "AssignTask") {
+			// Logic for AssignTask function
 			taskListParam, ok := params["task"]
 			if !ok {
-				return "", fmt.Errorf("Built-in function AssignTask error: no task list provided")
+				return "", fmt.Errorf("built-in function AssignTask error: no task list provided")
 			}
 			tasks := splitParams(taskListParam)
 			replacement = tasks[vmIndex%len(tasks)]
+		} else if strings.EqualFold(funcName, "GetNsId") {
+			// Logic for getNsId function
+			prefix := ""
+			if pre, ok := params["prefix"]; ok {
+				prefix = pre
+			}
+			postfix := ""
+			if post, ok := params["postfix"]; ok {
+				postfix = post
+			}
+			replacement = replaceWithId(nsId, prefix, postfix)
+		} else if strings.EqualFold(funcName, "GetMciId") {
+			// Logic for getMciId function
+			prefix := ""
+			if pre, ok := params["prefix"]; ok {
+				prefix = pre
+			}
+			postfix := ""
+			if post, ok := params["postfix"]; ok {
+				postfix = post
+			}
+			replacement = replaceWithId(mciId, prefix, postfix)
+		} else if strings.EqualFold(funcName, "GetVmId") {
+			// Logic for getVmId function
+			prefix := ""
+			if pre, ok := params["prefix"]; ok {
+				prefix = pre
+			}
+			postfix := ""
+			if post, ok := params["postfix"]; ok {
+				postfix = post
+			}
+			replacement = replaceWithId(vmId, prefix, postfix)
 		} else {
-			return "", fmt.Errorf("Built-in function error in command: Unknown function: %s", funcName)
+			return "", fmt.Errorf("built-in function error in command: unknown function: %s", funcName)
 		}
 
-		// Replace the entire $$Func(...) expression with the result
-		command = command[:start-7] + replacement + command[end+1:]
-		start = start - 7 + len(replacement) // Adjust start for the next iteration
+		// Replace the entire function call with its result in the processed command
+		processedCommand = processedCommand[:funcStartIndex] + replacement + processedCommand[contentEndIndex+1:]
 	}
 
-	return command, nil
+	// Safety check for possible infinite loops
+	if iterCount >= maxIterations {
+		return "", errors.New("built-in function error: too many iterations, possible infinite loop")
+	}
+
+	return processedCommand, nil
 }
 
 // Built-in functions for remote command
-// getPublicIP function to get and replace string with the public IP of the target
-func getPublicIP(nsId, mciId, vmId, prefix, postfix string) (string, error) {
+// replaceWithPublicIP function to get and replace string with the public IP of the target
+func replaceWithPublicIP(nsId, mciId, vmId, prefix, postfix string) (string, error) {
 	vmStatus, err := GetVmCurrentPublicIp(nsId, mciId, vmId)
 	if err != nil {
 		return "", err
@@ -1240,8 +1346,18 @@ func getPublicIP(nsId, mciId, vmId, prefix, postfix string) (string, error) {
 	return prefix + ip + postfix, err
 }
 
-// getPublicIP function to get and replace string with the public IP list of the target
-func getPublicIPs(nsId, mciId, separator, prefix, postfix string) (string, error) {
+// replaceWithPrivateIP function to get and replace string with the private IP of the target
+func replaceWithPrivateIP(nsId, mciId, vmId, prefix, postfix string) (string, error) {
+	vmStatus, err := GetVmCurrentPublicIp(nsId, mciId, vmId)
+	if err != nil {
+		return "", err
+	}
+	ip := vmStatus.PrivateIp
+	return prefix + ip + postfix, err
+}
+
+// replaceWithPublicIPs function to get and replace string with the public IP list of the target
+func replaceWithPublicIPs(nsId, mciId, separator, prefix, postfix string) (string, error) {
 	mciStatus, err := GetMciStatus(nsId, mciId)
 	if err != nil {
 		return "", err
@@ -1251,4 +1367,22 @@ func getPublicIPs(nsId, mciId, separator, prefix, postfix string) (string, error
 		ips[i] = prefix + vmStatus.PublicIp + postfix
 	}
 	return strings.Join(ips, separator), nil
+}
+
+// replaceWithPrivateIPs function to get and replace string with the Private IP list of the target
+func replaceWithPrivateIPs(nsId, mciId, separator, prefix, postfix string) (string, error) {
+	mciStatus, err := GetMciStatus(nsId, mciId)
+	if err != nil {
+		return "", err
+	}
+	ips := make([]string, len(mciStatus.Vm))
+	for i, vmStatus := range mciStatus.Vm {
+		ips[i] = prefix + vmStatus.PrivateIp + postfix
+	}
+	return strings.Join(ips, separator), nil
+}
+
+// replaceWithId function to replace string with the prefix and postfix
+func replaceWithId(id, prefix, postfix string) string {
+	return prefix + id + postfix
 }
