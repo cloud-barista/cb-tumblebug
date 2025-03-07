@@ -1697,7 +1697,7 @@ paths:
           default: g1-1
       - name: labelSelector
         in: query
-        description: "Label selector query. Example: env=production,tier=backend"
+        description: "Target VM Label selector query. Example: sys.id=g1-1,role=worker"
         schema:
           type: string
       - name: x-request-id

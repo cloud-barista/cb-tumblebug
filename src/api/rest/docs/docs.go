@@ -2267,7 +2267,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Label selector query. Example: env=production,tier=backend",
+                        "description": "Target VM Label selector query. Example: sys.id=g1-1,role=worker",
                         "name": "labelSelector",
                         "in": "query"
                     },
