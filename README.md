@@ -401,14 +401,17 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
       ├── deploy-dragonfly-docker.sh # Automatically deploy CB-Dragonfly on MCI and set up the environment
       ├── clean-all.sh # Delete all objects in reverse order of creation
       ├── create-k8scluster-only.sh # Create a K8s cluster for the multi-cloud infrastructure specified in the testSet
-      ├── get-k8scluster.sh # Get K8s cluster information for the multi-cloud infrastructure specified in the testSet
-      ├── clean-k8scluster-only.sh # Delete the K8s cluster for the multi-cloud infrastructure specified in the testSet
-      ├── force-clean-k8scluster-only.sh # Force delete the K8s cluster for the multi-cloud infrastructure specified in the testSet if deletion fails
-      ├── add-k8snodegroup.sh # Add a new K8s node group to the created K8s cluster
-      ├── remove-k8snodegroup.sh # Delete the newly created K8s node group in the K8s cluster
-      ├── set-k8snodegroup-autoscaling.sh # Change the autoscaling setting of the created K8s node group to off
-      ├── change-k8snodegroup-autoscalesize.sh # Change the autoscale size of the created K8s node group
-      ├── deploy-weavescope-to-k8scluster.sh # Deploy weavescope to the created K8s cluster
+      ├── get-k8scluster.sh # Get each K8s cluster information for the multi-cloud infrastructure specified in the testSet
+      ├── clean-k8scluster-only.sh # Delete each K8s cluster for the multi-cloud infrastructure specified in the testSet
+      ├── force-clean-k8scluster-only.sh # Force delete each K8s cluster for the multi-cloud infrastructure specified in the testSet if deletion fails
+      ├── add-k8snodegroup.sh # Add a new K8s node group to each K8s cluster
+      ├── remove-k8snodegroup.sh # Delete the new K8s node group in each K8s cluster
+      ├── set-k8snodegroup-autoscaling.sh # Change the autoscaling setting of teach K8s node group to off
+      ├── change-k8snodegroup-autoscalesize.sh # Change the autoscale size of each K8s node group
+      ├── deploy-weavescope-to-k8scluster.sh # Deploy weavescope to each K8s cluster
+      ├── deploy-nginx-with-pvc-to-k8scluster.sh # Deploy nginx to each K8s cluster
+      ├── undeploy-nginx-with-pvc-to-k8scluster.sh # Undeploy nginx from each K8s cluster
+      ├── upgrade-k8scluster.sh # Upgrade each K8s cluster
       └── executionStatus # Logs of the tests performed (information is added when testAll is executed and removed when cleanAll is executed. You can check the ongoing tasks)
   ```
 
@@ -472,20 +475,23 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
   - `./command-mci.sh -n shson -f ../testSetCustom.env` # Execute IP and hostname retrieval for all VMs in MCI
 
-- K8s Cluster Test (WIP: Stability work in progress for each CSP)
+- K8s Cluster Test
 
   ```bash
-  ./create-resource-ns-cloud.sh -n tb -f ../testSet.env` # Create Resource required for K8s cluster creation
-  ./create-k8scluster-only.sh -n tb -f ../testSet.env -x 1 -z 1` # Create K8s cluster (-x maximum number of nodes, -z additional name for K8s node group and K8s cluster)
-  ./get-k8scluster.sh -n tb -f ../testSet.env -z 1` # Get K8s cluster information
-  ./add-k8snodegroup.sh -n tb -f ../testSet.env -x 1 -z 1` # Add a new K8s node group to the K8s cluster
-  ./change-k8snodegroup-autoscalesize.sh -n tb -f ../testSet.env -x 1 -z 1` # Change the autoscale size of the specified K8s node group
-  ./deploy-weavescope-to-k8scluster.sh -n tb -f ../testSet.env -y n` # Deploy weavescope to the created K8s cluster
-  ./set-k8snodegroup-autoscaling.sh -n tb -f ../testSet.env -z 1` # Change the autoscaling setting of the new K8s node group to off
-  ./remove-k8snodegroup.sh -n tb -f ../testSet.env -z 1` # Delete the newly created K8s node group
-  ./clean-k8scluster-only.sh -n tb -f ../testSet.env -z 1` # Delete the created K8s cluster
-  ./force-clean-k8scluster-only.sh -n tb -f ../testSet.env -z 1` # Force delete the created K8s cluster if deletion fails
-  ./clean-resource-ns-cloud.h -n tb -f ../testSet.env` # Delete the created Resource
+  ./create-resource-ns-cloud.sh -n tb -f ../testSet.env # Create Resource required for K8s cluster creation
+  ./create-k8scluster-only.sh -n tb -f ../testSet.env -x 1 -z 1 # Create a K8s cluster to specified CSPs (-x maximum number of nodes, -z additional name for K8s node group and K8s cluster)
+  ./get-k8scluster.sh -n tb -f ../testSet.env -z 1 # Get each K8s cluster information
+  ./add-k8snodegroup.sh -n tb -f ../testSet.env -x 1 -z 1 # Add a new K8s node group to each K8s cluster
+  ./change-k8snodegroup-autoscalesize.sh -n tb -f ../testSet.env -x 1 -z 1 # Change the autoscale size of each K8s node group
+  ./deploy-weavescope-to-k8scluster.sh -n tb -f ../testSet.env -y n # Deploy weavescope to each K8s cluster with loadbalancer
+  ./deploy-nginx-with-pvc-to-k8scluster.sh -n tb -f ../testSet.env -y n # Deploy nginx with pvc to each K8s cluster
+  ./undeploy-nginx-with-pvc-to-k8scluster.sh -n tb -f ../testSet.env -y n # Undeploy nginx with pvc from each K8s cluster
+  ./upgrade-k8scluster.sh -n tb -f ../testSet.env -x 1 -z 1 # Upgrade each K8s cluster
+  ./set-k8snodegroup-autoscaling.sh -n tb -f ../testSet.env -z 1 # Change the autoscaling setting of each new K8s node group to off
+  ./remove-k8snodegroup.sh -n tb -f ../testSet.env -z 1 # Delete each new K8s node group
+  ./clean-k8scluster-only.sh -n tb -f ../testSet.env -z 1 # Delete each K8s cluster
+  ./force-clean-k8scluster-only.sh -n tb -f ../testSet.env -z 1 # Force delete each K8s cluster if deletion fails
+  ./clean-resource-ns-cloud.h -n tb -f ../testSet.env # Delete the related Resources
   ```
 
 
