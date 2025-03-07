@@ -48,7 +48,7 @@ func InstallBenchmarkAgentToMci(nsId string, mciId string, req *model.MciCmdReq,
 	// Replace given parameter with the installation cmd
 	req.Command = append(req.Command, cmd)
 
-	sshCmdResult, err := RemoteCommandToMci(nsId, mciId, "", "", req)
+	sshCmdResult, err := RemoteCommandToMci(nsId, mciId, "", "", "", req)
 
 	if err != nil {
 		temp := []model.SshCmdResult{}

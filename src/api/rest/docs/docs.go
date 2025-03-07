@@ -2267,6 +2267,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Label selector query. Example: env=production,tier=backend",
+                        "name": "labelSelector",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"
