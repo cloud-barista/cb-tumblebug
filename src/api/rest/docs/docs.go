@@ -11746,6 +11746,9 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "diskSizeGB": {
+                    "$ref": "#/definitions/model.Range"
+                },
                 "evaluationScore01": {
                     "$ref": "#/definitions/model.Range"
                 },
@@ -11806,9 +11809,6 @@ const docTemplate = `{
                 "regionName": {
                     "type": "string"
                 },
-                "storageGiB": {
-                    "$ref": "#/definitions/model.Range"
-                },
                 "vCPU": {
                     "$ref": "#/definitions/model.Range"
                 }
@@ -11841,6 +11841,19 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "model.ImageStatus": {
+            "type": "string",
+            "enum": [
+                "Available",
+                "Unavailable",
+                "NA"
+            ],
+            "x-enum-varnames": [
+                "ImageAvailable",
+                "ImageUnavailable",
+                "ImageNA"
+            ]
         },
         "model.InspectResource": {
             "type": "object",
@@ -12494,6 +12507,42 @@ const docTemplate = `{
                     "example": "default"
                 }
             }
+        },
+        "model.OSArchitecture": {
+            "type": "string",
+            "enum": [
+                "arm32",
+                "arm64",
+                "arm64_mac",
+                "x86_32",
+                "x86_64",
+                "x86_32_mac",
+                "x86_64_mac",
+                "NA"
+            ],
+            "x-enum-varnames": [
+                "ARM32",
+                "ARM64",
+                "ARM64_MAC",
+                "X86_32",
+                "X86_64",
+                "X86_32_MAC",
+                "X86_64_MAC",
+                "ArchitectureNA"
+            ]
+        },
+        "model.OSPlatform": {
+            "type": "string",
+            "enum": [
+                "Linux/UNIX",
+                "Windows",
+                "NA"
+            ],
+            "x-enum-varnames": [
+                "Linux_UNIX",
+                "Windows",
+                "PlatformNA"
+            ]
         },
         "model.ObjectStorageInfo": {
             "type": "object",
@@ -13295,49 +13344,100 @@ const docTemplate = `{
         },
         "model.SpiderGpuInfo": {
             "type": "object",
+            "required": [
+                "Count"
+            ],
             "properties": {
-                "count": {
-                    "type": "string"
+                "Count": {
+                    "description": "Number of GPUs, \"-1\" when not applicable",
+                    "type": "string",
+                    "example": "2"
                 },
-                "mem": {
-                    "type": "string"
+                "MemSizeGB": {
+                    "description": "Memory size of the GPU in GB, \"-1\" when not applicable",
+                    "type": "string",
+                    "example": "12"
                 },
-                "mfr": {
-                    "type": "string"
+                "Mfr": {
+                    "description": "Manufacturer of the GPU, NA when not applicable",
+                    "type": "string",
+                    "example": "NVIDIA"
                 },
-                "model": {
-                    "type": "string"
+                "Model": {
+                    "description": "Model of the GPU, NA when not applicable",
+                    "type": "string",
+                    "example": "Tesla K80"
+                },
+                "TotalMemSizeGB": {
+                    "description": "Total Memory size of the GPU in GB, \"-1\" when not applicable",
+                    "type": "string",
+                    "example": "24"
                 }
             }
         },
         "model.SpiderImageInfo": {
             "type": "object",
             "properties": {
-                "guestOS": {
-                    "description": "Windows7, Ubuntu etc.",
-                    "type": "string"
-                },
-                "iid": {
-                    "description": "Fields for response",
+                "IId": {
+                    "description": "{NameId, SystemId}, {ami-00aa5a103ddf4509f, ami-00aa5a103ddf4509f}",
                     "allOf": [
                         {
                             "$ref": "#/definitions/model.IID"
                         }
                     ]
                 },
-                "keyValueList": {
+                "ImageStatus": {
+                    "description": "Available, Unavailable",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ImageStatus"
+                        }
+                    ],
+                    "example": "Available"
+                },
+                "KeyValueList": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.KeyValue"
                     }
                 },
-                "name": {
-                    "description": "Fields for request",
-                    "type": "string"
+                "Name": {
+                    "description": "ami-00aa5a103ddf4509f",
+                    "type": "string",
+                    "example": "ami-00aa5a103ddf4509f"
                 },
-                "status": {
-                    "description": "available, unavailable",
-                    "type": "string"
+                "OSArchitecture": {
+                    "description": "arm64, x86_64 etc.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.OSArchitecture"
+                        }
+                    ],
+                    "example": "x86_64"
+                },
+                "OSDiskSizeGB": {
+                    "description": "10, 50, 100 etc.",
+                    "type": "string",
+                    "example": "50"
+                },
+                "OSDiskType": {
+                    "description": "ebs, HDD, etc.",
+                    "type": "string",
+                    "example": "HDD"
+                },
+                "OSDistribution": {
+                    "description": "Ubuntu 22.04~, CentOS 8 etc.",
+                    "type": "string",
+                    "example": "Ubuntu 22.04~"
+                },
+                "OSPlatform": {
+                    "description": "Linux/UNIX, Windows, NA",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.OSPlatform"
+                        }
+                    ],
+                    "example": "Linux/UNIX"
                 }
             }
         },
@@ -13513,30 +13613,55 @@ const docTemplate = `{
         },
         "model.SpiderSpecInfo": {
             "type": "object",
+            "required": [
+                "DiskSizeGB",
+                "MemSizeMib",
+                "Name",
+                "Region",
+                "VCpu"
+            ],
             "properties": {
-                "gpu": {
+                "DiskSizeGB": {
+                    "description": "Disk size in GB, \"-1\" when not applicable",
+                    "type": "string",
+                    "example": "8"
+                },
+                "Gpu": {
+                    "description": "GPU details if available",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.SpiderGpuInfo"
                     }
                 },
-                "keyValueList": {
+                "KeyValueList": {
+                    "description": "Additional key-value pairs for the VM spec",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.KeyValue"
                     }
                 },
-                "mem": {
-                    "type": "string"
+                "MemSizeMib": {
+                    "description": "Memory size in MiB",
+                    "type": "string",
+                    "example": "1024"
                 },
-                "name": {
-                    "type": "string"
+                "Name": {
+                    "description": "Name of the VM spec",
+                    "type": "string",
+                    "example": "t2.micro"
                 },
-                "region": {
-                    "type": "string"
+                "Region": {
+                    "description": "Region where the VM spec is available",
+                    "type": "string",
+                    "example": "us-east-1"
                 },
-                "vcpu": {
-                    "$ref": "#/definitions/model.SpiderVCpuInfo"
+                "VCpu": {
+                    "description": "CPU details of the VM spec",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.SpiderVCpuInfo"
+                        }
+                    ]
                 }
             }
         },
@@ -13553,13 +13678,19 @@ const docTemplate = `{
         },
         "model.SpiderVCpuInfo": {
             "type": "object",
+            "required": [
+                "Count"
+            ],
             "properties": {
-                "clock": {
-                    "description": "GHz",
-                    "type": "string"
+                "ClockGHz": {
+                    "description": "Clock speed in GHz, \"-1\" when not applicable",
+                    "type": "string",
+                    "example": "2.5"
                 },
-                "count": {
-                    "type": "string"
+                "Count": {
+                    "description": "Number of VCpu, \"-1\" when not applicable",
+                    "type": "string",
+                    "example": "2"
                 }
             }
         },
@@ -14110,6 +14241,11 @@ const docTemplate = `{
         "model.TbImageInfo": {
             "type": "object",
             "properties": {
+                "architecture": {
+                    "description": "arm64, x86_64 etc.",
+                    "type": "string",
+                    "example": "x86_64"
+                },
                 "associatedObjectList": {
                     "type": "array",
                     "items": {
@@ -14129,6 +14265,11 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string"
+                },
+                "distribution": {
+                    "description": "Ubuntu 22.04~, CentOS 8 etc.",
+                    "type": "string",
+                    "example": "Ubuntu 22.04~"
                 },
                 "guestOS": {
                     "description": "Windows7, Ubuntu etc.",
@@ -14161,6 +14302,21 @@ const docTemplate = `{
                     "description": "required to save in RDB",
                     "type": "string",
                     "example": "default"
+                },
+                "platform": {
+                    "description": "Linux/UNIX, Windows, NA",
+                    "type": "string",
+                    "example": "Linux/UNIX"
+                },
+                "rootDeviceMinSizeGB": {
+                    "description": "10, 50, 100 etc.",
+                    "type": "number",
+                    "example": 50
+                },
+                "rootDeviceType": {
+                    "description": "ebs, HDD, etc.",
+                    "type": "string",
+                    "example": "HDD"
                 },
                 "status": {
                     "description": "available, unavailable",
@@ -15368,6 +15524,9 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "diskSizeGB": {
+                    "type": "number"
+                },
                 "evaluationScore01": {
                     "type": "number"
                 },
@@ -15448,9 +15607,6 @@ const docTemplate = `{
                 },
                 "rootDiskType": {
                     "type": "string"
-                },
-                "storageGiB": {
-                    "type": "integer"
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",

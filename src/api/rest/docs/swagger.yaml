@@ -8925,6 +8925,8 @@ components:
           type: string
         description:
           type: string
+        diskSizeGB:
+          $ref: '#/components/schemas/model.Range'
         evaluationScore01:
           $ref: '#/components/schemas/model.Range'
         evaluationScore02:
@@ -8965,8 +8967,6 @@ components:
           type: string
         regionName:
           type: string
-        storageGiB:
-          $ref: '#/components/schemas/model.Range'
         vCPU:
           $ref: '#/components/schemas/model.Range'
     model.IID:
@@ -8988,6 +8988,16 @@ components:
           type: array
           items:
             type: string
+    model.ImageStatus:
+      type: string
+      enum:
+      - Available
+      - Unavailable
+      - NA
+      x-enum-varnames:
+      - ImageAvailable
+      - ImageUnavailable
+      - ImageNA
     model.InspectResource:
       type: object
       properties:
@@ -9427,6 +9437,36 @@ components:
         name:
           type: string
           example: default
+    model.OSArchitecture:
+      type: string
+      enum:
+      - arm32
+      - arm64
+      - arm64_mac
+      - x86_32
+      - x86_64
+      - x86_32_mac
+      - x86_64_mac
+      - NA
+      x-enum-varnames:
+      - ARM32
+      - ARM64
+      - ARM64_MAC
+      - X86_32
+      - X86_64
+      - X86_32_MAC
+      - X86_64_MAC
+      - ArchitectureNA
+    model.OSPlatform:
+      type: string
+      enum:
+      - Linux/UNIX
+      - Windows
+      - NA
+      x-enum-varnames:
+      - Linux_UNIX
+      - Windows
+      - PlatformNA
     model.ObjectStorageInfo:
       type: object
       properties:
@@ -9983,37 +10023,76 @@ components:
       - SpiderClusterUpdating
       - SpiderClusterDeleting
     model.SpiderGpuInfo:
+      required:
+      - Count
       type: object
       properties:
-        count:
+        Count:
           type: string
-        mem:
+          description: "Number of GPUs, \"-1\" when not applicable"
+          example: "2"
+        MemSizeGB:
           type: string
-        mfr:
+          description: "Memory size of the GPU in GB, \"-1\" when not applicable"
+          example: "12"
+        Mfr:
           type: string
-        model:
+          description: "Manufacturer of the GPU, NA when not applicable"
+          example: NVIDIA
+        Model:
           type: string
+          description: "Model of the GPU, NA when not applicable"
+          example: Tesla K80
+        TotalMemSizeGB:
+          type: string
+          description: "Total Memory size of the GPU in GB, \"-1\" when not applicable"
+          example: "24"
     model.SpiderImageInfo:
       type: object
       properties:
-        guestOS:
-          type: string
-          description: "Windows7, Ubuntu etc."
-        iid:
+        IId:
           type: object
-          description: Fields for response
+          description: "{NameId, SystemId}, {ami-00aa5a103ddf4509f, ami-00aa5a103ddf4509f}"
           allOf:
           - $ref: '#/components/schemas/model.IID'
-        keyValueList:
+        ImageStatus:
+          type: object
+          description: "Available, Unavailable"
+          example: Available
+          allOf:
+          - $ref: '#/components/schemas/model.ImageStatus'
+        KeyValueList:
           type: array
           items:
             $ref: '#/components/schemas/model.KeyValue'
-        name:
+        Name:
           type: string
-          description: Fields for request
-        status:
+          description: ami-00aa5a103ddf4509f
+          example: ami-00aa5a103ddf4509f
+        OSArchitecture:
+          type: object
+          description: "arm64, x86_64 etc."
+          example: x86_64
+          allOf:
+          - $ref: '#/components/schemas/model.OSArchitecture'
+        OSDiskSizeGB:
           type: string
-          description: "available, unavailable"
+          description: "10, 50, 100 etc."
+          example: "50"
+        OSDiskType:
+          type: string
+          description: "ebs, HDD, etc."
+          example: HDD
+        OSDistribution:
+          type: string
+          description: "Ubuntu 22.04~, CentOS 8 etc."
+          example: Ubuntu 22.04~
+        OSPlatform:
+          type: object
+          description: "Linux/UNIX, Windows, NA"
+          example: Linux/UNIX
+          allOf:
+          - $ref: '#/components/schemas/model.OSPlatform'
     model.SpiderImageList:
       type: object
       properties:
@@ -10135,24 +10214,45 @@ components:
           type: string
           description: ex) "region01"
     model.SpiderSpecInfo:
+      required:
+      - DiskSizeGB
+      - MemSizeMib
+      - Name
+      - Region
+      - VCpu
       type: object
       properties:
-        gpu:
+        DiskSizeGB:
+          type: string
+          description: "Disk size in GB, \"-1\" when not applicable"
+          example: "8"
+        Gpu:
           type: array
+          description: GPU details if available
           items:
             $ref: '#/components/schemas/model.SpiderGpuInfo'
-        keyValueList:
+        KeyValueList:
           type: array
+          description: Additional key-value pairs for the VM spec
           items:
             $ref: '#/components/schemas/model.KeyValue'
-        mem:
+        MemSizeMib:
           type: string
-        name:
+          description: Memory size in MiB
+          example: "1024"
+        Name:
           type: string
-        region:
+          description: Name of the VM spec
+          example: t2.micro
+        Region:
           type: string
-        vcpu:
-          $ref: '#/components/schemas/model.SpiderVCpuInfo'
+          description: Region where the VM spec is available
+          example: us-east-1
+        VCpu:
+          type: object
+          description: CPU details of the VM spec
+          allOf:
+          - $ref: '#/components/schemas/model.SpiderVCpuInfo'
     model.SpiderSpecList:
       type: object
       properties:
@@ -10161,13 +10261,18 @@ components:
           items:
             $ref: '#/components/schemas/model.SpiderSpecInfo'
     model.SpiderVCpuInfo:
+      required:
+      - Count
       type: object
       properties:
-        clock:
+        ClockGHz:
           type: string
-          description: GHz
-        count:
+          description: "Clock speed in GHz, \"-1\" when not applicable"
+          example: "2.5"
+        Count:
           type: string
+          description: "Number of VCpu, \"-1\" when not applicable"
+          example: "2"
     model.SqlDBInfo:
       type: object
       properties:
@@ -10575,6 +10680,10 @@ components:
     model.TbImageInfo:
       type: object
       properties:
+        architecture:
+          type: string
+          description: "arm64, x86_64 etc."
+          example: x86_64
         associatedObjectList:
           type: array
           items:
@@ -10589,6 +10698,10 @@ components:
           example: csp-06eb41e14121c550a
         description:
           type: string
+        distribution:
+          type: string
+          description: "Ubuntu 22.04~, CentOS 8 etc."
+          example: Ubuntu 22.04~
         guestOS:
           type: string
           description: "Windows7, Ubuntu etc."
@@ -10613,6 +10726,18 @@ components:
           type: string
           description: required to save in RDB
           example: default
+        platform:
+          type: string
+          description: "Linux/UNIX, Windows, NA"
+          example: Linux/UNIX
+        rootDeviceMinSizeGB:
+          type: number
+          description: "10, 50, 100 etc."
+          example: 50.0
+        rootDeviceType:
+          type: string
+          description: "ebs, HDD, etc."
+          example: HDD
         status:
           type: string
           description: "available, unavailable"
@@ -11533,6 +11658,8 @@ components:
           example: csp-06eb41e14121c550a
         description:
           type: string
+        diskSizeGB:
+          type: number
         evaluationScore01:
           type: number
         evaluationScore02:
@@ -11589,8 +11716,6 @@ components:
           type: string
         rootDiskType:
           type: string
-        storageGiB:
-          type: integer
         systemLabel:
           type: string
           description: SystemLabel is for describing the Resource in a keyword (any
