@@ -20,16 +20,49 @@ type SpiderImageReqInfoWrapper struct {
 	ReqInfo        SpiderImageInfo
 }
 
-// SpiderImageInfo is a struct to create JSON body of 'Get image request'
-type SpiderImageInfo struct {
-	// Fields for request
-	Name string
+type OSArchitecture string
 
-	// Fields for response
-	IId          IID    // {NameId, SystemId}
-	GuestOS      string // Windows7, Ubuntu etc.
-	Status       string // available, unavailable
-	KeyValueList []KeyValue
+const (
+	ARM32          OSArchitecture = "arm32"
+	ARM64          OSArchitecture = "arm64"
+	ARM64_MAC      OSArchitecture = "arm64_mac"
+	X86_32         OSArchitecture = "x86_32"
+	X86_64         OSArchitecture = "x86_64"
+	X86_32_MAC     OSArchitecture = "x86_32_mac"
+	X86_64_MAC     OSArchitecture = "x86_64_mac"
+	ArchitectureNA OSArchitecture = "NA"
+)
+
+type OSPlatform string
+
+const (
+	Linux_UNIX OSPlatform = "Linux/UNIX"
+	Windows    OSPlatform = "Windows"
+	PlatformNA OSPlatform = "NA"
+)
+
+type ImageStatus string
+
+const (
+	ImageAvailable   ImageStatus = "Available"
+	ImageUnavailable ImageStatus = "Unavailable"
+	ImageNA          ImageStatus = "NA"
+)
+
+// SpiderImageInfo represents the information of an Image.
+type SpiderImageInfo struct {
+	IId IID `json:"IId" description:"The ID of the image."` // {NameId, SystemId}, {ami-00aa5a103ddf4509f, ami-00aa5a103ddf4509f}
+
+	Name           string         `json:"Name" example:"ami-00aa5a103ddf4509f" description:"The name of the image."`                                   // ami-00aa5a103ddf4509f
+	OSArchitecture OSArchitecture `json:"OSArchitecture" example:"x86_64" description:"The architecture of the operating system of the image."`        // arm64, x86_64 etc.
+	OSPlatform     OSPlatform     `json:"OSPlatform" example:"Linux/UNIX" description:"The platform of the operating system of the image."`            // Linux/UNIX, Windows, NA
+	OSDistribution string         `json:"OSDistribution" example:"Ubuntu 22.04~" description:"The distribution of the operating system of the image."` // Ubuntu 22.04~, CentOS 8 etc.
+	OSDiskType     string         `json:"OSDiskType" example:"HDD" description:"The type of the OS disk of for the VM being created."`                 // ebs, HDD, etc.
+	OSDiskSizeGB   string         `json:"OSDiskSizeGB" example:"50" description:"The (minimum) OS disk size in GB for the VM being created."`          // 10, 50, 100 etc.
+
+	ImageStatus ImageStatus `json:"ImageStatus" example:"Available" description:"The status of the image, e.g., Available or Unavailable."` // Available, Unavailable
+
+	KeyValueList []KeyValue `json:"KeyValueList,omitempty" validate:"omitempty" description:"A list of key-value pairs associated with the image."`
 }
 
 // TbImageReq is a struct to handle 'Register image' request toward CB-Tumblebug.
@@ -51,14 +84,21 @@ type TbImageInfo struct {
 	CspImageName string `json:"cspImageName,omitempty" example:"csp-06eb41e14121c550a"`
 
 	// Name is human-readable string to represent the object
-	Name                 string     `json:"name" example:"aws-ap-southeast-1"`
-	Namespace            string     `json:"namespace,omitempty" example:"default"` // required to save in RDB
-	ConnectionName       string     `json:"connectionName,omitempty"`
-	InfraType            string     `json:"infraType,omitempty"` // vm|k8s|kubernetes|container, etc.
-	Description          string     `json:"description,omitempty"`
-	CreationDate         string     `json:"creationDate,omitempty"`
-	GuestOS              string     `json:"guestOS,omitempty"` // Windows7, Ubuntu etc.
-	Status               string     `json:"status,omitempty"`  // available, unavailable
+	Name           string `json:"name" example:"aws-ap-southeast-1"`
+	Namespace      string `json:"namespace,omitempty" example:"default"` // required to save in RDB
+	ConnectionName string `json:"connectionName,omitempty"`
+	InfraType      string `json:"infraType,omitempty"` // vm|k8s|kubernetes|container, etc.
+	Description    string `json:"description,omitempty"`
+	CreationDate   string `json:"creationDate,omitempty"`
+	GuestOS        string `json:"guestOS,omitempty"` // Windows7, Ubuntu etc.
+
+	Architecture        string  `json:"architecture" example:"x86_64" description:"The architecture of the operating system of the image."`        // arm64, x86_64 etc.
+	Platform            string  `json:"platform" example:"Linux/UNIX" description:"The platform of the operating system of the image."`            // Linux/UNIX, Windows, NA
+	Distribution        string  `json:"distribution" example:"Ubuntu 22.04~" description:"The distribution of the operating system of the image."` // Ubuntu 22.04~, CentOS 8 etc.
+	RootDeviceType      string  `json:"rootDeviceType" example:"HDD" description:"The type of the OS disk of for the VM being created."`           // ebs, HDD, etc.
+	RootDeviceMinSizeGB float32 `json:"rootDeviceMinSizeGB" example:"50" description:"The (minimum) OS disk size in GB for the VM being created."` // 10, 50, 100 etc.
+
+	Status               string     `json:"status,omitempty"` // available, unavailable
 	KeyValueList         []KeyValue `json:"keyValueList,omitempty"`
 	AssociatedObjectList []string   `json:"associatedObjectList,omitempty"`
 	IsAutoGenerated      bool       `json:"isAutoGenerated,omitempty"`

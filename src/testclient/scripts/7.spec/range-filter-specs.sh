@@ -17,7 +17,7 @@ resp=$(
 		    "memoryGiB": {
 			    "min": 4
 		    },
-		    "storageGiB": {
+		    "diskSizeGB": {
 			    "max": 400
 		    }
 	    }
