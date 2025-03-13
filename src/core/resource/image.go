@@ -71,9 +71,9 @@ func ConvertSpiderImageToTumblebugImage(spiderImage model.SpiderImageInfo) (mode
 	tumblebugImage.Architecture = string(spiderImage.OSArchitecture)
 	tumblebugImage.Platform = string(spiderImage.OSPlatform)
 	tumblebugImage.Distribution = spiderImage.OSDistribution
-	tumblebugImage.RootDeviceType = spiderImage.OSDiskType
-	rootDeviceMinSizeGB, _ := strconv.ParseFloat(spiderImage.OSDiskSizeGB, 32)
-	tumblebugImage.RootDeviceMinSizeGB = float32(rootDeviceMinSizeGB)
+	tumblebugImage.RootDiskType = spiderImage.OSDiskType
+	rootDiskMinSizeGB, _ := strconv.ParseFloat(spiderImage.OSDiskSizeGB, 32)
+	tumblebugImage.RootDiskMinSizeGB = float32(rootDiskMinSizeGB)
 
 	tumblebugImage.Status = string(spiderImage.ImageStatus)
 	tumblebugImage.KeyValueList = spiderImage.KeyValueList

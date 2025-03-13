@@ -95,8 +95,8 @@ type TbImageInfo struct {
 	Architecture        string  `json:"architecture" example:"x86_64" description:"The architecture of the operating system of the image."`        // arm64, x86_64 etc.
 	Platform            string  `json:"platform" example:"Linux/UNIX" description:"The platform of the operating system of the image."`            // Linux/UNIX, Windows, NA
 	Distribution        string  `json:"distribution" example:"Ubuntu 22.04~" description:"The distribution of the operating system of the image."` // Ubuntu 22.04~, CentOS 8 etc.
-	RootDeviceType      string  `json:"rootDeviceType" example:"HDD" description:"The type of the OS disk of for the VM being created."`           // ebs, HDD, etc.
-	RootDeviceMinSizeGB float32 `json:"rootDeviceMinSizeGB" example:"50" description:"The (minimum) OS disk size in GB for the VM being created."` // 10, 50, 100 etc.
+	RootDiskType      string  `json:"rootDiskType" example:"HDD" description:"The type of the OS disk of for the VM being created."`           // ebs, HDD, etc.
+	RootDiskMinSizeGB float32 `json:"rootDiskMinSizeGB" example:"50" description:"The (minimum) OS disk size in GB for the VM being created."` // 10, 50, 100 etc.
 
 	Status               string     `json:"status,omitempty"` // available, unavailable
 	KeyValueList         []KeyValue `json:"keyValueList,omitempty"`
