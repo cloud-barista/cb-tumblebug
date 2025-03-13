@@ -10730,11 +10730,11 @@ components:
           type: string
           description: "Linux/UNIX, Windows, NA"
           example: Linux/UNIX
-        rootDeviceMinSizeGB:
+        rootDiskMinSizeGB:
           type: number
           description: "10, 50, 100 etc."
           example: 50.0
-        rootDeviceType:
+        rootDiskType:
           type: string
           description: "ebs, HDD, etc."
           example: HDD
@@ -12126,7 +12126,7 @@ components:
         resourceType:
           type: string
           description: ResourceType is the type of the resource
-        rootDeviceName:
+        rootDiskName:
           type: string
         rootDiskSize:
           type: string

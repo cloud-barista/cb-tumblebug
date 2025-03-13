@@ -14308,12 +14308,12 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Linux/UNIX"
                 },
-                "rootDeviceMinSizeGB": {
+                "rootDiskMinSizeGB": {
                     "description": "10, 50, 100 etc.",
                     "type": "number",
                     "example": 50
                 },
-                "rootDeviceType": {
+                "rootDiskType": {
                     "description": "ebs, HDD, etc.",
                     "type": "string",
                     "example": "HDD"
@@ -16148,7 +16148,7 @@ const docTemplate = `{
                     "description": "ResourceType is the type of the resource",
                     "type": "string"
                 },
-                "rootDeviceName": {
+                "rootDiskName": {
                     "type": "string"
                 },
                 "rootDiskSize": {
