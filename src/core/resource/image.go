@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -65,8 +66,16 @@ func ConvertSpiderImageToTumblebugImage(spiderImage model.SpiderImageInfo) (mode
 	tumblebugImage.CspImageName = spiderImage.IId.NameId
 	tumblebugImage.Description = common.LookupKeyValueList(spiderImage.KeyValueList, "Description")
 	tumblebugImage.CreationDate = common.LookupKeyValueList(spiderImage.KeyValueList, "CreationDate")
-	tumblebugImage.GuestOS = spiderImage.GuestOS
-	tumblebugImage.Status = spiderImage.Status
+	// GuestOS should be refinded, spiderImage.OSDistribution value is not ideal for GuestOS
+	tumblebugImage.GuestOS = spiderImage.OSDistribution
+	tumblebugImage.Architecture = string(spiderImage.OSArchitecture)
+	tumblebugImage.Platform = string(spiderImage.OSPlatform)
+	tumblebugImage.Distribution = spiderImage.OSDistribution
+	tumblebugImage.RootDiskType = spiderImage.OSDiskType
+	rootDiskMinSizeGB, _ := strconv.ParseFloat(spiderImage.OSDiskSizeGB, 32)
+	tumblebugImage.RootDiskMinSizeGB = float32(rootDiskMinSizeGB)
+
+	tumblebugImage.Status = string(spiderImage.ImageStatus)
 	tumblebugImage.KeyValueList = spiderImage.KeyValueList
 
 	return tumblebugImage, nil

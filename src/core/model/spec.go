@@ -25,27 +25,29 @@ import (
 type SpiderSpecInfo struct {
 	// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMSpecHandler.go
 
-	Region string
-	Name   string
-	VCpu   SpiderVCpuInfo
-	Mem    string
-	Gpu    []SpiderGpuInfo
+	Region     string          `json:"Region" validate:"required" example:"us-east-1"` // Region where the VM spec is available
+	Name       string          `json:"Name" validate:"required" example:"t2.micro"`    // Name of the VM spec
+	VCpu       SpiderVCpuInfo  `json:"VCpu" validate:"required"`                       // CPU details of the VM spec
+	MemSizeMiB string          `json:"MemSizeMib" validate:"required" example:"1024"`  // Memory size in MiB
+	DiskSizeGB string          `json:"DiskSizeGB" validate:"required" example:"8"`     // Disk size in GB, "-1" when not applicable
+	Gpu        []SpiderGpuInfo `json:"Gpu,omitempty" validate:"omitempty"`             // GPU details if available
 
-	KeyValueList []KeyValue
+	KeyValueList []KeyValue `json:"KeyValueList,omitempty" validate:"omitempty"` // Additional key-value pairs for the VM spec
 }
 
 // SpiderVCpuInfo is a struct to handle vCPU Info from CB-Spider.
 type SpiderVCpuInfo struct {
-	Count string
-	Clock string // GHz
+	Count    string `json:"Count" validate:"required" example:"2"`                 // Number of VCpu, "-1" when not applicable
+	ClockGHz string `json:"ClockGHz,omitempty" validate:"omitempty" example:"2.5"` // Clock speed in GHz, "-1" when not applicable
 }
 
 // SpiderGpuInfo is a struct to handle GPU Info from CB-Spider.
 type SpiderGpuInfo struct {
-	Count string
-	Mfr   string
-	Model string
-	Mem   string
+	Count          string `json:"Count" validate:"required" example:"2"`                      // Number of GPUs, "-1" when not applicable
+	Mfr            string `json:"Mfr,omitempty" validate:"omitempty" example:"NVIDIA"`        // Manufacturer of the GPU, NA when not applicable
+	Model          string `json:"Model,omitempty" validate:"omitempty" example:"Tesla K80"`   // Model of the GPU, NA when not applicable
+	MemSizeGB      string `json:"MemSizeGB,omitempty" validate:"omitempty" example:"12"`      // Memory size of the GPU in GB, "-1" when not applicable
+	TotalMemSizeGB string `json:"TotalMemSizeGB,omitempty" validate:"omitempty" example:"24"` // Total Memory size of the GPU in GB, "-1" when not applicable
 }
 
 // TbSpecReq is a struct to handle 'Register spec' request toward CB-Tumblebug.
@@ -79,7 +81,7 @@ type TbSpecInfo struct { // Tumblebug
 	OsType                string   `json:"osType,omitempty"`
 	VCPU                  uint16   `json:"vCPU,omitempty"`
 	MemoryGiB             float32  `json:"memoryGiB,omitempty"`
-	StorageGiB            uint32   `json:"storageGiB,omitempty"`
+	DiskSizeGB            float32  `json:"diskSizeGB,omitempty"`
 	MaxTotalStorageTiB    uint16   `json:"maxTotalStorageTiB,omitempty"`
 	NetBwGbps             uint16   `json:"netBwGbps,omitempty"`
 	AcceleratorModel      string   `json:"acceleratorModel,omitempty"`
@@ -121,7 +123,7 @@ type FilterSpecsByRangeRequest struct {
 	OsType              string `json:"osType"`
 	VCPU                Range  `json:"vCPU"`
 	MemoryGiB           Range  `json:"memoryGiB"`
-	StorageGiB          Range  `json:"storageGiB"`
+	DiskSizeGB          Range  `json:"diskSizeGB"`
 	MaxTotalStorageTiB  Range  `json:"maxTotalStorageTiB"`
 	NetBwGbps           Range  `json:"netBwGbps"`
 	AcceleratorModel    string `json:"acceleratorModel"`

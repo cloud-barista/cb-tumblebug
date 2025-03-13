@@ -341,7 +341,7 @@ type SpiderVMInfo struct {
 	PublicDNS         string
 	PrivateIP         string
 	PrivateDNS        string
-	RootDeviceName    string // "/dev/sda1", ...
+	RootDiskName    string // "/dev/sda1", ...
 	SSHAccessPoint    string
 	KeyValueList      []KeyValue
 }
@@ -412,7 +412,7 @@ type TbVmInfo struct {
 	PrivateDNS     string     `json:"privateDNS"`
 	RootDiskType   string     `json:"rootDiskType"`
 	RootDiskSize   string     `json:"rootDiskSize"`
-	RootDeviceName string     `json:"rootDeviceName"`
+	RootDiskName string     `json:"rootDiskName"`
 
 	ConnectionName   string     `json:"connectionName"`
 	ConnectionConfig ConnConfig `json:"connectionConfig"`
