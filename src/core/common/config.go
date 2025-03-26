@@ -39,6 +39,9 @@ var RuntimeCloudNetworkInfo = model.CloudNetworkInfo{}
 // RuntimeK8sClusterInfo is global variable for model.K8sClusterInfo
 var RuntimeK8sClusterInfo = model.K8sClusterInfo{}
 
+// RuntimeExtractPatternsInfo is global variable for model.ExtractPatternsInfo
+var RuntimeExtractPatternsInfo = model.ExtractPatternsInfo{}
+
 // RuntimeLatancyMap is global variable for LatancyMap
 var RuntimeLatancyMap = [][]string{}
 
@@ -176,16 +179,16 @@ func UpdateGlobalVariable(id string) error {
 		log.Debug().Msg("<TB_TERRARIUM_REST_URL> " + model.TerrariumRestUrl)
 	case model.StrDBUrl:
 		model.DBUrl = configInfo.Value
-		log.Debug().Msg("<TB_SQLITE_URL> " + model.DBUrl)
+		log.Debug().Msg("<TB_POSTGRES_ENDPOINT> " + model.DBUrl)
 	case model.StrDBDatabase:
 		model.DBDatabase = configInfo.Value
-		log.Debug().Msg("<TB_SQLITE_DATABASE> " + model.DBDatabase)
+		log.Debug().Msg("<TB_POSTGRES_DATABASE> " + model.DBDatabase)
 	case model.StrDBUser:
 		model.DBUser = configInfo.Value
-		log.Debug().Msg("<TB_SQLITE_USER> " + model.DBUser)
+		log.Debug().Msg("<TB_POSTGRES_USER> " + model.DBUser)
 	case model.StrDBPassword:
 		model.DBPassword = configInfo.Value
-		log.Debug().Msg("<TB_SQLITE_PASSWORD> " + model.DBPassword)
+		log.Debug().Msg("<TB_POSTGRES_PASSWORD> " + model.DBPassword)
 	case model.StrAutocontrolDurationMs:
 		model.AutocontrolDurationMs = configInfo.Value
 		log.Debug().Msg("<TB_AUTOCONTROL_DURATION_MS> " + model.AutocontrolDurationMs)
@@ -212,17 +215,17 @@ func InitConfig(id string) error {
 		model.TerrariumRestUrl = NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8055/terrarium")
 		log.Debug().Msg("<TB_TERRARIUM_REST_URL> " + model.TerrariumRestUrl)
 	case model.StrDBUrl:
-		model.DBUrl = NVL(os.Getenv("TB_SQLITE_URL"), "localhost:3306")
-		log.Debug().Msg("<TB_SQLITE_URL> " + model.DBUrl)
+		model.DBUrl = NVL(os.Getenv("TB_POSTGRES_ENDPOINT"), "localhost:3306")
+		log.Debug().Msg("<TB_POSTGRES_ENDPOINT> " + model.DBUrl)
 	case model.StrDBDatabase:
-		model.DBDatabase = NVL(os.Getenv("TB_SQLITE_DATABASE"), "cb_tumblebug")
-		log.Debug().Msg("<TB_SQLITE_DATABASE> " + model.DBDatabase)
+		model.DBDatabase = NVL(os.Getenv("TB_POSTGRES_DATABASE"), "cb_tumblebug")
+		log.Debug().Msg("<TB_POSTGRES_DATABASE> " + model.DBDatabase)
 	case model.StrDBUser:
-		model.DBUser = NVL(os.Getenv("TB_SQLITE_USER"), "cb_tumblebug")
-		log.Debug().Msg("<TB_SQLITE_USER> " + model.DBUser)
+		model.DBUser = NVL(os.Getenv("TB_POSTGRES_USER"), "cb_tumblebug")
+		log.Debug().Msg("<TB_POSTGRES_USER> " + model.DBUser)
 	case model.StrDBPassword:
-		model.DBPassword = NVL(os.Getenv("TB_SQLITE_PASSWORD"), "cb_tumblebug")
-		log.Debug().Msg("<TB_SQLITE_PASSWORD> " + model.DBPassword)
+		model.DBPassword = NVL(os.Getenv("TB_POSTGRES_PASSWORD"), "cb_tumblebug")
+		log.Debug().Msg("<TB_POSTGRES_PASSWORD> " + model.DBPassword)
 	case model.StrAutocontrolDurationMs:
 		model.AutocontrolDurationMs = NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
 		log.Debug().Msg("<TB_AUTOCONTROL_DURATION_MS> " + model.AutocontrolDurationMs)

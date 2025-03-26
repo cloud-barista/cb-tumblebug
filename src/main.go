@@ -43,8 +43,8 @@ import (
 
 	restServer "github.com/cloud-barista/cb-tumblebug/src/api/rest/server"
 
-	"xorm.io/xorm"
-	"xorm.io/xorm/names"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 // init for main
@@ -55,10 +55,10 @@ func init() {
 	model.SpiderRestUrl = common.NVL(os.Getenv("TB_SPIDER_REST_URL"), "http://localhost:1024/spider")
 	model.DragonflyRestUrl = common.NVL(os.Getenv("TB_DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
 	model.TerrariumRestUrl = common.NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8055/terrarium")
-	model.DBUrl = common.NVL(os.Getenv("TB_SQLITE_URL"), "localhost:3306")
-	model.DBDatabase = common.NVL(os.Getenv("TB_SQLITE_DATABASE"), "cb_tumblebug")
-	model.DBUser = common.NVL(os.Getenv("TB_SQLITE_USER"), "cb_tumblebug")
-	model.DBPassword = common.NVL(os.Getenv("TB_SQLITE_PASSWORD"), "cb_tumblebug")
+	model.DBUrl = common.NVL(os.Getenv("TB_POSTGRES_ENDPOINT"), "localhost:3306")
+	model.DBDatabase = common.NVL(os.Getenv("TB_POSTGRES_DATABASE"), "cb_tumblebug")
+	model.DBUser = common.NVL(os.Getenv("TB_POSTGRES_USER"), "cb_tumblebug")
+	model.DBPassword = common.NVL(os.Getenv("TB_POSTGRES_PASSWORD"), "cb_tumblebug")
 	model.AutocontrolDurationMs = common.NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
 	model.DefaultNamespace = common.NVL(os.Getenv("TB_DEFAULT_NAMESPACE"), "default")
 	model.DefaultCredentialHolder = common.NVL(os.Getenv("TB_DEFAULT_CREDENTIALHOLDER"), "admin")
@@ -112,40 +112,31 @@ func init() {
 		log.Error().Err(err).Msg("")
 	}
 
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Seoul",
+		strings.Split(model.DBUrl, ":")[0],
+		model.DBUser,
+		model.DBPassword,
+		model.DBDatabase,
+		strings.Split(model.DBUrl, ":")[1],
+	)
+
 	//err = common.OpenSQL("../meta_db/dat/cbtumblebug.s3db") // commented out to move to use XORM
-	model.ORM, err = xorm.NewEngine("sqlite3", "../meta_db/dat/cbtumblebug.s3db")
+	model.ORM, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("Failed to connect to PostgreSQL database")
 	} else {
-		log.Info().Msg("Database access info set successfully")
+		log.Info().Msg("PostgreSQL database connected successfully")
 	}
-	//model.ORM.SetMapper(names.SameMapper{})
-	model.ORM.SetTableMapper(names.SameMapper{})
-	model.ORM.SetColumnMapper(names.SameMapper{})
+	err = model.ORM.AutoMigrate(
+		&model.TbSpecInfo{},
+		&model.TbImageInfo{},
+		&model.TbCustomImageInfo{},
+	)
 
-	// "CREATE Table IF NOT EXISTS spec(...)"
-	//err = common.CreateSpecTable() // commented out to move to use XORM
-	err = model.ORM.Sync2(new(model.TbSpecInfo))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
-		log.Info().Msg("Table spec set successfully..")
-	}
-
-	// "CREATE Table IF NOT EXISTS image(...)"
-	//err = common.CreateImageTable() // commented out to move to use XORM
-	err = model.ORM.Sync2(new(model.TbImageInfo))
-	if err != nil {
-		log.Error().Err(err).Msg("")
-	} else {
-		log.Info().Msg("Table image set successfully..")
-	}
-
-	err = model.ORM.Sync2(new(model.TbCustomImageInfo))
-	if err != nil {
-		log.Error().Err(err).Msg("")
-	} else {
-		log.Info().Msg("Table customImage set successfully..")
+		log.Info().Msg("Database schemas migrated successfully")
 	}
 
 	err = addIndexes()
@@ -257,6 +248,28 @@ func setConfig() {
 
 	log.Info().Msg(k8sClusterInfoViper.ConfigFileUsed())
 	err = k8sClusterInfoViper.Unmarshal(&common.RuntimeK8sClusterInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		panic(err)
+	}
+
+	//
+	// Load extractionpatterns
+	//
+	extractPatternsViper := viper.New()
+	fileName = "extractionpatterns"
+	extractPatternsViper.AddConfigPath(".")
+	extractPatternsViper.AddConfigPath("./assets/")
+	extractPatternsViper.AddConfigPath("../assets/")
+	extractPatternsViper.SetConfigName(fileName)
+	extractPatternsViper.SetConfigType("yaml")
+	err = extractPatternsViper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("fatal error reading extractionpatterns config file: %w", err))
+	}
+
+	log.Info().Msg(extractPatternsViper.ConfigFileUsed())
+	err = extractPatternsViper.Unmarshal(&common.RuntimeExtractPatternsInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		panic(err)
@@ -398,28 +411,23 @@ func setConfig() {
 // addIndexes adds indexes to the tables for faster search
 func addIndexes() error {
 
-	_, err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_namespace ON TbSpecInfo (Namespace)")
-	if err != nil {
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_namespace ON tb_spec_infos (namespace)").Error; err != nil {
 		return err
 	}
 
-	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_vcpu ON TbSpecInfo (VCPU)")
-	if err != nil {
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_vcpu ON tb_spec_infos (v_cpu)").Error; err != nil {
 		return err
 	}
 
-	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_memorygib ON TbSpecInfo (MemoryGiB)")
-	if err != nil {
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_memorygib ON tb_spec_infos (memory_gi_b)").Error; err != nil {
 		return err
 	}
 
-	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_cspspecname ON TbSpecInfo (CspSpecName)")
-	if err != nil {
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_cspspecname ON tb_spec_infos (csp_spec_name)").Error; err != nil {
 		return err
 	}
 
-	_, err = model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_costperhour ON TbSpecInfo (CostPerHour)")
-	if err != nil {
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_costperhour ON tb_spec_infos (cost_per_hour)").Error; err != nil {
 		return err
 	}
 
