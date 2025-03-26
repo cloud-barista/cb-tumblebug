@@ -212,6 +212,69 @@ func RestFetchImages(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
+// RestFetchImagesAsync godoc
+// @ID FetchImagesAsync
+// @Summary Fetch images asynchronously
+// @Description Fetch images in the background without waiting for completion
+// @Tags [Infra Resource] Image Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(system)
+// @Success 202 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/resources/fetchImagesAsync [post]
+func RestFetchImagesAsync(c echo.Context) error {
+	nsId := c.Param("nsId")
+
+	u := &RestLookupImageRequest{}
+	if err := c.Bind(u); err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	var err error
+
+	if u.ConnectionName == "" {
+		err = resource.FetchImagesForAllConnConfigsAsync(nsId)
+		if err != nil {
+			return clientManager.EndRequestWithLog(c, err, nil)
+		}
+	} else {
+		_, err = resource.FetchImagesForConnConfig(u.ConnectionName, nsId)
+		if err != nil {
+			return clientManager.EndRequestWithLog(c, err, nil)
+		}
+	}
+
+	content := map[string]string{
+		"message": "Started fetching images in the background. Check server logs for progress."}
+
+	return c.JSON(202, content)
+}
+
+// RestGetFetchImagesAsyncResult godoc
+// @ID GetFetchImagesAsyncResult
+// @Summary Get result of asynchronous image fetching
+// @Description Get detailed results from the last asynchronous image fetch operation
+// @Tags [Infra Resource] Image Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(system)
+// @Success 200 {object} resource.FetchImagesAsyncResult
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/resources/fetchImagesResult [get]
+func RestGetFetchImagesAsyncResult(c echo.Context) error {
+	nsId := c.Param("nsId")
+
+	result, err := resource.GetFetchImagesAsyncResult(nsId)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
 // RestGetImage godoc
 // @ID GetImage
 // @Summary Get image

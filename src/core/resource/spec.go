@@ -27,6 +27,8 @@ import (
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	//"github.com/cloud-barista/cb-tumblebug/src/core/mci"
 
@@ -299,9 +301,9 @@ func RegisterSpecWithCspResourceId(nsId string, u *model.TbSpecReq, update bool)
 	content.AssociatedObjectList = []string{}
 
 	// "INSERT INTO `spec`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
-	_, err = model.ORM.Insert(&content)
-	if err != nil {
-		log.Error().Err(err).Msg("Cannot insert data to RDB")
+	result := model.ORM.Create(&content)
+	if result.Error != nil {
+		log.Error().Err(result.Error).Msg("Cannot insert data to RDB")
 	} else {
 		log.Trace().Msg("SQL: Insert success")
 	}
@@ -325,20 +327,22 @@ func RegisterSpecWithInfo(nsId string, content *model.TbSpecInfo, update bool) (
 
 	// "INSERT INTO `spec`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
 	// Attempt to insert the new record
-	_, err = model.ORM.Insert(content)
-	if err != nil {
+	result := model.ORM.Create(content)
+	if result.Error != nil {
 		if update {
-			// If insert fails and update is true, attempt to update the existing record
-			_, updateErr := model.ORM.Update(content, &model.TbSpecInfo{Namespace: content.Namespace, Id: content.Id})
-			if updateErr != nil {
-				log.Error().Err(updateErr).Msg("Error updating spec after insert failure")
-				return *content, updateErr
+			updateResult := model.ORM.Model(&model.TbSpecInfo{}).
+				Where("namespace = ? AND id = ?", content.Namespace, content.Id).
+				Updates(content)
+
+			if updateResult.Error != nil {
+				log.Error().Err(updateResult.Error).Msg("Error updating spec after insert failure")
+				return *content, updateResult.Error
 			} else {
 				log.Trace().Msg("SQL: Update success after insert failure")
 			}
 		} else {
-			log.Error().Err(err).Msg("Error inserting spec and update flag is false")
-			return *content, err
+			log.Error().Err(result.Error).Msg("Error inserting spec and update flag is false")
+			return *content, result.Error
 		}
 	} else {
 		log.Trace().Msg("SQL: Insert success")
@@ -349,55 +353,79 @@ func RegisterSpecWithInfo(nsId string, content *model.TbSpecInfo, update bool) (
 
 // RegisterSpecWithInfoInBulk register a list of specs in bulk
 func RegisterSpecWithInfoInBulk(specList []model.TbSpecInfo) error {
-	// Insert in bulk
-	// batch size is 90 due to the limit of SQL
-	batchSize := 90
+	// In PostgreSQL, use session_replication_role instead of PRAGMA
+	model.ORM.Exec("SET session_replication_role = 'replica'")
 
-	total := len(specList)
+	// Batch size - PostgreSQL can handle larger batches
+	batchSize := 100
+
+	uniqueSpecs := make(map[string]model.TbSpecInfo)
+	for _, spec := range specList {
+		key := spec.Namespace + ":" + spec.Id
+		uniqueSpecs[key] = spec
+	}
+	dedupedSpecList := make([]model.TbSpecInfo, 0, len(uniqueSpecs))
+	for _, spec := range uniqueSpecs {
+		dedupedSpecList = append(dedupedSpecList, spec)
+	}
+
+	total := len(dedupedSpecList)
 	for i := 0; i < total; i += batchSize {
 		end := i + batchSize
 		if end > total {
 			end = total
 		}
-		batch := specList[i:end]
+		batch := dedupedSpecList[i:end]
 
-		session := model.ORM.NewSession()
-		defer session.Close()
-		if err := session.Begin(); err != nil {
-			log.Error().Err(err).Msg("Failed to begin transaction")
+		// Start transaction
+		tx := model.ORM.Begin()
+		if tx.Error != nil {
+			log.Error().Err(tx.Error).Msg("Failed to begin transaction")
+			return tx.Error
+		}
+
+		// Use PostgreSQL's more concise UPSERT approach: UpdateAll: true
+		result := tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "namespace"}, {Name: "id"}},
+			UpdateAll: true, // Automatically update all fields (no need to specify individual fields)
+		}).CreateInBatches(&batch, len(batch))
+
+		if result.Error != nil {
+			tx.Rollback()
+			log.Error().Err(result.Error).Msg("Error upserting specs in bulk")
+			return result.Error
+		}
+
+		if err := tx.Commit().Error; err != nil {
+			log.Error().Err(err).Msg("Failed to commit transaction")
 			return err
 		}
 
-		affected, err := session.Insert(&batch)
-		if err != nil {
-			session.Rollback()
-			log.Error().Err(err).Msg("Error inserting specs in bulk")
-			return err
-		} else {
-			if err := session.Commit(); err != nil {
-				log.Error().Err(err).Msg("Failed to commit transaction")
-				return err
-			}
-			log.Trace().Msgf("Bulk insert success: %d records affected", affected)
-		}
+		log.Info().Msgf("Bulk upsert success: batch %d-%d, affected: %d records",
+			i, end-1, result.RowsAffected)
 	}
+
+	// Re-enable foreign key constraints
+	//model.ORM.Exec("SET session_replication_role = 'origin'")
 	return nil
 }
 
 // RemoveDuplicateSpecsInSQL is to remove duplicate specs in db to refine batch insert duplicates
 func RemoveDuplicateSpecsInSQL() error {
+	// PostgreSQL deduplication query
 	sqlStr := `
-	DELETE FROM TbSpecInfo
-	WHERE rowid NOT IN (
-		SELECT MAX(rowid)
-		FROM TbSpecInfo
-		GROUP BY Namespace, Id
-	);
-	`
-	_, err := model.ORM.Exec(sqlStr)
-	if err != nil {
-		log.Error().Err(err).Msg("Error deleting duplicate specs")
-		return err
+    DELETE FROM tb_spec_infos
+    WHERE ctid NOT IN (
+        SELECT MIN(ctid)
+        FROM tb_spec_infos
+        GROUP BY namespace, id
+    );
+    `
+
+	result := model.ORM.Exec(sqlStr)
+	if result.Error != nil {
+		log.Error().Err(result.Error).Msg("Error deleting duplicate specs")
+		return result.Error
 	}
 	log.Info().Msg("Duplicate specs removed successfully")
 
@@ -424,26 +452,32 @@ func GetSpec(nsId string, specKey string) (model.TbSpecInfo, error) {
 	specKey = strings.ToLower(specKey)
 
 	// ex: tencent+ap-jakarta+ubuntu22.04
-	spec := model.TbSpecInfo{Namespace: nsId, Id: specKey}
-	has, err := model.ORM.Where("LOWER(Namespace) = ? AND LOWER(Id) = ?", nsId, specKey).Get(&spec)
-	if err != nil {
-		log.Info().Err(err).Msgf("Failed to get spec %s by ID", specKey)
-	}
-	if has {
+	var spec model.TbSpecInfo
+	result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(id) = ?", nsId, specKey).First(&spec)
+	if result.Error == nil {
 		return spec, nil
 	}
 
-	// ex: img-487zeit5
-	spec = model.TbSpecInfo{Namespace: nsId, CspSpecName: specKey}
-	has, err = model.ORM.Where("LOWER(Namespace) = ? AND LOWER(CspSpecName) = ?", nsId, specKey).Get(&spec)
-	if err != nil {
-		log.Info().Err(err).Msgf("Failed to get spec %s by CspSpecName", specKey)
-	}
-	if has {
+	// ex: spec-487zeit5
+	result = model.ORM.Where("LOWER(namespace) = ? AND LOWER(csp_spec_name) = ?", nsId, specKey).First(&spec)
+	if result.Error == nil {
 		return spec, nil
 	}
 
 	return model.TbSpecInfo{}, fmt.Errorf("The specKey %s not found by any of ID, CspSpecName", specKey)
+}
+
+// 모델의 필드-컬럼 매핑 정보 가져오기
+func getColumnMapping(modelType interface{}) map[string]string {
+	stmt := &gorm.Statement{DB: model.ORM}
+	stmt.Parse(modelType)
+
+	mapping := make(map[string]string)
+	for _, field := range stmt.Schema.Fields {
+		mapping[field.Name] = field.DBName
+	}
+
+	return mapping
 }
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
@@ -454,9 +488,11 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]
 	}
 
 	// Start building the query using field names as database column names
-	session := model.ORM.Where("Namespace = ?", nsId)
+	query := model.ORM.Where("namespace = ?", nsId)
 
-	// Use reflection to iterate over filter struct
+	specColumnMapping := getColumnMapping(&model.TbSpecInfo{})
+
+	// 필드 이름은 소문자로 시작하도록 변경 (GORM 규칙)
 	val := reflect.ValueOf(filter)
 	typ := val.Type()
 
@@ -464,26 +500,29 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]
 		field := typ.Field(i)
 		value := val.Field(i)
 
-		// Convert the first letter of the field name to lowercase to match typical database column naming conventions
-		dbFieldName := strings.ToLower(field.Name[:1]) + field.Name[1:]
-		//log.Debug().Msgf("Field: %s, Value: %v", dbFieldName, value)
+		modelFieldName := field.Name
+
+		dbFieldName, exists := specColumnMapping[modelFieldName]
+		if !exists {
+			log.Warn().Msgf("Field %s not found in the model", modelFieldName)
+			return nil, fmt.Errorf("Field %s not found in the model", modelFieldName)
+		}
 
 		if value.Kind() == reflect.Struct {
-			// Handle range filters like VCPU, MemoryGiB, etc.
 			min := value.FieldByName("Min")
 			max := value.FieldByName("Max")
 
 			if min.IsValid() && !min.IsZero() {
-				session = session.And(dbFieldName+" >= ?", min.Interface())
+				query = query.Where(dbFieldName+" >= ?", min.Interface())
 			}
 			if max.IsValid() && !max.IsZero() {
-				session = session.And(dbFieldName+" <= ?", max.Interface())
+				query = query.Where(dbFieldName+" <= ?", max.Interface())
 			}
 		} else if value.IsValid() && !value.IsZero() {
 			switch value.Kind() {
 			case reflect.String:
 				cleanValue := ToNamingRuleCompatible(value.String())
-				session = session.And(dbFieldName+" LIKE ?", "%"+cleanValue+"%")
+				query = query.Where(dbFieldName+" LIKE ?", "%"+cleanValue+"%")
 				log.Info().Msgf("Filtering by %s: %s", dbFieldName, cleanValue)
 			}
 		}
@@ -492,10 +531,10 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]
 	startTime := time.Now()
 
 	var specs []model.TbSpecInfo
-	err := session.Find(&specs)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to execute query")
-		return nil, err
+	result := query.Find(&specs)
+	if result.Error != nil {
+		log.Error().Err(result.Error).Msg("Failed to execute query")
+		return nil, result.Error
 	}
 
 	elapsedTime := time.Since(startTime)
@@ -510,10 +549,13 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]
 // updates and returns the updated TB spec objects
 func UpdateSpec(nsId string, specId string, fieldsToUpdate model.TbSpecInfo) (model.TbSpecInfo, error) {
 
-	_, err := model.ORM.Update(&fieldsToUpdate, &model.TbSpecInfo{Namespace: nsId, Id: specId})
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return fieldsToUpdate, err
+	result := model.ORM.Model(&model.TbSpecInfo{}).
+		Where("namespace = ? AND id = ?", nsId, specId).
+		Updates(fieldsToUpdate)
+
+	if result.Error != nil {
+		log.Error().Err(result.Error).Msg("")
+		return fieldsToUpdate, result.Error
 	} else {
 		log.Trace().Msg("SQL: Update success")
 	}

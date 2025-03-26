@@ -213,9 +213,9 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 
 		// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-		_, err = model.ORM.Delete(&model.TbImageInfo{Namespace: nsId, Id: resourceId})
-		if err != nil {
-			fmt.Println(err.Error())
+		result := model.ORM.Delete(&model.TbImageInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
+		if result.Error != nil {
+			fmt.Println(result.Error.Error())
 		} else {
 			log.Debug().Msg("Data deleted successfully..")
 		}
@@ -269,9 +269,9 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		// }
 
 		// "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
-		_, err = model.ORM.Delete(&model.TbSpecInfo{Namespace: nsId, Id: resourceId})
-		if err != nil {
-			fmt.Println(err.Error())
+		result := model.ORM.Delete(&model.TbCustomImageInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
+		if result.Error != nil {
+			fmt.Println(result.Error.Error())
 		} else {
 			log.Debug().Msg("Data deleted successfully..")
 		}
@@ -386,9 +386,9 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 	} else if resourceType == model.StrCustomImage {
 		// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-		_, err = model.ORM.Delete(&model.TbCustomImageInfo{Namespace: nsId, Id: resourceId})
-		if err != nil {
-			fmt.Println(err.Error())
+		result := model.ORM.Delete(&model.TbSpecInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
+		if result.Error != nil {
+			fmt.Println(result.Error.Error())
 		} else {
 			log.Debug().Msg("Data deleted successfully..")
 		}
