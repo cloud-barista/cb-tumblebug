@@ -52,6 +52,26 @@ type Credential struct {
 	Credentialholder map[string]map[string]map[string]string `yaml:"credentialholder"`
 }
 
+// ExtractPatternsInfo is structure for extraction patterns information
+type ExtractPatternsInfo struct {
+	ExtractPatterns ExtractPatterns `mapstructure:"extractionPatterns" json:"extraction_patterns"`
+}
+
+// ExtractPatterns is structure for extraction patterns
+type ExtractPatterns struct {
+	OSType      map[string]OSTypeDetail `mapstructure:"osType" json:"os_type"`
+	GPUPatterns []string                `mapstructure:"gpuPatterns" json:"gpu_patterns"`
+	K8sPatterns []string                `mapstructure:"k8sPatterns" json:"k8s_patterns"`
+}
+
+// OSTypeDetail is structure for OS type detail information
+type OSTypeDetail struct {
+	Name           string   `mapstructure:"name" json:"name"`
+	Versions       []string `mapstructure:"versions" json:"versions"`
+	DefaultVersion string   `mapstructure:"defaultVersion" json:"default_version"`
+	Patterns       []string `mapstructure:"patterns" json:"patterns"`
+}
+
 // K8sClusterInfo is structure for kubernetes cluster information
 type K8sClusterInfo struct {
 	CSPs map[string]K8sClusterDetail `mapstructure:"k8scluster" json:"k8s_cluster"`

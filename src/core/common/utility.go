@@ -1575,3 +1575,69 @@ func CompareVersions(version1, version2 string) int {
 
 	return 0
 }
+
+// ExtractOSInfo extracts OS name and version from string
+// and returns formatted string like "Ubuntu 22.04"
+func ExtractOSInfo(combinedInfo string) string {
+	if combinedInfo == "" {
+		return ""
+	}
+
+	infoLower := strings.ToLower(combinedInfo)
+
+	// Loop through all OS types from extraction patterns
+	for _, osInfo := range RuntimeExtractPatternsInfo.ExtractPatterns.OSType {
+		// Check if OS patterns are in the combined string
+		for _, pattern := range osInfo.Patterns {
+			if strings.Contains(infoLower, strings.ToLower(pattern)) {
+				// OS found, now look for version
+				for _, version := range osInfo.Versions {
+					if strings.Contains(infoLower, strings.ToLower(version)) {
+						// Both OS and version found
+						return fmt.Sprintf("%s %s", osInfo.Name, version)
+					}
+				}
+
+				// OS found but no specific version, use default
+				return fmt.Sprintf("%s %s", osInfo.Name, osInfo.DefaultVersion)
+			}
+		}
+	}
+
+	// If no match found, return empty string
+	return ""
+}
+
+// IsGPUImage checks if an image has GPU support
+func IsGPUImage(combinedInfo string) bool {
+	if combinedInfo == "" {
+		return false
+	}
+
+	infoLower := strings.ToLower(combinedInfo)
+
+	for _, pattern := range RuntimeExtractPatternsInfo.ExtractPatterns.GPUPatterns {
+		if strings.Contains(infoLower, strings.ToLower(pattern)) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// IsK8sImage checks if an image is for Kubernetes
+func IsK8sImage(combinedInfo string) bool {
+	if combinedInfo == "" {
+		return false
+	}
+
+	infoLower := strings.ToLower(combinedInfo)
+
+	for _, pattern := range RuntimeExtractPatternsInfo.ExtractPatterns.K8sPatterns {
+		if strings.Contains(infoLower, strings.ToLower(pattern)) {
+			return true
+		}
+	}
+
+	return false
+}

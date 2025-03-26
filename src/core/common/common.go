@@ -29,10 +29,10 @@ func init() {
 func OpenSQL(path string) error {
 	/*
 		common.MYDB, err = sql.Open("mysql", //"root:pwd@tcp(127.0.0.1:3306)/testdb")
-			common.TB_SQLITE_USER+":"+
-				common.TB_SQLITE_PASSWORD+"@tcp("+
-				common.TB_SQLITE_URL+")/"+
-				common.TB_SQLITE_DATABASE)
+			common.TB_POSTGRES_USER+":"+
+				common.TB_POSTGRES_PASSWORD+"@tcp("+
+				common.TB_POSTGRES_ENDPOINT+")/"+
+				common.TB_POSTGRES_DATABASE)
 	*/
 	err := error(nil)
 

@@ -33,9 +33,12 @@ services:
     ports:
       - 1323:1323
     depends_on:
-      - cb-tumblebug-etcd
-      # - cb-tumblebug-etcd-conf
-      - cb-spider
+      cb-tumblebug-etcd:
+        condition: service_started
+      cb-spider:
+        condition: service_started
+      cb-tumblebug-postgres:
+        condition: service_healthy
     volumes:
       - ./conf/:/app/conf/
       - ./container-volume/cb-tumblebug-container/meta_db/:/app/meta_db/
@@ -51,10 +54,10 @@ services:
       # - TB_ETCD_AUTH_ENABLED=false
       # - TB_ETCD_USERNAME=default
       # - TB_ETCD_PASSWORD=default
-      # - TB_SQLITE_URL=localhost:3306
-      # - TB_SQLITE_DATABASE=cb_tumblebug
-      # - TB_SQLITE_USER=cb_tumblebug
-      # - TB_SQLITE_PASSWORD=cb_tumblebug
+      - TB_POSTGRES_ENDPOINT=cb-tumblebug-postgres:5432
+      - TB_POSTGRES_DATABASE=cb_tumblebug
+      - TB_POSTGRES_USER=cb_tumblebug
+      - TB_POSTGRES_PASSWORD=cb_tumblebug
       # - TB_ALLOW_ORIGINS=*
       # - TB_AUTH_ENABLED=true
       # - TB_API_USERNAME=default
@@ -123,6 +126,100 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  # PostgreSQL for CB-Tumblebug
+  cb-tumblebug-postgres:
+    image: postgres:16-alpine
+    container_name: cb-tumblebug-postgres
+    restart: always
+    networks:
+      - internal_network
+    ports:
+      - 5432:5432
+    volumes:
+      - ./container-volume/cb-tumblebug-container/meta_db/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=cb_tumblebug
+      - POSTGRES_PASSWORD=cb_tumblebug
+      - POSTGRES_DB=cb_tumblebug
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cb_tumblebug"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # pgAdmin Dashboard for PostgreSQL
+  cb-tumblebug-pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cb-tumblebug-pgadmin
+    restart: always
+    networks:
+      - internal_network
+      - external_network
+    ports:
+      - 5050:80
+    volumes:
+      - ./container-volume/cb-tumblebug-container/meta_db/pgadmin:/var/lib/pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@cloud-barista.org
+      - PGADMIN_DEFAULT_PASSWORD=cb_tumblebug
+      - PGADMIN_CONFIG_SERVER_MODE=True
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+      - PGADMIN_CONFIG_CONSOLE_LOG_LEVEL=40
+      - PGADMIN_CONFIG_FILE_LOG_LEVEL=40
+      - PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION=False
+      - PGADMIN_CONFIG_SESSION_EXPIRATION_TIME=1440
+      - PGADMIN_CONFIG_ENABLE_PSQL=False
+      - PGADMIN_CONFIG_ENABLE_CONSOLE_LOGGING=False
+      - PGADMIN_CONFIG_ENABLE_FILE_LOGGING=False      
+      - PGADMIN_SERVER_JSON={"Servers":{"1":{"Name":"CB-Tumblebug PostgreSQL","Group":"Cloud-Barista","Host":"cb-tumblebug-postgres","Port":5432,"MaintenanceDB":"cb_tumblebug","Username":"cb_tumblebug","SSLMode":"prefer","Password":"cb_tumblebug"}}}
+    user: "0:0"
+    depends_on:
+      - cb-tumblebug-postgres
+    logging:
+      driver: "none"
+
+  # Metabase - Lightweight data visualization tool
+  cb-tumblebug-metabase:
+    image: metabase/metabase:latest
+    container_name: cb-tumblebug-metabase
+    restart: always
+    networks:
+      - internal_network
+      - external_network
+    ports:
+      - 3000:3000
+    environment:
+      # - MB_DB_TYPE=postgres
+      # - MB_DB_DBNAME=cb_tumblebug
+      # - MB_DB_PORT=5432
+      # - MB_DB_USER=cb_tumblebug
+      # - MB_DB_PASS=cb_tumblebug
+      # - MB_DB_HOST=cb-tumblebug-postgres
+      - MB_ADMIN_EMAIL=admin@cloud-barista.org
+      - MB_ADMIN_FIRST_NAME=Cloud
+      - MB_ADMIN_LAST_NAME=Barista
+      - MB_ADMIN_PASSWORD=cb_tumblebug11
+      - MB_SITE_NAME=CB-Tumblebug Analytics
+      - MB_SITE_LOCALE=en
+      - JAVA_TIMEZONE=Asia/Seoul
+      - MB_LOGGER_LEVEL=ERROR
+      - MB_JETTY_REQUEST_LOGS_ENABLED=false
+      - MB_JETTY_ALLOWED_HOSTS=localhost
+      - MB_LOGGING_LEVEL=ERROR      
+    volumes:
+      - ./container-volume/cb-tumblebug-container/meta_db/metabase-data:/metabase-data
+    depends_on:
+      cb-tumblebug-postgres:
+        condition: service_healthy
+    user: "0:0"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
 
   # CB-Spider
   cb-spider:

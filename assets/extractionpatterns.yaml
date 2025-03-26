@@ -1,0 +1,119 @@
+# Configuration for Pattern Extraction from Cloud Resources
+# This file defines patterns to extract various information from cloud resources
+
+extractionPatterns:
+  osType:
+    ubuntu:
+      name: "Ubuntu"
+      versions: ["16.04", "18.04", "20.04", "22.04", "24.04"]
+      defaultVersion: "22.04"
+      patterns: ["ubuntu", "canonical", "aks-ubuntu"]
+    centos:
+      name: "CentOS"
+      versions: ["7", "8", "9"]
+      defaultVersion: "7"
+      patterns: ["centos", "centoscore"]
+    debian:
+      name: "Debian"
+      versions: ["9", "10", "11", "12"]
+      defaultVersion: "11"
+      patterns: ["debian"]
+    windows:
+      name: "Windows"
+      versions: ["2016", "2019", "2022", "10", "11"]
+      defaultVersion: "2022"
+      patterns: ["windows", "win"]
+    rhel:
+      name: "Red Hat Enterprise Linux"
+      versions: ["7", "8", "9"]
+      defaultVersion: "9"
+      patterns: ["rhel", "red hat", "redhat"]
+    amazonlinux:
+      name: "Amazon Linux"
+      versions: ["2", "2023"]
+      defaultVersion: "2023"
+      patterns: ["amazon linux", "amzn", "al20", "aws-marketplace", "amazon", "aws linux"]
+    azurelinux:
+      name: "Azure Linux"
+      versions: ["2", "3"]
+      defaultVersion: "3"
+      patterns: ["azurelinux", "azure linux"]
+    fedora:
+      name: "Fedora"
+      versions: ["35", "36", "37", "38", "39"]
+      defaultVersion: "39"
+      patterns: ["fedora"]
+    suse:
+      name: "SUSE Linux Enterprise Server"
+      versions: ["12", "15"]
+      defaultVersion: "15"
+      patterns: ["suse", "sles", "sles-sap"]
+    rocky:
+      name: "Rocky Linux"
+      versions: ["8", "9"]
+      defaultVersion: "9"
+      patterns: ["rocky"]
+    oracle:
+      name: "Oracle Linux"
+      versions: ["7", "8", "9"]
+      defaultVersion: "9"
+      patterns: ["oracle", "ol", "oel"]
+    alma:
+      name: "AlmaLinux"
+      versions: ["8", "9"]
+      defaultVersion: "9"
+      patterns: ["alma"]
+    alibaba:
+      name: "Alibaba Cloud Linux"
+      versions: ["2", "3"]
+      defaultVersion: "3"
+      patterns: ["aliyun", "alibaba linux"]
+    tencent:
+      name: "Tencent Linux"
+      versions: ["2", "3"]
+      defaultVersion: "3"
+      patterns: ["tlinux", "tencentos"]
+    
+  # GPU image identification patterns (case-insensitive, any match = GPU)
+  gpuPatterns:
+    - "gpu"
+    - "cuda"
+    - "nvidia"
+    - "deep learning"
+    - "ml."
+    - "accelerated"
+    - "tesla"
+    - "a100"
+    - "t4"
+    - "v100"
+    - "p100"
+    - "optimized-for-ml"
+    - "nc"  # Azure NC-series
+    - "nd"  # Azure ND-series
+    - "nv"  # Azure NV-series
+    - "g2"  # NCP g2 instance
+    - "heterogeneous"
+    - "compute-optimized-with-gpu"
+  
+  # Kubernetes image identification patterns (case-insensitive, any match = Kubernetes)
+  k8sPatterns:
+    # General terms
+    - "kubernetes"
+    - "k8s"
+    - "container"
+    
+    # CSP-specific terms (모두 통합)
+    - "eks"                # AWS
+    - "eks-optimized"      # AWS
+    - "aks"                # Azure
+    - "azurek8s"           # Azure
+    - "gke"                # GCP
+    - "cos"                # GCP Container-Optimized OS
+    - "cos-cloud"          # GCP
+    - "container-optimized" # GCP
+    - "ack"                # Alibaba Cloud
+    - "aliyun-linux-k8s"   # Alibaba Cloud
+    - "tke"                # Tencent Cloud
+    - "nks"                # NHN Cloud, NCP
+    - "iks"                # IBM Cloud
+    
