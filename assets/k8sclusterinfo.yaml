@@ -23,6 +23,8 @@ k8scluster:
     version:
       - region: [common]
         available:
+          - name: "1.32"
+            id: "1.32"
           - name: "1.31"
             id: "1.31"
           - name: "1.30"
@@ -31,8 +33,6 @@ k8scluster:
             id: "1.29"
           - name: "1.28"
             id: "1.28"
-          - name: "1.27"
-            id: "1.27"
     rootDisk:
       - region: [common]
         type:
@@ -47,24 +47,18 @@ k8scluster:
     requiredSubnetCount: 1
     nodeGroupNamingRule: ^[a-z][a-z0-9]*$
     version:
-      - region: [westeurope,westus]
-        available:
-          - name: "1.29"
-            id: "1.29.4"
-          - name: "1.28"
-            id: "1.28.9"
-          - name: "1.27"
-            id: "1.27.13"
       - region: [westindia]
         # no available version
       - region: [common]
         available:
+          - name: "1.31"
+            id: "1.31.3"
+          - name: "1.30"
+            id: "1.30.7"
           - name: "1.29"
-            id: "1.29.5"
+            id: "1.29.11"
           - name: "1.28"
-            id: "1.28.10"
-          - name: "1.27"
-            id: "1.27.14"
+            id: "1.28.15"
     rootDisk:
       - region: [common]
         type:
@@ -79,15 +73,17 @@ k8scluster:
     requiredSubnetCount: 1
     version:
       - region: [common]
-        available:
+        available: # stable channel
+          - name: "1.32"
+            id: "1.32.1-gke.1357001"
           - name: "1.31"
-            id: "1.31.1-gke.2105000"
+            id: "1.31.5-gke.1169000"
           - name: "1.30"
-            id: "1.30.6-gke.1125000"
+            id: "1.30.9-gke.1201000"
+          - name: "1.30"
+            id: "1.30.9-gke.1009000"
           - name: "1.29"
-            id: "1.29.10-gke.1280000"
-          - name: "1.28"
-            id: "1.28.15-gke.1342000"
+            id: "1.29.13-gke.1169000"
       - region: [africa-south1]
         # addnodegroup unavailble
     rootDisk:
