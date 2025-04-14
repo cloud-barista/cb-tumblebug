@@ -96,7 +96,7 @@ ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240819.vhd,Ubuntu 20.04,,,vm
 ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240925.vhd,Ubuntu 20.04,,,vm
 ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240807.vhd,Ubuntu 22.04,,,vm
 ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240926.vhd,Ubuntu 22.04,,,vm
-ALIBABA,all,aliyun_3_x64_20G_alibase_20240819.vhd,Alibaba Cloud Linux 3.2104,,,vm|k8s
+ALIBABA,all,aliyun_3_x64_20G_alibase_20241218.vhd,Alibaba Cloud Linux 3.2104,,,vm|k8s
 TENCENT,all,img-pi0ii46r,Ubuntu 18.04,,,vm|k8s
 TENCENT,all,img-22trbn9x,Ubuntu 20.04,,,vm|k8s
 TENCENT,all,img-487zeit5,Ubuntu 22.04,,,vm
@@ -123,8 +123,8 @@ NCP,DEN,SPSW0LINUX000130,Ubuntu 18.04,,,vm
 NCPVPC,all,SW.VSVR.OS.LNX64.UBNTU.SVR2004.B050,Ubuntu 20.04,,,vm
 NHNCLOUD,KR1,b7bd50d9-bdc2-460d-8b6a-358436ae3897,Ubuntu 20.04,Ubuntu Server 20.04.6 LTS (2024.05.21),,vm
 NHNCLOUD,KR1,280399f1-af96-41b7-b13b-2fae3752e97f,Ubuntu 22.04,Ubuntu Server 22.04.4 LTS (2024.05.21),,vm
-NHNCLOUD,KR1,875175ea-59ae-4298-b355-ab95c5b92a1f,Ubuntu 20.04 Container,Ubuntu Server 20.04.6 LTS - Container (2024.11.19),,k8s
-NHNCLOUD,KR1,9cc342b9-14d5-4e20-9ffd-19f21d339656,Ubuntu 22.04 Container,Ubuntu Server 22.04.5 LTS - Container (2024.11.19),,k8s
+NHNCLOUD,KR1,62202a6a-5de2-4e13-8461-351f4a93a664,Ubuntu 20.04 Container,Ubuntu Server 20.04.6 LTS - Container (2025.02.25),,k8s
+NHNCLOUD,KR1,efe7f58f-5a32-4905-aa3b-e7839bd191d7,Ubuntu 22.04 Container,Ubuntu Server 22.04.5 LTS - Container (2025.02.25),,k8s
 NHNCLOUD,KR2,b850cadf-7015-49c1-8e01-1c709289a8b8,Ubuntu 20.04,Ubuntu Server 20.04.6 LTS (2024.05.21),,vm
 NHNCLOUD,KR2,84f1a13e-462e-49dd-9598-023fb2ca5d86,Ubuntu 22.04,Ubuntu Server 22.04.4 LTS (2024.05.21),,vm
 NHNCLOUD,KR2,61945852-0924-45ef-8431-58700fd2c98d,Ubuntu 20.04 Container,Ubuntu Server 20.04.6 LTS - Container (2024.11.19),,k8s
