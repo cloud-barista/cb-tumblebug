@@ -484,6 +484,8 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   ./add-k8snodegroup.sh -n tb -f ../testSet.env -x 1 -z 1 # Add a new K8s node group to each K8s cluster
   ./change-k8snodegroup-autoscalesize.sh -n tb -f ../testSet.env -x 1 -z 1 # Change the autoscale size of each K8s node group
   ./deploy-weavescope-to-k8scluster.sh -n tb -f ../testSet.env -y n # Deploy weavescope to each K8s cluster with loadbalancer
+  # Register a default storageclass (kubectl apply -f ./ebs-sc.yaml for AWS or ./cinder-sc.yaml for NHNCloud)
+  # Update storage size in nginx-with-pvc.yaml (1GB to 20GB for Alibaba, 10GB for Tencent)
   ./deploy-nginx-with-pvc-to-k8scluster.sh -n tb -f ../testSet.env -y n # Deploy nginx with pvc to each K8s cluster
   ./undeploy-nginx-with-pvc-to-k8scluster.sh -n tb -f ../testSet.env -y n # Undeploy nginx with pvc from each K8s cluster
   ./upgrade-k8scluster.sh -n tb -f ../testSet.env -x 1 -z 1 # Upgrade each K8s cluster
