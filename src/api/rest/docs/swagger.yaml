@@ -2362,7 +2362,7 @@ paths:
         required: true
         schema:
           type: string
-          default: k8snodegroup01
+          default: k8sng01
       - name: option
         in: query
         description: Option for K8sNodeGroup deletion
@@ -2411,7 +2411,7 @@ paths:
         required: true
         schema:
           type: string
-          default: k8snodegroup01
+          default: k8sng01
       requestBody:
         description: Details of the TbChangeK8sNodeGroupAutoscaleSizeReq object
         content:
@@ -2467,7 +2467,7 @@ paths:
         required: true
         schema:
           type: string
-          default: k8snodegroup01
+          default: k8sng01
       requestBody:
         description: Details of the TbSetK8sNodeGroupAutoscalingReq object
         content:
@@ -2524,8 +2524,8 @@ paths:
           type: string
       requestBody:
         description: "Request body to provision K8sNodeGroup dynamically. <br> Must\
-          \ include commonSpec and commonImage info. <br> (ex: {name: k8snodegroup01,\
-          \ commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]})\
+          \ include commonSpec and commonImage info. <br> (ex: {name: k8sng01, commonImage:\
+          \ azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]})\
           \ <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest\
           \ to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
         content:

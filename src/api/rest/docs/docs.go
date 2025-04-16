@@ -3122,7 +3122,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "k8snodegroup01",
+                        "default": "k8sng01",
                         "description": "K8sNodeGroup Name",
                         "name": "k8sNodeGroupName",
                         "in": "path",
@@ -3187,7 +3187,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "k8snodegroup01",
+                        "default": "k8sng01",
                         "description": "K8sNodeGroup Name",
                         "name": "k8sNodeGroupName",
                         "in": "path",
@@ -3258,7 +3258,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "k8snodegroup01",
+                        "default": "k8sng01",
                         "description": "K8sNodeGroup Name",
                         "name": "k8sNodeGroupName",
                         "in": "path",
@@ -3328,7 +3328,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Request body to provision K8sNodeGroup dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8snodegroup01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
+                        "description": "Request body to provision K8sNodeGroup dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8sng01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
                         "name": "k8sNodeGroupDynamicReq",
                         "in": "body",
                         "required": true,
