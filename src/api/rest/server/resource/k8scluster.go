@@ -209,7 +209,7 @@ func RestPutK8sCluster(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param k8sNodeGroupReq body model.TbK8sNodeGroupReq true "Details of the K8sNodeGroup object" default(k8snodegroup01)
+// @Param k8sNodeGroupReq body model.TbK8sNodeGroupReq true "Details of the K8sNodeGroup object"
 // @Success 200 {object} model.TbK8sClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -247,7 +247,7 @@ func RestPostK8sNodeGroup(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(k8snodegroup01)
+// @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(k8sng01)
 // @Param option query string false "Option for K8sNodeGroup deletion" Enums(force)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
@@ -287,7 +287,7 @@ func RestDeleteK8sNodeGroup(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(k8snodegroup01)
+// @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(k8sng01)
 // @Param setK8sNodeGroupAutoscalingReq body model.TbSetK8sNodeGroupAutoscalingReq true "Details of the TbSetK8sNodeGroupAutoscalingReq object"
 // @Success 200 {object} model.TbSetK8sNodeGroupAutoscalingRes
 // @Failure 404 {object} model.SimpleMsg
@@ -327,7 +327,7 @@ func RestPutSetK8sNodeGroupAutoscaling(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(k8snodegroup01)
+// @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(k8sng01)
 // @Param changeK8sNodeGroupAutoscaleSizeReq body model.TbChangeK8sNodeGroupAutoscaleSizeReq true "Details of the TbChangeK8sNodeGroupAutoscaleSizeReq object"
 // @Success 200 {object} model.TbChangeK8sNodeGroupAutoscaleSizeRes
 // @Failure 404 {object} model.SimpleMsg
@@ -613,7 +613,7 @@ func RestPostK8sClusterDynamic(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param k8sNodeGroupDynamicReq body model.TbK8sNodeGroupDynamicReq true "Request body to provision K8sNodeGroup dynamically. <br> Must include commonSpec and commonImage info. <br> (ex: {name: k8snodegroup01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
+// @Param k8sNodeGroupDynamicReq body model.TbK8sNodeGroupDynamicReq true "Request body to provision K8sNodeGroup dynamically. <br> Must include commonSpec and commonImage info. <br> (ex: {name: k8sng01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} model.TbK8sNodeGroupInfo
 // @Failure 404 {object} model.SimpleMsg
