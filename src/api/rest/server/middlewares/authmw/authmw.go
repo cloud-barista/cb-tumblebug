@@ -97,7 +97,7 @@ func retrospectToken(c echo.Context) {
 	accesstoken := c.Get("user").(*jwt.Token).Raw
 	iamManagerClaims, err := iamtokenvalidator.GetTokenClaimsByIamManagerClaims(accesstoken)
 	if err != nil {
-		c.String(http.StatusUnauthorized, "failed to type cast claims as jwt.MapClaims")
+		c.String(http.StatusUnauthorized, "failed to type cast claims as IamManagerClaims")
 	}
 
 	jwtRegisteredClaims := iamManagerClaims.RegisteredClaims
