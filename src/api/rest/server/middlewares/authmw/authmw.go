@@ -8,8 +8,8 @@ import (
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/go-resty/resty/v2"
-	"github.com/golang-jwt/jwt/v4"
-	echojwt "github.com/labstack/echo-jwt"
+	"github.com/golang-jwt/jwt/v5"
+	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/m-cmp/mc-iam-manager/iamtokenvalidator"
 	"github.com/rs/zerolog/log"
@@ -22,7 +22,7 @@ func InitJwtAuthMw(iamEndpoint string, pubkeyUrl string) error {
 	client := resty.New()
 
 	method := "GET"
-	url := fmt.Sprintf("%s/alive", iamEndpoint)
+	url := fmt.Sprintf("%s/readyz", iamEndpoint)
 	requestBody := clientManager.NoBody
 	var resReadyz map[string]string
 
@@ -95,13 +95,16 @@ func retrospectToken(c echo.Context) {
 	log.Debug().Msg("start - retrospectToken, which is the SuccessHandler")
 
 	accesstoken := c.Get("user").(*jwt.Token).Raw
-	claims, err := iamtokenvalidator.GetTokenClaimsByIamManagerClaims(accesstoken)
+	iamManagerClaims, err := iamtokenvalidator.GetTokenClaimsByIamManagerClaims(accesstoken)
 	if err != nil {
 		c.String(http.StatusUnauthorized, "failed to type cast claims as jwt.MapClaims")
 	}
 
+	jwtRegisteredClaims := iamManagerClaims.RegisteredClaims
+	log.Debug().Msgf("claims.RegisteredClaims: %+v", jwtRegisteredClaims)
+
 	// Get the realm roles from the claims
-	roles := claims.RealmAccess.Roles
+	roles := iamManagerClaims.RealmAccess.Roles
 	log.Debug().Msgf("claims.RealmAccess.Roles: %+v", roles)
 
 	// Check this user's role
@@ -117,22 +120,22 @@ func retrospectToken(c echo.Context) {
 	}
 
 	// Get expiry time from claims
-	exp := claims.ExpiresAt
+	exp := jwtRegisteredClaims.ExpiresAt
 	log.Debug().Msgf("claims.ExpiresAt: %+v", exp)
 
-	expiryTime := time.Unix(int64(exp), 0)         // Unix time
+	expiryTime := time.Unix(exp.Unix(), 0)         // Unix time
 	expiredTime := expiryTime.Format(time.RFC3339) // RFC3339 time
 	log.Debug().Msgf("expiredTime: %+v", expiredTime)
 
 	// log.Trace().Msgf("token: %+v", token)
 	log.Trace().Msgf("accesstoken (jwtToken.Raw): %+v", accesstoken)
-	log.Trace().Msgf("claims: %+v", claims)
+	log.Trace().Msgf("claims: %+v", iamManagerClaims)
 
 	// Set user as authenticated
 	c.Set("authenticated", true)
 	c.Set("token", accesstoken)
 	// Set user name
-	c.Set("name", claims.UserName)
+	c.Set("name", iamManagerClaims.Name)
 	c.Set("role", role)
 	c.Set("expired-time", expiredTime)
 	// Set more values here

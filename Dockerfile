@@ -50,6 +50,7 @@ COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/src/cb-tumbleb
 ENV TB_ROOT_PATH=/app \
     TB_SPIDER_REST_URL=http://cb-spider:1024/spider \
     TB_DRAGONFLY_REST_URL=http://cb-dragonfly:9090/dragonfly \
+    TB_IAM_MANAGER_REST_URL=https:///mc-iam-manager:5000 \
     TB_SQLITE_URL=localhost:3306 \
     TB_SQLITE_DATABASE=cb_tumblebug \
     TB_SQLITE_USER=cb_tumblebug \

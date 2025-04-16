@@ -48,6 +48,7 @@ services:
       - TB_SPIDER_REST_URL=http://cb-spider:1024/spider
       - TB_ETCD_ENDPOINTS=http://cb-tumblebug-etcd:2379
       - TB_TERRARIUM_REST_URL=http://mc-terrarium:8055/terrarium
+      - TB_IAM_MANAGER_REST_URL=http://mc-iam-manager:5000
       # - TB_ETCD_AUTH_ENABLED=false
       # - TB_ETCD_USERNAME=default
       # - TB_ETCD_PASSWORD=default
@@ -57,6 +58,7 @@ services:
       # - TB_SQLITE_PASSWORD=cb_tumblebug
       # - TB_ALLOW_ORIGINS=*
       # - TB_AUTH_ENABLED=true
+      # - TB_AUTH_MODE=jwt
       # - TB_API_USERNAME=default
       # - TB_API_PASSWORD=$$2a$$10$$4PKzCuJ6fPYsbCF.HR//ieLjaCzBAdwORchx62F2JRXQsuR3d9T0q
       # - TB_AUTOCONTROL_DURATION_MS=10000
