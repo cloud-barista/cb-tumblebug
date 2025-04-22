@@ -1753,7 +1753,7 @@ func LoadAssets() (model.IdList, error) {
 						// Update registered image object with OsType info
 						expandedInfraType := expandInfraType(infraType)
 
-						tmpImageInfo.GuestOS = osType
+						tmpImageInfo.OSType = osType
 						tmpImageInfo.Description = description
 						tmpImageInfo.InfraType = expandedInfraType
 

@@ -467,7 +467,7 @@ func GetSpec(nsId string, specKey string) (model.TbSpecInfo, error) {
 	return model.TbSpecInfo{}, fmt.Errorf("The specKey %s not found by any of ID, CspSpecName", specKey)
 }
 
-// 모델의 필드-컬럼 매핑 정보 가져오기
+// Retrieve field-to-column mapping information for the model
 func getColumnMapping(modelType interface{}) map[string]string {
 	stmt := &gorm.Statement{DB: model.ORM}
 	stmt.Parse(modelType)
@@ -492,7 +492,7 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]
 
 	specColumnMapping := getColumnMapping(&model.TbSpecInfo{})
 
-	// 필드 이름은 소문자로 시작하도록 변경 (GORM 규칙)
+	// Change field names to start with lowercase (GORM convention)
 	val := reflect.ValueOf(filter)
 	typ := val.Type()
 

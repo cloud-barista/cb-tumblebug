@@ -298,11 +298,6 @@ func RestGetImage(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-// Response structure for RestGetAllImage
-type RestGetAllImageResponse struct {
-	Image []model.TbImageInfo `json:"image"`
-}
-
 // RestGetAllImage godoc
 // @ID GetAllImage
 // @Summary List all images or images' ID
@@ -314,7 +309,7 @@ type RestGetAllImageResponse struct {
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex:guestOS)"
 // @Param filterVal query string false "Field value for filtering (ex: Ubuntu18.04)"
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllImageResponse,[ID]=model.IdList} "Different return structures by the given option param"
+// @Success 200 {object} JSONResult{[DEFAULT]=model.SearchImageResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image [get]
@@ -357,11 +352,6 @@ func RestDelAllImage(c echo.Context) error {
 	return nil
 }
 
-// Response structure for RestSearchImage
-type RestSearchImageRequest struct {
-	Keywords []string `json:"keywords"`
-}
-
 // RestSearchImage godoc
 // @ID SearchImage
 // @Summary Search image
@@ -370,8 +360,8 @@ type RestSearchImageRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param keywords body RestSearchImageRequest true "Keywords"
-// @Success 200 {object} RestGetAllImageResponse
+// @Param condition body model.SearchImageRequest true "condition"
+// @Success 200 {object} model.SearchImageResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/searchImage [post]
@@ -379,13 +369,23 @@ func RestSearchImage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	u := &RestSearchImageRequest{}
+	u := &model.SearchImageRequest{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := resource.SearchImage(nsId, u.Keywords...)
-	result := RestGetAllImageResponse{}
-	result.Image = content
+	content, cnt, err := resource.SearchImage(
+		nsId,
+		u.ProviderName,
+		u.RegionName,
+		u.OSType,
+		u.IsGPUImage,
+		u.IsKubernetesImage,
+		u.DetailSearchKeys...,
+	)
+
+	result := model.SearchImageResponse{}
+	result.Count = cnt
+	result.ImageList = content
 	return clientManager.EndRequestWithLog(c, err, result)
 }

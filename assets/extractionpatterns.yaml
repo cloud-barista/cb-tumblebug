@@ -102,7 +102,7 @@ extractionPatterns:
     - "k8s"
     - "container"
     
-    # CSP-specific terms (모두 통합)
+    # CSP-specific terms
     - "eks"                # AWS
     - "eks-optimized"      # AWS
     - "aks"                # Azure
