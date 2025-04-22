@@ -847,8 +847,7 @@ func CheckMciDynamicReq(req *model.MciConnectionConfigCandidatesReq) (*model.Che
 		}
 
 		vmReqInfo.Spec = specInfo
-		imageSearchKey := specInfo.ProviderName + "+" + specInfo.RegionName
-		availableImageList, err := resource.SearchImage(model.SystemCommonNs, imageSearchKey)
+		availableImageList, err := resource.GetImagesByRegion(model.SystemCommonNs, specInfo.ProviderName, specInfo.RegionName)
 		if err != nil {
 			errMessage += "//Failed to search images for Spec (" + k + ")"
 		}

@@ -82,12 +82,11 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	tumblebugImage.Namespace = nsId
 	tumblebugImage.ConnectionName = connConfig
 	tumblebugImage.ProviderName = providerName
+	tumblebugImage.FetchedTime = time.Now().Format("2006.01.02 15:04:05 Mon")
 
 	// Set region information (array and default region)
 	tumblebugImage.RegionList = make([]string, 0)
 	tumblebugImage.RegionList = append(tumblebugImage.RegionList, currentRegion)
-
-	tumblebugImage.RegionName = currentRegion
 
 	tumblebugImage.CspImageName = spiderImage.IId.NameId
 	tumblebugImage.Description = common.LookupKeyValueList(spiderImage.KeyValueList, "Description")
@@ -95,29 +94,28 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 
 	// Extract OS, GPU, K8s information
 	searchStr := spiderImage.IId.NameId + " " + spiderImage.OSDistribution
-	tumblebugImage.GuestOS = common.ExtractOSInfo(searchStr)
+	tumblebugImage.OSType = common.ExtractOSInfo(searchStr)
 
 	// Check if this is a GPU image
 	if common.IsGPUImage(searchStr) {
-		tumblebugImage.GPUReady = model.GPUReadyYes
+		tumblebugImage.IsGPUImage = true
 	}
 
 	// Check if this is a Kubernetes image
 	if common.IsK8sImage(searchStr) {
 		tumblebugImage.InfraType = "k8s|kubernetes|container"
+		tumblebugImage.IsKubernetesImage = true
 	}
 
 	// Set additional fields
-	tumblebugImage.Architecture = string(spiderImage.OSArchitecture)
-	tumblebugImage.Platform = string(spiderImage.OSPlatform)
-	tumblebugImage.Distribution = spiderImage.OSDistribution
-	tumblebugImage.RootDiskType = spiderImage.OSDiskType
-	rootDiskMinSizeGB, _ := strconv.ParseFloat(spiderImage.OSDiskSizeGB, 32)
-	tumblebugImage.RootDiskMinSizeGB = float32(rootDiskMinSizeGB)
+	tumblebugImage.OSArchitecture = spiderImage.OSArchitecture
+	tumblebugImage.OSPlatform = spiderImage.OSPlatform
+	tumblebugImage.OSDistribution = spiderImage.OSDistribution
+	tumblebugImage.OSDiskType = spiderImage.OSDiskType
+	tumblebugImage.OSDiskSizeGB, _ = strconv.ParseFloat(spiderImage.OSDiskSizeGB, 64)
 
-	tumblebugImage.Status = string(spiderImage.ImageStatus)
+	tumblebugImage.ImageStatus = spiderImage.ImageStatus
 	tumblebugImage.KeyValueList = spiderImage.KeyValueList
-	tumblebugImage.AssociatedObjectList = make([]string, 0)
 
 	return tumblebugImage, nil
 }
@@ -184,22 +182,6 @@ func RegisterImageWithInfoInBulk(imageList []model.TbImageInfo) error {
 			if img.RegionList == nil {
 				img.RegionList = make([]string, 0)
 			}
-
-			// Add RegionName to RegionList if it exists and isn't already in the list
-			if img.RegionName != "" {
-				regionExists := false
-				for _, region := range img.RegionList {
-					if region == img.RegionName {
-						regionExists = true
-						break
-					}
-				}
-
-				if !regionExists {
-					img.RegionList = append(img.RegionList, img.RegionName)
-				}
-			}
-
 			uniqueImages[key] = img
 		}
 	}
@@ -464,7 +446,6 @@ func RegisterImageWithInfo(nsId string, content *model.TbImageInfo, update bool)
 	content.Namespace = nsId
 	//content.Id = common.GenUid()
 	content.Id = content.Name
-	content.AssociatedObjectList = []string{}
 
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
@@ -855,31 +836,58 @@ func fetchImagesForAllConnConfigsInternal(nsId string) (connConfigCount uint, im
 	return connConfigCount, imageCount, nil
 }
 
-// SearchImage accepts arbitrary number of keywords, and returns the list of matched TB image objects
-func SearchImage(nsId string, keywords ...string) ([]model.TbImageInfo, error) {
-
+// Refactored SearchImage function to use a single query for keyword matching
+func SearchImage(nsId, providerName, regionName, osType string, isGPUImage, isKubernetesImage *bool, keywords ...string) ([]model.TbImageInfo, int, error) {
 	err := common.CheckString(nsId)
+	cnt := 0
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
+		log.Error().Err(err).Msg("Invalid namespace ID")
+		return nil, cnt, err
 	}
 
-	tempList := []model.TbImageInfo{}
-
-	//sqlQuery := "SELECT * FROM `image` WHERE `namespace`='" + nsId + "'"
+	var images []model.TbImageInfo
 	sqlQuery := model.ORM.Where("namespace = ?", nsId)
 
-	for _, keyword := range keywords {
-		keyword = ToNamingRuleCompatible(keyword)
-		sqlQuery = sqlQuery.Where("name LIKE ?", "%"+keyword+"%")
+	if providerName != "" {
+		sqlQuery = sqlQuery.Where("provider_name = ?", providerName)
 	}
 
-	result := sqlQuery.Find(&tempList)
-	if result.Error != nil {
-		log.Error().Err(result.Error).Msg("")
-		return tempList, result.Error
+	// regionName needs to be searched from region_list
+	if regionName != "" {
+		sqlQuery = sqlQuery.Where("LOWER(region_list) LIKE ?", "%"+regionName+"%")
 	}
-	return tempList, nil
+
+	if osType != "" {
+		osKeywords := strings.Fields(strings.ToLower(osType))
+		for _, osKeyword := range osKeywords {
+			sqlQuery = sqlQuery.Where("LOWER(os_type) LIKE ?", "%"+osKeyword+"%")
+		}
+	}
+
+	if isGPUImage != nil {
+		sqlQuery = sqlQuery.Where("is_gpu_image = ?", *isGPUImage)
+	}
+
+	if isKubernetesImage != nil {
+		sqlQuery = sqlQuery.Where("is_kubernetes_image = ?", *isKubernetesImage)
+	}
+
+	if len(keywords) > 0 {
+		// Build a single query to check if all keywords are included in either os_type or key_value_list
+		for _, keyword := range keywords {
+			keyword = strings.ToLower(keyword)
+			sqlQuery = sqlQuery.Where("(LOWER(key_value_list) LIKE ?)", "%"+keyword+"%")
+		}
+	}
+
+	result := sqlQuery.Find(&images)
+	if result.Error != nil {
+		log.Error().Err(result.Error).Msg("Failed to retrieve images")
+		return nil, cnt, result.Error
+	}
+	cnt = len(images)
+
+	return images, cnt, nil
 }
 
 // UpdateImage accepts to-be TB image objects,
@@ -1015,13 +1023,8 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 
 		// 2) Check if the image is a registered image in the common namespace model.SystemCommonNs by CspImageName
 		// ex: tencent+ap-jakarta+img-487zeit5
-		image = model.TbImageInfo{Namespace: model.SystemCommonNs, CspImageName: resourceName}
-		result = model.ORM.Where("LOWER(namespace) = ? AND LOWER(csp_image_name) = ? AND LOWER(id) LIKE ? AND LOWER(id) LIKE ?",
-			model.SystemCommonNs,
-			resourceName,
-			"%"+strings.ToLower(providerName)+"%",
-			"%"+strings.ToLower(regionName)+"%").First(&image)
-		if result.Error != nil {
+		image, err := GetImageByPrimaryKey(model.SystemCommonNs, providerName, resourceName)
+		if err != nil {
 			log.Info().Err(result.Error).Msgf("Cannot get image %s by CspImageName", resourceName)
 		} else {
 			return image, nil
@@ -1029,8 +1032,8 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 
 		// 3) Check if the image is a registered image in the common namespace model.SystemCommonNs by GuestOS
 		// ex: tencent+ap-jakarta+Ubuntu22.04
-		image = model.TbImageInfo{Namespace: model.SystemCommonNs, GuestOS: resourceName}
-		result = model.ORM.Where("LOWER(namespace) = ? AND LOWER(guest_os) LIKE ? AND LOWER(id) LIKE ? AND LOWER(id) LIKE ?",
+		image = model.TbImageInfo{Namespace: model.SystemCommonNs, OSType: resourceName}
+		result = model.ORM.Where("LOWER(namespace) = ? AND LOWER(os_type) LIKE ? AND LOWER(id) LIKE ? AND LOWER(id) LIKE ?",
 			model.SystemCommonNs,
 			"%"+strings.ToLower(resourceName)+"%",
 			"%"+strings.ToLower(providerName)+"%",
@@ -1044,4 +1047,54 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 	}
 
 	return model.TbImageInfo{}, fmt.Errorf("The imageKey %s not found by any of ID, CspImageName, GuestOS", imageKey)
+}
+
+// GetImageByPrimaryKey retrieves image information based on namespace, provider, and CSP image name
+func GetImageByPrimaryKey(nsId string, provider string, cspImageName string) (model.TbImageInfo, error) {
+	if err := common.CheckString(nsId); err != nil {
+		log.Error().Err(err).Msg("Invalid namespace ID")
+		return model.TbImageInfo{}, err
+	}
+
+	log.Debug().Msgf("[Get image] Namespace: %s, Provider: %s, CSP Image Name: %s", nsId, provider, cspImageName)
+
+	// Convert inputs to lowercase for case-insensitive comparison
+	nsId = strings.ToLower(nsId)
+	provider = strings.ToLower(provider)
+	cspImageName = strings.ToLower(cspImageName)
+
+	// Query the database for the image
+	var image model.TbImageInfo
+	result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(provider_name) = ? AND LOWER(csp_image_name) = ?", nsId, provider, cspImageName).First(&image)
+	if result.Error != nil {
+		log.Error().Err(result.Error).Msgf("Failed to retrieve image for Namespace: %s, Provider: %s, CSP Image Name: %s", nsId, provider, cspImageName)
+		return model.TbImageInfo{}, result.Error
+	}
+
+	return image, nil
+}
+
+// GetImagesByRegion retrieves images based on namespace, provider, and region
+func GetImagesByRegion(nsId string, provider string, region string) ([]model.TbImageInfo, error) {
+	if err := common.CheckString(nsId); err != nil {
+		log.Error().Err(err).Msg("Invalid namespace ID")
+		return nil, err
+	}
+
+	log.Debug().Msgf("[Get images] Namespace: %s, Provider: %s, Region: %s", nsId, provider, region)
+
+	// Convert inputs to lowercase for case-insensitive comparison
+	nsId = strings.ToLower(nsId)
+	provider = strings.ToLower(provider)
+	region = strings.ToLower(region)
+
+	// Query the database for the images
+	var images []model.TbImageInfo
+	result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(provider_name) = ? AND LOWER(region_list) LIKE ?", nsId, provider, "%"+region+"%").Find(&images)
+	if result.Error != nil {
+		log.Error().Err(result.Error).Msgf("Failed to retrieve images for Namespace: %s, Provider: %s, Region: %s", nsId, provider, region)
+		return nil, result.Error
+	}
+
+	return images, nil
 }

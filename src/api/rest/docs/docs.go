@@ -7422,7 +7422,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/resource.RestGetAllImageResponse"
+                                            "$ref": "#/definitions/model.SearchImageResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/model.IdList"
@@ -8008,12 +8008,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Keywords",
-                        "name": "keywords",
+                        "description": "condition",
+                        "name": "condition",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.RestSearchImageRequest"
+                            "$ref": "#/definitions/model.SearchImageRequest"
                         }
                     }
                 ],
@@ -8021,7 +8021,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.RestGetAllImageResponse"
+                            "$ref": "#/definitions/model.SearchImageResponse"
                         }
                     },
                     "404": {
@@ -11994,24 +11994,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.GPUReadyType": {
-            "type": "string",
-            "enum": [
-                "yes",
-                "no",
-                ""
-            ],
-            "x-enum-comments": {
-                "GPUReadyNo": "GPU not ready for use",
-                "GPUReadyUnknown": "Unknown/no information",
-                "GPUReadyYes": "GPU ready for use (drivers and libraries pre-installed)"
-            },
-            "x-enum-varnames": [
-                "GPUReadyYes",
-                "GPUReadyNo",
-                "GPUReadyUnknown"
-            ]
-        },
         "model.IID": {
             "type": "object",
             "required": [
@@ -13414,6 +13396,55 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SearchImageRequest": {
+            "type": "object",
+            "properties": {
+                "detailSearchKeys": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "sql",
+                        "2022"
+                    ]
+                },
+                "isGPUImage": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "isKubernetesImage": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "osType": {
+                    "type": "string",
+                    "example": "ubuntu 22.04"
+                },
+                "providerName": {
+                    "type": "string",
+                    "example": "aws"
+                },
+                "regionName": {
+                    "type": "string",
+                    "example": "us-east-1"
+                }
+            }
+        },
+        "model.SearchImageResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "image": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbImageInfo"
+                    }
+                }
+            }
+        },
         "model.SimpleMsg": {
             "type": "object",
             "properties": {
@@ -14502,16 +14533,6 @@ const docTemplate = `{
         "model.TbImageInfo": {
             "type": "object",
             "properties": {
-                "architecture": {
-                    "type": "string",
-                    "example": "x86_64"
-                },
-                "associatedObjectList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -14525,33 +14546,33 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
-                "distribution": {
-                    "type": "string",
-                    "example": "Ubuntu 22.04~"
-                },
-                "gpuReady": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.GPUReadyType"
-                        }
-                    ],
-                    "example": "yes"
-                },
-                "guestOS": {
-                    "description": "Windows7, Ubuntu etc.",
+                "fetchedTime": {
                     "type": "string"
                 },
                 "id": {
-                    "description": "Keep existing fields (backward compatibility)",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
+                },
+                "imageStatus": {
+                    "description": "Available, Unavailable",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ImageStatus"
+                        }
+                    ],
+                    "example": "Available"
                 },
                 "infraType": {
                     "description": "vm|k8s|kubernetes|container, etc.",
                     "type": "string"
                 },
-                "isAutoGenerated": {
-                    "type": "boolean"
+                "isGPUImage": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "isKubernetesImage": {
+                    "type": "boolean",
+                    "default": false
                 },
                 "keyValueList": {
                     "type": "array",
@@ -14560,7 +14581,6 @@ const docTemplate = `{
                     }
                 },
                 "name": {
-                    "description": "Keep other fields",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
@@ -14569,9 +14589,42 @@ const docTemplate = `{
                     "type": "string",
                     "example": "default"
                 },
-                "platform": {
+                "osArchitecture": {
+                    "description": "arm64, x86_64 etc.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.OSArchitecture"
+                        }
+                    ],
+                    "example": "x86_64"
+                },
+                "osDiskSizeGB": {
+                    "description": "10, 50, 100 etc.",
+                    "type": "number",
+                    "example": 50
+                },
+                "osDiskType": {
+                    "description": "ebs, HDD, etc.",
                     "type": "string",
+                    "example": "HDD"
+                },
+                "osDistribution": {
+                    "description": "Ubuntu 22.04~, CentOS 8 etc.",
+                    "type": "string",
+                    "example": "Ubuntu 22.04~"
+                },
+                "osPlatform": {
+                    "description": "Linux/UNIX, Windows, NA",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.OSPlatform"
+                        }
+                    ],
                     "example": "Linux/UNIX"
+                },
+                "osType": {
+                    "type": "string",
+                    "example": "ubuntu 22.04"
                 },
                 "providerName": {
                     "type": "string"
@@ -14582,21 +14635,6 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
-                },
-                "regionName": {
-                    "description": "Current primary region (first region or main region)",
-                    "type": "string"
-                },
-                "rootDiskMinSizeGB": {
-                    "type": "number",
-                    "example": 50
-                },
-                "rootDiskType": {
-                    "type": "string",
-                    "example": "HDD"
-                },
-                "status": {
-                    "type": "string"
                 },
                 "systemLabel": {
                     "type": "string",
@@ -17214,17 +17252,6 @@ const docTemplate = `{
                 }
             }
         },
-        "resource.RestGetAllImageResponse": {
-            "type": "object",
-            "properties": {
-                "image": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.TbImageInfo"
-                    }
-                }
-            }
-        },
         "resource.RestGetAllK8sClusterResponse": {
             "type": "object",
             "properties": {
@@ -17299,17 +17326,6 @@ const docTemplate = `{
                 },
                 "cspResourceId": {
                     "type": "string"
-                }
-            }
-        },
-        "resource.RestSearchImageRequest": {
-            "type": "object",
-            "properties": {
-                "keywords": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 }
             }
         },
