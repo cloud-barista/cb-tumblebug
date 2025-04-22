@@ -2,6 +2,9 @@
 
 SCRIPT_DIR=$(cd $(dirname "$0") && pwd)
 
+# Change to the script directory
+pushd "$SCRIPT_DIR" > /dev/null
+
 # Python version check
 REQUIRED_VERSION="3.8.0"
 
@@ -22,48 +25,60 @@ if [[ $PYTHON_MAJOR -gt $REQUIRED_MAJOR ]] || \
     echo "Python version is sufficient."
 else
     echo "This script requires Python $REQUIRED_MAJOR.$REQUIRED_MINOR.$REQUIRED_PATCH or higher. Please upgrade the version"
+    echo "  * Upgrade command by uv: uv python install $REQUIRED_MAJOR.$REQUIRED_MINOR"
     exit 1
 fi
 
-# Try creating the virtual environment first
-echo "Attempting to create a virtual environment..."
-if python3 -m venv "$SCRIPT_DIR/initPyEnv"; then
-    echo "Virtual environment created successfully."
+# Ensure curl is installed
+echo
+echo "Checking for curl..."
+if ! command -v curl &> /dev/null; then
+    echo "curl is not installed. Installing..."
+    sudo apt update
+    sudo apt install -y curl || {
+        echo "Failed to install curl."
+        exit 1
+    }
+
+    echo "curl is installed successfully."
 else
-    echo "Failed to create the virtual environment. Checking for ensurepip..."
-    # Check if venv module and ensurepip are available
-    if ! python3 -c "import venv, ensurepip" &> /dev/null; then
-        echo "venv or ensurepip module is not available. Installing python3-venv..."
-        sudo apt update
-        sudo apt install -y python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv
-        if [[ $? -ne 0 ]]; then
-            echo "Failed to install python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv. Please check the package availability."
-            exit 1
-        fi
-        # Retry creating the virtual environment
-        if ! python3 -m venv "$SCRIPT_DIR/initPyEnv"; then
-            echo "Failed to create the virtual environment after installing python3-venv."
-            exit 1
-        fi
-    fi
+    echo "curl is already installed."
 fi
 
-# Activate the virtual environment
-source "$SCRIPT_DIR/initPyEnv/bin/activate"
 
+# Ensure uv is installed
 echo
-echo "Installing dependencies..."
-python3 -m pip install --upgrade pip
-pip3 install -r "$SCRIPT_DIR/requirements.txt"
+echo "Checking for uv..."
+if ! command -v uv &> /dev/null; then
+    echo "uv is not installed. Installing..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    if [[ $? -ne 0 ]]; then
+        echo "Failed to install uv. Please check the installation script."
+        exit 1
+    fi
+
+    source ~/.bashrc
+    if ! command -v uv &> /dev/null; then
+        echo "uv installation failed. Please check your PATH."
+        exit 1
+    fi
+
+    echo "uv is installed successfully."
+else
+    echo "uv is already installed."
+fi
 
 echo
 echo "Running the application..."
-echo
-python3 "$SCRIPT_DIR/init.py" "$@"
+uv run init.py "$@"
 
 echo
 echo "Cleaning up..."
-deactivate
+rm -rf .venv
+rm -rf uv.lock # Make it commented out if you want to keep the lock file
 
-rm -rf "$SCRIPT_DIR/initPyEnv"
+echo
 echo "Environment cleanup complete."
+
+# Return to the original directory
+popd > /dev/null

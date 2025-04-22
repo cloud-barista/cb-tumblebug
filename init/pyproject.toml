@@ -1,0 +1,14 @@
+[project]
+name = "init"
+version = "0.1.0"
+description = "This script initializes CB-Tumblebug project."
+readme = "README.md"
+requires-python = ">=3.8.0"
+dependencies = [
+    "alive-progress==3.1.5",
+    "colorama==0.4.6",
+    "pycryptodome==3.19.1",
+    "pyyaml==6.0.1",
+    "requests==2.32.2",
+    "tabulate==0.8.9",
+]
