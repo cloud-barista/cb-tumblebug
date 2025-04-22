@@ -2235,14 +2235,14 @@ func CreateK8sNodeGroupDynamic(reqID string, nsId string, k8sClusterId string, d
 		return emptyK8sCluster, err
 	}
 
-	if tbK8sCInfo.CspViewK8sClusterDetail.Status != model.SpiderClusterActive {
+	if tbK8sCInfo.Status != model.TbK8sClusterActive {
 		err := fmt.Errorf("K8sCluster(%s) is not active status", k8sClusterId)
 		log.Err(err).Msgf("Failed to Create K8sNodeGroup(%s) in K8sCluster(%s) Dynamically", dReq.Name, k8sClusterId)
 		return emptyK8sCluster, err
 	}
 
-	for _, ng := range tbK8sCInfo.CspViewK8sClusterDetail.NodeGroupList {
-		if ng.IId.NameId == dReq.Name {
+	for _, ngi := range tbK8sCInfo.K8sNodeGroupList {
+		if ngi.Name == dReq.Name {
 			err := fmt.Errorf("K8sNodeGroup(%s) already exists", dReq.Name)
 			log.Err(err).Msgf("Failed to Create K8sNodeGroup(%s) in K8sCluster(%s) Dynamically", dReq.Name, k8sClusterId)
 			return emptyK8sCluster, err
