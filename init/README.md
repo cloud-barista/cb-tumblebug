@@ -12,6 +12,7 @@ The `init.py` script is designed to automate the process of registering credenti
 ## Prerequisites
 - Python 3.8.0 or higher is installed
 - uv 0.6.16 or higher is installed
+  - uv is an emerging Python package and project manager
 - Python packages listed in `pyproject.toml`
 
 ### `uv` installation
