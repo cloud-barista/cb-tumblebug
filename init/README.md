@@ -35,6 +35,7 @@ Note: Removing uv is described at the last section.
 Before running `init.py`, you must encrypt your `credentials.yaml` file to ensure the security of your sensitive information.
 
 1. Use the `encCredential.sh` script to encrypt your `credentials.yaml` file:
+
 ```bash
 init/encCredential.sh
 ```
@@ -93,6 +94,7 @@ init/decCredential.sh
 ## Note: Removing uv
 
 1. Clean up stored data (optional):
+
 ```shell
 uv cache clean
 rm -r "$(uv python dir)"
@@ -100,6 +102,7 @@ rm -r "$(uv tool dir)"
 ```
 
 2. Remove the uv and uvx binaries:
+
 ```shell
 rm ~/.local/bin/uv ~/.local/bin/uvx
 ```
