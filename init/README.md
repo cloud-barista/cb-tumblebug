@@ -10,9 +10,24 @@ The `init.py` script is designed to automate the process of registering credenti
 - **Resource Loading**: Initiates the loading of common specs and images into Tumblebug.
 
 ## Prerequisites
-- Python 3.7.5 or higher is installed
-- Python packages listed in `requirements.txt`
-- The `python3-venv` package should be installed for running the script using `init.sh`.
+- Python 3.8.0 or higher is installed
+- uv 0.6.16 or higher is installed
+- Python packages listed in `pyproject.toml`
+
+### `uv` installation
+
+See [Installing uv](https://docs.astral.sh/uv/getting-started/installation/)
+
+```shell
+# Installing uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Setting environment variables
+source ~/.bashrc
+# or source ~/.bash_profile, source ~/.profile 
+```
+
+Note: Removing uv is described at the last section.
 
 ## Usage
 
@@ -29,11 +44,7 @@ The `init.py` script will decrypt the `credentials.yaml.enc` file as needed to r
 
 ### Direct Execution
 ```bash
-pip3 install -r requirements.txt
-```
-
-```bash
-python3 init.py
+uv run init.py
 ```
 
 - Options: `-y, --yes` (Automatically answer yes to prompts and proceed without manual confirmation)
@@ -71,8 +82,24 @@ init/decCredential.sh
 
 ## Related Files
 - `init.py`: Main Python script.
-- `requirements.txt`: Contains all Python dependencies.
+- `pyproject.toml`: Contains all Python dependencies.
 - `init.sh`: Bash script for setting up a Python virtual environment and running `init.py`.
 - `credentials.yaml`: Contains the credentials data to be registered with the Tumblebug server.
 - `encCredential.sh`: Script to encrypt `credentials.yaml`.
 - `decCredential.sh`: Script to decrypt `credentials.yaml.enc`.
+
+---
+
+## Note: Removing uv
+
+1. Clean up stored data (optional):
+```shell
+uv cache clean
+rm -r "$(uv python dir)"
+rm -r "$(uv tool dir)"
+```
+
+2. Remove the uv and uvx binaries:
+```shell
+rm ~/.local/bin/uv ~/.local/bin/uvx
+```

@@ -29,43 +29,19 @@ else
     exit 1
 fi
 
-# Ensure curl is installed
-echo
-echo "Checking for curl..."
-if ! command -v curl &> /dev/null; then
-    echo "curl is not installed. Installing..."
-    sudo apt update
-    sudo apt install -y curl || {
-        echo "Failed to install curl."
-        exit 1
-    }
-
-    echo "curl is installed successfully."
-else
-    echo "curl is already installed."
-fi
-
-
 # Ensure uv is installed
 echo
 echo "Checking for uv..."
 if ! command -v uv &> /dev/null; then
-    echo "uv is not installed. Installing..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    if [[ $? -ne 0 ]]; then
-        echo "Failed to install uv. Please check the installation script."
-        exit 1
-    fi
-
-    source ~/.bashrc
-    if ! command -v uv &> /dev/null; then
-        echo "uv installation failed. Please check your PATH."
-        exit 1
-    fi
-
-    echo "uv is installed successfully."
-else
-    echo "uv is already installed."
+    echo "uv is not installed. Please install it using the following command:"
+    echo
+    echo "# Installing uv"
+    echo " curl -LsSf https://astral.sh/uv/install.sh | sh"
+    echo
+    echo "# Setting environment variables"
+    echo "source ~/.bashrc"
+    echo "# or use source ~/.bash_profile or source ~/.profile"
+    exit 1
 fi
 
 echo
