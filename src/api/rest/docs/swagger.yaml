@@ -10412,26 +10412,48 @@ components:
           description: CspResourceName is name assigned to the CSP resource. This
             name is internally used to handle the resource.
           example: we12fawefadf1221edcf
-        cspViewK8sNodeGroupDetail:
-          $ref: '#/components/schemas/model.SpiderNodeGroupInfo'
+        desiredNodeSize:
+          type: integer
         id:
           type: string
           description: Id is unique identifier for the object
           example: aws-ap-southeast-1
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
+        imageId:
+          type: string
+        k8sNodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.TbK8sNodeInfo'
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        maxNodeSize:
+          type: integer
+        minNodeSize:
+          type: integer
         name:
           type: string
           description: Name is human-readable string to represent the object
           example: aws-ap-southeast-1
-        uid:
+        onAutoScaling:
+          type: boolean
+        rootDiskSize:
           type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
+        rootDiskType:
+          type: string
+        specId:
+          type: string
+        spiderViewK8sNodeGroupDetail:
+          $ref: '#/components/schemas/model.SpiderNodeGroupInfo'
+        sshKeyId:
+          type: string
+        status:
+          type: object
+          description: "Creating, Active, Inactive, Updating, Deleting"
+          example: Active
+          allOf:
+          - $ref: '#/components/schemas/model.TbK8sNodeGroupStatus'
     model.TbCustomImageInfo:
       type: object
       properties:
@@ -10766,6 +10788,26 @@ components:
           type: string
         name:
           type: string
+    model.TbK8sAccessInfo:
+      type: object
+      properties:
+        endpoint:
+          type: string
+          example: http://1.2.3.4:6443
+        kubeconfig:
+          type: string
+          example: |-
+            apiVersion: v1
+            clusters:
+            - cluster:
+             certificate-authority-data: LS0...
+    model.TbK8sAddonsInfo:
+      type: object
+      properties:
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
     model.TbK8sClusterContainerCmdReq:
       required:
       - command
@@ -10842,7 +10884,7 @@ components:
         nodeGroupName:
           type: string
           description: NodeGroup name if it is not empty
-          example: k8snodegroup01
+          example: k8sng01
         onAutoScaling:
           type: string
           example: "true"
@@ -10868,6 +10910,10 @@ components:
     model.TbK8sClusterInfo:
       type: object
       properties:
+        accessInfo:
+          $ref: '#/components/schemas/model.TbK8sAccessInfo'
+        addons:
+          $ref: '#/components/schemas/model.TbK8sAddonsInfo'
         connectionConfig:
           type: object
           description: ConnectionConfig shows connection info to cloud service provider
@@ -10876,6 +10922,9 @@ components:
         connectionName:
           type: string
           example: alibaba-ap-northeast-2
+        createdTime:
+          type: string
+          example: 1970-01-01T00:00:00.00Z
         cspResourceId:
           type: string
           description: CspResourceId is resource identifier managed by CSP
@@ -10885,8 +10934,6 @@ components:
           description: CspResourceName is name assigned to the CSP resource. This
             name is internally used to handle the resource.
           example: we12fawefadf1221edcf
-        cspViewK8sClusterDetail:
-          $ref: '#/components/schemas/model.SpiderClusterInfo'
         description:
           type: string
           example: My K8sCluster
@@ -10894,6 +10941,16 @@ components:
           type: string
           description: "Id is unique identifier for the object, same as Name"
           example: k8scluster01
+        k8sNodeGroupList:
+          type: array
+          description: K8sNodeGroupList is for describing network information about
+            the cluster
+          items:
+            $ref: '#/components/schemas/model.TbK8sNodeGroupInfo'
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
         label:
           type: object
           additionalProperties:
@@ -10903,9 +10960,22 @@ components:
           type: string
           description: Name is human-readable string to represent the object
           example: k8scluster01
+        network:
+          type: object
+          description: Network is for describing network information about the cluster
+          allOf:
+          - $ref: '#/components/schemas/model.TbK8sClusterNetworkInfo'
         resourceType:
           type: string
           description: ResourceType is the type of the resource
+        spiderViewK8sClusterDetail:
+          $ref: '#/components/schemas/model.SpiderClusterInfo'
+        status:
+          type: object
+          description: "Creating, Active, Inactive, Updating, Deleting"
+          example: Active
+          allOf:
+          - $ref: '#/components/schemas/model.TbK8sClusterStatus'
         systemLabel:
           type: string
           description: SystemLabel is for describing the Resource in a keyword (any
@@ -10920,6 +10990,32 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
+        version:
+          type: string
+          description: Version is for kubernetes version
+          example: 1.30.1
+    model.TbK8sClusterNetworkInfo:
+      type: object
+      properties:
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        securityGroupIds:
+          type: array
+          example:
+          - sg-01
+          items:
+            type: string
+        subnetIds:
+          type: array
+          example:
+          - subnet-01
+          items:
+            type: string
+        vNetId:
+          type: string
+          example: vpc-01
     model.TbK8sClusterReq:
       required:
       - connectionName
@@ -10981,6 +11077,20 @@ components:
         version:
           type: string
           example: 1.30.1-aliyun.1
+    model.TbK8sClusterStatus:
+      type: string
+      enum:
+      - Creating
+      - Active
+      - Inactive
+      - Updating
+      - Deleting
+      x-enum-varnames:
+      - TbK8sClusterCreating
+      - TbK8sClusterActive
+      - TbK8sClusterInactive
+      - TbK8sClusterUpdating
+      - TbK8sClusterDeleting
     model.TbK8sNodeGroupDynamicReq:
       required:
       - commonImage
@@ -11019,7 +11129,7 @@ components:
         name:
           type: string
           description: K8sNodeGroup name if it is not empty.
-          example: k8snodegroup01
+          example: k8sng01
         onAutoScaling:
           type: string
           example: "true"
@@ -11050,26 +11160,48 @@ components:
           description: CspResourceName is name assigned to the CSP resource. This
             name is internally used to handle the resource.
           example: we12fawefadf1221edcf
-        cspViewK8sNodeGroupDetail:
-          $ref: '#/components/schemas/model.SpiderNodeGroupInfo'
+        desiredNodeSize:
+          type: integer
         id:
           type: string
           description: Id is unique identifier for the object
           example: aws-ap-southeast-1
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
+        imageId:
+          type: string
+        k8sNodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.TbK8sNodeInfo'
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        maxNodeSize:
+          type: integer
+        minNodeSize:
+          type: integer
         name:
           type: string
           description: Name is human-readable string to represent the object
           example: aws-ap-southeast-1
-        uid:
+        onAutoScaling:
+          type: boolean
+        rootDiskSize:
           type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
+        rootDiskType:
+          type: string
+        specId:
+          type: string
+        spiderViewK8sNodeGroupDetail:
+          $ref: '#/components/schemas/model.SpiderNodeGroupInfo'
+        sshKeyId:
+          type: string
+        status:
+          type: object
+          description: "Creating, Active, Inactive, Updating, Deleting"
+          example: Active
+          allOf:
+          - $ref: '#/components/schemas/model.TbK8sNodeGroupStatus'
     model.TbK8sNodeGroupReq:
       type: object
       properties:
@@ -11095,7 +11227,7 @@ components:
           example: "1"
         name:
           type: string
-          example: k8snodegroup01
+          example: k8sng01
         onAutoScaling:
           type: string
           description: autoscale config.
@@ -11118,6 +11250,32 @@ components:
         sshKeyId:
           type: string
           example: sshkey-01
+    model.TbK8sNodeGroupStatus:
+      type: string
+      enum:
+      - Creating
+      - Active
+      - Inactive
+      - Updating
+      - Deleting
+      x-enum-varnames:
+      - TbK8sNodeGroupCreating
+      - TbK8sNodeGroupActive
+      - TbK8sNodeGroupInactive
+      - TbK8sNodeGroupUpdating
+      - TbK8sNodeGroupDeleting
+    model.TbK8sNodeInfo:
+      type: object
+      properties:
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
     model.TbMciDynamicReq:
       required:
       - name
