@@ -13881,30 +13881,66 @@ const docTemplate = `{
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
                 },
-                "cspViewK8sNodeGroupDetail": {
-                    "$ref": "#/definitions/model.SpiderNodeGroupInfo"
+                "desiredNodeSize": {
+                    "type": "integer"
                 },
                 "id": {
                     "description": "Id is unique identifier for the object",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
-                "label": {
-                    "description": "Label is for describing the object by keywords",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
+                "imageId": {
+                    "type": "string"
+                },
+                "k8sNodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbK8sNodeInfo"
                     }
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "maxNodeSize": {
+                    "type": "integer"
+                },
+                "minNodeSize": {
+                    "type": "integer"
                 },
                 "name": {
                     "description": "Name is human-readable string to represent the object",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
-                "uid": {
-                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
-                    "type": "string",
-                    "example": "wef12awefadf1221edcf"
+                "onAutoScaling": {
+                    "type": "boolean"
+                },
+                "rootDiskSize": {
+                    "type": "string"
+                },
+                "rootDiskType": {
+                    "type": "string"
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "spiderViewK8sNodeGroupDetail": {
+                    "$ref": "#/definitions/model.SpiderNodeGroupInfo"
+                },
+                "sshKeyId": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Creating, Active, Inactive, Updating, Deleting",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.TbK8sNodeGroupStatus"
+                        }
+                    ],
+                    "example": "Active"
                 }
             }
         },
@@ -14356,6 +14392,30 @@ const docTemplate = `{
                 }
             }
         },
+        "model.TbK8sAccessInfo": {
+            "type": "object",
+            "properties": {
+                "endpoint": {
+                    "type": "string",
+                    "example": "http://1.2.3.4:6443"
+                },
+                "kubeconfig": {
+                    "type": "string",
+                    "example": "apiVersion: v1\nclusters:\n- cluster:\n certificate-authority-data: LS0..."
+                }
+            }
+        },
+        "model.TbK8sAddonsInfo": {
+            "type": "object",
+            "properties": {
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                }
+            }
+        },
         "model.TbK8sClusterContainerCmdReq": {
             "type": "object",
             "required": [
@@ -14454,7 +14514,7 @@ const docTemplate = `{
                 "nodeGroupName": {
                     "description": "NodeGroup name if it is not empty",
                     "type": "string",
-                    "example": "k8snodegroup01"
+                    "example": "k8sng01"
                 },
                 "onAutoScaling": {
                     "type": "string",
@@ -14483,6 +14543,12 @@ const docTemplate = `{
         "model.TbK8sClusterInfo": {
             "type": "object",
             "properties": {
+                "accessInfo": {
+                    "$ref": "#/definitions/model.TbK8sAccessInfo"
+                },
+                "addons": {
+                    "$ref": "#/definitions/model.TbK8sAddonsInfo"
+                },
                 "connectionConfig": {
                     "description": "ConnectionConfig shows connection info to cloud service provider",
                     "allOf": [
@@ -14495,6 +14561,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "alibaba-ap-northeast-2"
                 },
+                "createdTime": {
+                    "type": "string",
+                    "example": "1970-01-01T00:00:00.00Z"
+                },
                 "cspResourceId": {
                     "description": "CspResourceId is resource identifier managed by CSP",
                     "type": "string",
@@ -14505,9 +14575,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
                 },
-                "cspViewK8sClusterDetail": {
-                    "$ref": "#/definitions/model.SpiderClusterInfo"
-                },
                 "description": {
                     "type": "string",
                     "example": "My K8sCluster"
@@ -14516,6 +14583,19 @@ const docTemplate = `{
                     "description": "Id is unique identifier for the object, same as Name",
                     "type": "string",
                     "example": "k8scluster01"
+                },
+                "k8sNodeGroupList": {
+                    "description": "K8sNodeGroupList is for describing network information about the cluster",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbK8sNodeGroupInfo"
+                    }
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
                 },
                 "label": {
                     "description": "Label is for describing the object by keywords",
@@ -14529,9 +14609,29 @@ const docTemplate = `{
                     "type": "string",
                     "example": "k8scluster01"
                 },
+                "network": {
+                    "description": "Network is for describing network information about the cluster",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.TbK8sClusterNetworkInfo"
+                        }
+                    ]
+                },
                 "resourceType": {
                     "description": "ResourceType is the type of the resource",
                     "type": "string"
+                },
+                "spiderViewK8sClusterDetail": {
+                    "$ref": "#/definitions/model.SpiderClusterInfo"
+                },
+                "status": {
+                    "description": "Creating, Active, Inactive, Updating, Deleting",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.TbK8sClusterStatus"
+                        }
+                    ],
+                    "example": "Active"
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
@@ -14547,6 +14647,44 @@ const docTemplate = `{
                     "description": "Uid is universally unique identifier for the object, used for labelSelector",
                     "type": "string",
                     "example": "wef12awefadf1221edcf"
+                },
+                "version": {
+                    "description": "Version is for kubernetes version",
+                    "type": "string",
+                    "example": "1.30.1"
+                }
+            }
+        },
+        "model.TbK8sClusterNetworkInfo": {
+            "type": "object",
+            "properties": {
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "sg-01"
+                    ]
+                },
+                "subnetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "subnet-01"
+                    ]
+                },
+                "vNetId": {
+                    "type": "string",
+                    "example": "vpc-01"
                 }
             }
         },
@@ -14627,6 +14765,23 @@ const docTemplate = `{
                 }
             }
         },
+        "model.TbK8sClusterStatus": {
+            "type": "string",
+            "enum": [
+                "Creating",
+                "Active",
+                "Inactive",
+                "Updating",
+                "Deleting"
+            ],
+            "x-enum-varnames": [
+                "TbK8sClusterCreating",
+                "TbK8sClusterActive",
+                "TbK8sClusterInactive",
+                "TbK8sClusterUpdating",
+                "TbK8sClusterDeleting"
+            ]
+        },
         "model.TbK8sNodeGroupDynamicReq": {
             "type": "object",
             "required": [
@@ -14674,7 +14829,7 @@ const docTemplate = `{
                 "name": {
                     "description": "K8sNodeGroup name if it is not empty.",
                     "type": "string",
-                    "example": "k8snodegroup01"
+                    "example": "k8sng01"
                 },
                 "onAutoScaling": {
                     "type": "string",
@@ -14708,30 +14863,66 @@ const docTemplate = `{
                     "type": "string",
                     "example": "we12fawefadf1221edcf"
                 },
-                "cspViewK8sNodeGroupDetail": {
-                    "$ref": "#/definitions/model.SpiderNodeGroupInfo"
+                "desiredNodeSize": {
+                    "type": "integer"
                 },
                 "id": {
                     "description": "Id is unique identifier for the object",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
-                "label": {
-                    "description": "Label is for describing the object by keywords",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
+                "imageId": {
+                    "type": "string"
+                },
+                "k8sNodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbK8sNodeInfo"
                     }
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "maxNodeSize": {
+                    "type": "integer"
+                },
+                "minNodeSize": {
+                    "type": "integer"
                 },
                 "name": {
                     "description": "Name is human-readable string to represent the object",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
-                "uid": {
-                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
-                    "type": "string",
-                    "example": "wef12awefadf1221edcf"
+                "onAutoScaling": {
+                    "type": "boolean"
+                },
+                "rootDiskSize": {
+                    "type": "string"
+                },
+                "rootDiskType": {
+                    "type": "string"
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "spiderViewK8sNodeGroupDetail": {
+                    "$ref": "#/definitions/model.SpiderNodeGroupInfo"
+                },
+                "sshKeyId": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Creating, Active, Inactive, Updating, Deleting",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.TbK8sNodeGroupStatus"
+                        }
+                    ],
+                    "example": "Active"
                 }
             }
         },
@@ -14767,7 +14958,7 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string",
-                    "example": "k8snodegroup01"
+                    "example": "k8sng01"
                 },
                 "onAutoScaling": {
                     "description": "autoscale config.",
@@ -14791,6 +14982,38 @@ const docTemplate = `{
                 "sshKeyId": {
                     "type": "string",
                     "example": "sshkey-01"
+                }
+            }
+        },
+        "model.TbK8sNodeGroupStatus": {
+            "type": "string",
+            "enum": [
+                "Creating",
+                "Active",
+                "Inactive",
+                "Updating",
+                "Deleting"
+            ],
+            "x-enum-varnames": [
+                "TbK8sNodeGroupCreating",
+                "TbK8sNodeGroupActive",
+                "TbK8sNodeGroupInactive",
+                "TbK8sNodeGroupUpdating",
+                "TbK8sNodeGroupDeleting"
+            ]
+        },
+        "model.TbK8sNodeInfo": {
+            "type": "object",
+            "properties": {
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
                 }
             }
         },
