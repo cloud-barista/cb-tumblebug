@@ -59,15 +59,15 @@ if [ "${INDEX}" == "0" ]; then
 				#trap 'echo "trapped"; rm -f -- "$TMP_FILE_KUBECONFIG"' EXIT
 			fi
 
-			ENDPOINT=$(jq -r '.CspViewK8sClusterDetail.AccessInfo.Endpoint' <<<"$K8SCLUSTERINFO")
+			ENDPOINT=$(jq -r '.accessInfo.endpoint' <<<"$K8SCLUSTERINFO")
 			if [[ ! $ENDPOINT =~ $ENDPOINT_REGEX ]]; then
-				echo ".CspViewK8sClusterDetail.AccessInfo.Endpoint ($ENDPOINT) is not valid"	
+				echo ".accessInfo.endpoint ($ENDPOINT) is not valid"
 				echo "Try again after about 5 minutes"		
 				continue
 			fi
 
 			echo "TMP_FILE_KUBECONFIG="$TMP_FILE_KUBECONFIG
-			jq -r '.CspViewK8sClusterDetail.AccessInfo.Kubeconfig' <<<"$K8SCLUSTERINFO" > $TMP_FILE_KUBECONFIG
+			jq -r '.accessInfo.kubeconfig' <<<"$K8SCLUSTERINFO" > $TMP_FILE_KUBECONFIG
 			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG apply -f ./nginx-with-pvc.yaml
 			dozing 1
 
