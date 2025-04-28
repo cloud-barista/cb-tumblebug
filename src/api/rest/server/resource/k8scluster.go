@@ -16,6 +16,7 @@ package resource
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -714,7 +715,7 @@ func RestRecommendK8sNode(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param k8sClusterNamespace query string true "Namespace in K8sCluster to apply the command" default(mynamespace)
+// @Param k8sClusterNamespace query string true "Namespace in K8sCluster to apply the command" default(default)
 // @Param k8sClusterPodName query string true "Pod Name in K8sCluster to apply the command" default(mypod)
 // @Param k8sClusterContainerName query string false "Container Name in K8sCluster to apply the command"
 // @Param k8sClusterContainerCmdReq body model.TbK8sClusterContainerCmdReq true "K8sCluster's Container Command Request"
@@ -737,5 +738,79 @@ func RestPostCmdK8sCluster(c echo.Context) error {
 	}
 
 	content, err := resource.RemoteCommandToK8sClusterContainer(nsId, k8sClusterId, k8sClusterNamespace, k8sClusterPodName, k8sClusterContainerName, req)
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestPostFileToK8sCluster godoc
+// @ID PostFileToK8sCluster
+// @Summary Transfer a file to specified Container in K8sCluster
+// @Description Transfer a file to specified Container in K8sCluster. The tar command is required in the container.
+// @Description [note] This feature is not intended for general use
+// @Description This API is provided as an exceptional and limited function for specific purposes such as migration.
+// @Description Kubernetes resource information required as input for this API is not currently provided, and its availability in the future is uncertain.
+// @Tags [Kubernetes] Cluster's Container Remote Command
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
+// @Param k8sClusterNamespace query string true "Namespace in K8sCluster to apply the command" default(default)
+// @Param k8sClusterPodName query string true "Pod Name in K8sCluster to apply the command" default(mypod)
+// @Param k8sClusterContainerName query string false "Container Name in K8sCluster to apply the command"
+// @Param path formData string true "Target path where the file will be stored" default(/tmp)
+// @Param file formData file true "The file to be uploaded (Max 10MB)"
+// @Param x-request-id header string false "Custom request ID"
+// @Success 200 {object} model.TbK8sClusterContainerCmdResults
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/transferFile/k8sCluster/{k8sClusterId} [post]
+func RestPostFileToK8sCluster(c echo.Context) error {
+	nsId := c.Param("nsId")
+	k8sClusterId := c.Param("k8sClusterId")
+	k8sClusterNamespace := c.QueryParam("k8sClusterNamespace")
+	k8sClusterPodName := c.QueryParam("k8sClusterPodName")
+	k8sClusterContainerName := c.QueryParam("k8sClusterContainerName")
+	targetPath := c.FormValue("path")
+
+	if targetPath == "" {
+		err := fmt.Errorf("target path is required")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Validate the file
+	file, err := c.FormFile("file")
+	if err != nil {
+		err = fmt.Errorf("failed to read the file: %w", err)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// File size validation
+	fileSizeLimit := int64(10 * 1024 * 1024) // (10MB limit)
+	if file.Size > fileSizeLimit {
+		err := fmt.Errorf("file too large, max size is %v", fileSizeLimit)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Open the file and read it into memory
+	src, err := file.Open()
+	if err != nil {
+		err = fmt.Errorf("failed to open the file: %w", err)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	defer src.Close()
+
+	// Read the file into memory
+	bytesFile, err := io.ReadAll(src)
+	if err != nil {
+		err = fmt.Errorf("failed to read the file: %w", err)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	content, err := resource.TransferFileToK8sClusterContainer(nsId, k8sClusterId, k8sClusterNamespace, k8sClusterPodName, k8sClusterContainerName, bytesFile, file.Filename, targetPath)
+	if err != nil {
+		err = fmt.Errorf("failed to transfer the file to k8sCluster: %v", err)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Return the result
 	return clientManager.EndRequestWithLog(c, err, content)
 }

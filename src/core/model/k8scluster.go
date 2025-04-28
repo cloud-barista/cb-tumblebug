@@ -555,8 +555,13 @@ type TbK8sClusterContainerCmdReq struct {
 
 // TbK8sClusterContainerCmdResult is struct for K8sClusterContainerCmd Result
 type TbK8sClusterContainerCmdResult struct {
-	Command map[int]string `json:"command"`
-	Stdout  map[int]string `json:"stdout"`
-	Stderr  map[int]string `json:"stderr"`
-	Err     error          `json:"err"`
+	Command string `json:"command"`
+	Stdout  string `json:"stdout"`
+	Stderr  string `json:"stderr"`
+	Err     error  `json:"err"`
+}
+
+// TbK8sClusterContainerCmdResultMap is struct maps for K8sClusterContainerCmd Result
+type TbK8sClusterContainerCmdResults struct {
+	Results []*TbK8sClusterContainerCmdResult `json:"results"`
 }
