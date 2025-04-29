@@ -1616,7 +1616,7 @@ paths:
         required: true
         schema:
           type: string
-          default: mynamespace
+          default: default
       - name: k8sClusterPodName
         in: query
         description: Pod Name in K8sCluster to apply the command
@@ -7562,6 +7562,93 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/transferFile/k8sCluster/{k8sClusterId}:
+    post:
+      tags:
+      - "[Kubernetes] Cluster's Container Remote Command"
+      summary: Transfer a file to specified Container in K8sCluster
+      description: |-
+        Transfer a file to specified Container in K8sCluster. The tar command is required in the container.
+        [note] This feature is not intended for general use
+        This API is provided as an exceptional and limited function for specific purposes such as migration.
+        Kubernetes resource information required as input for this API is not currently provided, and its availability in the future is uncertain.
+      operationId: PostFileToK8sCluster
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterId
+        in: path
+        description: K8sCluster ID
+        required: true
+        schema:
+          type: string
+          default: k8scluster01
+      - name: k8sClusterNamespace
+        in: query
+        description: Namespace in K8sCluster to apply the command
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: k8sClusterPodName
+        in: query
+        description: Pod Name in K8sCluster to apply the command
+        required: true
+        schema:
+          type: string
+          default: mypod
+      - name: k8sClusterContainerName
+        in: query
+        description: Container Name in K8sCluster to apply the command
+        schema:
+          type: string
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+              - file
+              - path
+              type: object
+              properties:
+                path:
+                  type: string
+                  description: Target path where the file will be stored
+                  default: /tmp
+                file:
+                  type: string
+                  description: The file to be uploaded (Max 10MB)
+                  format: binary
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.TbK8sClusterContainerCmdResults'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/transferFile/mci/{mciId}:
     post:
       tags:
@@ -10823,19 +10910,20 @@ components:
       type: object
       properties:
         command:
-          type: object
-          additionalProperties:
-            type: string
+          type: string
         err:
           type: object
         stderr:
-          type: object
-          additionalProperties:
-            type: string
+          type: string
         stdout:
-          type: object
-          additionalProperties:
-            type: string
+          type: string
+    model.TbK8sClusterContainerCmdResults:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.TbK8sClusterContainerCmdResult'
     model.TbK8sClusterDynamicReq:
       required:
       - commonImage
