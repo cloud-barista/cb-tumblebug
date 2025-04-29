@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/user"
@@ -213,6 +214,31 @@ func setConfig() {
 	common.AdjustKeysToLowercase(&common.RuntimeCloudInfo)
 	// fmt.Printf("%+v\n", common.RuntimeCloudInfo)
 	// common.PrintCloudInfoTable(common.RuntimeCloudInfo)
+
+	//
+	// Load networkinfo
+	//
+	networkInfo := viper.New()
+	fileName = "networkinfo"
+	networkInfo.AddConfigPath(".")
+	networkInfo.AddConfigPath("./assets/")
+	networkInfo.AddConfigPath("../assets/")
+	networkInfo.SetConfigName(fileName)
+	networkInfo.SetConfigType("yaml")
+	err = networkInfo.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("fatal error reading networkinfo config file: %w", err))
+	}
+
+	log.Info().Msg(networkInfo.ConfigFileUsed())
+	err = networkInfo.Unmarshal(&common.RuntimeCloudNetworkInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		panic(err)
+	}
+
+	networkInfoJSON, _ := json.MarshalIndent(common.RuntimeCloudNetworkInfo.CSPs["aws"], "", "  ")
+	log.Debug().Msgf("common.RuntimeNetworkInfo: %s", string(networkInfoJSON))
 
 	//
 	// Load k8sclusterinfo

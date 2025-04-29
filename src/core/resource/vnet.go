@@ -131,6 +131,7 @@ func ValidateVNetReq(vNetReq *model.TbVNetReq) error {
 	log.Debug().Msg("ValidateVNetReq")
 	log.Debug().Msgf("vNetReq: %+v", vNetReq)
 
+	// * 1. Validates that each struct fields follows the rules in its 'validate' tags.
 	err := validate.Struct(vNetReq)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
@@ -139,14 +140,14 @@ func ValidateVNetReq(vNetReq *model.TbVNetReq) error {
 		return err
 	}
 
-	// Validate if vNet has at least one subnet or not
+	// * 2. Validates that the vNet has at least one subnet.
 	if len(vNetReq.SubnetInfoList) == 0 {
 		err := fmt.Errorf("at least one subnet is required")
 		log.Error().Err(err).Msg("")
 		return err
 	}
 
-	// Validate zone in each subnet
+	// * 3. Validates that each subnet's zone is valid in the region
 	// TODO: Update the validation logic
 	// It's a temporary validation logic due to the connection name pattern
 
@@ -179,7 +180,7 @@ func ValidateVNetReq(vNetReq *model.TbVNetReq) error {
 		return err
 	}
 
-	// Validate the zone in each subnet
+	// Check if each subnet's zone is included in the region's zone list
 	zones := regionDetail.Zones
 	for _, subnetInfo := range vNetReq.SubnetInfoList {
 		if subnetInfo.Zone != "" {
@@ -191,6 +192,22 @@ func ValidateVNetReq(vNetReq *model.TbVNetReq) error {
 		}
 	}
 
+	// * 4. Validates that the CIDR block of the vNet and subnets are available for use in the CSP.
+	// e.g., in available CIDR Blocks, not in the reserved CIDR Blocks, and etc.
+	ok, err := IsAvailableForUseInCSP(vNetReq, provider)
+	if !ok {
+		if err != nil {
+			err2 := fmt.Errorf("CIDR block is not available for use in the CSP (provider: %s): %w", provider, err)
+			log.Error().Err(err2).Msg("")
+			return err2
+		} else {
+			err := fmt.Errorf("CIDR block is not available for use in the CSP (provider: %s)", provider)
+			log.Error().Err(err).Msg("")
+			return err
+		}
+	}
+
+	// * 5. Validates that the CIDR block of the vNet and subnets are valid
 	// A network object for validation
 	var network netutil.Network
 	var subnets []netutil.Network
@@ -225,6 +242,151 @@ func ContainsZone(zones []string, zone string) bool {
 		}
 	}
 	return false
+}
+
+func IsAvailableForUseInCSP(vNetReq *model.TbVNetReq, provider string) (bool, error) {
+
+	// * 1. Check if the provider info exists
+	csp, ok := common.RuntimeCloudNetworkInfo.CSPs[provider]
+	if !ok {
+		log.Warn().Msgf("skip validation, no CSP info for provider: %s", provider)
+		return true, nil
+	}
+
+	// * 2. Check if the input CIDR block is valid.
+	// Input the CIDR block of the vNet
+	vNetCidrBlock := vNetReq.CidrBlock
+	// Parse IPNet
+	_, vNetIpNet, err := net.ParseCIDR(vNetCidrBlock)
+	if err != nil {
+		return false, fmt.Errorf("invalid CIDR block format (%s): %v", vNetCidrBlock, err)
+	}
+	vNetPrefixLength, _ := vNetIpNet.Mask.Size()
+
+	// * 3. Check if the CIDR block of the vNet is available for use in the CSP
+	if csp.AvailableCIDRBlocks != nil {
+
+		// Check if the CIDR block is in the available CIDR blocks
+		isAvailable := false
+		for _, availableCidrBlockDetail := range csp.AvailableCIDRBlocks {
+
+			// Parse IPNet
+			_, availableIpNet, err := net.ParseCIDR(availableCidrBlockDetail.CIDRBlock)
+			if err != nil {
+				return false, fmt.Errorf("invalid CIDR block format (%s): %v", availableCidrBlockDetail.CIDRBlock, err)
+			}
+
+			// Its available if the CIDR blocks are the same
+			if vNetIpNet.String() == availableIpNet.String() {
+				isAvailable = true
+				break
+			}
+
+			// 1. Available CIDR block must include the input CIDR block
+			// 2. Network mask of the available CIDR block must be less than the input CIDR block
+			PrefixLengthOfAvailableCidrBlock, _ := availableIpNet.Mask.Size()
+
+			if availableIpNet.Contains(vNetIpNet.IP) && PrefixLengthOfAvailableCidrBlock < vNetPrefixLength {
+				isAvailable = true
+				break
+			}
+		}
+
+		if !isAvailable {
+			err := fmt.Errorf("vNet CIDR block %s is not available for use in the CSP (provider: %s)", vNetCidrBlock, provider)
+			log.Error().Err(err).Msg("")
+			return false, err
+		}
+
+		log.Debug().Msgf("[Network Validation Success] vNet CIDR block %s is available for use in the CSP (provider: %s)", vNetCidrBlock, provider)
+	}
+
+	// * 4. Check if the prefix length of the vNet CIDR block is in range of CSP's vNet prefix length
+	// Note: GCP does not have VPC network CIDR block so skip the prefix length check
+	if csp.VNet != nil {
+		vNetPrefixMin := csp.VNet.PrefixLength.Min
+		vNetPrefixMax := csp.VNet.PrefixLength.Max
+
+		if !(vNetPrefixLength >= vNetPrefixMin && vNetPrefixLength <= vNetPrefixMax) {
+			err := fmt.Errorf("vNet CIDR block %s is not valid (provider: %s, prefix min: %d, prefix max: %d)", vNetCidrBlock, provider, vNetPrefixMin, vNetPrefixMax)
+			return false, err
+		}
+		log.Debug().Msgf("[Network Validation Success] vNet CIDR block %s is valid (provider: %s, prefix min: %d, prefix max: %d)", vNetCidrBlock, provider, vNetPrefixMin, vNetPrefixMax)
+	}
+
+	// * 5. Check if the vNet CIDR block is in the reserved CIDR blocks
+	// * For the time being, just make a warning log
+	if csp.ReservedCIDRBlocks != nil {
+		for _, reservedCidrBlockDetail := range csp.ReservedCIDRBlocks {
+			// Parse IPNet
+			_, reservedIpNet, err := net.ParseCIDR(reservedCidrBlockDetail.CIDRBlock)
+			if err != nil {
+				return false, fmt.Errorf("invalid CIDR block format (%s): %v", reservedIpNet, err)
+			}
+
+			// It's not available if the CIDR blocks are the same
+			if vNetIpNet.String() == reservedIpNet.String() {
+				err := fmt.Errorf("vNet CIDR block %s is in the reserved CIDR blocks (provider: %s)", vNetCidrBlock, provider)
+				log.Warn().Msgf(err.Error())
+				// return false, err
+			}
+
+			// Check if the vNet CIDR block is in the reserved CIDR blocks
+			if reservedIpNet.Contains(vNetIpNet.IP) {
+				err := fmt.Errorf("vNet CIDR block %s is in the reserved CIDR blocks (provider: %s)", vNetCidrBlock, provider)
+				log.Warn().Msgf(err.Error())
+				// return false, err
+			}
+		}
+
+		log.Debug().Msgf("[Network Validation Success] vNet CIDR block %s is not in the reserved CIDR blocks (provider: %s)", vNetCidrBlock, provider)
+	}
+
+	// * 6. Check if the CIDR block of the subnet is
+	// subnet of the vNet CIDR block and
+	// available for use in the CSP.
+
+	// Get the CIDR block of the subnets
+	// subnetCidrBlocks := make([]string, len(vNetReq.SubnetInfoList))
+	if csp.Subnet != nil {
+		for _, subnetInfo := range vNetReq.SubnetInfoList {
+
+			// * 6-1. Check if the subnet CIDR block is available for use in the CSP
+			subnetCidrBlock := subnetInfo.IPv4_CIDR
+			// Parse IPNet
+			_, subnetIpNet, err := net.ParseCIDR(subnetCidrBlock)
+			if err != nil {
+				return false, fmt.Errorf("invalid subnet CIDR block format (%s): %v", subnetIpNet, err)
+			}
+
+			// 1. Available CIDR block must include the input CIDR block
+			// 2. Network mask of the available CIDR block must be less than the input CIDR block
+			subnetPrefixLength, _ := subnetIpNet.Mask.Size()
+
+			if !(vNetIpNet.Contains(subnetIpNet.IP) && vNetPrefixLength < subnetPrefixLength) {
+				err := fmt.Errorf("subnet CIDR block %s is not valid for vNet CIDR block: %s", subnetCidrBlock, vNetCidrBlock)
+				log.Error().Err(err).Msg("")
+				return false, err
+			}
+
+			// * 6-2. Check if the prefix length of the subnet CIDR block is in range of CSP's subnet prefix length
+			subnetPrefixMin := csp.Subnet.PrefixLength.Min
+			subnetPrefixMax := csp.Subnet.PrefixLength.Max
+			if !(subnetPrefixLength >= subnetPrefixMin && subnetPrefixLength <= subnetPrefixMax) {
+				err := fmt.Errorf("subnet CIDR block %s is not valid (provider: %s, prefix min: %d, prefix max: %d)", subnetCidrBlock, provider, subnetPrefixMin, subnetPrefixMax)
+				log.Error().Err(err).Msg("")
+				return false, err
+			}
+		}
+
+		log.Debug().Msgf("[Network Validation Success] subnet CIDR block %s is valid (provider: %s, prefix min: %d, prefix max: %d)", vNetCidrBlock, provider, csp.Subnet.PrefixLength.Min, csp.Subnet.PrefixLength.Max)
+	}
+
+	log.Info().Msgf("[Network Validation Completed] Everything is valid (provider: %s)", provider)
+
+	// TODO: Validate the VPN in the VPN request section.
+
+	return true, nil
 }
 
 // The spiderXxx structs are used to call the Spider REST API

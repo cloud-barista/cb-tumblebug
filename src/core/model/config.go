@@ -23,7 +23,7 @@ type CloudInfo struct {
 type CSPDetail struct {
 	Description string                  `mapstructure:"description" json:"description"`
 	Driver      string                  `mapstructure:"driver" json:"driver"`
-	Links       []string                `mapstructure:"link" json:"links"`
+	Links       []string                `mapstructure:"link" json:"links,omitempty"`
 	Regions     map[string]RegionDetail `mapstructure:"region" json:"regions"`
 }
 
@@ -51,6 +51,73 @@ type Location struct {
 type Credential struct {
 	Credentialholder map[string]map[string]map[string]string `yaml:"credentialholder"`
 }
+
+/*
+ * NetworkInfo
+ */
+
+// NetworkInfo is structure for network information
+type CloudNetworkInfo struct {
+	CSPs map[string]CSPNetworkDetail `mapstructure:"network" json:"csps"`
+}
+
+// CSPNetworkDetail is structure for CSP network information
+type CSPNetworkDetail struct {
+	Description         string            `mapstructure:"description" json:"description"`
+	Links               []string          `mapstructure:"link" json:"links,omitempty"`
+	AvailableCIDRBlocks []CIDRBlockDetail `mapstructure:"available-cidr-blocks" json:"availableCidrBlocks"`
+	ReservedCIDRBlocks  []CIDRBlockDetail `mapstructure:"reserved-cidr-blocks" json:"reservedCidrBlocks,omitempty"`
+	VNet                *VNetDetail       `mapstructure:"vnet" json:"vnet,omitempty"`
+	Subnet              *SubnetDetail     `mapstructure:"subnet" json:"subnet,omitempty"`
+	VPN                 *VPNDetail        `mapstructure:"vpn" json:"vpn,omitempty"`
+}
+
+// CIDRBlockDetail is structure for IP range information
+type CIDRBlockDetail struct {
+	CIDRBlock   string `mapstructure:"cidr-block" json:"cidrBlock"`
+	Description string `mapstructure:"description" json:"description"`
+}
+
+// VNetDetail is structure for virtual network configuration
+type VNetDetail struct {
+	PrefixLength PrefixLengthDetail `mapstructure:"prefix-length" json:"prefixLength"`
+}
+
+// SubnetDetail is structure for subnet configuration
+type SubnetDetail struct {
+	PrefixLength PrefixLengthDetail `mapstructure:"prefix-length" json:"prefixLength"`
+	ReservedIPs  ReservedIPsDetail  `mapstructure:"reserved-ips" json:"reservedIPs"`
+}
+
+// PrefixLengthDetail is structure for prefix length configuration
+type PrefixLengthDetail struct {
+	Min         int    `mapstructure:"min" json:"min,omitempty"`
+	Max         int    `mapstructure:"max" json:"max,omitempty"`
+	Description string `mapstructure:"description" json:"description"`
+}
+
+// ReservedIPsDetail is structure for reserved IPs configuration
+type ReservedIPsDetail struct {
+	Value       int    `mapstructure:"value" json:"value"`
+	Description string `mapstructure:"description" json:"description"`
+}
+
+// VPNDetail is structure for VPN configuration
+type VPNDetail struct {
+	GatewaySubnet GatewaySubnetDetail `mapstructure:"gateway-subnet" json:"gatewaySubnet"`
+}
+
+// GatewaySubnetDetail is structure for gateway subnet configuration
+type GatewaySubnetDetail struct {
+	Required     bool               `mapstructure:"required" json:"required"`
+	Name         string             `mapstructure:"name" json:"name"`
+	Description  string             `mapstructure:"description" json:"description"`
+	PrefixLength PrefixLengthDetail `mapstructure:"prefix-length" json:"prefixLength"`
+}
+
+/*
+ * K8sClusterInfo
+ */
 
 // K8sClusterInfo is structure for kubernetes cluster information
 type K8sClusterInfo struct {
