@@ -417,6 +417,7 @@ func RunServer() {
 	g.GET("/:nsId/control/k8sCluster/:k8sClusterId", rest_resource.RestGetControlK8sCluster)
 
 	g.POST("/:nsId/cmd/k8sCluster/:k8sClusterId", rest_resource.RestPostCmdK8sCluster)
+	g.POST("/:nsId/transferFile/k8sCluster/:k8sClusterId", rest_resource.RestPostFileToK8sCluster)
 
 	// Network Load Balancer
 	g.POST("/:nsId/mci/:mciId/mcSwNlb", rest_infra.RestPostMcNLB)

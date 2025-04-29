@@ -15,9 +15,11 @@ limitations under the License.
 package resource
 
 import (
+	"archive/tar"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"path"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -1515,10 +1517,10 @@ func validateK8sVersion(providerName, regionName, version string) error {
 }
 
 // RemoteCommandToK8sClusterContainer is func to command to specified Container in K8sCluster by Kubernetes API
-func RemoteCommandToK8sClusterContainer(nsId string, k8sClusterId string, k8sClusterNamespace string, k8sClusterPodName string, k8sClusterContainerName string, req *model.TbK8sClusterContainerCmdReq) (*model.TbK8sClusterContainerCmdResult, error) {
+func RemoteCommandToK8sClusterContainer(nsId string, k8sClusterId string, k8sClusterNamespace string, k8sClusterPodName string, k8sClusterContainerName string, req *model.TbK8sClusterContainerCmdReq) (*model.TbK8sClusterContainerCmdResults, error) {
 	log.Info().Msg("RemoteCommandToK8sClusterContainer")
 
-	emptyObj := &model.TbK8sClusterContainerCmdResult{}
+	emptyObj := &model.TbK8sClusterContainerCmdResults{}
 
 	err := validate.Struct(req)
 	if err != nil {
@@ -1548,13 +1550,29 @@ func RemoteCommandToK8sClusterContainer(nsId string, k8sClusterId string, k8sClu
 	}
 
 	// Execute commands
-	commandMap, stdoutMap, stderrMap, err := runRemoteCommandToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName, k8sClusterNamespace, k8sClusterContainerName, req.Command)
-	return &model.TbK8sClusterContainerCmdResult{
-		Command: commandMap,
-		Stdout:  stdoutMap,
-		Stderr:  stderrMap,
-		Err:     err,
-	}, nil
+	results, err := runRemoteCommandToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName, k8sClusterNamespace, k8sClusterContainerName, req.Command)
+	return results, nil
+}
+
+// TransferFileToK8sClusterContainer is func to transfer a file to specified Container in K8sCluster by Kubernetes API
+func TransferFileToK8sClusterContainer(nsId string, k8sClusterId string, k8sClusterNamespace string, k8sClusterPodName string, k8sClusterContainerName string, fileData []byte, fileName, targetPath string) (*model.TbK8sClusterContainerCmdResult, error) {
+	log.Info().Msg("TransferFileToK8sClusterContainer")
+
+	emptyObj := &model.TbK8sClusterContainerCmdResult{}
+
+	check, err := CheckK8sCluster(nsId, k8sClusterId)
+	if err != nil {
+		log.Err(err).Msgf("Failed to Run Remote Command to K8sCluster(%s)'s Pod(%s)", k8sClusterId, k8sClusterPodName)
+		return emptyObj, err
+	}
+
+	if !check {
+		err = fmt.Errorf("The K8sCluster(%s) does not exist", k8sClusterId)
+		return emptyObj, err
+	}
+
+	// Execute commands
+	return transferFileToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName, k8sClusterNamespace, k8sClusterContainerName, fileData, fileName, targetPath)
 }
 
 func getKubeconfigFromK8sClusterInfo(nsId, k8sClusterId string) (string, error) {
@@ -1583,32 +1601,32 @@ func getKubeconfigFromK8sClusterInfo(nsId, k8sClusterId string) (string, error) 
 	return tbK8sCInfo.AccessInfo.Kubeconfig, nil
 }
 
-func runRemoteCommandToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName, k8sClusterNamespace, k8sClusterContainerName string, commands []string) (map[int]string, map[int]string, map[int]string, error) {
-	commandMap := make(map[int]string)
-	stdoutMap := make(map[int]string)
-	stderrMap := make(map[int]string)
+func runRemoteCommandToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName, k8sClusterNamespace, k8sClusterContainerName string, commands []string) (*model.TbK8sClusterContainerCmdResults, error) {
+	log.Debug().Msgf("[Run Remote Command To K8sCluster's Conatiner] %s, %s, %s, %s", k8sClusterId, k8sClusterNamespace, k8sClusterPodName, k8sClusterContainerName)
+
+	results := &model.TbK8sClusterContainerCmdResults{}
 
 	// Check whether K8sCluster is active
 	kubeconfig, err := getKubeconfigFromK8sClusterInfo(nsId, k8sClusterId)
 	if err != nil {
 		log.Err(err).Msgf("failed to run remote commands To K8sCluster(%s)'s container(%s)", k8sClusterId, k8sClusterContainerName)
-		return commandMap, stdoutMap, stderrMap, err
+		return results, err
 	}
 
 	// Access K8sCluster via kubeconfig
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
 	if err != nil {
 		log.Err(err).Msgf("failed to run remote commands To K8sCluster(%s)'s container(%s)", k8sClusterId, k8sClusterContainerName)
-		return commandMap, stdoutMap, stderrMap, err
+		return results, err
 	}
 
 	cset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		log.Err(err).Msgf("failed to run remote commands To K8sCluster(%s)'s container(%s)", k8sClusterId, k8sClusterContainerName)
-		return commandMap, stdoutMap, stderrMap, err
+		return results, err
 	}
 
-	for i, cmd := range commands {
+	for _, cmd := range commands {
 		// Split the command string into individual arguments
 		cmdArgs := strings.Fields(cmd)
 
@@ -1640,16 +1658,108 @@ func runRemoteCommandToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName
 			})
 			if err != nil {
 				log.Err(err).Msgf("failed to run some remote command(%s) to K8sCluster(%s)'s Container(%s)", cmd, k8sClusterId, k8sClusterContainerName)
-				return commandMap, stdoutMap, stderrMap, err
+				return results, err
 			}
 		}
 
-		commandMap[i] = cmd
-		stdoutMap[i] = stdout.String()
-		stderrMap[i] = stderr.String()
+		results.Results = append(results.Results, &model.TbK8sClusterContainerCmdResult{
+			Command: cmd,
+			Stdout:  stdout.String(),
+			Stderr:  stderr.String(),
+			Err:     nil,
+		})
 	}
 
-	return commandMap, stdoutMap, stderrMap, nil
+	return results, nil
+}
+
+func transferFileToK8sClusterContainer(nsId, k8sClusterId, k8sClusterPodName, k8sClusterNamespace, k8sClusterContainerName string, fileData []byte, fileName, targetPath string) (*model.TbK8sClusterContainerCmdResult, error) {
+	log.Debug().Msgf("[Transfer a File To K8sCluster's Conatiner] %s, %s, %s, %s, %s, %s", k8sClusterId, k8sClusterNamespace, k8sClusterPodName, k8sClusterContainerName, fileName, targetPath)
+
+	result := &model.TbK8sClusterContainerCmdResult{}
+
+	// Check whether K8sCluster is active
+	kubeconfig, err := getKubeconfigFromK8sClusterInfo(nsId, k8sClusterId)
+	if err != nil {
+		log.Err(err).Msgf("failed to run remote commands To K8sCluster(%s)'s container(%s)", k8sClusterId, k8sClusterContainerName)
+		return result, err
+	}
+
+	// Access K8sCluster via kubeconfig
+	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
+	if err != nil {
+		log.Err(err).Msgf("failed to run remote commands To K8sCluster(%s)'s container(%s)", k8sClusterId, k8sClusterContainerName)
+		return result, err
+	}
+
+	cset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Err(err).Msgf("failed to run remote commands To K8sCluster(%s)'s container(%s)", k8sClusterId, k8sClusterContainerName)
+		return result, err
+	}
+
+	// Create in-memory tar stream from []byte
+	var bufFile bytes.Buffer
+	tw := tar.NewWriter(&bufFile)
+	hdr := &tar.Header{
+		Name: fileName,
+		Mode: 0600,
+		Size: int64(len(fileData)),
+	}
+
+	if err := tw.WriteHeader(hdr); err != nil {
+		log.Err(err).Msgf("failed to transfer a file To K8sCluster(%s)'s container(%s)", k8sClusterId, k8sClusterContainerName)
+		return result, err
+	}
+	if _, err := tw.Write(fileData); err != nil {
+		log.Err(err).Msgf("failed to transfer a file To K8sCluster(%s)'s container(%s)", k8sClusterId, k8sClusterContainerName)
+		return result, err
+	}
+	tw.Close()
+
+	// Extract tar from stdin
+	cmd := []string{"tar", "xf", "-", "-C", path.Clean(targetPath)}
+
+	podExecOptions := &corev1.PodExecOptions{
+		Container: k8sClusterContainerName,
+		Command:   cmd,
+		Stdin:     true,
+		Stdout:    true,
+		Stderr:    true,
+	}
+
+	req := cset.CoreV1().RESTClient().
+		Post().
+		Namespace(k8sClusterNamespace).
+		Resource("pods").
+		Name(k8sClusterPodName).
+		SubResource("exec").
+		VersionedParams(podExecOptions, scheme.ParameterCodec)
+
+	var stdout, stderr bytes.Buffer
+
+	executor, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
+	if err != nil {
+		log.Err(err).Msgf("failed to run some remote command(%s) to K8sCluster(%s)'s Container(%s)", cmd, k8sClusterId, k8sClusterContainerName)
+	} else {
+		err = executor.Stream(remotecommand.StreamOptions{
+			Stdin:  &bufFile,
+			Stdout: &stdout,
+			Stderr: &stderr,
+			Tty:    false,
+		})
+		if err != nil {
+			log.Err(err).Msgf("failed to run some remote command(%s) to K8sCluster(%s)'s Container(%s)", cmd, k8sClusterId, k8sClusterContainerName)
+			return result, err
+		}
+	}
+
+	result.Command = strings.Join(cmd, " ")
+	result.Stdout = stdout.String()
+	result.Stderr = stderr.String()
+	result.Err = nil
+
+	return result, nil
 }
 
 func updateTbK8sClusterNetworkInfoFromSpiderNetworkInfo(tbK8sCNInfo *model.TbK8sClusterNetworkInfo, spNetworkInfo *model.SpiderNetworkInfo) {
