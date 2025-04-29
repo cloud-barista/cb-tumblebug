@@ -1,0 +1,325 @@
+# Configuration for Cloud Service Providers (CSPs)
+# This file is mainly used to validate CSP network.
+# Also, it can be used in various ways, such as providing network characteristics/requirements.
+
+# [NOTE] Contributions to help keep it accurate and up-to-date are always welcome!
+
+# The file is in YAML format and contains the following fields:
+# network: Top level key to describe network characteristics or requirements
+#   <csp>: Name of the CSP
+#     description: Description of the CSP
+#     link:
+#       - URLs to the official documentation of the CSP
+#     available-cidr-blocks: List of available IP ranges
+#       - cidr-block: CIDR of the private IP ranges (e.g., 10.0.0.0/8)
+#         description: Description of the private IP range
+#     reserved-cidr-blocks: List of reserved IP ranges
+#       - cidr-block: CIDR of the reserved/used IP ranges (e.g,. 172.17.0.0/16)
+#         description: Description of the reserved IP range
+#     vnet: Virtual network characteristics
+#       prefix-length: CIDR prefix length for the virtual network
+#         min: Minimum prefix length for the virtual network (e.g., 8)
+#         max: Maximum prefix length for the virtual network (e.g., 28)
+#         description: Description of the prefix length for the virtual network
+#     subnet: Subnet characteristics
+#       prefix-length: CIDR prefix length for the subnet
+#         min: Minimum prefix length for the subnetk (e.g., 8)
+#         max: Maximum prefix length for the subnetk (e.g., 29)
+#         description: Description of the prefix length for the subnet
+#       reserved-ips: Reserved IPs in the subnet
+#         value: Number of reserved IPs in the subnet (e.g., 5)
+#         description: Description of the reserved IPs in the subnet (e.g., Network Address, Gateway Address, DNS Server Address, Reserved Address, Broadcast Address)
+#     vpn: VPN characteristics
+#       gateway-subnet: Gateway subnet characteristics
+#         required: Indicates if the gateway subnet is required (true/false)
+#         name: GatewaySubnet
+#         description: Description of the gateway subnet
+#         prefix-length: CIDR prefix length for the gateway subnet
+#           min: Minimum prefix length for GatewaySubnet (e.g., 27)
+#           description: Description of the minimum prefix length for the GatewaySubnet
+
+network:
+  alibaba:
+    description: Alibaba Cloud
+    link:
+      - https://www.alibabacloud.com/help/en/ecs/product-overview/regions-and-zones
+      - https://www.alibabacloud.com/help/en/cloud-migration-guide-for-beginners/latest/regions-and-zones
+      - https://www.alibabacloud.com/help/en/vpc/getting-started/network-planning
+    available-cidr-blocks:
+      - cidr-block: 10.0.0.0/8
+        description: RFC 1918 private IP address range
+      - cidr-block: 172.16.0.0/12
+        description: RFC 1918 private IP address range
+      - cidr-block: 192.168.0.0/16
+        description: RFC 1918 private IP address range
+    # reserved-cidr-blocks:
+    #   - cidr-block:
+    #     description:
+    vnet:
+      # quota: 100 # Default value for Alibaba
+      prefix-length:
+        min: 8
+        max: 28
+        description: Prefix length for VPC (note - recommended to use /16 ~ /28)
+    subnet:
+      prefix-length:
+        min: 16
+        max: 29
+        description: Prefix length for the subnet
+      reserved-ips:
+        value: 4
+        description: Number of reserved IPs in the subnet (i.e., the 1st IP address and last 3 IP addresses are reserved)
+  aws:
+    description: Amazon Web Services
+    link:
+      - https://aws.amazon.com/about-aws/global-infrastructure/
+      - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
+      - https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html
+      - https://docs.aws.amazon.com/vpc/latest/userguide/vpc-cidr-blocks.html
+      - https://docs.aws.amazon.com/vpc/latest/userguide/vpc-ip-addressing.html
+      - https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html
+    available-cidr-blocks:
+      - cidr-block: 10.0.0.0/8
+        description: RFC 1918 private IP address range
+      - cidr-block: 172.16.0.0/12
+        description: RFC 1918 private IP address range
+      - cidr-block: 192.168.0.0/16
+        description: RFC 1918 private IP address range
+    reserved-cidr-blocks:
+      - cidr-block: 172.17.0.0/16
+        description: It's used in some AWS services like AWS Cloud9 and Amazon SageMaker
+    vnet:
+      # quota: 50 # Default value for AWS (required to check the actual limit)
+      prefix-length:
+        min: 16
+        max: 28
+        description: Prefix length for the Virtual Private Cloud (VPC) CIDR block
+    subnet:
+      # quota: 200 # Default value for AWS (required to check the actual limit)
+      prefix-length:
+        min: 16
+        max: 28
+        description: Prefix length for the subnet CIDR block, which is Generally within the VPC prefix length
+      reserved-ips:
+        count: 5
+        description: Number of reserved IPs within a subnet (e.g., network address, broadcast address)
+  azure:
+    description: Microsoft Azure
+    link:
+      - https://learn.microsoft.com/ko-kr/azure/virtual-network/manage-virtual-network
+      - https://learn.microsoft.com/ko-kr/azure/virtual-network/virtual-networks-faq#how-many-ip-addresses-are-reserved-within-each-subnet
+      - https://learn.microsoft.com/ko-kr/azure/azure-resource-manager/management/azure-subscription-service-limits?toc=%2Fazure%2Fvirtual-network%2Ftoc.json#azure-networking-limits
+      - https://docs.azure.cn/en-us/expressroute/expressroute-about-virtual-network-gateways#gateway-subnet-creation
+    available-cidr-blocks:
+      - cidr-block: 10.0.0.0/8
+        description: RFC 1918 private IP address range
+      - cidr-block: 172.16.0.0/12
+        description: RFC 1918 private IP address range
+      - cidr-block: 192.168.0.0/16
+        description: RFC 1918 private IP address range
+    # reserved-cidr-blocks:
+    #   - cidr-block:
+    #     description:
+    vnet:
+      # quota: 100 # Default value for Azure
+      prefix-length:
+        min: 8
+        max: 29
+        description: Prefix length for the virtual network
+    subnet:
+      prefix-length:
+        min: 8
+        max: 29
+        description: Prefix length for the subnet (note - practical min /8, theoretical min /2)
+      reserved-ips:
+        value: 5
+        description: Number of reserved IPs in for Network Address, Gateway Address, DNS Server Address, Reserved Address, Broadcast Address
+    vpn:
+      gateway-subnet:
+        required: true
+        name: GatewaySubnet
+        description: GatewaySubnet is required for deploying Azure VPN Gateway or ExpressRoute Gateway. Deploying other resources into this subnet is not supported
+        prefix-length:
+          min: 27 # Minimum prefix length for GatewaySubnet (/27)
+          description: Minimum prefix length for the GatewaySubnet
+  gcp:
+    description: Google Cloud Platform
+    link:
+      - https://cloud.google.com/compute/docs/regions-zones
+      - https://cloud.google.com/vpc/docs/subnets#ipv4-range-limitations
+      - https://cloud.google.com/vpc/docs/subnets#additional-ipv4-considerations
+    available-cidr-blocks:
+      - cidr-block: 10.0.0.0/8
+        description: "RFC 1918 private IP address range"
+      - cidr-block: 172.16.0.0/12
+        description: "RFC 1918 private IP address range"
+      - cidr-block: 192.168.0.0/16
+        description: "RFC 1918 private IP address range"
+    reserved-cidr-blocks:
+      - cidr-block: 172.17.0.0/16
+        description: Some Google and third-party products use this CIDR routing within the guest operating system. For example, the default Docker bridge network uses this range.
+    # vnet: # GCP's VPC network does not have CIDR block. The CIDR block is defined at the subnet level.
+    # prefix-length:
+    #   min: 8
+    #   max: 29
+    #   description: Prefix length for the VPC network CIDR block
+    subnet:
+      prefix-length:
+        min: 8
+        max: 29
+        description: Prefix length for the subnetwork CIDR block (note - practical min /8, theoretical min /4)
+      reserved-ips:
+        count: 4
+        description: Number of reserved IPs in the subnetwork (primary - first 2, last 2 / secondary - 0)
+  ibm:
+    description: IBM Cloud
+    link:
+      - https://cloud.ibm.com/docs/vpc?topic=vpc-choosing-ip-ranges-for-your-vpc
+      - https://cloud.ibm.com/docs/vpc?topic=vpc-vpc-addressing-plan-design
+      - https://cloud.ibm.com/docs/vpc?topic=vpc-configuring-address-prefixes
+      - https://cloud.ibm.com/docs/vpc?topic=vpc-about-networking-for-vpc
+      - https://cloud.ibm.com/docs/overview?topic=overview-locations#zone-mapping
+    available-cidr-blocks:
+      - cidr-block: 10.0.0.0/8
+        description: RFC 1918 private IP address range
+      - cidr-block: 172.16.0.0/12
+        description: RFC 1918 private IP address range
+      - cidr-block: 192.168.0.0/16
+        description: RFC 1918 private IP address range
+    # reserved-cidr-blocks:
+    #   - cidr-block:
+    #     description:
+    vnet:
+      # quota: 100 # Default value for Alibaba
+      prefix-length:
+        min: 9
+        max: 28
+        description: Prefix length of Address Prefix in a VPC, checked on the IBM Cloud Console
+    subnet:
+      prefix-length:
+        min: 9
+        max: 29
+        description: Prefix length for the subnet, checked on the IBM Cloud Console
+      reserved-ips:
+        value: 5
+        description: Number of reserved IPs for Network Address, Gateway Address, Addresses reserved by IBM, and Broadcast Address
+  ktcloudvpc:
+    description: KT Cloud (VPC)
+    # TBD
+    # link:
+    #   -
+    # available-cidr-blocks:
+    #   - cidr-block: 10.0.0.0/8
+    #     description: "RFC 1918 private IP address range"
+    #   - cidr-block: 172.16.0.0/12
+    #     description: "RFC 1918 private IP address range"
+    #   - cidr-block: 192.168.0.0/16
+    #     description: "RFC 1918 private IP address range"
+    # # reserved-cidr-blocks:
+    # # - cidr-block: 172.17.0.0/16
+    # #   description: Some Google and third-party products use this CIDR routing within the guest operating system. For example, the default Docker bridge network uses this range.
+    # #   vnet:
+    # #   prefix-length:
+    # #     min: 16
+    # #     max: 24
+    # #     description: Prefix length for the VPC CIDR block
+    # subnet:
+    #   prefix-length:
+    #     min: 24
+    #     max: 28
+    #     description: Prefix length for the subnet CIDR block (The number of available IPs would be 249 for /24, 121 for /25, and 57 for /26.)
+    #   reserved-ips:
+    #     count: 5
+    #     description: Number of reserved IPs for ....
+  ncp:
+    description: Naver Cloud Platform (Classic without VPC)
+    # No planned yet
+
+  ncpvpc:
+    description: Naver Cloud Platform (VPC)
+    link:
+      - https://guide.ncloud-docs.com/docs/en/vpc-procedure-vpc
+      - https://guide.ncloud-docs.com/docs/en/vpc-subnetmanage-vpc
+    available-cidr-blocks:
+      - cidr-block: 10.0.0.0/8
+        description: "RFC 1918 private IP address range"
+      - cidr-block: 172.16.0.0/12
+        description: "RFC 1918 private IP address range"
+      - cidr-block: 192.168.0.0/16
+        description: "RFC 1918 private IP address range"
+    # reserved-cidr-blocks:
+    # - cidr-block: 172.17.0.0/16
+    #   description: Some Google and third-party products use this CIDR routing within the guest operating system. For example, the default Docker bridge network uses this range.
+    vnet:
+      prefix-length:
+        min: 16
+        max: 28
+        description: (Fixed) Prefix length for the VPC CIDR block
+    subnet:
+      prefix-length:
+        min: 16
+        max: 28
+        description: Prefix length for the subnet CIDR block (The number of available IPs would be 249 for /24, 121 for /25, and 57 for /26.)
+      reserved-ips:
+        count: 5
+        description: Number of reserved IPs for network IP, broadcast IP, and internal management
+  nhncloud:
+    description: NHN Cloud
+    link:
+      - https://docs.nhncloud.com/en/Network/VPC/en/console-guide/
+      - https://docs.nhncloud.com/en/nhncloud/en/resource-policy/
+    available-cidr-blocks:
+      - cidr-block: 10.0.0.0/8
+        description: "RFC 1918 private IP address range"
+      - cidr-block: 172.16.0.0/12
+        description: "RFC 1918 private IP address range"
+      - cidr-block: 192.168.0.0/16
+        description: "RFC 1918 private IP address range"
+    reserved-cidr-blocks:
+      - cidr-block: 169.254.0.0/16
+        description: Link Local Address Range
+    vnet:
+      prefix-length:
+        min: 8
+        max: 24
+        description: Prefix length for the VPC CIDR block
+    subnet:
+      prefix-length:
+        min: 8
+        max: 28
+        description: Prefix length for the subnet CIDR block
+      reserved-ips:
+        count: 5
+        description: Number of reserved IPs for Network Address, Default Gateway, DHCP Servers/SNAT IPs, and Broadcast Address
+  openstack:
+    description: OpenStack
+    # TBD
+
+  tencent:
+    description: Tencent Cloud
+    link:
+      - https://www.tencentcloud.com/document/product/215/31805
+      - https://main.qcloudimg.com/raw/document/intl/product/pdf/tencent-cloud_215_35524_en.pdf
+    available-cidr-blocks:
+      - cidr-block: 10.0.0.0/8
+        description: "RFC 1918 private IP address range"
+      - cidr-block: 172.16.0.0/12
+        description: "RFC 1918 private IP address range"
+      - cidr-block: 192.168.0.0/16
+        description: "RFC 1918 private IP address range"
+    # reserved-cidr-blocks:
+    # - cidr-block: 172.17.0.0/16
+    #   description: Some Google and third-party products use this CIDR routing within the guest operating system. For example, the default Docker bridge network uses this range.
+    vnet:
+      prefix-length:
+        min: 12
+        max: 28
+        description: Prefix length for the VPC CIDR block
+    subnet:
+      prefix-length:
+        min: 16
+        max: 29
+        description: Prefix length for the subnet CIDR block
+      reserved-ips:
+        count: 3
+        description: Number of reserved IPs for Network Address, System Reserved(likely for gateway), and Broadcast Address

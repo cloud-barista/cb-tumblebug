@@ -18,7 +18,7 @@ package model
 type TbSubnetReq struct { // Tumblebug
 	Name        string `json:"name" validate:"required" example:"subnet00"`
 	IPv4_CIDR   string `json:"ipv4_CIDR" validate:"required" example:"10.0.1.0/24"`
-	Zone        string `json:"zone,omitempty"`
+	Zone        string `json:"zone,omitempty" default:""`
 	Description string `json:"description,omitempty" example:"subnet00 managed by CB-Tumblebug"`
 	// todo: restore the tag list later
 	// TagList     []KeyValue `json:"tagList,omitempty"`

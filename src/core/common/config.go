@@ -33,6 +33,9 @@ import (
 var RuntimeCloudInfo = model.CloudInfo{}
 var RuntimeCredential = model.Credential{}
 
+// RuntimeNetworkInfo is global variable for model.NetworkInfo
+var RuntimeCloudNetworkInfo = model.CloudNetworkInfo{}
+
 // RuntimeK8sClusterInfo is global variable for model.K8sClusterInfo
 var RuntimeK8sClusterInfo = model.K8sClusterInfo{}
 
