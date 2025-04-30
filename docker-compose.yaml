@@ -1,4 +1,6 @@
 networks:
+  # terrarium_network:
+  #   external: true
   internal_network:
     internal: true
   external_network:
@@ -30,6 +32,7 @@ services:
     networks:
       - internal_network
       - external_network
+      # - terrarium_network
     ports:
       - 1323:1323
     depends_on:
@@ -56,6 +59,8 @@ services:
       # - TB_SQLITE_DATABASE=cb_tumblebug
       # - TB_SQLITE_USER=cb_tumblebug
       # - TB_SQLITE_PASSWORD=cb_tumblebug
+      # - TB_TERRARIUM_API_USERNAME=default
+      # - TB_TERRARIUM_API_PASSWORD=default
       # - TB_ALLOW_ORIGINS=*
       # - TB_AUTH_ENABLED=true
       # - TB_AUTH_MODE=jwt

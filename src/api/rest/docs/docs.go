@@ -5654,82 +5654,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.VPNInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "(To be provided) Update a site-to-site VPN",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/x-json-stream"
-                ],
-                "tags": [
-                    "[Infra Resource] Site-to-site VPN Management (under development)"
-                ],
-                "summary": "(To be provided) Update a site-to-site VPN",
-                "operationId": "PutSiteToSiteVpn",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mci01",
-                        "description": "MCI ID",
-                        "name": "mciId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "vpn01",
-                        "description": "VPN ID",
-                        "name": "vpnId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Resources info for VPN tunnel configuration between GCP and AWS",
-                        "name": "vpnReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.RestPostVpnRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
+                            "$ref": "#/definitions/model.VpnInfo"
                         }
                     },
                     "400": {
@@ -5753,7 +5678,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete a site-to-site VPN (Currently, GCP-AWS is supported)",
+                "description": "Delete a site-to-site VPN",
                 "consumes": [
                     "application/json"
                 ],
@@ -5763,7 +5688,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Site-to-site VPN Management (under development)"
                 ],
-                "summary": "Delete a site-to-site VPN (Currently, GCP-AWS is supported)",
+                "summary": "Delete a site-to-site VPN",
                 "operationId": "DeleteSiteToSiteVpn",
                 "parameters": [
                     {
@@ -11372,6 +11297,16 @@ const docTemplate = `{
                 }
             }
         },
+        "model.AlibabaSpecificProperty": {
+            "type": "object",
+            "properties": {
+                "bgpAsn": {
+                    "type": "string",
+                    "default": "65532",
+                    "example": "65532"
+                }
+            }
+        },
         "model.AutoAction": {
             "type": "object",
             "properties": {
@@ -11430,6 +11365,34 @@ const docTemplate = `{
                         "\u003e="
                     ],
                     "example": "\u003e="
+                }
+            }
+        },
+        "model.AwsSpecificProperty": {
+            "type": "object",
+            "properties": {
+                "bgpAsn": {
+                    "type": "string",
+                    "default": "64512",
+                    "example": "64512"
+                }
+            }
+        },
+        "model.AzureSpecificProperty": {
+            "type": "object",
+            "properties": {
+                "bgpAsn": {
+                    "type": "string",
+                    "default": "65531",
+                    "example": "65531"
+                },
+                "gatewaySubnetCidr": {
+                    "type": "string"
+                },
+                "vpnSku": {
+                    "type": "string",
+                    "default": "VpnGw1AZ",
+                    "example": "VpnGw1AZ"
                 }
             }
         },
@@ -11737,6 +11700,23 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CspSpecificProperty": {
+            "type": "object",
+            "properties": {
+                "alibaba": {
+                    "$ref": "#/definitions/model.AlibabaSpecificProperty"
+                },
+                "aws": {
+                    "$ref": "#/definitions/model.AwsSpecificProperty"
+                },
+                "azure": {
+                    "$ref": "#/definitions/model.AzureSpecificProperty"
+                },
+                "gcp": {
+                    "$ref": "#/definitions/model.GcpSpecificProperty"
+                }
+            }
+        },
         "model.CustomImageStatus": {
             "type": "string",
             "enum": [
@@ -11908,6 +11888,16 @@ const docTemplate = `{
                 },
                 "vCPU": {
                     "$ref": "#/definitions/model.Range"
+                }
+            }
+        },
+        "model.GcpSpecificProperty": {
+            "type": "object",
+            "properties": {
+                "bgpAsn": {
+                    "type": "string",
+                    "default": "65530",
+                    "example": "65530"
                 }
             }
         },
@@ -13046,6 +13036,27 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ResourceDetail": {
+            "type": "object",
+            "properties": {
+                "cspResourceDetail": {
+                    "description": "CspResourceDetail is the detailed information of the resource provided from the terrarium."
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
+                "cspResourceName": {
+                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
+                    "type": "string",
+                    "example": "we12fawefadf1221edcf"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "model.ResourceOnCsp": {
             "type": "object",
             "properties": {
@@ -13274,10 +13285,10 @@ const docTemplate = `{
                     "example": "vpn01"
                 },
                 "site1": {
-                    "$ref": "#/definitions/model.SiteDetail"
+                    "$ref": "#/definitions/model.SiteProperty"
                 },
                 "site2": {
-                    "$ref": "#/definitions/model.SiteDetail"
+                    "$ref": "#/definitions/model.SiteProperty"
                 }
             }
         },
@@ -13332,6 +13343,18 @@ const docTemplate = `{
                     "description": "Zone              string ` + "`" + `json:\"zone,omitempty\" example:\"ap-northeast-2a\"` + "`" + `",
                     "type": "string",
                     "example": "vpc-xxxxx"
+                }
+            }
+        },
+        "model.SiteProperty": {
+            "type": "object",
+            "properties": {
+                "cspSpecificProperty": {
+                    "$ref": "#/definitions/model.CspSpecificProperty"
+                },
+                "vNetId": {
+                    "type": "string",
+                    "example": "vnet01"
                 }
             }
         },
@@ -16713,35 +16736,18 @@ const docTemplate = `{
                 }
             }
         },
-        "model.VPNGatewayInfo": {
+        "model.VpnIdList": {
             "type": "object",
             "properties": {
-                "connectionConfig": {
-                    "$ref": "#/definitions/model.ConnConfig"
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspResourceId": {
-                    "description": "CspResourceId is resource identifier managed by CSP",
-                    "type": "string",
-                    "example": "csp-06eb41e14121c550a"
-                },
-                "cspResourceName": {
-                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "details": {},
-                "status": {
-                    "type": "string"
+                "vpnIdList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
-        "model.VPNInfo": {
+        "model.VpnInfo": {
             "type": "object",
             "properties": {
                 "description": {
@@ -16769,21 +16775,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "wef12awefadf1221edcf"
                 },
-                "vpnGatewayInfo": {
+                "vpnSites": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.VPNGatewayInfo"
-                    }
-                }
-            }
-        },
-        "model.VpnIdList": {
-            "type": "object",
-            "properties": {
-                "vpnIdList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/model.VpnSiteDetail"
                     }
                 }
             }
@@ -16794,7 +16789,25 @@ const docTemplate = `{
                 "vpnInfoList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.VPNInfo"
+                        "$ref": "#/definitions/model.VpnInfo"
+                    }
+                }
+            }
+        },
+        "model.VpnSiteDetail": {
+            "type": "object",
+            "properties": {
+                "connectionConfig": {
+                    "$ref": "#/definitions/model.ConnConfig"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "resourceDetails": {
+                    "description": "ResourceDetails represents a CSP's multiple resources associated with the VPN from a CSP.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ResourceDetail"
                     }
                 }
             }

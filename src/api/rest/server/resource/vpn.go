@@ -15,7 +15,6 @@ limitations under the License.
 package resource
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -337,15 +336,15 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Validate the VPN sites
-	ok, err := resource.IsValidCspSetForVPN(vpnReq.Site1.CSP, vpnReq.Site2.CSP)
-	if !ok {
-		log.Warn().Err(err).Msg("")
-		res := model.SimpleMsg{
-			Message: err.Error(),
-		}
-		return c.JSON(http.StatusBadRequest, res)
-	}
+	// // Validate the VPN sites
+	// ok, err := resource.IsValidCspPairForVPN(vpnReq.Site1.CSP, vpnReq.Site2.CSP)
+	// if !ok {
+	// 	log.Warn().Err(err).Msg("")
+	// 	res := model.SimpleMsg{
+	// 		Message: err.Error(),
+	// 	}
+	// 	return c.JSON(http.StatusBadRequest, res)
+	// }
 
 	err = common.CheckString(vpnReq.Name)
 	if err != nil {
@@ -366,8 +365,8 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 // RestDeleteSiteToSiteVpn godoc
 // @ID DeleteSiteToSiteVpn
-// @Summary Delete a site-to-site VPN (Currently, GCP-AWS is supported)
-// @Description Delete a site-to-site VPN (Currently, GCP-AWS is supported)
+// @Summary Delete a site-to-site VPN
+// @Description Delete a site-to-site VPN
 // @Tags [Infra Resource] Site-to-site VPN Management (under development)
 // @Accept  json
 // @Produce  json-stream
@@ -414,123 +413,17 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
-// RestPutSiteToSiteVpn godoc
-// @ID PutSiteToSiteVpn
-// @Summary (To be provided) Update a site-to-site VPN
-// @Description (To be provided) Update a site-to-site VPN
-// @Tags [Infra Resource] Site-to-site VPN Management (under development)
-// @Accept  json
-// @Produce  json-stream
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param vpnId path string true "VPN ID" default(vpn01)
-// @Param vpnReq body model.RestPostVpnRequest true "Resources info for VPN tunnel configuration between GCP and AWS"
-// @Success 200 {object} model.SimpleMsg "OK"
-// @Failure 400 {object} model.SimpleMsg "Bad Request"
-// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [put]
-func RestPutSiteToSiteVpn(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-	err := common.CheckString(nsId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-
-	mciId := c.Param("mciId")
-	err = common.CheckString(mciId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-
-	vpnId := c.Param("vpnId")
-	err = common.CheckString(vpnId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid vpnId (%s)", vpnId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-
-	// Prepare for streaming response
-	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	c.Response().WriteHeader(http.StatusOK)
-	enc := json.NewEncoder(c.Response())
-
-	// Flush a response
-	res := model.SimpleMsg{
-		Message: "note - API to be provided",
-	}
-	if err := enc.Encode(res); err != nil {
-		return err
-	}
-	c.Response().Flush()
-
-	return nil
-
-	// Initialize resty client with basic auth
-	// client := resty.New()
-	// apiUser := os.Getenv("TB_API_USERNAME")
-	// apiPass := os.Getenv("TB_API_PASSWORD")
-	// client.SetBasicAuth(apiUser, apiPass)
-
-	// epTerrarium := "http://localhost:8055/terrarium"
-	// trId := fmt.Sprintf("%s-%s-%s", nsId, mciId, vpnId)
-
-	// // check readyz
-	// method := "GET"
-	// url := fmt.Sprintf("%s/readyz", epTerrarium)
-	// requestBody := common.NoBody
-	// resReadyz := new(model.Response)
-
-	// err := common.ExecuteHttpRequest(
-	// 	client,
-	// 	method,
-	// 	url,
-	// 	nil,
-	// 	common.SetUseBody(requestBody),
-	// 	&requestBody,
-	// 	resReadyz,
-	// 	common.VeryShortDuration,
-	// )
-
-	// if err != nil {
-	// 	log.Err(err).Msg("")
-	// 	res := model.SimpleMsg{
-	// 		Message: err.Error(),
-	// 	}
-	// 	return c.JSON(http.StatusServiceUnavailable, res)
-	// }
-	// log.Debug().Msgf("resReadyz: %+v", resReadyz)
-
-	// // Flush a response
-	// res := model.SimpleMsg{
-	// 	Message: resReadyz.Message,
-	// }
-	// if err := enc.Encode(res); err != nil {
-	// 	return err
-	// }
-	// c.Response().Flush()
-
-	// return nil
-}
-
 // RestGetSiteToSiteVpn godoc
 // @ID GetSiteToSiteVpn
-// @Summary Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)
-// @Description Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)
+// @Summary Get resource info of a site-to-site VPN
+// @Description Get resource info of a site-to-site VPN
 // @Tags [Infra Resource] Site-to-site VPN Management (under development)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
-// // @Param detail query string false "Resource info by detail (refined, raw)" default(refined)
-// @Success 200 {object} model.VPNInfo "OK"
+// @Success 200 {object} model.VpnInfo "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
@@ -559,30 +452,7 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	// // Use this struct like the enum
-	// var DetailOptions = struct {
-	// 	Refined string
-	// 	Raw     string
-	// }{
-	// 	Refined: "refined",
-	// 	Raw:     "raw",
-	// }
-
-	// // valid detail options
-	// validDetailOptions := map[string]bool{
-	// 	DetailOptions.Refined: true,
-	// 	DetailOptions.Raw:     true,
-	// }
-
-	// detail := c.QueryParam("detail")
-	// detail = strings.ToLower(detail)
-
-	// if detail == "" || !validDetailOptions[detail] {
-	// 	err := fmt.Errorf("invalid detail (%s), use the default (%s)", detail, DetailOptions.Refined)
-	// 	log.Warn().Msg(err.Error())
-	// 	detail = DetailOptions.Refined
-	// }
-
+	// * Only provide the "refined" detail level for now
 	detail := "refined"
 	resp, err := resource.GetSiteToSiteVPN(nsId, mciId, vpnId, detail)
 	if err != nil {

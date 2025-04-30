@@ -153,7 +153,7 @@ var ResourceTypeRegistry = map[string]func() interface{}{
 	StrMCI:           func() interface{} { return &TbMciInfo{} },
 	StrK8s:           func() interface{} { return &TbK8sClusterInfo{} },
 	StrNamespace:     func() interface{} { return &NsInfo{} },
-	StrVPN:           func() interface{} { return &VPNInfo{} },
+	StrVPN:           func() interface{} { return &VpnInfo{} },
 }
 
 // ResourceIds is struct for containing id and name of each Resource type

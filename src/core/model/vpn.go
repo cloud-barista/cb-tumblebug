@@ -62,10 +62,54 @@ func NewSiteInfo(nsId, mciId string) *SitesInfo {
 	return siteInfo
 }
 
+/*
+ *
+ */
+
+type SiteProperty struct {
+	VNetId              string              `json:"vNetId" example:"vnet01"`
+	CspSpecificProperty CspSpecificProperty `json:"cspSpecificProperty,omitempty"`
+}
+
+type CspSpecificProperty struct {
+	Aws     *AwsSpecificProperty     `json:"aws,omitempty"`
+	Azure   *AzureSpecificProperty   `json:"azure,omitempty"`
+	Gcp     *GcpSpecificProperty     `json:"gcp,omitempty"`
+	Alibaba *AlibabaSpecificProperty `json:"alibaba,omitempty"`
+	// Tencent *TencentSpecificProperty `json:"tencent,omitempty"`
+	// Ibm     *IbmSpecificProperty     `json:"ibm,omitempty"`
+}
+
+type AwsSpecificProperty struct {
+	BgpAsn string `json:"bgpAsn,omitempty" default:"64512" example:"64512"`
+}
+
+type AzureSpecificProperty struct {
+	GatewaySubnetCidr string `json:"gatewaySubnetCidr"`
+	BgpAsn            string `json:"bgpAsn,omitempty" default:"65531" example:"65531"`
+	VpnSku            string `json:"vpnSku,omitempty" default:"VpnGw1AZ" example:"VpnGw1AZ"`
+}
+
+type GcpSpecificProperty struct {
+	BgpAsn string `json:"bgpAsn,omitempty" default:"65530" example:"65530"`
+}
+
+type AlibabaSpecificProperty struct {
+	BgpAsn string `json:"bgpAsn,omitempty" default:"65532" example:"65532"`
+}
+
+// * Note: nothing is needed for Tencent currently.
+type TencentSpecificProperty struct {
+}
+
+// * Note: nothing is needed for IBM currently.
+type IbmSpecificProperty struct {
+}
+
 type RestPostVpnRequest struct {
-	Name  string     `json:"name" validate:"required" example:"vpn01"`
-	Site1 SiteDetail `json:"site1" validate:"required"`
-	Site2 SiteDetail `json:"site2" validate:"required"`
+	Name  string       `json:"name" validate:"required" example:"vpn01"`
+	Site1 SiteProperty `json:"site1" validate:"required"`
+	Site2 SiteProperty `json:"site2" validate:"required"`
 }
 
 type Response struct {
@@ -82,10 +126,10 @@ type VpnIdList struct {
 }
 
 type VpnInfoList struct {
-	VpnInfoList []VPNInfo `json:"vpnInfoList"`
+	VpnInfoList []VpnInfo `json:"vpnInfoList"`
 }
 
-type VPNInfo struct {
+type VpnInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 
@@ -95,22 +139,29 @@ type VPNInfo struct {
 	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
 
 	// Name is human-readable string to represent the object
-	Name           string           `json:"name" example:"vpn01"`
-	Description    string           `json:"description"`
-	Status         string           `json:"status"`
-	VPNGatewayInfo []VPNGatewayInfo `json:"vpnGatewayInfo"`
+	Name        string          `json:"name" example:"vpn01"`
+	Description string          `json:"description"`
+	Status      string          `json:"status"`
+	VpnSites    []VpnSiteDetail `json:"vpnSites"`
 }
 
-type VPNGatewayInfo struct {
+type VpnSiteDetail struct {
 	ConnectionName   string     `json:"connectionName"`
 	ConnectionConfig ConnConfig `json:"connectionConfig"`
+
+	// ResourceDetails represents a CSP's multiple resources associated with the VPN from a CSP.
+	ResourceDetails []ResourceDetail `json:"resourceDetails"`
+}
+
+type ResourceDetail struct {
 	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
 	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
 	// CspResourceId is resource identifier managed by CSP
-	CspResourceId string      `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
-	Status        string      `json:"status"`
-	Description   string      `json:"description"`
-	Details       interface{} `json:"details"`
+	CspResourceId string `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
+	// CspResourceDetail is the detailed information of the resource provided from the terrarium.
+	CspResourceDetail any `json:"cspResourceDetail"`
+
+	Status string `json:"status,omitempty"`
 }
 
 // // TbVNetInfo is a struct that represents TB vNet object.
