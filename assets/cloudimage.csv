@@ -96,6 +96,7 @@ ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240819.vhd,Ubuntu 20.04,,,vm
 ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240925.vhd,Ubuntu 20.04,,,vm
 ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240807.vhd,Ubuntu 22.04,,,vm
 ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240926.vhd,Ubuntu 22.04,,,vm
+ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20250415.vhd,Ubuntu 22.04,,,vm
 ALIBABA,all,aliyun_3_x64_20G_alibase_20241218.vhd,Alibaba Cloud Linux 3.2104,,,vm|k8s
 TENCENT,all,img-pi0ii46r,Ubuntu 18.04,,,vm|k8s
 TENCENT,all,img-22trbn9x,Ubuntu 20.04,,,vm|k8s
