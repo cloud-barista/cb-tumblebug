@@ -4229,9 +4229,9 @@ paths:
 
         The supported CSP sets are as follows:
 
-        - GCP and AWS (Note: It will take about `15 minutes`.)
+        - AWS and one of CSPs in Azure, GCP, Alibaba, Tencent, and IBM
 
-        - GCP and Azure (Note: It will take about `30 minutes`.)
+        - Note: It will take about `15 ~ 45 minutes`.
       operationId: PostSiteToSiteVpn
       parameters:
       - name: nsId
@@ -4292,9 +4292,8 @@ paths:
     get:
       tags:
       - "[Infra Resource] Site-to-site VPN Management (under development)"
-      summary: "Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)"
-      description: "Get resource info of a site-to-site VPN (Currently, GCP-AWS is\
-        \ supported)"
+      summary: Get resource info of a site-to-site VPN
+      description: Get resource info of a site-to-site VPN
       operationId: GetSiteToSiteVpn
       parameters:
       - name: nsId

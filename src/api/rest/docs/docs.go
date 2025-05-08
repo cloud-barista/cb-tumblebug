@@ -5534,7 +5534,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a site-to-site VPN\n\nThe supported CSP sets are as follows:\n\n- GCP and AWS (Note: It will take about ` + "`" + `15 minutes` + "`" + `.)\n\n- GCP and Azure (Note: It will take about ` + "`" + `30 minutes` + "`" + `.)",
+                "description": "Create a site-to-site VPN\n\nThe supported CSP sets are as follows:\n\n- AWS and one of CSPs in Azure, GCP, Alibaba, Tencent, and IBM\n\n- Note: It will take about ` + "`" + `15 ~ 45 minutes` + "`" + `.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5612,7 +5612,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/mci/{mciId}/vpn/{vpnId}": {
             "get": {
-                "description": "Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)",
+                "description": "Get resource info of a site-to-site VPN",
                 "consumes": [
                     "application/json"
                 ],
@@ -5622,7 +5622,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Site-to-site VPN Management (under development)"
                 ],
-                "summary": "Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)",
+                "summary": "Get resource info of a site-to-site VPN",
                 "operationId": "GetSiteToSiteVpn",
                 "parameters": [
                     {
