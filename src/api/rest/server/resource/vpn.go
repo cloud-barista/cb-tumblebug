@@ -24,6 +24,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
+	"github.com/cloud-barista/cb-tumblebug/src/csp"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
@@ -89,6 +90,9 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 	sitesInAws := []model.SiteDetail{}
 	sitesInAzure := []model.SiteDetail{}
 	sitesInGcp := []model.SiteDetail{}
+	sitesInAlibaba := []model.SiteDetail{}
+	sitesInTencent := []model.SiteDetail{}
+	sitesInIbm := []model.SiteDetail{}
 
 	for _, vm := range mciInfo.Vm {
 
@@ -118,36 +122,36 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 		providerName = strings.ToLower(providerName)
 
 		switch providerName {
-		case "aws":
+		case csp.AWS:
 
-			// Get vNet info
-			resourceType := "vNet"
-			resourceId := vm.VNetId
-			result, err := resource.GetResource(nsId, resourceType, resourceId)
-			if err != nil {
-				log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
-				continue
-			}
-			vNetInfo := result.(model.TbVNetInfo)
+			// // Get vNet info
+			// resourceType := "vNet"
+			// resourceId := vm.VNetId
+			// result, err := resource.GetResource(nsId, resourceType, resourceId)
+			// if err != nil {
+			// 	log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
+			// 	continue
+			// }
+			// vNetInfo := result.(model.TbVNetInfo)
 
-			// Get the last subnet
-			subnetCount := len(vNetInfo.SubnetInfoList)
-			if subnetCount == 0 {
-				log.Warn().Msgf("No subnets found for VNet ID: %s", vNetId)
-				continue
-			}
-			lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
+			// // Get the last subnet
+			// subnetCount := len(vNetInfo.SubnetInfoList)
+			// if subnetCount == 0 {
+			// 	log.Warn().Msgf("No subnets found for VNet ID: %s", vNetId)
+			// 	continue
+			// }
+			// lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
 
 			// Set VNet and the last subnet IDs
-			site.VNet = vm.CspVNetId
-			site.Subnet = lastSubnet.CspResourceId
+			site.VNetId = vm.VNetId
+			// site.SubnetId = lastSubnet.CspResourceId
 
 			// Set connection name
 			site.ConnectionName = vm.ConnectionName
 
 			sitesInAws = append(sitesInAws, site)
 
-		case "azure":
+		case csp.Azure:
 			// Parse vNet and resource group names
 			parts := strings.Split(vm.CspVNetId, "/")
 			log.Debug().Msgf("parts: %+v", parts)
@@ -156,10 +160,11 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 				continue
 			}
 			parsedResourceGroupName := parts[4]
-			parsedVirtualNetworkName := parts[8]
+			// parsedVirtualNetworkName := parts[8]
 
 			// Set VNet and resource group names
-			site.VNet = parsedVirtualNetworkName
+			// site.VNetId = parsedVirtualNetworkName
+			site.VNetId = vm.VNetId
 			site.ResourceGroup = parsedResourceGroupName
 
 			// Get vNet info
@@ -195,14 +200,40 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 
 			sitesInAzure = append(sitesInAzure, site)
 
-		case "gcp":
+		case csp.GCP:
 			// Set vNet ID
-			site.VNet = vm.CspVNetId
+			site.VNetId = vm.VNetId
 
 			// Set connection name
 			site.ConnectionName = vm.ConnectionName
 
 			sitesInGcp = append(sitesInGcp, site)
+
+		case csp.Alibaba:
+
+			// Set vNet ID
+			site.VNetId = vm.VNetId
+
+			// Set connection name
+			site.ConnectionName = vm.ConnectionName
+			sitesInAlibaba = append(sitesInAlibaba, site)
+
+		case csp.Tencent:
+
+			// Set vNet ID
+			site.VNetId = vm.VNetId
+
+			// Set connection name
+			site.ConnectionName = vm.ConnectionName
+			sitesInTencent = append(sitesInTencent, site)
+
+		case csp.IBM:
+			// Set vNet ID
+			site.VNetId = vm.VNetId
+
+			// Set connection name
+			site.ConnectionName = vm.ConnectionName
+			sitesInIbm = append(sitesInIbm, site)
 
 		default:
 			log.Warn().Msgf("Unsupported provider name: %s", providerName)
@@ -214,6 +245,9 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 	sitesInfo.Sites.Aws = sitesInAws
 	sitesInfo.Sites.Azure = sitesInAzure
 	sitesInfo.Sites.Gcp = sitesInGcp
+	sitesInfo.Sites.Alibaba = sitesInAlibaba
+	sitesInfo.Sites.Tencent = sitesInTencent
+	sitesInfo.Sites.Ibm = sitesInIbm
 
 	return sitesInfo, nil
 }
@@ -289,9 +323,9 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 // @Description
 // @Description The supported CSP sets are as follows:
 // @Description
-// @Description - GCP and AWS (Note: It will take about `15 minutes`.)
+// @Description - AWS and one of CSPs in Azure, GCP, Alibaba, Tencent, and IBM
 // @Description
-// @Description - GCP and Azure (Note: It will take about `30 minutes`.)
+// @Description - Note: It will take about `15 ~ 45 minutes`.
 // @Tags [Infra Resource] Site-to-site VPN Management (under development)
 // @Accept  json
 // @Produce  json-stream

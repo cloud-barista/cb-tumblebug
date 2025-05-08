@@ -14,29 +14,26 @@ limitations under the License.
 // Package mci is to handle REST API for mci
 package model
 
-var ProviderNames = map[string]string{
-	"AWS":   "aws",
-	"Azure": "azure",
-	"GCP":   "gcp",
-}
-
 // SiteDetail struct represents the structure for detailed site information
 type SiteDetail struct {
 	CSP            string `json:"csp" example:"aws"`
 	Region         string `json:"region" example:"ap-northeast-2"`
 	ConnectionName string `json:"connectionName" example:"aws-ap-northeast-2"`
 	// Zone              string `json:"zone,omitempty" example:"ap-northeast-2a"`
-	VNet              string `json:"vnet" example:"vpc-xxxxx"`
-	Subnet            string `json:"subnet,omitempty" example:"subnet-xxxxx"`
+	VNetId string `json:"vnet" example:"vpc-xxxxx"`
+	// SubnetId          string `json:"subnet,omitempty" example:"subnet-xxxxx"`
 	GatewaySubnetCidr string `json:"gatewaySubnetCidr,omitempty" example:"xxx.xxx.xxx.xxx/xx"`
 	ResourceGroup     string `json:"resourceGroup,omitempty" example:"rg-xxxxx"`
 }
 
 // Sites struct represents the overall site information
 type sites struct {
-	Aws   []SiteDetail `json:"aws"`
-	Azure []SiteDetail `json:"azure"`
-	Gcp   []SiteDetail `json:"gcp"`
+	Aws     []SiteDetail `json:"aws,omitempty"`
+	Azure   []SiteDetail `json:"azure,omitempty"`
+	Gcp     []SiteDetail `json:"gcp,omitempty"`
+	Alibaba []SiteDetail `json:"alibaba,omitempty"`
+	Tencent []SiteDetail `json:"tencent,omitempty"`
+	Ibm     []SiteDetail `json:"ibm,omitempty"`
 }
 
 // SitesInfo struct represents the overall site information including namespace and MCI ID
@@ -53,9 +50,12 @@ func NewSiteInfo(nsId, mciId string) *SitesInfo {
 		MciId: mciId,
 		Count: 0,
 		Sites: sites{
-			Aws:   []SiteDetail{},
-			Azure: []SiteDetail{},
-			Gcp:   []SiteDetail{},
+			Aws:     []SiteDetail{},
+			Azure:   []SiteDetail{},
+			Gcp:     []SiteDetail{},
+			Alibaba: []SiteDetail{},
+			Tencent: []SiteDetail{},
+			Ibm:     []SiteDetail{},
 		},
 	}
 
@@ -85,7 +85,7 @@ type AwsSpecificProperty struct {
 }
 
 type AzureSpecificProperty struct {
-	GatewaySubnetCidr string `json:"gatewaySubnetCidr"`
+	GatewaySubnetCidr string `json:"gatewaySubnetCidr,omitempty" default:"" example:"xxx.xxx.xxx.xxx/xx"`
 	BgpAsn            string `json:"bgpAsn,omitempty" default:"65531" example:"65531"`
 	VpnSku            string `json:"vpnSku,omitempty" default:"VpnGw1AZ" example:"VpnGw1AZ"`
 }

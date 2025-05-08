@@ -85,10 +85,6 @@ func IsValidCspPairForVpn(csp1, csp2 string) (bool, error) {
 	return true, nil
 }
 
-func whichCspSetForVPN(csp1, csp2 string) string {
-	return csp1 + "," + csp2
-}
-
 // GetSiteToSiteVPN returns a site-to-site VPN
 func GetAllSiteToSiteVPN(nsId string, mciId string) (model.VpnInfoList, error) {
 
@@ -394,7 +390,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 			reqInfracode.VpnConfig.TargetCsp.Type = csp.Azure
 			reqInfracode.VpnConfig.TargetCsp.Azure = new(terrariumModel.AzureConfig)
 			reqInfracode.VpnConfig.TargetCsp.Azure.Region = vNetInfo2.ConnectionConfig.RegionDetail.RegionId
-			reqInfracode.VpnConfig.TargetCsp.Azure.VirtualNetworkName = vNetInfo2.CspResourceId
+			reqInfracode.VpnConfig.TargetCsp.Azure.VirtualNetworkName = vNetInfo2.CspResourceName // * Azure uses CspResourceName
 			reqInfracode.VpnConfig.TargetCsp.Azure.ResourceGroupName = vNetInfo2.ConnectionConfig.RegionDetail.RegionId
 			reqInfracode.VpnConfig.TargetCsp.Azure.BgpAsn = vpnReq.Site2.CspSpecificProperty.Azure.BgpAsn
 			reqInfracode.VpnConfig.TargetCsp.Azure.VpnSku = vpnReq.Site2.CspSpecificProperty.Azure.VpnSku
