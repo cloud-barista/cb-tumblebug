@@ -252,70 +252,6 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 	return sitesInfo, nil
 }
 
-// RestGetAllSiteToSiteVpn godoc
-// @ID GetAllSiteToSiteVpn
-// @Summary Get all site-to-site VPNs
-// @Description Get all site-to-site VPNs
-// @Tags [Infra Resource] Site-to-site VPN Management (under development)
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param option query string false "Option" Enums(InfoList, IdList) default(IdList)
-// @Success 200 {object} model.VpnInfoList "OK"
-// @Success 200 {object} model.VpnIdList "OK"
-// @Failure 400 {object} model.SimpleMsg "Bad Request"
-// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/mci/{mciId}/vpn [get]
-func RestGetAllSiteToSiteVpn(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-	err := common.CheckString(nsId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-
-	mciId := c.Param("mciId")
-	err = common.CheckString(mciId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-
-	option := c.QueryParam("option")
-	if option != "InfoList" && option != "IdList" && option != "" {
-		errMsg := fmt.Errorf("invalid option (%s)", option)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-
-	switch option {
-	case "InfoList":
-		vpnInfoList, err := resource.GetAllSiteToSiteVPN(nsId, mciId)
-		if err != nil {
-			log.Err(err).Msg("")
-			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
-		}
-		return c.JSON(http.StatusOK, vpnInfoList)
-	case "IdList":
-		vpnIdList, err := resource.GetAllIDsOfSiteToSiteVPN(nsId, mciId)
-		if err != nil {
-			log.Err(err).Msg("")
-			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
-		}
-		return c.JSON(http.StatusOK, vpnIdList)
-	default:
-		errMsg := fmt.Errorf("invalid option (%s)", option)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-
-}
-
 // RestPostSiteToSiteVpn godoc
 // @ID PostSiteToSiteVpn
 // @Summary Create a site-to-site VPN
@@ -397,22 +333,23 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 }
 
-// RestDeleteSiteToSiteVpn godoc
-// @ID DeleteSiteToSiteVpn
-// @Summary Delete a site-to-site VPN
-// @Description Delete a site-to-site VPN
+// RestGetAllSiteToSiteVpn godoc
+// @ID GetAllSiteToSiteVpn
+// @Summary Get all site-to-site VPNs
+// @Description Get all site-to-site VPNs
 // @Tags [Infra Resource] Site-to-site VPN Management (under development)
 // @Accept  json
-// @Produce  json-stream
+// @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Param vpnId path string true "VPN ID" default(vpn01)
-// @Success 200 {object} model.SimpleMsg "OK"
+// @Param option query string false "Option" Enums(InfoList, IdList) default(IdList)
+// @Success 200 {object} model.VpnInfoList "OK"
+// @Success 200 {object} model.VpnIdList "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [delete]
-func RestDeleteSiteToSiteVpn(c echo.Context) error {
+// @Router /ns/{nsId}/mci/{mciId}/vpn [get]
+func RestGetAllSiteToSiteVpn(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -430,21 +367,34 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	vpnId := c.Param("vpnId")
-	err = common.CheckString(vpnId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid vpnId (%s)", vpnId)
+	option := c.QueryParam("option")
+	if option != "InfoList" && option != "IdList" && option != "" {
+		errMsg := fmt.Errorf("invalid option (%s)", option)
 		log.Warn().Err(err).Msgf(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	resp, err := resource.DeleteSiteToSiteVPN(nsId, mciId, vpnId)
-	if err != nil {
-		log.Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	switch option {
+	case "InfoList":
+		vpnInfoList, err := resource.GetAllSiteToSiteVPN(nsId, mciId)
+		if err != nil {
+			log.Err(err).Msg("")
+			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		}
+		return c.JSON(http.StatusOK, vpnInfoList)
+	case "IdList":
+		vpnIdList, err := resource.GetAllIDsOfSiteToSiteVPN(nsId, mciId)
+		if err != nil {
+			log.Err(err).Msg("")
+			return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+		}
+		return c.JSON(http.StatusOK, vpnIdList)
+	default:
+		errMsg := fmt.Errorf("invalid option (%s)", option)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	return c.JSON(http.StatusOK, resp)
 }
 
 // RestGetSiteToSiteVpn godoc
@@ -489,6 +439,56 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 	// * Only provide the "refined" detail level for now
 	detail := "refined"
 	resp, err := resource.GetSiteToSiteVPN(nsId, mciId, vpnId, detail)
+	if err != nil {
+		log.Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, resp)
+}
+
+// RestDeleteSiteToSiteVpn godoc
+// @ID DeleteSiteToSiteVpn
+// @Summary Delete a site-to-site VPN
+// @Description Delete a site-to-site VPN
+// @Tags [Infra Resource] Site-to-site VPN Management (under development)
+// @Accept  json
+// @Produce  json-stream
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param vpnId path string true "VPN ID" default(vpn01)
+// @Success 200 {object} model.SimpleMsg "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
+// @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [delete]
+func RestDeleteSiteToSiteVpn(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	err := common.CheckString(nsId)
+	if err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	mciId := c.Param("mciId")
+	err = common.CheckString(mciId)
+	if err != nil {
+		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	vpnId := c.Param("vpnId")
+	err = common.CheckString(vpnId)
+	if err != nil {
+		errMsg := fmt.Errorf("invalid vpnId (%s)", vpnId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	resp, err := resource.DeleteSiteToSiteVPN(nsId, mciId, vpnId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})

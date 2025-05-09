@@ -11387,7 +11387,8 @@ const docTemplate = `{
                     "example": "65531"
                 },
                 "gatewaySubnetCidr": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "xxx.xxx.xxx.xxx/xx"
                 },
                 "vpnSku": {
                     "type": "string",
@@ -13324,6 +13325,7 @@ const docTemplate = `{
                     "example": "aws"
                 },
                 "gatewaySubnetCidr": {
+                    "description": "SubnetId          string ` + "`" + `json:\"subnet,omitempty\" example:\"subnet-xxxxx\"` + "`" + `",
                     "type": "string",
                     "example": "xxx.xxx.xxx.xxx/xx"
                 },
@@ -13334,10 +13336,6 @@ const docTemplate = `{
                 "resourceGroup": {
                     "type": "string",
                     "example": "rg-xxxxx"
-                },
-                "subnet": {
-                    "type": "string",
-                    "example": "subnet-xxxxx"
                 },
                 "vnet": {
                     "description": "Zone              string ` + "`" + `json:\"zone,omitempty\" example:\"ap-northeast-2a\"` + "`" + `",
@@ -16841,6 +16839,12 @@ const docTemplate = `{
         "model.sites": {
             "type": "object",
             "properties": {
+                "alibaba": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SiteDetail"
+                    }
+                },
                 "aws": {
                     "type": "array",
                     "items": {
@@ -16854,6 +16858,18 @@ const docTemplate = `{
                     }
                 },
                 "gcp": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SiteDetail"
+                    }
+                },
+                "ibm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SiteDetail"
+                    }
+                },
+                "tencent": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.SiteDetail"

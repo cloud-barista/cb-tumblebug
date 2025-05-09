@@ -685,16 +685,22 @@ func extractResourceDetails(cspData map[string]interface{}) []model.ResourceDeta
 func processResourceMap(resourceMap map[string]interface{}) []model.ResourceDetail {
 	var details []model.ResourceDetail
 
-	// Check if this resource has id and name fields
+	var resourceDetail model.ResourceDetail
+
+	// Check if this resource has id fields
 	if id, hasId := resourceMap["id"].(string); hasId {
-		if name, hasName := resourceMap["name"].(string); hasName {
-			details = append(details, model.ResourceDetail{
-				CspResourceId:     id,
-				CspResourceName:   name,
-				CspResourceDetail: resourceMap,
-			})
-		}
+		resourceDetail.CspResourceId = id
 	}
+
+	// Check if this resource has name fields
+	if name, hasName := resourceMap["name"].(string); hasName {
+		resourceDetail.CspResourceName = name
+	}
+
+	// Set the resource detail
+	resourceDetail.CspResourceDetail = resourceMap
+
+	details = append(details, resourceDetail)
 
 	return details
 }

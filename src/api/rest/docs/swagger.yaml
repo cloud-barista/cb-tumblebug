@@ -8686,6 +8686,7 @@ components:
           default: "65531"
         gatewaySubnetCidr:
           type: string
+          example: xxx.xxx.xxx.xxx/xx
         vpnSku:
           type: string
           example: VpnGw1AZ
@@ -10023,6 +10024,8 @@ components:
           example: aws
         gatewaySubnetCidr:
           type: string
+          description: "SubnetId          string `json:\"subnet,omitempty\" example:\"\
+            subnet-xxxxx\"`"
           example: xxx.xxx.xxx.xxx/xx
         region:
           type: string
@@ -10030,9 +10033,6 @@ components:
         resourceGroup:
           type: string
           example: rg-xxxxx
-        subnet:
-          type: string
-          example: subnet-xxxxx
         vnet:
           type: string
           description: "Zone              string `json:\"zone,omitempty\" example:\"\
@@ -12639,6 +12639,10 @@ components:
     model.sites:
       type: object
       properties:
+        alibaba:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.SiteDetail'
         aws:
           type: array
           items:
@@ -12648,6 +12652,14 @@ components:
           items:
             $ref: '#/components/schemas/model.SiteDetail'
         gcp:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.SiteDetail'
+        ibm:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.SiteDetail'
+        tencent:
           type: array
           items:
             $ref: '#/components/schemas/model.SiteDetail'
