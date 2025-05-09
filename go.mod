@@ -2,8 +2,11 @@ module github.com/cloud-barista/cb-tumblebug
 
 go 1.23.0
 
+// Uncomment the following line to use local mc-terrarium module for development.
+// replace github.com/cloud-barista/mc-terrarium v0.0.22 => ../mc-terrarium
+
 require (
-	github.com/cloud-barista/mc-terrarium v0.0.18
+	github.com/cloud-barista/mc-terrarium v0.0.22
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/validator/v10 v10.17.0
 	github.com/go-resty/resty/v2 v2.13.1

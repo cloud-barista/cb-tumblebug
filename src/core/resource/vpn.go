@@ -25,6 +25,8 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
+	"github.com/cloud-barista/cb-tumblebug/src/csp"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -38,28 +40,49 @@ const (
 	maxWaitDuration = 120 * time.Second
 )
 
-var validCspSetForVPN = map[string]bool{
-	"aws,gcp":   true,
-	"gcp,aws":   true,
-	"gcp,azure": true,
-	"azure,gcp": true,
-	// "azure,alibaba": true,
-	// "alibaba,azure": true,
-	// "nhn,ncp":       true,
-	// "ncp,nhn":       true,
-
-	// Add more CSP sets here
+// supportedCspForVpn is a map of supported CSPs for VPN connections.
+// The keys are the hub CSPs, and the values are slices of supported spoke CSPs.
+var supportedCspForVpn = map[string][]string{
+	csp.AWS: {csp.Azure, csp.GCP, csp.Alibaba, csp.Tencent, csp.IBM},
+	// csp.Azure:   {csp.AWS, csp.GCP},
+	// csp.GCP:     {csp.AWS, csp.Azure},
+	// csp.Alibaba: {csp.AWS},
+	// csp.Tencent: {csp.AWS},
+	// csp.IBM:     {csp.AWS},
 }
 
-func IsValidCspSetForVPN(csp1, csp2 string) (bool, error) {
-	if !validCspSetForVPN[csp1+","+csp2] {
+// validCspPairsForVpn is a map of valid CSP pairs for VPN connections.
+var validCspPairsForVpn = func() map[string]map[string]bool {
+	cspPairs := make(map[string]map[string]bool)
+
+	// Initialize maps for each CSP pair
+	for hub, spokes := range supportedCspForVpn {
+		if cspPairs[hub] == nil {
+			cspPairs[hub] = make(map[string]bool)
+		}
+
+		// Add valid pairs for current hub CSP
+		for _, spoke := range spokes {
+			// Add forward direction (hub -> spoke)
+			cspPairs[hub][spoke] = true
+
+			// Add reverse direction (spoke -> hub)
+			if cspPairs[spoke] == nil {
+				cspPairs[spoke] = make(map[string]bool)
+			}
+			cspPairs[spoke][hub] = true
+		}
+	}
+
+	return cspPairs
+}()
+
+func IsValidCspPairForVpn(csp1, csp2 string) (bool, error) {
+	valid, exists := validCspPairsForVpn[csp1][csp2]
+	if !exists || !valid {
 		return false, fmt.Errorf("currently not supported, VPN between %s and %s", csp1, csp2)
 	}
 	return true, nil
-}
-
-func whichCspSetForVPN(csp1, csp2 string) string {
-	return csp1 + "," + csp2
 }
 
 // GetSiteToSiteVPN returns a site-to-site VPN
@@ -67,7 +90,7 @@ func GetAllSiteToSiteVPN(nsId string, mciId string) (model.VpnInfoList, error) {
 
 	var emptyRet model.VpnInfoList
 	var vpnInfoList model.VpnInfoList
-	vpnInfoList.VpnInfoList = []model.VPNInfo{}
+	vpnInfoList.VpnInfoList = []model.VpnInfo{}
 	var err error = nil
 	/*
 	 * Validate the input parameters
@@ -97,7 +120,7 @@ func GetAllSiteToSiteVPN(nsId string, mciId string) (model.VpnInfoList, error) {
 		return emptyRet, err
 	}
 	for _, vpnKv := range vpnKvs {
-		tempVpnInfo := model.VPNInfo{}
+		tempVpnInfo := model.VpnInfo{}
 		err = json.Unmarshal([]byte(vpnKv.Value), &tempVpnInfo)
 		if err != nil {
 			log.Warn().Err(err).Msg("")
@@ -145,7 +168,7 @@ func GetAllIDsOfSiteToSiteVPN(nsId string, mciId string) (model.VpnIdList, error
 		return emptyRet, err
 	}
 	for _, vpnKv := range vpnKvs {
-		tempVpnInfo := model.VPNInfo{}
+		tempVpnInfo := model.VpnInfo{}
 		err = json.Unmarshal([]byte(vpnKv.Value), &tempVpnInfo)
 		if err != nil {
 			log.Warn().Err(err).Msg("")
@@ -158,11 +181,11 @@ func GetAllIDsOfSiteToSiteVPN(nsId string, mciId string) (model.VpnIdList, error
 }
 
 // CreateSiteToSiteVPN creates a site-to-site VPN via Terrarium
-func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnRequest, retry string) (model.VPNInfo, error) {
+func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnRequest, retry string) (model.VpnInfo, error) {
 
 	// VPN objects
-	var emptyRet model.VPNInfo
-	var vpnInfo model.VPNInfo
+	var emptyRet model.VpnInfo
+	var vpnInfo model.VpnInfo
 	var err error = nil
 	var retried bool = (retry == "retry")
 
@@ -185,16 +208,35 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	ok, err := IsValidCspSetForVPN(vpnReq.Site1.CSP, vpnReq.Site2.CSP)
-	if !ok {
+
+	// Get each vnet info
+	vNetInfo1, err := GetVNet(nsId, vpnReq.Site1.VNetId)
+	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
-	// Ensure vpnReq.Site1 and vpnReq.Site2 are in alphabetical order by CSP
-	if vpnReq.Site1.CSP > vpnReq.Site2.CSP {
+	vNetInfo2, err := GetVNet(nsId, vpnReq.Site2.VNetId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// Check if the CSPs are valid for VPN
+	ok, err := IsValidCspPairForVpn(vNetInfo1.ConnectionConfig.ProviderName, vNetInfo2.ConnectionConfig.ProviderName)
+	if !ok {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	// Ensure vnetInfo1 is the hub and vnetInfo2 is the spoke
+	_, exists := supportedCspForVpn[vNetInfo1.ConnectionConfig.ProviderName]
+	if !exists {
+		vNetInfo1, vNetInfo2 = vNetInfo2, vNetInfo1
 		vpnReq.Site1, vpnReq.Site2 = vpnReq.Site2, vpnReq.Site1
 	}
+
+	site1CspName := vNetInfo1.ConnectionConfig.ProviderName
+	site2CspName := vNetInfo2.ConnectionConfig.ProviderName
 
 	// Set the resource type
 	resourceType := model.StrVPN
@@ -205,30 +247,30 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 	vpnInfo.Name = vpnReq.Name
 	vpnInfo.Id = vpnReq.Name
 	vpnInfo.Uid = uid
-	vpnInfo.Description = "VPN between " + vpnReq.Site1.CSP + " and " + vpnReq.Site2.CSP
+	vpnInfo.Description = "VPN between " + site1CspName + " and " + site2CspName
 
-	site1VPNGatewayInfo := model.VPNGatewayInfo{}
-	site1VPNGatewayInfo.ConnectionName = vpnReq.Site1.ConnectionName
-	site1VPNGatewayInfo.ConnectionConfig, err = common.GetConnConfig(site1VPNGatewayInfo.ConnectionName)
+	site1Detail := model.VpnSiteDetail{}
+	site1Detail.ConnectionName = vNetInfo1.ConnectionName
+	site1Detail.ConnectionConfig, err = common.GetConnConfig(site1Detail.ConnectionName)
 	if err != nil {
 		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
 		log.Error().Err(err).Msg("")
 	}
 
-	site2VPNGatewayInfo := model.VPNGatewayInfo{}
-	site2VPNGatewayInfo.ConnectionName = vpnReq.Site2.ConnectionName
-	site2VPNGatewayInfo.ConnectionConfig, err = common.GetConnConfig(site2VPNGatewayInfo.ConnectionName)
+	site2Detail := model.VpnSiteDetail{}
+	site2Detail.ConnectionName = vNetInfo2.ConnectionName
+	site2Detail.ConnectionConfig, err = common.GetConnConfig(site2Detail.ConnectionName)
 	if err != nil {
 		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
 		log.Error().Err(err).Msg("")
 	}
 
-	vpnInfo.VPNGatewayInfo = []model.VPNGatewayInfo{site1VPNGatewayInfo, site2VPNGatewayInfo}
+	vpnInfo.VpnSites = []model.VpnSiteDetail{site1Detail, site2Detail}
 
 	// Set a vpnKey for the site-to-site VPN object
 	vpnKey := common.GenResourceKey(nsId, resourceType, vpnInfo.Id)
 	// Check if the vpn already exists or not
-	exists, err := CheckResource(nsId, resourceType, vpnInfo.Id)
+	exists, err = CheckResource(nsId, resourceType, vpnInfo.Id)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("failed to check if the site-to-site VPN (%s) exists or not", vpnInfo.Id)
@@ -276,29 +318,29 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 
 	// Initialize resty client with basic auth
 	client := resty.New()
-	apiUser := os.Getenv("TB_API_USERNAME")
-	apiPass := os.Getenv("TB_API_PASSWORD")
+	apiUser := os.Getenv("TB_TERRARIUM_API_USERNAME")
+	apiPass := os.Getenv("TB_TERRARIUM_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
 	// Set Terrarium endpoint
 	epTerrarium := model.TerrariumRestUrl
 
 	// Set a terrarium ID
-	trId := vpnInfo.Uid
-
-	cspSet := whichCspSetForVPN(vpnReq.Site1.CSP, vpnReq.Site2.CSP)
+	trName := vpnInfo.Uid
+	// init trId
+	trId := trName
 
 	// Check the CSPs of the sites
-	switch cspSet {
-	case "aws,gcp":
+	switch site1CspName {
+	case csp.AWS:
 
 		if !retried {
 			// Issue a terrarium
 			method := "POST"
 			url := fmt.Sprintf("%s/tr", epTerrarium)
-			reqTr := new(terrariumModel.TerrariumInfo)
-			reqTr.Id = trId
-			reqTr.Description = "VPN between GCP and AWS"
+			reqTr := new(terrariumModel.TerrariumCreationRequest)
+			reqTr.Name = trName
+			reqTr.Description = fmt.Sprintf("VPN between %s and %s", site1CspName, site2CspName)
 
 			resTrInfo := new(terrariumModel.TerrariumInfo)
 
@@ -321,54 +363,106 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 			log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
 			log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
 
-			// init env
-			method = "POST"
-			url = fmt.Sprintf("%s/tr/%s/vpn/gcp-aws/env", epTerrarium, trId)
-			requestBody := clientManager.NoBody
-			resTerrariumEnv := new(model.Response)
+			// set trId
+			trId = resTrInfo.Id
+		}
 
-			err = clientManager.ExecuteHttpRequest(
-				client,
-				method,
-				url,
-				nil,
-				clientManager.SetUseBody(requestBody),
-				&requestBody,
-				resTerrariumEnv,
-				clientManager.VeryShortDuration,
-			)
+		// * Set request body to create site-to-site VPN as csp pair
+		reqInfracode := new(terrariumModel.CreateAwsToSiteVpnRequest)
 
-			if err != nil {
-				log.Err(err).Msg("")
-				return emptyRet, err
+		log.Debug().Msgf("vNetInfo1: %+v", vNetInfo1)
+
+		// Set Hub site (AWS)
+		reqInfracode.VpnConfig.Aws.Region = vNetInfo1.ConnectionConfig.RegionDetail.RegionId
+		reqInfracode.VpnConfig.Aws.VpcId = vNetInfo1.CspResourceId
+		if len(vNetInfo1.SubnetInfoList) < 1 {
+			log.Error().Msgf("No subnets found for VPC ID: %s", vNetInfo1.Id)
+			return emptyRet, fmt.Errorf("no subnets found for VPC ID: %s", vNetInfo1.Id)
+		}
+		reqInfracode.VpnConfig.Aws.SubnetId = vNetInfo1.SubnetInfoList[0].CspResourceId
+		reqInfracode.VpnConfig.Aws.BgpAsn = vpnReq.Site1.CspSpecificProperty.Aws.BgpAsn
+
+		log.Debug().Msgf("vNetInfo2: %+v", vNetInfo2)
+
+		// Set spoke site
+		switch site2CspName {
+		case csp.Azure:
+			reqInfracode.VpnConfig.TargetCsp.Type = csp.Azure
+			reqInfracode.VpnConfig.TargetCsp.Azure = new(terrariumModel.AzureConfig)
+			reqInfracode.VpnConfig.TargetCsp.Azure.Region = vNetInfo2.ConnectionConfig.RegionDetail.RegionId
+			reqInfracode.VpnConfig.TargetCsp.Azure.VirtualNetworkName = vNetInfo2.CspResourceName // * Azure uses CspResourceName
+			reqInfracode.VpnConfig.TargetCsp.Azure.ResourceGroupName = vNetInfo2.ConnectionConfig.RegionDetail.RegionId
+			reqInfracode.VpnConfig.TargetCsp.Azure.BgpAsn = vpnReq.Site2.CspSpecificProperty.Azure.BgpAsn
+			reqInfracode.VpnConfig.TargetCsp.Azure.VpnSku = vpnReq.Site2.CspSpecificProperty.Azure.VpnSku
+
+			// ! Warning: This is a temporary solution
+			// Get the last subnet CIDR block
+			subnetCount := len(vNetInfo2.SubnetInfoList)
+			if subnetCount == 0 {
+				log.Error().Msgf("No subnets found for VNet ID: %s", vNetInfo2.Id)
+				return emptyRet, fmt.Errorf("no subnets found for VNet ID: %s", vNetInfo2.Id)
 			}
 
-			log.Debug().Msgf("resInit: %+v", resTerrariumEnv.Message)
-			log.Trace().Msgf("resInit: %+v", resTerrariumEnv.Detail)
+			lastSubnet := vNetInfo2.SubnetInfoList[subnetCount-1]
+			lastSubnetCidr := lastSubnet.IPv4_CIDR
+
+			// Calculate the next subnet CIDR block
+			nextCidr, err := netutil.NextSubnet(lastSubnetCidr, vNetInfo2.CidrBlock)
+			if err != nil {
+				log.Warn().Msgf("Failed to get the next subnet CIDR")
+			}
+			// Set the next subnet CIDR block as GatewaySubnet CIDR
+			reqInfracode.VpnConfig.TargetCsp.Azure.GatewaySubnetCidr = nextCidr
+
+		case csp.GCP:
+			reqInfracode.VpnConfig.TargetCsp.Type = csp.GCP
+			reqInfracode.VpnConfig.TargetCsp.Gcp = new(terrariumModel.GcpConfig)
+			reqInfracode.VpnConfig.TargetCsp.Gcp.Region = vNetInfo2.ConnectionConfig.RegionDetail.RegionId
+			reqInfracode.VpnConfig.TargetCsp.Gcp.VpcNetworkName = vNetInfo2.CspResourceId
+			reqInfracode.VpnConfig.TargetCsp.Gcp.BgpAsn = vpnReq.Site2.CspSpecificProperty.Gcp.BgpAsn
+
+		case csp.Alibaba:
+			reqInfracode.VpnConfig.TargetCsp.Type = csp.Alibaba
+			reqInfracode.VpnConfig.TargetCsp.Alibaba = new(terrariumModel.AlibabaConfig)
+			reqInfracode.VpnConfig.TargetCsp.Alibaba.Region = vNetInfo2.ConnectionConfig.RegionDetail.RegionId
+			reqInfracode.VpnConfig.TargetCsp.Alibaba.VpcId = vNetInfo2.CspResourceId
+			if len(vNetInfo2.SubnetInfoList) == 1 {
+				reqInfracode.VpnConfig.TargetCsp.Alibaba.VswitchId1 = vNetInfo2.SubnetInfoList[0].CspResourceId
+				reqInfracode.VpnConfig.TargetCsp.Alibaba.VswitchId2 = vNetInfo2.SubnetInfoList[0].CspResourceId
+			} else if len(vNetInfo2.SubnetInfoList) == 2 {
+				reqInfracode.VpnConfig.TargetCsp.Alibaba.VswitchId1 = vNetInfo2.SubnetInfoList[0].CspResourceId
+				reqInfracode.VpnConfig.TargetCsp.Alibaba.VswitchId2 = vNetInfo2.SubnetInfoList[1].CspResourceId
+			}
+			reqInfracode.VpnConfig.TargetCsp.Alibaba.BgpAsn = vpnReq.Site2.CspSpecificProperty.Alibaba.BgpAsn
+
+		case csp.Tencent:
+			reqInfracode.VpnConfig.TargetCsp.Type = csp.Tencent
+			reqInfracode.VpnConfig.TargetCsp.Tencent = new(terrariumModel.TencentConfig)
+			reqInfracode.VpnConfig.TargetCsp.Tencent.Region = vNetInfo2.ConnectionConfig.RegionDetail.RegionId
+			reqInfracode.VpnConfig.TargetCsp.Tencent.VpcId = vNetInfo2.CspResourceId
+			if len(vNetInfo2.SubnetInfoList) >= 1 {
+				reqInfracode.VpnConfig.TargetCsp.Tencent.SubnetId = vNetInfo2.SubnetInfoList[0].CspResourceId
+			}
+
+		case csp.IBM:
+			reqInfracode.VpnConfig.TargetCsp.Type = csp.IBM
+			reqInfracode.VpnConfig.TargetCsp.Ibm = new(terrariumModel.IbmConfig)
+			reqInfracode.VpnConfig.TargetCsp.Ibm.Region = vNetInfo2.ConnectionConfig.RegionDetail.RegionId
+			reqInfracode.VpnConfig.TargetCsp.Ibm.VpcId = vNetInfo2.CspResourceId
+			reqInfracode.VpnConfig.TargetCsp.Ibm.VpcCidr = vNetInfo2.CidrBlock
+			if len(vNetInfo2.SubnetInfoList) >= 1 {
+				reqInfracode.VpnConfig.TargetCsp.Ibm.SubnetId = vNetInfo2.SubnetInfoList[0].CspResourceId
+			}
+
+		default:
+			err = fmt.Errorf("not supported, %s", site2CspName)
+			log.Error().Err(err).Msg("")
+			return emptyRet, err
 		}
 
-		// generate infracode
+		// * Create site-to-site VPN
 		method := "POST"
-		url := fmt.Sprintf("%s/tr/%s/vpn/gcp-aws/infracode", epTerrarium, trId)
-		reqInfracode := new(terrariumModel.CreateInfracodeOfGcpAwsVpnRequest)
-
-		if vpnReq.Site1.CSP == "aws" {
-			// Site1 is AWS
-			reqInfracode.TfVars.AwsRegion = vpnReq.Site1.Region
-			reqInfracode.TfVars.AwsVpcId = vpnReq.Site1.VNet
-			reqInfracode.TfVars.AwsSubnetId = vpnReq.Site1.Subnet
-			// Site2 is GCP
-			reqInfracode.TfVars.GcpRegion = vpnReq.Site2.Region
-			reqInfracode.TfVars.GcpVpcNetworkName = vpnReq.Site2.VNet
-		} else {
-			// Site2 is AWS
-			reqInfracode.TfVars.AwsRegion = vpnReq.Site2.Region
-			reqInfracode.TfVars.AwsVpcId = vpnReq.Site2.VNet
-			reqInfracode.TfVars.AwsSubnetId = vpnReq.Site2.Subnet
-			// Site1 is GCP
-			reqInfracode.TfVars.GcpRegion = vpnReq.Site1.Region
-			reqInfracode.TfVars.GcpVpcNetworkName = vpnReq.Site1.VNet
-		}
+		url := fmt.Sprintf("%s/tr/%s/vpn/aws-to-site", epTerrarium, trId)
 
 		resInfracode := new(model.Response)
 
@@ -387,64 +481,10 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 			log.Err(err).Msg("")
 			return emptyRet, err
 		}
-		log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
-		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
+		log.Debug().Msgf("resVpnCreation: %+v", resInfracode.Message)
+		log.Trace().Msgf("resVpnCreation: %+v", resInfracode.Detail)
 
-		// check the infracode by plan
-		method = "POST"
-		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-aws/plan", epTerrarium, trId)
-		requestBody := clientManager.NoBody
-		resPlan := new(model.Response)
-
-		err = clientManager.ExecuteHttpRequest(
-			client,
-			method,
-			url,
-			nil,
-			clientManager.SetUseBody(requestBody),
-			&requestBody,
-			resPlan,
-			clientManager.VeryShortDuration,
-		)
-
-		if err != nil {
-			log.Err(err).Msg("")
-			return emptyRet, err
-		}
-		log.Debug().Msgf("resPlan: %+v", resPlan.Message)
-		log.Trace().Msgf("resPlan: %+v", resPlan.Detail)
-
-		// apply
-		// wait until the task is completed
-		// or response immediately with requestId as it is a time-consuming task
-		// and provide seperate api to check the status
-		method = "POST"
-		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-aws", epTerrarium, trId)
-		requestBody = clientManager.NoBody
-		resApply := new(model.Response)
-
-		err = clientManager.ExecuteHttpRequest(
-			client,
-			method,
-			url,
-			nil,
-			clientManager.SetUseBody(requestBody),
-			&requestBody,
-			resApply,
-			clientManager.VeryShortDuration,
-		)
-
-		if err != nil {
-			log.Err(err).Msg("")
-			return emptyRet, err
-		}
-		log.Debug().Msgf("resApply: %+v", resApply.Message)
-		log.Trace().Msgf("resApply: %+v", resApply.Detail)
-
-		/*
-		 * [Via Terrarium] Retrieve the VPN info recursively until the VPN is created
-		 */
-
+		// * Retrieve the VPN info recursively until the VPN is created
 		// Recursively call the function to get the VPN info
 		// An expected completion duration is 15 minutes
 		expectedCompletionDuration := 15 * time.Minute
@@ -452,223 +492,42 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
 		defer cancel()
 
-		ret, err := retrieveEnrichmentsInfoInTerrarium(ctx, trId, "vpn/gcp-aws", expectedCompletionDuration)
+		ret, err := retrieveEnrichmentsInfoInTerrarium(ctx, trId, "vpn/aws-to-site", expectedCompletionDuration)
 		if err != nil {
 			log.Err(err).Msg("")
-			return emptyRet, err
 		}
 
 		// Set the VPN info
-		var trVpnInfo terrariumModel.OutputGcpAwsVpnInfo
 		jsonData, err := json.Marshal(ret.Object)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
+
+		// Use a map on unmarshaling the JSON data instead of terrariumModel.TerrariumInfo
+		// for better data extraction
+		var trVpnInfo map[string]interface{}
 		err = json.Unmarshal(jsonData, &trVpnInfo)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
 
-		vpnInfo.VPNGatewayInfo[0].CspResourceId = trVpnInfo.AWS.VpnGateway.ID
-		vpnInfo.VPNGatewayInfo[0].CspResourceName = trVpnInfo.AWS.VpnGateway.Name
-		vpnInfo.VPNGatewayInfo[0].Details = trVpnInfo.AWS
-		vpnInfo.VPNGatewayInfo[1].CspResourceId = trVpnInfo.GCP.HaVpnGateway.ID
-		vpnInfo.VPNGatewayInfo[1].CspResourceName = trVpnInfo.GCP.HaVpnGateway.Name
-		vpnInfo.VPNGatewayInfo[1].Details = trVpnInfo.GCP
+		log.Debug().Msgf("trVpnInfo: %v", trVpnInfo)
 
-	case "azure,gcp":
-
-		if !retried {
-			// issue a terrarium
-			method := "POST"
-			url := fmt.Sprintf("%s/tr", epTerrarium)
-			reqTr := new(terrariumModel.TerrariumInfo)
-			reqTr.Id = trId
-			reqTr.Description = "VPN between GCP and Azure"
-
-			resTrInfo := new(terrariumModel.TerrariumInfo)
-
-			err = clientManager.ExecuteHttpRequest(
-				client,
-				method,
-				url,
-				nil,
-				clientManager.SetUseBody(*reqTr),
-				reqTr,
-				resTrInfo,
-				clientManager.VeryShortDuration,
-			)
-
-			if err != nil {
-				log.Err(err).Msg("")
-				return emptyRet, err
-			}
-
-			log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
-			log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
-
-			// init env
-			method = "POST"
-			url = fmt.Sprintf("%s/tr/%s/vpn/gcp-azure/env", epTerrarium, trId)
-			requestBody := clientManager.NoBody
-			resTerrariumEnv := new(model.Response)
-
-			err = clientManager.ExecuteHttpRequest(
-				client,
-				method,
-				url,
-				nil,
-				clientManager.SetUseBody(requestBody),
-				&requestBody,
-				resTerrariumEnv,
-				clientManager.VeryShortDuration,
-			)
-
-			if err != nil {
-				log.Err(err).Msg("")
-				return emptyRet, err
-			}
-
-			log.Debug().Msgf("resInit: %+v", resTerrariumEnv.Message)
-			log.Trace().Msgf("resInit: %+v", resTerrariumEnv.Detail)
+		// Extract the detail of CSPs' resources (NOTE: currently Terrarium supports AWS-to-site VPN)
+		cspResources, exists := trVpnInfo[site1CspName].(map[string]interface{})
+		if !exists {
+			log.Error().Msgf("AWS resources not found in VPN info")
 		}
+		vpnInfo.VpnSites[0].ResourceDetails = extractResourceDetails(cspResources)
 
-		// generate infracode
-		method := "POST"
-		url := fmt.Sprintf("%s/tr/%s/vpn/gcp-azure/infracode", epTerrarium, trId)
-		reqInfracode := new(terrariumModel.CreateInfracodeOfGcpAzureVpnRequest)
-
-		if vpnReq.Site1.CSP == "azure" {
-			// Site1 is Azure
-			reqInfracode.TfVars.AzureRegion = vpnReq.Site1.Region
-			reqInfracode.TfVars.AzureVirtualNetworkName = vpnReq.Site1.VNet
-			reqInfracode.TfVars.AzureResourceGroupName = vpnReq.Site1.ResourceGroup
-			reqInfracode.TfVars.AzureGatewaySubnetCidrBlock = vpnReq.Site1.GatewaySubnetCidr
-			// Site2 is GCP
-			reqInfracode.TfVars.GcpRegion = vpnReq.Site2.Region
-			reqInfracode.TfVars.GcpVpcNetworkName = vpnReq.Site2.VNet
-		} else {
-			// Site1 is GCP
-			reqInfracode.TfVars.GcpRegion = vpnReq.Site1.Region
-			reqInfracode.TfVars.GcpVpcNetworkName = vpnReq.Site1.VNet
-			// site2 is Azure
-			reqInfracode.TfVars.AzureRegion = vpnReq.Site2.Region
-			reqInfracode.TfVars.AzureVirtualNetworkName = vpnReq.Site2.VNet
-			reqInfracode.TfVars.AzureResourceGroupName = vpnReq.Site2.ResourceGroup
-			reqInfracode.TfVars.AzureGatewaySubnetCidrBlock = vpnReq.Site2.GatewaySubnetCidr
+		cspResources2, exists2 := trVpnInfo[site2CspName].(map[string]interface{})
+		if !exists2 {
+			log.Error().Msgf("%s resources not found in VPN info", site2CspName)
 		}
-
-		resInfracode := new(model.Response)
-
-		err = clientManager.ExecuteHttpRequest(
-			client,
-			method,
-			url,
-			nil,
-			clientManager.SetUseBody(*reqInfracode),
-			reqInfracode,
-			resInfracode,
-			clientManager.VeryShortDuration,
-		)
-
-		if err != nil {
-			log.Err(err).Msg("")
-			return emptyRet, err
-		}
-
-		log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
-		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
-
-		// check the infracode by plan
-		method = "POST"
-		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-azure/plan", epTerrarium, trId)
-		requestBody := clientManager.NoBody
-		resPlan := new(model.Response)
-
-		err = clientManager.ExecuteHttpRequest(
-			client,
-			method,
-			url,
-			nil,
-			clientManager.SetUseBody(requestBody),
-			&requestBody,
-			resPlan,
-			clientManager.VeryShortDuration,
-		)
-
-		if err != nil {
-			log.Err(err).Msg("")
-			return emptyRet, err
-		}
-
-		log.Debug().Msgf("resPlan: %+v", resPlan.Message)
-		log.Trace().Msgf("resPlan: %+v", resPlan.Detail)
-
-		// apply
-		// wait until the task is completed
-		// or response immediately with requestId as it is a time-consuming task
-		// and provide seperate api to check the status
-		method = "POST"
-		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-azure", epTerrarium, trId)
-		requestBody = clientManager.NoBody
-		resApply := new(model.Response)
-
-		err = clientManager.ExecuteHttpRequest(
-			client,
-			method,
-			url,
-			nil,
-			clientManager.SetUseBody(requestBody),
-			&requestBody,
-			resApply,
-			clientManager.VeryShortDuration,
-		)
-
-		if err != nil {
-			log.Err(err).Msg("")
-			return emptyRet, err
-		}
-
-		log.Debug().Msgf("resApply: %+v", resApply.Message)
-		log.Trace().Msgf("resApply: %+v", resApply.Detail)
-
-		/*
-		 * [Via Terrarium] Retrieve the VPN info recursively until the VPN is created
-		 */
-
-		// Recursively call the function to get the VPN info
-		// An expected completion duration is 15 minutes
-		expectedCompletionDuration := 30 * time.Minute
-
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
-		defer cancel()
-
-		ret, err := retrieveEnrichmentsInfoInTerrarium(ctx, trId, "vpn/gcp-azure", expectedCompletionDuration)
-		if err != nil {
-			log.Err(err).Msg("")
-			return emptyRet, err
-		}
-
-		// Set the VPN info
-		var trVpnInfo terrariumModel.OutputGcpAzureVpnInfo
-		jsonData, err := json.Marshal(ret.Object)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
-		err = json.Unmarshal(jsonData, &trVpnInfo)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
-
-		vpnInfo.VPNGatewayInfo[0].CspResourceId = trVpnInfo.Azure.VirtualNetworkGateway.ID
-		vpnInfo.VPNGatewayInfo[0].CspResourceName = trVpnInfo.Azure.VirtualNetworkGateway.Name
-		vpnInfo.VPNGatewayInfo[0].Details = trVpnInfo.Azure
-		vpnInfo.VPNGatewayInfo[1].CspResourceId = trVpnInfo.GCP.HaVpnGateway.ID
-		vpnInfo.VPNGatewayInfo[1].CspResourceName = trVpnInfo.GCP.HaVpnGateway.Name
-		vpnInfo.VPNGatewayInfo[1].Details = trVpnInfo.GCP
+		vpnInfo.VpnSites[1].ResourceDetails = extractResourceDetails(cspResources2)
 
 	default:
-		log.Warn().Msgf("not valid CSP set: %s", cspSet)
+		log.Warn().Msgf("invalid CSP set: %s and %s", site1CspName, site2CspName)
 	}
 
 	// [Set and store status]
@@ -730,8 +589,8 @@ func retrieveEnrichmentsInfoInTerrarium(ctx context.Context, trId string, enrich
 
 	// Initialize resty client with basic auth
 	client := resty.New()
-	apiUser := os.Getenv("TB_API_USERNAME")
-	apiPass := os.Getenv("TB_API_PASSWORD")
+	apiUser := os.Getenv("TB_TERRARIUM_API_USERNAME")
+	apiPass := os.Getenv("TB_TERRARIUM_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
 	// Set Terrarium endpoint
@@ -799,11 +658,73 @@ func calculateWaitDuration(elapsedTime time.Duration, expectedCompletionDuration
 	return time.Duration(waitSeconds) * time.Second
 }
 
-// GetSiteToSiteVPN returns a site-to-site VPN via Terrarium
-func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string) (model.VPNInfo, error) {
+// extractResourceDetails collects all resource details from a CSP's data map
+func extractResourceDetails(cspData map[string]interface{}) []model.ResourceDetail {
+	var details []model.ResourceDetail
 
-	var emptyRet model.VPNInfo
-	var vpnInfo model.VPNInfo
+	// Process top-level resources
+	for _, value := range cspData {
+		// Handle different types of values
+		switch v := value.(type) {
+		case map[string]interface{}:
+			// Process map values
+			resourceDetails := processResourceMap(v)
+			details = append(details, resourceDetails...)
+
+		case []interface{}:
+			// Process array/list values
+			resourceDetails := processResourceArray(v)
+			details = append(details, resourceDetails...)
+		}
+	}
+
+	return details
+}
+
+// processResourceMap extracts resource details from a map
+func processResourceMap(resourceMap map[string]interface{}) []model.ResourceDetail {
+	var details []model.ResourceDetail
+
+	var resourceDetail model.ResourceDetail
+
+	// Check if this resource has id fields
+	if id, hasId := resourceMap["id"].(string); hasId {
+		resourceDetail.CspResourceId = id
+	}
+
+	// Check if this resource has name fields
+	if name, hasName := resourceMap["name"].(string); hasName {
+		resourceDetail.CspResourceName = name
+	}
+
+	// Set the resource detail
+	resourceDetail.CspResourceDetail = resourceMap
+
+	details = append(details, resourceDetail)
+
+	return details
+}
+
+// processResourceArray extracts resource details from an array/slice
+func processResourceArray(array []interface{}) []model.ResourceDetail {
+	var details []model.ResourceDetail
+
+	for _, item := range array {
+		// Process each item in the array
+		if resourceMap, ok := item.(map[string]interface{}); ok {
+			itemDetails := processResourceMap(resourceMap)
+			details = append(details, itemDetails...)
+		}
+	}
+
+	return details
+}
+
+// GetSiteToSiteVPN returns a site-to-site VPN via Terrarium
+func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string) (model.VpnInfo, error) {
+
+	var emptyRet model.VpnInfo
+	var vpnInfo model.VpnInfo
 	var err error = nil
 	/*
 	 * Validate the input parameters
@@ -857,8 +778,8 @@ func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string) (m
 
 	// Initialize resty client with basic auth
 	client := resty.New()
-	apiUser := os.Getenv("TB_API_USERNAME")
-	apiPass := os.Getenv("TB_API_PASSWORD")
+	apiUser := os.Getenv("TB_TERRARIUM_API_USERNAME")
+	apiPass := os.Getenv("TB_TERRARIUM_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
 	trId := vpnInfo.Uid
@@ -916,44 +837,36 @@ func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string) (m
 		return emptyRet, err
 	}
 
-	switch enrichments {
-	case "vpn/gcp-aws":
-		var trVpnInfo terrariumModel.OutputGcpAwsVpnInfo
-		jsonData, err := json.Marshal(resResourceInfo.Object)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
-		err = json.Unmarshal(jsonData, &trVpnInfo)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
+	jsonData, err := json.Marshal(resResourceInfo.Object)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	// Use a map on unmarshaling the JSON data instead of terrariumModel.TerrariumInfo
+	// for better data extraction
+	var trVpnInfo map[string]interface{}
+	err = json.Unmarshal(jsonData, &trVpnInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	}
 
-		vpnInfo.VPNGatewayInfo[0].CspResourceId = trVpnInfo.AWS.VpnGateway.ID
-		vpnInfo.VPNGatewayInfo[0].CspResourceName = trVpnInfo.AWS.VpnGateway.Name
-		vpnInfo.VPNGatewayInfo[0].Details = trVpnInfo.AWS
-		vpnInfo.VPNGatewayInfo[1].CspResourceId = trVpnInfo.GCP.HaVpnGateway.ID
-		vpnInfo.VPNGatewayInfo[1].CspResourceName = trVpnInfo.GCP.HaVpnGateway.Name
-		vpnInfo.VPNGatewayInfo[1].Details = trVpnInfo.GCP
-	case "vpn/gcp-azure":
-		var trVpnInfo terrariumModel.OutputGcpAzureVpnInfo
-		jsonData, err := json.Marshal(resResourceInfo.Object)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
-		err = json.Unmarshal(jsonData, &trVpnInfo)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
+	log.Debug().Msgf("trVpnInfo: %v", trVpnInfo)
 
-		vpnInfo.VPNGatewayInfo[0].CspResourceId = trVpnInfo.Azure.VirtualNetworkGateway.ID
-		vpnInfo.VPNGatewayInfo[0].CspResourceName = trVpnInfo.Azure.VirtualNetworkGateway.Name
-		vpnInfo.VPNGatewayInfo[0].Details = trVpnInfo.Azure
-		vpnInfo.VPNGatewayInfo[1].CspResourceId = trVpnInfo.GCP.HaVpnGateway.ID
-		vpnInfo.VPNGatewayInfo[1].CspResourceName = trVpnInfo.GCP.HaVpnGateway.Name
-		vpnInfo.VPNGatewayInfo[1].Details = trVpnInfo.GCP
-	default:
-		log.Warn().Msgf("not valid enrichments: %s", enrichments)
-		return emptyRet, fmt.Errorf("not valid enrichments: %s", enrichments)
+	// Extract the detail of CSPs' resources (NOTE: currently Terrarium supports AWS-to-site VPN)
+	for _, provider := range resTrInfo.Providers {
+		if provider == csp.AWS {
+			cspResources, exists := trVpnInfo[provider].(map[string]interface{})
+			if !exists {
+				log.Error().Msgf("AWS resources not found in VPN info")
+			}
+			vpnInfo.VpnSites[0].ResourceDetails = extractResourceDetails(cspResources)
+		} else {
+			cspResources, exists := trVpnInfo[provider].(map[string]interface{})
+			if !exists {
+				log.Error().Msgf("%s resources not found in VPN info", provider)
+			}
+			vpnInfo.VpnSites[1].ResourceDetails = extractResourceDetails(cspResources)
+		}
 	}
 
 	log.Debug().Msgf("vpnInfo(final): %+v", vpnInfo)
@@ -994,7 +907,7 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 
 	// VPN objects
 	var emptyRet model.SimpleMsg
-	var vpnInfo model.VPNInfo
+	var vpnInfo model.VpnInfo
 	var err error = nil
 
 	/*
@@ -1062,13 +975,13 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 
 	// Initialize resty client with basic auth
 	client := resty.New()
-	apiUser := os.Getenv("TB_API_USERNAME")
-	apiPass := os.Getenv("TB_API_PASSWORD")
+	apiUser := os.Getenv("TB_TERRARIUM_API_USERNAME")
+	apiPass := os.Getenv("TB_TERRARIUM_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
 	trId := vpnInfo.Uid
 
-	// set endpoint
+	// Set endpoint
 	epTerrarium := model.TerrariumRestUrl
 
 	// Get the terrarium info
@@ -1097,11 +1010,11 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 	log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
 	enrichments := resTrInfo.Enrichments
 
-	// delete enrichments
+	// Delete aws-to-site VPN (enrichments example: "vpn/aws-to-site")
 	method = "DELETE"
 	url = fmt.Sprintf("%s/tr/%s/%s", epTerrarium, trId, enrichments)
 	requestBody = clientManager.NoBody
-	resDeleteEnrichments := new(model.Response)
+	resDeleteSiteToSiteVpn := new(model.Response)
 
 	err = clientManager.ExecuteHttpRequest(
 		client,
@@ -1110,7 +1023,7 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 		nil,
 		clientManager.SetUseBody(requestBody),
 		&requestBody,
-		resDeleteEnrichments,
+		resDeleteSiteToSiteVpn,
 		clientManager.VeryShortDuration,
 	)
 
@@ -1119,58 +1032,35 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 		return emptyRet, err
 	}
 
-	log.Debug().Msgf("resDeleteEnrichments: %+v", resDeleteEnrichments.Message)
-	log.Trace().Msgf("resDeleteEnrichments: %+v", resDeleteEnrichments.Detail)
+	log.Debug().Msgf("resDeleteSiteToSiteVpn: %+v", resDeleteSiteToSiteVpn.Message)
+	log.Trace().Msgf("resDeleteSiteToSiteVpn: %+v", resDeleteSiteToSiteVpn.Detail)
 
-	// delete env
-	method = "DELETE"
-	url = fmt.Sprintf("%s/tr/%s/%s/env", epTerrarium, trId, enrichments)
-	requestBody = clientManager.NoBody
-	resDeleteEnv := new(model.Response)
+	// ! TBD
 
-	err = clientManager.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		clientManager.SetUseBody(requestBody),
-		&requestBody,
-		resDeleteEnv,
-		clientManager.VeryShortDuration,
-	)
+	// // delete terrarium
+	// method = "DELETE"
+	// url = fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
+	// requestBody = clientManager.NoBody
+	// resDeleteTr := new(model.Response)
 
-	if err != nil {
-		log.Err(err).Msg("")
-		return emptyRet, err
-	}
+	// err = clientManager.ExecuteHttpRequest(
+	// 	client,
+	// 	method,
+	// 	url,
+	// 	nil,
+	// 	clientManager.SetUseBody(requestBody),
+	// 	&requestBody,
+	// 	resDeleteTr,
+	// 	clientManager.VeryShortDuration,
+	// )
 
-	log.Debug().Msgf("resDeleteEnv: %+v", resDeleteEnv.Message)
-	log.Trace().Msgf("resDeleteEnv: %+v", resDeleteEnv.Detail)
+	// if err != nil {
+	// 	log.Err(err).Msg("")
+	// 	return emptyRet, err
+	// }
 
-	// delete terrarium
-	method = "DELETE"
-	url = fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
-	requestBody = clientManager.NoBody
-	resDeleteTr := new(model.Response)
-
-	err = clientManager.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		clientManager.SetUseBody(requestBody),
-		&requestBody,
-		resDeleteTr,
-		clientManager.VeryShortDuration,
-	)
-
-	if err != nil {
-		log.Err(err).Msg("")
-		return emptyRet, err
-	}
-
-	log.Debug().Msgf("resDeleteTr: %+v", resDeleteTr.Message)
-	log.Trace().Msgf("resDeleteTr: %+v", resDeleteTr.Detail)
+	// log.Debug().Msgf("resDeleteTr: %+v", resDeleteTr.Message)
+	// log.Trace().Msgf("resDeleteTr: %+v", resDeleteTr.Detail)
 
 	// [Set and store status]
 	err = kvstore.Delete(vpnKey)
@@ -1186,8 +1076,11 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 		return emptyRet, err
 	}
 
+	msg := fmt.Sprintf("successfully deleted the site-to-site VPN (%s)", vpnId)
+	log.Debug().Msgf("msg: %s", msg)
+
 	res := model.SimpleMsg{
-		Message: resDeleteTr.Message,
+		Message: msg,
 	}
 
 	return res, nil
@@ -1197,7 +1090,7 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 func GetRequestStatusOfSiteToSiteVpn(nsId string, mciId string, vpnId string, reqId string) (model.Response, error) {
 
 	var emptyRet model.Response
-	var vpnInfo model.VPNInfo
+	var vpnInfo model.VpnInfo
 	var err error = nil
 
 	/*
@@ -1252,8 +1145,8 @@ func GetRequestStatusOfSiteToSiteVpn(nsId string, mciId string, vpnId string, re
 
 	// Initialize resty client with basic auth
 	client := resty.New()
-	apiUser := os.Getenv("TB_API_USERNAME")
-	apiPass := os.Getenv("TB_API_PASSWORD")
+	apiUser := os.Getenv("TB_TERRARIUM_API_USERNAME")
+	apiPass := os.Getenv("TB_TERRARIUM_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
 	trId := vpnInfo.Uid
