@@ -15,7 +15,6 @@ limitations under the License.
 package resource
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -25,6 +24,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
+	"github.com/cloud-barista/cb-tumblebug/src/csp"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
@@ -90,6 +90,9 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 	sitesInAws := []model.SiteDetail{}
 	sitesInAzure := []model.SiteDetail{}
 	sitesInGcp := []model.SiteDetail{}
+	sitesInAlibaba := []model.SiteDetail{}
+	sitesInTencent := []model.SiteDetail{}
+	sitesInIbm := []model.SiteDetail{}
 
 	for _, vm := range mciInfo.Vm {
 
@@ -119,36 +122,36 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 		providerName = strings.ToLower(providerName)
 
 		switch providerName {
-		case "aws":
+		case csp.AWS:
 
-			// Get vNet info
-			resourceType := "vNet"
-			resourceId := vm.VNetId
-			result, err := resource.GetResource(nsId, resourceType, resourceId)
-			if err != nil {
-				log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
-				continue
-			}
-			vNetInfo := result.(model.TbVNetInfo)
+			// // Get vNet info
+			// resourceType := "vNet"
+			// resourceId := vm.VNetId
+			// result, err := resource.GetResource(nsId, resourceType, resourceId)
+			// if err != nil {
+			// 	log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
+			// 	continue
+			// }
+			// vNetInfo := result.(model.TbVNetInfo)
 
-			// Get the last subnet
-			subnetCount := len(vNetInfo.SubnetInfoList)
-			if subnetCount == 0 {
-				log.Warn().Msgf("No subnets found for VNet ID: %s", vNetId)
-				continue
-			}
-			lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
+			// // Get the last subnet
+			// subnetCount := len(vNetInfo.SubnetInfoList)
+			// if subnetCount == 0 {
+			// 	log.Warn().Msgf("No subnets found for VNet ID: %s", vNetId)
+			// 	continue
+			// }
+			// lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
 
 			// Set VNet and the last subnet IDs
-			site.VNet = vm.CspVNetId
-			site.Subnet = lastSubnet.CspResourceId
+			site.VNetId = vm.VNetId
+			// site.SubnetId = lastSubnet.CspResourceId
 
 			// Set connection name
 			site.ConnectionName = vm.ConnectionName
 
 			sitesInAws = append(sitesInAws, site)
 
-		case "azure":
+		case csp.Azure:
 			// Parse vNet and resource group names
 			parts := strings.Split(vm.CspVNetId, "/")
 			log.Debug().Msgf("parts: %+v", parts)
@@ -157,10 +160,11 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 				continue
 			}
 			parsedResourceGroupName := parts[4]
-			parsedVirtualNetworkName := parts[8]
+			// parsedVirtualNetworkName := parts[8]
 
 			// Set VNet and resource group names
-			site.VNet = parsedVirtualNetworkName
+			// site.VNetId = parsedVirtualNetworkName
+			site.VNetId = vm.VNetId
 			site.ResourceGroup = parsedResourceGroupName
 
 			// Get vNet info
@@ -196,14 +200,40 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 
 			sitesInAzure = append(sitesInAzure, site)
 
-		case "gcp":
+		case csp.GCP:
 			// Set vNet ID
-			site.VNet = vm.CspVNetId
+			site.VNetId = vm.VNetId
 
 			// Set connection name
 			site.ConnectionName = vm.ConnectionName
 
 			sitesInGcp = append(sitesInGcp, site)
+
+		case csp.Alibaba:
+
+			// Set vNet ID
+			site.VNetId = vm.VNetId
+
+			// Set connection name
+			site.ConnectionName = vm.ConnectionName
+			sitesInAlibaba = append(sitesInAlibaba, site)
+
+		case csp.Tencent:
+
+			// Set vNet ID
+			site.VNetId = vm.VNetId
+
+			// Set connection name
+			site.ConnectionName = vm.ConnectionName
+			sitesInTencent = append(sitesInTencent, site)
+
+		case csp.IBM:
+			// Set vNet ID
+			site.VNetId = vm.VNetId
+
+			// Set connection name
+			site.ConnectionName = vm.ConnectionName
+			sitesInIbm = append(sitesInIbm, site)
 
 		default:
 			log.Warn().Msgf("Unsupported provider name: %s", providerName)
@@ -215,8 +245,92 @@ func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
 	sitesInfo.Sites.Aws = sitesInAws
 	sitesInfo.Sites.Azure = sitesInAzure
 	sitesInfo.Sites.Gcp = sitesInGcp
+	sitesInfo.Sites.Alibaba = sitesInAlibaba
+	sitesInfo.Sites.Tencent = sitesInTencent
+	sitesInfo.Sites.Ibm = sitesInIbm
 
 	return sitesInfo, nil
+}
+
+// RestPostSiteToSiteVpn godoc
+// @ID PostSiteToSiteVpn
+// @Summary Create a site-to-site VPN
+// @Description Create a site-to-site VPN
+// @Description
+// @Description The supported CSP sets are as follows:
+// @Description
+// @Description - AWS and one of CSPs in Azure, GCP, Alibaba, Tencent, and IBM
+// @Description
+// @Description - Note: It will take about `15 ~ 45 minutes`.
+// @Tags [Infra Resource] Site-to-site VPN Management (under development)
+// @Accept  json
+// @Produce  json-stream
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param vpnReq body model.RestPostVpnRequest true "Sites info for VPN configuration"
+// @Param action query string false "Action" Enums(retry)
+// @Success 200 {object} model.SimpleMsg "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
+// @Router /ns/{nsId}/mci/{mciId}/vpn [post]
+func RestPostSiteToSiteVpn(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	err := common.CheckString(nsId)
+	if err != nil {
+		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	mciId := c.Param("mciId")
+	err = common.CheckString(mciId)
+	if err != nil {
+		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	action := c.QueryParam("action")
+	if action != "retry" && action != "" {
+		errMsg := fmt.Errorf("invalid action (%s)", action)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	// Bind the request body to RestPostVpnRequest struct
+	vpnReq := new(model.RestPostVpnRequest)
+	if err := c.Bind(vpnReq); err != nil {
+		log.Warn().Err(err).Msgf("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// // Validate the VPN sites
+	// ok, err := resource.IsValidCspPairForVPN(vpnReq.Site1.CSP, vpnReq.Site2.CSP)
+	// if !ok {
+	// 	log.Warn().Err(err).Msg("")
+	// 	res := model.SimpleMsg{
+	// 		Message: err.Error(),
+	// 	}
+	// 	return c.JSON(http.StatusBadRequest, res)
+	// }
+
+	err = common.CheckString(vpnReq.Name)
+	if err != nil {
+		errMsg := fmt.Errorf("invalid vpnName (%s)", vpnReq.Name)
+		log.Warn().Err(err).Msgf(errMsg.Error())
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	}
+
+	resp, err := resource.CreateSiteToSiteVPN(nsId, mciId, vpnReq, action)
+	if err != nil {
+		log.Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, resp)
+
 }
 
 // RestGetAllSiteToSiteVpn godoc
@@ -283,29 +397,22 @@ func RestGetAllSiteToSiteVpn(c echo.Context) error {
 
 }
 
-// RestPostSiteToSiteVpn godoc
-// @ID PostSiteToSiteVpn
-// @Summary Create a site-to-site VPN
-// @Description Create a site-to-site VPN
-// @Description
-// @Description The supported CSP sets are as follows:
-// @Description
-// @Description - GCP and AWS (Note: It will take about `15 minutes`.)
-// @Description
-// @Description - GCP and Azure (Note: It will take about `30 minutes`.)
+// RestGetSiteToSiteVpn godoc
+// @ID GetSiteToSiteVpn
+// @Summary Get resource info of a site-to-site VPN
+// @Description Get resource info of a site-to-site VPN
 // @Tags [Infra Resource] Site-to-site VPN Management (under development)
 // @Accept  json
-// @Produce  json-stream
+// @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Param vpnReq body model.RestPostVpnRequest true "Sites info for VPN configuration"
-// @Param action query string false "Action" Enums(retry)
-// @Success 200 {object} model.SimpleMsg "OK"
+// @Param vpnId path string true "VPN ID" default(vpn01)
+// @Success 200 {object} model.VpnInfo "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/mci/{mciId}/vpn [post]
-func RestPostSiteToSiteVpn(c echo.Context) error {
+// @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [get]
+func RestGetSiteToSiteVpn(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
@@ -314,7 +421,6 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		log.Warn().Err(err).Msgf(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
-
 	mciId := c.Param("mciId")
 	err = common.CheckString(mciId)
 	if err != nil {
@@ -322,52 +428,29 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 		log.Warn().Err(err).Msgf(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
-
-	action := c.QueryParam("action")
-	if action != "retry" && action != "" {
-		errMsg := fmt.Errorf("invalid action (%s)", action)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-
-	// Bind the request body to RestPostVpnRequest struct
-	vpnReq := new(model.RestPostVpnRequest)
-	if err := c.Bind(vpnReq); err != nil {
-		log.Warn().Err(err).Msgf("")
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-	}
-
-	// Validate the VPN sites
-	ok, err := resource.IsValidCspSetForVPN(vpnReq.Site1.CSP, vpnReq.Site2.CSP)
-	if !ok {
-		log.Warn().Err(err).Msg("")
-		res := model.SimpleMsg{
-			Message: err.Error(),
-		}
-		return c.JSON(http.StatusBadRequest, res)
-	}
-
-	err = common.CheckString(vpnReq.Name)
+	vpnId := c.Param("vpnId")
+	err = common.CheckString(vpnId)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid vpnName (%s)", vpnReq.Name)
+		errMsg := fmt.Errorf("invalid vpnId (%s)", vpnId)
 		log.Warn().Err(err).Msgf(errMsg.Error())
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	resp, err := resource.CreateSiteToSiteVPN(nsId, mciId, vpnReq, action)
+	// * Only provide the "refined" detail level for now
+	detail := "refined"
+	resp, err := resource.GetSiteToSiteVPN(nsId, mciId, vpnId, detail)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, resp)
-
 }
 
 // RestDeleteSiteToSiteVpn godoc
 // @ID DeleteSiteToSiteVpn
-// @Summary Delete a site-to-site VPN (Currently, GCP-AWS is supported)
-// @Description Delete a site-to-site VPN (Currently, GCP-AWS is supported)
+// @Summary Delete a site-to-site VPN
+// @Description Delete a site-to-site VPN
 // @Tags [Infra Resource] Site-to-site VPN Management (under development)
 // @Accept  json
 // @Produce  json-stream
@@ -406,185 +489,6 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 	}
 
 	resp, err := resource.DeleteSiteToSiteVPN(nsId, mciId, vpnId)
-	if err != nil {
-		log.Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
-	}
-
-	return c.JSON(http.StatusOK, resp)
-}
-
-// RestPutSiteToSiteVpn godoc
-// @ID PutSiteToSiteVpn
-// @Summary (To be provided) Update a site-to-site VPN
-// @Description (To be provided) Update a site-to-site VPN
-// @Tags [Infra Resource] Site-to-site VPN Management (under development)
-// @Accept  json
-// @Produce  json-stream
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param vpnId path string true "VPN ID" default(vpn01)
-// @Param vpnReq body model.RestPostVpnRequest true "Resources info for VPN tunnel configuration between GCP and AWS"
-// @Success 200 {object} model.SimpleMsg "OK"
-// @Failure 400 {object} model.SimpleMsg "Bad Request"
-// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [put]
-func RestPutSiteToSiteVpn(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-	err := common.CheckString(nsId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-
-	mciId := c.Param("mciId")
-	err = common.CheckString(mciId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-
-	vpnId := c.Param("vpnId")
-	err = common.CheckString(vpnId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid vpnId (%s)", vpnId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-
-	// Prepare for streaming response
-	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	c.Response().WriteHeader(http.StatusOK)
-	enc := json.NewEncoder(c.Response())
-
-	// Flush a response
-	res := model.SimpleMsg{
-		Message: "note - API to be provided",
-	}
-	if err := enc.Encode(res); err != nil {
-		return err
-	}
-	c.Response().Flush()
-
-	return nil
-
-	// Initialize resty client with basic auth
-	// client := resty.New()
-	// apiUser := os.Getenv("TB_API_USERNAME")
-	// apiPass := os.Getenv("TB_API_PASSWORD")
-	// client.SetBasicAuth(apiUser, apiPass)
-
-	// epTerrarium := "http://localhost:8055/terrarium"
-	// trId := fmt.Sprintf("%s-%s-%s", nsId, mciId, vpnId)
-
-	// // check readyz
-	// method := "GET"
-	// url := fmt.Sprintf("%s/readyz", epTerrarium)
-	// requestBody := common.NoBody
-	// resReadyz := new(model.Response)
-
-	// err := common.ExecuteHttpRequest(
-	// 	client,
-	// 	method,
-	// 	url,
-	// 	nil,
-	// 	common.SetUseBody(requestBody),
-	// 	&requestBody,
-	// 	resReadyz,
-	// 	common.VeryShortDuration,
-	// )
-
-	// if err != nil {
-	// 	log.Err(err).Msg("")
-	// 	res := model.SimpleMsg{
-	// 		Message: err.Error(),
-	// 	}
-	// 	return c.JSON(http.StatusServiceUnavailable, res)
-	// }
-	// log.Debug().Msgf("resReadyz: %+v", resReadyz)
-
-	// // Flush a response
-	// res := model.SimpleMsg{
-	// 	Message: resReadyz.Message,
-	// }
-	// if err := enc.Encode(res); err != nil {
-	// 	return err
-	// }
-	// c.Response().Flush()
-
-	// return nil
-}
-
-// RestGetSiteToSiteVpn godoc
-// @ID GetSiteToSiteVpn
-// @Summary Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)
-// @Description Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)
-// @Tags [Infra Resource] Site-to-site VPN Management (under development)
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param mciId path string true "MCI ID" default(mci01)
-// @Param vpnId path string true "VPN ID" default(vpn01)
-// // @Param detail query string false "Resource info by detail (refined, raw)" default(refined)
-// @Success 200 {object} model.VPNInfo "OK"
-// @Failure 400 {object} model.SimpleMsg "Bad Request"
-// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/mci/{mciId}/vpn/{vpnId} [get]
-func RestGetSiteToSiteVpn(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-	err := common.CheckString(nsId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-	mciId := c.Param("mciId")
-	err = common.CheckString(mciId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-	vpnId := c.Param("vpnId")
-	err = common.CheckString(vpnId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid vpnId (%s)", vpnId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	}
-
-	// // Use this struct like the enum
-	// var DetailOptions = struct {
-	// 	Refined string
-	// 	Raw     string
-	// }{
-	// 	Refined: "refined",
-	// 	Raw:     "raw",
-	// }
-
-	// // valid detail options
-	// validDetailOptions := map[string]bool{
-	// 	DetailOptions.Refined: true,
-	// 	DetailOptions.Raw:     true,
-	// }
-
-	// detail := c.QueryParam("detail")
-	// detail = strings.ToLower(detail)
-
-	// if detail == "" || !validDetailOptions[detail] {
-	// 	err := fmt.Errorf("invalid detail (%s), use the default (%s)", detail, DetailOptions.Refined)
-	// 	log.Warn().Msg(err.Error())
-	// 	detail = DetailOptions.Refined
-	// }
-
-	detail := "refined"
-	resp, err := resource.GetSiteToSiteVPN(nsId, mciId, vpnId, detail)
 	if err != nil {
 		log.Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})

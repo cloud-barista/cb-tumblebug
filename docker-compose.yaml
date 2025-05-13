@@ -3,6 +3,8 @@ networks:
     internal: true
   external_network:
     driver: bridge
+  # terrarium_network: # Uncomment this line when you use this compose and the terrarium compose
+  #   external: true
 
 services:
   reverse-proxy:
@@ -30,6 +32,7 @@ services:
     networks:
       - internal_network
       - external_network
+      # - terrarium_network # Uncomment this line when you use this compose and the terrarium compose
     ports:
       - 1323:1323
     depends_on:
@@ -56,6 +59,8 @@ services:
       # - TB_SQLITE_DATABASE=cb_tumblebug
       # - TB_SQLITE_USER=cb_tumblebug
       # - TB_SQLITE_PASSWORD=cb_tumblebug
+      # - TB_TERRARIUM_API_USERNAME=default
+      # - TB_TERRARIUM_API_PASSWORD=default
       # - TB_ALLOW_ORIGINS=*
       # - TB_AUTH_ENABLED=true
       # - TB_AUTH_MODE=jwt
@@ -199,7 +204,7 @@ services:
 
   # # mc-terrarium (PoC): resource extentions such as VPN for CB-Tumblebug by using OpenTofu
   # mc-terrarium:
-  #   image: cloudbaristaorg/mc-terrarium:0.0.18
+  #   image: cloudbaristaorg/mc-terrarium:0.0.22
   #   container_name: mc-terrarium
   #   # build:
   #   #   context: .
@@ -211,19 +216,23 @@ services:
   #       published: 8055
   #       protocol: tcp
   #   env_file:
-  #     - ${HOME}/.cloud-barista/secrets/credentials           # AWS credentials
-  #     - ${HOME}/.cloud-barista/secrets/credential-azure.env  # Azure credentials
-  #     - ${HOME}/.cloud-barista/secrets/credential-ncp.env    # NCP credentials
+  #     - ${HOME}/.cloud-barista/secrets/credentials             # AWS credential
+  #     - ${HOME}/.cloud-barista/secrets/credential-azure.env    # Azure credential
+  #     - ${HOME}/.cloud-barista/secrets/credential-alibaba.env  # Alibaba credential
+  #     - ${HOME}/.cloud-barista/secrets/credential-tencent.env  # Tencent credential
+  #     - ${HOME}/.cloud-barista/secrets/credential-ibm.env      # IBM credential
+  #     - ${HOME}/.cloud-barista/secrets/credential-ncp.env      # NCP credential
   #   volumes:
-  #     - ${HOME}/.cloud-barista/secrets:/app/secrets:ro       # GCP credentials
+  #     - ${HOME}/.cloud-barista/secrets/credential-gcp.json:/app/secrets/credential-gcp.json:ro # GCP credential
   #     - ./container-volume/mc-terrarium-container/.terrarium:/app/.terrarium
+  #     - /etc/ssl/certs:/etc/ssl/certs:ro
   #   environment:
   #     - TERRARIUM_ROOT=/app
   #     # - TERRARIUM_SELF_ENDPOINT=localhost:8055
   #     # - TERRARIUM_API_ALLOW_ORIGINS=*
   #     # - TERRARIUM_API_AUTH_ENABLED=true
   #     # - TERRARIUM_API_USERNAME=default
-  #     # - TERRARIUM_API_PASSWORD=default
+  #     # - TERRARIUM_API_PASSWORD=$$2a$$10$$cKUlDfR8k4VUubhhRwCV9.sFvKV3KEc9RJ.H8R/thIeVOrhQ.nuuW
   #     # - TERRARIUM_LOGFILE_PATH=/app/log/terrarium.log
   #     # - TERRARIUM_LOGFILE_MAXSIZE=1000
   #     # - TERRARIUM_LOGFILE_MAXBACKUPS=3
@@ -233,8 +242,8 @@ services:
   #     # - TERRARIUM_LOGWRITER=both
   #     # - TERRARIUM_NODE_ENV=production
   #     # - TERRARIUM_AUTOCONTROL_DURATION_MS=10000
-  #   healthcheck:
-  #     test: [ "CMD", "curl", "-f", "http://localhost:8055/terrarium/readyz" ]
+  #   healthcheck: # for MC-Terrarirum
+  #     test: ["CMD", "curl", "-f", "http://localhost:8055/terrarium/readyz"]
   #     interval: 5m
   #     timeout: 5s
   #     retries: 3
