@@ -63,16 +63,18 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 		}
 	}
 
-	// if kvstore key has LabelConnectionName, try ListCSPResourceLabel
-	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
-		lbs := ListCSPResourceLabel(labelType, uid, connectionName)
-		log.Info().Msgf("ListCSPResourceLabel: %v", lbs)
+	if labelType != model.StrVPN { // Skip for VPN
+		// if kvstore key has LabelConnectionName, try ListCSPResourceLabel
+		if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
+			lbs := ListCSPResourceLabel(labelType, uid, connectionName)
+			log.Info().Msgf("ListCSPResourceLabel: %v", lbs)
 
-		// Merge CSP labels with existing labels (existing labels have priority)
-		for key, value := range lbs {
-			// Only add if key doesn't exist in labelInfo.Labels
-			if _, exists := labelInfo.Labels[key]; !exists {
-				labelInfo.Labels[key] = value
+			// Merge CSP labels with existing labels (existing labels have priority)
+			for key, value := range lbs {
+				// Only add if key doesn't exist in labelInfo.Labels
+				if _, exists := labelInfo.Labels[key]; !exists {
+					labelInfo.Labels[key] = value
+				}
 			}
 		}
 	}
@@ -88,9 +90,11 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 		return fmt.Errorf("failed to put label info into kvstore: %w", err)
 	}
 
-	// if kvstore key has LabelConnectionName, try UpdateCSPResourceLabel
-	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
-		UpdateCSPResourceLabel(labelType, uid, labels, connectionName)
+	if labelType != model.StrVPN { // Skip for VPN
+		// if kvstore key has LabelConnectionName, try UpdateCSPResourceLabel
+		if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
+			UpdateCSPResourceLabel(labelType, uid, labels, connectionName)
+		}
 	}
 	return nil
 }

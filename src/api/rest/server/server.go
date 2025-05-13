@@ -159,6 +159,9 @@ func RunServer() {
 	apiUser := os.Getenv("TB_API_USERNAME")
 	apiPass := os.Getenv("TB_API_PASSWORD")
 
+	trApiUser := os.Getenv("TB_TERRARIUM_API_USERNAME")
+	trApiPass := os.Getenv("TB_TERRARIUM_API_PASSWORD")
+
 	// Setup Middlewares for auth
 	var basicAuthMw echo.MiddlewareFunc
 	var jwtAuthMw echo.MiddlewareFunc
@@ -368,7 +371,7 @@ func RunServer() {
 	g.GET("/:nsId/mci/:mciId/vpn", rest_resource.RestGetAllSiteToSiteVpn)
 	vpnGroup := g.Group("/:nsId/mci/:mciId/vpn")
 	terrariumURL := model.TerrariumRestUrl + "/readyz"
-	vpnGroup.Use(middlewares.CheckReadiness(terrariumURL, apiUser, apiPass))
+	vpnGroup.Use(middlewares.CheckReadiness(terrariumURL, trApiUser, trApiPass))
 	vpnGroup.POST("", rest_resource.RestPostSiteToSiteVpn)
 	vpnGroup.GET("/:vpnId", rest_resource.RestGetSiteToSiteVpn)
 	// g.PUT("/:vpnId", rest_resource.RestPutSiteToSiteVpn)
@@ -515,7 +518,7 @@ func RunServer() {
 	// g.GET("/:nsId/resources/sqlDb", rest_resource.)
 	sqlDbGroup := g.Group("/:nsId/resources/sqlDb")
 	terrariumURL = model.TerrariumRestUrl + "/readyz"
-	sqlDbGroup.Use(middlewares.CheckReadiness(terrariumURL, apiUser, apiPass))
+	sqlDbGroup.Use(middlewares.CheckReadiness(terrariumURL, trApiUser, trApiPass))
 	sqlDbGroup.POST("", rest_resource.RestPostSqlDB)
 	sqlDbGroup.GET("/:sqlDbId", rest_resource.RestGetSqlDB)
 	sqlDbGroup.DELETE("/:sqlDbId", rest_resource.RestDeleteSqlDB)
@@ -526,7 +529,7 @@ func RunServer() {
 	// g.GET("/:nsId/resources/objectStorage", rest_resource.)
 	objectStorageGroup := g.Group("/:nsId/resources/objectStorage")
 	terrariumURL = model.TerrariumRestUrl + "/readyz"
-	objectStorageGroup.Use(middlewares.CheckReadiness(terrariumURL, apiUser, apiPass))
+	objectStorageGroup.Use(middlewares.CheckReadiness(terrariumURL, trApiUser, trApiPass))
 	objectStorageGroup.POST("", rest_resource.RestPostObjectStorage)
 	objectStorageGroup.GET("/:objectStorageId", rest_resource.RestGetObjectStorage)
 	objectStorageGroup.DELETE("/:objectStorageId", rest_resource.RestDeleteObjectStorage)

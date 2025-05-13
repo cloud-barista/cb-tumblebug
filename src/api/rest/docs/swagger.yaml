@@ -4229,9 +4229,9 @@ paths:
 
         The supported CSP sets are as follows:
 
-        - GCP and AWS (Note: It will take about `15 minutes`.)
+        - AWS and one of CSPs in Azure, GCP, Alibaba, Tencent, and IBM
 
-        - GCP and Azure (Note: It will take about `30 minutes`.)
+        - Note: It will take about `15 ~ 45 minutes`.
       operationId: PostSiteToSiteVpn
       parameters:
       - name: nsId
@@ -4292,9 +4292,8 @@ paths:
     get:
       tags:
       - "[Infra Resource] Site-to-site VPN Management (under development)"
-      summary: "Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)"
-      description: "Get resource info of a site-to-site VPN (Currently, GCP-AWS is\
-        \ supported)"
+      summary: Get resource info of a site-to-site VPN
+      description: Get resource info of a site-to-site VPN
       operationId: GetSiteToSiteVpn
       parameters:
       - name: nsId
@@ -4324,7 +4323,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.VPNInfo'
+                $ref: '#/components/schemas/model.VpnInfo'
         "400":
           description: Bad Request
           content:
@@ -4343,72 +4342,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-    put:
-      tags:
-      - "[Infra Resource] Site-to-site VPN Management (under development)"
-      summary: (To be provided) Update a site-to-site VPN
-      description: (To be provided) Update a site-to-site VPN
-      operationId: PutSiteToSiteVpn
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: mciId
-        in: path
-        description: MCI ID
-        required: true
-        schema:
-          type: string
-          default: mci01
-      - name: vpnId
-        in: path
-        description: VPN ID
-        required: true
-        schema:
-          type: string
-          default: vpn01
-      requestBody:
-        description: Resources info for VPN tunnel configuration between GCP and AWS
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.RestPostVpnRequest'
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "400":
-          description: Bad Request
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/x-json-stream:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: vpnReq
     delete:
       tags:
       - "[Infra Resource] Site-to-site VPN Management (under development)"
-      summary: "Delete a site-to-site VPN (Currently, GCP-AWS is supported)"
-      description: "Delete a site-to-site VPN (Currently, GCP-AWS is supported)"
+      summary: Delete a site-to-site VPN
+      description: Delete a site-to-site VPN
       operationId: DeleteSiteToSiteVpn
       parameters:
       - name: nsId
@@ -8680,6 +8618,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.AgentInstallContent'
+    model.AlibabaSpecificProperty:
+      type: object
+      properties:
+        bgpAsn:
+          type: string
+          example: "65532"
+          default: "65532"
     model.AutoAction:
       type: object
       properties:
@@ -8725,6 +8670,27 @@ components:
           - <=
           - '>'
           - '>='
+    model.AwsSpecificProperty:
+      type: object
+      properties:
+        bgpAsn:
+          type: string
+          example: "64512"
+          default: "64512"
+    model.AzureSpecificProperty:
+      type: object
+      properties:
+        bgpAsn:
+          type: string
+          example: "65531"
+          default: "65531"
+        gatewaySubnetCidr:
+          type: string
+          example: xxx.xxx.xxx.xxx/xx
+        vpnSku:
+          type: string
+          example: VpnGw1AZ
+          default: VpnGw1AZ
     model.BastionNode:
       type: object
       properties:
@@ -8936,6 +8902,17 @@ components:
       description: "CredentialReq contains the necessary information to register a\
         \ credential. This includes the AES key encrypted with the RSA public key,\
         \ which is then used to decrypt the AES key on the server side."
+    model.CspSpecificProperty:
+      type: object
+      properties:
+        alibaba:
+          $ref: '#/components/schemas/model.AlibabaSpecificProperty'
+        aws:
+          $ref: '#/components/schemas/model.AwsSpecificProperty'
+        azure:
+          $ref: '#/components/schemas/model.AzureSpecificProperty'
+        gcp:
+          $ref: '#/components/schemas/model.GcpSpecificProperty'
     model.CustomImageStatus:
       type: string
       enum:
@@ -9056,6 +9033,13 @@ components:
           type: string
         vCPU:
           $ref: '#/components/schemas/model.Range'
+    model.GcpSpecificProperty:
+      type: object
+      properties:
+        bgpAsn:
+          type: string
+          example: "65530"
+          default: "65530"
     model.IID:
       required:
       - NameId
@@ -9833,6 +9817,24 @@ components:
           type: integer
         onTumblebug:
           type: integer
+    model.ResourceDetail:
+      type: object
+      properties:
+        cspResourceDetail:
+          type: object
+          description: CspResourceDetail is the detailed information of the resource
+            provided from the terrarium.
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        status:
+          type: string
     model.ResourceOnCsp:
       type: object
       properties:
@@ -9995,9 +9997,9 @@ components:
           type: string
           example: vpn01
         site1:
-          $ref: '#/components/schemas/model.SiteDetail'
+          $ref: '#/components/schemas/model.SiteProperty'
         site2:
-          $ref: '#/components/schemas/model.SiteDetail'
+          $ref: '#/components/schemas/model.SiteProperty'
     model.RetrievedRegionList:
       type: object
       properties:
@@ -10022,6 +10024,8 @@ components:
           example: aws
         gatewaySubnetCidr:
           type: string
+          description: "SubnetId          string `json:\"subnet,omitempty\" example:\"\
+            subnet-xxxxx\"`"
           example: xxx.xxx.xxx.xxx/xx
         region:
           type: string
@@ -10029,14 +10033,19 @@ components:
         resourceGroup:
           type: string
           example: rg-xxxxx
-        subnet:
-          type: string
-          example: subnet-xxxxx
         vnet:
           type: string
           description: "Zone              string `json:\"zone,omitempty\" example:\"\
             ap-northeast-2a\"`"
           example: vpc-xxxxx
+    model.SiteProperty:
+      type: object
+      properties:
+        cspSpecificProperty:
+          $ref: '#/components/schemas/model.CspSpecificProperty'
+        vNetId:
+          type: string
+          example: vnet01
     model.SitesInfo:
       type: object
       properties:
@@ -12556,29 +12565,14 @@ components:
           type: string
         useFirstNZones:
           type: string
-    model.VPNGatewayInfo:
+    model.VpnIdList:
       type: object
       properties:
-        connectionConfig:
-          $ref: '#/components/schemas/model.ConnConfig'
-        connectionName:
-          type: string
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-        description:
-          type: string
-        details:
-          type: object
-        status:
-          type: string
-    model.VPNInfo:
+        vpnIdList:
+          type: array
+          items:
+            type: string
+    model.VpnInfo:
       type: object
       properties:
         description:
@@ -12601,24 +12595,30 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
-        vpnGatewayInfo:
+        vpnSites:
           type: array
           items:
-            $ref: '#/components/schemas/model.VPNGatewayInfo'
-    model.VpnIdList:
-      type: object
-      properties:
-        vpnIdList:
-          type: array
-          items:
-            type: string
+            $ref: '#/components/schemas/model.VpnSiteDetail'
     model.VpnInfoList:
       type: object
       properties:
         vpnInfoList:
           type: array
           items:
-            $ref: '#/components/schemas/model.VPNInfo'
+            $ref: '#/components/schemas/model.VpnInfo'
+    model.VpnSiteDetail:
+      type: object
+      properties:
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+        resourceDetails:
+          type: array
+          description: ResourceDetails represents a CSP's multiple resources associated
+            with the VPN from a CSP.
+          items:
+            $ref: '#/components/schemas/model.ResourceDetail'
     model.inspectOverview:
       type: object
       properties:
@@ -12639,6 +12639,10 @@ components:
     model.sites:
       type: object
       properties:
+        alibaba:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.SiteDetail'
         aws:
           type: array
           items:
@@ -12648,6 +12652,14 @@ components:
           items:
             $ref: '#/components/schemas/model.SiteDetail'
         gcp:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.SiteDetail'
+        ibm:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.SiteDetail'
+        tencent:
           type: array
           items:
             $ref: '#/components/schemas/model.SiteDetail'
