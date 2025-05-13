@@ -26,7 +26,7 @@ import (
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
-	"github.com/cloud-barista/cb-tumblebug/src/csp"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
