@@ -23,8 +23,8 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
-	"github.com/cloud-barista/cb-tumblebug/src/csp"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )

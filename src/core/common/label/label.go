@@ -27,6 +27,18 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// cspSyncSkipMap contains resource types that should be skipped when synchronizing with CSP
+var cspSyncSkipMap = map[string]bool{
+	model.StrVPN: true,
+	// * NOTE: Add any other resource types that shouldn't be synced with CSP
+}
+
+// isCSPSyncEnabled determines if CSP synchronization is enabled for a label type
+func isCSPSyncEnabled(labelType string) bool {
+	shouldSkip, exists := cspSyncSkipMap[labelType]
+	return !exists || !shouldSkip
+}
+
 // CreateOrUpdateLabel adds a new label or updates an existing label for the given resource,
 // and then persists the updated label information in the Key-Value store.
 func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[string]string) error {
@@ -63,7 +75,7 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 		}
 	}
 
-	if labelType != model.StrVPN { // Skip for VPN
+	if isCSPSyncEnabled(labelType) { // Note: In the case of VPN, label synchronization with CSP is skipped.
 		// if kvstore key has LabelConnectionName, try ListCSPResourceLabel
 		if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
 			lbs := ListCSPResourceLabel(labelType, uid, connectionName)
@@ -90,7 +102,7 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 		return fmt.Errorf("failed to put label info into kvstore: %w", err)
 	}
 
-	if labelType != model.StrVPN { // Skip for VPN
+	if isCSPSyncEnabled(labelType) { // Note: In the case of VPN, label synchronization with CSP is skipped.
 		// if kvstore key has LabelConnectionName, try UpdateCSPResourceLabel
 		if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
 			UpdateCSPResourceLabel(labelType, uid, labels, connectionName)
