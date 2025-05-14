@@ -47,18 +47,28 @@ k8scluster:
     requiredSubnetCount: 1
     nodeGroupNamingRule: ^[a-z][a-z0-9]*$
     version:
+      - region: [westeurope,westus]
+        available: # not tested
+          - name: "1.33"
+            id: "1.33.0"
+          - name: "1.32"
+            id: "1.32.3"
+          - name: "1.31"
+            id: "1.31.6"
+          - name: "1.30"
+            id: "1.30.9"
       - region: [westindia]
         # no available version
       - region: [common]
         available:
+          - name: "1.33"
+            id: "1.33.0"
+          - name: "1.32"
+            id: "1.32.3"
           - name: "1.31"
-            id: "1.31.3"
+            id: "1.31.6"
           - name: "1.30"
-            id: "1.30.7"
-          - name: "1.29"
-            id: "1.29.11"
-          - name: "1.28"
-            id: "1.28.15"
+            id: "1.30.9"
     rootDisk:
       - region: [common]
         type:
