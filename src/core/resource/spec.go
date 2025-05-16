@@ -521,8 +521,8 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]
 		} else if value.IsValid() && !value.IsZero() {
 			switch value.Kind() {
 			case reflect.String:
-				cleanValue := ToNamingRuleCompatible(value.String())
-				query = query.Where(dbFieldName+" LIKE ?", "%"+cleanValue+"%")
+				cleanValue := strings.ToLower(value.String())
+				query = query.Where("LOWER("+dbFieldName+") LIKE ?", "%"+cleanValue+"%")
 				log.Info().Msgf("Filtering by %s: %s", dbFieldName, cleanValue)
 			}
 		}

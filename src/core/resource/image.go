@@ -53,6 +53,9 @@ func TbImageReqStructLevelValidation(sl validator.StructLevel) {
 
 // ConvertSpiderImageToTumblebugImage accepts an Spider image object, converts to and returns an TB image object
 func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage model.SpiderImageInfo) (model.TbImageInfo, error) {
+
+	regionAgnosticProviders := []string{"azure", "gcp", "tencent"}
+
 	if spiderImage.IId.NameId == "" {
 		err := fmt.Errorf("ConvertSpiderImageToTumblebugImage failed; spiderImage.IId.NameId == EmptyString")
 		emptyTumblebugImage := model.TbImageInfo{}
@@ -69,12 +72,16 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	cspImageName := spiderImage.IId.NameId
 	providerName := connectionConfig.ProviderName
 	currentRegion := connectionConfig.RegionDetail.RegionName
+	if slices.Contains(regionAgnosticProviders, providerName) {
+		// For region-agnostic providers, use common region
+		currentRegion = model.StrCommon
+	}
 
 	// Create new image instance
 	tumblebugImage := model.TbImageInfo{}
 
 	// Generate ID for backward compatibility
-	tumblebugImageId := GetProviderRegionZoneResourceKey(providerName, currentRegion, "", cspImageName)
+	tumblebugImageId := GetProviderRegionZoneResourceKey(providerName, "", "", cspImageName)
 
 	// Set basic fields
 	tumblebugImage.Id = tumblebugImageId
@@ -131,6 +138,10 @@ func GetImageInfoFromLookupImage(nsId string, u model.TbImageReq) (model.TbImage
 	if res.IId.NameId == "" {
 		err := fmt.Errorf("spider returned empty IId.NameId without Error: %s", u.ConnectionName)
 		log.Error().Err(err).Msgf("Cannot LookupImage %s %v", u.CspImageName, res)
+		return content, err
+	}
+	if res.ImageStatus == model.ImageUnavailable {
+		err := fmt.Errorf("image status of %s is unavailable", u.CspImageName)
 		return content, err
 	}
 
@@ -583,7 +594,6 @@ type ConnectionImageResult struct {
 	Region      string    `json:"region"`
 	ImageCount  int       `json:"imageCount"`
 	StartTime   time.Time `json:"startTime"`
-	EndTime     time.Time `json:"endTime"`
 	ElapsedTime string    `json:"elapsedTime"`
 	Success     bool      `json:"success"`
 	ErrorMsg    string    `json:"errorMsg,omitempty"`
@@ -592,12 +602,12 @@ type ConnectionImageResult struct {
 // FetchImagesAsyncResult is the result of the most recent fetch images operation
 type FetchImagesAsyncResult struct {
 	NamespaceID  string                  `json:"namespaceId"`
+	FecthOption  model.ImageFetchOption  `json:"fetchOption"`
 	TotalImages  int                     `json:"totalImages"`
 	SuccessCount int                     `json:"successCount"`
 	FailCount    int                     `json:"failCount"`
 	StartTime    time.Time               `json:"startTime"`
-	EndTime      time.Time               `json:"endTime"`
-	TotalTime    string                  `json:"totalTime"`
+	ElapsedTime  string                  `json:"elapsedTime"`
 	ConnResults  []ConnectionImageResult `json:"connResults"`
 }
 
@@ -612,11 +622,16 @@ func init() {
 }
 
 // FetchImagesForAllConnConfigsAsync starts fetching images in background with provider-based grouping
-func FetchImagesForAllConnConfigsAsync(nsId string) error {
+func FetchImagesForAllConnConfigsAsync(nsId string, option *model.ImageFetchOption) error {
 	// Validate input parameters
 	err := common.CheckString(nsId)
 	if err != nil {
 		return err
+	}
+
+	// initialize fetch options
+	if option == nil {
+		option = &model.ImageFetchOption{}
 	}
 
 	// Process asynchronously
@@ -636,6 +651,7 @@ func FetchImagesForAllConnConfigsAsync(nsId string) error {
 			NamespaceID: nsId,
 			StartTime:   startTime,
 			ConnResults: make([]ConnectionImageResult, 0, len(connConfigs.Connectionconfig)),
+			FecthOption: *option,
 		}
 
 		// Store initial result
@@ -647,6 +663,13 @@ func FetchImagesForAllConnConfigsAsync(nsId string) error {
 		providerConnMap := make(map[string][]model.ConnConfig)
 		for _, connConfig := range connConfigs.Connectionconfig {
 			provider := connConfig.ProviderName
+
+			// Skip excluded providers
+			if slices.Contains(option.ExcludedProviders, provider) {
+				log.Info().Msgf("[%s] Skipping excluded provider: %s", nsId, provider)
+				continue
+			}
+
 			providerConnMap[provider] = append(providerConnMap[provider], connConfig)
 		}
 
@@ -666,9 +689,19 @@ func FetchImagesForAllConnConfigsAsync(nsId string) error {
 					nsId, provider, len(connConfigList))
 
 				// Process each connection of this provider sequentially
-				for _, connConfig := range connConfigList {
+				for i, connConfig := range connConfigList {
 					connName := connConfig.ConfigName
 					region := connConfig.RegionZoneInfo.AssignedRegion
+
+					// Check if the provider is region-agnostic
+					if slices.Contains(option.RegionAgnosticProviders, provider) {
+						if i > 0 {
+							log.Warn().Msgf("[%s] Skipping region for provider %s (%d/%d)",
+								nsId, provider, i+1, len(connConfigList))
+							continue
+						}
+						region = model.StrCommon
+					}
 
 					// Initialize connection result
 					connResult := ConnectionImageResult{
@@ -723,8 +756,8 @@ func FetchImagesForAllConnConfigsAsync(nsId string) error {
 
 					// Clean up and finalize result
 					cancel()
-					connResult.EndTime = time.Now()
-					connResult.ElapsedTime = connResult.EndTime.Sub(connResult.StartTime).String()
+					endTime := time.Now()
+					connResult.ElapsedTime = endTime.Sub(connResult.StartTime).String()
 					resultChan <- connResult
 				}
 			}(provider, connConfigList)
@@ -754,8 +787,8 @@ func FetchImagesForAllConnConfigsAsync(nsId string) error {
 		}
 
 		// Finalize result
-		result.EndTime = time.Now()
-		result.TotalTime = result.EndTime.Sub(result.StartTime).String()
+		endTime := time.Now()
+		result.ElapsedTime = endTime.Sub(result.StartTime).String()
 
 		// Log provider statistics
 		providerStats := make(map[string]struct {
@@ -784,7 +817,7 @@ func FetchImagesForAllConnConfigsAsync(nsId string) error {
 
 		log.Info().Msgf("[%s] Async image fetch completed: %d images from %d/%d connections (took %s)",
 			nsId, result.TotalImages, result.SuccessCount,
-			result.SuccessCount+result.FailCount, result.TotalTime)
+			result.SuccessCount+result.FailCount, result.ElapsedTime)
 
 		// Save final result
 		lastFetchResult.Lock()

@@ -110,6 +110,15 @@ type TbImageInfo struct {
 	Description  string     `json:"description,omitempty"`
 }
 
+// ImageFetchOption is struct for Image Fetch Options
+type ImageFetchOption struct {
+	// providers need to be excluded from the image fetching operation (ex: ["azure"])
+	ExcludedProviders []string `json:"excludedProviders,omitempty" example:"azure" description:"Providers to be excluded from the image fetching operation."`
+
+	// providers that are not region-specific (ex: ["gcp"])
+	RegionAgnosticProviders []string `json:"regionAgnosticProviders,omitempty" example:"gcp,tencent" description:"Providers that are not region-specific."`
+}
+
 // SearchImageRequest is struct for Search Image Request
 type SearchImageRequest struct {
 	ProviderName      string   `json:"providerName" example:"aws"`

@@ -1716,7 +1716,7 @@ func LoadAssets() (model.IdList, error) {
 			providerName := strings.ToLower(row[0])
 			regionName := strings.ToLower(row[1])
 			imageReqTmp.CspImageName = row[2]
-			osType := strings.ReplaceAll(row[3], " ", "")
+			osType := row[3]
 			description := row[4]
 			infraType := strings.ToLower(row[6])
 

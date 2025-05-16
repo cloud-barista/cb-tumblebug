@@ -111,6 +111,7 @@ func RestPutImage(c echo.Context) error {
 	}
 
 	content, err := resource.UpdateImage(nsId, resourceId, *u, false)
+
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
@@ -220,6 +221,7 @@ func RestFetchImages(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
+// @Param fetchOption body model.ImageFetchOption true "Fetch option"
 // @Success 202 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -227,23 +229,14 @@ func RestFetchImages(c echo.Context) error {
 func RestFetchImagesAsync(c echo.Context) error {
 	nsId := c.Param("nsId")
 
-	u := &RestLookupImageRequest{}
-	if err := c.Bind(u); err != nil {
+	reqBody := &model.ImageFetchOption{}
+	if err := c.Bind(reqBody); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	var err error
-
-	if u.ConnectionName == "" {
-		err = resource.FetchImagesForAllConnConfigsAsync(nsId)
-		if err != nil {
-			return clientManager.EndRequestWithLog(c, err, nil)
-		}
-	} else {
-		_, err = resource.FetchImagesForConnConfig(u.ConnectionName, nsId)
-		if err != nil {
-			return clientManager.EndRequestWithLog(c, err, nil)
-		}
+	err := resource.FetchImagesForAllConnConfigsAsync(nsId, reqBody)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content := map[string]string{

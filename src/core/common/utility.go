@@ -1592,14 +1592,23 @@ func ExtractOSInfo(combinedInfo string) string {
 			if strings.Contains(infoLower, strings.ToLower(pattern)) {
 				// OS found, now look for version
 				for _, version := range osInfo.Versions {
-					if strings.Contains(infoLower, strings.ToLower(version)) {
-						// Both OS and version found
-						return fmt.Sprintf("%s %s", osInfo.Name, version)
+					// Take only the numeric parts of the version
+					numericParts := regexp.MustCompile(`\d+`).FindAllString(version, -1)
+					if len(numericParts) > 0 {
+						// Join the numeric parts with a regex pattern to match any non-numeric characters
+						versionPattern := strings.Join(numericParts, "[^0-9]*")
+						// Add a regex pattern to avoid matching the version in the middle of numeric strings
+						boundedVersionPattern := fmt.Sprintf("(?:^|[^0-9])%s(?:$|[^0-9])", versionPattern)
+
+						re := regexp.MustCompile(boundedVersionPattern)
+						if re.MatchString(infoLower) {
+							return fmt.Sprintf("%s %s", osInfo.Name, version)
+						}
 					}
 				}
 
-				// OS found but no specific version, use default
-				return fmt.Sprintf("%s %s", osInfo.Name, osInfo.DefaultVersion)
+				// OS found but no specific version, return the OS name without version
+				return osInfo.Name
 			}
 		}
 	}
