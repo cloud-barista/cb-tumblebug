@@ -8,6 +8,12 @@ import (
 	"strings"
 )
 
+const (
+	PrivateNetwork10Dot  string = "10.0.0.0/8"
+	PrivateNetwork172Dot string = "172.16.0.0/12"
+	PrivateNetwork192Dot string = "192.168.0.0/16"
+)
+
 var (
 	privateNetworks             []*net.IPNet
 	ip10, ip172, ip192          net.IP
@@ -34,9 +40,43 @@ func init() {
 	}
 
 	// Initialize IPs and networks of each private network
-	ip10, ipnet10, _ = net.ParseCIDR("10.0.0.0/8")
-	ip172, ipnet172, _ = net.ParseCIDR("172.16.0.0/12")
-	ip192, ipnet192, _ = net.ParseCIDR("192.168.0.0/16")
+	ip10, ipnet10, _ = net.ParseCIDR(PrivateNetwork10Dot)    // 10.0.0/8
+	ip172, ipnet172, _ = net.ParseCIDR(PrivateNetwork172Dot) // 172.16.0/12
+	ip192, ipnet192, _ = net.ParseCIDR(PrivateNetwork192Dot) // 192.168.0/16
+}
+
+// WhichPrivateNetworkByCidr identifies the private network of the given CIDR block.
+// The private network includes 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16.
+func WhichPrivateNetworkByCidr(cidr string) (string, error) {
+	// Extract IP from CIDR if necessary
+	ip, _, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return "", fmt.Errorf("invalid CIDR '%s': %w", cidr, err)
+	}
+
+	return WhichPrivateNetworkByIp(ip.String())
+}
+
+// WhichPrivateNetworkByIp identifies the private network of the given IP address.
+// The private network includes 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16.
+func WhichPrivateNetworkByIp(ip string) (string, error) {
+	// Extract IP from CIDR if necessary
+	ipAddr := net.ParseIP(ip)
+
+	if !ipAddr.IsPrivate() {
+		return "", fmt.Errorf("not a private IP address: '%s'", ip)
+	}
+
+	// Check which private network range the IP belongs to
+	if ipnet10.Contains(ipAddr) {
+		return PrivateNetwork10Dot, nil
+	} else if ipnet172.Contains(ipAddr) {
+		return PrivateNetwork172Dot, nil
+	} else if ipnet192.Contains(ipAddr) {
+		return PrivateNetwork192Dot, nil
+	} else {
+		return "", fmt.Errorf("IP '%s' is in 10.0.0.0/8, 172.16.0.0/12, or 192.168.0.0/16 ranges", ip)
+	}
 }
 
 // Models
