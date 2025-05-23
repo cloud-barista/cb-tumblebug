@@ -374,6 +374,8 @@ func RestSearchImage(c echo.Context) error {
 		u.OSType,
 		u.IsGPUImage,
 		u.IsKubernetesImage,
+		u.IsRegisteredByAsset,
+		u.IncludeDeprecatedImage,
 		u.DetailSearchKeys...,
 	)
 

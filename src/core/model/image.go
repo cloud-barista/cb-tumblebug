@@ -46,6 +46,7 @@ type ImageStatus string
 const (
 	ImageAvailable   ImageStatus = "Available"
 	ImageUnavailable ImageStatus = "Unavailable"
+	ImageDeprecated  ImageStatus = "Deprecated"
 	ImageNA          ImageStatus = "NA"
 )
 
@@ -103,11 +104,11 @@ type TbImageInfo struct {
 	OSDistribution string         `json:"osDistribution" gorm:"column:os_distribution" example:"Ubuntu 22.04~" description:"The distribution of the operating system of the image."` // Ubuntu 22.04~, CentOS 8 etc.
 	OSDiskType     string         `json:"osDiskType" gorm:"column:os_disk_type" example:"HDD" description:"The type of the OS disk of for the VM being created."`                    // ebs, HDD, etc.
 	OSDiskSizeGB   float64        `json:"osDiskSizeGB" gorm:"column:os_disk_size_gb" example:"50" description:"The (minimum) OS disk size in GB for the VM being created."`          // 10, 50, 100 etc.
-	ImageStatus    ImageStatus    `json:"imageStatus" example:"Available" description:"The status of the image, e.g., Available or Unavailable."`                                    // Available, Unavailable
+	ImageStatus    ImageStatus    `json:"imageStatus" example:"Available" description:"The status of the image, e.g., Available, Deprecated, NA."`                                   // Available, Deprecated, NA
 
-	KeyValueList []KeyValue `json:"keyValueList" gorm:"type:text;serializer:json"`
-	SystemLabel  string     `json:"systemLabel,omitempty" example:"Managed by CB-Tumblebug" default:""`
-	Description  string     `json:"description,omitempty"`
+	Details     []KeyValue `json:"details" gorm:"type:text;serializer:json"`
+	SystemLabel string     `json:"systemLabel,omitempty" example:"Managed by CB-Tumblebug" default:""`
+	Description string     `json:"description,omitempty"`
 }
 
 // ImageFetchOption is struct for Image Fetch Options
@@ -121,12 +122,14 @@ type ImageFetchOption struct {
 
 // SearchImageRequest is struct for Search Image Request
 type SearchImageRequest struct {
-	ProviderName      string   `json:"providerName" example:"aws"`
-	RegionName        string   `json:"regionName" example:"us-east-1"`
-	OSType            string   `json:"osType" example:"ubuntu 22.04" description:"Simplified OS name and version string. Space-separated for AND condition"`
-	IsGPUImage        *bool    `json:"isGPUImage" example:"false"`
-	IsKubernetesImage *bool    `json:"isKubernetesImage" example:"false"`
-	DetailSearchKeys  []string `json:"detailSearchKeys" example:"sql,2022" description:"Keywords for searching images in detail"`
+	ProviderName           string   `json:"providerName" example:"aws"`
+	RegionName             string   `json:"regionName" example:"us-east-1"`
+	OSType                 string   `json:"osType" example:"ubuntu 22.04" description:"Simplified OS name and version string. Space-separated for AND condition"`
+	IsGPUImage             *bool    `json:"isGPUImage" example:"false"`
+	IsKubernetesImage      *bool    `json:"isKubernetesImage" example:"false"`
+	IsRegisteredByAsset    *bool    `json:"isRegisteredByAsset" example:"false" description:"Whether the image is registered by asset or not."`
+	IncludeDeprecatedImage *bool    `json:"includeDeprecatedImage" example:"false" description:"Include deprecated images in the search results."`
+	DetailSearchKeys       []string `json:"detailSearchKeys" example:"sql,2022" description:"Keywords for searching images in detail"`
 }
 
 // SearchImageResponse is struct for Search Image Request

@@ -1638,7 +1638,7 @@ func LoadAssets() (model.IdList, error) {
 					specInfo.AcceleratorMemoryGB = float32(acceleratorMemoryGB)
 					specInfo.Description = description
 					specInfo.EvaluationScore01 = float32(evaluationScore01)
-					specInfo.SystemLabel = "from-assets"
+					specInfo.SystemLabel = model.StrFromAssets
 					specInfo.InfraType = expandedInfraType
 
 					// _, err3 := UpdateSpec(model.SystemCommonNs, specInfoId, specInfo)
@@ -1756,6 +1756,7 @@ func LoadAssets() (model.IdList, error) {
 						tmpImageInfo.OSType = osType
 						tmpImageInfo.Description = description
 						tmpImageInfo.InfraType = expandedInfraType
+						tmpImageInfo.SystemLabel = model.StrFromAssets
 
 						tmpImageList = append(tmpImageList, tmpImageInfo)
 

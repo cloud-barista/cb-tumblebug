@@ -1650,3 +1650,27 @@ func IsK8sImage(combinedInfo string) bool {
 
 	return false
 }
+
+// IsDeprecatedImage checks if an image is deprecated
+func IsDeprecatedImage(combinedInfo string) bool {
+	if combinedInfo == "" {
+		return false
+	}
+
+	infoLower := strings.ToLower(combinedInfo)
+
+	// Check for deprecated patterns
+	patterns := []string{
+		"deprecated",
+		"end of life",
+		"eol",
+	}
+
+	for _, pattern := range patterns {
+		if strings.Contains(infoLower, pattern) {
+			return true
+		}
+	}
+
+	return false
+}

@@ -91,6 +91,7 @@ const (
 	StrDBPassword            string = "TB_POSTGRES_PASSWORD"
 	StrAutocontrolDurationMs string = "TB_AUTOCONTROL_DURATION_MS"
 	StrEtcdEndpoints         string = "TB_ETCD_ENDPOINTS"
+	StrFromAssets            string = "from-assets"
 	ErrStrKeyNotFound        string = "key not found"
 	StrAdd                   string = "add"
 	StrDelete                string = "delete"

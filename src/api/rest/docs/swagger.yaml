@@ -9159,10 +9159,12 @@ components:
       enum:
       - Available
       - Unavailable
+      - Deprecated
       - NA
       x-enum-varnames:
       - ImageAvailable
       - ImageUnavailable
+      - ImageDeprecated
       - ImageNA
     model.InspectResource:
       type: object
@@ -10112,10 +10114,16 @@ components:
           - "2022"
           items:
             type: string
+        includeDeprecatedImage:
+          type: boolean
+          example: false
         isGPUImage:
           type: boolean
           example: false
         isKubernetesImage:
+          type: boolean
+          example: false
+        isRegisteredByAsset:
           type: boolean
           example: false
         osType:
@@ -10934,6 +10942,10 @@ components:
           example: csp-06eb41e14121c550a
         description:
           type: string
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
         fetchedTime:
           type: string
         id:
@@ -10941,7 +10953,7 @@ components:
           example: aws-ap-southeast-1
         imageStatus:
           type: object
-          description: "Available, Unavailable"
+          description: "Available, Deprecated, NA"
           example: Available
           allOf:
           - $ref: '#/components/schemas/model.ImageStatus'
@@ -10954,10 +10966,6 @@ components:
         isKubernetesImage:
           type: boolean
           default: false
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
         name:
           type: string
           example: aws-ap-southeast-1

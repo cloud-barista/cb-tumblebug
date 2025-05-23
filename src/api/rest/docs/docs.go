@@ -12062,11 +12062,13 @@ const docTemplate = `{
             "enum": [
                 "Available",
                 "Unavailable",
+                "Deprecated",
                 "NA"
             ],
             "x-enum-varnames": [
                 "ImageAvailable",
                 "ImageUnavailable",
+                "ImageDeprecated",
                 "ImageNA"
             ]
         },
@@ -13444,11 +13446,19 @@ const docTemplate = `{
                         "2022"
                     ]
                 },
+                "includeDeprecatedImage": {
+                    "type": "boolean",
+                    "example": false
+                },
                 "isGPUImage": {
                     "type": "boolean",
                     "example": false
                 },
                 "isKubernetesImage": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "isRegisteredByAsset": {
                     "type": "boolean",
                     "example": false
                 },
@@ -14581,6 +14591,12 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
                 "fetchedTime": {
                     "type": "string"
                 },
@@ -14589,7 +14605,7 @@ const docTemplate = `{
                     "example": "aws-ap-southeast-1"
                 },
                 "imageStatus": {
-                    "description": "Available, Unavailable",
+                    "description": "Available, Deprecated, NA",
                     "allOf": [
                         {
                             "$ref": "#/definitions/model.ImageStatus"
@@ -14608,12 +14624,6 @@ const docTemplate = `{
                 "isKubernetesImage": {
                     "type": "boolean",
                     "default": false
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
-                    }
                 },
                 "name": {
                     "type": "string",

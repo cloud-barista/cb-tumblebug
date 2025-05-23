@@ -107,22 +107,25 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	if common.IsGPUImage(searchStr) {
 		tumblebugImage.IsGPUImage = true
 	}
-
 	// Check if this is a Kubernetes image
 	if common.IsK8sImage(searchStr) {
 		tumblebugImage.InfraType = "k8s|kubernetes|container"
 		tumblebugImage.IsKubernetesImage = true
 	}
+	tumblebugImage.ImageStatus = spiderImage.ImageStatus
+	// Check if this is a deprecated image (need to be checked with KeyValueList but, for now, OSDistribution is used for simplicity)
+	if common.IsDeprecatedImage(spiderImage.OSDistribution) {
+		tumblebugImage.ImageStatus = model.ImageDeprecated
+	}
 
 	// Set additional fields
-	tumblebugImage.OSArchitecture = spiderImage.OSArchitecture
+	tumblebugImage.OSArchitecture = model.OSArchitecture(strings.ToLower(string(spiderImage.OSArchitecture)))
 	tumblebugImage.OSPlatform = spiderImage.OSPlatform
 	tumblebugImage.OSDistribution = spiderImage.OSDistribution
 	tumblebugImage.OSDiskType = spiderImage.OSDiskType
 	tumblebugImage.OSDiskSizeGB, _ = strconv.ParseFloat(spiderImage.OSDiskSizeGB, 64)
 
-	tumblebugImage.ImageStatus = spiderImage.ImageStatus
-	tumblebugImage.KeyValueList = spiderImage.KeyValueList
+	tumblebugImage.Details = spiderImage.KeyValueList
 
 	return tumblebugImage, nil
 }
@@ -870,7 +873,7 @@ func fetchImagesForAllConnConfigsInternal(nsId string) (connConfigCount uint, im
 }
 
 // Refactored SearchImage function to use a single query for keyword matching
-func SearchImage(nsId, providerName, regionName, osType string, isGPUImage, isKubernetesImage *bool, keywords ...string) ([]model.TbImageInfo, int, error) {
+func SearchImage(nsId, providerName, regionName, osType string, isGPUImage, isKubernetesImage, isRegisteredByAsset, includeDeprecatedImage *bool, keywords ...string) ([]model.TbImageInfo, int, error) {
 	err := common.CheckString(nsId)
 	cnt := 0
 	if err != nil {
@@ -887,13 +890,25 @@ func SearchImage(nsId, providerName, regionName, osType string, isGPUImage, isKu
 
 	// regionName needs to be searched from region_list
 	if regionName != "" {
-		sqlQuery = sqlQuery.Where("LOWER(region_list) LIKE ?", "%"+regionName+"%")
+		sqlQuery = sqlQuery.Where(
+			model.ORM.Where("LOWER(region_list) LIKE ?", "%"+strings.ToLower(regionName)+"%").
+				Or("LOWER(region_list) LIKE ?", "%"+strings.ToLower(model.StrCommon)+"%"))
 	}
 
 	if osType != "" {
-		osKeywords := strings.Fields(strings.ToLower(osType))
-		for _, osKeyword := range osKeywords {
-			sqlQuery = sqlQuery.Where("LOWER(os_type) LIKE ?", "%"+osKeyword+"%")
+		osTypeLower := strings.ToLower(osType)
+		osKeywords := strings.Fields(osTypeLower)
+
+		if len(osKeywords) == 1 {
+			keyword := osKeywords[0]
+			sqlQuery = sqlQuery.Where(
+				model.ORM.Where("LOWER(os_type) LIKE ?", "%"+keyword+"%").
+					Or("REPLACE(LOWER(os_type), ' ', '') LIKE ?", "%"+keyword+"%"))
+		} else {
+			for _, keyword := range osKeywords {
+				sqlQuery = sqlQuery.Where("LOWER(os_type) LIKE ?", "%"+keyword+"%")
+			}
+
 		}
 	}
 
@@ -905,11 +920,28 @@ func SearchImage(nsId, providerName, regionName, osType string, isGPUImage, isKu
 		sqlQuery = sqlQuery.Where("is_kubernetes_image = ?", *isKubernetesImage)
 	}
 
+	// Check if isRegisteredByAsset is true
+	// If it is true, filter by system_label = StrFromAssets
+	if isRegisteredByAsset != nil {
+		if *isRegisteredByAsset {
+			sqlQuery = sqlQuery.Where("system_label = ?", model.StrFromAssets)
+		}
+	}
+
+	// Check if includeDeprecated is nil or false
+	if includeDeprecatedImage != nil {
+		if !*includeDeprecatedImage {
+			sqlQuery = sqlQuery.Where("image_status != ?", model.ImageDeprecated)
+		}
+	} else {
+		sqlQuery = sqlQuery.Where("image_status != ?", model.ImageDeprecated)
+	}
+
 	if len(keywords) > 0 {
-		// Build a single query to check if all keywords are included in either os_type or key_value_list
+		// Build a single query to check if all keywords are included in either os_type or details
 		for _, keyword := range keywords {
 			keyword = strings.ToLower(keyword)
-			sqlQuery = sqlQuery.Where("(LOWER(key_value_list) LIKE ?)", "%"+keyword+"%")
+			sqlQuery = sqlQuery.Where("(LOWER(details) LIKE ?)", "%"+keyword+"%")
 		}
 	}
 
@@ -1011,7 +1043,7 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 	imageKey = strings.ToLower(imageKey)
 	imageKey = strings.ReplaceAll(imageKey, " ", "")
 
-	providerName, regionName, _, resourceName, err := ResolveProviderRegionZoneResourceKey(imageKey)
+	providerName, regionName, _, imageIdentifier, err := ResolveProviderRegionZoneResourceKey(imageKey)
 	if err != nil {
 		// imageKey does not include information for providerName, regionName
 		image := model.TbImageInfo{Namespace: nsId, Id: imageKey}
@@ -1055,28 +1087,38 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 		}
 
 		// 2) Check if the image is a registered image in the common namespace model.SystemCommonNs by CspImageName
-		// ex: tencent+ap-jakarta+img-487zeit5
-		image, err := GetImageByPrimaryKey(model.SystemCommonNs, providerName, resourceName)
+		// ex: tencent+img-487zeit5
+		image, err := GetImageByPrimaryKey(model.SystemCommonNs, providerName, imageIdentifier)
 		if err != nil {
-			log.Info().Err(result.Error).Msgf("Cannot get image %s by CspImageName", resourceName)
+			log.Info().Err(result.Error).Msgf("Cannot get image %s by CspImageName", imageIdentifier)
 		} else {
 			return image, nil
 		}
 
 		// 3) Check if the image is a registered image in the common namespace model.SystemCommonNs by GuestOS
 		// ex: tencent+ap-jakarta+Ubuntu22.04
-		image = model.TbImageInfo{Namespace: model.SystemCommonNs, OSType: resourceName}
-		result = model.ORM.Where("LOWER(namespace) = ? AND LOWER(os_type) LIKE ? AND LOWER(id) LIKE ? AND LOWER(id) LIKE ?",
-			model.SystemCommonNs,
-			"%"+strings.ToLower(resourceName)+"%",
-			"%"+strings.ToLower(providerName)+"%",
-			"%"+strings.ToLower(regionName)+"%").First(&image)
-		if result.Error != nil {
-			log.Info().Err(result.Error).Msgf("Failed to get image %s by GuestOS type", resourceName)
-		} else {
-			return image, nil
-		}
 
+		//isKubernetesImage := false
+		isRegisteredByAsset := true
+		includeDeprecatedImage := false
+
+		images, imageCnt, err := SearchImage(
+			model.SystemCommonNs,
+			providerName,
+			regionName,
+			imageIdentifier,
+			nil,
+			nil,
+			&isRegisteredByAsset,
+			&includeDeprecatedImage,
+			"",
+		)
+		if err != nil || imageCnt == 0 {
+			log.Info().Err(result.Error).Msgf("Failed to get image %s by OS type", imageIdentifier)
+		} else {
+			// Return the first image found
+			return images[0], nil
+		}
 	}
 
 	return model.TbImageInfo{}, fmt.Errorf("The imageKey %s not found by any of ID, CspImageName, GuestOS", imageKey)
