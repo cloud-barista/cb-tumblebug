@@ -7173,6 +7173,107 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/fetchImagesAsync": {
+            "post": {
+                "description": "Fetch images in the background without waiting for completion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Image Management"
+                ],
+                "summary": "Fetch images asynchronously",
+                "operationId": "FetchImagesAsync",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "system",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fetch option",
+                        "name": "fetchOption",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ImageFetchOption"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/fetchImagesResult": {
+            "get": {
+                "description": "Get detailed results from the last asynchronous image fetch operation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Image Management"
+                ],
+                "summary": "Get result of asynchronous image fetching",
+                "operationId": "GetFetchImagesAsyncResult",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "system",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resource.FetchImagesAsyncResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/fetchSpecs": {
             "post": {
                 "description": "Fetch specs",
@@ -7330,7 +7431,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/resource.RestGetAllImageResponse"
+                                            "$ref": "#/definitions/model.SearchImageResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/model.IdList"
@@ -7916,12 +8017,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Keywords",
-                        "name": "keywords",
+                        "description": "condition",
+                        "name": "condition",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.RestSearchImageRequest"
+                            "$ref": "#/definitions/model.SearchImageRequest"
                         }
                     }
                 ],
@@ -7929,7 +8030,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/resource.RestGetAllImageResponse"
+                            "$ref": "#/definitions/model.SearchImageResponse"
                         }
                     },
                     "404": {
@@ -11930,16 +12031,44 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ImageFetchOption": {
+            "type": "object",
+            "properties": {
+                "excludedProviders": {
+                    "description": "providers need to be excluded from the image fetching operation (ex: [\"azure\"])",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "azure"
+                    ]
+                },
+                "regionAgnosticProviders": {
+                    "description": "providers that are not region-specific (ex: [\"gcp\"])",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "gcp",
+                        "tencent"
+                    ]
+                }
+            }
+        },
         "model.ImageStatus": {
             "type": "string",
             "enum": [
                 "Available",
                 "Unavailable",
+                "Deprecated",
                 "NA"
             ],
             "x-enum-varnames": [
                 "ImageAvailable",
                 "ImageUnavailable",
+                "ImageDeprecated",
                 "ImageNA"
             ]
         },
@@ -13304,6 +13433,63 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SearchImageRequest": {
+            "type": "object",
+            "properties": {
+                "detailSearchKeys": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "sql",
+                        "2022"
+                    ]
+                },
+                "includeDeprecatedImage": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "isGPUImage": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "isKubernetesImage": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "isRegisteredByAsset": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "osType": {
+                    "type": "string",
+                    "example": "ubuntu 22.04"
+                },
+                "providerName": {
+                    "type": "string",
+                    "example": "aws"
+                },
+                "regionName": {
+                    "type": "string",
+                    "example": "us-east-1"
+                }
+            }
+        },
+        "model.SearchImageResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "imageList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbImageInfo"
+                    }
+                }
+            }
+        },
         "model.SimpleMsg": {
             "type": "object",
             "properties": {
@@ -14069,10 +14255,7 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    },
-                    "example": [
-                        "/ns/default/mci/mci01/vm/aws-ap-southeast-1-1"
-                    ]
+                    }
                 },
                 "connectionConfig": {
                     "$ref": "#/definitions/model.ConnConfig"
@@ -14395,17 +14578,6 @@ const docTemplate = `{
         "model.TbImageInfo": {
             "type": "object",
             "properties": {
-                "architecture": {
-                    "description": "arm64, x86_64 etc.",
-                    "type": "string",
-                    "example": "x86_64"
-                },
-                "associatedObjectList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -14413,76 +14585,107 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "cspImageName": {
-                    "description": "CspImageName is name of the image given by CSP",
                     "type": "string",
                     "example": "csp-06eb41e14121c550a"
                 },
                 "description": {
                     "type": "string"
                 },
-                "distribution": {
-                    "description": "Ubuntu 22.04~, CentOS 8 etc.",
-                    "type": "string",
-                    "example": "Ubuntu 22.04~"
-                },
-                "guestOS": {
-                    "description": "Windows7, Ubuntu etc.",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "Id is unique identifier for the object",
-                    "type": "string",
-                    "example": "aws-ap-southeast-1"
-                },
-                "infraType": {
-                    "description": "vm|k8s|kubernetes|container, etc.",
-                    "type": "string"
-                },
-                "isAutoGenerated": {
-                    "type": "boolean"
-                },
-                "keyValueList": {
+                "details": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.KeyValue"
                     }
                 },
+                "fetchedTime": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "imageStatus": {
+                    "description": "Available, Deprecated, NA",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ImageStatus"
+                        }
+                    ],
+                    "example": "Available"
+                },
+                "infraType": {
+                    "description": "vm|k8s|kubernetes|container, etc.",
+                    "type": "string"
+                },
+                "isGPUImage": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "isKubernetesImage": {
+                    "type": "boolean",
+                    "default": false
+                },
                 "name": {
-                    "description": "Name is human-readable string to represent the object",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
                 "namespace": {
-                    "description": "required to save in RDB",
+                    "description": "Composite primary key",
                     "type": "string",
                     "example": "default"
                 },
-                "platform": {
-                    "description": "Linux/UNIX, Windows, NA",
-                    "type": "string",
-                    "example": "Linux/UNIX"
+                "osArchitecture": {
+                    "description": "arm64, x86_64 etc.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.OSArchitecture"
+                        }
+                    ],
+                    "example": "x86_64"
                 },
-                "rootDiskMinSizeGB": {
+                "osDiskSizeGB": {
                     "description": "10, 50, 100 etc.",
                     "type": "number",
                     "example": 50
                 },
-                "rootDiskType": {
+                "osDiskType": {
                     "description": "ebs, HDD, etc.",
                     "type": "string",
                     "example": "HDD"
                 },
-                "status": {
-                    "description": "available, unavailable",
+                "osDistribution": {
+                    "description": "Ubuntu 22.04~, CentOS 8 etc.",
+                    "type": "string",
+                    "example": "Ubuntu 22.04~"
+                },
+                "osPlatform": {
+                    "description": "Linux/UNIX, Windows, NA",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.OSPlatform"
+                        }
+                    ],
+                    "example": "Linux/UNIX"
+                },
+                "osType": {
+                    "type": "string",
+                    "example": "ubuntu 22.04"
+                },
+                "providerName": {
                     "type": "string"
                 },
+                "regionList": {
+                    "description": "Array field for supporting multiple regions",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "systemLabel": {
-                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
                 "uid": {
-                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
                     "type": "string",
                     "example": "wef12awefadf1221edcf"
                 }
@@ -16994,6 +17197,67 @@ const docTemplate = `{
                 "SubnettingRuleTypeMinHosts"
             ]
         },
+        "resource.ConnectionImageResult": {
+            "type": "object",
+            "properties": {
+                "connName": {
+                    "type": "string"
+                },
+                "elapsedTime": {
+                    "type": "string"
+                },
+                "errorMsg": {
+                    "type": "string"
+                },
+                "imageCount": {
+                    "type": "integer"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "startTime": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "resource.FetchImagesAsyncResult": {
+            "type": "object",
+            "properties": {
+                "connResults": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.ConnectionImageResult"
+                    }
+                },
+                "elapsedTime": {
+                    "type": "string"
+                },
+                "failCount": {
+                    "type": "integer"
+                },
+                "fetchOption": {
+                    "$ref": "#/definitions/model.ImageFetchOption"
+                },
+                "namespaceId": {
+                    "type": "string"
+                },
+                "startTime": {
+                    "type": "string"
+                },
+                "successCount": {
+                    "type": "integer"
+                },
+                "totalImages": {
+                    "type": "integer"
+                }
+            }
+        },
         "resource.JSONResult": {
             "type": "object"
         },
@@ -17026,17 +17290,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.TbDataDiskInfo"
-                    }
-                }
-            }
-        },
-        "resource.RestGetAllImageResponse": {
-            "type": "object",
-            "properties": {
-                "image": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.TbImageInfo"
                     }
                 }
             }
@@ -17115,17 +17368,6 @@ const docTemplate = `{
                 },
                 "cspResourceId": {
                     "type": "string"
-                }
-            }
-        },
-        "resource.RestSearchImageRequest": {
-            "type": "object",
-            "properties": {
-                "keywords": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 }
             }
         },

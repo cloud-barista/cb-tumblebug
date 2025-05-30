@@ -111,6 +111,7 @@ func RestPutImage(c echo.Context) error {
 	}
 
 	content, err := resource.UpdateImage(nsId, resourceId, *u, false)
+
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
@@ -212,6 +213,61 @@ func RestFetchImages(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
+// RestFetchImagesAsync godoc
+// @ID FetchImagesAsync
+// @Summary Fetch images asynchronously
+// @Description Fetch images in the background without waiting for completion
+// @Tags [Infra Resource] Image Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(system)
+// @Param fetchOption body model.ImageFetchOption true "Fetch option"
+// @Success 202 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/resources/fetchImagesAsync [post]
+func RestFetchImagesAsync(c echo.Context) error {
+	nsId := c.Param("nsId")
+
+	reqBody := &model.ImageFetchOption{}
+	if err := c.Bind(reqBody); err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	err := resource.FetchImagesForAllConnConfigsAsync(nsId, reqBody)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	content := map[string]string{
+		"message": "Started fetching images in the background. Check server logs for progress."}
+
+	return c.JSON(202, content)
+}
+
+// RestGetFetchImagesAsyncResult godoc
+// @ID GetFetchImagesAsyncResult
+// @Summary Get result of asynchronous image fetching
+// @Description Get detailed results from the last asynchronous image fetch operation
+// @Tags [Infra Resource] Image Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(system)
+// @Success 200 {object} resource.FetchImagesAsyncResult
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/resources/fetchImagesResult [get]
+func RestGetFetchImagesAsyncResult(c echo.Context) error {
+	nsId := c.Param("nsId")
+
+	result, err := resource.GetFetchImagesAsyncResult(nsId)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
 // RestGetImage godoc
 // @ID GetImage
 // @Summary Get image
@@ -235,11 +291,6 @@ func RestGetImage(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-// Response structure for RestGetAllImage
-type RestGetAllImageResponse struct {
-	Image []model.TbImageInfo `json:"image"`
-}
-
 // RestGetAllImage godoc
 // @ID GetAllImage
 // @Summary List all images or images' ID
@@ -251,7 +302,7 @@ type RestGetAllImageResponse struct {
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex:guestOS)"
 // @Param filterVal query string false "Field value for filtering (ex: Ubuntu18.04)"
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllImageResponse,[ID]=model.IdList} "Different return structures by the given option param"
+// @Success 200 {object} JSONResult{[DEFAULT]=model.SearchImageResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image [get]
@@ -294,11 +345,6 @@ func RestDelAllImage(c echo.Context) error {
 	return nil
 }
 
-// Response structure for RestSearchImage
-type RestSearchImageRequest struct {
-	Keywords []string `json:"keywords"`
-}
-
 // RestSearchImage godoc
 // @ID SearchImage
 // @Summary Search image
@@ -307,8 +353,8 @@ type RestSearchImageRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param keywords body RestSearchImageRequest true "Keywords"
-// @Success 200 {object} RestGetAllImageResponse
+// @Param condition body model.SearchImageRequest true "condition"
+// @Success 200 {object} model.SearchImageResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/searchImage [post]
@@ -316,13 +362,25 @@ func RestSearchImage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	u := &RestSearchImageRequest{}
+	u := &model.SearchImageRequest{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := resource.SearchImage(nsId, u.Keywords...)
-	result := RestGetAllImageResponse{}
-	result.Image = content
+	content, cnt, err := resource.SearchImage(
+		nsId,
+		u.ProviderName,
+		u.RegionName,
+		u.OSType,
+		u.IsGPUImage,
+		u.IsKubernetesImage,
+		u.IsRegisteredByAsset,
+		u.IncludeDeprecatedImage,
+		u.DetailSearchKeys...,
+	)
+
+	result := model.SearchImageResponse{}
+	result.Count = cnt
+	result.ImageList = content
 	return clientManager.EndRequestWithLog(c, err, result)
 }

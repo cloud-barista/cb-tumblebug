@@ -18,7 +18,7 @@ import (
 	"database/sql"
 	"sync"
 
-	"xorm.io/xorm"
+	"gorm.io/gorm"
 )
 
 // SimpleMsg is struct for JSON Simple message
@@ -76,19 +76,22 @@ var EtcdEndpoints string
 var SelfEndpoint string
 var MyDB *sql.DB
 var err error
-var ORM *xorm.Engine
+
+// var ORM *xorm.Engine
+var ORM *gorm.DB
 
 const (
 	StrManager               string = "cb-tumblebug"
 	StrSpiderRestUrl         string = "TB_SPIDER_REST_URL"
 	StrDragonflyRestUrl      string = "TB_DRAGONFLY_REST_URL"
 	StrTerrariumRestUrl      string = "TB_TERRARIUM_REST_URL"
-	StrDBUrl                 string = "TB_SQLITE_URL"
-	StrDBDatabase            string = "TB_SQLITE_DATABASE"
-	StrDBUser                string = "TB_SQLITE_USER"
-	StrDBPassword            string = "TB_SQLITE_PASSWORD"
+	StrDBUrl                 string = "TB_POSTGRES_ENDPOINT"
+	StrDBDatabase            string = "TB_POSTGRES_DATABASE"
+	StrDBUser                string = "TB_POSTGRES_USER"
+	StrDBPassword            string = "TB_POSTGRES_PASSWORD"
 	StrAutocontrolDurationMs string = "TB_AUTOCONTROL_DURATION_MS"
 	StrEtcdEndpoints         string = "TB_ETCD_ENDPOINTS"
+	StrFromAssets            string = "from-assets"
 	ErrStrKeyNotFound        string = "key not found"
 	StrAdd                   string = "add"
 	StrDelete                string = "delete"
@@ -171,8 +174,8 @@ type ConnConfig struct {
 	CredentialName       string         `json:"credentialName"`
 	CredentialHolder     string         `json:"credentialHolder"`
 	RegionZoneInfoName   string         `json:"regionZoneInfoName"`
-	RegionZoneInfo       RegionZoneInfo `json:"regionZoneInfo"`
-	RegionDetail         RegionDetail   `json:"regionDetail"`
+	RegionZoneInfo       RegionZoneInfo `json:"regionZoneInfo" gorm:"type:text;serializer:json"`
+	RegionDetail         RegionDetail   `json:"regionDetail" gorm:"type:text;serializer:json"`
 	RegionRepresentative bool           `json:"regionRepresentative"`
 	Verified             bool           `json:"verified"`
 }

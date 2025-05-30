@@ -1575,3 +1575,102 @@ func CompareVersions(version1, version2 string) int {
 
 	return 0
 }
+
+// ExtractOSInfo extracts OS name and version from string
+// and returns formatted string like "Ubuntu 22.04"
+func ExtractOSInfo(combinedInfo string) string {
+	if combinedInfo == "" {
+		return ""
+	}
+
+	infoLower := strings.ToLower(combinedInfo)
+
+	// Loop through all OS types from extraction patterns
+	for _, osInfo := range RuntimeExtractPatternsInfo.ExtractPatterns.OSType {
+		// Check if OS patterns are in the combined string
+		for _, pattern := range osInfo.Patterns {
+			if strings.Contains(infoLower, strings.ToLower(pattern)) {
+				// OS found, now look for version
+				for _, version := range osInfo.Versions {
+					// Take only the numeric parts of the version
+					numericParts := regexp.MustCompile(`\d+`).FindAllString(version, -1)
+					if len(numericParts) > 0 {
+						// Join the numeric parts with a regex pattern to match any non-numeric characters
+						versionPattern := strings.Join(numericParts, "[^0-9]*")
+						// Add a regex pattern to avoid matching the version in the middle of numeric strings
+						boundedVersionPattern := fmt.Sprintf("(?:^|[^0-9])%s(?:$|[^0-9])", versionPattern)
+
+						re := regexp.MustCompile(boundedVersionPattern)
+						if re.MatchString(infoLower) {
+							return fmt.Sprintf("%s %s", osInfo.Name, version)
+						}
+					}
+				}
+
+				// OS found but no specific version, return the OS name without version
+				return osInfo.Name
+			}
+		}
+	}
+
+	// If no match found, return empty string
+	return ""
+}
+
+// IsGPUImage checks if an image has GPU support
+func IsGPUImage(combinedInfo string) bool {
+	if combinedInfo == "" {
+		return false
+	}
+
+	infoLower := strings.ToLower(combinedInfo)
+
+	for _, pattern := range RuntimeExtractPatternsInfo.ExtractPatterns.GPUPatterns {
+		if strings.Contains(infoLower, strings.ToLower(pattern)) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// IsK8sImage checks if an image is for Kubernetes
+func IsK8sImage(combinedInfo string) bool {
+	if combinedInfo == "" {
+		return false
+	}
+
+	infoLower := strings.ToLower(combinedInfo)
+
+	for _, pattern := range RuntimeExtractPatternsInfo.ExtractPatterns.K8sPatterns {
+		if strings.Contains(infoLower, strings.ToLower(pattern)) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// IsDeprecatedImage checks if an image is deprecated
+func IsDeprecatedImage(combinedInfo string) bool {
+	if combinedInfo == "" {
+		return false
+	}
+
+	infoLower := strings.ToLower(combinedInfo)
+
+	// Check for deprecated patterns
+	patterns := []string{
+		"deprecated",
+		"end of life",
+		"eol",
+	}
+
+	for _, pattern := range patterns {
+		if strings.Contains(infoLower, pattern) {
+			return true
+		}
+	}
+
+	return false
+}

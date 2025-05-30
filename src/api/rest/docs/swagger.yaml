@@ -5481,6 +5481,82 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/fetchImagesAsync:
+    post:
+      tags:
+      - "[Infra Resource] Image Management"
+      summary: Fetch images asynchronously
+      description: Fetch images in the background without waiting for completion
+      operationId: FetchImagesAsync
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: system
+      requestBody:
+        description: Fetch option
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.ImageFetchOption'
+        required: true
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: fetchOption
+  /ns/{nsId}/resources/fetchImagesResult:
+    get:
+      tags:
+      - "[Infra Resource] Image Management"
+      summary: Get result of asynchronous image fetching
+      description: Get detailed results from the last asynchronous image fetch operation
+      operationId: GetFetchImagesAsyncResult
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: system
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resource.FetchImagesAsyncResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/fetchSpecs:
     post:
       tags:
@@ -5600,7 +5676,7 @@ paths:
                 - type: object
                   properties:
                     '[DEFAULT]':
-                      $ref: '#/components/schemas/resource.RestGetAllImageResponse'
+                      $ref: '#/components/schemas/model.SearchImageResponse'
                     '[ID]':
                       $ref: '#/components/schemas/model.IdList'
         "404":
@@ -6054,11 +6130,11 @@ paths:
           type: string
           default: system
       requestBody:
-        description: Keywords
+        description: condition
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/resource.RestSearchImageRequest'
+              $ref: '#/components/schemas/model.SearchImageRequest'
         required: true
       responses:
         "200":
@@ -6066,7 +6142,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/resource.RestGetAllImageResponse'
+                $ref: '#/components/schemas/model.SearchImageResponse'
         "404":
           description: Not Found
           content:
@@ -6079,7 +6155,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: keywords
+      x-codegen-request-body-name: condition
   /ns/{nsId}/resources/securityGroup:
     get:
       tags:
@@ -9059,15 +9135,36 @@ components:
           type: array
           items:
             type: string
+    model.ImageFetchOption:
+      type: object
+      properties:
+        excludedProviders:
+          type: array
+          description: "providers need to be excluded from the image fetching operation\
+            \ (ex: [\"azure\"])"
+          example:
+          - azure
+          items:
+            type: string
+        regionAgnosticProviders:
+          type: array
+          description: "providers that are not region-specific (ex: [\"gcp\"])"
+          example:
+          - gcp
+          - tencent
+          items:
+            type: string
     model.ImageStatus:
       type: string
       enum:
       - Available
       - Unavailable
+      - Deprecated
       - NA
       x-enum-varnames:
       - ImageAvailable
       - ImageUnavailable
+      - ImageDeprecated
       - ImageNA
     model.InspectResource:
       type: object
@@ -10007,6 +10104,46 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.SpiderRegionZoneInfo'
+    model.SearchImageRequest:
+      type: object
+      properties:
+        detailSearchKeys:
+          type: array
+          example:
+          - sql
+          - "2022"
+          items:
+            type: string
+        includeDeprecatedImage:
+          type: boolean
+          example: false
+        isGPUImage:
+          type: boolean
+          example: false
+        isKubernetesImage:
+          type: boolean
+          example: false
+        isRegisteredByAsset:
+          type: boolean
+          example: false
+        osType:
+          type: string
+          example: ubuntu 22.04
+        providerName:
+          type: string
+          example: aws
+        regionName:
+          type: string
+          example: us-east-1
+    model.SearchImageResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        imageList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.TbImageInfo'
     model.SimpleMsg:
       type: object
       properties:
@@ -10555,8 +10692,6 @@ components:
       properties:
         associatedObjectList:
           type: array
-          example:
-          - /ns/default/mci/mci01/vm/aws-ap-southeast-1-1
           items:
             type: string
         connectionConfig:
@@ -10798,76 +10933,85 @@ components:
     model.TbImageInfo:
       type: object
       properties:
-        architecture:
-          type: string
-          description: "arm64, x86_64 etc."
-          example: x86_64
-        associatedObjectList:
-          type: array
-          items:
-            type: string
         connectionName:
           type: string
         creationDate:
           type: string
         cspImageName:
           type: string
-          description: CspImageName is name of the image given by CSP
           example: csp-06eb41e14121c550a
         description:
           type: string
-        distribution:
-          type: string
-          description: "Ubuntu 22.04~, CentOS 8 etc."
-          example: Ubuntu 22.04~
-        guestOS:
-          type: string
-          description: "Windows7, Ubuntu etc."
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: aws-ap-southeast-1
-        infraType:
-          type: string
-          description: "vm|k8s|kubernetes|container, etc."
-        isAutoGenerated:
-          type: boolean
-        keyValueList:
+        details:
           type: array
           items:
             $ref: '#/components/schemas/model.KeyValue'
+        fetchedTime:
+          type: string
+        id:
+          type: string
+          example: aws-ap-southeast-1
+        imageStatus:
+          type: object
+          description: "Available, Deprecated, NA"
+          example: Available
+          allOf:
+          - $ref: '#/components/schemas/model.ImageStatus'
+        infraType:
+          type: string
+          description: "vm|k8s|kubernetes|container, etc."
+        isGPUImage:
+          type: boolean
+          default: false
+        isKubernetesImage:
+          type: boolean
+          default: false
         name:
           type: string
-          description: Name is human-readable string to represent the object
           example: aws-ap-southeast-1
         namespace:
           type: string
-          description: required to save in RDB
+          description: Composite primary key
           example: default
-        platform:
-          type: string
-          description: "Linux/UNIX, Windows, NA"
-          example: Linux/UNIX
-        rootDiskMinSizeGB:
+        osArchitecture:
+          type: object
+          description: "arm64, x86_64 etc."
+          example: x86_64
+          allOf:
+          - $ref: '#/components/schemas/model.OSArchitecture'
+        osDiskSizeGB:
           type: number
           description: "10, 50, 100 etc."
           example: 50.0
-        rootDiskType:
+        osDiskType:
           type: string
           description: "ebs, HDD, etc."
           example: HDD
-        status:
+        osDistribution:
           type: string
-          description: "available, unavailable"
+          description: "Ubuntu 22.04~, CentOS 8 etc."
+          example: Ubuntu 22.04~
+        osPlatform:
+          type: object
+          description: "Linux/UNIX, Windows, NA"
+          example: Linux/UNIX
+          allOf:
+          - $ref: '#/components/schemas/model.OSPlatform'
+        osType:
+          type: string
+          example: ubuntu 22.04
+        providerName:
+          type: string
+        regionList:
+          type: array
+          description: Array field for supporting multiple regions
+          items:
+            type: string
         systemLabel:
           type: string
-          description: SystemLabel is for describing the Resource in a keyword (any
-            string can be used) for special System purpose
           example: Managed by CB-Tumblebug
         uid:
           type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
           example: wef12awefadf1221edcf
     model.TbImageReq:
       required:
@@ -12740,6 +12884,46 @@ components:
       x-enum-varnames:
       - SubnettingRuleTypeMinSubnets
       - SubnettingRuleTypeMinHosts
+    resource.ConnectionImageResult:
+      type: object
+      properties:
+        connName:
+          type: string
+        elapsedTime:
+          type: string
+        errorMsg:
+          type: string
+        imageCount:
+          type: integer
+        provider:
+          type: string
+        region:
+          type: string
+        startTime:
+          type: string
+        success:
+          type: boolean
+    resource.FetchImagesAsyncResult:
+      type: object
+      properties:
+        connResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/resource.ConnectionImageResult'
+        elapsedTime:
+          type: string
+        failCount:
+          type: integer
+        fetchOption:
+          $ref: '#/components/schemas/model.ImageFetchOption'
+        namespaceId:
+          type: string
+        startTime:
+          type: string
+        successCount:
+          type: integer
+        totalImages:
+          type: integer
     resource.JSONResult:
       type: object
     resource.RestFilterSpecsResponse:
@@ -12763,13 +12947,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.TbDataDiskInfo'
-    resource.RestGetAllImageResponse:
-      type: object
-      properties:
-        image:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.TbImageInfo'
     resource.RestGetAllK8sClusterResponse:
       type: object
       properties:
@@ -12819,13 +12996,6 @@ components:
           type: string
         cspResourceId:
           type: string
-    resource.RestSearchImageRequest:
-      type: object
-      properties:
-        keywords:
-          type: array
-          items:
-            type: string
     resource.TbFirewallRulesWrapper:
       type: object
       properties:

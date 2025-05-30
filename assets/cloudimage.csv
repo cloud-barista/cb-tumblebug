@@ -92,12 +92,9 @@ GCP,all,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debia
 GCP,all,https://www.googleapis.com/compute/v1/projects/deeplearning-platform-release/global/images/tf-2-15-cu121-v20240417-debian-11,Debian 11,"Google, Deep Learning VM for TensorFlow 2.15 with CUDA 12.1, M120, Debian 11, Python 3.10, with TensorFlow 2.15 for CUDA 12.1 with Intel MKL-DNN preinstalled",,vm
 GCP,all,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2,,,vm
 ALIBABA,all,ubuntu_18_04_x64_20G_alibase_20240223.vhd,Ubuntu 18.04,,,vm
-ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240819.vhd,Ubuntu 20.04,,,vm
-ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240925.vhd,Ubuntu 20.04,,,vm
-ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240807.vhd,Ubuntu 22.04,,,vm
-ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240926.vhd,Ubuntu 22.04,,,vm
+ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20250415.vhd,Ubuntu 20.04,,,vm
 ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20250415.vhd,Ubuntu 22.04,,,vm
-ALIBABA,all,aliyun_3_x64_20G_alibase_20241218.vhd,Alibaba Cloud Linux 3.2104,,,vm|k8s
+ALIBABA,all,aliyun_3_x64_20G_alibase_20250117.vhd,Alibaba Cloud Linux 3.2104,,,vm|k8s
 TENCENT,all,img-pi0ii46r,Ubuntu 18.04,,,vm|k8s
 TENCENT,all,img-22trbn9x,Ubuntu 20.04,,,vm|k8s
 TENCENT,all,img-487zeit5,Ubuntu 22.04,,,vm
@@ -115,12 +112,6 @@ IBM,jp-osa,r034-522c639c-52e1-4cab-8dfb-bc0fb9f6f577,Ubuntu 18.04,,,vm
 IBM,au-syd,r026-a8c25ce6-0ca1-43e9-9b41-411c6217b8b8,Ubuntu 18.04,,,vm
 IBM,au-syd,r026-3d2be426-8032-4215-a82b-d61075a49a1c,Debian 10,,,vm
 IBM,jp-tok,r022-61fdadec-6b03-4bd2-bfca-62cd16f5673f,Ubuntu 18.04,,,vm
-NCP,KR,SPSW0LINUX000130,Ubuntu 18.04,,,vm
-NCP,USWN,SPSW0LINUX000130,Ubuntu 18.04,,,vm
-NCP,HK,SPSW0LINUX000052,Ubuntu 14.04,,,vm
-NCP,SGN,SPSW0LINUX000130,Ubuntu 18.04,,,vm
-NCP,JPN,SPSW0LINUX000130,Ubuntu 18.04,,,vm
-NCP,DEN,SPSW0LINUX000130,Ubuntu 18.04,,,vm
 NCPVPC,all,SW.VSVR.OS.LNX64.UBNTU.SVR2004.B050,Ubuntu 20.04,,,vm|k8s
 NHNCLOUD,KR1,b7bd50d9-bdc2-460d-8b6a-358436ae3897,Ubuntu 20.04,Ubuntu Server 20.04.6 LTS (2024.05.21),,vm
 NHNCLOUD,KR1,280399f1-af96-41b7-b13b-2fae3752e97f,Ubuntu 22.04,Ubuntu Server 22.04.4 LTS (2024.05.21),,vm

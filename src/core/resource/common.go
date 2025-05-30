@@ -213,9 +213,9 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 
 		// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-		_, err = model.ORM.Delete(&model.TbImageInfo{Namespace: nsId, Id: resourceId})
-		if err != nil {
-			fmt.Println(err.Error())
+		result := model.ORM.Delete(&model.TbImageInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
+		if result.Error != nil {
+			fmt.Println(result.Error.Error())
 		} else {
 			log.Debug().Msg("Data deleted successfully..")
 		}
@@ -269,9 +269,9 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		// }
 
 		// "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
-		_, err = model.ORM.Delete(&model.TbSpecInfo{Namespace: nsId, Id: resourceId})
-		if err != nil {
-			fmt.Println(err.Error())
+		result := model.ORM.Delete(&model.TbCustomImageInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
+		if result.Error != nil {
+			fmt.Println(result.Error.Error())
 		} else {
 			log.Debug().Msg("Data deleted successfully..")
 		}
@@ -386,9 +386,9 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 	} else if resourceType == model.StrCustomImage {
 		// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-		_, err = model.ORM.Delete(&model.TbCustomImageInfo{Namespace: nsId, Id: resourceId})
-		if err != nil {
-			fmt.Println(err.Error())
+		result := model.ORM.Delete(&model.TbSpecInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
+		if result.Error != nil {
+			fmt.Println(result.Error.Error())
 		} else {
 			log.Debug().Msg("Data deleted successfully..")
 		}
@@ -1638,7 +1638,7 @@ func LoadAssets() (model.IdList, error) {
 					specInfo.AcceleratorMemoryGB = float32(acceleratorMemoryGB)
 					specInfo.Description = description
 					specInfo.EvaluationScore01 = float32(evaluationScore01)
-					specInfo.SystemLabel = "from-assets"
+					specInfo.SystemLabel = model.StrFromAssets
 					specInfo.InfraType = expandedInfraType
 
 					// _, err3 := UpdateSpec(model.SystemCommonNs, specInfoId, specInfo)
@@ -1716,7 +1716,7 @@ func LoadAssets() (model.IdList, error) {
 			providerName := strings.ToLower(row[0])
 			regionName := strings.ToLower(row[1])
 			imageReqTmp.CspImageName = row[2]
-			osType := strings.ReplaceAll(row[3], " ", "")
+			osType := row[3]
 			description := row[4]
 			infraType := strings.ToLower(row[6])
 
@@ -1753,9 +1753,10 @@ func LoadAssets() (model.IdList, error) {
 						// Update registered image object with OsType info
 						expandedInfraType := expandInfraType(infraType)
 
-						tmpImageInfo.GuestOS = osType
+						tmpImageInfo.OSType = osType
 						tmpImageInfo.Description = description
 						tmpImageInfo.InfraType = expandedInfraType
+						tmpImageInfo.SystemLabel = model.StrFromAssets
 
 						tmpImageList = append(tmpImageList, tmpImageInfo)
 

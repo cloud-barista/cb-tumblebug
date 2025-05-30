@@ -83,9 +83,9 @@ func RegisterCustomImageWithInfo(nsId string, content model.TbCustomImageInfo) (
 	}
 
 	// "INSERT INTO `image`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
-	_, err = model.ORM.Insert(content)
-	if err != nil {
-		log.Error().Err(err).Msg("")
+	result := model.ORM.Create(&content)
+	if result.Error != nil {
+		log.Error().Err(result.Error).Msg("")
 	} else {
 		log.Trace().Msg("SQL: Insert success")
 	}
