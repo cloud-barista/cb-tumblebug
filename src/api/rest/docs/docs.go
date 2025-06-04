@@ -7129,7 +7129,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/resources/fetchImages": {
             "post": {
-                "description": "Fetch images",
+                "description": "Fetch images waiting for completion",
                 "consumes": [
                     "application/json"
                 ],
@@ -7139,7 +7139,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Image Management"
                 ],
-                "summary": "Fetch images",
+                "summary": "Fetch images for regions of each CSP synchronously",
                 "operationId": "FetchImages",
                 "parameters": [
                     {
@@ -7149,13 +7149,22 @@ const docTemplate = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Fetch option",
+                        "name": "fetchOption",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ImageFetchOption"
+                        }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "202": {
+                        "description": "Accepted",
                         "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
+                            "$ref": "#/definitions/resource.FetchImagesAsyncResult"
                         }
                     },
                     "404": {
@@ -17229,31 +17238,37 @@ const docTemplate = `{
         "resource.FetchImagesAsyncResult": {
             "type": "object",
             "properties": {
-                "connResults": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/resource.ConnectionImageResult"
-                    }
-                },
                 "elapsedTime": {
                     "type": "string"
                 },
-                "failCount": {
+                "failedRegions": {
                     "type": "integer"
                 },
                 "fetchOption": {
                     "$ref": "#/definitions/model.ImageFetchOption"
                 },
+                "inProgress": {
+                    "type": "boolean"
+                },
                 "namespaceId": {
                     "type": "string"
+                },
+                "registeredImages": {
+                    "type": "integer"
+                },
+                "resultInDetail": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.ConnectionImageResult"
+                    }
                 },
                 "startTime": {
                     "type": "string"
                 },
-                "successCount": {
+                "succeedRegions": {
                     "type": "integer"
                 },
-                "totalImages": {
+                "totalRegions": {
                     "type": "integer"
                 }
             }
