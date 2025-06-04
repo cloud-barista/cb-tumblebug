@@ -32,6 +32,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 
 	"slices"
@@ -99,8 +100,17 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	tumblebugImage.Description = common.LookupKeyValueList(spiderImage.KeyValueList, "Description")
 	tumblebugImage.CreationDate = common.LookupKeyValueList(spiderImage.KeyValueList, "CreationDate")
 
+	// Stringify Values in the KeyValueList for information extraction
+	strDetails := ""
+	strSeparator := " "
+	values := make([]string, len(spiderImage.KeyValueList))
+	for i, kv := range spiderImage.KeyValueList {
+		values[i] = kv.Value
+	}
+	strDetails = strings.Join(values, strSeparator)
+
 	// Extract OS, GPU, K8s information
-	searchStr := spiderImage.IId.NameId + " " + spiderImage.OSDistribution
+	searchStr := fmt.Sprintf("%s%s%s%s%s", spiderImage.IId.NameId, strSeparator, spiderImage.OSDistribution, strSeparator, strDetails)
 	tumblebugImage.OSType = common.ExtractOSInfo(searchStr)
 
 	// Check if this is a GPU image
@@ -113,8 +123,8 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 		tumblebugImage.IsKubernetesImage = true
 	}
 	tumblebugImage.ImageStatus = spiderImage.ImageStatus
-	// Check if this is a deprecated image (need to be checked with KeyValueList but, for now, OSDistribution is used for simplicity)
-	if common.IsDeprecatedImage(spiderImage.OSDistribution) {
+	// Check if this is a deprecated image
+	if common.IsDeprecatedImage(searchStr) {
 		tumblebugImage.ImageStatus = model.ImageDeprecated
 	}
 
@@ -166,8 +176,8 @@ func RegisterImageWithInfoInBulk(imageList []model.TbImageInfo) error {
 
 		// Check if the image already exists in the map
 		if existingImg, exists := uniqueImages[key]; exists {
-			log.Debug().Msgf("Found duplicate image: %s/%s/%s",
-				img.Namespace, img.ProviderName, img.CspImageName)
+			// log.Debug().Msgf("Found duplicate image: %s/%s/%s",
+			// 	img.Namespace, img.ProviderName, img.CspImageName)
 
 			// Merge region information if the image already exists
 			// 1. Check and initialize RegionList if nil
@@ -203,7 +213,7 @@ func RegisterImageWithInfoInBulk(imageList []model.TbImageInfo) error {
 	// Step 2: Selectively check and merge with existing images in DB
 	dedupedImageList := make([]model.TbImageInfo, 0, len(uniqueImages))
 
-	for key, img := range uniqueImages {
+	for _, img := range uniqueImages {
 		// Check if image exists in database
 		var dbImage model.TbImageInfo
 		result := model.ORM.Where("namespace = ? AND provider_name = ? AND csp_image_name = ?",
@@ -211,8 +221,8 @@ func RegisterImageWithInfoInBulk(imageList []model.TbImageInfo) error {
 
 		if result.Error == nil {
 			// Merge region information if image exists in DB
-			log.Debug().Msgf("Found existing image in DB: %s/%s/%s with regions %v",
-				img.Namespace, img.ProviderName, img.CspImageName, dbImage.RegionList)
+			// log.Debug().Msgf("Found existing image in DB: %s/%s/%s with regions %v",
+			// 	img.Namespace, img.ProviderName, img.CspImageName, dbImage.RegionList)
 
 			// Initialize RegionList if nil in DB image
 			if dbImage.RegionList == nil {
@@ -225,8 +235,8 @@ func RegisterImageWithInfoInBulk(imageList []model.TbImageInfo) error {
 				regionExists := slices.Contains(dbImage.RegionList, newRegion)
 
 				if !regionExists {
-					log.Debug().Msgf("Adding region %s to DB image %s",
-						newRegion, key)
+					// log.Debug().Msgf("Adding region %s to DB image %s",
+					// 	newRegion, key)
 					dbImage.RegionList = append(dbImage.RegionList, newRegion)
 					regionsAdded = true
 				}
@@ -236,14 +246,14 @@ func RegisterImageWithInfoInBulk(imageList []model.TbImageInfo) error {
 				// Sort regions
 				sort.Strings(dbImage.RegionList)
 
-				log.Info().Msgf("Merged regions for image %s: %v",
-					key, dbImage.RegionList)
+				// log.Info().Msgf("Merged regions for image %s: %v",
+				// 	key, dbImage.RegionList)
 			}
 
 			dedupedImageList = append(dedupedImageList, dbImage)
 		} else {
 			// Add new image if not found in DB
-			log.Debug().Msgf("Image not found in DB, will insert new: %s", key)
+			//log.Debug().Msgf("Image not found in DB, will insert new: %s", key)
 			dedupedImageList = append(dedupedImageList, img)
 		}
 	}
@@ -322,7 +332,7 @@ func RegisterImageWithInfoInBulk(imageList []model.TbImageInfo) error {
 			return err
 		}
 
-		log.Info().Msgf("Bulk insert/update success: %d records affected", result.RowsAffected)
+		//log.Info().Msgf("Bulk insert/update success: %d records affected", result.RowsAffected)
 	}
 
 	return nil
@@ -604,14 +614,16 @@ type ConnectionImageResult struct {
 
 // FetchImagesAsyncResult is the result of the most recent fetch images operation
 type FetchImagesAsyncResult struct {
-	NamespaceID  string                  `json:"namespaceId"`
-	FecthOption  model.ImageFetchOption  `json:"fetchOption"`
-	TotalImages  int                     `json:"totalImages"`
-	SuccessCount int                     `json:"successCount"`
-	FailCount    int                     `json:"failCount"`
-	StartTime    time.Time               `json:"startTime"`
-	ElapsedTime  string                  `json:"elapsedTime"`
-	ConnResults  []ConnectionImageResult `json:"connResults"`
+	NamespaceID      string                  `json:"namespaceId"`
+	TotalRegions     int                     `json:"totalRegions"`
+	FetchOption      model.ImageFetchOption  `json:"fetchOption"`
+	InProgress       bool                    `json:"inProgress"`
+	RegisteredImages int                     `json:"registeredImages"`
+	SucceedRegions   int                     `json:"succeedRegions"`
+	FailedRegions    int                     `json:"failedRegions"`
+	StartTime        time.Time               `json:"startTime"`
+	ElapsedTime      string                  `json:"elapsedTime"`
+	ResultInDetail   []ConnectionImageResult `json:"resultInDetail"`
 }
 
 // lastFetchResult stores the result of the most recent fetch images operation
@@ -624,85 +636,121 @@ func init() {
 	lastFetchResult.Result = make(map[string]*FetchImagesAsyncResult)
 }
 
-// FetchImagesForAllConnConfigsAsync starts fetching images in background with provider-based grouping
-func FetchImagesForAllConnConfigsAsync(nsId string, option *model.ImageFetchOption) error {
+func updateFetchImagesProgress(nsId string, result *FetchImagesAsyncResult) {
+	lastFetchResult.Lock()
+	lastFetchResult.Result[nsId] = result
+	lastFetchResult.Unlock()
+}
+
+// isImageFetchInProgress checks if there's an ongoing image fetch operation for the given namespace
+func isImageFetchInProgress(nsId string) bool {
+	lastFetchResult.RLock()
+	defer lastFetchResult.RUnlock()
+
+	result, exists := lastFetchResult.Result[nsId]
+	if exists && result != nil && result.InProgress {
+		return true
+	}
+	return false
+}
+
+// Common internal function for fetching images that can be used by both sync and async versions
+func fetchImagesForAllConnConfigsInternal(nsId string, option *model.ImageFetchOption, result *FetchImagesAsyncResult) (*FetchImagesAsyncResult, error) {
 	// Validate input parameters
 	err := common.CheckString(nsId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// initialize fetch options
+	// Initialize fetch options
 	if option == nil {
 		option = &model.ImageFetchOption{}
 	}
 
-	// Process asynchronously
-	go func() {
-		startTime := time.Now()
-		log.Info().Msgf("[%s] Starting async image fetch operation", nsId)
+	// Set default parallel connections per provider if not specified
+	parallelConnPerProvider := 1 // Default: sequential execution
 
-		// Get all connection configs
-		connConfigs, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
-		if err != nil {
-			log.Error().Err(err).Msgf("[%s] Failed to get connection configs", nsId)
-			return
+	log.Info().Msgf("[%s] Starting image fetch operation", nsId)
+
+	// Get all connection configs
+	connConfigs, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
+	if err != nil {
+		log.Error().Err(err).Msgf("[%s] Failed to get connection configs", nsId)
+		return nil, err
+	}
+
+	// Initialize result object
+	result.TotalRegions = len(connConfigs.Connectionconfig)
+	result.FetchOption = *option
+	result.ResultInDetail = make([]ConnectionImageResult, 0, len(connConfigs.Connectionconfig))
+
+	updateFetchImagesProgress(nsId, result)
+
+	// Group connection configs by provider
+	providerConnMap := make(map[string][]model.ConnConfig)
+	for _, connConfig := range connConfigs.Connectionconfig {
+		provider := connConfig.ProviderName
+
+		// Skip excluded providers
+		if slices.Contains(option.ExcludedProviders, provider) {
+			log.Info().Msgf("[%s] Skipping excluded provider: %s", nsId, provider)
+			continue
 		}
 
-		// Initialize result object
-		result := &FetchImagesAsyncResult{
-			NamespaceID: nsId,
-			StartTime:   startTime,
-			ConnResults: make([]ConnectionImageResult, 0, len(connConfigs.Connectionconfig)),
-			FecthOption: *option,
-		}
+		providerConnMap[provider] = append(providerConnMap[provider], connConfig)
+	}
 
-		// Store initial result
-		lastFetchResult.Lock()
-		lastFetchResult.Result[nsId] = result
-		lastFetchResult.Unlock()
+	log.Info().Msgf("[%s] Grouped connections by provider: %d providers",
+		nsId, len(providerConnMap))
 
-		// Group connection configs by provider
-		providerConnMap := make(map[string][]model.ConnConfig)
-		for _, connConfig := range connConfigs.Connectionconfig {
-			provider := connConfig.ProviderName
+	// Channel to collect results from all goroutines
+	resultChan := make(chan ConnectionImageResult, len(connConfigs.Connectionconfig))
+	var wg sync.WaitGroup
 
-			// Skip excluded providers
-			if slices.Contains(option.ExcludedProviders, provider) {
-				log.Info().Msgf("[%s] Skipping excluded provider: %s", nsId, provider)
-				continue
+	// Create a goroutine for each provider
+	for provider, connConfigList := range providerConnMap {
+		wg.Add(1)
+		go func(provider string, connConfigList []model.ConnConfig) {
+			defer wg.Done()
+			log.Info().Msgf("[%s] Processing provider %s with %d connections",
+				nsId, provider, len(connConfigList))
+
+			// Adjust parallel connections for specific providers
+			providerParallelConn := parallelConnPerProvider
+			if provider == csp.AWS {
+				providerParallelConn = 15 // to handle more parallel connections
 			}
 
-			providerConnMap[provider] = append(providerConnMap[provider], connConfig)
-		}
+			// Set up semaphore for controlled parallelism
+			semaphore := make(chan struct{}, providerParallelConn)
 
-		log.Info().Msgf("[%s] Grouped connections by provider: %d providers",
-			nsId, len(providerConnMap))
+			var providerWg sync.WaitGroup
+			regionAgnosticProcessed := false
 
-		// Channel to collect results from all goroutines
-		resultChan := make(chan ConnectionImageResult, len(connConfigs.Connectionconfig))
-		var wg sync.WaitGroup
+			// Process connections of this provider with controlled parallelism
+			for i, connConfig := range connConfigList {
+				// Check if the provider is region-agnostic
+				if slices.Contains(option.RegionAgnosticProviders, provider) {
+					if regionAgnosticProcessed {
+						log.Warn().Msgf("[%s] Skipping region for provider %s (%d/%d)",
+							nsId, provider, i+1, len(connConfigList))
+						continue
+					}
+					regionAgnosticProcessed = true
+				}
 
-		// Create a goroutine for each provider to process its connections sequentially
-		for provider, connConfigList := range providerConnMap {
-			wg.Add(1)
-			go func(provider string, connConfigList []model.ConnConfig) {
-				defer wg.Done()
-				log.Info().Msgf("[%s] Processing provider %s with %d connections",
-					nsId, provider, len(connConfigList))
+				// Acquire semaphore to limit concurrent connections
+				semaphore <- struct{}{}
 
-				// Process each connection of this provider sequentially
-				for i, connConfig := range connConfigList {
+				providerWg.Add(1)
+				go func(connConfig model.ConnConfig, index int) {
+					defer providerWg.Done()
+					defer func() { <-semaphore }()
+
 					connName := connConfig.ConfigName
 					region := connConfig.RegionZoneInfo.AssignedRegion
 
-					// Check if the provider is region-agnostic
 					if slices.Contains(option.RegionAgnosticProviders, provider) {
-						if i > 0 {
-							log.Warn().Msgf("[%s] Skipping region for provider %s (%d/%d)",
-								nsId, provider, i+1, len(connConfigList))
-							continue
-						}
 						region = model.StrCommon
 					}
 
@@ -714,6 +762,9 @@ func FetchImagesForAllConnConfigsAsync(nsId string, option *model.ImageFetchOpti
 						StartTime: time.Now(),
 						Success:   false,
 					}
+
+					log.Info().Msgf("[%s][Provider-%s][Conn-%d] Processing connection %s (%s/%s)",
+						nsId, provider, index, connName, provider, region)
 
 					// Set timeout for this connection
 					timeout := 110 * time.Minute
@@ -727,9 +778,6 @@ func FetchImagesForAllConnConfigsAsync(nsId string, option *model.ImageFetchOpti
 					// Fetch images in a separate goroutine to handle timeout
 					go func() {
 						defer close(doneChan)
-						log.Info().Msgf("[%s] Fetching images for connection %s (%s/%s)",
-							nsId, connName, provider, region)
-
 						count, err := FetchImagesForConnConfig(connName, nsId)
 						imageCount = int(count)
 						fetchErr = err
@@ -741,19 +789,20 @@ func FetchImagesForAllConnConfigsAsync(nsId string, option *model.ImageFetchOpti
 						// Timeout occurred
 						connResult.Success = false
 						connResult.ErrorMsg = "Operation timed out after " + timeout.String()
-						log.Warn().Msgf("[%s] Connection %s timed out", nsId, connName)
+						log.Warn().Msgf("[%s][Provider-%s][Conn-%d] Connection %s timed out",
+							nsId, provider, index, connName)
 					case <-doneChan:
 						// Process completed
 						if fetchErr != nil {
 							connResult.Success = false
 							connResult.ErrorMsg = fetchErr.Error()
-							log.Error().Err(fetchErr).Msgf("[%s] Failed to fetch images for %s",
-								nsId, connName)
+							log.Error().Err(fetchErr).Msgf("[%s][Provider-%s][Conn-%d] Failed to fetch images for %s",
+								nsId, provider, index, connName)
 						} else {
 							connResult.Success = true
 							connResult.ImageCount = imageCount
-							log.Info().Msgf("[%s] Successfully fetched %d images from %s",
-								nsId, imageCount, connName)
+							log.Info().Msgf("[%s][Provider-%s][Conn-%d] Successfully fetched %d images from %s",
+								nsId, provider, index, imageCount, connName)
 						}
 					}
 
@@ -762,73 +811,126 @@ func FetchImagesForAllConnConfigsAsync(nsId string, option *model.ImageFetchOpti
 					endTime := time.Now()
 					connResult.ElapsedTime = endTime.Sub(connResult.StartTime).String()
 					resultChan <- connResult
-				}
-			}(provider, connConfigList)
-		}
-
-		// Close result channel when all providers are processed
-		go func() {
-			wg.Wait()
-			close(resultChan)
-		}()
-
-		// Collect results from all connections
-		for connResult := range resultChan {
-			result.ConnResults = append(result.ConnResults, connResult)
-
-			if connResult.Success {
-				result.SuccessCount++
-				result.TotalImages += connResult.ImageCount
-			} else {
-				result.FailCount++
+				}(connConfig, i)
 			}
 
-			// Update intermediate result
-			lastFetchResult.Lock()
-			lastFetchResult.Result[nsId] = result
-			lastFetchResult.Unlock()
+			providerWg.Wait()
+			log.Info().Msgf("[%s] Completed processing all connections for provider %s",
+				nsId, provider)
+
+		}(provider, connConfigList)
+	}
+
+	// Close result channel when all providers are processed
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	// Collect results from all connections
+	for connResult := range resultChan {
+		result.ResultInDetail = append(result.ResultInDetail, connResult)
+
+		if connResult.Success {
+			result.SucceedRegions++
+			result.RegisteredImages += connResult.ImageCount
+		} else {
+			result.FailedRegions++
 		}
+	}
 
-		// Finalize result
-		endTime := time.Now()
-		result.ElapsedTime = endTime.Sub(result.StartTime).String()
+	// Finalize result
+	endTime := time.Now()
+	result.ElapsedTime = endTime.Sub(result.StartTime).String()
+	result.InProgress = false
+	updateFetchImagesProgress(nsId, result)
 
-		// Log provider statistics
-		providerStats := make(map[string]struct {
-			Count      int
-			Success    int
-			Failed     int
-			ImageCount int
-		})
+	// Log provider statistics
+	providerStats := make(map[string]struct {
+		Count      int
+		Success    int
+		Failed     int
+		ImageCount int
+	})
 
-		for _, connResult := range result.ConnResults {
-			stats := providerStats[connResult.Provider]
-			stats.Count++
-			if connResult.Success {
-				stats.Success++
-				stats.ImageCount += connResult.ImageCount
-			} else {
-				stats.Failed++
-			}
-			providerStats[connResult.Provider] = stats
+	for _, connResult := range result.ResultInDetail {
+		stats := providerStats[connResult.Provider]
+		stats.Count++
+		if connResult.Success {
+			stats.Success++
+			stats.ImageCount += connResult.ImageCount
+		} else {
+			stats.Failed++
 		}
+		providerStats[connResult.Provider] = stats
+	}
 
-		for provider, stats := range providerStats {
-			log.Info().Msgf("[%s] Provider %s: %d connections (%d success, %d failed), %d images",
-				nsId, provider, stats.Count, stats.Success, stats.Failed, stats.ImageCount)
+	for provider, stats := range providerStats {
+		log.Info().Msgf("[%s] Provider %s: %d connections (%d success, %d failed), %d images",
+			nsId, provider, stats.Count, stats.Success, stats.Failed, stats.ImageCount)
+	}
+
+	log.Info().Msgf("[%s] Image fetch completed: %d images from %d/%d connections (took %s)",
+		nsId, result.RegisteredImages, result.SucceedRegions,
+		result.SucceedRegions+result.FailedRegions, result.ElapsedTime)
+
+	return result, nil
+}
+
+// FetchImagesForAllConnConfigsAsync starts fetching images in background with provider-based grouping
+func FetchImagesForAllConnConfigsAsync(nsId string, option *model.ImageFetchOption) error {
+	// Check if there's already an operation in progress
+	if isImageFetchInProgress(nsId) {
+		return fmt.Errorf("an image fetch operation is already in progress")
+	}
+
+	result := &FetchImagesAsyncResult{
+		NamespaceID: nsId,
+		StartTime:   time.Now(),
+		InProgress:  true,
+	}
+	updateFetchImagesProgress(nsId, result)
+
+	// Process asynchronously
+	go func() {
+		result, err := fetchImagesForAllConnConfigsInternal(nsId, option, result)
+		if err != nil {
+			log.Error().Err(err).Msgf("[%s] Failed to fetch images asynchronously", nsId)
+			result.InProgress = false
+			result.ElapsedTime = time.Since(result.StartTime).String()
+			updateFetchImagesProgress(nsId, result)
+			return
 		}
-
-		log.Info().Msgf("[%s] Async image fetch completed: %d images from %d/%d connections (took %s)",
-			nsId, result.TotalImages, result.SuccessCount,
-			result.SuccessCount+result.FailCount, result.ElapsedTime)
-
-		// Save final result
-		lastFetchResult.Lock()
-		lastFetchResult.Result[nsId] = result
-		lastFetchResult.Unlock()
+		log.Info().Msgf("[%s] Async image fetch operation completed and result saved", nsId)
 	}()
 
 	return nil
+}
+
+// FetchImagesForAllConnConfigs fetches images synchronously for all connection configs
+func FetchImagesForAllConnConfigs(nsId string, option *model.ImageFetchOption) (*FetchImagesAsyncResult, error) {
+	// Check if there's already an operation in progress
+	if isImageFetchInProgress(nsId) {
+		return nil, fmt.Errorf("an image fetch operation is already in progress")
+	}
+	result := &FetchImagesAsyncResult{
+		NamespaceID: nsId,
+		StartTime:   time.Now(),
+		InProgress:  true,
+	}
+	updateFetchImagesProgress(nsId, result)
+
+	// Direct call to internal function and wait for completion
+	result, err := fetchImagesForAllConnConfigsInternal(nsId, option, result)
+	if err != nil {
+		log.Error().Err(err).Msgf("[%s] Failed to fetch images synchronously", nsId)
+		result.InProgress = false
+		result.ElapsedTime = time.Since(result.StartTime).String()
+		updateFetchImagesProgress(nsId, result)
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // GetFetchImagesAsyncResult returns the result of the most recent fetch images operation
@@ -837,39 +939,12 @@ func GetFetchImagesAsyncResult(nsId string) (*FetchImagesAsyncResult, error) {
 	defer lastFetchResult.RUnlock()
 
 	result, exists := lastFetchResult.Result[nsId]
+	result.ElapsedTime = time.Since(result.StartTime).String()
 	if !exists {
 		return nil, fmt.Errorf("No fetch images result found for namespace %s", nsId)
 	}
 
 	return result, nil
-}
-
-// FetchImagesForConnConfig gets lookups all images for the region of conn config, and saves into TB image objects
-func FetchImagesForAllConnConfigs(nsId string) (connConfigCount uint, imageCount uint, err error) {
-	return fetchImagesForAllConnConfigsInternal(nsId)
-}
-
-// FetchImagesForAllConnConfigsInternal gets lookups all images for the region of conn config, and saves into TB image objects
-func fetchImagesForAllConnConfigsInternal(nsId string) (connConfigCount uint, imageCount uint, err error) {
-
-	connConfigs, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	for _, connConfig := range connConfigs.Connectionconfig {
-		connConfigCount++
-
-		imageCountPerConn, err := FetchImagesForConnConfig(connConfig.ConfigName, nsId)
-		if err != nil {
-			log.Error().Err(err).Msgf("Failed to fetch images for connection %s", connConfig.ConfigName)
-			continue
-		}
-
-		imageCount += imageCountPerConn
-	}
-
-	return connConfigCount, imageCount, nil
 }
 
 // Refactored SearchImage function to use a single query for keyword matching
@@ -945,7 +1020,11 @@ func SearchImage(nsId, providerName, regionName, osType string, isGPUImage, isKu
 		}
 	}
 
+	log.Info().Msgf("SearchImage: providerName=%s, regionName=%s, osType=%s, isGPUImage=%v, isKubernetesImage=%v, isRegisteredByAsset=%v, includeDeprecatedImage=%v",
+		providerName, regionName, osType, isGPUImage, isKubernetesImage, isRegisteredByAsset, includeDeprecatedImage)
+
 	result := sqlQuery.Find(&images)
+	log.Info().Msgf("SearchImage: Found %d images for namespace %s", len(images), nsId)
 	if result.Error != nil {
 		log.Error().Err(result.Error).Msg("Failed to retrieve images")
 		return nil, cnt, result.Error

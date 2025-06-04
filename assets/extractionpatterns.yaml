@@ -80,20 +80,12 @@ extractionPatterns:
     - "cuda"
     - "nvidia"
     - "deep learning"
-    - "ml."
-    - "accelerated"
-    - "tesla"
-    - "a100"
-    - "t4"
-    - "v100"
-    - "p100"
+    - "tensorflow"
+    - "pytorch"
+    - "keras"
+    - "caffe"
+    - "machine learning"
     - "optimized-for-ml"
-    - "nc"  # Azure NC-series
-    - "nd"  # Azure ND-series
-    - "nv"  # Azure NV-series
-    - "g2"  # NCP g2 instance
-    - "heterogeneous"
-    - "compute-optimized-with-gpu"
   
   # Kubernetes image identification patterns (case-insensitive, any match = Kubernetes)
   k8sPatterns:

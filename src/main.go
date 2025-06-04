@@ -45,6 +45,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	gormLogger "gorm.io/gorm/logger"
 )
 
 // init for main
@@ -120,8 +121,10 @@ func init() {
 		strings.Split(model.DBUrl, ":")[1],
 	)
 
-	//err = common.OpenSQL("../meta_db/dat/cbtumblebug.s3db") // commented out to move to use XORM
-	model.ORM, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// Use GORM's default logger in silent mode to avoid verbose output
+	model.ORM, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: gormLogger.Default.LogMode(gormLogger.Silent),
+	})
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to connect to PostgreSQL database")
 	} else {
