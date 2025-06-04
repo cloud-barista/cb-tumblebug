@@ -82,15 +82,16 @@ AWS,af-south-1,ami-03dfab9c5b8844b77,Windows Server 2012 R2,,,vm
 AWS,eu-south-1,ami-0f274cb646afd3475,Ubuntu 18.04,,,vm
 AWS,eu-south-1,ami-0fdd5958b81f36e68,Ubuntu 22.04,,,vm
 AWS,eu-south-1,ami-0c49c6227e9c03e66,Windows Server 2012 R2,,,vm
-AZURE,all,Canonical:0001-com-ubuntu-server-focal:20_04-lts:20.04.202404080,Ubuntu 20.04,,,vm
-AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202404090,Ubuntu 22.04,,,vm
-AZURE,all,Debian:debian-10:10:0.20240204.1647,Debian 10,,,vm
-AZURE,all,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.21620.231004,Windows Server 2012 R2,,,vm
-GCP,all,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240307b,Ubuntu 20.04,,,vm
-GCP,all,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20240319,Ubuntu 22.04,,,vm
-GCP,all,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10,,,vm
+AZURE,all,Canonical:0001-com-ubuntu-server-focal:20_04-lts:20.04.202505200,Ubuntu 20.04,,,vm
+AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210,Ubuntu 22.04,,,vm
+AZURE,all,Debian:debian-11:11:0.20250528.2126,Debian 10,,,vm
+AZURE,all,Debian:debian-10:10:0.20240430.1733,Debian 11,,,vm
+AZURE,all,MicrosoftWindowsServer:WindowsServer:2019-Datacenter:17763.7322.250524,Windows 2019,,,vm
+GCP,all,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20250530,Ubuntu 20.04,,,vm
+GCP,all,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250530,Ubuntu 22.04,,,vm
+GCP,all,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-11-bullseye-v20250513,Debian 11,,,vm
 GCP,all,https://www.googleapis.com/compute/v1/projects/deeplearning-platform-release/global/images/tf-2-15-cu121-v20240417-debian-11,Debian 11,"Google, Deep Learning VM for TensorFlow 2.15 with CUDA 12.1, M120, Debian 11, Python 3.10, with TensorFlow 2.15 for CUDA 12.1 with Intel MKL-DNN preinstalled",,vm
-GCP,all,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2,,,vm
+GCP,all,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2019-dc-v20250515,Windows 2019,,,vm
 ALIBABA,all,ubuntu_18_04_x64_20G_alibase_20240223.vhd,Ubuntu 18.04,,,vm
 ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20250415.vhd,Ubuntu 20.04,,,vm
 ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20250415.vhd,Ubuntu 22.04,,,vm

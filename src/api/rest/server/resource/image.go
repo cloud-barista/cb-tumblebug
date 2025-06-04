@@ -173,43 +173,30 @@ func RestLookupImageList(c echo.Context) error {
 
 // RestFetchImages godoc
 // @ID FetchImages
-// @Summary Fetch images
-// @Description Fetch images
+// @Summary Fetch images for regions of each CSP synchronously
+// @Description Fetch images waiting for completion
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
-// @Success 200 {object} model.SimpleMsg
+// @Param fetchOption body model.ImageFetchOption true "Fetch option"
+// @Success 202 {object} resource.FetchImagesAsyncResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/fetchImages [post]
 func RestFetchImages(c echo.Context) error {
-
 	nsId := c.Param("nsId")
 
-	u := &RestLookupImageRequest{}
-	if err := c.Bind(u); err != nil {
+	reqBody := &model.ImageFetchOption{}
+	if err := c.Bind(reqBody); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	var connConfigCount, imageCount uint
-	var err error
-
-	if u.ConnectionName == "" {
-		connConfigCount, imageCount, err = resource.FetchImagesForAllConnConfigs(nsId)
-		if err != nil {
-			return clientManager.EndRequestWithLog(c, err, nil)
-		}
-	} else {
-		connConfigCount = 1
-		imageCount, err = resource.FetchImagesForConnConfig(u.ConnectionName, nsId)
-		if err != nil {
-			return clientManager.EndRequestWithLog(c, err, nil)
-		}
+	content, err := resource.FetchImagesForAllConnConfigs(nsId, reqBody)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content := map[string]string{
-		"message": "Fetched " + fmt.Sprint(imageCount) + " images (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

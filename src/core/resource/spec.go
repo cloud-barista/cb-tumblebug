@@ -401,8 +401,8 @@ func RegisterSpecWithInfoInBulk(specList []model.TbSpecInfo) error {
 			return err
 		}
 
-		log.Info().Msgf("Bulk upsert success: batch %d-%d, affected: %d records",
-			i, end-1, result.RowsAffected)
+		// log.Info().Msgf("Bulk upsert success: batch %d-%d, affected: %d records",
+		// 	i, end-1, result.RowsAffected)
 	}
 
 	// Re-enable foreign key constraints
