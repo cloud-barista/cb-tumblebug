@@ -5451,8 +5451,8 @@ paths:
     post:
       tags:
       - "[Infra Resource] Image Management"
-      summary: Fetch images
-      description: Fetch images
+      summary: Fetch images for regions of each CSP synchronously
+      description: Fetch images waiting for completion
       operationId: FetchImages
       parameters:
       - name: nsId
@@ -5462,13 +5462,20 @@ paths:
         schema:
           type: string
           default: system
+      requestBody:
+        description: Fetch option
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.ImageFetchOption'
+        required: true
       responses:
-        "200":
-          description: OK
+        "202":
+          description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
+                $ref: '#/components/schemas/resource.FetchImagesAsyncResult'
         "404":
           description: Not Found
           content:
@@ -5481,6 +5488,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: fetchOption
   /ns/{nsId}/resources/fetchImagesAsync:
     post:
       tags:
@@ -12906,23 +12914,27 @@ components:
     resource.FetchImagesAsyncResult:
       type: object
       properties:
-        connResults:
-          type: array
-          items:
-            $ref: '#/components/schemas/resource.ConnectionImageResult'
         elapsedTime:
           type: string
-        failCount:
+        failedRegions:
           type: integer
         fetchOption:
           $ref: '#/components/schemas/model.ImageFetchOption'
+        inProgress:
+          type: boolean
         namespaceId:
           type: string
+        registeredImages:
+          type: integer
+        resultInDetail:
+          type: array
+          items:
+            $ref: '#/components/schemas/resource.ConnectionImageResult'
         startTime:
           type: string
-        successCount:
+        succeedRegions:
           type: integer
-        totalImages:
+        totalRegions:
           type: integer
     resource.JSONResult:
       type: object
