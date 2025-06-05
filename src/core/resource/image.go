@@ -110,9 +110,10 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	strDetails = strings.Join(values, strSeparator)
 
 	// Extract OS, GPU, K8s information
-	searchStr := fmt.Sprintf("%s%s%s%s%s", spiderImage.IId.NameId, strSeparator, spiderImage.OSDistribution, strSeparator, strDetails)
+	searchStr := fmt.Sprintf("%s%s%s%s%s", spiderImage.OSDistribution, strSeparator, spiderImage.IId.NameId, strSeparator, strDetails)
 	tumblebugImage.OSType = common.ExtractOSInfo(searchStr)
 
+	searchStr = fmt.Sprintf("%s%s%s%s%s", spiderImage.IId.NameId, strSeparator, spiderImage.OSDistribution, strSeparator, strDetails)
 	// Check if this is a GPU image
 	if common.IsGPUImage(searchStr) {
 		tumblebugImage.IsGPUImage = true
@@ -577,6 +578,11 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 	tmpImageList := []model.TbImageInfo{}
 
 	for _, spiderImage := range spiderImageList.Image {
+		if spiderImage.ImageStatus == model.ImageUnavailable {
+			log.Warn().Msgf("Skipping unavailable image: %s (%s)", spiderImage.IId.NameId, connConfig)
+			continue
+		}
+
 		tumblebugImage, err := ConvertSpiderImageToTumblebugImage(nsId, connConfig, spiderImage)
 		if err != nil {
 			log.Error().Err(err).Msg("")
