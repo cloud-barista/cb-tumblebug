@@ -160,7 +160,7 @@ services:
 
   # CB-Spider
   cb-spider:
-    image: cloudbaristaorg/cb-spider:0.10.3
+    image: cloudbaristaorg/cb-spider:0.10.7
     container_name: cb-spider
     # build:
     #   context: ../cb-spider
@@ -177,7 +177,7 @@ services:
       - ./container-volume/cb-spider-container/log/:/root/go/src/github.com/cloud-barista/cb-spider/log/
     environment:
       - PLUGIN_SW=OFF
-      - SERVER_ADDRESS=localhost
+      - SERVER_ADDRESS=0.0.0.0:1024
       # if you leave these values empty, REST Auth will be disabled.
       # - API_USERNAME=
       # - API_PASSWORD=

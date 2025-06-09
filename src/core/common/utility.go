@@ -1596,7 +1596,8 @@ func ExtractOSInfo(combinedInfo string) string {
 					numericParts := regexp.MustCompile(`\d+`).FindAllString(version, -1)
 					if len(numericParts) > 0 {
 						// Join the numeric parts with a regex pattern to match any non-numeric characters
-						versionPattern := strings.Join(numericParts, "[^0-9]*")
+						// Exclude 'T' between numbers (used in time formats like 22T04)
+						versionPattern := strings.Join(numericParts, "[^0-9T]*")
 						// Add a regex pattern to avoid matching the version in the middle of numeric strings
 						boundedVersionPattern := fmt.Sprintf("(?:^|[^0-9])%s(?:$|[^0-9])", versionPattern)
 
