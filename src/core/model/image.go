@@ -122,20 +122,88 @@ type ImageFetchOption struct {
 
 // SearchImageRequest is struct for Search Image Request
 type SearchImageRequest struct {
-	ProviderName           string   `json:"providerName" example:"aws"`
-	RegionName             string   `json:"regionName" example:"us-east-1"`
-	OSType                 string   `json:"osType" example:"ubuntu 22.04" description:"Simplified OS name and version string. Space-separated for AND condition"`
-	IsGPUImage             *bool    `json:"isGPUImage" example:"false"`
-	IsKubernetesImage      *bool    `json:"isKubernetesImage" example:"false"`
-	IsRegisteredByAsset    *bool    `json:"isRegisteredByAsset" example:"false" description:"Whether the image is registered by asset or not."`
-	IncludeDeprecatedImage *bool    `json:"includeDeprecatedImage" example:"false" description:"Include deprecated images in the search results."`
-	DetailSearchKeys       []string `json:"detailSearchKeys" example:"sql,2022" description:"Keywords for searching images in detail"`
+
+	// Cloud Service Provider (ex: "aws", "azure", "gcp", etc.). Use GET /provider to get the list of available providers.
+	ProviderName string `json:"providerName" example:"aws"`
+
+	// Cloud Service Provider Region (ex: "us-east-1", "us-west-2", etc.). Use GET /provider/{providerName}/region to get the list of available regions.
+	RegionName string `json:"regionName" example:"us-east-1"`
+
+	// Simplified OS name and version string. Space-separated for AND condition (ex: "ubuntu 22.04", "windows 10", etc.).
+	OSType string `json:"osType" example:"ubuntu 22.04" description:"Simplified OS name and version string. Space-separated for AND condition"`
+
+	// The architecture of the operating system of the image. (ex: "x86_64", "arm64", etc.)
+	OSArchitecture OSArchitecture `json:"osArchitecture" gorm:"column:os_architecture" example:"x86_64" description:"The architecture of the operating system of the image."`
+
+	// Whether the image is ready for GPU usage or not.
+	// In usual, true means the image is ready for GPU usage with GPU drivers and libraries installed.
+	// If not specified, both true and false images will be included in the search results.
+	// Even if the image is not ready for GPU usage, it can be used with GPU by installing GPU drivers and libraries manually.
+	IsGPUImage *bool `json:"isGPUImage" example:"false"`
+
+	// Whether the image is specialized image only for Kubernetes nodes.
+	// If not specified, both true and false images will be included in the search results.
+	// Images that are not specialized for Kubernetes also can be used as Kubernetes nodes. It depends on CSPs.
+	IsKubernetesImage *bool `json:"isKubernetesImage" example:"false"`
+
+	// Whether the image is registered by CB-Tumblebug asset file or not.
+	IsRegisteredByAsset *bool `json:"isRegisteredByAsset" example:"false" description:"Whether the image is registered by asset or not."`
+
+	// Whether the search results should include deprecated images or not.
+	// If not specified, deprecated images will not be included in the search results.
+	// In usual, deprecated images are not recommended to use, but they can be used if necessary.
+	IncludeDeprecatedImage *bool `json:"includeDeprecatedImage" example:"false" description:"Include deprecated images in the search results."`
+
+	// Keywords for searching images in detail.
+	// Space-separated for AND condition (ex: "sql 2022", "ubuntu 22.04", etc.).
+	// Used for if the user wants to search images with specific keywords in their details.
+	DetailSearchKeys []string `json:"detailSearchKeys" example:"tensorflow,2.17" description:"Keywords for searching images in detail"`
+}
+
+// SearchImageRequestOptions is struct for Search Image Request
+type SearchImageRequestOptions struct {
+
+	// Cloud Service Provider (ex: "aws", "azure", "gcp", etc.). Use GET /provider to get the list of available providers.
+	ProviderName []string `json:"providerName"`
+
+	// Cloud Service Provider Region (ex: "us-east-1", "us-west-2", etc.). Use GET /provider/{providerName}/region to get the list of available regions.
+	RegionName []string `json:"regionName"`
+
+	// Simplified OS name and version string. Space-separated for AND condition (ex: "ubuntu 22.04", "windows 10", etc.).
+	OSType []string `json:"osType" description:"Simplified OS name and version string. Space-separated for AND condition"`
+
+	// The architecture of the operating system of the image. (ex: "x86_64", "arm64", etc.)
+	OSArchitecture []string `json:"osArchitecture" description:"The architecture of the operating system of the image."`
+
+	// Whether the image is ready for GPU usage or not.
+	// In usual, true means the image is ready for GPU usage with GPU drivers and libraries installed.
+	// If not specified, both true and false images will be included in the search results.
+	// Even if the image is not ready for GPU usage, it can be used with GPU by installing GPU drivers and libraries manually.
+	IsGPUImage []bool `json:"isGPUImage" description:"Whether the image is ready for GPU usage or not."`
+
+	// Whether the image is specialized image only for Kubernetes nodes.
+	// If not specified, both true and false images will be included in the search results.
+	// Images that are not specialized for Kubernetes also can be used as Kubernetes nodes. It depends on CSPs.
+	IsKubernetesImage []bool `json:"isKubernetesImage" description:"Whether the image is specialized image only for Kubernetes nodes."`
+
+	// Whether the image is registered by CB-Tumblebug asset file or not.
+	IsRegisteredByAsset []bool `json:"isRegisteredByAsset" description:"Whether the image is registered by asset or not."`
+
+	// Whether the search results should include deprecated images or not.
+	// If not specified, deprecated images will not be included in the search results.
+	// In usual, deprecated images are not recommended to use, but they can be used if necessary.
+	IncludeDeprecatedImage []bool `json:"includeDeprecatedImage" description:"Include deprecated images in the search results."`
+
+	// Keywords for searching images in detail.
+	// Space-separated for AND condition (ex: "sql 2022", "ubuntu 22.04", etc.).
+	// Used for if the user wants to search images with specific keywords in their details.
+	DetailSearchKeys [][]string `json:"detailSearchKeys" description:"Keywords for searching images in detail"`
 }
 
 // SearchImageResponse is struct for Search Image Request
 type SearchImageResponse struct {
-	Count     int           `json:"count"`
-	ImageList []TbImageInfo `json:"imageList"`
+	ImageCount int           `json:"imageCount"`
+	ImageList  []TbImageInfo `json:"imageList"`
 }
 
 // SpiderImageList is struct for Spider Image List

@@ -359,6 +359,7 @@ func RestSearchImage(c echo.Context) error {
 		u.ProviderName,
 		u.RegionName,
 		u.OSType,
+		string(u.OSArchitecture),
 		u.IsGPUImage,
 		u.IsKubernetesImage,
 		u.IsRegisteredByAsset,
@@ -367,7 +368,29 @@ func RestSearchImage(c echo.Context) error {
 	)
 
 	result := model.SearchImageResponse{}
-	result.Count = cnt
+	result.ImageCount = cnt
 	result.ImageList = content
 	return clientManager.EndRequestWithLog(c, err, result)
+}
+
+// RestSearchImageOptions godoc
+// @ID SearchImageOptions
+// @Get available image search request options
+// @Description Get all available options for image search fields
+// @Tags [Infra Resource] Image Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(system)
+// @Success 200 {object} model.SearchImageRequestOptions
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/resources/searchImageOptions [get]
+func RestSearchImageOptions(c echo.Context) error {
+
+	content, err := resource.SearchImageOptions()
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, content)
 }

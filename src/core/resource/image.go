@@ -953,8 +953,8 @@ func GetFetchImagesAsyncResult(nsId string) (*FetchImagesAsyncResult, error) {
 	return result, nil
 }
 
-// Refactored SearchImage function to use a single query for keyword matching
-func SearchImage(nsId, providerName, regionName, osType string, isGPUImage, isKubernetesImage, isRegisteredByAsset, includeDeprecatedImage *bool, keywords ...string) ([]model.TbImageInfo, int, error) {
+// SearchImage returns a list of images based on the search criteria
+func SearchImage(nsId, providerName, regionName, osType, osArchitecture string, isGPUImage, isKubernetesImage, isRegisteredByAsset, includeDeprecatedImage *bool, keywords ...string) ([]model.TbImageInfo, int, error) {
 	err := common.CheckString(nsId)
 	cnt := 0
 	if err != nil {
@@ -991,6 +991,10 @@ func SearchImage(nsId, providerName, regionName, osType string, isGPUImage, isKu
 			}
 
 		}
+	}
+
+	if osArchitecture != "" {
+		sqlQuery = sqlQuery.Where("LOWER(os_architecture) = ?", strings.ToLower(osArchitecture))
 	}
 
 	if isGPUImage != nil {
@@ -1038,6 +1042,79 @@ func SearchImage(nsId, providerName, regionName, osType string, isGPUImage, isKu
 	cnt = len(images)
 
 	return images, cnt, nil
+}
+
+// SearchImageOptions returns the available options for searching images
+func SearchImageOptions() (model.SearchImageRequestOptions, error) {
+	var options model.SearchImageRequestOptions
+
+	// Get distinct provider names
+	if err := model.ORM.Model(&model.TbImageInfo{}).
+		Distinct("provider_name").
+		Order("provider_name").
+		Pluck("provider_name", &options.ProviderName).Error; err != nil {
+		log.Error().Err(err).Msg("Failed to get distinct provider names")
+		return options, err
+	}
+
+	// Get regions (application-level processing)
+	var images []model.TbImageInfo
+	if err := model.ORM.Model(&model.TbImageInfo{}).
+		Select("region_list").
+		Find(&images).Error; err != nil {
+		log.Error().Err(err).Msg("Failed to get region lists")
+		return options, err
+	}
+
+	// Use a map for deduplication
+	regionMap := make(map[string]struct{})
+	for _, img := range images {
+		for _, region := range img.RegionList {
+			regionMap[region] = struct{}{}
+		}
+	}
+
+	// Convert map to sorted slice
+	options.RegionName = make([]string, 0, len(regionMap))
+	for region := range regionMap {
+		options.RegionName = append(options.RegionName, region)
+	}
+	sort.Strings(options.RegionName)
+
+	// Get distinct OS types (non-empty only)
+	if err := model.ORM.Model(&model.TbImageInfo{}).
+		Where("os_type != ''").
+		Distinct("os_type").
+		Order("os_type").
+		Pluck("os_type", &options.OSType).Error; err != nil {
+		log.Error().Err(err).Msg("Failed to get distinct OS types")
+		return options, err
+	}
+
+	// Get distinct OS architectures (non-empty only)
+	if err := model.ORM.Model(&model.TbImageInfo{}).
+		Where("os_architecture != ''").
+		Distinct("os_architecture").
+		Order("os_architecture").
+		Pluck("os_architecture", &options.OSArchitecture).Error; err != nil {
+		log.Error().Err(err).Msg("Failed to get distinct OS architectures")
+		return options, err
+	}
+
+	// Set boolean options
+	options.IsGPUImage = []bool{true, false}
+	options.IsKubernetesImage = []bool{true, false}
+	options.IsRegisteredByAsset = []bool{true, false}
+	options.IncludeDeprecatedImage = []bool{true, false}
+
+	// Set DetailSearchKeys example
+	options.DetailSearchKeys = [][]string{
+		{"This is just an example", "omit this option if not needed", "requires more time to search"},
+		{"sql", "2022"},
+		{"tensorflow", "2.17"},
+	}
+
+	return options, nil
 }
 
 // UpdateImage accepts to-be TB image objects,
@@ -1192,6 +1269,7 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 			providerName,
 			regionName,
 			imageIdentifier,
+			"",
 			nil,
 			nil,
 			&isRegisteredByAsset,
