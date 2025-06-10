@@ -8050,6 +8050,51 @@
                 }
             }
         },
+        "/ns/{nsId}/resources/searchImageOptions": {
+            "get": {
+                "description": "Get all available options for image search fields",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Image Management"
+                ],
+                "operationId": "SearchImageOptions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "system",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SearchImageRequestOptions"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/securityGroup": {
             "get": {
                 "description": "List all Security Groups or Security Groups' ID",
@@ -13439,49 +13484,137 @@
             "type": "object",
             "properties": {
                 "detailSearchKeys": {
+                    "description": "Keywords for searching images in detail.\nSpace-separated for AND condition (ex: \"sql 2022\", \"ubuntu 22.04\", etc.).\nUsed for if the user wants to search images with specific keywords in their details.",
                     "type": "array",
                     "items": {
                         "type": "string"
                     },
                     "example": [
-                        "sql",
-                        "2022"
+                        "tensorflow",
+                        "2.17"
                     ]
                 },
                 "includeDeprecatedImage": {
+                    "description": "Whether the search results should include deprecated images or not.\nIf not specified, deprecated images will not be included in the search results.\nIn usual, deprecated images are not recommended to use, but they can be used if necessary.",
                     "type": "boolean",
                     "example": false
                 },
                 "isGPUImage": {
+                    "description": "Whether the image is ready for GPU usage or not.\nIn usual, true means the image is ready for GPU usage with GPU drivers and libraries installed.\nIf not specified, both true and false images will be included in the search results.\nEven if the image is not ready for GPU usage, it can be used with GPU by installing GPU drivers and libraries manually.",
                     "type": "boolean",
                     "example": false
                 },
                 "isKubernetesImage": {
+                    "description": "Whether the image is specialized image only for Kubernetes nodes.\nIf not specified, both true and false images will be included in the search results.\nImages that are not specialized for Kubernetes also can be used as Kubernetes nodes. It depends on CSPs.",
                     "type": "boolean",
                     "example": false
                 },
                 "isRegisteredByAsset": {
+                    "description": "Whether the image is registered by CB-Tumblebug asset file or not.",
                     "type": "boolean",
                     "example": false
                 },
+                "osArchitecture": {
+                    "description": "The architecture of the operating system of the image. (ex: \"x86_64\", \"arm64\", etc.)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.OSArchitecture"
+                        }
+                    ],
+                    "example": "x86_64"
+                },
                 "osType": {
+                    "description": "Simplified OS name and version string. Space-separated for AND condition (ex: \"ubuntu 22.04\", \"windows 10\", etc.).",
                     "type": "string",
                     "example": "ubuntu 22.04"
                 },
                 "providerName": {
+                    "description": "Cloud Service Provider (ex: \"aws\", \"azure\", \"gcp\", etc.). Use GET /provider to get the list of available providers.",
                     "type": "string",
                     "example": "aws"
                 },
                 "regionName": {
+                    "description": "Cloud Service Provider Region (ex: \"us-east-1\", \"us-west-2\", etc.). Use GET /provider/{providerName}/region to get the list of available regions.",
                     "type": "string",
                     "example": "us-east-1"
+                }
+            }
+        },
+        "model.SearchImageRequestOptions": {
+            "type": "object",
+            "properties": {
+                "detailSearchKeys": {
+                    "description": "Keywords for searching images in detail.\nSpace-separated for AND condition (ex: \"sql 2022\", \"ubuntu 22.04\", etc.).\nUsed for if the user wants to search images with specific keywords in their details.",
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "includeDeprecatedImage": {
+                    "description": "Whether the search results should include deprecated images or not.\nIf not specified, deprecated images will not be included in the search results.\nIn usual, deprecated images are not recommended to use, but they can be used if necessary.",
+                    "type": "array",
+                    "items": {
+                        "type": "boolean"
+                    }
+                },
+                "isGPUImage": {
+                    "description": "Whether the image is ready for GPU usage or not.\nIn usual, true means the image is ready for GPU usage with GPU drivers and libraries installed.\nIf not specified, both true and false images will be included in the search results.\nEven if the image is not ready for GPU usage, it can be used with GPU by installing GPU drivers and libraries manually.",
+                    "type": "array",
+                    "items": {
+                        "type": "boolean"
+                    }
+                },
+                "isKubernetesImage": {
+                    "description": "Whether the image is specialized image only for Kubernetes nodes.\nIf not specified, both true and false images will be included in the search results.\nImages that are not specialized for Kubernetes also can be used as Kubernetes nodes. It depends on CSPs.",
+                    "type": "array",
+                    "items": {
+                        "type": "boolean"
+                    }
+                },
+                "isRegisteredByAsset": {
+                    "description": "Whether the image is registered by CB-Tumblebug asset file or not.",
+                    "type": "array",
+                    "items": {
+                        "type": "boolean"
+                    }
+                },
+                "osArchitecture": {
+                    "description": "The architecture of the operating system of the image. (ex: \"x86_64\", \"arm64\", etc.)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "osType": {
+                    "description": "Simplified OS name and version string. Space-separated for AND condition (ex: \"ubuntu 22.04\", \"windows 10\", etc.).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "providerName": {
+                    "description": "Cloud Service Provider (ex: \"aws\", \"azure\", \"gcp\", etc.). Use GET /provider to get the list of available providers.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "regionName": {
+                    "description": "Cloud Service Provider Region (ex: \"us-east-1\", \"us-west-2\", etc.). Use GET /provider/{providerName}/region to get the list of available regions.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
         "model.SearchImageResponse": {
             "type": "object",
             "properties": {
-                "count": {
+                "imageCount": {
                     "type": "integer"
                 },
                 "imageList": {
