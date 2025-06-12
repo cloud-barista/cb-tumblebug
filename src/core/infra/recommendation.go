@@ -139,7 +139,6 @@ func RecommendVm(nsId string, plan model.DeploymentPlan) ([]model.TbSpecInfo, er
 	// })
 
 	// Prioritizing
-	log.Debug().Msg("[Prioritizing specs]")
 	prioritySpecs := []model.TbSpecInfo{}
 
 	startTime = time.Now()

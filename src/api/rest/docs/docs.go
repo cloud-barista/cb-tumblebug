@@ -9346,6 +9346,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/updateImagesFromAsset": {
+            "post": {
+                "description": "Update image information based on the cloudimage.csv asset file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Image Management"
+                ],
+                "summary": "Update images from cloudimage.csv asset file",
+                "operationId": "UpdateImagesFromAsset",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "system",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/resource.FetchImagesAsyncResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/vNet": {
             "get": {
                 "description": "List all VNets or VNets' ID",

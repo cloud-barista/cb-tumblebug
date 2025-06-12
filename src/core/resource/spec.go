@@ -491,7 +491,6 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]
 	query := model.ORM.Where("namespace = ?", nsId)
 
 	specColumnMapping := getColumnMapping(&model.TbSpecInfo{})
-
 	// Change field names to start with lowercase (GORM convention)
 	val := reflect.ValueOf(filter)
 	typ := val.Type()
@@ -531,6 +530,9 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]
 	startTime := time.Now()
 
 	var specs []model.TbSpecInfo
+
+	// Check the query before executing
+	query = query.Debug()
 	result := query.Find(&specs)
 	if result.Error != nil {
 		log.Error().Err(result.Error).Msg("Failed to execute query")

@@ -40,7 +40,7 @@ CRED_PATH = os.path.join(os.path.expanduser('~'), '.cloud-barista')
 ENC_FILE_PATH = os.path.join(CRED_PATH, CRED_FILE_NAME_ENC)
 KEY_FILE = os.path.join(CRED_PATH, ".tmp_enc_key")
 
-expected_completion_time_seconds = 100
+expected_completion_time_seconds = 180
 
 # Check for credential path
 if not os.path.exists(CRED_PATH):
@@ -315,9 +315,9 @@ elif response_json:
                 successful_images += 1
 
     print(Fore.CYAN + f"\nLoading completed (elapsed: {duration}s)")
-    print(Fore.RESET + "Registered Common specs")
-    print(Fore.GREEN + f"- Successful: {successful_specs}" + Fore.RESET + f", Failed: {failed_specs}")
-    print(Fore.RESET + "Registered Common images")
-    print(Fore.GREEN + f"- Successful: {successful_images}" + Fore.RESET + f", Failed: {failed_images}")
+    # print(Fore.RESET + "Registered Common specs")
+    # print(Fore.GREEN + f"- Successful: {successful_specs}" + Fore.RESET + f", Failed: {failed_specs}")
+    # print(Fore.RESET + "Registered Common images")
+    # print(Fore.GREEN + f"- Successful: {successful_images}" + Fore.RESET + f", Failed: {failed_images}")
 else:
     print(Fore.RED + "No data returned from the API.")

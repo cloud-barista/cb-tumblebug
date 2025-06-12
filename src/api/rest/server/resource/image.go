@@ -255,6 +255,29 @@ func RestGetFetchImagesAsyncResult(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, nil, result)
 }
 
+// RestUpdateImagesFromAsset godoc
+// @ID UpdateImagesFromAsset
+// @Summary Update images from cloudimage.csv asset file
+// @Description Update image information based on the cloudimage.csv asset file
+// @Tags [Infra Resource] Image Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(system)
+// @Success 202 {object} resource.FetchImagesAsyncResult
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/resources/updateImagesFromAsset [post]
+func RestUpdateImagesFromAsset(c echo.Context) error {
+	nsId := c.Param("nsId")
+
+	result, err := resource.UpdateImagesFromAsset(nsId)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
 // RestGetImage godoc
 // @ID GetImage
 // @Summary Get image
