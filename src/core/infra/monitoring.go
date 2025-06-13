@@ -319,85 +319,130 @@ func UpdateMonitoringAgentStatusManually(nsId string, mciId string, vmId string,
 	return nil
 }
 
-// GetMonitoringData func retrieves monitoring data from cb-dragonfly
+// GetMonitoringData retrieves monitoring data from CB-Dragonfly for all VMs in an MCI
+// Returns a consolidated response with metrics for each VM
 func GetMonitoringData(nsId string, mciId string, metric string) (model.MonResultSimpleResponse, error) {
+	// Initialize response object
+	content := model.MonResultSimpleResponse{
+		NsId:  nsId,
+		MciId: mciId,
+	}
 
+	// Validate namespace ID
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := model.MonResultSimpleResponse{}
-		log.Error().Err(err).Msg("")
-		return temp, err
+		log.Error().Err(err).Msg("Invalid namespace ID format")
+		return content, fmt.Errorf("invalid namespace ID: %w", err)
 	}
 
+	// Validate MCI ID
 	err = common.CheckString(mciId)
 	if err != nil {
-		temp := model.MonResultSimpleResponse{}
-		log.Error().Err(err).Msg("")
-		return temp, err
+		log.Error().Err(err).Msg("Invalid MCI ID format")
+		return content, fmt.Errorf("invalid MCI ID: %w", err)
 	}
-	check, _ := CheckMci(nsId, mciId)
 
+	// Check if MCI exists
+	check, err := CheckMci(nsId, mciId)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error checking MCI existence: %s/%s", nsId, mciId)
+		return content, fmt.Errorf("error checking MCI existence: %w", err)
+	}
 	if !check {
-		temp := model.MonResultSimpleResponse{}
-		err := fmt.Errorf("The mci " + mciId + " does not exist.")
-		return temp, err
+		log.Error().Msgf("MCI does not exist: %s/%s", nsId, mciId)
+		return content, fmt.Errorf("MCI %s does not exist in namespace %s", mciId, nsId)
 	}
 
-	content := model.MonResultSimpleResponse{}
-
+	// Get the list of VMs in the MCI
 	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
-		//log.Error().Err(err).Msg("")
-		return content, err
+		log.Error().Err(err).Msgf("Failed to list VMs for MCI: %s/%s", nsId, mciId)
+		return content, fmt.Errorf("failed to list VMs: %w", err)
 	}
 
-	//goroutin sync wg
+	// If no VMs found, return empty result
+	if len(vmList) == 0 {
+		log.Warn().Msgf("No VMs found in MCI: %s/%s", nsId, mciId)
+		return content, nil
+	}
+
+	log.Info().Msgf("Retrieving %s metrics for %d VMs in MCI %s/%s", metric, len(vmList), nsId, mciId)
+
+	// Setup for concurrent monitoring requests
 	var wg sync.WaitGroup
-
 	var resultArray []model.MonResultSimple
-
 	method := "GET"
 
+	// Process each VM concurrently
 	for _, vmId := range vmList {
 		wg.Add(1)
 
+		// Get VM IP address
 		vmIp, _, _, err := GetVmIp(nsId, mciId, vmId)
 		if err != nil {
-			log.Error().Err(err).Msg("")
-			wg.Done()
-			// continue to next vm even if error occurs
+			log.Error().Err(err).Msgf("Failed to get IP for VM: %s/%s/%s", nsId, mciId, vmId)
+
+			// Create a result for this VM with error information
+			errResult := model.MonResultSimple{
+				VmId:   vmId,
+				Metric: metric,
+				Value:  "Error",
+				Err:    fmt.Sprintf("Failed to get VM IP: %v", err),
+			}
+			resultArray = append(resultArray, errResult)
+
+			wg.Done() // Decrement counter for this VM
+			continue  // Continue to next VM
+		}
+
+		// Construct the API path for this VM's monitoring data
+		cmd := fmt.Sprintf("/ns/%s/mci/%s/vm/%s/agent_ip/%s/metric/%s/ondemand-monitoring-info",
+			nsId, mciId, vmId, vmIp, metric)
+
+		// Make asynchronous call to CB-Dragonfly
+		go CallGetMonitoringAsync(&wg, nsId, mciId, vmId, vmIp, method, metric, cmd, &resultArray)
+	}
+
+	// Wait for all monitoring requests to complete
+	wg.Wait()
+
+	// Add results to response object
+	content.MciMonitoring = resultArray
+
+	// Log summary of results
+	successCount := 0
+	errorCount := 0
+	for _, result := range resultArray {
+		if result.Err != "" {
+			errorCount++
 		} else {
-			// DF: Get vm on-demand monitoring metric info
-			// Path Param: /ns/:nsId/mci/:mciId/vm/:vmId/agent_ip/:agent_ip/metric/:metric_name/ondemand-monitoring-info
-			cmd := "/ns/" + nsId + "/mci/" + mciId + "/vm/" + vmId + "/agent_ip/" + vmIp + "/metric/" + metric + "/ondemand-monitoring-info"
-			go CallGetMonitoringAsync(&wg, nsId, mciId, vmId, vmIp, method, metric, cmd, &resultArray)
+			successCount++
 		}
 	}
-	wg.Wait() //goroutin sync wg
 
-	content.NsId = nsId
-	content.MciId = mciId
-	for _, v := range resultArray {
-		content.MciMonitoring = append(content.MciMonitoring, v)
+	log.Info().Msgf("Monitoring data collection complete: %d successful, %d failed",
+		successCount, errorCount)
+	if errorCount > 0 {
+		return content, fmt.Errorf("%d VMs failed to retrieve monitoring data", errorCount)
 	}
 
-	fmt.Printf("%+v\n", content)
-
 	return content, nil
-
 }
 
+// CallGetMonitoringAsync makes asynchronous HTTP call to CB-Dragonfly for monitoring data
+// and appends the result to the provided result array
 func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, vmID string, vmIP string, method string, metric string, cmd string, returnResult *[]model.MonResultSimple) {
-
-	defer wg.Done() //goroutin sync done
+	defer wg.Done() // Ensure WaitGroup counter is decremented when function exits
 
 	log.Info().Msg("[Call CB-DF] " + mciID + "/" + vmID + "(" + vmIP + ")")
 
-	var response string
-	var errStr string
-	var result string
-	var err error
+	// Initialize result object
+	resultTmp := model.MonResultSimple{
+		VmId:   vmID,
+		Metric: metric,
+	}
 
+	// Prepare HTTP request
 	url := model.DragonflyRestUrl + cmd
 	log.Debug().Msg("URL: " + url)
 
@@ -408,72 +453,118 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, vmID 
 		},
 		Timeout: time.Duration(responseLimit) * time.Minute,
 	}
+
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		errStr = err.Error()
+		// Handle request creation error
+		log.Error().Err(err).Msg("Failed to create HTTP request")
+		resultTmp.Value = "Error"
+		resultTmp.Err = fmt.Sprintf("HTTP request creation error: %v", err)
+		*returnResult = append(*returnResult, resultTmp)
+		return
 	}
 
-	fmt.Print("[Call CB-DF Result (" + mciID + "," + vmID + ")] ")
+	// Execute HTTP request
+
+	log.Debug().Msg("Call CB-DF Result (" + mciID + "," + vmID + ") ")
 	res, err := client.Do(req)
-
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		errStr = err.Error()
-	} else {
-		// fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
-		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err1 := fmt.Errorf("HTTP Status: not in 200-399")
-			log.Error().Err(err1).Msg("")
-			errStr = err1.Error()
-		}
-
-		body, err2 := io.ReadAll(res.Body)
-		if err2 != nil {
-			log.Error().Err(err2).Msg("")
-			errStr = err2.Error()
-		}
-		defer res.Body.Close()
-		response = string(body)
+		// Handle request execution error
+		log.Error().Err(err).Msg("Failed to execute HTTP request")
+		resultTmp.Value = "Error"
+		resultTmp.Err = fmt.Sprintf("HTTP request execution error: %v", err)
+		*returnResult = append(*returnResult, resultTmp)
+		return
 	}
 
+	// Check status code
+	if res.StatusCode < 200 || res.StatusCode >= 400 {
+		errMsg := fmt.Sprintf("HTTP request failed with status code: %d", res.StatusCode)
+		log.Error().Msg(errMsg)
+		resultTmp.Value = "Error"
+		resultTmp.Err = errMsg
+		*returnResult = append(*returnResult, resultTmp)
+		return
+	}
+
+	// Read response body
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		// Handle response reading error
+		log.Error().Err(err).Msg("Failed to read response body")
+		resultTmp.Value = "Error"
+		resultTmp.Err = fmt.Sprintf("Response body read error: %v", err)
+		*returnResult = append(*returnResult, resultTmp)
+		return
+	}
+
+	response := string(body)
+
+	// Validate JSON response
 	if !gjson.Valid(response) {
-		log.Debug().Msg("!gjson.Valid(response)")
+		// Handle invalid JSON response
+		log.Error().Msg("Invalid JSON response from monitoring server")
+		log.Debug().Msgf("Raw response: %s", response)
+		resultTmp.Value = "Invalid JSON response"
+		resultTmp.Err = "Response validation error: Invalid JSON format"
+		*returnResult = append(*returnResult, resultTmp)
+		return
 	}
+
+	// Extract metric value based on metric type
+	var result string
+	var metricError string
 
 	switch metric {
 	case model.MonMetricCpu:
 		value := gjson.Get(response, "values.cpu_utilization")
-		result = value.String()
+		if !value.Exists() {
+			metricError = "CPU utilization data not found in response"
+			result = "N/A"
+		} else {
+			result = value.String()
+		}
 	case model.MonMetricMem:
 		value := gjson.Get(response, "values.mem_utilization")
-		result = value.String()
+		if !value.Exists() {
+			metricError = "Memory utilization data not found in response"
+			result = "N/A"
+		} else {
+			result = value.String()
+		}
 	case model.MonMetricDisk:
 		value := gjson.Get(response, "values.disk_utilization")
-		result = value.String()
+		if !value.Exists() {
+			metricError = "Disk utilization data not found in response"
+			result = "N/A"
+		} else {
+			result = value.String()
+		}
 	case model.MonMetricNet:
 		value := gjson.Get(response, "values.bytes_out")
-		result = value.String()
+		if !value.Exists() {
+			metricError = "Network bytes out data not found in response"
+			result = "N/A"
+		} else {
+			result = value.String()
+		}
 	default:
+		// For unknown metrics, return the entire response
 		result = response
 	}
 
-	//wg.Done() //goroutin sync done
+	// Set result value
+	resultTmp.Value = result
 
-	ResultTmp := model.MonResultSimple{}
-	ResultTmp.VmId = vmID
-	ResultTmp.Metric = metric
-
-	if err != nil {
-		fmt.Println("CB-DF Error message: " + errStr)
-		ResultTmp.Value = errStr
-		ResultTmp.Err = err.Error()
-		*returnResult = append(*returnResult, ResultTmp)
+	// Set error if metric data was not found
+	if metricError != "" {
+		resultTmp.Err = metricError
+		log.Debug().Msgf("Monitoring data issue: %s", metricError)
 	} else {
-		log.Debug().Msg("CB-DF Result: " + result)
-		ResultTmp.Value = result
-		*returnResult = append(*returnResult, ResultTmp)
+		log.Debug().Msgf("Successfully retrieved monitoring data: %s", result)
 	}
 
+	// Append result to return array
+	*returnResult = append(*returnResult, resultTmp)
 }
