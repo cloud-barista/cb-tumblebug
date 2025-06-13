@@ -42,7 +42,7 @@ func OrchestrationController() {
 		mciPolicyList := ListMciPolicyId(nsId)
 
 		for _, m := range mciPolicyList {
-			log.Debug().Msg("NS[" + nsId + "]" + "MciPolicy[" + m + "]")
+			log.Debug().Msg("mciPolicyList: NS[" + nsId + "]" + "MciPolicy[" + m + "]")
 		}
 
 		for _, v := range mciPolicyList {
@@ -73,8 +73,7 @@ func OrchestrationController() {
 			*/
 
 			for policyIndex := range mciPolicyTmp.Policy {
-				log.Debug().Msg("\n[MCI-Policy-StateMachine]")
-				common.PrintJsonPretty(mciPolicyTmp.Policy[policyIndex])
+				log.Debug().Msg("\n[MCI-Policy-StateMachine] mciPolicyTmp.Policy[policyIndex],[" + v + "]")
 
 				switch {
 				case mciPolicyTmp.Policy[policyIndex].Status == model.AutoStatusReady:
@@ -116,9 +115,20 @@ func OrchestrationController() {
 						averMci := (sumMci / float64(len(content.MciMonitoring)))
 						fmt.Printf("[monData.Value] AverMci: %f,  SumMci: %f \n", averMci, sumMci)
 
+						// Before adding new value, ensure the list doesn't exceed evaluationPeriod length
 						evaluationPeriod, _ := strconv.Atoi(mciPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationPeriod)
 						evaluationValue := mciPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationValue
-						evaluationValue = append([]string{fmt.Sprintf("%f", averMci)}, evaluationValue...) // prepend current aver date
+
+						// Add new value to the beginning of the list
+						evaluationValue = append([]string{fmt.Sprintf("%f", averMci)}, evaluationValue...)
+
+						// If the list exceeds evaluationPeriod, truncate it
+						if len(evaluationValue) > evaluationPeriod {
+							// Keep only the most recent evaluationPeriod items
+							evaluationValue = evaluationValue[:evaluationPeriod]
+						}
+
+						// Update the evaluationValue in the policy
 						mciPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationValue = evaluationValue
 
 						sum := 0.0
