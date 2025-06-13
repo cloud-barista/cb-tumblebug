@@ -9,6 +9,6 @@ dependencies = [
     "colorama==0.4.6",
     "pycryptodome==3.19.1",
     "pyyaml==6.0.1",
-    "requests==2.32.2",
+    "requests==2.32.4",
     "tabulate==0.8.9",
 ]
