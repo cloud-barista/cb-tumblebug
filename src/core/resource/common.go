@@ -30,6 +30,7 @@ import (
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	"github.com/go-resty/resty/v2"
@@ -1319,10 +1320,6 @@ func LoadAssets() (model.IdList, error) {
 	regiesteredIds := model.IdList{}
 	regiesteredStatus := ""
 
-	// WaitGroups for goroutine
-	// var waitSpecImg sync.WaitGroup
-	var wait sync.WaitGroup
-
 	// Check common namespace. Create one if not.
 	_, err := common.GetNs(model.SystemCommonNs)
 	if err != nil {
@@ -1356,7 +1353,6 @@ func LoadAssets() (model.IdList, error) {
 	var specMap sync.Map
 
 	tmpSpecList := []model.TbSpecInfo{}
-	tmpImageList := []model.TbImageInfo{}
 
 	// ignoreConnectionMap is used to store connection names that failed to lookup specs
 	var ignoreConnectionMap sync.Map
@@ -1486,37 +1482,6 @@ func LoadAssets() (model.IdList, error) {
 		}
 	}
 	rowsSpec = newRowsSpec
-
-	// Read common specs and register spec objects
-	file, fileErr = os.Open("../assets/cloudimage.csv")
-	if fileErr != nil {
-		log.Error().Err(fileErr).Msg("")
-		return regiesteredIds, fileErr
-	}
-	defer file.Close()
-
-	rdr = csv.NewReader(bufio.NewReader(file))
-	rowsImg, _ := rdr.ReadAll()
-
-	// expending rows with "all" connectionName into each region
-	// "all" means the values in the row are applicable to all connectionNames in a CSP
-	newRowsImg := make([][]string, 0, len(rowsImg))
-	for _, row := range rowsImg {
-		if row[1] == "all" {
-			for _, connConfig := range connectionList.Connectionconfig {
-				if strings.EqualFold(connConfig.ProviderName, row[0]) {
-					newRow := make([]string, len(row))
-					copy(newRow, row)
-					newRow[1] = connConfig.RegionDetail.RegionName
-					newRowsImg = append(newRowsImg, newRow)
-					//log.Info().Msgf("Expended row: %s", newRow)
-				}
-			}
-		} else {
-			newRowsImg = append(newRowsImg, row)
-		}
-	}
-	rowsImg = newRowsImg
 
 	// waitSpecImg.Add(1)
 	//go func(rowsSpec [][]string) {
@@ -1692,125 +1657,25 @@ func LoadAssets() (model.IdList, error) {
 
 	elapsedUpdateSpec := time.Now().Sub(startTime)
 	log.Info().Msgf("Updated the registered Specs according to the asset file. Elapsed [%s]", elapsedUpdateSpec)
+
 	startTime = time.Now()
 
-	// // waitSpecImg.Add(1)
-	// go func(rowsImg [][]string) {
-	// 	// defer waitSpecImg.Done()
-	lenImages := len(rowsImg[1:])
-	for i, row := range rowsImg[1:] {
-		wait.Add(1)
-		// fmt.Printf("[%d] i, row := range rowsImg[1:] %s\n", i, row)
-		// goroutine
-		go func(i int, row []string, lenImages int) {
-			defer wait.Done()
-
-			imageReqTmp := model.TbImageReq{}
-			// row0: ProviderName
-			// row1: regionName
-			// row2: cspResourceId
-			// row3: OsType
-			// row4: description
-			// row5: supportedInstance
-			// row6: infraType
-			providerName := strings.ToLower(row[0])
-			regionName := strings.ToLower(row[1])
-			imageReqTmp.CspImageName = row[2]
-			osType := row[3]
-			description := row[4]
-			infraType := strings.ToLower(row[6])
-
-			// Give a name for spec object by combining ConnectionName and OsType
-			imageReqTmp.Name = GetProviderRegionZoneResourceKey(providerName, regionName, "", osType)
-
-			//get connetion for lookup (if regionName is "all", use providerName only)
-			validRepresentativeConnectionMapKey := providerName + "-" + regionName
-			connectionForLookup, ok := validRepresentativeConnectionMap.Load(validRepresentativeConnectionMapKey)
-			if ok {
-				imageReqTmp.ConnectionName = connectionForLookup.(model.ConnConfig).ConfigName
-
-				_, ignoreCase := ignoreConnectionMap.Load(imageReqTmp.ConnectionName)
-				if !ignoreCase {
-					// RandomSleep for safe parallel executions
-					common.RandomSleep(0, lenImages/8)
-
-					// To avoid naming-rule violation, modify the string
-					// imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + osType
-					// imageReqTmp.Name = ToNamingRuleCompatible(imageReqTmp.Name)
-					imageInfoId := imageReqTmp.Name
-					imageReqTmp.Description = "Common Image Resource"
-
-					log.Trace().Msgf("[%d] register Common Image: %s", i, imageReqTmp.Name)
-
-					// Register Spec object
-					regiesteredStatus = ""
-
-					tmpImageInfo, err1 := GetImageInfoFromLookupImage(model.SystemCommonNs, imageReqTmp)
-					if err1 != nil {
-						log.Info().Msgf("lookup failure, Provider: %s, Region: %s, CspImageName: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err1.Error())
-						regiesteredStatus += "  [Failed] " + err1.Error()
-					} else {
-						// Update registered image object with OsType info
-						expandedInfraType := expandInfraType(infraType)
-
-						tmpImageInfo.OSType = osType
-						tmpImageInfo.Description = description
-						tmpImageInfo.InfraType = expandedInfraType
-						tmpImageInfo.SystemLabel = model.StrFromAssets
-
-						tmpImageList = append(tmpImageList, tmpImageInfo)
-
-					}
-
-					// _, err1 := RegisterImageWithId(model.SystemCommonNs, &imageReqTmp, true, true)
-					// if err1 != nil {
-					// 	log.Info().Msgf("Provider: %s, Region: %s, CspResourceId: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err1.Error())
-					// 	regiesteredStatus += "  [Failed] " + err1.Error()
-					// } else {
-					// 	// Update registered image object with OsType info
-					// 	expandedInfraType := expandInfraType(infraType)
-					// 	imageUpdateRequest := model.TbImageInfo{
-					// 		GuestOS:     osType,
-					// 		Description: description,
-					// 		InfraType:   expandedInfraType,
-					// 	}
-					// 	_, err2 := UpdateImage(model.SystemCommonNs, imageInfoId, imageUpdateRequest, true)
-					// 	if err2 != nil {
-					// 		log.Error().Err(err2).Msg("UpdateImage failed")
-					// 		regiesteredStatus += "  [Failed] " + err2.Error()
-					// 	}
-					// }
-
-					//regiesteredStatus = strings.Replace(regiesteredStatus, "\\", "", -1)
-					regiesteredIds.AddItem(model.StrImage + ": " + imageInfoId + regiesteredStatus)
-				}
-			}
-		}(i, row, lenImages)
-	}
-	wait.Wait()
-	// }(rowsImg)
-
-	log.Info().Msgf("tmpImageList %d", len(tmpImageList))
-
-	err = RegisterImageWithInfoInBulk(tmpImageList)
+	reqBody := &model.ImageFetchOption{}
+	reqBody.ExcludedProviders = []string{csp.Azure}
+	reqBody.RegionAgnosticProviders = []string{csp.GCP, csp.Tencent}
+	resultFetchImagesForAllConnConfigs, err := FetchImagesForAllConnConfigs(model.SystemCommonNs, reqBody)
 	if err != nil {
-		log.Info().Err(err).Msg("RegisterImage WithInfo failed")
+		log.Error().Err(err).Msg("FetchImagesForAllConnConfigs failed")
 	}
-	tmpImageList = nil
+	log.Debug().Msgf("resultFetchImagesForAllConnConfigs: %+v", resultFetchImagesForAllConnConfigs)
 
-	// elapsedRegisterUpdatedImages := time.Now().Sub(startTime)
-	// log.Info().Msgf("Registerd Updated Images. Elapsed [%s]", elapsedRegisterUpdatedImages)
-	// startTime = time.Now()
-
-	err = RemoveDuplicateImagesInSQL()
+	resultUpdateImagesFromAsset, err := UpdateImagesFromAsset(model.SystemCommonNs)
 	if err != nil {
-		log.Error().Err(err).Msg("RemoveDuplicateImagesInSQL failed")
+		log.Error().Err(err).Msg("UpdateImagesFromAsset failed")
 	}
-	// elapsedRemoveDuplicateImagesInSQLUpdated := time.Now().Sub(startTime)
-	// log.Info().Msgf("Remove Duplicate Images In SQL. Elapsed [%s]", elapsedRemoveDuplicateImagesInSQLUpdated)
-	// startTime = time.Now()
+	log.Debug().Msgf("resultUpdateImagesFromAsset: %+v", resultUpdateImagesFromAsset)
 
-	elapsedUpdateImg := time.Now().Sub(startTime)
+	elapsedUpdateImg := time.Since(startTime)
 
 	// waitSpecImg.Wait()
 	// sort.Strings(regiesteredIds.IdList)

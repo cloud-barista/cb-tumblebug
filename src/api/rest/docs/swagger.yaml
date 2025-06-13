@@ -7145,6 +7145,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/updateImagesFromAsset:
+    post:
+      tags:
+      - "[Infra Resource] Image Management"
+      summary: Update images from cloudimage.csv asset file
+      description: Update image information based on the cloudimage.csv asset file
+      operationId: UpdateImagesFromAsset
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: system
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resource.FetchImagesAsyncResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/vNet:
     get:
       tags:

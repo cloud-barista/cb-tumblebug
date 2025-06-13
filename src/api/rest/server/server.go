@@ -482,6 +482,7 @@ func RunServer() {
 	g.POST("/:nsId/resources/fetchImages", rest_resource.RestFetchImages)
 	g.POST("/:nsId/resources/fetchImagesAsync", rest_resource.RestFetchImagesAsync)
 	g.GET("/:nsId/resources/fetchImagesResult", rest_resource.RestGetFetchImagesAsyncResult)
+	g.POST("/:nsId/resources/updateImagesFromAsset", rest_resource.RestUpdateImagesFromAsset)
 	g.POST("/:nsId/resources/searchImage", rest_resource.RestSearchImage)
 	g.GET("/:nsId/resources/searchImageOptions", rest_resource.RestSearchImageOptions)
 

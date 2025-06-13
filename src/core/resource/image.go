@@ -15,10 +15,13 @@ limitations under the License.
 package resource
 
 import (
+	"bufio"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -579,7 +582,7 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 
 	for _, spiderImage := range spiderImageList.Image {
 		if spiderImage.ImageStatus == model.ImageUnavailable {
-			log.Warn().Msgf("Skipping unavailable image: %s (%s)", spiderImage.IId.NameId, connConfig)
+			log.Debug().Msgf("Skipping image in the unavailable status: %s (%s)", spiderImage.IId.NameId, connConfig)
 			continue
 		}
 
@@ -953,6 +956,192 @@ func GetFetchImagesAsyncResult(nsId string) (*FetchImagesAsyncResult, error) {
 	return result, nil
 }
 
+// UpdateImagesFromAsset updates image information based on cloudimage.csv asset file
+func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
+	if nsId == "" {
+		nsId = model.SystemCommonNs
+	}
+
+	startTime := time.Now()
+	result := &FetchImagesAsyncResult{
+		NamespaceID: nsId,
+		StartTime:   startTime,
+		InProgress:  true,
+	}
+	updateFetchImagesProgress(nsId, result)
+
+	// Get all connection configs for provider and region information
+	connectionList, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
+	if err != nil {
+		log.Error().Err(err).Msg("Cannot GetConnConfigList")
+		result.InProgress = false
+		result.ElapsedTime = time.Since(startTime).String()
+		updateFetchImagesProgress(nsId, result)
+		return result, err
+	}
+
+	// Map to store valid connections by provider and region
+	validConnectionMap := make(map[string]model.ConnConfig)
+	for _, connConfig := range connectionList.Connectionconfig {
+		key := strings.ToLower(connConfig.ProviderName) + "-" + strings.ToLower(connConfig.RegionDetail.RegionName)
+		validConnectionMap[key] = connConfig
+	}
+
+	// Open cloudimage.csv file
+	file, fileErr := os.Open("../assets/cloudimage.csv")
+	if fileErr != nil {
+		log.Error().Err(fileErr).Msg("Failed to open cloudimage.csv")
+		result.InProgress = false
+		result.ElapsedTime = time.Since(startTime).String()
+		updateFetchImagesProgress(nsId, result)
+		return result, fileErr
+	}
+	defer file.Close()
+
+	// Read CSV file
+	rdr := csv.NewReader(bufio.NewReader(file))
+	rowsImg, err := rdr.ReadAll()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to read cloudimage.csv")
+		result.InProgress = false
+		result.ElapsedTime = time.Since(startTime).String()
+		updateFetchImagesProgress(nsId, result)
+		return result, err
+	}
+
+	tmpImageList := []model.TbImageInfo{}
+	var wait sync.WaitGroup
+	var mutex sync.Mutex
+
+	// // waitSpecImg.Add(1)
+	// go func(rowsImg [][]string) {
+	// 	// defer waitSpecImg.Done()
+	lenImages := len(rowsImg[1:])
+	for i, row := range rowsImg[1:] {
+
+		imageReqTmp := model.TbImageReq{}
+		// row0: ProviderName
+		// row1: regionName
+		// row2: cspResourceId
+		// row3: OsType
+		// row4: description
+		// row5: supportedInstance
+		// row6: infraType
+		providerName := strings.ToLower(row[0])
+		regionName := strings.ToLower(row[1])
+		imageReqTmp.CspImageName = row[2]
+		osType := row[3]
+		description := row[4]
+		infraType := strings.ToLower(row[6])
+
+		regionNameForConnection := regionName
+		if regionName == "all" {
+			regionName = model.StrCommon
+		}
+		imageReqTmp.ConnectionName = providerName + "-" + regionNameForConnection
+
+		log.Trace().Msgf("[%d] register Common Image: %s", i, imageReqTmp.Name)
+
+		existingImage, err := GetImageByPrimaryKey(nsId, providerName, imageReqTmp.CspImageName)
+		if err != nil {
+			wait.Add(1)
+			// fmt.Printf("[%d] i, row := range rowsImg[1:] %s\n", i, row)
+			// goroutine
+			go func(i int, row []string, lenImages int) {
+				defer wait.Done()
+
+				// RandomSleep for safe parallel executions
+				common.RandomSleep(0, lenImages/8)
+				log.Info().Msgf("Failed to get existing image, Provider: %s, Region: %s, CspImageName: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err.Error())
+
+				if regionName == model.StrCommon {
+					// If region is common, check all regions for the provider
+					for _, connConfig := range connectionList.Connectionconfig {
+						if connConfig.ProviderName == providerName {
+							regionNameForConnection = connConfig.RegionDetail.RegionName
+							imageReqTmp.ConnectionName = providerName + "-" + regionNameForConnection
+
+							tmpImageInfo, err1 := GetImageInfoFromLookupImage(model.SystemCommonNs, imageReqTmp)
+							if err1 != nil {
+								log.Info().Msgf("lookup failure, Provider: %s, Region: %s, CspImageName: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err1.Error())
+
+							} else {
+								// Update registered image object with OsType info
+								expandedInfraType := expandInfraType(infraType)
+
+								tmpImageInfo.OSType = osType
+								tmpImageInfo.Description = description
+								tmpImageInfo.InfraType = expandedInfraType
+								tmpImageInfo.SystemLabel = model.StrFromAssets
+
+								mutex.Lock()
+								tmpImageList = append(tmpImageList, tmpImageInfo)
+								mutex.Unlock()
+								break // Exit loop after first successful lookup
+							}
+
+						}
+					}
+				} else {
+					tmpImageInfo, err1 := GetImageInfoFromLookupImage(model.SystemCommonNs, imageReqTmp)
+					if err1 != nil {
+						log.Info().Msgf("lookup failure, Provider: %s, Region: %s, CspImageName: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err1.Error())
+
+					} else {
+						// Update registered image object with OsType info
+						expandedInfraType := expandInfraType(infraType)
+
+						tmpImageInfo.OSType = osType
+						tmpImageInfo.Description = description
+						tmpImageInfo.InfraType = expandedInfraType
+						tmpImageInfo.SystemLabel = model.StrFromAssets
+
+						mutex.Lock()
+						tmpImageList = append(tmpImageList, tmpImageInfo)
+						mutex.Unlock()
+
+					}
+				}
+
+			}(i, row, lenImages)
+		} else {
+			// Update existing image with new information from the asset file
+			log.Info().Msgf("Found existing image, Provider: %s, Region: %s, CspImageName: %s", providerName, regionName, imageReqTmp.CspImageName)
+			tmpImageInfo := existingImage
+			// Update registered image object with OsType info
+			expandedInfraType := expandInfraType(infraType)
+
+			tmpImageInfo.OSType = osType
+			tmpImageInfo.Description = description
+			tmpImageInfo.InfraType = expandedInfraType
+			tmpImageInfo.SystemLabel = model.StrFromAssets
+
+			mutex.Lock()
+			tmpImageList = append(tmpImageList, tmpImageInfo)
+			mutex.Unlock()
+		}
+
+	}
+	wait.Wait()
+	// }(rowsImg)
+
+	log.Info().Msgf("tmpImageList %d", len(tmpImageList))
+
+	err = RegisterImageWithInfoInBulk(tmpImageList)
+	if err != nil {
+		log.Info().Err(err).Msg("RegisterImage WithInfo failed")
+	}
+
+	elapsedUpdateImg := time.Since(startTime)
+
+	log.Info().Msgf("Updated the registered Images according to the asset file. Elapsed [%s]", elapsedUpdateImg)
+
+	result.InProgress = false
+	result.ElapsedTime = time.Since(startTime).String()
+	updateFetchImagesProgress(nsId, result)
+	return result, nil
+}
+
 // SearchImage returns a list of images based on the search criteria
 func SearchImage(nsId, providerName, regionName, osType, osArchitecture string, isGPUImage, isKubernetesImage, isRegisteredByAsset, includeDeprecatedImage *bool, keywords ...string) ([]model.TbImageInfo, int, error) {
 	err := common.CheckString(nsId)
@@ -1305,7 +1494,7 @@ func GetImageByPrimaryKey(nsId string, provider string, cspImageName string) (mo
 	var image model.TbImageInfo
 	result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(provider_name) = ? AND LOWER(csp_image_name) = ?", nsId, provider, cspImageName).First(&image)
 	if result.Error != nil {
-		log.Error().Err(result.Error).Msgf("Failed to retrieve image for Namespace: %s, Provider: %s, CSP Image Name: %s", nsId, provider, cspImageName)
+		log.Debug().Err(result.Error).Msgf("Failed to retrieve image for Namespace: %s, Provider: %s, CSP Image Name: %s", nsId, provider, cspImageName)
 		return model.TbImageInfo{}, result.Error
 	}
 

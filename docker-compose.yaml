@@ -358,7 +358,6 @@ services:
   #     - MB_LOGGER_LEVEL=OFF
   #     - MB_LOGGING_LEVEL=OFF  
   #     - MB_EMOJI_IN_LOGS=false   
-      
   #   volumes:
   #     - ./container-volume/cb-tumblebug-container/meta_db/metabase-data:/metabase-data
   #   depends_on:
