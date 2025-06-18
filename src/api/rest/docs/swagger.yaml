@@ -495,6 +495,154 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /fetchImages:
+    post:
+      tags:
+      - "[Infra Resource] Image Management"
+      summary: Fetch images for regions of each CSP synchronously
+      description: Fetch images waiting for completion
+      operationId: FetchImages
+      requestBody:
+        description: Fetch option
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.ImageFetchOption'
+        required: true
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resource.FetchImagesAsyncResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: fetchOption
+  /fetchImagesAsync:
+    post:
+      tags:
+      - "[Infra Resource] Image Management"
+      summary: Fetch images asynchronously
+      description: Fetch images in the background without waiting for completion
+      operationId: FetchImagesAsync
+      requestBody:
+        description: Fetch option
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.ImageFetchOption'
+        required: true
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: fetchOption
+  /fetchImagesResult:
+    get:
+      tags:
+      - "[Infra Resource] Image Management"
+      summary: Get result of asynchronous image fetching
+      description: Get detailed results from the last asynchronous image fetch operation
+      operationId: GetFetchImagesAsyncResult
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resource.FetchImagesAsyncResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /fetchPrice:
+    post:
+      tags:
+      - "[Infra Resource] Spec Management"
+      summary: Fetch price from all CSP connections and update the price information
+        for associated specs in the system.
+      description: Fetch price from all CSP connections and update the price information
+        for associated specs in the system.
+      operationId: FetchPrice
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /fetchSpecs:
+    post:
+      tags:
+      - "[Infra Resource] Spec Management"
+      summary: Fetch specs from CSPs and register them in the system.
+      description: Fetch specs from CSPs and register them in the system.
+      operationId: FetchSpecs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /forward/{path}:
     post:
       tags:
@@ -934,8 +1082,8 @@ paths:
     post:
       tags:
       - "[Infra Resource] Image Management"
-      summary: Lookup image
-      description: Lookup image
+      summary: Lookup image (for debugging purposes)
+      description: Lookup image (for debugging purposes)
       operationId: LookupImage
       requestBody:
         description: "Specify connectionName, cspImageName"
@@ -968,8 +1116,8 @@ paths:
     post:
       tags:
       - "[Infra Resource] Image Management"
-      summary: Lookup image list
-      description: Lookup image list
+      summary: Lookup image list (for debugging purposes)
+      description: Lookup image list (for debugging purposes)
       operationId: LookupImageList
       requestBody:
         description: Specify connectionName
@@ -1002,8 +1150,8 @@ paths:
     post:
       tags:
       - "[Infra Resource] Spec Management"
-      summary: Lookup spec
-      description: Lookup spec
+      summary: Lookup spec (for debugging purposes)
+      description: Lookup spec (for debugging purposes)
       operationId: LookupSpec
       requestBody:
         description: Specify connectionName & cspSpecNameS
@@ -1036,8 +1184,8 @@ paths:
     post:
       tags:
       - "[Infra Resource] Spec Management"
-      summary: Lookup spec list
-      description: Lookup spec list
+      summary: Lookup spec list (for debugging purposes)
+      description: Lookup spec list (for debugging purposes)
       operationId: LookupSpecList
       requestBody:
         description: Specify connectionName
@@ -5447,158 +5595,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/resources/fetchImages:
-    post:
-      tags:
-      - "[Infra Resource] Image Management"
-      summary: Fetch images for regions of each CSP synchronously
-      description: Fetch images waiting for completion
-      operationId: FetchImages
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: system
-      requestBody:
-        description: Fetch option
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.ImageFetchOption'
-        required: true
-      responses:
-        "202":
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/resource.FetchImagesAsyncResult'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: fetchOption
-  /ns/{nsId}/resources/fetchImagesAsync:
-    post:
-      tags:
-      - "[Infra Resource] Image Management"
-      summary: Fetch images asynchronously
-      description: Fetch images in the background without waiting for completion
-      operationId: FetchImagesAsync
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: system
-      requestBody:
-        description: Fetch option
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.ImageFetchOption'
-        required: true
-      responses:
-        "202":
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: fetchOption
-  /ns/{nsId}/resources/fetchImagesResult:
-    get:
-      tags:
-      - "[Infra Resource] Image Management"
-      summary: Get result of asynchronous image fetching
-      description: Get detailed results from the last asynchronous image fetch operation
-      operationId: GetFetchImagesAsyncResult
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: system
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/resource.FetchImagesAsyncResult'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/resources/fetchSpecs:
-    post:
-      tags:
-      - "[Infra Resource] Spec Management"
-      summary: Fetch specs
-      description: Fetch specs
-      operationId: FetchSpecs
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: system
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/filterSpecsByRange:
     post:
       tags:
@@ -7145,40 +7141,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/resources/updateImagesFromAsset:
-    post:
-      tags:
-      - "[Infra Resource] Image Management"
-      summary: Update images from cloudimage.csv asset file
-      description: Update image information based on the cloudimage.csv asset file
-      operationId: UpdateImagesFromAsset
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: system
-      responses:
-        "202":
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/resource.FetchImagesAsyncResult'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/vNet:
     get:
       tags:
@@ -8478,6 +8440,32 @@ paths:
                 additionalProperties:
                   type: string
       x-codegen-request-body-name: number
+  /updateImagesFromAsset:
+    post:
+      tags:
+      - "[Infra Resource] Image Management"
+      summary: Update images from cloudimage.csv asset file
+      description: Update image information based on the cloudimage.csv asset file
+      operationId: UpdateImagesFromAsset
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resource.FetchImagesAsyncResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /util/net/design:
     post:
       tags:

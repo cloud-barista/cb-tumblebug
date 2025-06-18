@@ -1675,3 +1675,40 @@ func IsDeprecatedImage(combinedInfo string) bool {
 
 	return false
 }
+
+// ConvertToBaseCurrency converts a cost value from a specific currency to the base currency (USD)
+// This function handles currency conversion using predefined exchange rates
+func ConvertToBaseCurrency(cost float32, currency string) float32 {
+	// If currency is already USD or empty, return the original cost
+	if currency == "" || strings.ToUpper(currency) == "USD" {
+		return cost
+	}
+
+	// Normalize currency code to uppercase for consistency
+	currencyCode := strings.ToUpper(currency)
+
+	// Exchange rates table (base: USD)
+	// These should ideally come from an external source or database for up-to-date rates
+	exchangeRates := map[string]float32{
+		"USD": 1.0,     // 1 USD = 1 USD
+		"KRW": 0.00074, // 1 KRW = 0.00074 USD (approx. 1350:1)
+		"EUR": 1.09,    // 1 EUR = 1.09 USD
+		"JPY": 0.0067,  // 1 JPY = 0.0067 USD
+		"CNY": 0.14,    // 1 CNY = 0.14 USD
+		"GBP": 1.27,    // 1 GBP = 1.27 USD
+		"CAD": 0.74,    // 1 CAD = 0.74 USD
+		"AUD": 0.66,    // 1 AUD = 0.66 USD
+	}
+
+	// Check if the currency code exists in our exchange rates table
+	rate, exists := exchangeRates[currencyCode]
+	if !exists {
+		log.Warn().Msgf("Unknown currency code: %s, using original value", currencyCode)
+		return cost
+	}
+
+	// Convert to USD (base currency) by multiplying by the exchange rate
+	// For currencies like KRW, JPY: multiply by a small number (e.g., 0.00074)
+	// For currencies like EUR, GBP: multiply by a number > 1
+	return cost * rate
+}

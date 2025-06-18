@@ -143,6 +143,8 @@ services:
     restart: always
     networks:
       - internal_network
+      # # Enable external network for outbound access (not ideal for security)
+      # - external_network
     ports:
       - 5432:5432
     volumes:

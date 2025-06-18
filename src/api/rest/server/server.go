@@ -476,13 +476,14 @@ func RunServer() {
 	g.PUT("/:nsId/resources/spec/:resourceId", rest_resource.RestPutSpec)
 	g.DELETE("/:nsId/resources/spec/:resourceId", rest_resource.RestDelResource)
 
-	g.POST("/:nsId/resources/fetchSpecs", rest_resource.RestFetchSpecs)
+	e.POST("/tumblebug/fetchSpecs", rest_resource.RestFetchSpecs)
+	e.POST("/tumblebug/fetchPrice", rest_resource.RestFetchPrice)
 	g.POST("/:nsId/resources/filterSpecsByRange", rest_resource.RestFilterSpecsByRange)
 
-	g.POST("/:nsId/resources/fetchImages", rest_resource.RestFetchImages)
-	g.POST("/:nsId/resources/fetchImagesAsync", rest_resource.RestFetchImagesAsync)
-	g.GET("/:nsId/resources/fetchImagesResult", rest_resource.RestGetFetchImagesAsyncResult)
-	g.POST("/:nsId/resources/updateImagesFromAsset", rest_resource.RestUpdateImagesFromAsset)
+	e.POST("/tumblebug/fetchImages", rest_resource.RestFetchImages)
+	e.POST("/tumblebug/fetchImagesAsync", rest_resource.RestFetchImagesAsync)
+	e.POST("/tumblebug/fetchImagesResult", rest_resource.RestGetFetchImagesAsyncResult)
+	e.POST("/tumblebug/updateImagesFromAsset", rest_resource.RestUpdateImagesFromAsset)
 	g.POST("/:nsId/resources/searchImage", rest_resource.RestSearchImage)
 	g.GET("/:nsId/resources/searchImageOptions", rest_resource.RestSearchImageOptions)
 

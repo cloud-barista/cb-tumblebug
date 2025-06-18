@@ -50,6 +50,56 @@ type SpiderGpuInfo struct {
 	TotalMemSizeGB string `json:"TotalMemSizeGB,omitempty" validate:"omitempty" example:"24"` // Total Memory size of the GPU in GB, "-1" when not applicable
 }
 
+// SpiderCloudPrice represents the pricing information for a specific cloud provider.
+type SpiderCloudPrice struct {
+	Meta       SpiderMeta `json:"Meta" validate:"required" description:"Metadata information about the price data"`
+	CloudName  string     `json:"CloudName" validate:"required" example:"AWS"`        // Name of the cloud provider
+	RegionName string     `json:"RegionName" validate:"required" example:"us-east-1"` // Name of the region
+
+	PriceList []SpiderPrice `json:"PriceList" validate:"required" description:"List of prices"` // List of prices for different services/products
+}
+
+// SpiderMeta contains metadata information about the price data.
+type SpiderMeta struct {
+	Version     string `json:"Version" validate:"required" example:"1.0"`        // Version of the pricing data
+	Description string `json:"Description,omitempty" example:"Cloud price data"` // Description of the pricing data
+}
+
+// SpiderPrice represents the price information for a specific product.
+type SpiderPrice struct {
+	ZoneName    string            `json:"ZoneName,omitempty" example:"us-east-1a"`                                     // Name of the zone
+	ProductInfo SpiderProductInfo `json:"ProductInfo" validate:"required" description:"Information about the product"` // Information about the product
+	PriceInfo   SpiderPriceInfo   `json:"PriceInfo" validate:"required" description:"Pricing details of the product"`  // Pricing details of the product
+}
+
+// ProductInfo represents the product details.
+type SpiderProductInfo struct {
+	ProductId      string         `json:"ProductId" validate:"required" example:"prod-123"`                           // ID of the product
+	VMSpecInfo     SpiderSpecInfo `json:"VMSpecInfo" validate:"required" description:"Information about the VM spec"` // Information about the VM spec
+	Description    string         `json:"Description,omitempty" example:"General purpose instance"`                   // Description of the product
+	CSPProductInfo interface{}    `json:"CSPProductInfo" validate:"required" description:"Additional product info"`   // Additional product information specific to CSP
+}
+
+// PriceInfo represents the pricing details for a product.
+type SpiderPriceInfo struct {
+	OnDemand     SpiderOnDemand `json:"OnDemand" validate:"required" description:"Ondemand pricing details"`  // Ondemand pricing details
+	CSPPriceInfo interface{}    `json:"CSPPriceInfo" validate:"required" description:"Additional price info"` // Additional price information specific to CSP
+}
+
+// OnDemand represents the OnDemand pricing details.
+type SpiderOnDemand struct {
+	PricingId   string `json:"PricingId" validate:"required" example:"price-123"`    // ID of the pricing policy
+	Unit        string `json:"Unit" validate:"required" example:"Hour"`              // Unit of the pricing (e.g., per hour)
+	Currency    string `json:"Currency" validate:"required" example:"USD"`           // Currency of the pricing
+	Price       string `json:"Price" validate:"required" example:"0.02"`             // Price in the specified currency per unit
+	Description string `json:"Description,omitempty" example:"Pricing for t2.micro"` // Description of the pricing policy
+}
+
+type SpiderPriceInfoHandler interface {
+	ListProductFamily(regionName string) ([]string, error)
+	GetPriceInfo(productFamily string, regionName string, filterList []KeyValue) (string, error) // return string: json format
+}
+
 // TbSpecReq is a struct to handle 'Register spec' request toward CB-Tumblebug.
 type TbSpecReq struct {
 	// Name is human-readable string to represent the object, used to generate Id

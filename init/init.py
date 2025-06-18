@@ -256,6 +256,27 @@ def load_resources():
     finally:
         event.set()  # Signal that the request is complete regardless of success or failure
 
+# Function to fetch price information from CSPs
+def fetch_price():
+    global response_json
+    try:
+        # FetchPrice API is a POST endpoint with no required body
+        response = requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/fetchPrice", headers=HEADERS)
+        response.raise_for_status()  # Will raise an exception for HTTP error codes
+        
+        response_json = response.json()
+        if response_json is None:  # Check if response.json() returned None
+            response_json = {'error': 'No content returned'}
+        
+        # Log success message
+        print(f"Price fetching initiated: {response_json.get('message', 'No message returned')}")
+    except requests.RequestException as e:
+        response_json = {'error': f'Failed to fetch prices: {str(e)}'}
+        print(f"Error fetching prices: {str(e)}")
+    finally:
+        event.set()  # Signal that the request is complete regardless of success or failure
+        return response_json
+
 # Start time
 start_time = time.time()
 
@@ -315,6 +336,16 @@ elif response_json:
                 successful_images += 1
 
     print(Fore.CYAN + f"\nLoading completed (elapsed: {duration}s)")
+    print(Fore.YELLOW + f"\nThe system is ready to use.")
+
+    # print a message for initiating price fetching and say that this finial operation can be run background
+    print(Fore.CYAN + f"\nInitiating price fetching information from all CSPs...")
+    print(Fore.CYAN + f"Price for Specs will be updated (it may take around 10 mins).")
+    print(Fore.YELLOW + f"\nYou can run this procedure in the background using by ctrl+c or ctrl+z.")
+    # Start the price fetching
+    fetch_price()
+    
+
     # print(Fore.RESET + "Registered Common specs")
     # print(Fore.GREEN + f"- Successful: {successful_specs}" + Fore.RESET + f", Failed: {failed_specs}")
     # print(Fore.RESET + "Registered Common images")
