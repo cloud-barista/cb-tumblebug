@@ -19,6 +19,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -233,7 +234,7 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 			tumblebugSpec.RegionName = connConfig.RegionDetail.RegionName
 			tumblebugSpec.InfraType = "vm" // default value
 			tumblebugSpec.SystemLabel = "auto-gen"
-			tumblebugSpec.CostPerHour = 99999999.9
+			tumblebugSpec.CostPerHour = -1
 			tumblebugSpec.EvaluationScore01 = -99.9
 
 			_, err := RegisterSpecWithInfo(nsId, &tumblebugSpec, true)
@@ -269,6 +270,256 @@ func FetchSpecsForAllConnConfigs(nsId string) (connConfigCount uint, specCount u
 		connConfigCount++
 	}
 	return connConfigCount, specCount, nil
+}
+
+// FetchPriceForAllConnConfigs gets all conn configs from Spider, lookups all Price for each region of conn config,
+// and saves into TB Price objects. This implementation uses parallel processing and retries failed connections once.
+func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err error) {
+	// Get connection configurations
+	connConfigs, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get connection config list")
+		return 0, 0, err
+	}
+
+	// Skip processing if no connections found
+	if len(connConfigs.Connectionconfig) == 0 {
+		log.Info().Msg("No connection configurations found")
+		return 0, 0, nil
+	}
+
+	connConfigCount = uint(len(connConfigs.Connectionconfig))
+	log.Info().Msgf("Starting parallel price fetching for %d connections", connConfigCount)
+	startTime := time.Now()
+
+	// Define lightweight result type with only essential information
+	type EssentialPriceInfo struct {
+		ProviderName   string
+		RegionName     string
+		SpecName       string
+		Currency       string
+		Price          string
+		ConnectionName string
+	}
+
+	// Function to fetch prices for a single connection with retry
+	fetchPricesWithRetry := func(config model.ConnConfig) ([]EssentialPriceInfo, error) {
+		// First attempt
+		priceList, err := FetchPriceForConnConfig(config)
+
+		// If failed, retry once after random sleep
+		if err != nil {
+			log.Warn().Err(err).Msgf("First attempt failed for connection %s, will retry",
+				config.ConfigName)
+
+			// if err message contains "not support", skip retry
+			if strings.Contains(err.Error(), "not support") {
+				log.Warn().Msgf("Skipping retry for connection %s due to unsupported error",
+					config.ConfigName)
+				return nil, err
+			}
+
+			// Random sleep before retry
+			common.RandomSleep(2, 5)
+			priceList, err = FetchPriceForConnConfig(config)
+		}
+
+		// If still failed after retry
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to fetch prices for connection %s after retry",
+				config.ConfigName)
+			return nil, err
+		}
+
+		// Extract only essential information to reduce memory usage
+		var essentialPrices []EssentialPriceInfo
+		if priceList.PriceList != nil {
+			for _, price := range priceList.PriceList {
+				// // Log debug info for GCP providers
+				// if config.ProviderName == csp.GCP {
+				// 	log.Debug().Msgf("Price for spec %s: %s",
+				// 		price.ProductInfo.VMSpecInfo.Name,
+				// 		price.PriceInfo.OnDemand.Currency)
+				// }
+
+				essentialPrices = append(essentialPrices, EssentialPriceInfo{
+					ProviderName:   config.ProviderName,
+					RegionName:     config.RegionDetail.RegionName,
+					SpecName:       price.ProductInfo.VMSpecInfo.Name,
+					Currency:       price.PriceInfo.OnDemand.Currency,
+					Price:          price.PriceInfo.OnDemand.Price,
+					ConnectionName: config.ConfigName,
+				})
+			}
+		}
+
+		return essentialPrices, nil
+	}
+
+	// Process all connections in parallel
+	var wg sync.WaitGroup
+	resultChan := make(chan struct {
+		ConnConfig model.ConnConfig
+		PriceInfos []EssentialPriceInfo
+		Err        error
+	}, len(connConfigs.Connectionconfig))
+
+	for _, connConfig := range connConfigs.Connectionconfig {
+		wg.Add(1)
+		go func(config model.ConnConfig) {
+			defer wg.Done()
+
+			// Simulate random sleep to avoid overwhelming the API
+			common.RandomSleep(0, 10)
+
+			// Fetch with retry
+			prices, err := fetchPricesWithRetry(config)
+
+			// Send result back through channel
+			resultChan <- struct {
+				ConnConfig model.ConnConfig
+				PriceInfos []EssentialPriceInfo
+				Err        error
+			}{
+				ConnConfig: config,
+				PriceInfos: prices,
+				Err:        err,
+			}
+		}(connConfig)
+	}
+
+	// Wait for all goroutines to complete and close the channel
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	// Process results
+	var finalErrors []string
+	var allPriceInfos []EssentialPriceInfo
+	var successCount uint
+
+	for result := range resultChan {
+		if result.Err != nil {
+			errMsg := fmt.Sprintf("Error fetching prices for connection %s: %v",
+				result.ConnConfig.ConfigName, result.Err)
+			finalErrors = append(finalErrors, errMsg)
+			continue
+		}
+
+		// Mark as successful and collect prices
+		successCount++
+		priceCount += uint(len(result.PriceInfos))
+		allPriceInfos = append(allPriceInfos, result.PriceInfos...)
+
+		if len(result.PriceInfos) > 0 {
+			log.Debug().Msgf("Collected %d prices for connection %s",
+				len(result.PriceInfos), result.ConnConfig.ConfigName)
+		} else {
+			log.Info().Msgf("No prices found for connection %s", result.ConnConfig.ConfigName)
+		}
+	}
+
+	// Now process all collected price info and update specs
+	log.Info().Msgf("Starting batch update of %d prices", len(allPriceInfos))
+
+	var updateCount int
+	for _, priceInfo := range allPriceInfos {
+		priceFloat, err := strconv.ParseFloat(priceInfo.Price, 32)
+
+		// Apply currency conversion if needed
+		priceFloat = float64(common.ConvertToBaseCurrency(float32(priceFloat), priceInfo.Currency))
+
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to parse price '%s' for spec '%s', skipping update.",
+				priceInfo.Price, priceInfo.SpecName)
+		} else {
+			imageUpdateKey := GetProviderRegionZoneResourceKey(
+				priceInfo.ProviderName,
+				priceInfo.RegionName,
+				"",
+				priceInfo.SpecName)
+
+			UpdateSpec(model.SystemCommonNs, imageUpdateKey,
+				model.TbSpecInfo{
+					CostPerHour: float32(priceFloat),
+				})
+
+			updateCount++
+
+			// if updateCount%100 == 0 {
+			// 	log.Info().Msgf("Updated %d/%d prices", updateCount, len(allPriceInfos))
+			// }
+		}
+	}
+
+	// Report any errors
+	if len(finalErrors) > 0 {
+		log.Warn().Msgf("Encountered %d errors while fetching prices after retries", len(finalErrors))
+		if len(finalErrors) == len(connConfigs.Connectionconfig) {
+			return connConfigCount, priceCount, fmt.Errorf("all connections failed: %s",
+				finalErrors[0])
+		}
+	}
+
+	log.Info().Msgf("Completed price fetching in %s. Successfully fetched prices from %d/%d connections, updated %d/%d prices",
+		time.Since(startTime),
+		successCount,
+		connConfigCount,
+		updateCount,
+		priceCount)
+
+	return connConfigCount, priceCount, nil
+}
+
+// FetchPriceForConnConfig lookups all Price for region of conn config, and saves into TB Price objects
+func FetchPriceForConnConfig(connConfig model.ConnConfig) (model.SpiderCloudPrice, error) {
+	log.Debug().Msg("FetchPriceForConnConfig(" + connConfig.ConfigName + ")")
+
+	priceInConnection, err := LookupPriceList(connConfig)
+	if err != nil {
+		log.Error().Err(err).Msgf("Cannot LookupPriceList in %s", connConfig.ConfigName)
+		return model.SpiderCloudPrice{}, err
+	}
+
+	// for _, price := range priceInConnection.PriceList {
+	// 	log.Info().Msgf("Found price in the connection %s: %s, %s", connConfig.ConfigName, price.ProductInfo.VMSpecInfo.Name, price.PriceInfo.OnDemand.Price)
+	// }
+
+	return priceInConnection, nil
+}
+
+// LookupPriceList returns the list of all prices in the region of conn config
+// in the form of the list of Spider price objects
+func LookupPriceList(connConfig model.ConnConfig) (model.SpiderCloudPrice, error) {
+
+	var callResult model.SpiderCloudPrice
+	client := resty.New()
+	client.SetTimeout(10 * time.Minute)
+	url := model.SpiderRestUrl + "/priceinfo/vm/" + connConfig.RegionZoneInfo.AssignedRegion
+	method := "POST"
+	requestBody := model.SpiderConnectionName{}
+	requestBody.ConnectionName = connConfig.ConfigName
+
+	err := clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
+
+	if err != nil {
+		log.Trace().Err(err).Msg("")
+		content := model.SpiderCloudPrice{}
+		return content, err
+	}
+
+	temp := callResult
+	return temp, nil
 }
 
 // RegisterSpecWithCspResourceId accepts spec creation request, creates and returns an TB spec object

@@ -49,7 +49,7 @@ echo "Running the application..."
 uv run init.py "$@"
 
 echo
-echo "Cleaning up..."
+echo "Cleaning up the venv and uv.lock files..."
 rm -rf .venv
 rm -rf uv.lock # Make it commented out if you want to keep the lock file
 

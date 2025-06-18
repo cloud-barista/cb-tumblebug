@@ -220,7 +220,13 @@ func RecommendVmLatency(nsId string, specList *[]model.TbSpecInfo, param *[]mode
 
 			// Sort
 			sort.Slice(distances, func(i, j int) bool {
-				return (*specList)[i].CostPerHour < (*specList)[j].CostPerHour
+				// Handle negative cost values - positive values have higher priority
+				if (*specList)[i].CostPerHour >= 0 && (*specList)[j].CostPerHour >= 0 {
+					// Both are positive, compare normally
+					return (*specList)[i].CostPerHour < (*specList)[j].CostPerHour
+				}
+				// Otherwise, positive value has higher priority
+				return (*specList)[i].CostPerHour >= 0
 			})
 			sort.Slice(distances, func(i, j int) bool {
 				return distances[i].distance < distances[j].distance
@@ -257,10 +263,8 @@ func RecommendVmLatency(nsId string, specList *[]model.TbSpecInfo, param *[]mode
 
 	}
 
-	for i := range *specList {
-		result = append(result, (*specList)[i])
-		//result[i].OrderInFilteredResult = uint16(i + 1)
-	}
+	result = append(result, *specList...)
+	//result[i].OrderInFilteredResult = uint16(i + 1)
 
 	// Sorting result based on multiple criteria: OrderInFilteredResult, CostPerHour, VCPU, MemoryGiB
 	sort.Slice(result, func(i, j int) bool {
@@ -270,7 +274,12 @@ func RecommendVmLatency(nsId string, specList *[]model.TbSpecInfo, param *[]mode
 		}
 		// 2nd priority: CostPerHour
 		if result[i].CostPerHour != result[j].CostPerHour {
-			return result[i].CostPerHour < result[j].CostPerHour
+			// negative value has lower priority (negative means cost is not specified)
+			if result[i].CostPerHour >= 0 && result[j].CostPerHour >= 0 {
+				// both are positive, compare normally
+				return result[i].CostPerHour < result[j].CostPerHour
+			}
+			return result[i].CostPerHour >= 0
 		}
 		// 3rd priority: VCPU
 		if result[i].VCPU != result[j].VCPU {
@@ -354,7 +363,13 @@ func RecommendVmLocation(nsId string, specList *[]model.TbSpecInfo, param *[]mod
 			}
 
 			sort.Slice(distances, func(i, j int) bool {
-				return (*specList)[i].CostPerHour < (*specList)[j].CostPerHour
+				// Handle negative cost values - positive values have higher priority
+				if (*specList)[i].CostPerHour >= 0 && (*specList)[j].CostPerHour >= 0 {
+					// Both are positive, compare normally
+					return (*specList)[i].CostPerHour < (*specList)[j].CostPerHour
+				}
+				// Otherwise, positive value has higher priority
+				return (*specList)[i].CostPerHour >= 0
 			})
 			sort.Slice(distances, func(i, j int) bool {
 				return distances[i].distance < distances[j].distance
@@ -457,7 +472,13 @@ func RecommendVmLocation(nsId string, specList *[]model.TbSpecInfo, param *[]mod
 			}
 
 			sort.Slice(distances, func(i, j int) bool {
-				return (*specList)[i].CostPerHour < (*specList)[j].CostPerHour
+				// Handle negative cost values - positive values have higher priority
+				if (*specList)[i].CostPerHour >= 0 && (*specList)[j].CostPerHour >= 0 {
+					// Both are positive, compare normally
+					return (*specList)[i].CostPerHour < (*specList)[j].CostPerHour
+				}
+				// Otherwise, positive value has higher priority
+				return (*specList)[i].CostPerHour >= 0
 			})
 			sort.Slice(distances, func(i, j int) bool {
 				return distances[i].distance < distances[j].distance
@@ -503,7 +524,12 @@ func RecommendVmLocation(nsId string, specList *[]model.TbSpecInfo, param *[]mod
 		}
 		// 2nd priority: CostPerHour
 		if result[i].CostPerHour != result[j].CostPerHour {
-			return result[i].CostPerHour < result[j].CostPerHour
+			// negative value has lower priority (negative means cost is not specified)
+			if result[i].CostPerHour >= 0 && result[j].CostPerHour >= 0 {
+				// both are positive, compare normally
+				return result[i].CostPerHour < result[j].CostPerHour
+			}
+			return result[i].CostPerHour >= 0
 		}
 		// 3rd priority: VCPU
 		if result[i].VCPU != result[j].VCPU {
@@ -585,7 +611,15 @@ func RecommendVmCost(nsId string, specList *[]model.TbSpecInfo) ([]model.TbSpecI
 
 	result := append([]model.TbSpecInfo{}, (*specList)...)
 
-	sort.Slice(result, func(i, j int) bool { return result[i].CostPerHour < result[j].CostPerHour })
+	sort.Slice(result, func(i, j int) bool {
+		// Handle negative cost values - positive values have higher priority
+		if result[i].CostPerHour >= 0 && result[j].CostPerHour >= 0 {
+			// Both are positive, compare normally
+			return result[i].CostPerHour < result[j].CostPerHour
+		}
+		// Otherwise, positive value has higher priority
+		return result[i].CostPerHour >= 0
+	})
 
 	Max := float32(result[len(result)-1].CostPerHour)
 	Min := float32(result[0].CostPerHour)

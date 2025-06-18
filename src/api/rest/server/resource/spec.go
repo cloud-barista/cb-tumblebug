@@ -117,8 +117,8 @@ type RestLookupSpecRequest struct {
 
 // RestLookupSpec godoc
 // @ID LookupSpec
-// @Summary Lookup spec
-// @Description Lookup spec
+// @Summary Lookup spec (for debugging purposes)
+// @Description Lookup spec (for debugging purposes)
 // @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
@@ -142,8 +142,8 @@ func RestLookupSpec(c echo.Context) error {
 
 // RestLookupSpecList godoc
 // @ID LookupSpecList
-// @Summary Lookup spec list
-// @Description Lookup spec list
+// @Summary Lookup spec list (for debugging purposes)
+// @Description Lookup spec list (for debugging purposes)
 // @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
@@ -167,19 +167,18 @@ func RestLookupSpecList(c echo.Context) error {
 
 // RestFetchSpecs godoc
 // @ID FetchSpecs
-// @Summary Fetch specs
-// @Description Fetch specs
+// @Summary Fetch specs from CSPs and register them in the system.
+// @Description Fetch specs from CSPs and register them in the system.
 // @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(system)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/resources/fetchSpecs [post]
+// @Router /fetchSpecs [post]
 func RestFetchSpecs(c echo.Context) error {
 
-	nsId := c.Param("nsId")
+	nsId := model.SystemCommonNs
 
 	u := &RestLookupSpecRequest{}
 	if err := c.Bind(u); err != nil {
@@ -204,6 +203,32 @@ func RestFetchSpecs(c echo.Context) error {
 
 	content := map[string]string{
 		"message": "Fetched " + fmt.Sprint(specCount) + " specs (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestFetchPrice godoc
+// @ID FetchPrice
+// @Summary Fetch price from all CSP connections and update the price information for associated specs in the system.
+// @Description Fetch price from all CSP connections and update the price information for associated specs in the system.
+// @Tags [Infra Resource] Spec Management
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /fetchPrice [post]
+func RestFetchPrice(c echo.Context) error {
+
+	var connConfigCount, priceCount uint
+	var err error
+
+	connConfigCount, priceCount, err = resource.FetchPriceForAllConnConfigs()
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	content := map[string]string{
+		"message": "Fetched " + fmt.Sprint(priceCount) + " prices (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

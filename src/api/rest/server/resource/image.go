@@ -123,8 +123,8 @@ type RestLookupImageRequest struct {
 
 // RestLookupImage godoc
 // @ID LookupImage
-// @Summary Lookup image
-// @Description Lookup image
+// @Summary Lookup image (for debugging purposes)
+// @Description Lookup image (for debugging purposes)
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
@@ -148,8 +148,8 @@ func RestLookupImage(c echo.Context) error {
 
 // RestLookupImageList godoc
 // @ID LookupImageList
-// @Summary Lookup image list
-// @Description Lookup image list
+// @Summary Lookup image list (for debugging purposes)
+// @Description Lookup image list (for debugging purposes)
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
@@ -178,14 +178,13 @@ func RestLookupImageList(c echo.Context) error {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(system)
 // @Param fetchOption body model.ImageFetchOption true "Fetch option"
 // @Success 202 {object} resource.FetchImagesAsyncResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/resources/fetchImages [post]
+// @Router /fetchImages [post]
 func RestFetchImages(c echo.Context) error {
-	nsId := c.Param("nsId")
+	nsId := model.SystemCommonNs
 
 	reqBody := &model.ImageFetchOption{}
 	if err := c.Bind(reqBody); err != nil {
@@ -207,14 +206,13 @@ func RestFetchImages(c echo.Context) error {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(system)
 // @Param fetchOption body model.ImageFetchOption true "Fetch option"
 // @Success 202 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/resources/fetchImagesAsync [post]
+// @Router /fetchImagesAsync [post]
 func RestFetchImagesAsync(c echo.Context) error {
-	nsId := c.Param("nsId")
+	nsId := model.SystemCommonNs
 
 	reqBody := &model.ImageFetchOption{}
 	if err := c.Bind(reqBody); err != nil {
@@ -239,13 +237,12 @@ func RestFetchImagesAsync(c echo.Context) error {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(system)
 // @Success 200 {object} resource.FetchImagesAsyncResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/resources/fetchImagesResult [get]
+// @Router /fetchImagesResult [get]
 func RestGetFetchImagesAsyncResult(c echo.Context) error {
-	nsId := c.Param("nsId")
+	nsId := model.SystemCommonNs
 
 	result, err := resource.GetFetchImagesAsyncResult(nsId)
 	if err != nil {
@@ -262,14 +259,13 @@ func RestGetFetchImagesAsyncResult(c echo.Context) error {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(system)
 // @Success 202 {object} resource.FetchImagesAsyncResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/resources/updateImagesFromAsset [post]
+// @Router /updateImagesFromAsset [post]
 func RestUpdateImagesFromAsset(c echo.Context) error {
-	nsId := c.Param("nsId")
 
+	nsId := model.SystemCommonNs
 	result, err := resource.UpdateImagesFromAsset(nsId)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)

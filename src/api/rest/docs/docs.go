@@ -674,6 +674,208 @@ const docTemplate = `{
                 }
             }
         },
+        "/fetchImages": {
+            "post": {
+                "description": "Fetch images waiting for completion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Image Management"
+                ],
+                "summary": "Fetch images for regions of each CSP synchronously",
+                "operationId": "FetchImages",
+                "parameters": [
+                    {
+                        "description": "Fetch option",
+                        "name": "fetchOption",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ImageFetchOption"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/resource.FetchImagesAsyncResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/fetchImagesAsync": {
+            "post": {
+                "description": "Fetch images in the background without waiting for completion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Image Management"
+                ],
+                "summary": "Fetch images asynchronously",
+                "operationId": "FetchImagesAsync",
+                "parameters": [
+                    {
+                        "description": "Fetch option",
+                        "name": "fetchOption",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ImageFetchOption"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/fetchImagesResult": {
+            "get": {
+                "description": "Get detailed results from the last asynchronous image fetch operation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Image Management"
+                ],
+                "summary": "Get result of asynchronous image fetching",
+                "operationId": "GetFetchImagesAsyncResult",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resource.FetchImagesAsyncResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/fetchPrice": {
+            "post": {
+                "description": "Fetch price from all CSP connections and update the price information for associated specs in the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Spec Management"
+                ],
+                "summary": "Fetch price from all CSP connections and update the price information for associated specs in the system.",
+                "operationId": "FetchPrice",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/fetchSpecs": {
+            "post": {
+                "description": "Fetch specs from CSPs and register them in the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Spec Management"
+                ],
+                "summary": "Fetch specs from CSPs and register them in the system.",
+                "operationId": "FetchSpecs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/forward/{path}": {
             "post": {
                 "description": "Forward any (GET) request to CB-Spider",
@@ -1243,7 +1445,7 @@ const docTemplate = `{
         },
         "/lookupImage": {
             "post": {
-                "description": "Lookup image",
+                "description": "Lookup image (for debugging purposes)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1253,7 +1455,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Image Management"
                 ],
-                "summary": "Lookup image",
+                "summary": "Lookup image (for debugging purposes)",
                 "operationId": "LookupImage",
                 "parameters": [
                     {
@@ -1290,7 +1492,7 @@ const docTemplate = `{
         },
         "/lookupImages": {
             "post": {
-                "description": "Lookup image list",
+                "description": "Lookup image list (for debugging purposes)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1300,7 +1502,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Image Management"
                 ],
-                "summary": "Lookup image list",
+                "summary": "Lookup image list (for debugging purposes)",
                 "operationId": "LookupImageList",
                 "parameters": [
                     {
@@ -1337,7 +1539,7 @@ const docTemplate = `{
         },
         "/lookupSpec": {
             "post": {
-                "description": "Lookup spec",
+                "description": "Lookup spec (for debugging purposes)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1347,7 +1549,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Spec Management"
                 ],
-                "summary": "Lookup spec",
+                "summary": "Lookup spec (for debugging purposes)",
                 "operationId": "LookupSpec",
                 "parameters": [
                     {
@@ -1384,7 +1586,7 @@ const docTemplate = `{
         },
         "/lookupSpecs": {
             "post": {
-                "description": "Lookup spec list",
+                "description": "Lookup spec list (for debugging purposes)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1394,7 +1596,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Spec Management"
                 ],
-                "summary": "Lookup spec list",
+                "summary": "Lookup spec list (for debugging purposes)",
                 "operationId": "LookupSpecList",
                 "parameters": [
                     {
@@ -7127,208 +7329,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/resources/fetchImages": {
-            "post": {
-                "description": "Fetch images waiting for completion",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Image Management"
-                ],
-                "summary": "Fetch images for regions of each CSP synchronously",
-                "operationId": "FetchImages",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "system",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Fetch option",
-                        "name": "fetchOption",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.ImageFetchOption"
-                        }
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "$ref": "#/definitions/resource.FetchImagesAsyncResult"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/resources/fetchImagesAsync": {
-            "post": {
-                "description": "Fetch images in the background without waiting for completion",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Image Management"
-                ],
-                "summary": "Fetch images asynchronously",
-                "operationId": "FetchImagesAsync",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "system",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Fetch option",
-                        "name": "fetchOption",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.ImageFetchOption"
-                        }
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/resources/fetchImagesResult": {
-            "get": {
-                "description": "Get detailed results from the last asynchronous image fetch operation",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Image Management"
-                ],
-                "summary": "Get result of asynchronous image fetching",
-                "operationId": "GetFetchImagesAsyncResult",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "system",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/resource.FetchImagesAsyncResult"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/resources/fetchSpecs": {
-            "post": {
-                "description": "Fetch specs",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Spec Management"
-                ],
-                "summary": "Fetch specs",
-                "operationId": "FetchSpecs",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "system",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/ns/{nsId}/resources/filterSpecsByRange": {
             "post": {
                 "description": "Filter specs by range",
@@ -9346,52 +9346,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/resources/updateImagesFromAsset": {
-            "post": {
-                "description": "Update image information based on the cloudimage.csv asset file",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Image Management"
-                ],
-                "summary": "Update images from cloudimage.csv asset file",
-                "operationId": "UpdateImagesFromAsset",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "system",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "$ref": "#/definitions/resource.FetchImagesAsyncResult"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/ns/{nsId}/resources/vNet": {
             "get": {
                 "description": "List all VNets or VNets' ID",
@@ -11082,6 +11036,42 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/updateImagesFromAsset": {
+            "post": {
+                "description": "Update image information based on the cloudimage.csv asset file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Image Management"
+                ],
+                "summary": "Update images from cloudimage.csv asset file",
+                "operationId": "UpdateImagesFromAsset",
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/resource.FetchImagesAsyncResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     }
                 }

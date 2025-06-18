@@ -1389,7 +1389,7 @@ func LoadAssets() (model.IdList, error) {
 					tumblebugSpec.RegionName = connConfig.RegionDetail.RegionName
 					tumblebugSpec.InfraType = "vm" // default value
 					tumblebugSpec.SystemLabel = "auto-gen"
-					tumblebugSpec.CostPerHour = 99999999.9
+					tumblebugSpec.CostPerHour = -1
 					tumblebugSpec.EvaluationScore01 = -99.9
 
 					// instead of connConfig.RegionName, spec.Region will be used in the future
@@ -1497,19 +1497,20 @@ func LoadAssets() (model.IdList, error) {
 		// 0	providerName
 		// 1	regionName
 		// 2	cspResourceId
-		// 3	CostPerHour
-		// 4	evaluationScore01
-		// 5	evaluationScore02
-		// 6	evaluationScore03
-		// 7	evaluationScore04
-		// 8	evaluationScore05
-		// 9	evaluationScore06
-		// 10	evaluationScore07
-		// 11	evaluationScore08
-		// 12	evaluationScore09
-		// 13	evaluationScore10
-		// 14	rootDiskType
-		// 15	rootDiskSize
+		// 3	costPerHour
+		// 4    currency
+		// 5	evaluationScore01
+		// 6	evaluationScore02
+		// 7	evaluationScore03
+		// 8	evaluationScore04
+		// 9	evaluationScore05
+		// 10	evaluationScore06
+		// 11	evaluationScore07
+		// 12	evaluationScore08
+		// 13	evaluationScore09
+		// 14	evaluationScore10
+		// 15	rootDiskType
+		// 16	rootDiskSize
 		// 17	acceleratorModel
 		// 18	acceleratorCount
 		// 19	acceleratorMemoryGB
@@ -1519,20 +1520,20 @@ func LoadAssets() (model.IdList, error) {
 		providerName := strings.ToLower(row[0])
 		regionName := strings.ToLower(row[1])
 		specReqTmp.CspSpecName = row[2]
-		rootDiskType := row[14]
-		rootDiskSize := row[15]
-		acceleratorType := row[16]
-		acceleratorModel := row[17]
+		rootDiskType := row[15]
+		rootDiskSize := row[16]
+		acceleratorType := row[17]
+		acceleratorModel := row[18]
 		acceleratorCount := 0
-		if s, err := strconv.Atoi(row[18]); err == nil {
+		if s, err := strconv.Atoi(row[19]); err == nil {
 			acceleratorCount = s
 		}
 		acceleratorMemoryGB := 0.0
-		if s, err := strconv.ParseFloat(row[19], 32); err == nil {
+		if s, err := strconv.ParseFloat(row[20], 32); err == nil {
 			acceleratorMemoryGB = s
 		}
-		description := row[20]
-		infraType := strings.ToLower(row[21])
+		description := row[21]
+		infraType := strings.ToLower(row[22])
 
 		specReqTmp.Name = GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
 
@@ -1581,11 +1582,15 @@ func LoadAssets() (model.IdList, error) {
 					// Update registered Spec object with givn info from asset file
 					// Update registered Spec object with Cost info
 					costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
+					currency := strings.ToUpper(row[4])
+
 					if err2 != nil {
 						log.Error().Msgf("Not valid CostPerHour value in the asset: %s", specInfoId)
-						costPerHour = 99999999.9
+						costPerHour = -1
+					} else {
+						costPerHour = float64(common.ConvertToBaseCurrency(float32(costPerHour), currency))
 					}
-					evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
+					evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[5], " ", ""), 32)
 					if err2 != nil {
 						log.Error().Msgf("Not valid evaluationScore01 value in the asset: %s", specInfoId)
 						evaluationScore01 = -99.9
@@ -1686,6 +1691,11 @@ func LoadAssets() (model.IdList, error) {
 	log.Info().Msgf("Remove Duplicate Specs In SQL. Elapsed [%s]", elapsedRemoveDuplicateSpecsInSQL)
 	log.Info().Msgf("Updated the registered Specs according to the asset file. Elapsed [%s]", elapsedUpdateSpec)
 	log.Info().Msgf("Updated the registered Images according to the asset file. Elapsed [%s]", elapsedUpdateImg)
+
+	// FetchPriceForAllConnConfigs is called to update the prices of all specs
+	log.Info().Msgf("FetchPriceForAllConnConfigs is called to update the prices of all specs")
+	// FetchPriceForAllConnConfigs() will be called in the end of this function in background
+	go FetchPriceForAllConnConfigs()
 
 	return regiesteredIds, nil
 }
