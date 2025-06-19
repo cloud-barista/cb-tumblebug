@@ -134,6 +134,19 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 
 	// Set additional fields
 	tumblebugImage.OSArchitecture = model.OSArchitecture(strings.ToLower(string(spiderImage.OSArchitecture)))
+
+	// Handle specific cases for OSArchitecture
+	// KT Cloud and IBM Cloud have specific architecture mappings
+	if spiderImage.OSArchitecture == model.ArchitectureNA {
+		// For KT Cloud, we set X86_64 if the architecture is not specified
+		if providerName == csp.KTCloud {
+			tumblebugImage.OSArchitecture = model.X86_64
+		}
+		// For IBM Cloud, we set S390X if the architecture is not specified
+		if providerName == csp.IBM {
+			tumblebugImage.OSArchitecture = model.S390X
+		}
+	}
 	tumblebugImage.OSPlatform = spiderImage.OSPlatform
 	tumblebugImage.OSDistribution = spiderImage.OSDistribution
 	tumblebugImage.OSDiskType = spiderImage.OSDiskType

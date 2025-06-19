@@ -130,7 +130,7 @@ func createK8sClusterInfo(nsId string, tbK8sCInfo model.TbK8sClusterInfo) error 
 }
 
 func getK8sClusterInfo(nsId, k8sClusterId string) (*model.TbK8sClusterInfo, error) {
-	log.Debug().Msg("[Get K8sClusterInfo] " + k8sClusterId)
+	//log.Debug().Msg("[Get K8sClusterInfo] " + k8sClusterId)
 
 	emptyObj := &model.TbK8sClusterInfo{}
 
@@ -964,7 +964,7 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 
 // GetK8sCluster retrives a k8s cluster information
 func GetK8sCluster(nsId string, k8sClusterId string) (*model.TbK8sClusterInfo, error) {
-	log.Debug().Msg("[Get K8sCluster] " + k8sClusterId)
+	//log.Debug().Msg("[Get K8sCluster] " + k8sClusterId)
 
 	emptyObj := &model.TbK8sClusterInfo{}
 
@@ -1064,7 +1064,7 @@ func CheckK8sCluster(nsId string, k8sClusterId string) (bool, error) {
 		return false, err
 	}
 
-	log.Debug().Msg("[Check K8sCluster] " + k8sClusterId)
+	//log.Debug().Msg("[Check K8sCluster] " + k8sClusterId)
 
 	key := common.GenK8sClusterKey(nsId, k8sClusterId)
 

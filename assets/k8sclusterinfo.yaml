@@ -83,17 +83,14 @@ k8scluster:
     requiredSubnetCount: 1
     version:
       - region: [common]
+        # ref: https://cloud.google.com/kubernetes-engine/docs/release-notes
         available: # stable channel
           - name: "1.32"
-            id: "1.32.1-gke.1357001"
+            id: "1.32.2-gke.1297002"
           - name: "1.31"
-            id: "1.31.5-gke.1169000"
+            id: "1.31.8-gke.1113000"
           - name: "1.30"
-            id: "1.30.9-gke.1201000"
-          - name: "1.30"
-            id: "1.30.9-gke.1009000"
-          - name: "1.29"
-            id: "1.29.13-gke.1169000"
+            id: "1.30.12-gke.1086000"
       - region: [africa-south1]
         # addnodegroup unavailble
     rootDisk:
@@ -114,12 +111,12 @@ k8scluster:
       # ap-northeast-1,ap-northeast-2,ap-southeast-1,ap-southeast-3,ap-southeast-5,us-west-1,us-east-1,eu-central-1,eu-west-1,cn-beijing,cn-hongkong,cn-shanghai,cn-huhehaote,cn-heyuan,cn-wulanchabu,cn-guangzhou
       - region: [common] 
         available:
+          - name: "1.33"
+            id: "1.33.1-aliyun.1"
+          - name: "1.32"
+            id: "1.32.1-aliyun.1"
           - name: "1.31"
-            id: "1.31.1-aliyun.1"
-          - name: "1.30"
-            id: "1.30.7-aliyun.1"
-          - name: "1.28"
-            id: "1.28.15-aliyun.1"
+            id: "1.31.9-aliyun.1"
     rootDisk:
       - region: [common]
         type:
