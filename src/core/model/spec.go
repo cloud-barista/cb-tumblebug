@@ -14,13 +14,6 @@ limitations under the License.
 // Package model is to handle object of CB-Tumblebug
 package model
 
-import (
-
-	//"github.com/cloud-barista/cb-tumblebug/src/core/mci"
-
-	_ "github.com/go-sql-driver/mysql"
-)
-
 // SpiderSpecInfo is a struct to create JSON body of 'Get spec request'
 type SpiderSpecInfo struct {
 	// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMSpecHandler.go
