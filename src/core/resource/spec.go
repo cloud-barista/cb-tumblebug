@@ -30,10 +30,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-
-	//"github.com/cloud-barista/cb-tumblebug/src/core/mci"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
 // TbSpecReqStructLevelValidation is a function to validate 'TbSpecReq' object.

@@ -33,9 +33,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
 
-	//_ "github.com/go-sql-driver/mysql"
 	"github.com/fsnotify/fsnotify"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
