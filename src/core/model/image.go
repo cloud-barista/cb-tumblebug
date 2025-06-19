@@ -30,6 +30,7 @@ const (
 	X86_64         OSArchitecture = "x86_64"
 	X86_32_MAC     OSArchitecture = "x86_32_mac"
 	X86_64_MAC     OSArchitecture = "x86_64_mac"
+	S390X          OSArchitecture = "s390x"
 	ArchitectureNA OSArchitecture = "NA"
 )
 
