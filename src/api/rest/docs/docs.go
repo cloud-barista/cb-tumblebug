@@ -12825,6 +12825,7 @@ const docTemplate = `{
                 "x86_64",
                 "x86_32_mac",
                 "x86_64_mac",
+                "s390x",
                 "NA"
             ],
             "x-enum-varnames": [
@@ -12835,6 +12836,7 @@ const docTemplate = `{
                 "X86_64",
                 "X86_32_MAC",
                 "X86_64_MAC",
+                "S390X",
                 "ArchitectureNA"
             ]
         },
