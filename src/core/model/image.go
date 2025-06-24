@@ -23,15 +23,16 @@ type SpiderImageReqInfoWrapper struct {
 type OSArchitecture string
 
 const (
-	ARM32          OSArchitecture = "arm32"
-	ARM64          OSArchitecture = "arm64"
-	ARM64_MAC      OSArchitecture = "arm64_mac"
-	X86_32         OSArchitecture = "x86_32"
-	X86_64         OSArchitecture = "x86_64"
-	X86_32_MAC     OSArchitecture = "x86_32_mac"
-	X86_64_MAC     OSArchitecture = "x86_64_mac"
-	S390X          OSArchitecture = "s390x"
-	ArchitectureNA OSArchitecture = "NA"
+	ARM32               OSArchitecture = "arm32"
+	ARM64               OSArchitecture = "arm64"
+	ARM64_MAC           OSArchitecture = "arm64_mac"
+	X86_32              OSArchitecture = "x86_32"
+	X86_64              OSArchitecture = "x86_64"
+	X86_32_MAC          OSArchitecture = "x86_32_mac"
+	X86_64_MAC          OSArchitecture = "x86_64_mac"
+	S390X               OSArchitecture = "s390x"
+	ArchitectureNA      OSArchitecture = "NA"
+	ArchitectureUnknown OSArchitecture = ""
 )
 
 type OSPlatform string

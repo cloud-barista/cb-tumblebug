@@ -12826,7 +12826,8 @@ const docTemplate = `{
                 "x86_32_mac",
                 "x86_64_mac",
                 "s390x",
-                "NA"
+                "NA",
+                ""
             ],
             "x-enum-varnames": [
                 "ARM32",
@@ -12837,7 +12838,8 @@ const docTemplate = `{
                 "X86_32_MAC",
                 "X86_64_MAC",
                 "S390X",
-                "ArchitectureNA"
+                "ArchitectureNA",
+                "ArchitectureUnknown"
             ]
         },
         "model.OSPlatform": {
@@ -16230,6 +16232,10 @@ const docTemplate = `{
                 "acceleratorType": {
                     "type": "string"
                 },
+                "architecture": {
+                    "type": "string",
+                    "example": "x86_64"
+                },
                 "associatedObjectList": {
                     "type": "array",
                     "items": {
@@ -16249,6 +16255,12 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string"
+                },
+                "details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.KeyValue"
+                    }
                 },
                 "diskSizeGB": {
                     "type": "number"

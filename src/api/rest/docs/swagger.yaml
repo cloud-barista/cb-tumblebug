@@ -9680,6 +9680,7 @@ components:
       - x86_64_mac
       - s390x
       - NA
+      - ""
       x-enum-varnames:
       - ARM32
       - ARM64
@@ -9690,6 +9691,7 @@ components:
       - X86_64_MAC
       - S390X
       - ArchitectureNA
+      - ArchitectureUnknown
     model.OSPlatform:
       type: string
       enum:
@@ -12210,6 +12212,9 @@ components:
           type: string
         acceleratorType:
           type: string
+        architecture:
+          type: string
+          example: x86_64
         associatedObjectList:
           type: array
           items:
@@ -12224,6 +12229,10 @@ components:
           example: csp-06eb41e14121c550a
         description:
           type: string
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
         diskSizeGB:
           type: number
         evaluationScore01:
