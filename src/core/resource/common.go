@@ -1376,7 +1376,7 @@ func LoadAssets() (model.IdList, error) {
 			for _, spec := range specsInConnection.Vmspec {
 				spiderSpec := spec
 				//log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
-				tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
+				tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(connConfig.ProviderName, spiderSpec)
 				if errConvert != nil {
 					log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
 				} else {

@@ -25,6 +25,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
@@ -45,7 +46,7 @@ func TbSpecReqStructLevelValidation(sl validator.StructLevel) {
 }
 
 // ConvertSpiderSpecToTumblebugSpec accepts an Spider spec object, converts to and returns an TB spec object
-func ConvertSpiderSpecToTumblebugSpec(spiderSpec model.SpiderSpecInfo) (model.TbSpecInfo, error) {
+func ConvertSpiderSpecToTumblebugSpec(providerName string, spiderSpec model.SpiderSpecInfo) (model.TbSpecInfo, error) {
 	if spiderSpec.Name == "" {
 		err := fmt.Errorf("convertSpiderSpecToTumblebugSpec failed; spiderSpec.Name == \"\" ")
 		emptyTumblebugSpec := model.TbSpecInfo{}
@@ -57,6 +58,7 @@ func ConvertSpiderSpecToTumblebugSpec(spiderSpec model.SpiderSpecInfo) (model.Tb
 	tumblebugSpec.Name = spiderSpec.Name
 	tumblebugSpec.CspSpecName = spiderSpec.Name
 	tumblebugSpec.RegionName = spiderSpec.Region
+	tumblebugSpec.ProviderName = providerName
 
 	tempUint64, _ := strconv.ParseUint(spiderSpec.VCpu.Count, 10, 16)
 	tumblebugSpec.VCPU = uint16(tempUint64)
@@ -64,6 +66,14 @@ func ConvertSpiderSpecToTumblebugSpec(spiderSpec model.SpiderSpecInfo) (model.Tb
 	tumblebugSpec.MemoryGiB = float32(tempFloat64 / 1024)
 	tempFloat64, _ = strconv.ParseFloat(spiderSpec.DiskSizeGB, 32)
 	tumblebugSpec.DiskSizeGB = float32(tempFloat64)
+
+	tumblebugSpec.Details = spiderSpec.KeyValueList
+
+	// Extract Architecture based on CSP
+	tumblebugSpec.Architecture = extractArchitecture(tumblebugSpec.ProviderName, tumblebugSpec.Details, tumblebugSpec.CspSpecName)
+	if tumblebugSpec.Architecture == string(model.ArchitectureUnknown) {
+		log.Debug().Msgf("(%s) architecture for spec %s: %s", tumblebugSpec.ProviderName, tumblebugSpec.CspSpecName, tumblebugSpec.Architecture)
+	}
 
 	// GPU(Accelerator) information conversion
 	if len(spiderSpec.Gpu) > 0 {
@@ -113,6 +123,139 @@ func ConvertSpiderSpecToTumblebugSpec(spiderSpec model.SpiderSpecInfo) (model.Tb
 	}
 
 	return tumblebugSpec, nil
+}
+
+// extractArchitecture extracts architecture information based on CSP-specific logic
+func extractArchitecture(providerName string, details []model.KeyValue, cspSpecName string) string {
+
+	// FYI model.OSArchitecture is defined in src/core/model/OSArchitecture.go
+	// 	const (
+	// 	ARM32          OSArchitecture = "arm32"
+	// 	ARM64          OSArchitecture = "arm64"
+	// 	ARM64_MAC      OSArchitecture = "arm64_mac"
+	// 	X86_32         OSArchitecture = "x86_32"
+	// 	X86_64         OSArchitecture = "x86_64"
+	// 	X86_32_MAC     OSArchitecture = "x86_32_mac"
+	// 	X86_64_MAC     OSArchitecture = "x86_64_mac"
+	// 	S390X          OSArchitecture = "s390x"
+	// 	ArchitectureNA OSArchitecture = "NA"
+	// )
+
+	switch providerName {
+	case csp.AWS:
+		// For AWS, look for ProcessorInfo and extract SupportedArchitectures from its value
+		archInfo := common.LookupKeyValueList(details, "ProcessorInfo")
+		if archInfo != "" {
+			// Parse the SupportedArchitectures from ProcessorInfo value
+			// Examples:
+			// "{SupportedArchitectures:[arm64],SustainedClockSpeedInGhz:2.6}"
+			// "{SupportedArchitectures:[x86_64_mac],SustainedClockSpeedInGhz:3.2}"
+			// "{SupportedArchitectures:[i386,x86_64],SustainedClockSpeedInGhz:2.5}"
+
+			if strings.Contains(archInfo, "arm64_mac") {
+				return string(model.ARM64_MAC)
+			} else if strings.Contains(archInfo, "x86_64_mac") {
+				return string(model.X86_64_MAC)
+			} else if strings.Contains(archInfo, "arm64") {
+				return string(model.ARM64)
+			} else if strings.Contains(archInfo, "x86_64") {
+				return string(model.X86_64)
+			} else if strings.Contains(archInfo, "i386") {
+				return string(model.X86_32)
+			} else {
+				return archInfo
+			}
+		}
+		// Fallback: check instance name patterns
+		// if strings.HasPrefix(cspSpecName, "mac1") {
+		// 	return string(model.X86_64_MAC)
+		// } else if strings.HasPrefix(cspSpecName, "mac2") {
+		// 	return string(model.ARM64_MAC)
+		// }
+
+	case csp.Alibaba:
+		// For Alibaba, CpuArchitecture is a direct key
+		archInfo := strings.ToLower(common.LookupKeyValueList(details, "CpuArchitecture"))
+		if archInfo != "" {
+			if strings.Contains(archInfo, strings.ToLower("ARM")) {
+				return string(model.ARM64)
+			} else if strings.Contains(archInfo, strings.ToLower("X86")) {
+				return string(model.X86_64)
+			} else {
+				return archInfo
+			}
+		}
+
+	case csp.IBM:
+		// For IBM, look for VcpuArchitecture and extract the actual value
+		archInfo := common.LookupKeyValueList(details, "VcpuArchitecture")
+		if archInfo != "" {
+			// Parse the value from "{type:fixed,value:amd64}"
+			if strings.Contains(archInfo, "s390x") {
+				return string(model.S390X)
+			} else if strings.Contains(archInfo, "amd64") {
+				return string(model.X86_64)
+			} else {
+				return archInfo
+			}
+		}
+
+	case csp.Tencent:
+		// ref: https://www.tencentcloud.com/document/product/213/11518
+		patterns := []string{
+			"sr1.", // Standard ARM (Ampere Altra)
+		}
+
+		for _, pattern := range patterns {
+			if strings.Contains(strings.ToLower(cspSpecName), strings.ToLower(pattern)) {
+				return string(model.ARM64)
+			}
+		}
+		return string(model.X86_64)
+
+	case csp.Azure:
+		// Azure doesn't provide architecture in details, use instance name patterns
+		// Check for ARM-specific patterns
+		patterns := []string{
+			"Ep", "Dp",
+		}
+
+		for _, pattern := range patterns {
+			if strings.Contains(strings.ToLower(cspSpecName), strings.ToLower(pattern)) {
+				return string(model.ARM64)
+			}
+		}
+		return string(model.X86_64)
+
+	case csp.GCP:
+		// ref: https://cloud.google.com/compute/docs/cpu-platforms
+		// GCP doesn't provide architecture in details, use instance name patterns
+		// Check for ARM-specific patterns
+		patterns := []string{
+			"t2a", "c2a",
+		}
+
+		for _, pattern := range patterns {
+			if strings.Contains(strings.ToLower(cspSpecName), strings.ToLower(pattern)) {
+				return string(model.ARM64)
+			}
+		}
+		return string(model.X86_64)
+
+	case csp.KTCloud:
+		return string(model.X86_64)
+
+	case csp.NCP:
+		return string(model.X86_64)
+
+	case csp.NHNCloud:
+		return string(model.X86_64)
+
+	default:
+		// For unknown CSPs
+		return string(model.X86_64)
+	}
+	return string(model.ArchitectureUnknown)
 }
 
 // LookupSpecList accepts Spider conn config,
@@ -219,7 +362,7 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 	for _, spec := range specsInConnection.Vmspec {
 		spiderSpec := spec
 		//log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
-		tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
+		tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(connConfig.ProviderName, spiderSpec)
 		if errConvert != nil {
 			log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
 		} else {
@@ -529,13 +672,19 @@ func RegisterSpecWithCspResourceId(nsId string, u *model.TbSpecReq, update bool)
 		return content, err
 	}
 
+	connConfig, err := common.GetConnConfig(u.ConnectionName)
+	if err != nil {
+		log.Error().Err(err).Msgf("Cannot GetConnConfig in %s", u.ConnectionName)
+		return content, err
+	}
+
 	res, err := LookupSpec(u.ConnectionName, u.CspSpecName)
 	if err != nil {
 		log.Error().Err(err).Msgf("cannot LookupSpec ConnectionName(%s), CspResourceId(%s)", u.ConnectionName, u.CspSpecName)
 		return content, err
 	}
 
-	content, err = ConvertSpiderSpecToTumblebugSpec(res)
+	content, err = ConvertSpiderSpecToTumblebugSpec(connConfig.ProviderName, res)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot RegisterSpecWithCspResourceId")
 		return content, err
