@@ -141,3 +141,5 @@ else
     echo "Check logs at: /tmp/ray/session_latest/logs/"
     exit 1
 fi
+
+exit 0

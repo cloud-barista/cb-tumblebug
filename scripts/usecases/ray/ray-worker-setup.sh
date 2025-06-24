@@ -8,6 +8,7 @@
 RAY_COMPONENT="minimal"   # Ray component to install (usually 'minimal' is sufficient for workers)
 PUBLIC_IP=""              # IP address for this server (will be auto-detected if not provided)
 HEAD_ADDRESS=""           # Address of the Ray head node (required)
+HEAD_PORT="6379"          # Default port for Ray head node (can be overridden in HEAD_ADDRESS)
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -50,6 +51,12 @@ if [ -z "$HEAD_ADDRESS" ]; then
     exit 1
 fi
 
+# Check if HEAD_ADDRESS is in the correct format
+# If HEAD_ADDRESS does not contain a port, append the default port
+if [[ ! "$HEAD_ADDRESS" =~ : ]]; then
+    HEAD_ADDRESS="${HEAD_ADDRESS}:${HEAD_PORT}"
+fi
+
 echo "==== Ray Worker Node Setup ===="
 echo "Ray Install Component: $RAY_COMPONENT"
 echo "Head Node Address: $HEAD_ADDRESS"
@@ -88,6 +95,7 @@ pip install -U "ray[$RAY_COMPONENT]"
 echo "Starting Ray worker node..."
 echo "Connecting to head node at: $HEAD_ADDRESS"
 echo "Self node IP address: $PUBLIC_IP"
+echo "Excute command: ray start --address=\"$HEAD_ADDRESS\" --node-ip-address=\"$PUBLIC_IP\""
 ray start --address="$HEAD_ADDRESS" --node-ip-address="$PUBLIC_IP"
 
 # Check Ray status (give it a moment to start)
