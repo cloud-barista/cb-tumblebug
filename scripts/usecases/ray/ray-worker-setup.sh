@@ -80,12 +80,29 @@ if command -v needrestart &> /dev/null; then
     sudo NEEDRESTART_MODE=a sudo needrestart -r a
 fi
 
-# Add pip bin directory to PATH
-echo "Updating PATH..."
+# Add pip bin directory to PATH and create system-wide symlink
+echo "Updating PATH and creating symlinks..."
+
+# Update .bashrc for current user
 if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' ~/.bashrc; then
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 fi
+
+# Apply PATH change to current session
 export PATH="$HOME/.local/bin:$PATH"
+
+# Create system-wide symlink for ray command (requires sudo)
+if [ -f "$HOME/.local/bin/ray" ] && [ ! -f "/usr/local/bin/ray" ]; then
+    echo "Creating symlink to ray command in /usr/local/bin..."
+    sudo ln -sf "$HOME/.local/bin/ray" /usr/local/bin/ray
+fi
+
+# Add to /etc/profile.d for all users and sessions
+if [ ! -f "/etc/profile.d/ray-path.sh" ]; then
+    echo "Adding ray path to system-wide profile..."
+    echo 'export PATH="$HOME/.local/bin:$PATH"' | sudo tee /etc/profile.d/ray-path.sh > /dev/null
+    sudo chmod +x /etc/profile.d/ray-path.sh
+fi
 
 # Install Ray with specified component
 echo "Installing Ray[$RAY_COMPONENT]..."
