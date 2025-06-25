@@ -138,6 +138,8 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 
 	tempSpiderKeyPairInfo = resp.Result().(*model.SpiderKeyPairInfo)
 
+	common.PrintJsonPretty(tempSpiderKeyPairInfo)
+
 	content := model.TbSshKeyInfo{}
 	content.ResourceType = resourceType
 	content.Id = u.Name

@@ -86,7 +86,7 @@ rule_exists() {
     local table=$1
     local chain=$2
     shift 2
-    iptables -t "$table" -C "$chain" "$@" 2>/dev/null
+    iptables -w -t "$table" -C "$chain" "$@" 2>/dev/null
 }
 
 # Function to add or update iptables rule
@@ -97,7 +97,7 @@ add_or_update_iptables_rule() {
     local public_ip=$4
     
     # Check if a rule for this private IP already exists
-    local existing_rule=$(iptables -t "$table" -L "$chain" -n | grep "DNAT.*$private_ip" | head -1)
+    local existing_rule=$(iptables -w -t "$table" -L "$chain" -n | grep "DNAT.*$private_ip" | head -1)
     
     if [ -n "$existing_rule" ]; then
         # Extract the current destination
@@ -105,16 +105,16 @@ add_or_update_iptables_rule() {
         
         if [ "$current_dest" != "$public_ip" ]; then
             # Remove old rule
-            iptables -t "$table" -D "$chain" -d "$private_ip" -j DNAT --to-destination "$current_dest" 2>/dev/null || true
+            iptables -w -t "$table" -D "$chain" -d "$private_ip" -j DNAT --to-destination "$current_dest" 2>/dev/null || true
             # Add new rule
-            iptables -t "$table" -A "$chain" -d "$private_ip" -j DNAT --to-destination "$public_ip"
+            iptables -w -t "$table" -A "$chain" -d "$private_ip" -j DNAT --to-destination "$public_ip"
             echo "Updated rule: $private_ip -> $public_ip (was -> $current_dest)"
         else
             echo "Rule already exists with same destination: $private_ip -> $public_ip"
         fi
     else
         # Add new rule
-        iptables -t "$table" -A "$chain" -d "$private_ip" -j DNAT --to-destination "$public_ip"
+        iptables -w -t "$table" -A "$chain" -d "$private_ip" -j DNAT --to-destination "$public_ip"
         echo "Added rule: $private_ip -> $public_ip"
     fi
 }
@@ -161,28 +161,40 @@ setup_nat_rules() {
     
     # Clean up orphaned rules (private IPs not in current list)
     echo "Cleaning up orphaned NAT rules..."
+    
+    # Store rules to remove after iteration
+    local rules_to_remove=()
+    
     for chain in OUTPUT PREROUTING; do
-        iptables -t nat -L "$chain" -n | grep "DNAT" | while read line; do
-            local rule_ip=$(echo "$line" | awk '{print $5}')
-            local found=0
-            
-            # Check if this IP is in our current private IP list
-            for private_ip in "${PRIVATE_IP_ARRAY[@]}"; do
-                if [ "$rule_ip" = "$private_ip" ]; then
-                    found=1
-                    break
-                fi
-            done
-            
-            # If not found, remove the rule
-            if [ $found -eq 0 ] && [ -n "$rule_ip" ]; then
-                local dest=$(echo "$line" | grep -oP 'to:\K[0-9.]+')
-                if [ -n "$dest" ]; then
-                    iptables -t nat -D "$chain" -d "$rule_ip" -j DNAT --to-destination "$dest" 2>/dev/null && \
-                        echo "Removed orphaned rule: $rule_ip -> $dest"
+        while IFS= read -r line; do
+            if [[ "$line" =~ DNAT ]]; then
+                local rule_ip=$(echo "$line" | awk '{print $5}')
+                local found=0
+                
+                # Check if this IP is in our current private IP list
+                for private_ip in "${PRIVATE_IP_ARRAY[@]}"; do
+                    if [ "$rule_ip" = "$private_ip" ]; then
+                        found=1
+                        break
+                    fi
+                done
+                
+                # If not found, add to removal list
+                if [ $found -eq 0 ] && [ -n "$rule_ip" ]; then
+                    local dest=$(echo "$line" | grep -oP 'to:\K[0-9.]+')
+                    if [ -n "$dest" ]; then
+                        rules_to_remove+=("$chain:$rule_ip:$dest")
+                    fi
                 fi
             fi
-        done
+        done < <(iptables -w -t nat -L "$chain" -n 2>/dev/null)
+    done
+    
+    # Remove orphaned rules
+    for rule in "${rules_to_remove[@]}"; do
+        IFS=':' read -r chain rule_ip dest <<< "$rule"
+        iptables -w -t nat -D "$chain" -d "$rule_ip" -j DNAT --to-destination "$dest" 2>/dev/null && \
+            echo "Removed orphaned rule: $rule_ip -> $dest"
     done
     
     # Enable IP forwarding
@@ -205,24 +217,24 @@ setup_nat_rules() {
     
     # Try different methods based on the distribution
     if command -v netfilter-persistent &> /dev/null; then
-        netfilter-persistent save
-        echo "Saved iptables rules with netfilter-persistent"
+        timeout 10 netfilter-persistent save 2>/dev/null || echo "Warning: netfilter-persistent save timeout or failed"
     elif [ -f /etc/debian_version ]; then
         # Debian/Ubuntu
         if ! command -v iptables-save &> /dev/null; then
-            apt-get update && apt-get install -y iptables-persistent
+            DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent
         fi
-        iptables-save > /etc/iptables/rules.v4
+        mkdir -p /etc/iptables
+        iptables-save > /etc/iptables/rules.v4 2>/dev/null || echo "Warning: Could not save to /etc/iptables/rules.v4"
         echo "Saved iptables rules to /etc/iptables/rules.v4"
     elif [ -f /etc/redhat-release ]; then
         # RHEL/CentOS
         service iptables save 2>/dev/null || \
-        iptables-save > /etc/sysconfig/iptables
-        echo "Saved iptables rules to /etc/sysconfig/iptables"
+        iptables-save > /etc/sysconfig/iptables 2>/dev/null || \
+        echo "Warning: Could not save iptables rules"
     else
         # Generic fallback
-        iptables-save > /etc/iptables.rules
-        echo "Saved iptables rules to /etc/iptables.rules"
+        mkdir -p /etc
+        iptables-save > /etc/iptables.rules 2>/dev/null || echo "Warning: Could not save iptables rules"
         echo "Warning: You may need to configure automatic restore on boot"
     fi
     
@@ -234,10 +246,10 @@ show_nat_rules() {
     echo
     echo "=== Current NAT Rules ==="
     echo "OUTPUT chain:"
-    iptables -t nat -L OUTPUT -n -v | grep -E "DNAT|Chain OUTPUT" || true
+    iptables -w -t nat -L OUTPUT -n -v | grep -E "DNAT|Chain OUTPUT" || true
     echo
     echo "PREROUTING chain:"
-    iptables -t nat -L PREROUTING -n -v | grep -E "DNAT|Chain PREROUTING" || true
+    iptables -w -t nat -L PREROUTING -n -v | grep -E "DNAT|Chain PREROUTING" || true
     echo
 }
 
@@ -247,6 +259,10 @@ test_connectivity() {
     echo "=== Testing Connectivity ==="
     
     local current_index=$(detect_current_vm_index)
+    if [ $current_index -eq -1 ]; then
+        echo "Could not detect current VM for testing"
+        return
+    fi
     
     for i in "${!PRIVATE_IP_ARRAY[@]}"; do
         # Skip current VM
@@ -264,12 +280,11 @@ test_connectivity() {
         
         # Test ping to private IP (should be routed to public IP)
         echo -n "  Ping test (via private IP): "
-        if ping -c 1 -W 2 "$private_ip" &>/dev/null; then
+        if timeout 2 ping -c 1 -W 2 "$private_ip" &>/dev/null; then
             echo "SUCCESS"
         else
             echo "FAILED"
         fi
-
     done
     echo
 }
@@ -278,3 +293,9 @@ test_connectivity() {
 setup_nat_rules
 show_nat_rules
 test_connectivity
+
+# Ensure all background processes are completed
+wait
+
+# Force exit
+exit 0

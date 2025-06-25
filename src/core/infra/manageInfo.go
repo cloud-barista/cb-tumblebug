@@ -1027,19 +1027,7 @@ func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (model.TbVmSta
 	errorInfo := model.TbVmStatusInfo{}
 	errorInfo.Status = model.StatusFailed
 
-	key := common.GenMciKey(nsId, mciId, vmId)
-	keyValue, err := kvstore.GetKv(key)
-	if err != nil || keyValue == (kvstore.KeyValue{}) {
-		if keyValue == (kvstore.KeyValue{}) {
-			log.Error().Err(err).Msgf("Not found: %s keyValue is nil", key)
-			return errorInfo, fmt.Errorf("Not found: %s keyValue is nil", key)
-		}
-		log.Error().Err(err).Msg("")
-		return errorInfo, err
-	}
-
-	temp := model.TbVmInfo{}
-	err = json.Unmarshal([]byte(keyValue.Value), &temp)
+	temp, err := GetVmObject(nsId, mciId, vmId) // to check if the VM exists
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return errorInfo, err
