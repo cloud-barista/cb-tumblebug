@@ -222,6 +222,29 @@ func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName stri
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
+
+	if len(bastionNodes) == 0 {
+		err = fmt.Errorf("no bastion nodes available for VM (ID: %s) in MCI (ID: %s)", vmId, mciId)
+		log.Error().Err(err).Msg("")
+
+		// Assign a Bastion if none (randomly)
+		_, err = SetBastionNodes(nsId, mciId, vmId, "")
+		if err != nil {
+			log.Error().Err(err).Msg("no bastion nodes available")
+			return map[int]string{}, map[int]string{}, err
+		}
+		bastionNodes, err = GetBastionNodes(nsId, mciId, vmId)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return map[int]string{}, map[int]string{}, err
+		}
+		if len(bastionNodes) == 0 {
+			err = fmt.Errorf("still no bastion nodes available after attempted assignment")
+			log.Error().Err(err).Msg("")
+			return map[int]string{}, map[int]string{}, err
+		}
+	}
+
 	bastionNode := bastionNodes[0]
 	// use public IP of the bastion VM
 	bastionIp, _, bastionSshPort, err := GetVmIp(nsId, bastionNode.MciId, bastionNode.VmId)
