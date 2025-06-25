@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Ensure clean exit on any termination
+trap 'exit 0' EXIT TERM INT
+
+# Redirect any hanging file descriptors
+exec 3>&- 4>&- 5>&- 6>&- 7>&- 8>&- 9>&-
+
 set -e
 
 # Initialize variables
@@ -119,6 +125,17 @@ add_or_update_iptables_rule() {
     fi
 }
 
+# Function to check if IP is reachable (same network)
+is_ip_reachable() {
+    local ip=$1
+    # Try arping first (layer 2, more reliable for same network detection)
+    if command -v arping &>/dev/null; then
+        arping -c 1 -w 1 "$ip" &>/dev/null 2>&1 && return 0
+    fi
+    # Fallback to ping with strict timeout
+    timeout 1 ping -c 1 -W 1 "$ip" &>/dev/null 2>&1
+}
+
 # Main setup function
 setup_nat_rules() {
     echo "=== Starting NAT Setup on $(hostname) ==="
@@ -149,6 +166,15 @@ setup_nat_rules() {
         
         local private_ip="${PRIVATE_IP_ARRAY[$i]}"
         local public_ip="${PUBLIC_IP_ARRAY[$i]}"
+        
+        # Check if this VM is directly reachable via private IP
+        echo -n "Checking connectivity to $private_ip... "
+        if is_ip_reachable "$private_ip"; then
+            echo "REACHABLE (same network) - skipping NAT rule"
+            continue
+        else
+            echo "NOT REACHABLE - adding NAT rule"
+        fi
         
         echo "Setting up NAT: $private_ip -> $public_ip"
         
@@ -215,27 +241,30 @@ setup_nat_rules() {
     # Save iptables rules persistently
     echo "Saving iptables rules..."
     
-    # Try different methods based on the distribution
-    if command -v netfilter-persistent &> /dev/null; then
-        timeout 10 netfilter-persistent save 2>/dev/null || echo "Warning: netfilter-persistent save timeout or failed"
-    elif [ -f /etc/debian_version ]; then
-        # Debian/Ubuntu
-        if ! command -v iptables-save &> /dev/null; then
-            DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent
-        fi
-        mkdir -p /etc/iptables
-        iptables-save > /etc/iptables/rules.v4 2>/dev/null || echo "Warning: Could not save to /etc/iptables/rules.v4"
-        echo "Saved iptables rules to /etc/iptables/rules.v4"
-    elif [ -f /etc/redhat-release ]; then
-        # RHEL/CentOS
-        service iptables save 2>/dev/null || \
-        iptables-save > /etc/sysconfig/iptables 2>/dev/null || \
-        echo "Warning: Could not save iptables rules"
+    # Skip save if running in container or minimal environment
+    if [ -f /.dockerenv ] || [ -f /run/systemd/container ]; then
+        echo "Container environment detected, skipping persistent save"
     else
-        # Generic fallback
-        mkdir -p /etc
-        iptables-save > /etc/iptables.rules 2>/dev/null || echo "Warning: Could not save iptables rules"
-        echo "Warning: You may need to configure automatic restore on boot"
+        # Try different methods based on the distribution
+        if command -v netfilter-persistent &>/dev/null 2>&1; then
+            timeout 5 netfilter-persistent save </dev/null &>/dev/null 2>&1 || echo "Warning: netfilter-persistent save failed"
+        elif [ -f /etc/debian_version ]; then
+            # Debian/Ubuntu
+            if ! command -v iptables-save &>/dev/null 2>&1; then
+                echo "Installing iptables-persistent..."
+                DEBIAN_FRONTEND=noninteractive apt-get update </dev/null &>/dev/null 2>&1
+                DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent </dev/null &>/dev/null 2>&1
+            fi
+            mkdir -p /etc/iptables 2>/dev/null || true
+            iptables-save > /etc/iptables/rules.v4 2>/dev/null || echo "Warning: Could not save to /etc/iptables/rules.v4"
+        elif [ -f /etc/redhat-release ]; then
+            # RHEL/CentOS
+            service iptables save </dev/null &>/dev/null 2>&1 || \
+            iptables-save > /etc/sysconfig/iptables 2>/dev/null || true
+        else
+            # Generic fallback - just skip
+            echo "Unknown distribution, skipping persistent save"
+        fi
     fi
     
     echo "=== NAT Setup Complete ==="
@@ -289,13 +318,18 @@ test_connectivity() {
     echo
 }
 
-# Execute main functions
-setup_nat_rules
-show_nat_rules
-test_connectivity
+# Execute main functions with clean stdio
+{
+    setup_nat_rules
+    show_nat_rules
+    test_connectivity
+} </dev/null 2>&1 | cat
 
-# Ensure all background processes are completed
-wait
+# Ensure all file descriptors are closed
+exec 0<&- 1>&- 2>&-
+
+# Kill any remaining background processes from this script
+pkill -P $ 2>/dev/null || true
 
 # Force exit
 exit 0
