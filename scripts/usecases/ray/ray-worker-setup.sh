@@ -5,7 +5,7 @@
 # Designed for unattended execution via SSH
 
 # Default values
-RAY_COMPONENT="minimal"   # Ray component to install (usually 'minimal' is sufficient for workers)
+RAY_COMPONENT="all"       # Ray component to install (usually 'minimal' is sufficient for workers. all is for testing all components.)
 PUBLIC_IP=""              # IP address for this server (will be auto-detected if not provided)
 HEAD_ADDRESS=""           # Address of the Ray head node (required)
 HEAD_PORT="6379"          # Default port for Ray head node (can be overridden in HEAD_ADDRESS)
