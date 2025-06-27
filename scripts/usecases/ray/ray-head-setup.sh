@@ -93,14 +93,8 @@ echo "export RAY_GRAFANA_IFRAME_HOST=\"http://${PUBLIC_IP}:3000\"" >> ~/.bashrc
 
 
 # Start Ray head node
-echo "Starting Ray head node (detached)..."
-nohup ray start \
-      --head \
-      --port=6379 \
-      --dashboard-host=0.0.0.0 \
-      --dashboard-port=8265 \
-      --block \
-      > ~/ray_head.log 2>&1 &
+echo "Starting Ray head node..."
+ray start --head --port=6379 --dashboard-host=0.0.0.0 --dashboard-port=8265
 
 # Check Ray status (give it a moment to start)
 sleep 5
@@ -115,7 +109,9 @@ if ray status > /dev/null 2>&1; then
         
         # Launch Prometheus using Ray's built-in command
         echo "Launching Prometheus..."
-        nohup ray metrics launch-prometheus > ~/prometheus.log 2>&1 &
+        nohup ray metrics launch-prometheus > ~/prometheus.log 2>&1 < /dev/null &
+
+        sleep 5
 
         # Create needed directories for Grafana
         echo "Setting up Grafana directories..."
@@ -172,9 +168,4 @@ else
     exit 1
 fi
 
-for pid in $(jobs -p); do
-  disown "$pid" 2>/dev/null || true
-done
-
-echo "Ray head setup finished. Logs: ~/ray_head.log, ~/prometheus.log"
 exit 0
