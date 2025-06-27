@@ -1248,6 +1248,17 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 				if len(parts) == 2 {
 					targetMciId = parts[0]
 					targetVmId = parts[1]
+					if targetMciId == "this" {
+						targetMciId = mciId
+					}
+					if targetVmId == "this" {
+						targetVmId = vmId
+					}
+					// if targetVm or targetMci is not specified, return error
+					if targetMciId == "" || targetVmId == "" {
+						return "", fmt.Errorf("built-in function %s error: target MCI or VM %s is invalid", funcName, val)
+					}
+
 				} else if strings.EqualFold(val, "this") {
 					targetMciId = mciId
 					targetVmId = vmId
@@ -1269,7 +1280,7 @@ func processCommand(command, nsId, mciId, vmId string, vmIndex int) (string, err
 				replacement, err = replaceWithPrivateIP(nsId, targetMciId, targetVmId, prefix, postfix)
 			}
 			if err != nil {
-				return "", fmt.Errorf("built-in function getPublicIP error: %s", err.Error())
+				return "", fmt.Errorf("built-in function GetPublicIP error: %s", err.Error())
 			}
 		} else if strings.EqualFold(funcName, "GetPublicIPs") || strings.EqualFold(funcName, "GetPrivateIPs") {
 			// Logic for GetPublicIPs function
