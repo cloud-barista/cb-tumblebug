@@ -371,21 +371,28 @@ func RecommendVmLocation(nsId string, specList *[]model.TbSpecInfo, param *[]mod
 				// Otherwise, positive value has higher priority
 				return (*specList)[i].CostPerHour >= 0
 			})
+
+			// Sort distances based on calculated distance
 			sort.Slice(distances, func(i, j int) bool {
 				return distances[i].distance < distances[j].distance
 			})
 
+			// Calculate priorityIndex based on distances
+			minDistance := distances[0].distance
+			// Set a tolerance threshold as 10% of the minimum distance
+			toleranceThreshold := minDistance * 0.1
+
 			priorityCnt := 1
 			for i := range distances {
-
 				// priorityIndex++ if two distances are not equal (give the same priorityIndex if two variables are same)
 				if i != 0 {
-					if distances[i].distance > distances[i-1].distance {
+					currentDiff := distances[i].distance - distances[i-1].distance
+
+					if currentDiff > toleranceThreshold {
 						priorityCnt++
 					}
 				}
 				distances[i].priorityIndex = priorityCnt
-
 			}
 
 			max := float32(distances[len(*specList)-1].distance)
