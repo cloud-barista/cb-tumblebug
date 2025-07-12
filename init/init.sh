@@ -33,14 +33,25 @@ fi
 echo
 echo "Checking for uv..."
 if ! command -v uv &> /dev/null; then
-    echo "uv is not installed. Please install it using the following command:"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "uv is not installed"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "uv is an extremely fast Python package installer and resolver,"
+    echo "designed as a drop-in replacement for pip and pip-tools."
+    echo "It's required for this project to manage Python dependencies efficiently."
     echo
-    echo "# Installing uv"
-    echo " curl -LsSf https://astral.sh/uv/install.sh | sh"
+    echo "You can install it using one of these methods:"
     echo
-    echo "# Setting environment variables"
-    echo "source ~/.bashrc"
-    echo "# or use source ~/.bash_profile or source ~/.profile"
+    echo "Option 1: Direct install (recommended)"
+    echo -e "\033[4;94mcurl -LsSf https://astral.sh/uv/install.sh | sh\033[0m"
+    echo
+    echo "Option 2: Visit the installation page"
+    echo -e "\033[4;94mhttps://github.com/astral-sh/uv#installation\033[0m"
+    echo
+    echo "After installation, reload your shell environment with:"
+    echo -e "\033[4;94msource ~/.bashrc\033[0m"
+    echo "# or use source ~/.bash_profile or source ~/.profile depending on your system"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     exit 1
 fi
 

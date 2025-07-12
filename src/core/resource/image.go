@@ -58,7 +58,7 @@ func TbImageReqStructLevelValidation(sl validator.StructLevel) {
 // ConvertSpiderImageToTumblebugImage accepts an Spider image object, converts to and returns an TB image object
 func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage model.SpiderImageInfo) (model.TbImageInfo, error) {
 
-	regionAgnosticProviders := []string{"azure", "gcp", "tencent"}
+	regionAgnosticProviders := []string{csp.Azure, csp.GCP, csp.Tencent}
 
 	if spiderImage.IId.NameId == "" {
 		err := fmt.Errorf("ConvertSpiderImageToTumblebugImage failed; spiderImage.IId.NameId == EmptyString")
@@ -740,7 +740,7 @@ func fetchImagesForAllConnConfigsInternal(nsId string, option *model.ImageFetchO
 			// Adjust parallel connections for specific providers
 			providerParallelConn := parallelConnPerProvider
 			if provider == csp.AWS {
-				providerParallelConn = 15 // to handle more parallel connections
+				providerParallelConn = 3 // to handle more parallel connections
 			}
 
 			// Set up semaphore for controlled parallelism

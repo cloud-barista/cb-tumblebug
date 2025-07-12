@@ -411,6 +411,16 @@ func FetchSpecsForAllConnConfigs(nsId string) (connConfigCount uint, specCount u
 	return connConfigCount, specCount, nil
 }
 
+// Define lightweight result type with only essential information
+type essentialPriceInfo struct {
+	ProviderName   string
+	RegionName     string
+	SpecName       string
+	Currency       string
+	Price          float32
+	ConnectionName string
+}
+
 // FetchPriceForAllConnConfigs gets all conn configs from Spider, lookups all Price for each region of conn config,
 // and saves into TB Price objects. This implementation uses parallel processing and retries failed connections once.
 func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err error) {
@@ -431,20 +441,10 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 	log.Info().Msgf("Starting parallel price fetching for %d connections", connConfigCount)
 	startTime := time.Now()
 
-	// Define lightweight result type with only essential information
-	type EssentialPriceInfo struct {
-		ProviderName   string
-		RegionName     string
-		SpecName       string
-		Currency       string
-		Price          string
-		ConnectionName string
-	}
-
 	// Function to fetch prices for a single connection with retry
-	fetchPricesWithRetry := func(config model.ConnConfig) ([]EssentialPriceInfo, error) {
+	fetchPricesWithRetry := func(config model.ConnConfig) ([]essentialPriceInfo, error) {
 		// First attempt
-		priceList, err := FetchPriceForConnConfig(config)
+		essentialPrices, err := FetchPriceForConnConfig(config)
 
 		// If failed, retry once after random sleep
 		if err != nil {
@@ -460,7 +460,7 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 
 			// Random sleep before retry
 			common.RandomSleep(2, 5)
-			priceList, err = FetchPriceForConnConfig(config)
+			essentialPrices, err = FetchPriceForConnConfig(config)
 		}
 
 		// If still failed after retry
@@ -470,28 +470,6 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 			return nil, err
 		}
 
-		// Extract only essential information to reduce memory usage
-		var essentialPrices []EssentialPriceInfo
-		if priceList.PriceList != nil {
-			for _, price := range priceList.PriceList {
-				// // Log debug info for GCP providers
-				// if config.ProviderName == csp.GCP {
-				// 	log.Debug().Msgf("Price for spec %s: %s",
-				// 		price.ProductInfo.VMSpecInfo.Name,
-				// 		price.PriceInfo.OnDemand.Currency)
-				// }
-
-				essentialPrices = append(essentialPrices, EssentialPriceInfo{
-					ProviderName:   config.ProviderName,
-					RegionName:     config.RegionDetail.RegionName,
-					SpecName:       price.ProductInfo.VMSpecInfo.Name,
-					Currency:       price.PriceInfo.OnDemand.Currency,
-					Price:          price.PriceInfo.OnDemand.Price,
-					ConnectionName: config.ConfigName,
-				})
-			}
-		}
-
 		return essentialPrices, nil
 	}
 
@@ -499,7 +477,7 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 	var wg sync.WaitGroup
 	resultChan := make(chan struct {
 		ConnConfig model.ConnConfig
-		PriceInfos []EssentialPriceInfo
+		PriceInfos []essentialPriceInfo
 		Err        error
 	}, len(connConfigs.Connectionconfig))
 
@@ -517,7 +495,7 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 			// Send result back through channel
 			resultChan <- struct {
 				ConnConfig model.ConnConfig
-				PriceInfos []EssentialPriceInfo
+				PriceInfos []essentialPriceInfo
 				Err        error
 			}{
 				ConnConfig: config,
@@ -535,7 +513,7 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 
 	// Process results
 	var finalErrors []string
-	var allPriceInfos []EssentialPriceInfo
+	var allPriceInfos []essentialPriceInfo
 	var successCount uint
 
 	for result := range resultChan {
@@ -564,32 +542,18 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 
 	var updateCount int
 	for _, priceInfo := range allPriceInfos {
-		priceFloat, err := strconv.ParseFloat(priceInfo.Price, 32)
+		imageUpdateKey := GetProviderRegionZoneResourceKey(
+			priceInfo.ProviderName,
+			priceInfo.RegionName,
+			"",
+			priceInfo.SpecName)
 
-		// Apply currency conversion if needed
-		priceFloat = float64(common.ConvertToBaseCurrency(float32(priceFloat), priceInfo.Currency))
+		UpdateSpec(model.SystemCommonNs, imageUpdateKey,
+			model.TbSpecInfo{
+				CostPerHour: priceInfo.Price,
+			})
 
-		if err != nil {
-			log.Warn().Err(err).Msgf("Failed to parse price '%s' for spec '%s', skipping update.",
-				priceInfo.Price, priceInfo.SpecName)
-		} else {
-			imageUpdateKey := GetProviderRegionZoneResourceKey(
-				priceInfo.ProviderName,
-				priceInfo.RegionName,
-				"",
-				priceInfo.SpecName)
-
-			UpdateSpec(model.SystemCommonNs, imageUpdateKey,
-				model.TbSpecInfo{
-					CostPerHour: float32(priceFloat),
-				})
-
-			updateCount++
-
-			// if updateCount%100 == 0 {
-			// 	log.Info().Msgf("Updated %d/%d prices", updateCount, len(allPriceInfos))
-			// }
-		}
+		updateCount++
 	}
 
 	// Report any errors
@@ -611,21 +575,60 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 	return connConfigCount, priceCount, nil
 }
 
-// FetchPriceForConnConfig lookups all Price for region of conn config, and saves into TB Price objects
-func FetchPriceForConnConfig(connConfig model.ConnConfig) (model.SpiderCloudPrice, error) {
-	log.Debug().Msg("FetchPriceForConnConfig(" + connConfig.ConfigName + ")")
+// FetchPriceForConnConfig lookups all Price for region of conn config, and returns essential price information
+func FetchPriceForConnConfig(config model.ConnConfig) ([]essentialPriceInfo, error) {
+	log.Debug().Msg("FetchPriceForConnConfig(" + config.ConfigName + ")")
 
-	priceInConnection, err := LookupPriceList(connConfig)
+	// Reuse existing LookupPriceList function
+	priceInConnection, err := LookupPriceList(config)
 	if err != nil {
-		log.Error().Err(err).Msgf("Cannot LookupPriceList in %s", connConfig.ConfigName)
-		return model.SpiderCloudPrice{}, err
+		log.Error().Err(err).Msgf("Cannot LookupPriceList in %s", config.ConfigName)
+		return nil, err
 	}
 
-	// for _, price := range priceInConnection.PriceList {
-	// 	log.Info().Msgf("Found price in the connection %s: %s, %s", connConfig.ConfigName, price.ProductInfo.VMSpecInfo.Name, price.PriceInfo.OnDemand.Price)
-	// }
+	// Extract only essential information immediately
+	var essentialPrices []essentialPriceInfo
+	if priceInConnection.PriceList != nil {
+		// Pre-allocate slice capacity for memory efficiency
+		essentialPrices = make([]essentialPriceInfo, 0, len(priceInConnection.PriceList))
 
-	return priceInConnection, nil
+		for i := range priceInConnection.PriceList {
+			price := priceInConnection.PriceList[i]
+
+			priceFloat, err := strconv.ParseFloat(price.PriceInfo.OnDemand.Price, 32)
+
+			// Apply currency conversion if needed
+			priceFloat = float64(common.ConvertToBaseCurrency(float32(priceFloat), price.PriceInfo.OnDemand.Currency))
+
+			if err != nil {
+				log.Warn().Err(err).Msgf("Failed to parse price '%s' for spec '%s', skipping update.",
+					price.PriceInfo.OnDemand.Price, price.ProductInfo.VMSpecInfo.Name)
+			} else {
+				// Extract only required fields
+				essentialPrices = append(essentialPrices, essentialPriceInfo{
+					ProviderName:   config.ProviderName,
+					RegionName:     config.RegionDetail.RegionName,
+					SpecName:       price.ProductInfo.VMSpecInfo.Name,
+					Currency:       price.PriceInfo.OnDemand.Currency,
+					Price:          float32(priceFloat),
+					ConnectionName: config.ConfigName,
+				})
+
+				// Remove references to large objects to help with memory cleanup
+				priceInConnection.PriceList[i].ProductInfo.VMSpecInfo = model.SpiderSpecInfo{}
+				priceInConnection.PriceList[i].ProductInfo.CSPProductInfo = nil
+				priceInConnection.PriceList[i].PriceInfo.CSPPriceInfo = nil
+			}
+		}
+
+		// Release the original data slice
+		priceInConnection.PriceList = nil
+	}
+
+	log.Debug().Msgf("Extracted %d essential price info items from %s",
+		len(essentialPrices), config.ConfigName)
+
+	return essentialPrices, nil
 }
 
 // LookupPriceList returns the list of all prices in the region of conn config
