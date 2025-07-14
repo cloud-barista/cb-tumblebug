@@ -33,20 +33,110 @@ fi
 echo
 echo "Checking for uv..."
 if ! command -v uv &> /dev/null; then
-    echo "uv is not installed. Please install it using the following command:"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "uv is not installed"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "uv is an extremely fast Python package installer and resolver,"
+    echo "designed as a drop-in replacement for pip and pip-tools."
+    echo "It's required for this project to manage Python dependencies efficiently."
     echo
-    echo "# Installing uv"
-    echo " curl -LsSf https://astral.sh/uv/install.sh | sh"
+    echo "You can install it using one of these methods:"
     echo
-    echo "# Setting environment variables"
-    echo "source ~/.bashrc"
-    echo "# or use source ~/.bash_profile or source ~/.profile"
+    echo "Option 1: Direct install (recommended)"
+    echo -e "\033[4;94mcurl -LsSf https://astral.sh/uv/install.sh | sh\033[0m"
+    echo
+    echo "Option 2: Visit the installation page"
+    echo -e "\033[4;94mhttps://github.com/astral-sh/uv#installation\033[0m"
+    echo
+    echo "After installation, reload your shell environment with:"
+    echo -e "\033[4;94msource ~/.bashrc\033[0m"
+    echo "# or use source ~/.bash_profile or source ~/.profile depending on your system"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     exit 1
+fi
+
+    
+# Record start time for elapsed seconds calculation
+START_TIME=$(date +%s)
+
+# Optional: monitor cb-tumblebug and cb-spider resource usage if STATS is set
+if [[ "$STATS" == "true" ]]; then
+    echo "Docker resource monitoring enabled (cb-tumblebug, cb-spider)"
+    LOGFILE="docker_stats_$(date +'%Y%m%d_%H%M%S').csv"
+    
+    # Get total memory of the host in GiB (used for mem-total)
+    TOTAL_MEM_GIB=$(free -g | awk '/^Mem:/{print $2}')
+
+    
+    # Updated header with elapsed seconds instead of timestamp
+    echo "elapsed,tb-cpu,sp-cpu,sum-cpu,tb-mem,sp-mem,sum-mem,mem-unit,mem-total" > "$LOGFILE"
+    
+    # Start monitoring in background
+    {
+        while true; do
+            # Calculate elapsed seconds from start
+            CURRENT_TIME=$(date +%s)
+            ELAPSED_SEC=$((CURRENT_TIME - START_TIME))
+            
+            # Get CPU usage without % and memory usage in bytes
+            TB_CPU=$(docker stats cb-tumblebug --no-stream --format "{{.CPUPerc}}" | sed 's/%//g')
+            SP_CPU=$(docker stats cb-spider --no-stream --format "{{.CPUPerc}}" | sed 's/%//g')
+            
+            # Get memory usage in bytes and convert to GiB
+            TB_MEM_BYTES=$(docker stats cb-tumblebug --no-stream --format "{{.MemUsage}}" | awk '{print $1}')
+            SP_MEM_BYTES=$(docker stats cb-spider --no-stream --format "{{.MemUsage}}" | awk '{print $1}')
+            
+            # Convert memory to GiB (handling MiB, GiB units)
+            TB_MEM_GIB=$(echo $TB_MEM_BYTES | awk '{
+                value=$1; 
+                if (index(value, "MiB") > 0) {
+                    sub("MiB", "", value); 
+                    printf "%.2f", value/1024;
+                } else if (index(value, "GiB") > 0) {
+                    sub("GiB", "", value); 
+                    printf "%.2f", value;
+                }
+            }')
+            
+            SP_MEM_GIB=$(echo $SP_MEM_BYTES | awk '{
+                value=$1; 
+                if (index(value, "MiB") > 0) {
+                    sub("MiB", "", value); 
+                    printf "%.2f", value/1024;
+                } else if (index(value, "GiB") > 0) {
+                    sub("GiB", "", value); 
+                    printf "%.2f", value;
+                }
+            }')
+
+            # Calculate totals using awk for better precision
+            SUM_CPU=$(awk "BEGIN {printf \"%.2f\", $TB_CPU + $SP_CPU}")
+            SUM_MEM=$(awk "BEGIN {printf \"%.2f\", $TB_MEM_GIB + $SP_MEM_GIB}")
+
+            # Write data to log file with elapsed seconds and totals
+            echo "$ELAPSED_SEC,$TB_CPU,$SP_CPU,$SUM_CPU,$TB_MEM_GIB,$SP_MEM_GIB,$SUM_MEM,GiB,$TOTAL_MEM_GIB" >> "$LOGFILE"
+            sleep 1
+        done
+    } &
+    MONITOR_PID=$!
 fi
 
 echo
 echo "Running the application..."
 uv run init.py "$@"
+
+# Stop monitoring if it was started
+if [[ ! -z "$MONITOR_PID" ]]; then
+    kill "$MONITOR_PID" 2>/dev/null
+    wait "$MONITOR_PID" 2>/dev/null
+    echo "Docker stats log saved to $LOGFILE"
+fi
+
+# Elapsed time calculation in Minutes
+END_TIME=$(date +%s)
+ELAPSED_TIME=$((END_TIME - START_TIME))
+ELAPSED_MINUTES=$((ELAPSED_TIME / 60))
+echo "Elapsed time: $ELAPSED_MINUTES minutes"
 
 echo
 echo "Cleaning up the venv and uv.lock files..."
