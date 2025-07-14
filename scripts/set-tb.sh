@@ -40,6 +40,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 # ──────────────
 # Install prerequisites
 # ──────────────
+echo
 echo "📦 Installing prerequisites..."
 sudo apt update
 sudo apt install -y make gcc git curl wget
@@ -47,6 +48,7 @@ sudo apt install -y make gcc git curl wget
 # ──────────────
 # Install Go (if needed)
 # ──────────────
+echo
 if ! go version | grep -q "$GO_VERSION"; then
   echo "⬇️ Installing Go $GO_VERSION..."
   wget -q https://go.dev/dl/${GO_TAR}
@@ -60,6 +62,7 @@ fi
 # ──────────────
 # Set Go environment
 # ──────────────
+echo
 if ! grep -q 'export GOPATH=' ~/.bashrc; then
   echo "🔧 Setting up Go environment..."
   echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> ~/.bashrc
@@ -75,6 +78,7 @@ go version
 # ──────────────
 # Clone CB-Tumblebug
 # ──────────────
+echo
 if [ -d "$CB_DIR" ]; then
   echo "✅ CB-Tumblebug already cloned at $CB_DIR. Skipping clone."
 else
@@ -92,6 +96,7 @@ mkdir -p ~/.cloud-barista
 # ──────────────
 # Register aliases
 # ──────────────
+echo
 if ! grep -q "alias cdtb=" ~/.bashrc; then
   echo "🔗 Registering aliases in ~/.bashrc..."
   {
@@ -106,6 +111,7 @@ fi
 # ──────────────
 # Install Docker (if needed)
 # ──────────────
+echo
 if ! command -v docker &> /dev/null; then
   echo "🐳 Installing Docker..."
   curl -fsSL https://get.docker.com | sh
@@ -116,6 +122,7 @@ fi
 # ──────────────
 # Add user to docker group
 # ──────────────
+echo
 if groups $USER | grep -q '\bdocker\b'; then
   echo "✅ User already in 'docker' group."
 else
@@ -123,6 +130,29 @@ else
   sudo groupadd docker 2>/dev/null || true
   sudo usermod -aG docker $USER
 fi
+
+# ──────────────
+# Install uv for init.py
+# ──────────────
+echo
+echo "🧩 Checking for Python package manager 'uv'..."
+
+if ! command -v uv &> /dev/null; then
+    echo "→ 'uv' not found. Installing now..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    if [ -f "$HOME/.cargo/env" ]; then
+        source "$HOME/.cargo/env"
+    fi
+
+    export PATH="$HOME/.cargo/bin:$PATH"
+    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+
+    echo "✅ uv installed successfully!"
+else
+    echo "✅ uv is already installed."
+fi
+
 
 # ──────────────
 # Done
