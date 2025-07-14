@@ -84,6 +84,19 @@ the titles of Issues, Pull Requests, and Commits, while accommodating local lang
 - Docker and Docker Compose 
 - Golang (recommend: `v1.23.0`) to build the source
 
+### Minimum Hardware Requirements
+
+To run CB-Tumblebug and all related components reliably, the following hardware specifications are recommended:
+
+| Component | Minimum Spec |
+|-----------|--------------|
+| vCPU      | 4 cores or more |
+| Memory    | 6 GiB or more |
+| Disk      | 20 GiB or more free space |
+| Example   | AWS `c5a.xlarge` instance (4 vCPU, 8 GiB RAM) with `Ubuntu 22.04` |
+
+> ⚠️ Lower specs may cause failure in initialization or performance degradation due to limited resources.
+
 ---
 
 ### Dependency
@@ -97,6 +110,20 @@ Open source packages used in this project
 ---
 
 ## How to Run 🚀
+
+### 🧪 Quick Start (from the installaztion script)
+
+If you're using a clean Linux machine (e.g., AWS EC2), 
+you can quickly set up all required environments and clone CB-TB using the automated script:
+- https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/set-tb.sh
+
+```bash
+curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/set-tb.sh | bash
+```
+
+> ℹ️ After the script finishes, you may need to **log out and back in** to activate Docker permissions and aliases.
+> If you'd prefer to install dependencies and clone the repository manually, follow the steps below. 👇
+
 
 ### (1) Download CB-Tumblebug
 
@@ -144,7 +171,7 @@ Open source packages used in this project
   
   ```bash
   cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-  sudo docker compose up
+  docker compose up
   ```
   
   This command will start all components as defined in the preconfigured [docker-compose.yaml](https://github.com/cloud-barista/cb-tumblebug/blob/main/docker-compose.yaml) file. For configuration customization, please refer to the [guide](https://github.com/cloud-barista/cb-tumblebug/discussions/1669).
