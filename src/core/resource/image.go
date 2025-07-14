@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -591,34 +592,62 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 		return 0, err
 	}
 
-	tmpImageList := []model.TbImageInfo{}
+	// Pre-allocate slice with known capacity to reduce memory allocations
+	tmpImageList := make([]model.TbImageInfo, 0, len(spiderImageList.Image))
 
-	for _, spiderImage := range spiderImageList.Image {
+	// Process images and clean up memory immediately
+	for i := range spiderImageList.Image {
+		spiderImage := spiderImageList.Image[i]
+
 		if spiderImage.ImageStatus == model.ImageUnavailable {
 			log.Debug().Msgf("Skipping image in the unavailable status: %s (%s)", spiderImage.IId.NameId, connConfig)
+
+			// Clear the processed item immediately
+			spiderImageList.Image[i] = model.SpiderImageInfo{}
 			continue
 		}
 
 		tumblebugImage, err := ConvertSpiderImageToTumblebugImage(nsId, connConfig, spiderImage)
 		if err != nil {
 			log.Error().Err(err).Msg("")
+			// Clean up before returning error
+			spiderImageList.Image = nil
+			tmpImageList = nil
 			return 0, err
 		}
 
 		imageCount++
-
 		tmpImageList = append(tmpImageList, tumblebugImage)
+
+		// Clear the processed spider image immediately to free memory
+		spiderImageList.Image[i] = model.SpiderImageInfo{}
 	}
 
+	// Release the original spider image list immediately after processing
+	spiderImageList.Image = nil
+	spiderImageList = model.SpiderImageList{}
+
+	// Perform bulk registration
 	if len(tmpImageList) > 0 {
 		err = RegisterImageWithInfoInBulk(tmpImageList)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to register images in bulk for %s", connConfig)
+			// Clean up before returning error
+			tmpImageList = nil
 			return 0, err
 		}
 		log.Info().Msgf("Successfully registered %d images for connection %s", len(tmpImageList), connConfig)
 	}
 
+	// Clear the temporary image list after successful registration
+	tmpImageList = nil
+
+	// Force garbage collection hint for large datasets
+	if imageCount > 100 {
+		runtime.GC()
+	}
+
+	log.Debug().Msgf("Memory cleanup completed for connection %s", connConfig)
 	return imageCount, nil
 }
 

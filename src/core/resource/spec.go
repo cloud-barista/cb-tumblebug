@@ -17,6 +17,8 @@ package resource
 import (
 	"fmt"
 	"reflect"
+	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -411,18 +413,8 @@ func FetchSpecsForAllConnConfigs(nsId string) (connConfigCount uint, specCount u
 	return connConfigCount, specCount, nil
 }
 
-// Define lightweight result type with only essential information
-type essentialPriceInfo struct {
-	ProviderName   string
-	RegionName     string
-	SpecName       string
-	Currency       string
-	Price          float32
-	ConnectionName string
-}
-
 // FetchPriceForAllConnConfigs gets all conn configs from Spider, lookups all Price for each region of conn config,
-// and saves into TB Price objects. This implementation uses parallel processing and retries failed connections once.
+// and saves into TB Price objects. This implementation uses parallel processing with concurrency control and retries failed connections once.
 func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err error) {
 	// Get connection configurations
 	connConfigs, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
@@ -439,12 +431,20 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 
 	connConfigCount = uint(len(connConfigs.Connectionconfig))
 	log.Info().Msgf("Starting parallel price fetching for %d connections", connConfigCount)
+
+	// Sort connections by CSP rotation for optimal parallel processing
+	sortConnectionsByCSPRotation(connConfigs.Connectionconfig)
+
 	startTime := time.Now()
 
+	// Control concurrency with semaphore - limit concurrent connections
+	maxConcurrent := 15 // Reduced from unlimited to 15 concurrent connections
+	semaphore := make(chan struct{}, maxConcurrent)
+
 	// Function to fetch prices for a single connection with retry
-	fetchPricesWithRetry := func(config model.ConnConfig) ([]essentialPriceInfo, error) {
+	fetchPricesWithRetry := func(config model.ConnConfig) error {
 		// First attempt
-		essentialPrices, err := FetchPriceForConnConfig(config)
+		err := FetchPriceForConnConfig(config)
 
 		// If failed, retry once after random sleep
 		if err != nil {
@@ -455,51 +455,56 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 			if strings.Contains(err.Error(), "not support") {
 				log.Warn().Msgf("Skipping retry for connection %s due to unsupported error",
 					config.ConfigName)
-				return nil, err
+				return err
 			}
 
 			// Random sleep before retry
 			common.RandomSleep(2, 5)
-			essentialPrices, err = FetchPriceForConnConfig(config)
+			err = FetchPriceForConnConfig(config)
 		}
 
 		// If still failed after retry
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to fetch prices for connection %s after retry",
 				config.ConfigName)
-			return nil, err
+			return err
 		}
 
-		return essentialPrices, nil
+		return nil
 	}
 
-	// Process all connections in parallel
+	// Process all connections in parallel with controlled concurrency
 	var wg sync.WaitGroup
 	resultChan := make(chan struct {
 		ConnConfig model.ConnConfig
-		PriceInfos []essentialPriceInfo
 		Err        error
 	}, len(connConfigs.Connectionconfig))
 
 	for _, connConfig := range connConfigs.Connectionconfig {
 		wg.Add(1)
+
+		// Acquire semaphore slot before starting goroutine
+		semaphore <- struct{}{}
+
 		go func(config model.ConnConfig) {
 			defer wg.Done()
+			defer func() { <-semaphore }() // Release semaphore slot when done
 
 			// Simulate random sleep to avoid overwhelming the API
 			common.RandomSleep(0, 10)
 
 			// Fetch with retry
-			prices, err := fetchPricesWithRetry(config)
+			err := fetchPricesWithRetry(config)
+
+			// Force garbage collection after each connection to manage memory
+			runtime.GC()
 
 			// Send result back through channel
 			resultChan <- struct {
 				ConnConfig model.ConnConfig
-				PriceInfos []essentialPriceInfo
 				Err        error
 			}{
 				ConnConfig: config,
-				PriceInfos: prices,
 				Err:        err,
 			}
 		}(connConfig)
@@ -513,7 +518,6 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 
 	// Process results
 	var finalErrors []string
-	var allPriceInfos []essentialPriceInfo
 	var successCount uint
 
 	for result := range resultChan {
@@ -526,34 +530,7 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 
 		// Mark as successful and collect prices
 		successCount++
-		priceCount += uint(len(result.PriceInfos))
-		allPriceInfos = append(allPriceInfos, result.PriceInfos...)
-
-		if len(result.PriceInfos) > 0 {
-			log.Debug().Msgf("Collected %d prices for connection %s",
-				len(result.PriceInfos), result.ConnConfig.ConfigName)
-		} else {
-			log.Info().Msgf("No prices found for connection %s", result.ConnConfig.ConfigName)
-		}
-	}
-
-	// Now process all collected price info and update specs
-	log.Info().Msgf("Starting batch update of %d prices", len(allPriceInfos))
-
-	var updateCount int
-	for _, priceInfo := range allPriceInfos {
-		imageUpdateKey := GetProviderRegionZoneResourceKey(
-			priceInfo.ProviderName,
-			priceInfo.RegionName,
-			"",
-			priceInfo.SpecName)
-
-		UpdateSpec(model.SystemCommonNs, imageUpdateKey,
-			model.TbSpecInfo{
-				CostPerHour: priceInfo.Price,
-			})
-
-		updateCount++
+		log.Debug().Msgf("Successfully processed connection: %s", result.ConnConfig.ConfigName)
 	}
 
 	// Report any errors
@@ -565,70 +542,131 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 		}
 	}
 
-	log.Info().Msgf("Completed price fetching in %s. Successfully fetched prices from %d/%d connections, updated %d/%d prices",
+	// Final cleanup
+	runtime.GC()
+
+	log.Info().Msgf("Completed price fetching in %s. Successfully fetched prices from %d/%d connections with max %d concurrent workers",
 		time.Since(startTime),
 		successCount,
 		connConfigCount,
-		updateCount,
-		priceCount)
+		maxConcurrent)
 
 	return connConfigCount, priceCount, nil
 }
 
-// FetchPriceForConnConfig lookups all Price for region of conn config, and returns essential price information
-func FetchPriceForConnConfig(config model.ConnConfig) ([]essentialPriceInfo, error) {
+// FetchPriceForConnConfig lookups all Price for region of conn config, processes them in batch
+func FetchPriceForConnConfig(config model.ConnConfig) error {
 	log.Debug().Msg("FetchPriceForConnConfig(" + config.ConfigName + ")")
 
 	// Reuse existing LookupPriceList function
 	priceInConnection, err := LookupPriceList(config)
 	if err != nil {
 		log.Error().Err(err).Msgf("Cannot LookupPriceList in %s", config.ConfigName)
-		return nil, err
+		return err
 	}
 
-	// Extract only essential information immediately
-	var essentialPrices []essentialPriceInfo
-	if priceInConnection.PriceList != nil {
-		// Pre-allocate slice capacity for memory efficiency
-		essentialPrices = make([]essentialPriceInfo, 0, len(priceInConnection.PriceList))
+	if len(priceInConnection.PriceList) == 0 {
+		return nil
+	}
 
-		for i := range priceInConnection.PriceList {
-			price := priceInConnection.PriceList[i]
+	// Prepare batch updates map
+	batchUpdates := make(map[string]float32, len(priceInConnection.PriceList))
+	processedCount := 0
 
-			priceFloat, err := strconv.ParseFloat(price.PriceInfo.OnDemand.Price, 32)
+	for i := range priceInConnection.PriceList {
+		price := priceInConnection.PriceList[i]
 
-			// Apply currency conversion if needed
-			priceFloat = float64(common.ConvertToBaseCurrency(float32(priceFloat), price.PriceInfo.OnDemand.Currency))
+		priceFloat, err := strconv.ParseFloat(price.PriceInfo.OnDemand.Price, 32)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to parse price '%s' for spec '%s', skipping.",
+				price.PriceInfo.OnDemand.Price, price.ProductInfo.VMSpecInfo.Name)
 
-			if err != nil {
-				log.Warn().Err(err).Msgf("Failed to parse price '%s' for spec '%s', skipping update.",
-					price.PriceInfo.OnDemand.Price, price.ProductInfo.VMSpecInfo.Name)
-			} else {
-				// Extract only required fields
-				essentialPrices = append(essentialPrices, essentialPriceInfo{
-					ProviderName:   config.ProviderName,
-					RegionName:     config.RegionDetail.RegionName,
-					SpecName:       price.ProductInfo.VMSpecInfo.Name,
-					Currency:       price.PriceInfo.OnDemand.Currency,
-					Price:          float32(priceFloat),
-					ConnectionName: config.ConfigName,
-				})
-
-				// Remove references to large objects to help with memory cleanup
-				priceInConnection.PriceList[i].ProductInfo.VMSpecInfo = model.SpiderSpecInfo{}
-				priceInConnection.PriceList[i].ProductInfo.CSPProductInfo = nil
-				priceInConnection.PriceList[i].PriceInfo.CSPPriceInfo = nil
-			}
+			// Early memory cleanup for failed items
+			priceInConnection.PriceList[i].ProductInfo.VMSpecInfo = model.SpiderSpecInfoForNameOnly{}
+			continue
 		}
 
-		// Release the original data slice
-		priceInConnection.PriceList = nil
+		// Apply currency conversion
+		priceFloat = float64(common.ConvertToBaseCurrency(float32(priceFloat), price.PriceInfo.OnDemand.Currency))
+
+		// Create spec key
+		specKey := GetProviderRegionZoneResourceKey(
+			config.ProviderName,
+			config.RegionDetail.RegionName,
+			"",
+			price.ProductInfo.VMSpecInfo.Name)
+
+		// Add to batch instead of individual update
+		batchUpdates[specKey] = float32(priceFloat)
+		processedCount++
+
+		// Immediate memory cleanup after processing each item
+		priceInConnection.PriceList[i].ProductInfo.VMSpecInfo = model.SpiderSpecInfoForNameOnly{}
 	}
 
-	log.Debug().Msgf("Extracted %d essential price info items from %s",
-		len(essentialPrices), config.ConfigName)
+	// Release the original data slice immediately
+	priceInConnection.PriceList = nil
+	priceInConnection = model.SpiderCloudPrice{}
 
-	return essentialPrices, nil
+	// Perform batch update if we have data to update
+	if len(batchUpdates) > 0 {
+		updateCount, err := BulkUpdateSpec(model.SystemCommonNs, batchUpdates)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to batch update specs for %s", config.ConfigName)
+			batchUpdates = nil
+			return err
+		}
+		log.Debug().Msgf("Successfully updated %d specs for %s", updateCount, config.ConfigName)
+	}
+
+	// Clear the batch map to help GC
+	batchUpdates = nil
+
+	if processedCount > 100 {
+		runtime.GC()
+	}
+
+	log.Debug().Msgf("Processed %d price items from %s", processedCount, config.ConfigName)
+	return nil
+}
+
+// Sort connections by CSP rotation to ensure different CSPs are processed in parallel
+// Result: csp1-region1, csp2-region1, csp3-region1, csp1-region2, csp2-region2, csp3-region2, ...
+func sortConnectionsByCSPRotation(configs []model.ConnConfig) {
+	// Group by CSP provider
+	cspGroups := make(map[string][]model.ConnConfig)
+	for _, config := range configs {
+		provider := config.ProviderName
+		cspGroups[provider] = append(cspGroups[provider], config)
+	}
+
+	// Get sorted CSP names for consistent ordering
+	cspNames := make([]string, 0, len(cspGroups))
+	for cspName := range cspGroups {
+		cspNames = append(cspNames, cspName)
+	}
+	sort.Strings(cspNames)
+
+	// Find maximum number of regions in any CSP
+	maxRegions := 0
+	for _, configs := range cspGroups {
+		if len(configs) > maxRegions {
+			maxRegions = len(configs)
+		}
+	}
+
+	// Rebuild the slice in rotation order
+	rotatedConfigs := make([]model.ConnConfig, 0, len(configs))
+	for regionIndex := 0; regionIndex < maxRegions; regionIndex++ {
+		for _, cspName := range cspNames {
+			if regionIndex < len(cspGroups[cspName]) {
+				rotatedConfigs = append(rotatedConfigs, cspGroups[cspName][regionIndex])
+			}
+		}
+	}
+
+	// Copy back to original slice
+	copy(configs, rotatedConfigs)
 }
 
 // LookupPriceList returns the list of all prices in the region of conn config
@@ -962,4 +1000,38 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate model.TbSpecInfo) (mo
 	}
 
 	return fieldsToUpdate, nil
+}
+
+// BulkUpdateSpec updates multiple specs with proper type casting
+func BulkUpdateSpec(nsId string, updates map[string]float32) (int, error) {
+	if len(updates) == 0 {
+		return 0, nil
+	}
+
+	// Extract spec IDs for WHERE IN clause
+	specIds := make([]string, 0, len(updates))
+	for specId := range updates {
+		specIds = append(specIds, specId)
+	}
+
+	// Build CASE statement with explicit CAST
+	caseClause := "CASE id "
+	args := make([]interface{}, 0, len(updates)*2)
+
+	for specId, price := range updates {
+		caseClause += "WHEN ? THEN CAST(? AS NUMERIC) "
+		args = append(args, specId, price)
+	}
+	caseClause += "END"
+
+	// Execute with proper casting
+	result := model.ORM.Model(&model.TbSpecInfo{}).
+		Where("namespace = ? AND id IN ?", nsId, specIds).
+		Update("cost_per_hour", gorm.Expr(caseClause, args...))
+
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return int(result.RowsAffected), nil
 }

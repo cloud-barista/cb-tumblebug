@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -1397,6 +1398,9 @@ func LoadAssets() (model.IdList, error) {
 					specMap.Store(key, tumblebugSpec)
 					tmpSpecList = append(tmpSpecList, tumblebugSpec)
 				}
+				// Clear the entire specs slice after processing
+				specsInConnection.Vmspec = nil
+				specsInConnection = model.SpiderSpecList{}
 			}
 		}(connConfig)
 	}
@@ -1439,6 +1443,12 @@ func LoadAssets() (model.IdList, error) {
 		log.Info().Err(err).Msg("RegisterSpec WithInfo failed")
 	}
 	tmpSpecList = nil
+
+	// Clear specMap as it's no longer needed for initial registration
+	specMap.Range(func(key, value interface{}) bool {
+		specMap.Delete(key)
+		return true
+	})
 
 	elapsedRegisterSpecs := time.Now().Sub(startTime)
 	log.Info().Msgf("Registerd the Specs. Elapsed [%s]", elapsedRegisterSpecs)
@@ -1682,6 +1692,25 @@ func LoadAssets() (model.IdList, error) {
 
 	elapsedUpdateImg := time.Since(startTime)
 
+	// Final cleanup
+	tmpSpecList = nil
+	rowsSpec = nil
+	newRowsSpec = nil
+	connectionList.Connectionconfig = nil
+
+	// Clear sync.Maps
+	ignoreConnectionMap.Range(func(key, value interface{}) bool {
+		ignoreConnectionMap.Delete(key)
+		return true
+	})
+	validRepresentativeConnectionMap.Range(func(key, value interface{}) bool {
+		validRepresentativeConnectionMap.Delete(key)
+		return true
+	})
+
+	// Force garbage collection for large cleanup
+	runtime.GC()
+
 	// waitSpecImg.Wait()
 	// sort.Strings(regiesteredIds.IdList)
 	log.Info().Msgf("Registered Common Resources %d", len(regiesteredIds.IdList))
@@ -1695,7 +1724,7 @@ func LoadAssets() (model.IdList, error) {
 	// FetchPriceForAllConnConfigs is called to update the prices of all specs
 	log.Info().Msgf("FetchPriceForAllConnConfigs is called to update the prices of all specs")
 	// FetchPriceForAllConnConfigs() will be called in the end of this function in background
-	go FetchPriceForAllConnConfigs()
+	//go FetchPriceForAllConnConfigs()
 
 	return regiesteredIds, nil
 }

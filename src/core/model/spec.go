@@ -45,9 +45,9 @@ type SpiderGpuInfo struct {
 
 // SpiderCloudPrice represents the pricing information for a specific cloud provider.
 type SpiderCloudPrice struct {
-	Meta       SpiderMeta `json:"Meta" validate:"required" description:"Metadata information about the price data"`
-	CloudName  string     `json:"CloudName" validate:"required" example:"AWS"`        // Name of the cloud provider
-	RegionName string     `json:"RegionName" validate:"required" example:"us-east-1"` // Name of the region
+	// Meta       SpiderMeta `json:"Meta" validate:"required" description:"Metadata information about the price data"`
+	// CloudName  string     `json:"CloudName" validate:"required" example:"AWS"`        // Name of the cloud provider
+	// RegionName string     `json:"RegionName" validate:"required" example:"us-east-1"` // Name of the region
 
 	PriceList []SpiderPrice `json:"PriceList" validate:"required" description:"List of prices"` // List of prices for different services/products
 }
@@ -60,23 +60,35 @@ type SpiderMeta struct {
 
 // SpiderPrice represents the price information for a specific product.
 type SpiderPrice struct {
-	ZoneName    string            `json:"ZoneName,omitempty" example:"us-east-1a"`                                     // Name of the zone
+	// ZoneName    string            `json:"ZoneName,omitempty" example:"us-east-1a"`                                     // Name of the zone
 	ProductInfo SpiderProductInfo `json:"ProductInfo" validate:"required" description:"Information about the product"` // Information about the product
 	PriceInfo   SpiderPriceInfo   `json:"PriceInfo" validate:"required" description:"Pricing details of the product"`  // Pricing details of the product
 }
 
 // ProductInfo represents the product details.
 type SpiderProductInfo struct {
-	ProductId      string         `json:"ProductId" validate:"required" example:"prod-123"`                           // ID of the product
-	VMSpecInfo     SpiderSpecInfo `json:"VMSpecInfo" validate:"required" description:"Information about the VM spec"` // Information about the VM spec
-	Description    string         `json:"Description,omitempty" example:"General purpose instance"`                   // Description of the product
-	CSPProductInfo interface{}    `json:"CSPProductInfo" validate:"required" description:"Additional product info"`   // Additional product information specific to CSP
+	// ProductId  string         `json:"ProductId" validate:"required" example:"prod-123"`                           // ID of the product
+	VMSpecInfo SpiderSpecInfoForNameOnly `json:"VMSpecInfo" validate:"required" description:"Information about the VM spec"` // Information about the VM spec
+	// Description string         `json:"Description,omitempty" example:"General purpose instance"`                   // Description of the product
+	// CSPProductInfo interface{}    `json:"CSPProductInfo" validate:"required" description:"Additional product info"`   // Additional product information specific to CSP
+}
+
+// SpiderSpecInfoForNameOnly is a struct to create JSON body of SpiderSpecInfoForNameOnly
+type SpiderSpecInfoForNameOnly struct {
+	// Region     string          `json:"Region" validate:"required" example:"us-east-1"` // Region where the VM spec is available
+	Name string `json:"Name" validate:"required" example:"t2.micro"` // Name of the VM spec
+	// VCpu       SpiderVCpuInfo  `json:"VCpu" validate:"required"`                       // CPU details of the VM spec
+	// MemSizeMiB string          `json:"MemSizeMib" validate:"required" example:"1024"`  // Memory size in MiB
+	// DiskSizeGB string          `json:"DiskSizeGB" validate:"required" example:"8"`     // Disk size in GB, "-1" when not applicable
+	// Gpu        []SpiderGpuInfo `json:"Gpu,omitempty" validate:"omitempty"`             // GPU details if available
+
+	// KeyValueList []KeyValue `json:"KeyValueList,omitempty" validate:"omitempty"` // Additional key-value pairs for the VM spec
 }
 
 // PriceInfo represents the pricing details for a product.
 type SpiderPriceInfo struct {
-	OnDemand     SpiderOnDemand `json:"OnDemand" validate:"required" description:"Ondemand pricing details"`  // Ondemand pricing details
-	CSPPriceInfo interface{}    `json:"CSPPriceInfo" validate:"required" description:"Additional price info"` // Additional price information specific to CSP
+	OnDemand SpiderOnDemand `json:"OnDemand" validate:"required" description:"Ondemand pricing details"` // Ondemand pricing details
+	// CSPPriceInfo interface{}    `json:"CSPPriceInfo" validate:"required" description:"Additional price info"` // Additional price information specific to CSP
 }
 
 // OnDemand represents the OnDemand pricing details.
