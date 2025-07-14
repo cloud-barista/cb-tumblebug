@@ -69,7 +69,7 @@ if [[ "$STATS" == "true" ]]; then
 
     
     # Updated header with elapsed seconds instead of timestamp
-    echo "elapsed_sec,cb-tumblebug-cpu,cb-spider-cpu,cb-tumblebug-mem,cb-spider-mem,mem-unit,mem-total" > "$LOGFILE"
+    echo "elapsed,tb-cpu,sp-cpu,sum-cpu,tb-mem,sp-mem,sum-mem,mem-unit,mem-total" > "$LOGFILE"
     
     # Start monitoring in background
     {
