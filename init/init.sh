@@ -43,13 +43,18 @@ if ! command -v uv &> /dev/null; then
     echo "You can install it using one of these methods:"
     echo
     echo "Option 1: Direct install (recommended)"
+    echo
     echo -e "\033[4;94mcurl -LsSf https://astral.sh/uv/install.sh | sh\033[0m"
     echo
     echo "Option 2: Visit the installation page"
+    echo
     echo -e "\033[4;94mhttps://github.com/astral-sh/uv#installation\033[0m"
     echo
+    echo
     echo "After installation, reload your shell environment with:"
+    echo
     echo -e "\033[4;94msource ~/.bashrc\033[0m"
+    echo
     echo "# or use source ~/.bash_profile or source ~/.profile depending on your system"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     exit 1
@@ -60,7 +65,7 @@ fi
 START_TIME=$(date +%s)
 
 # Optional: monitor cb-tumblebug and cb-spider resource usage if STATS is set
-if [[ "$STATS" == "true" ]]; then
+if [[ "$LOG" == "on" ]]; then
     echo "Docker resource monitoring enabled (cb-tumblebug, cb-spider)"
     LOGFILE="docker_stats_$(date +'%Y%m%d_%H%M%S').csv"
     
