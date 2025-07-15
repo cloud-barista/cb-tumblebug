@@ -10758,14 +10758,29 @@ const docTemplate = `{
                 "operationId": "GetAllRequests",
                 "parameters": [
                     {
+                        "enum": [
+                            "",
+                            "Handling",
+                            "Error",
+                            "Success"
+                        ],
                         "type": "string",
+                        "default": "",
                         "description": "Filter by request status (Handling, Error, Success)",
                         "name": "status",
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            "",
+                            "GET",
+                            "POST",
+                            "PUT",
+                            "DELETE"
+                        ],
                         "type": "string",
-                        "description": "Filter by HTTP method (GET, POST, etc.)",
+                        "default": "",
+                        "description": "Filter by HTTP method (GET, POST, PUT, DELETE, etc.)",
                         "name": "method",
                         "in": "query"
                     },
@@ -10782,7 +10797,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            "true",
+                            "false"
+                        ],
                         "type": "string",
+                        "default": "false",
                         "description": "Option to save the results to a file (set 'true' to activate)",
                         "name": "savefile",
                         "in": "query"

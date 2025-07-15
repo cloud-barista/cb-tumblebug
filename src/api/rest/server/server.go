@@ -78,17 +78,65 @@ const (
  ██║     ██╔══██╗╚════╝██║   ██╔══██╗     
  ╚██████╗██████╔╝      ██║   ██████╔╝     
   ╚═════╝╚═════╝       ╚═╝   ╚═════╝      
-                                         
- ██████╗ ███████╗ █████╗ ██████╗ ██╗   ██╗
- ██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
- ██████╔╝█████╗  ███████║██║  ██║ ╚████╔╝ 
- ██╔══██╗██╔══╝  ██╔══██║██║  ██║  ╚██╔╝  
- ██║  ██║███████╗██║  ██║██████╔╝   ██║   
- ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝    ╚═╝   
 
- Multi-cloud infrastructure management framework
- ________________________________________________`
+ Multi-cloud infrastructure management
+ _____________________________________`
 )
+
+// Request log skip patterns - used across multiple middlewares
+var (
+	RequestLogSkipPatterns = [][]string{
+		{"/tumblebug/api"},
+		{"/tumblebug/readyz"},
+		{"/tumblebug/httpVersion"},
+		{"/tumblebug/testStreamResponse"},
+		{"/tumblebug/request"},
+		{"/tumblebug/requests"},
+	}
+
+	APILogSkipPatterns = [][]string{
+		{"/tumblebug/api"},
+		{"/mci", "option=status"},
+		{"/k8sCluster"},
+		{"/resources/vNet"},
+		{"/resources/securityGroup"},
+		{"/resources/vpn"},
+		{"/resources/sshKey"},
+	}
+)
+
+// Helper function to check if request should skip logging/tracking
+func shouldSkipRequestLog(c echo.Context) bool {
+	path := c.Request().URL.Path
+	method := c.Request().Method
+	queryParams := c.QueryParams()
+
+	// Skip OPTIONS method requests
+	if method == "OPTIONS" {
+		return true
+	}
+
+	for _, pattern := range RequestLogSkipPatterns {
+		if len(pattern) == 1 {
+			// Path-only pattern
+			if strings.Contains(path, pattern[0]) {
+				return true
+			}
+		} else if len(pattern) == 2 {
+			// Path + query parameter pattern
+			if strings.Contains(path, pattern[0]) {
+				for key, values := range queryParams {
+					for _, value := range values {
+						if key+"="+value == pattern[1] {
+							return true
+						}
+					}
+				}
+			}
+		}
+	}
+	return false
+}
 
 // RunServer func start Rest API server
 func RunServer() {
@@ -98,16 +146,7 @@ func RunServer() {
 	e := echo.New()
 
 	// Middleware
-	// e.Use(middleware.Logger())
-	APILogSkipPatterns := [][]string{
-		{"/tumblebug/api"},
-		{"/mci", "option=status"},
-		{"/k8sCluster"},
-		{"/resources/vNet"},
-		{"/resources/securityGroup"},
-		{"/resources/vpn"},
-		{"/resources/sshKey"},
-	}
+
 	e.Use(middlewares.Zerologger(APILogSkipPatterns))
 
 	e.Use(middleware.Recover())
@@ -115,13 +154,34 @@ func RunServer() {
 	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(20)))
 
 	// Custom middleware for RequestID and RequestDetails
-	e.Use(middlewares.RequestIdAndDetailsIssuer)
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if shouldSkipRequestLog(c) {
+				return next(c)
+			}
+			return middlewares.RequestIdAndDetailsIssuer(next)(c)
+		}
+	})
 
 	// Custom middleware for tracing
-	e.Use(middlewares.TracingMiddleware)
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if shouldSkipRequestLog(c) {
+				return next(c)
+			}
+			return middlewares.TracingMiddleware(next)(c)
+		}
+	})
 
 	// Custom middleware for ResponseBodyDump
-	e.Use(middlewares.ResponseBodyDump())
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if shouldSkipRequestLog(c) {
+				return next(c)
+			}
+			return middlewares.ResponseBodyDump()(next)(c)
+		}
+	})
 
 	e.HideBanner = true
 	//e.colorer.Printf(banner, e.colorer.Red("v"+Version), e.colorer.Blue(website))
@@ -135,11 +195,9 @@ func RunServer() {
 	e.GET("/tumblebug/api/", swaggerRedirect)
 	e.GET("/tumblebug/api/*", echoSwagger.WrapHandler)
 
-	// e.GET("/tumblebug/swagger/*", echoSwagger.WrapHandler)
-	// e.GET("/tumblebug/swaggerActive", rest_common.RestGetSwagger)
 	e.GET("/tumblebug/readyz", rest_common.RestGetReadyz)
 	e.GET("/tumblebug/httpVersion", rest_common.RestCheckHTTPVersion)
-	e.POST("tumblebug/testStreamResponse", rest_common.RestTestStreamResponse)
+	e.POST("/tumblebug/testStreamResponse", rest_common.RestTestStreamResponse)
 
 	allowedOrigins := os.Getenv("TB_ALLOW_ORIGINS")
 	if allowedOrigins == "" {

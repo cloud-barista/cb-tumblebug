@@ -15,7 +15,10 @@ limitations under the License.
 package resource
 
 import (
+	"bufio"
+	"encoding/csv"
 	"fmt"
+	"os"
 	"reflect"
 	"runtime"
 	"sort"
@@ -411,6 +414,366 @@ func FetchSpecsForAllConnConfigs(nsId string) (connConfigCount uint, specCount u
 		connConfigCount++
 	}
 	return connConfigCount, specCount, nil
+}
+
+// ConnectionSpecResult is the result of fetching specs for a single connection
+type ConnectionSpecResult struct {
+	ConnName    string    `json:"connName"`
+	Provider    string    `json:"provider"`
+	Region      string    `json:"region"`
+	SpecCount   int       `json:"specCount"`
+	StartTime   time.Time `json:"startTime"`
+	ElapsedTime string    `json:"elapsedTime"`
+	Success     bool      `json:"success"`
+	ErrorMsg    string    `json:"errorMsg,omitempty"`
+}
+
+// FetchSpecsAsyncResult is the result of the most recent fetch specs operation
+type FetchSpecsAsyncResult struct {
+	NamespaceID     string                 `json:"namespaceId"`
+	TotalRegions    int                    `json:"totalRegions"`
+	FetchOption     model.SpecFetchOption  `json:"fetchOption"`
+	InProgress      bool                   `json:"inProgress"`
+	RegisteredSpecs int                    `json:"registeredSpecs"`
+	SucceedRegions  int                    `json:"succeedRegions"`
+	FailedRegions   int                    `json:"failedRegions"`
+	StartTime       time.Time              `json:"startTime"`
+	ElapsedTime     string                 `json:"elapsedTime"`
+	ResultInDetail  []ConnectionSpecResult `json:"resultInDetail"`
+}
+
+// lastSpecFetchResult stores the result of the most recent fetch images operation
+var lastSpecFetchResult struct {
+	sync.RWMutex
+	Result map[string]*FetchSpecsAsyncResult
+}
+
+func init() {
+	lastSpecFetchResult.Result = make(map[string]*FetchSpecsAsyncResult)
+}
+
+func updateFetchSpecsProgress(nsId string, result *FetchSpecsAsyncResult) {
+	lastSpecFetchResult.Lock()
+	lastSpecFetchResult.Result[nsId] = result
+	lastSpecFetchResult.Unlock()
+}
+
+// isSpecFetchInProgress checks if there's an ongoing image fetch operation for the given namespace
+func isSpecFetchInProgress(nsId string) bool {
+	lastSpecFetchResult.RLock()
+	defer lastSpecFetchResult.RUnlock()
+
+	result, exists := lastSpecFetchResult.Result[nsId]
+	if exists && result != nil && result.InProgress {
+		return true
+	}
+	return false
+}
+
+// UpdateSpecsFromAsset updates spec information based on cloudspec.csv asset file
+func UpdateSpecsFromAsset(nsId string) (*FetchSpecsAsyncResult, error) {
+	if nsId == "" {
+		nsId = model.SystemCommonNs
+	}
+
+	startTime := time.Now()
+	result := &FetchSpecsAsyncResult{
+		NamespaceID: nsId,
+		StartTime:   startTime,
+		InProgress:  true,
+	}
+
+	// Open and read CSV file
+	file, err := os.Open("../assets/cloudspec.csv")
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to open cloudspec.csv")
+		result.InProgress = false
+		result.ElapsedTime = time.Since(startTime).String()
+		return result, err
+	}
+	defer file.Close()
+
+	rdr := csv.NewReader(bufio.NewReader(file))
+	rows, err := rdr.ReadAll()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to read cloudspec.csv")
+		result.InProgress = false
+		result.ElapsedTime = time.Since(startTime).String()
+		return result, err
+	}
+	// row[0]	providerName
+	// row[1]	regionName
+	// row[2]	cspResourceId
+	// row[3]	costPerHour
+	// row[4]	currency
+	// row[5]	evaluationScore01
+	// row[6]	evaluationScore02
+	// row[7]	evaluationScore03
+	// row[8]	evaluationScore04
+	// row[9]	evaluationScore05
+	// row[10]	evaluationScore06
+	// row[11]	evaluationScore07
+	// row[12]	evaluationScore08
+	// row[13]	evaluationScore09
+	// row[14]	evaluationScore10
+	// row[15]	rootDiskType
+	// row[16]	rootDiskSize
+	// row[17]	acceleratorModel
+	// row[18]	acceleratorCount
+	// row[19]	acceleratorMemoryGB
+	// row[20]	acceleratorDetails
+	// row[21]	infraType
+
+	var specList []model.TbSpecInfo
+
+	// Process each row (skip header)
+	for i, row := range rows[1:] {
+
+		// Parse CSV data directly into TbSpecInfo struct
+		csvSpec := model.TbSpecInfo{
+			Namespace:    nsId,
+			ProviderName: strings.ToLower(row[0]),
+			RegionName:   strings.ToLower(row[1]),
+			CspSpecName:  row[2],
+			SystemLabel:  model.StrFromAssets,
+		}
+
+		// Parse cost per hour with currency conversion
+		if row[3] != "" {
+			if cost, err := strconv.ParseFloat(row[3], 32); err == nil {
+				currency := "USD"
+				if row[4] != "" {
+					currency = strings.ToUpper(row[4])
+				}
+				csvSpec.CostPerHour = common.ConvertToBaseCurrency(float32(cost), currency)
+			}
+		}
+
+		// Parse evaluation scores (row[5] to row[14])
+		if row[5] != "" {
+			if score, err := strconv.ParseFloat(row[5], 32); err == nil {
+				csvSpec.EvaluationScore01 = float32(score)
+			}
+		}
+		if row[6] != "" {
+			if score, err := strconv.ParseFloat(row[6], 32); err == nil {
+				csvSpec.EvaluationScore02 = float32(score)
+			}
+		}
+		if row[7] != "" {
+			if score, err := strconv.ParseFloat(row[7], 32); err == nil {
+				csvSpec.EvaluationScore03 = float32(score)
+			}
+		}
+		if row[8] != "" {
+			if score, err := strconv.ParseFloat(row[8], 32); err == nil {
+				csvSpec.EvaluationScore04 = float32(score)
+			}
+		}
+		if row[9] != "" {
+			if score, err := strconv.ParseFloat(row[9], 32); err == nil {
+				csvSpec.EvaluationScore05 = float32(score)
+			}
+		}
+		if row[10] != "" {
+			if score, err := strconv.ParseFloat(row[10], 32); err == nil {
+				csvSpec.EvaluationScore06 = float32(score)
+			}
+		}
+		if row[11] != "" {
+			if score, err := strconv.ParseFloat(row[11], 32); err == nil {
+				csvSpec.EvaluationScore07 = float32(score)
+			}
+		}
+		if row[12] != "" {
+			if score, err := strconv.ParseFloat(row[12], 32); err == nil {
+				csvSpec.EvaluationScore08 = float32(score)
+			}
+		}
+		if row[13] != "" {
+			if score, err := strconv.ParseFloat(row[13], 32); err == nil {
+				csvSpec.EvaluationScore09 = float32(score)
+			}
+		}
+		if row[14] != "" {
+			if score, err := strconv.ParseFloat(row[14], 32); err == nil {
+				csvSpec.EvaluationScore10 = float32(score)
+			}
+		}
+
+		// Parse disk and accelerator specifications
+		if row[15] != "" {
+			csvSpec.RootDiskType = row[15]
+		}
+		if row[16] != "" {
+			csvSpec.RootDiskSize = row[16]
+		}
+		if row[17] != "" {
+			csvSpec.AcceleratorModel = row[17]
+		}
+		if row[18] != "" {
+			if count, err := strconv.Atoi(row[18]); err == nil {
+				csvSpec.AcceleratorCount = uint8(count)
+			}
+		}
+		if row[19] != "" {
+			if memory, err := strconv.ParseFloat(row[19], 32); err == nil {
+				csvSpec.AcceleratorMemoryGB = float32(memory)
+			}
+		}
+		// row[20] is acceleratorDetails - not used currently
+		if row[21] != "" {
+			csvSpec.Description = row[21]
+		}
+		if len(row) > 22 && row[22] != "" {
+			csvSpec.InfraType = strings.ToLower(row[22])
+		}
+
+		// Generate ID and Name
+		csvSpec.Id = GetProviderRegionZoneResourceKey(csvSpec.ProviderName, csvSpec.RegionName, "", csvSpec.CspSpecName)
+		csvSpec.Name = csvSpec.Id
+
+		log.Debug().Msgf("Processing row %d: %s-%s-%s", i+1, csvSpec.ProviderName, csvSpec.RegionName, csvSpec.CspSpecName)
+
+		// Check if spec already exists in database
+		existingSpec, err := GetSpec(nsId, csvSpec.CspSpecName)
+		if err == nil {
+			// Existing spec found - merge with CSV data
+			log.Info().Msgf("Found existing spec: %s, merging with CSV data", csvSpec.CspSpecName)
+			mergedSpec := mergeSpecWithCSVData(existingSpec, csvSpec)
+			specList = append(specList, mergedSpec)
+
+		} else {
+			// Spec not found in DB - try LookupSpec from CSP
+			log.Debug().Msgf("Spec not found in DB: %s, trying LookupSpec", csvSpec.CspSpecName)
+
+			// Create connection name for LookupSpec
+			connectionName := csvSpec.ProviderName + "-" + csvSpec.RegionName
+
+			lookupSpec, lookupErr := LookupSpec(connectionName, csvSpec.CspSpecName)
+			if lookupErr != nil {
+				log.Warn().Msgf("LookupSpec failed for %s-%s-%s: %s",
+					csvSpec.ProviderName, csvSpec.RegionName, csvSpec.CspSpecName, lookupErr.Error())
+				continue
+			}
+
+			// Convert Spider spec to Tumblebug spec and merge with CSV data
+			log.Info().Msgf("Found spec via LookupSpec: %s, converting and merging", csvSpec.CspSpecName)
+
+			tumblebugSpec, convertErr := ConvertSpiderSpecToTumblebugSpec(csvSpec.ProviderName, lookupSpec)
+			if convertErr != nil {
+				log.Warn().Msgf("Failed to convert Spider spec to Tumblebug spec for %s: %s",
+					csvSpec.CspSpecName, convertErr.Error())
+				continue
+			}
+
+			// Set basic information
+			tumblebugSpec.Namespace = nsId
+			tumblebugSpec.ConnectionName = connectionName
+			tumblebugSpec.ProviderName = csvSpec.ProviderName
+			tumblebugSpec.RegionName = csvSpec.RegionName
+			tumblebugSpec.Id = csvSpec.Id
+			tumblebugSpec.Name = csvSpec.Name
+
+			// Merge with CSV data
+			mergedSpec := mergeSpecWithCSVData(tumblebugSpec, csvSpec)
+			specList = append(specList, mergedSpec)
+		}
+	}
+
+	// Update database with bulk operation
+	if len(specList) > 0 {
+		err = RegisterSpecWithInfoInBulk(specList)
+		if err != nil {
+			log.Error().Err(err).Msg("RegisterSpecWithInfoInBulk failed")
+			result.InProgress = false
+			result.ElapsedTime = time.Since(startTime).String()
+			return result, err
+		}
+		log.Info().Msgf("Updated %d specs from asset file", len(specList))
+	} else {
+		log.Warn().Msg("No specs were processed from the asset file")
+	}
+
+	result.InProgress = false
+	result.ElapsedTime = time.Since(startTime).String()
+	updateFetchSpecsProgress(nsId, result)
+
+	return result, nil
+}
+
+// mergeSpecWithCSVData merges CSV spec data into existing spec (CSV data has priority for non-empty values)
+func mergeSpecWithCSVData(existingSpec model.TbSpecInfo, csvSpec model.TbSpecInfo) model.TbSpecInfo {
+	mergedSpec := existingSpec
+
+	// Merge cost information (CSV priority for non-zero values)
+	if csvSpec.CostPerHour != 0 {
+		mergedSpec.CostPerHour = csvSpec.CostPerHour
+	}
+
+	// Merge evaluation scores (CSV priority for non-zero values)
+	if csvSpec.EvaluationScore01 != 0 {
+		mergedSpec.EvaluationScore01 = csvSpec.EvaluationScore01
+	}
+	if csvSpec.EvaluationScore02 != 0 {
+		mergedSpec.EvaluationScore02 = csvSpec.EvaluationScore02
+	}
+	if csvSpec.EvaluationScore03 != 0 {
+		mergedSpec.EvaluationScore03 = csvSpec.EvaluationScore03
+	}
+	if csvSpec.EvaluationScore04 != 0 {
+		mergedSpec.EvaluationScore04 = csvSpec.EvaluationScore04
+	}
+	if csvSpec.EvaluationScore05 != 0 {
+		mergedSpec.EvaluationScore05 = csvSpec.EvaluationScore05
+	}
+	if csvSpec.EvaluationScore06 != 0 {
+		mergedSpec.EvaluationScore06 = csvSpec.EvaluationScore06
+	}
+	if csvSpec.EvaluationScore07 != 0 {
+		mergedSpec.EvaluationScore07 = csvSpec.EvaluationScore07
+	}
+	if csvSpec.EvaluationScore08 != 0 {
+		mergedSpec.EvaluationScore08 = csvSpec.EvaluationScore08
+	}
+	if csvSpec.EvaluationScore09 != 0 {
+		mergedSpec.EvaluationScore09 = csvSpec.EvaluationScore09
+	}
+	if csvSpec.EvaluationScore10 != 0 {
+		mergedSpec.EvaluationScore10 = csvSpec.EvaluationScore10
+	}
+
+	// Merge disk specifications (CSV priority for non-empty values)
+	if csvSpec.RootDiskType != "" {
+		mergedSpec.RootDiskType = csvSpec.RootDiskType
+	}
+	if csvSpec.RootDiskSize != "" {
+		mergedSpec.RootDiskSize = csvSpec.RootDiskSize
+	}
+
+	// Merge accelerator specifications (CSV priority for non-empty/non-zero values)
+	if csvSpec.AcceleratorModel != "" {
+		mergedSpec.AcceleratorModel = csvSpec.AcceleratorModel
+	}
+	if csvSpec.AcceleratorCount != 0 {
+		mergedSpec.AcceleratorCount = csvSpec.AcceleratorCount
+	}
+	if csvSpec.AcceleratorMemoryGB != 0 {
+		mergedSpec.AcceleratorMemoryGB = csvSpec.AcceleratorMemoryGB
+	}
+
+	// Merge description and infrastructure type (CSV priority for non-empty values)
+	if csvSpec.Description != "" {
+		mergedSpec.Description = csvSpec.Description
+	}
+	if csvSpec.InfraType != "" {
+		mergedSpec.InfraType = csvSpec.InfraType
+	}
+
+	// Always update SystemLabel to indicate data source
+	mergedSpec.SystemLabel = model.StrFromAssets
+
+	return mergedSpec
 }
 
 // FetchPriceForAllConnConfigs gets all conn configs from Spider, lookups all Price for each region of conn config,

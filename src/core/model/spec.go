@@ -177,6 +177,7 @@ type FilterSpecsByRangeRequest struct {
 	RegionName          string `json:"regionName"`
 	CspSpecName         string `json:"cspSpecName"`
 	InfraType           string `json:"infraType"`
+	Architecture        string `json:"architecture"`
 	OsType              string `json:"osType"`
 	VCPU                Range  `json:"vCPU"`
 	MemoryGiB           Range  `json:"memoryGiB"`
@@ -211,4 +212,13 @@ type SpiderSpecList struct {
 type Range struct {
 	Min float32 `json:"min"`
 	Max float32 `json:"max"`
+}
+
+// SpecFetchOption is struct for Spec Fetch Options
+type SpecFetchOption struct {
+	// providers need to be excluded from the spec fetching operation (ex: ["azure"])
+	ExcludedProviders []string `json:"excludedProviders,omitempty" example:"azure" description:"Providers to be excluded from the spec fetching operation."`
+
+	// providers that are not region-specific (ex: ["gcp"])
+	RegionAgnosticProviders []string `json:"regionAgnosticProviders,omitempty" example:"gcp,tencent" description:"Providers that are not region-specific."`
 }

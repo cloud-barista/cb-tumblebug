@@ -215,9 +215,9 @@ services:
       - traefik.http.services.cb-mapui.loadbalancer.server.scheme=http
       # The port the service listens on
       - traefik.http.services.cb-mapui.loadbalancer.server.port=1324
-    # build:
-    #   context: ../cb-mapui
-    #   dockerfile: Dockerfile
+    build:
+      context: ../cb-mapui
+      dockerfile: Dockerfile
     networks:
       - internal_network
       - external_network # Keep this for the time being to support legacy access methods (http://localhost:1324)

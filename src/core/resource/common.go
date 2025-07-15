@@ -1454,6 +1454,8 @@ func LoadAssets() (model.IdList, error) {
 	log.Info().Msgf("Registerd the Specs. Elapsed [%s]", elapsedRegisterSpecs)
 	startTime = time.Now()
 
+	log.Info().Msgf("Remove Duplicate Specs In DB")
+
 	err = RemoveDuplicateSpecsInSQL()
 	if err != nil {
 		log.Error().Err(err).Msg("RemoveDuplicateSpecsInSQL failed")

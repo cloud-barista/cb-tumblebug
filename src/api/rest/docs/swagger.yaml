@@ -8228,11 +8228,22 @@ paths:
         description: "Filter by request status (Handling, Error, Success)"
         schema:
           type: string
+          enum:
+          - ""
+          - Handling
+          - Error
+          - Success
       - name: method
         in: query
-        description: "Filter by HTTP method (GET, POST, etc.)"
+        description: "Filter by HTTP method (GET, POST, PUT, DELETE, etc.)"
         schema:
           type: string
+          enum:
+          - ""
+          - GET
+          - POST
+          - PUT
+          - DELETE
       - name: url
         in: query
         description: Filter by request URL
@@ -8248,6 +8259,10 @@ paths:
         description: Option to save the results to a file (set 'true' to activate)
         schema:
           type: string
+          default: "false"
+          enum:
+          - "true"
+          - "false"
       responses:
         "200":
           description: OK
