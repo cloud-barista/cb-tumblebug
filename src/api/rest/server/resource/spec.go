@@ -172,37 +172,24 @@ func RestLookupSpecList(c echo.Context) error {
 // @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} model.SimpleMsg
+// @Param fetchOption body model.SpecFetchOption true "Fetch option"
+// @Success 202 {object} resource.FetchSpecsAsyncResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /fetchSpecs [post]
 func RestFetchSpecs(c echo.Context) error {
-
 	nsId := model.SystemCommonNs
 
-	u := &RestLookupSpecRequest{}
-	if err := c.Bind(u); err != nil {
+	reqBody := &model.SpecFetchOption{}
+	if err := c.Bind(reqBody); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	var connConfigCount, specCount uint
-	var err error
-
-	if u.ConnectionName == "" {
-		connConfigCount, specCount, err = resource.FetchSpecsForAllConnConfigs(nsId)
-		if err != nil {
-			return clientManager.EndRequestWithLog(c, err, nil)
-		}
-	} else {
-		connConfigCount = 1
-		specCount, err = resource.FetchSpecsForConnConfig(u.ConnectionName, nsId)
-		if err != nil {
-			return clientManager.EndRequestWithLog(c, err, nil)
-		}
+	content, err := resource.FetchSpecsForAllConnConfigs(nsId, reqBody)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content := map[string]string{
-		"message": "Fetched " + fmt.Sprint(specCount) + " specs (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
@@ -219,16 +206,13 @@ func RestFetchSpecs(c echo.Context) error {
 // @Router /fetchPrice [post]
 func RestFetchPrice(c echo.Context) error {
 
-	var connConfigCount, priceCount uint
-	var err error
-
-	connConfigCount, priceCount, err = resource.FetchPriceForAllConnConfigs()
+	connConfigCount, _, err := resource.FetchPriceForAllConnConfigs()
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content := map[string]string{
-		"message": "Fetched " + fmt.Sprint(priceCount) + " prices (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
+		"message": "Fetched prices (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

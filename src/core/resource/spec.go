@@ -16,6 +16,7 @@ package resource
 
 import (
 	"bufio"
+	"context"
 	"encoding/csv"
 	"fmt"
 	"os"
@@ -53,7 +54,7 @@ func TbSpecReqStructLevelValidation(sl validator.StructLevel) {
 // ConvertSpiderSpecToTumblebugSpec accepts an Spider spec object, converts to and returns an TB spec object
 func ConvertSpiderSpecToTumblebugSpec(providerName string, spiderSpec model.SpiderSpecInfo) (model.TbSpecInfo, error) {
 	if spiderSpec.Name == "" {
-		err := fmt.Errorf("convertSpiderSpecToTumblebugSpec failed; spiderSpec.Name == \"\" ")
+		err := fmt.Errorf("failed convertSpiderSpecToTumblebugSpec. spiderSpec.Name is empty")
 		emptyTumblebugSpec := model.TbSpecInfo{}
 		return emptyTumblebugSpec, err
 	}
@@ -71,6 +72,7 @@ func ConvertSpiderSpecToTumblebugSpec(providerName string, spiderSpec model.Spid
 	tumblebugSpec.MemoryGiB = float32(tempFloat64 / 1024)
 	tempFloat64, _ = strconv.ParseFloat(spiderSpec.DiskSizeGB, 32)
 	tumblebugSpec.DiskSizeGB = float32(tempFloat64)
+	tumblebugSpec.RootDiskSize = spiderSpec.DiskSizeGB
 
 	tumblebugSpec.Details = spiderSpec.KeyValueList
 
@@ -350,70 +352,419 @@ func LookupSpec(connConfig string, specName string) (model.SpiderSpecInfo, error
 // FetchSpecsForConnConfig lookups all specs for region of conn config, and saves into TB spec objects
 func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 	log.Debug().Msg("FetchSpecsForConnConfig(" + connConfigName + ")")
-	specCount := uint(0)
 
 	connConfig, err := common.GetConnConfig(connConfigName)
 	if err != nil {
 		log.Error().Err(err).Msgf("Cannot GetConnConfig in %s", connConfigName)
-		return specCount, err
+		return 0, err
 	}
 
 	specsInConnection, err := LookupSpecList(connConfigName)
 	if err != nil {
 		log.Error().Err(err).Msgf("Cannot LookupSpecList in %s", connConfigName)
-		return specCount, err
+		return 0, err
 	}
 
-	for _, spec := range specsInConnection.Vmspec {
-		spiderSpec := spec
-		//log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
+	if len(specsInConnection.Vmspec) == 0 {
+		log.Debug().Msgf("No specs found for connection %s", connConfigName)
+		return 0, nil
+	}
+
+	// Pre-allocate slice with known capacity to reduce memory allocations
+	tmpSpecList := make([]model.TbSpecInfo, 0, len(specsInConnection.Vmspec))
+
+	// Process specs and clean up memory immediately
+	for i := range specsInConnection.Vmspec {
+		spiderSpec := specsInConnection.Vmspec[i]
+
 		tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(connConfig.ProviderName, spiderSpec)
 		if errConvert != nil {
-			log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
-		} else {
-			key := GetProviderRegionZoneResourceKey(connConfig.ProviderName, connConfig.RegionDetail.RegionName, "", spec.Name)
-			tumblebugSpec.Name = key
-			tumblebugSpec.ConnectionName = connConfig.ConfigName
-			tumblebugSpec.ProviderName = strings.ToLower(connConfig.ProviderName)
-			tumblebugSpec.RegionName = connConfig.RegionDetail.RegionName
-			tumblebugSpec.InfraType = "vm" // default value
-			tumblebugSpec.SystemLabel = "auto-gen"
-			tumblebugSpec.CostPerHour = -1
-			tumblebugSpec.EvaluationScore01 = -99.9
-
-			_, err := RegisterSpecWithInfo(nsId, &tumblebugSpec, true)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return 0, err
-			}
-			specCount++
+			log.Error().Err(errConvert).Msgf("Cannot ConvertSpiderSpecToTumblebugSpec for %s", spiderSpec.Name)
+			// Clear the processed item immediately
+			specsInConnection.Vmspec[i] = model.SpiderSpecInfo{}
+			continue
 		}
 
+		// Set basic information
+		key := GetProviderRegionZoneResourceKey(connConfig.ProviderName, connConfig.RegionDetail.RegionName, "", spiderSpec.Name)
+		tumblebugSpec.Namespace = nsId
+		tumblebugSpec.Id = key
+		tumblebugSpec.Name = key
+		tumblebugSpec.ConnectionName = connConfig.ConfigName
+		tumblebugSpec.ProviderName = strings.ToLower(connConfig.ProviderName)
+		tumblebugSpec.RegionName = connConfig.RegionDetail.RegionName
+		tumblebugSpec.InfraType = model.StrVM  // default value should be enhanced later
+		tumblebugSpec.SystemLabel = "auto-gen" // default value
+		tumblebugSpec.AssociatedObjectList = []string{}
+
+		tumblebugSpec.CostPerHour = -1
+		tumblebugSpec.EvaluationScore01 = -1
+		tumblebugSpec.EvaluationScore02 = -1
+		tumblebugSpec.EvaluationScore03 = -1
+		tumblebugSpec.EvaluationScore04 = -1
+		tumblebugSpec.EvaluationScore05 = -1
+		tumblebugSpec.EvaluationScore06 = -1
+		tumblebugSpec.EvaluationScore07 = -1
+		tumblebugSpec.EvaluationScore08 = -1
+		tumblebugSpec.EvaluationScore09 = -1
+		tumblebugSpec.EvaluationScore10 = -1
+
+		tmpSpecList = append(tmpSpecList, tumblebugSpec)
+
+		// Clear the processed spider spec immediately to free memory
+		specsInConnection.Vmspec[i] = model.SpiderSpecInfo{}
 	}
+
+	// Release the original spider spec list immediately after processing
+	specsInConnection.Vmspec = nil
+	specsInConnection = model.SpiderSpecList{}
+
+	specCount := uint(len(tmpSpecList))
+
+	// Perform bulk registration
+	if len(tmpSpecList) > 0 {
+		err = RegisterSpecWithInfoInBulk(tmpSpecList)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to register specs in bulk for %s", connConfigName)
+			// Clean up before returning error
+			tmpSpecList = nil
+			return 0, err
+		}
+		// log.Info().Msgf("Successfully registered %d specs for connection %s", len(tmpSpecList), connConfigName)
+	}
+
+	// Clear the temporary spec list after successful registration
+	tmpSpecList = nil
+
+	// Force garbage collection hint for large datasets
+	if specCount > 100 {
+		runtime.GC()
+	}
+
+	//log.Debug().Msgf("Memory cleanup completed for connection %s", connConfigName)
 	return specCount, nil
 }
 
-// FetchSpecsForAllConnConfigs gets all conn configs from Spider, lookups all specs for each region of conn config, and saves into TB spec objects
-func FetchSpecsForAllConnConfigs(nsId string) (connConfigCount uint, specCount uint, err error) {
-
-	err = common.CheckString(nsId)
+// Common internal function for fetching specs that can be used by both sync and async versions
+func fetchSpecsForAllConnConfigsInternal(nsId string, option *model.SpecFetchOption, result *FetchSpecsAsyncResult) (*FetchSpecsAsyncResult, error) {
+	// Validate input parameters
+	err := common.CheckString(nsId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return 0, 0, err
+		return nil, err
 	}
 
+	// Initialize fetch options
+	if option == nil {
+		option = &model.SpecFetchOption{}
+	}
+
+	// Set default parallel connections per provider if not specified
+	parallelConnPerProvider := 50
+
+	log.Info().Msgf("[%s] Starting spec fetch operation", nsId)
+
+	// Get all connection configs
 	connConfigs, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return 0, 0, err
+		log.Error().Err(err).Msgf("[%s] Failed to get connection configs", nsId)
+		return nil, err
 	}
 
+	// Initialize result object
+	result.TotalRegions = len(connConfigs.Connectionconfig)
+	result.FetchOption = *option
+	result.ResultInDetail = make([]ConnectionSpecResult, 0, len(connConfigs.Connectionconfig))
+
+	updateFetchSpecsProgress(nsId, result)
+
+	// Group connection configs by provider
+	providerConnMap := make(map[string][]model.ConnConfig)
 	for _, connConfig := range connConfigs.Connectionconfig {
-		temp, _ := FetchSpecsForConnConfig(connConfig.ConfigName, nsId)
-		specCount += temp
-		connConfigCount++
+		provider := connConfig.ProviderName
+
+		// Skip excluded providers if specified
+		if len(option.ExcludedProviders) > 0 {
+			excluded := false
+			for _, excludedProvider := range option.ExcludedProviders {
+				if strings.EqualFold(provider, excludedProvider) {
+					excluded = true
+					break
+				}
+			}
+			if excluded {
+				log.Info().Msgf("[%s] Skipping excluded provider: %s", nsId, provider)
+				continue
+			}
+		}
+
+		providerConnMap[provider] = append(providerConnMap[provider], connConfig)
 	}
-	return connConfigCount, specCount, nil
+
+	log.Info().Msgf("[%s] Grouped connections by provider: %d providers",
+		nsId, len(providerConnMap))
+
+	// Channel to collect results from all goroutines
+	resultChan := make(chan ConnectionSpecResult, len(connConfigs.Connectionconfig))
+	var wg sync.WaitGroup
+
+	// Create a goroutine for each provider
+	for provider, connConfigList := range providerConnMap {
+		wg.Add(1)
+		go func(provider string, connConfigList []model.ConnConfig) {
+			defer wg.Done()
+			log.Info().Msgf("[%s] Processing provider %s with %d connections",
+				nsId, provider, len(connConfigList))
+
+			// Adjust parallel connections for specific providers
+			providerParallelConn := parallelConnPerProvider
+			// if provider == csp.AWS {
+			// 	providerParallelConn = 3 // AWS can handle more parallel connections
+			// } else if provider == csp.Azure {
+			// 	providerParallelConn = 2 // Azure moderate parallelism
+			// }
+
+			// Set up semaphore for controlled parallelism
+			semaphore := make(chan struct{}, providerParallelConn)
+
+			var providerWg sync.WaitGroup
+
+			// Process connections of this provider with controlled parallelism
+			for i, connConfig := range connConfigList {
+				// Acquire semaphore to limit concurrent connections
+				semaphore <- struct{}{}
+
+				providerWg.Add(1)
+				go func(connConfig model.ConnConfig, index int) {
+					defer providerWg.Done()
+					defer func() { <-semaphore }()
+
+					connName := connConfig.ConfigName
+					region := connConfig.RegionZoneInfo.AssignedRegion
+
+					// Initialize connection result
+					connResult := ConnectionSpecResult{
+						ConnName:  connName,
+						Provider:  provider,
+						Region:    region,
+						StartTime: time.Now(),
+						Success:   false,
+					}
+
+					log.Info().Msgf("[%s][Provider-%s][Conn-%d] Processing connection %s (%s/%s)",
+						nsId, provider, index, connName, provider, region)
+
+					// Set timeout for this connection
+					timeout := 20 * time.Minute
+					ctx, cancel := context.WithTimeout(context.Background(), timeout)
+
+					// Process specs for this connection
+					doneChan := make(chan struct{})
+					var specCount int
+					var fetchErr error
+
+					// Fetch specs in a separate goroutine to handle timeout
+					go func() {
+						defer close(doneChan)
+						count, err := FetchSpecsForConnConfig(connName, nsId)
+						specCount = int(count)
+						fetchErr = err
+					}()
+
+					// Wait for completion or timeout
+					select {
+					case <-ctx.Done():
+						// Timeout occurred
+						connResult.Success = false
+						connResult.ErrorMsg = "Operation timed out after " + timeout.String()
+						log.Warn().Msgf("[%s][Provider-%s][Conn-%d] Connection %s timed out",
+							nsId, provider, index, connName)
+					case <-doneChan:
+						// Process completed
+						if fetchErr != nil {
+							connResult.Success = false
+							connResult.ErrorMsg = fetchErr.Error()
+							log.Error().Err(fetchErr).Msgf("[%s][Provider-%s][Conn-%d] Failed to fetch specs for %s",
+								nsId, provider, index, connName)
+						} else {
+							connResult.Success = true
+							connResult.SpecCount = specCount
+							log.Info().Msgf("[%s][Provider-%s][Conn-%d] Successfully fetched %d specs from %s",
+								nsId, provider, index, specCount, connName)
+						}
+					}
+
+					// Clean up and finalize result
+					cancel()
+					endTime := time.Now()
+					connResult.ElapsedTime = endTime.Sub(connResult.StartTime).String()
+					resultChan <- connResult
+				}(connConfig, i)
+			}
+
+			providerWg.Wait()
+			log.Info().Msgf("[%s] Completed processing all connections for provider %s",
+				nsId, provider)
+
+		}(provider, connConfigList)
+	}
+
+	// Close result channel when all providers are processed
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	// Collect results from all connections
+	for connResult := range resultChan {
+		result.ResultInDetail = append(result.ResultInDetail, connResult)
+
+		if connResult.Success {
+			result.SucceedRegions++
+			result.RegisteredSpecs += connResult.SpecCount
+		} else {
+			result.FailedRegions++
+		}
+	}
+
+	// Finalize result
+	endTime := time.Now()
+	result.ElapsedTime = endTime.Sub(result.StartTime).String()
+	result.InProgress = false
+	updateFetchSpecsProgress(nsId, result)
+
+	// Log provider statistics
+	providerStats := make(map[string]struct {
+		Count     int
+		Success   int
+		Failed    int
+		SpecCount int
+	})
+
+	for _, connResult := range result.ResultInDetail {
+		stats := providerStats[connResult.Provider]
+		stats.Count++
+		if connResult.Success {
+			stats.Success++
+			stats.SpecCount += connResult.SpecCount
+		} else {
+			stats.Failed++
+		}
+		providerStats[connResult.Provider] = stats
+	}
+
+	for provider, stats := range providerStats {
+		log.Info().Msgf("[%s] Provider %s: %d connections (%d success, %d failed), %d specs",
+			nsId, provider, stats.Count, stats.Success, stats.Failed, stats.SpecCount)
+	}
+
+	log.Info().Msgf("[%s] Spec fetch completed: %d specs from %d/%d connections (took %s)",
+		nsId, result.RegisteredSpecs, result.SucceedRegions,
+		result.SucceedRegions+result.FailedRegions, result.ElapsedTime)
+
+	return result, nil
+}
+
+// FetchSpecsForAllConnConfigsAsync starts fetching specs in background with provider-based grouping
+func FetchSpecsForAllConnConfigsAsync(nsId string, option *model.SpecFetchOption) error {
+	// Check if there's already an operation in progress
+	if isSpecFetchInProgress(nsId) {
+		return fmt.Errorf("a spec fetch operation is already in progress")
+	}
+
+	result := &FetchSpecsAsyncResult{
+		NamespaceID: nsId,
+		StartTime:   time.Now(),
+		InProgress:  true,
+	}
+	updateFetchSpecsProgress(nsId, result)
+
+	// Process asynchronously
+	go func() {
+		result, err := fetchSpecsForAllConnConfigsInternal(nsId, option, result)
+		if err != nil {
+			log.Error().Err(err).Msgf("[%s] Failed to fetch specs asynchronously", nsId)
+			result.InProgress = false
+			result.ElapsedTime = time.Since(result.StartTime).String()
+			updateFetchSpecsProgress(nsId, result)
+			return
+		}
+		log.Info().Msgf("[%s] Async spec fetch operation completed and result saved", nsId)
+	}()
+
+	return nil
+}
+
+// GetFetchSpecsAsyncResult returns the result of the most recent fetch specs operation
+func GetFetchSpecsAsyncResult(nsId string) (*FetchSpecsAsyncResult, error) {
+	lastFetchSpecsResult.RLock()
+	defer lastFetchSpecsResult.RUnlock()
+
+	result, exists := lastFetchSpecsResult.Result[nsId]
+	if !exists {
+		return nil, fmt.Errorf("no fetch specs result found for namespace %s", nsId)
+	}
+
+	// Update elapsed time if still in progress
+	if result.InProgress {
+		result.ElapsedTime = time.Since(result.StartTime).String()
+	}
+
+	return result, nil
+}
+
+// FetchSpecsForAllConnConfigs synchronously fetches specs for all connection configs in the namespace
+func FetchSpecsForAllConnConfigs(nsId string, option *model.SpecFetchOption) (*FetchSpecsAsyncResult, error) {
+	// Check if there's already an operation in progress
+	if isSpecFetchInProgress(nsId) {
+		return nil, fmt.Errorf("a spec fetch operation is already in progress")
+	}
+
+	result := &FetchSpecsAsyncResult{
+		NamespaceID: nsId,
+		StartTime:   time.Now(),
+		InProgress:  true,
+	}
+	updateFetchSpecsProgress(nsId, result)
+
+	// Direct call to internal function and wait for completion
+	result, err := fetchSpecsForAllConnConfigsInternal(nsId, option, result)
+	if err != nil {
+		log.Error().Err(err).Msgf("[%s] Failed to fetch specs synchronously", nsId)
+		result.InProgress = false
+		result.ElapsedTime = time.Since(result.StartTime).String()
+		updateFetchSpecsProgress(nsId, result)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+var lastFetchSpecsResult struct {
+	sync.RWMutex
+	Result map[string]*FetchSpecsAsyncResult
+}
+
+func init() {
+	lastFetchSpecsResult.Result = make(map[string]*FetchSpecsAsyncResult)
+}
+
+// updateFetchSpecsProgress updates the progress of fetch specs operation
+func updateFetchSpecsProgress(nsId string, result *FetchSpecsAsyncResult) {
+	lastFetchSpecsResult.Lock()
+	lastFetchSpecsResult.Result[nsId] = result
+	lastFetchSpecsResult.Unlock()
+}
+
+// isSpecFetchInProgress checks if there's an ongoing spec fetch operation for the given namespace
+func isSpecFetchInProgress(nsId string) bool {
+	lastFetchSpecsResult.RLock()
+	defer lastFetchSpecsResult.RUnlock()
+
+	result, exists := lastFetchSpecsResult.Result[nsId]
+	if exists && result != nil && result.InProgress {
+		return true
+	}
+	return false
 }
 
 // ConnectionSpecResult is the result of fetching specs for a single connection
@@ -442,54 +793,17 @@ type FetchSpecsAsyncResult struct {
 	ResultInDetail  []ConnectionSpecResult `json:"resultInDetail"`
 }
 
-// lastSpecFetchResult stores the result of the most recent fetch images operation
-var lastSpecFetchResult struct {
-	sync.RWMutex
-	Result map[string]*FetchSpecsAsyncResult
-}
-
-func init() {
-	lastSpecFetchResult.Result = make(map[string]*FetchSpecsAsyncResult)
-}
-
-func updateFetchSpecsProgress(nsId string, result *FetchSpecsAsyncResult) {
-	lastSpecFetchResult.Lock()
-	lastSpecFetchResult.Result[nsId] = result
-	lastSpecFetchResult.Unlock()
-}
-
-// isSpecFetchInProgress checks if there's an ongoing image fetch operation for the given namespace
-func isSpecFetchInProgress(nsId string) bool {
-	lastSpecFetchResult.RLock()
-	defer lastSpecFetchResult.RUnlock()
-
-	result, exists := lastSpecFetchResult.Result[nsId]
-	if exists && result != nil && result.InProgress {
-		return true
-	}
-	return false
-}
-
 // UpdateSpecsFromAsset updates spec information based on cloudspec.csv asset file
-func UpdateSpecsFromAsset(nsId string) (*FetchSpecsAsyncResult, error) {
+func UpdateSpecsFromAsset(nsId string) error {
 	if nsId == "" {
 		nsId = model.SystemCommonNs
-	}
-
-	startTime := time.Now()
-	result := &FetchSpecsAsyncResult{
-		NamespaceID: nsId,
-		StartTime:   startTime,
-		InProgress:  true,
 	}
 
 	// Open and read CSV file
 	file, err := os.Open("../assets/cloudspec.csv")
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to open cloudspec.csv")
-		result.InProgress = false
-		result.ElapsedTime = time.Since(startTime).String()
-		return result, err
+		return err
 	}
 	defer file.Close()
 
@@ -497,13 +811,11 @@ func UpdateSpecsFromAsset(nsId string) (*FetchSpecsAsyncResult, error) {
 	rows, err := rdr.ReadAll()
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to read cloudspec.csv")
-		result.InProgress = false
-		result.ElapsedTime = time.Since(startTime).String()
-		return result, err
+		return err
 	}
 	// row[0]	providerName
 	// row[1]	regionName
-	// row[2]	cspResourceId
+	// row[2]	cspSpecName
 	// row[3]	costPerHour
 	// row[4]	currency
 	// row[5]	evaluationScore01
@@ -518,255 +830,278 @@ func UpdateSpecsFromAsset(nsId string) (*FetchSpecsAsyncResult, error) {
 	// row[14]	evaluationScore10
 	// row[15]	rootDiskType
 	// row[16]	rootDiskSize
-	// row[17]	acceleratorModel
-	// row[18]	acceleratorCount
-	// row[19]	acceleratorMemoryGB
-	// row[20]	acceleratorDetails
-	// row[21]	infraType
+	// row[17]	acceleratorType
+	// row[18]	acceleratorModel
+	// row[19]	acceleratorCount
+	// row[20]	acceleratorMemoryGB
+	// row[21]	description
+	// row[22]	infraType
+
+	// expending rows with "all" connectionName into each region
+	// "all" means the values in the row are applicable to all connectionNames in a CSP
+
+	connectionList, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
+	if err != nil {
+		log.Error().Err(err).Msg("Cannot GetConnConfigList")
+		return err
+	}
+	if len(connectionList.Connectionconfig) == 0 {
+		log.Error().Err(err).Msg("No registered connection config")
+		return err
+	}
+
+	newRowsSpec := make([][]string, 0, len(rows))
+	for _, row := range rows {
+		if row[1] == "all" {
+			for _, connConfig := range connectionList.Connectionconfig {
+				if strings.EqualFold(connConfig.ProviderName, row[0]) {
+					newRow := make([]string, len(row))
+					copy(newRow, row)
+					newRow[1] = connConfig.RegionDetail.RegionName
+					newRowsSpec = append(newRowsSpec, newRow)
+					//log.Info().Msgf("Expended row: %s", newRow)
+				}
+			}
+		} else {
+			newRowsSpec = append(newRowsSpec, row)
+		}
+	}
+	rows = newRowsSpec
+
+	startTime := time.Now()
+	// Load all existing specs for the namespace into memory
+	existingSpecsMap, err := loadAllSpecsIntoMemory(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to load existing specs into memory")
+		return err
+	}
+	log.Info().Msgf("Loaded %d existing specs into memory in %v", len(existingSpecsMap), time.Since(startTime))
 
 	var specList []model.TbSpecInfo
 
 	// Process each row (skip header)
-	for i, row := range rows[1:] {
+	for _, row := range rows[1:] {
 
 		// Parse CSV data directly into TbSpecInfo struct
-		csvSpec := model.TbSpecInfo{
-			Namespace:    nsId,
-			ProviderName: strings.ToLower(row[0]),
-			RegionName:   strings.ToLower(row[1]),
-			CspSpecName:  row[2],
-			SystemLabel:  model.StrFromAssets,
+		specInfo := model.TbSpecInfo{}
+
+		providerName := strings.ToLower(row[0])
+		regionName := strings.ToLower(row[1])
+		cspSpecName := row[2]
+		specInfoId := GetProviderRegionZoneResourceKey(providerName, regionName, "", cspSpecName)
+		rootDiskType := row[15]
+		rootDiskSize := row[16]
+		acceleratorType := row[17]
+		acceleratorModel := row[18]
+		acceleratorCount := 0
+		if s, err := strconv.Atoi(strings.ReplaceAll(row[19], " ", "")); err == nil {
+			acceleratorCount = s
+		}
+		acceleratorMemoryGB := 0.0
+		if s, err := strconv.ParseFloat(strings.ReplaceAll(row[20], " ", ""), 32); err == nil {
+			acceleratorMemoryGB = s
+		}
+		description := row[21]
+		infraType := strings.ToLower(row[22])
+		costPerHour, err := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
+		currency := strings.ToUpper(row[4])
+
+		if err != nil {
+			log.Error().Msgf("Not valid CostPerHour value in the asset: %s", specInfoId)
+			costPerHour = -1
+		} else {
+			costPerHour = float64(common.ConvertToBaseCurrency(float32(costPerHour), currency))
+		}
+		evaluationScore01, err := strconv.ParseFloat(strings.ReplaceAll(row[5], " ", ""), 32)
+		if err != nil {
+			evaluationScore01 = -1
+		}
+		evaluationScore02, err := strconv.ParseFloat(strings.ReplaceAll(row[6], " ", ""), 32)
+		if err != nil {
+			evaluationScore02 = -1
+		}
+		evaluationScore03, err := strconv.ParseFloat(strings.ReplaceAll(row[7], " ", ""), 32)
+		if err != nil {
+			evaluationScore03 = -1
+		}
+		evaluationScore04, err := strconv.ParseFloat(strings.ReplaceAll(row[8], " ", ""), 32)
+		if err != nil {
+			evaluationScore04 = -1
+		}
+		evaluationScore05, err := strconv.ParseFloat(strings.ReplaceAll(row[9], " ", ""), 32)
+		if err != nil {
+			evaluationScore05 = -1
+		}
+		evaluationScore06, err := strconv.ParseFloat(strings.ReplaceAll(row[10], " ", ""), 32)
+		if err != nil {
+			evaluationScore06 = -1
+		}
+		evaluationScore07, err := strconv.ParseFloat(strings.ReplaceAll(row[11], " ", ""), 32)
+		if err != nil {
+			evaluationScore07 = -1
+		}
+		evaluationScore08, err := strconv.ParseFloat(strings.ReplaceAll(row[12], " ", ""), 32)
+		if err != nil {
+			evaluationScore08 = -1
+		}
+		evaluationScore09, err := strconv.ParseFloat(strings.ReplaceAll(row[13], " ", ""), 32)
+		if err != nil {
+			evaluationScore09 = -1
+		}
+		evaluationScore10, err := strconv.ParseFloat(strings.ReplaceAll(row[14], " ", ""), 32)
+		if err != nil {
+			evaluationScore10 = -1
 		}
 
-		// Parse cost per hour with currency conversion
-		if row[3] != "" {
-			if cost, err := strconv.ParseFloat(row[3], 32); err == nil {
-				currency := "USD"
-				if row[4] != "" {
-					currency = strings.ToUpper(row[4])
-				}
-				csvSpec.CostPerHour = common.ConvertToBaseCurrency(float32(cost), currency)
-			}
-		}
+		expandedInfraType := expandInfraType(infraType)
 
-		// Parse evaluation scores (row[5] to row[14])
-		if row[5] != "" {
-			if score, err := strconv.ParseFloat(row[5], 32); err == nil {
-				csvSpec.EvaluationScore01 = float32(score)
-			}
-		}
-		if row[6] != "" {
-			if score, err := strconv.ParseFloat(row[6], 32); err == nil {
-				csvSpec.EvaluationScore02 = float32(score)
-			}
-		}
-		if row[7] != "" {
-			if score, err := strconv.ParseFloat(row[7], 32); err == nil {
-				csvSpec.EvaluationScore03 = float32(score)
-			}
-		}
-		if row[8] != "" {
-			if score, err := strconv.ParseFloat(row[8], 32); err == nil {
-				csvSpec.EvaluationScore04 = float32(score)
-			}
-		}
-		if row[9] != "" {
-			if score, err := strconv.ParseFloat(row[9], 32); err == nil {
-				csvSpec.EvaluationScore05 = float32(score)
-			}
-		}
-		if row[10] != "" {
-			if score, err := strconv.ParseFloat(row[10], 32); err == nil {
-				csvSpec.EvaluationScore06 = float32(score)
-			}
-		}
-		if row[11] != "" {
-			if score, err := strconv.ParseFloat(row[11], 32); err == nil {
-				csvSpec.EvaluationScore07 = float32(score)
-			}
-		}
-		if row[12] != "" {
-			if score, err := strconv.ParseFloat(row[12], 32); err == nil {
-				csvSpec.EvaluationScore08 = float32(score)
-			}
-		}
-		if row[13] != "" {
-			if score, err := strconv.ParseFloat(row[13], 32); err == nil {
-				csvSpec.EvaluationScore09 = float32(score)
-			}
-		}
-		if row[14] != "" {
-			if score, err := strconv.ParseFloat(row[14], 32); err == nil {
-				csvSpec.EvaluationScore10 = float32(score)
-			}
-		}
+		specInfo.Namespace = nsId
+		specInfo.Id = specInfoId
+		specInfo.Name = specInfoId
+		specInfo.ProviderName = providerName
+		specInfo.RegionName = regionName
+		specInfo.CspSpecName = cspSpecName
+		specInfo.CostPerHour = float32(costPerHour)
+		specInfo.RootDiskType = rootDiskType
+		specInfo.RootDiskSize = rootDiskSize
+		specInfo.AcceleratorType = acceleratorType
+		specInfo.AcceleratorModel = acceleratorModel
+		specInfo.AcceleratorCount = uint8(acceleratorCount)
+		specInfo.AcceleratorMemoryGB = float32(acceleratorMemoryGB)
+		specInfo.EvaluationScore01 = float32(evaluationScore01)
+		specInfo.EvaluationScore02 = float32(evaluationScore02)
+		specInfo.EvaluationScore03 = float32(evaluationScore03)
+		specInfo.EvaluationScore04 = float32(evaluationScore04)
+		specInfo.EvaluationScore05 = float32(evaluationScore05)
+		specInfo.EvaluationScore06 = float32(evaluationScore06)
+		specInfo.EvaluationScore07 = float32(evaluationScore07)
+		specInfo.EvaluationScore08 = float32(evaluationScore08)
+		specInfo.EvaluationScore09 = float32(evaluationScore09)
+		specInfo.EvaluationScore10 = float32(evaluationScore10)
+		specInfo.Description = description
+		specInfo.SystemLabel = model.StrFromAssets
+		specInfo.InfraType = expandedInfraType
 
-		// Parse disk and accelerator specifications
-		if row[15] != "" {
-			csvSpec.RootDiskType = row[15]
-		}
-		if row[16] != "" {
-			csvSpec.RootDiskSize = row[16]
-		}
-		if row[17] != "" {
-			csvSpec.AcceleratorModel = row[17]
-		}
-		if row[18] != "" {
-			if count, err := strconv.Atoi(row[18]); err == nil {
-				csvSpec.AcceleratorCount = uint8(count)
-			}
-		}
-		if row[19] != "" {
-			if memory, err := strconv.ParseFloat(row[19], 32); err == nil {
-				csvSpec.AcceleratorMemoryGB = float32(memory)
-			}
-		}
-		// row[20] is acceleratorDetails - not used currently
-		if row[21] != "" {
-			csvSpec.Description = row[21]
-		}
-		if len(row) > 22 && row[22] != "" {
-			csvSpec.InfraType = strings.ToLower(row[22])
-		}
+		//log.Debug().Msgf("Processing row %d: %s-%s-%s", i+1, specInfo.ProviderName, specInfo.RegionName, specInfo.CspSpecName)
 
-		// Generate ID and Name
-		csvSpec.Id = GetProviderRegionZoneResourceKey(csvSpec.ProviderName, csvSpec.RegionName, "", csvSpec.CspSpecName)
-		csvSpec.Name = csvSpec.Id
-
-		log.Debug().Msgf("Processing row %d: %s-%s-%s", i+1, csvSpec.ProviderName, csvSpec.RegionName, csvSpec.CspSpecName)
-
-		// Check if spec already exists in database
-		existingSpec, err := GetSpec(nsId, csvSpec.CspSpecName)
-		if err == nil {
+		// Check if spec exists in memory map (O(1) lookup)
+		if existingSpec, exists := existingSpecsMap[specInfo.Id]; exists {
 			// Existing spec found - merge with CSV data
-			log.Info().Msgf("Found existing spec: %s, merging with CSV data", csvSpec.CspSpecName)
-			mergedSpec := mergeSpecWithCSVData(existingSpec, csvSpec)
+			// log.Debug().Msgf("Found existing spec: %s, merging with CSV data", specInfo.Id)
+			mergedSpec := mergeSpecWithCSVData(existingSpec, specInfo)
 			specList = append(specList, mergedSpec)
-
 		} else {
 			// Spec not found in DB - try LookupSpec from CSP
-			log.Debug().Msgf("Spec not found in DB: %s, trying LookupSpec", csvSpec.CspSpecName)
-
-			// Create connection name for LookupSpec
-			connectionName := csvSpec.ProviderName + "-" + csvSpec.RegionName
-
-			lookupSpec, lookupErr := LookupSpec(connectionName, csvSpec.CspSpecName)
-			if lookupErr != nil {
-				log.Warn().Msgf("LookupSpec failed for %s-%s-%s: %s",
-					csvSpec.ProviderName, csvSpec.RegionName, csvSpec.CspSpecName, lookupErr.Error())
-				continue
-			}
-
-			// Convert Spider spec to Tumblebug spec and merge with CSV data
-			log.Info().Msgf("Found spec via LookupSpec: %s, converting and merging", csvSpec.CspSpecName)
-
-			tumblebugSpec, convertErr := ConvertSpiderSpecToTumblebugSpec(csvSpec.ProviderName, lookupSpec)
-			if convertErr != nil {
-				log.Warn().Msgf("Failed to convert Spider spec to Tumblebug spec for %s: %s",
-					csvSpec.CspSpecName, convertErr.Error())
-				continue
-			}
-
-			// Set basic information
-			tumblebugSpec.Namespace = nsId
-			tumblebugSpec.ConnectionName = connectionName
-			tumblebugSpec.ProviderName = csvSpec.ProviderName
-			tumblebugSpec.RegionName = csvSpec.RegionName
-			tumblebugSpec.Id = csvSpec.Id
-			tumblebugSpec.Name = csvSpec.Name
-
-			// Merge with CSV data
-			mergedSpec := mergeSpecWithCSVData(tumblebugSpec, csvSpec)
-			specList = append(specList, mergedSpec)
+			log.Debug().Msgf("Spec %s not found in DB, recommended to remove from assets", specInfo.Id)
 		}
+		// clear memory for specInfo
+		specInfo = model.TbSpecInfo{}
 	}
+	existingSpecsMap = nil
+	runtime.GC()
 
 	// Update database with bulk operation
 	if len(specList) > 0 {
 		err = RegisterSpecWithInfoInBulk(specList)
 		if err != nil {
 			log.Error().Err(err).Msg("RegisterSpecWithInfoInBulk failed")
-			result.InProgress = false
-			result.ElapsedTime = time.Since(startTime).String()
-			return result, err
+			return err
 		}
 		log.Info().Msgf("Updated %d specs from asset file", len(specList))
 	} else {
 		log.Warn().Msg("No specs were processed from the asset file")
 	}
+	specList = nil
+	runtime.GC()
 
-	result.InProgress = false
-	result.ElapsedTime = time.Since(startTime).String()
-	updateFetchSpecsProgress(nsId, result)
+	return nil
+}
 
-	return result, nil
+// loadAllSpecsIntoMemory loads all existing specs for a namespace into a map for O(1) lookup
+func loadAllSpecsIntoMemory(nsId string) (map[string]model.TbSpecInfo, error) {
+	var allSpecs []model.TbSpecInfo
+
+	// Single query to get all specs for the namespace
+	result := model.ORM.Where("namespace = ?", nsId).Find(&allSpecs)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	// Build map for O(1) lookup using spec ID as key
+	specsMap := make(map[string]model.TbSpecInfo, len(allSpecs))
+	for _, spec := range allSpecs {
+		specsMap[spec.Id] = spec
+	}
+
+	log.Debug().Msgf("Loaded %d existing specs into memory for namespace %s", len(allSpecs), nsId)
+	return specsMap, nil
 }
 
 // mergeSpecWithCSVData merges CSV spec data into existing spec (CSV data has priority for non-empty values)
 func mergeSpecWithCSVData(existingSpec model.TbSpecInfo, csvSpec model.TbSpecInfo) model.TbSpecInfo {
 	mergedSpec := existingSpec
 
-	// Merge cost information (CSV priority for non-zero values)
-	if csvSpec.CostPerHour != 0 {
+	// Merge cost information (existingSpec priority)
+	// If existingSpec.CostPerHour is -1 or 0, use CSV value
+	if existingSpec.CostPerHour <= 0 {
 		mergedSpec.CostPerHour = csvSpec.CostPerHour
 	}
 
-	// Merge evaluation scores (CSV priority for non-zero values)
-	if csvSpec.EvaluationScore01 != 0 {
+	// Merge evaluation scores (existingSpec priority)
+	if existingSpec.EvaluationScore01 <= 0 {
 		mergedSpec.EvaluationScore01 = csvSpec.EvaluationScore01
 	}
-	if csvSpec.EvaluationScore02 != 0 {
+	if existingSpec.EvaluationScore02 <= 0 {
 		mergedSpec.EvaluationScore02 = csvSpec.EvaluationScore02
 	}
-	if csvSpec.EvaluationScore03 != 0 {
+	if existingSpec.EvaluationScore03 <= 0 {
 		mergedSpec.EvaluationScore03 = csvSpec.EvaluationScore03
 	}
-	if csvSpec.EvaluationScore04 != 0 {
+	if existingSpec.EvaluationScore04 <= 0 {
 		mergedSpec.EvaluationScore04 = csvSpec.EvaluationScore04
 	}
-	if csvSpec.EvaluationScore05 != 0 {
+	if existingSpec.EvaluationScore05 <= 0 {
 		mergedSpec.EvaluationScore05 = csvSpec.EvaluationScore05
 	}
-	if csvSpec.EvaluationScore06 != 0 {
+	if existingSpec.EvaluationScore06 <= 0 {
 		mergedSpec.EvaluationScore06 = csvSpec.EvaluationScore06
 	}
-	if csvSpec.EvaluationScore07 != 0 {
+	if existingSpec.EvaluationScore07 <= 0 {
 		mergedSpec.EvaluationScore07 = csvSpec.EvaluationScore07
 	}
-	if csvSpec.EvaluationScore08 != 0 {
+	if existingSpec.EvaluationScore08 <= 0 {
 		mergedSpec.EvaluationScore08 = csvSpec.EvaluationScore08
 	}
-	if csvSpec.EvaluationScore09 != 0 {
+	if existingSpec.EvaluationScore09 <= 0 {
 		mergedSpec.EvaluationScore09 = csvSpec.EvaluationScore09
 	}
-	if csvSpec.EvaluationScore10 != 0 {
+	if existingSpec.EvaluationScore10 <= 0 {
 		mergedSpec.EvaluationScore10 = csvSpec.EvaluationScore10
 	}
 
-	// Merge disk specifications (CSV priority for non-empty values)
-	if csvSpec.RootDiskType != "" {
+	// Merge disk specifications (existingSpec priority for non-empty values)
+	if existingSpec.RootDiskType == "" {
 		mergedSpec.RootDiskType = csvSpec.RootDiskType
 	}
-	if csvSpec.RootDiskSize != "" {
+	if existingSpec.RootDiskSize == "" {
 		mergedSpec.RootDiskSize = csvSpec.RootDiskSize
 	}
 
-	// Merge accelerator specifications (CSV priority for non-empty/non-zero values)
-	if csvSpec.AcceleratorModel != "" {
+	// Merge accelerator specifications (existingSpec priority)
+	if existingSpec.AcceleratorModel == "" {
 		mergedSpec.AcceleratorModel = csvSpec.AcceleratorModel
 	}
-	if csvSpec.AcceleratorCount != 0 {
+	if existingSpec.AcceleratorCount <= 0 {
 		mergedSpec.AcceleratorCount = csvSpec.AcceleratorCount
 	}
-	if csvSpec.AcceleratorMemoryGB != 0 {
+	if existingSpec.AcceleratorMemoryGB <= 0 {
 		mergedSpec.AcceleratorMemoryGB = csvSpec.AcceleratorMemoryGB
 	}
 
-	// Merge description and infrastructure type (CSV priority for non-empty values)
-	if csvSpec.Description != "" {
+	if existingSpec.Description == "" {
 		mergedSpec.Description = csvSpec.Description
 	}
-	if csvSpec.InfraType != "" {
+	if existingSpec.InfraType == "" {
 		mergedSpec.InfraType = csvSpec.InfraType
 	}
 

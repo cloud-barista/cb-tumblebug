@@ -245,12 +245,12 @@ def load_resources():
         response = requests.get(f"http://{TUMBLEBUG_SERVER}/tumblebug/loadAssets", headers=HEADERS)
         response.raise_for_status()  # Will raise an exception for HTTP error codes
         response_json = response.json()
-        if response_json is None:  # Check if response.json() returned None
-            response_json = {'error': 'No content returned'}
-        if 'output' not in response_json:
-            response_json = {'error': 'No output content returned'}
-        if response_json.get('output', []) is None:
-            response_json = {'error': 'Empty output content returned'}
+        # if response_json is None:  # Check if response.json() returned None
+        #     response_json = {'error': 'No content returned'}
+        # if 'output' not in response_json:
+        #     response_json = {'error': 'No output content returned'}
+        # if response_json.get('output', []) is None:
+        #     response_json = {'error': 'Empty output content returned'}
     except requests.RequestException as e:
         response_json = {'error': str(e)}
     finally:
@@ -318,22 +318,22 @@ if 'error' in response_json:
     print(Fore.RED + "Error during resource loading: " + response_json['error'])
     exit(1)
 elif response_json: 
-    failed_specs = 0
-    failed_images = 0
-    successful_specs = 0
-    successful_images = 0
+    # failed_specs = 0
+    # failed_images = 0
+    # successful_specs = 0
+    # successful_images = 0
 
-    for item in response_json.get('output', []):  
-        if "spec:" in item:
-            if "[Failed]" in item:
-                failed_specs += 1
-            else:
-                successful_specs += 1
-        elif "image:" in item:
-            if "[Failed]" in item:
-                failed_images += 1
-            else:
-                successful_images += 1
+    # for item in response_json.get('output', []):  
+    #     if "spec:" in item:
+    #         if "[Failed]" in item:
+    #             failed_specs += 1
+    #         else:
+    #             successful_specs += 1
+    #     elif "image:" in item:
+    #         if "[Failed]" in item:
+    #             failed_images += 1
+    #         else:
+    #             successful_images += 1
 
     print(Fore.CYAN + f"\nLoading completed (elapsed: {duration}s)")
     print(Fore.YELLOW + f"\nThe system is ready to use.")
