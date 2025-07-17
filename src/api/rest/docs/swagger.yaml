@@ -624,13 +624,20 @@ paths:
       summary: Fetch specs from CSPs and register them in the system.
       description: Fetch specs from CSPs and register them in the system.
       operationId: FetchSpecs
+      requestBody:
+        description: Fetch option
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.SpecFetchOption'
+        required: true
       responses:
-        "200":
-          description: OK
+        "202":
+          description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
+                $ref: '#/components/schemas/resource.FetchSpecsAsyncResult'
         "404":
           description: Not Found
           content:
@@ -643,6 +650,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: fetchOption
   /forward/{path}:
     post:
       tags:
@@ -8228,11 +8236,20 @@ paths:
         description: "Filter by request status (Handling, Error, Success)"
         schema:
           type: string
+          enum:
+          - Handling
+          - Error
+          - Success
       - name: method
         in: query
-        description: "Filter by HTTP method (GET, POST, etc.)"
+        description: "Filter by HTTP method (GET, POST, PUT, DELETE, etc.)"
         schema:
           type: string
+          enum:
+          - GET
+          - POST
+          - PUT
+          - DELETE
       - name: url
         in: query
         description: Filter by request URL
@@ -8248,6 +8265,10 @@ paths:
         description: Option to save the results to a file (set 'true' to activate)
         schema:
           type: string
+          default: "false"
+          enum:
+          - "true"
+          - "false"
       responses:
         "200":
           description: OK
@@ -9119,6 +9140,8 @@ components:
         acceleratorModel:
           type: string
         acceleratorType:
+          type: string
+        architecture:
           type: string
         connectionName:
           type: string
@@ -10366,6 +10389,25 @@ components:
           example: ns-01
         sites:
           $ref: '#/components/schemas/model.sites'
+    model.SpecFetchOption:
+      type: object
+      properties:
+        excludedProviders:
+          type: array
+          description: "providers need to be excluded from the spec fetching operation\
+            \ (ex: [\"azure\"])"
+          example:
+          - azure
+          items:
+            type: string
+        regionAgnosticProviders:
+          type: array
+          description: "providers that are not region-specific (ex: [\"gcp\"])"
+          example:
+          - gcp
+          - tencent
+          items:
+            type: string
     model.SpiderAccessInfo:
       type: object
       properties:
@@ -13079,6 +13121,25 @@ components:
           type: string
         success:
           type: boolean
+    resource.ConnectionSpecResult:
+      type: object
+      properties:
+        connName:
+          type: string
+        elapsedTime:
+          type: string
+        errorMsg:
+          type: string
+        provider:
+          type: string
+        region:
+          type: string
+        specCount:
+          type: integer
+        startTime:
+          type: string
+        success:
+          type: boolean
     resource.FetchImagesAsyncResult:
       type: object
       properties:
@@ -13098,6 +13159,31 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/resource.ConnectionImageResult'
+        startTime:
+          type: string
+        succeedRegions:
+          type: integer
+        totalRegions:
+          type: integer
+    resource.FetchSpecsAsyncResult:
+      type: object
+      properties:
+        elapsedTime:
+          type: string
+        failedRegions:
+          type: integer
+        fetchOption:
+          $ref: '#/components/schemas/model.SpecFetchOption'
+        inProgress:
+          type: boolean
+        namespaceId:
+          type: string
+        registeredSpecs:
+          type: integer
+        resultInDetail:
+          type: array
+          items:
+            $ref: '#/components/schemas/resource.ConnectionSpecResult'
         startTime:
           type: string
         succeedRegions:

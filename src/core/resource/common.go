@@ -15,12 +15,9 @@ limitations under the License.
 package resource
 
 import (
-	"bufio"
-	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"runtime"
 	"strconv"
 	"strings"
@@ -1316,10 +1313,9 @@ func GetNameFromStruct(u interface{}) (string, error) {
 }
 
 // LoadAssets is to register common resources from asset files (../assets/*.csv)
-func LoadAssets() (model.IdList, error) {
+func LoadAssets() (*model.IdList, error) {
 
-	regiesteredIds := model.IdList{}
-	regiesteredStatus := ""
+	regiesteredIds := &model.IdList{}
 
 	// Check common namespace. Create one if not.
 	_, err := common.GetNs(model.SystemCommonNs)
@@ -1336,354 +1332,36 @@ func LoadAssets() (model.IdList, error) {
 
 	startTime := time.Now()
 
-	connectionList, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
-	if err != nil {
-		log.Error().Err(err).Msg("Cannot GetConnConfigList")
-		return regiesteredIds, err
-	}
-	if len(connectionList.Connectionconfig) == 0 {
-		log.Error().Err(err).Msg("No registered connection config")
-		return regiesteredIds, err
-	}
+	reqBodySpecFetchOption := &model.SpecFetchOption{}
 
-	elapsedVerifyConnections := time.Now().Sub(startTime)
-	log.Info().Msgf("Verified all connections. Elapsed [%s]", elapsedVerifyConnections)
-	startTime = time.Now()
-
-	// LookupSpecList and LookupImageList of all connections in parallel
-	var specMap sync.Map
-
-	tmpSpecList := []model.TbSpecInfo{}
-
-	// ignoreConnectionMap is used to store connection names that failed to lookup specs
-	var ignoreConnectionMap sync.Map
-	// validRepresentativeConnectionMap is used to store connection names that valid representative connection
-	var validRepresentativeConnectionMap sync.Map
-
-	startTime = time.Now()
-	var wg sync.WaitGroup
-	for _, connConfig := range connectionList.Connectionconfig {
-		wg.Add(1)
-		go func(connConfig model.ConnConfig) {
-			defer wg.Done()
-			specsInConnection, err := LookupSpecList(connConfig.ConfigName)
-			if err != nil {
-				log.Error().Err(err).Msgf("Cannot LookupSpecList in %s", connConfig.ConfigName)
-				ignoreConnectionMap.Store(connConfig.ConfigName, err)
-				return
-			}
-			log.Info().Msgf("[%s] #Spec: %d", connConfig.ConfigName, len(specsInConnection.Vmspec))
-			validRepresentativeConnectionMap.Store(connConfig.ProviderName+"-"+connConfig.RegionDetail.RegionName, connConfig)
-			for _, spec := range specsInConnection.Vmspec {
-				spiderSpec := spec
-				//log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
-				tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(connConfig.ProviderName, spiderSpec)
-				if errConvert != nil {
-					log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
-				} else {
-					key := GetProviderRegionZoneResourceKey(connConfig.ProviderName, connConfig.RegionDetail.RegionName, "", spec.Name)
-					tumblebugSpec.Namespace = model.SystemCommonNs
-					tumblebugSpec.Name = key
-					tumblebugSpec.Id = key
-					tumblebugSpec.ConnectionName = connConfig.ConfigName
-					tumblebugSpec.ProviderName = strings.ToLower(connConfig.ProviderName)
-					tumblebugSpec.RegionName = connConfig.RegionDetail.RegionName
-					tumblebugSpec.InfraType = "vm" // default value
-					tumblebugSpec.SystemLabel = "auto-gen"
-					tumblebugSpec.CostPerHour = -1
-					tumblebugSpec.EvaluationScore01 = -99.9
-
-					// instead of connConfig.RegionName, spec.Region will be used in the future
-					//log.Info().Msgf("specMap.Store(%s, spec)", key)
-					specMap.Store(key, tumblebugSpec)
-					tmpSpecList = append(tmpSpecList, tumblebugSpec)
-				}
-				// Clear the entire specs slice after processing
-				specsInConnection.Vmspec = nil
-				specsInConnection = model.SpiderSpecList{}
-			}
-		}(connConfig)
-	}
-
-	// LookupImageList of all connections in parallel takes too long time
-	// disable it for now
-
-	// for i := len(connectionList.Connectionconfig) - 1; i >= 0; i-- {
-	// 	connConfig := connectionList.Connectionconfig[i]
-	// 	wg.Add(1)
-	// 	go func(cc model.ConnConfig) {
-	// 		defer wg.Done()
-	// 		imagesInConnection, err := LookupImageList(cc.ConfigName)
-	// 		if err != nil {
-	// 			log.Error().Err(err).Msgf("Cannot LookupImageList in %s", cc.ConfigName)
-	// 		} else {
-	// 			log.Info().Msgf("[%s] #Image: %d", cc.ConfigName, len(imagesInConnection.Image))
-	// 		}
-	// 	}(connConfig)
-	// }
-	wg.Wait()
-
-	elapsedLookupSpecList := time.Now().Sub(startTime)
-	log.Info().Msgf("Lookup Spec List is complete. Elapsed [%s]", elapsedLookupSpecList)
-	startTime = time.Now()
-
-	// specMap.Range(func(key, value interface{}) bool {
-	// 	specInfo := value.(model.TbSpecInfo)
-	// 	//log.Info().Msgf("specMap.Range: %s value: %v", key, specInfo)
-
-	// 	_, errRegisterSpec := RegisterSpecWithInfo(model.SystemCommonNs, &specInfo, true)
-	// 	if errRegisterSpec != nil {
-	// 		log.Info().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
-	// 	}
-	// 	return true
-	// })
-
-	err = RegisterSpecWithInfoInBulk(tmpSpecList)
-	if err != nil {
-		log.Info().Err(err).Msg("RegisterSpec WithInfo failed")
-	}
-	tmpSpecList = nil
-
-	// Clear specMap as it's no longer needed for initial registration
-	specMap.Range(func(key, value interface{}) bool {
-		specMap.Delete(key)
-		return true
-	})
-
-	elapsedRegisterSpecs := time.Now().Sub(startTime)
-	log.Info().Msgf("Registerd the Specs. Elapsed [%s]", elapsedRegisterSpecs)
-	startTime = time.Now()
-
-	err = RemoveDuplicateSpecsInSQL()
-	if err != nil {
-		log.Error().Err(err).Msg("RemoveDuplicateSpecsInSQL failed")
-	}
-	elapsedRemoveDuplicateSpecsInSQL := time.Now().Sub(startTime)
-	log.Info().Msgf("Remove Duplicate Specs In SQL. Elapsed [%s]", elapsedRemoveDuplicateSpecsInSQL)
-	startTime = time.Now()
-
-	// Read common specs and register spec objects
-	file, fileErr := os.Open("../assets/cloudspec.csv")
-	if fileErr != nil {
-		log.Error().Err(fileErr).Msg("")
-		return regiesteredIds, fileErr
-	}
-	defer file.Close()
-
-	rdr := csv.NewReader(bufio.NewReader(file))
-	rowsSpec, _ := rdr.ReadAll()
-
-	// expending rows with "all" connectionName into each region
-	// "all" means the values in the row are applicable to all connectionNames in a CSP
-	newRowsSpec := make([][]string, 0, len(rowsSpec))
-	for _, row := range rowsSpec {
-		if row[1] == "all" {
-			for _, connConfig := range connectionList.Connectionconfig {
-				if strings.EqualFold(connConfig.ProviderName, row[0]) {
-					newRow := make([]string, len(row))
-					copy(newRow, row)
-					newRow[1] = connConfig.RegionDetail.RegionName
-					newRowsSpec = append(newRowsSpec, newRow)
-					//log.Info().Msgf("Expended row: %s", newRow)
-				}
-			}
-		} else {
-			newRowsSpec = append(newRowsSpec, row)
-		}
-	}
-	rowsSpec = newRowsSpec
-
-	// waitSpecImg.Add(1)
-	//go func(rowsSpec [][]string) {
-	// defer waitSpecImg.Done()
-	//lenSpecs := len(rowsSpec[1:])
-	for i, row := range rowsSpec[1:] {
-		// wait.Add(1)
-		// go func(i int, row []string, lenSpecs int) {
-		// 	defer wait.Done()
-		// 	common.RandomSleep(0, lenSpecs/20)
-
-		specReqTmp := model.TbSpecReq{}
-		// 0	providerName
-		// 1	regionName
-		// 2	cspResourceId
-		// 3	costPerHour
-		// 4    currency
-		// 5	evaluationScore01
-		// 6	evaluationScore02
-		// 7	evaluationScore03
-		// 8	evaluationScore04
-		// 9	evaluationScore05
-		// 10	evaluationScore06
-		// 11	evaluationScore07
-		// 12	evaluationScore08
-		// 13	evaluationScore09
-		// 14	evaluationScore10
-		// 15	rootDiskType
-		// 16	rootDiskSize
-		// 17	acceleratorModel
-		// 18	acceleratorCount
-		// 19	acceleratorMemoryGB
-		// 20	acceleratorDetails
-		// 21	infraType
-
-		providerName := strings.ToLower(row[0])
-		regionName := strings.ToLower(row[1])
-		specReqTmp.CspSpecName = row[2]
-		rootDiskType := row[15]
-		rootDiskSize := row[16]
-		acceleratorType := row[17]
-		acceleratorModel := row[18]
-		acceleratorCount := 0
-		if s, err := strconv.Atoi(row[19]); err == nil {
-			acceleratorCount = s
-		}
-		acceleratorMemoryGB := 0.0
-		if s, err := strconv.ParseFloat(row[20], 32); err == nil {
-			acceleratorMemoryGB = s
-		}
-		description := row[21]
-		infraType := strings.ToLower(row[22])
-
-		specReqTmp.Name = GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
-
-		//get connetion for lookup (if regionName is "all", use providerName only)
-		validRepresentativeConnectionMapKey := providerName + "-" + regionName
-		connectionForLookup, ok := validRepresentativeConnectionMap.Load(validRepresentativeConnectionMapKey)
-		if ok {
-			specReqTmp.ConnectionName = connectionForLookup.(model.ConnConfig).ConfigName
-
-			_, ignoreCase := ignoreConnectionMap.Load(specReqTmp.ConnectionName)
-			if !ignoreCase {
-				// Give a name for spec object by combining ConnectionName and CspResourceId
-				// To avoid naming-rule violation, modify the string
-
-				// specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspResourceId
-				// specReqTmp.Name = ToNamingRuleCompatible(specReqTmp.Name)
-				specInfoId := specReqTmp.Name
-
-				specReqTmp.Description = "Common Spec Resource"
-
-				regiesteredStatus = ""
-
-				var errRegisterSpec error
-
-				log.Trace().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
-
-				// Register Spec object
-				searchKey := GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
-				value, ok := specMap.Load(searchKey)
-				if ok {
-					// spiderSpec := value.(SpiderSpecInfo)
-					// //log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
-					// tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
-					// if errConvert != nil {
-					// 	log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
-					// }
-
-					// tumblebugSpec.Name = specInfoId
-					// tumblebugSpec.ConnectionName = specReqTmp.ConnectionName
-					// // _, errRegisterSpec = RegisterSpecWithInfo(model.SystemCommonNs, &tumblebugSpec, true)
-					// // if errRegisterSpec != nil {
-					// // 	log.Info().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
-					// // }
-					specInfo := value.(model.TbSpecInfo)
-
-					// Update registered Spec object with givn info from asset file
-					// Update registered Spec object with Cost info
-					costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
-					currency := strings.ToUpper(row[4])
-
-					if err2 != nil {
-						log.Error().Msgf("Not valid CostPerHour value in the asset: %s", specInfoId)
-						costPerHour = -1
-					} else {
-						costPerHour = float64(common.ConvertToBaseCurrency(float32(costPerHour), currency))
-					}
-					evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[5], " ", ""), 32)
-					if err2 != nil {
-						log.Error().Msgf("Not valid evaluationScore01 value in the asset: %s", specInfoId)
-						evaluationScore01 = -99.9
-					}
-					expandedInfraType := expandInfraType(infraType)
-
-					specInfo.ProviderName = providerName
-					specInfo.RegionName = regionName
-					specInfo.CostPerHour = float32(costPerHour)
-					specInfo.RootDiskType = rootDiskType
-					specInfo.RootDiskSize = rootDiskSize
-					specInfo.AcceleratorType = acceleratorType
-					specInfo.AcceleratorModel = acceleratorModel
-					specInfo.AcceleratorCount = uint8(acceleratorCount)
-					specInfo.AcceleratorMemoryGB = float32(acceleratorMemoryGB)
-					specInfo.Description = description
-					specInfo.EvaluationScore01 = float32(evaluationScore01)
-					specInfo.SystemLabel = model.StrFromAssets
-					specInfo.InfraType = expandedInfraType
-
-					// _, err3 := UpdateSpec(model.SystemCommonNs, specInfoId, specInfo)
-					// if err3 != nil {
-					// 	log.Error().Err(err3).Msg("UpdateSpec failed")
-					// 	regiesteredStatus += "  [Failed] " + err3.Error()
-					// }
-
-					tmpSpecList = append(tmpSpecList, specInfo)
-
-					//fmt.Printf("[%d] Registered Common Spec\n", i)
-					//common.PrintJsonPretty(updatedSpecInfo)
-
-				} else {
-					errRegisterSpec = fmt.Errorf("Not Found spec from the fetched spec list: %s", searchKey)
-					log.Trace().Msgf(errRegisterSpec.Error())
-					// _, errRegisterSpec = RegisterSpecWithCspResourceId(model.SystemCommonNs, &specReqTmp, true)
-					// if errRegisterSpec != nil {
-					// 	log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspResourceId failed")
-					// }
-					regiesteredStatus += "  [Failed] " + errRegisterSpec.Error()
-				}
-
-				regiesteredIds.AddItem(model.StrSpec + ": " + specInfoId + regiesteredStatus)
-				// }(i, row, lenSpecs)
-			}
-		}
-	}
-	// 	wait.Wait()
-	// }(rowsSpec)
-
-	log.Info().Msgf("tmpSpecList %d", len(tmpSpecList))
-
-	err = RegisterSpecWithInfoInBulk(tmpSpecList)
-	if err != nil {
-		log.Info().Err(err).Msg("RegisterSpec WithInfo failed")
-	}
-	tmpSpecList = nil
-
-	// elapsedRegisterUpdatedSpecs := time.Now().Sub(startTime)
-	// log.Info().Msgf("Registerd Updated Specs. Elapsed [%s]", elapsedRegisterUpdatedSpecs)
-	// startTime = time.Now()
-
-	err = RemoveDuplicateSpecsInSQL()
-	if err != nil {
-		log.Error().Err(err).Msg("RemoveDuplicateSpecsInSQL failed")
-	}
-	// elapsedRemoveDuplicateSpecsInSQLUpdated := time.Now().Sub(startTime)
-	// log.Info().Msgf("Remove Duplicate Specs In SQL. Elapsed [%s]", elapsedRemoveDuplicateSpecsInSQLUpdated)
-	// startTime = time.Now()
-
-	elapsedUpdateSpec := time.Now().Sub(startTime)
-	log.Info().Msgf("Updated the registered Specs according to the asset file. Elapsed [%s]", elapsedUpdateSpec)
-
-	startTime = time.Now()
-
-	reqBody := &model.ImageFetchOption{}
-	reqBody.ExcludedProviders = []string{csp.Azure}
-	reqBody.RegionAgnosticProviders = []string{csp.GCP, csp.Tencent}
-	resultFetchImagesForAllConnConfigs, err := FetchImagesForAllConnConfigs(model.SystemCommonNs, reqBody)
+	resultFetchSpecsForAllConnConfigs, err := FetchSpecsForAllConnConfigs(model.SystemCommonNs, reqBodySpecFetchOption)
 	if err != nil {
 		log.Error().Err(err).Msg("FetchImagesForAllConnConfigs failed")
 	}
-	log.Debug().Msgf("resultFetchImagesForAllConnConfigs: %+v", resultFetchImagesForAllConnConfigs)
+	elapsedFetchSpec := time.Since(startTime)
+	log.Debug().Msgf("resultFetchSpecsForAllConnConfigs: %+v elapsed: [%s]", resultFetchSpecsForAllConnConfigs, elapsedFetchSpec)
 
+	startTime = time.Now()
+	err = UpdateSpecsFromAsset(model.SystemCommonNs)
+	if err != nil {
+		log.Error().Err(err).Msg("UpdateSpecsFromAsset failed")
+	}
+	elapsedUpdateSpec := time.Since(startTime)
+	log.Info().Msgf("UpdateSpecsFromAsset. Elapsed [%s]", elapsedUpdateSpec)
+
+	startTime = time.Now()
+
+	reqBodyImageFetchOption := &model.ImageFetchOption{}
+	reqBodyImageFetchOption.ExcludedProviders = []string{csp.Azure}
+	reqBodyImageFetchOption.RegionAgnosticProviders = []string{csp.GCP, csp.Tencent}
+	resultFetchImagesForAllConnConfigs, err := FetchImagesForAllConnConfigs(model.SystemCommonNs, reqBodyImageFetchOption)
+	if err != nil {
+		log.Error().Err(err).Msg("FetchImagesForAllConnConfigs failed")
+	}
+	elapsedFetchImg := time.Since(startTime)
+	log.Debug().Msgf("resultFetchImagesForAllConnConfigs: %+v elapsed: [%s]", resultFetchImagesForAllConnConfigs, elapsedFetchImg)
+
+	startTime = time.Now()
 	resultUpdateImagesFromAsset, err := UpdateImagesFromAsset(model.SystemCommonNs)
 	if err != nil {
 		log.Error().Err(err).Msg("UpdateImagesFromAsset failed")
@@ -1692,34 +1370,17 @@ func LoadAssets() (model.IdList, error) {
 
 	elapsedUpdateImg := time.Since(startTime)
 
-	// Final cleanup
-	tmpSpecList = nil
-	rowsSpec = nil
-	newRowsSpec = nil
-	connectionList.Connectionconfig = nil
-
-	// Clear sync.Maps
-	ignoreConnectionMap.Range(func(key, value interface{}) bool {
-		ignoreConnectionMap.Delete(key)
-		return true
-	})
-	validRepresentativeConnectionMap.Range(func(key, value interface{}) bool {
-		validRepresentativeConnectionMap.Delete(key)
-		return true
-	})
-
 	// Force garbage collection for large cleanup
 	runtime.GC()
 
 	// waitSpecImg.Wait()
 	// sort.Strings(regiesteredIds.IdList)
-	log.Info().Msgf("Registered Common Resources %d", len(regiesteredIds.IdList))
+	//log.Info().Msgf("Registered Common Resources %d", len(regiesteredIds.IdList))
 
-	log.Info().Msgf("Verified all connections. Elapsed [%s]", elapsedVerifyConnections)
-	log.Info().Msgf("Lookup Spec List is complete. Elapsed [%s]", elapsedLookupSpecList)
-	log.Info().Msgf("Remove Duplicate Specs In SQL. Elapsed [%s]", elapsedRemoveDuplicateSpecsInSQL)
-	log.Info().Msgf("Updated the registered Specs according to the asset file. Elapsed [%s]", elapsedUpdateSpec)
-	log.Info().Msgf("Updated the registered Images according to the asset file. Elapsed [%s]", elapsedUpdateImg)
+	log.Info().Msgf("Fetched Spec List. Elapsed [%s]", elapsedFetchSpec)
+	log.Info().Msgf("Updated Spec List. Elapsed [%s]", elapsedUpdateSpec)
+	log.Info().Msgf("Fetched Image List. Elapsed [%s]", elapsedFetchImg)
+	log.Info().Msgf("Updated Image List. Elapsed [%s]", elapsedUpdateImg)
 
 	// FetchPriceForAllConnConfigs is called to update the prices of all specs
 	log.Info().Msgf("FetchPriceForAllConnConfigs is called to update the prices of all specs")
@@ -1768,7 +1429,7 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 		}
 	}
 	if sliceIndex == -1 {
-		err := fmt.Errorf("Cannot find the connection config: %s", connectionName)
+		err := fmt.Errorf("cannot find the connection config: %s", connectionName)
 		log.Error().Err(err).Msg("Failed to CreateSharedResource")
 		return err
 	}

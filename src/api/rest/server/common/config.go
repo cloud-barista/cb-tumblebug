@@ -188,11 +188,11 @@ func RestGetRequest(c echo.Context) error {
 // @Tags [Admin] API Request Management
 // @Accept  json
 // @Produce  json
-// @Param status query string false "Filter by request status (Handling, Error, Success)"
-// @Param method query string false "Filter by HTTP method (GET, POST, etc.)"
+// @Param status query string false "Filter by request status (Handling, Error, Success)" Enums(Handling, Error, Success) default()
+// @Param method query string false "Filter by HTTP method (GET, POST, PUT, DELETE, etc.)" Enums(GET, POST, PUT, DELETE) default()
 // @Param url query string false "Filter by request URL"
 // @Param time query string false "Filter by time in minutes from now (to get recent requests)"
-// @Param savefile query string false "Option to save the results to a file (set 'true' to activate)"
+// @Param savefile query string false "Option to save the results to a file (set 'true' to activate)" Enums(true,false) default(false)
 // @Success 200 {object} map[string][]clientManager.RequestDetails
 // @Router /requests [get]
 func RestGetAllRequests(c echo.Context) error {
@@ -222,24 +222,47 @@ func RestGetAllRequests(c echo.Context) error {
 		return true
 	})
 
-	// Option to save the result to a file
+	// Option to save the filtered results to a file
 	if c.QueryParam("savefile") == "true" {
 		cbTumblebugRoot := os.Getenv("TB_ROOT_PATH")
-		logPath := filepath.Join(cbTumblebugRoot, "log", "request_log_"+time.Now().Format("20060102_150405")+".log")
+		logPath := filepath.Join(cbTumblebugRoot, "log", "request_log_"+time.Now().Format("20060102_150405")+".json")
 		file, err := os.Create(logPath)
 		if err != nil {
 			return SendMessage(c, http.StatusInternalServerError, "Failed to create log file")
 		}
 		defer file.Close()
 
-		// Write each request detail in a new line
-		for _, detail := range allRequests {
-			jsonLine, _ := json.Marshal(detail)
+		// Write filtered results as formatted JSON array
+		file.WriteString("[\n")
+		for i, detail := range allRequests {
+			// Use MarshalIndent for pretty-printed JSON
+			jsonLine, err := json.MarshalIndent(detail, "  ", "  ")
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to marshal request detail")
+				continue
+			}
+
 			file.Write(jsonLine)
+
+			// Add comma except for the last item
+			if i < len(allRequests)-1 {
+				file.WriteString(",")
+			}
 			file.WriteString("\n")
 		}
+		file.WriteString("]\n")
+
+		log.Info().Msgf("Filtered request log saved to: %s", logPath)
+
+		// Return only the file path when savefile is requested
+		return Send(c, http.StatusOK, map[string]interface{}{
+			"message":   "Filtered requests saved successfully",
+			"file_path": logPath,
+			"count":     len(allRequests),
+		})
 	}
 
+	// Return the filtered requests data when savefile is not requested
 	return Send(c, http.StatusOK, map[string][]clientManager.RequestDetails{"requests": allRequests})
 }
 

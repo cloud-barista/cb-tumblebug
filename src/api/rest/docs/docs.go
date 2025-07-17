@@ -854,11 +854,22 @@ const docTemplate = `{
                 ],
                 "summary": "Fetch specs from CSPs and register them in the system.",
                 "operationId": "FetchSpecs",
-                "responses": {
-                    "200": {
-                        "description": "OK",
+                "parameters": [
+                    {
+                        "description": "Fetch option",
+                        "name": "fetchOption",
+                        "in": "body",
+                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
+                            "$ref": "#/definitions/model.SpecFetchOption"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/resource.FetchSpecsAsyncResult"
                         }
                     },
                     "404": {
@@ -10758,14 +10769,27 @@ const docTemplate = `{
                 "operationId": "GetAllRequests",
                 "parameters": [
                     {
+                        "enum": [
+                            "Handling",
+                            "Error",
+                            "Success"
+                        ],
                         "type": "string",
+                        "default": "",
                         "description": "Filter by request status (Handling, Error, Success)",
                         "name": "status",
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            "GET",
+                            "POST",
+                            "PUT",
+                            "DELETE"
+                        ],
                         "type": "string",
-                        "description": "Filter by HTTP method (GET, POST, etc.)",
+                        "default": "",
+                        "description": "Filter by HTTP method (GET, POST, PUT, DELETE, etc.)",
                         "name": "method",
                         "in": "query"
                     },
@@ -10782,7 +10806,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            "true",
+                            "false"
+                        ],
                         "type": "string",
+                        "default": "false",
                         "description": "Option to save the results to a file (set 'true' to activate)",
                         "name": "savefile",
                         "in": "query"
@@ -12001,6 +12030,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "acceleratorType": {
+                    "type": "string"
+                },
+                "architecture": {
                     "type": "string"
                 },
                 "connectionName": {
@@ -13741,6 +13773,32 @@ const docTemplate = `{
                 },
                 "sites": {
                     "$ref": "#/definitions/model.sites"
+                }
+            }
+        },
+        "model.SpecFetchOption": {
+            "type": "object",
+            "properties": {
+                "excludedProviders": {
+                    "description": "providers need to be excluded from the spec fetching operation (ex: [\"azure\"])",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "azure"
+                    ]
+                },
+                "regionAgnosticProviders": {
+                    "description": "providers that are not region-specific (ex: [\"gcp\"])",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "gcp",
+                        "tencent"
+                    ]
                 }
             }
         },
@@ -17418,6 +17476,35 @@ const docTemplate = `{
                 }
             }
         },
+        "resource.ConnectionSpecResult": {
+            "type": "object",
+            "properties": {
+                "connName": {
+                    "type": "string"
+                },
+                "elapsedTime": {
+                    "type": "string"
+                },
+                "errorMsg": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "specCount": {
+                    "type": "integer"
+                },
+                "startTime": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
         "resource.FetchImagesAsyncResult": {
             "type": "object",
             "properties": {
@@ -17443,6 +17530,44 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/resource.ConnectionImageResult"
+                    }
+                },
+                "startTime": {
+                    "type": "string"
+                },
+                "succeedRegions": {
+                    "type": "integer"
+                },
+                "totalRegions": {
+                    "type": "integer"
+                }
+            }
+        },
+        "resource.FetchSpecsAsyncResult": {
+            "type": "object",
+            "properties": {
+                "elapsedTime": {
+                    "type": "string"
+                },
+                "failedRegions": {
+                    "type": "integer"
+                },
+                "fetchOption": {
+                    "$ref": "#/definitions/model.SpecFetchOption"
+                },
+                "inProgress": {
+                    "type": "boolean"
+                },
+                "namespaceId": {
+                    "type": "string"
+                },
+                "registeredSpecs": {
+                    "type": "integer"
+                },
+                "resultInDetail": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.ConnectionSpecResult"
                     }
                 },
                 "startTime": {

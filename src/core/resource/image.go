@@ -744,7 +744,7 @@ func fetchImagesForAllConnConfigsInternal(nsId string, option *model.ImageFetchO
 
 		// Skip excluded providers
 		if slices.Contains(option.ExcludedProviders, provider) {
-			log.Info().Msgf("[%s] Skipping excluded provider: %s", nsId, provider)
+			log.Debug().Msgf("[%s] Skipping excluded provider: %s", nsId, provider)
 			continue
 		}
 
@@ -783,7 +783,7 @@ func fetchImagesForAllConnConfigsInternal(nsId string, option *model.ImageFetchO
 				// Check if the provider is region-agnostic
 				if slices.Contains(option.RegionAgnosticProviders, provider) {
 					if regionAgnosticProcessed {
-						log.Warn().Msgf("[%s] Skipping region for provider %s (%d/%d)",
+						log.Debug().Msgf("[%s] Skipping region for provider %s (%d/%d)",
 							nsId, provider, i+1, len(connConfigList))
 						continue
 					}

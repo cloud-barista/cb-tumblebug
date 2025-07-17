@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -274,8 +275,25 @@ type ProgressInfo struct {
 // ExtractRequestInfo extracts necessary information from http.Request
 func ExtractRequestInfo(r *http.Request) RequestInfo {
 	headerInfo := make(map[string]string)
+
+	// Headers to ignore
+	ignorePatterns := []string{
+		"Accept", "Authorization", "Connection", "Referer",
+		"Sec-", "User-Agent",
+	}
+
 	for name, headers := range r.Header {
-		headerInfo[name] = headers[0]
+		shouldIgnore := false
+		for _, pattern := range ignorePatterns {
+			if strings.HasPrefix(name, pattern) {
+				shouldIgnore = true
+				break
+			}
+		}
+
+		if !shouldIgnore {
+			headerInfo[name] = headers[0]
+		}
 	}
 
 	//var bodyString string
