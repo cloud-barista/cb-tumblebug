@@ -39,7 +39,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 
-	restServer "github.com/cloud-barista/cb-tumblebug/src/api/rest/server"
+	restServer "github.com/cloud-barista/cb-tumblebug/src/interface/rest/server"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

@@ -18,103 +18,142 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-49-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-## CB-TB? ✨
+## What is CB-Tumblebug? ✨
 
-CB-Tumblebug (CB-TB for short) is a system for managing multi-cloud infrastructure consisting of resources from multiple cloud service providers. (Cloud-Barista)
+**CB-Tumblebug (CB-TB)** is an advanced **multi-cloud infrastructure management system** that enables seamless provisioning, management, and orchestration of resources across multiple cloud service providers. Part of the Cloud-Barista project, CB-TB abstracts the complexity of multi-cloud environments into a unified, intuitive interface.
 
-- [Overview](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Overview), [Features](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Features), [Architecture](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Architecture)
-- [Supported Cloud Providers and Resource Types](https://docs.google.com/spreadsheets/d/1idBoaTxEMzuVACKUIMIE9OY1rPO-7yZ0y7Rs1dBG0og/edit?usp=sharing)
-  ![image](https://github.com/user-attachments/assets/7c3a5961-ffbe-4ed1-bc50-f3f445417a96)
-  - This is for reference only, and we do not guarantee its functionality. Regular updates are made.
-  - The support for Kubernetes is currently mostly a WIP, and even when available, it offers only a limited set of features.
+### 🎯 Key Capabilities
+- **🌐 Multi-Cloud Orchestration**: Manage AWS, Azure, GCP, Alibaba Cloud, and more from a single platform
+- **⚡ Auto-provisioning**: Intelligent resource recommendations and automated deployment
+- **🔐 Secure Operations**: Encrypted credential management and hybrid encryption protocols
+- **🗺️ Visual Infrastructure Map**: Interactive GUI for infrastructure visualization and management  
+- **🤖 AI-Powered Management**: NEW! Control infrastructure using natural language via our MCP Server
+
+### 📚 Documentation & Resources
+- [📖 Overview](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Overview) | [✨ Features](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Features) | [🏗️ Architecture](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Architecture)
+- [☁️ Supported Cloud Providers & Resources](https://docs.google.com/spreadsheets/d/1idBoaTxEMzuVACKUIMIE9OY1rPO-7yZ0y7Rs1dBG0og/edit?usp=sharing)
+
+  ![Multi-Cloud Support Matrix](https://github.com/user-attachments/assets/7c3a5961-ffbe-4ed1-bc50-f3f445417a96)
+  
+  > 📌 **Note**: Reference only - functionality not guaranteed. Regular updates are made.  
+  > Kubernetes support is currently WIP with limited features available.
 
 ---
 
 <details>
-<summary>Note: Ongoing Development of CB-Tumblebug </summary>
+<summary>📋 Development Status & Contributing Notes</summary>
 
-```
+### 🚧 Ongoing Development 
 CB-TB has not reached version 1.0 yet. We welcome any new suggestions, issues, opinions, and contributors!
 Please note that the functionalities of Cloud-Barista are not yet stable or secure.
 Be cautious if you plan to use the current release in a production environment.
 If you encounter any difficulties using Cloud-Barista,
 please let us know by opening an issue or joining the Cloud-Barista Slack.
-```
 
-</details>
-
-<details>
-<summary>Note: Localization and Globalization of CB-Tumblebug </summary>
-    
-```
+### 🌍 Localization & Globalization
 As an open-source project initiated by Korean members,
 we aim to encourage participation from Korean contributors during the initial stages of this project.
 Therefore, the CB-TB repository will accept the use of the Korean language in its early stages.
 However, we hope this project will thrive regardless of contributors' countries in the long run.
 To facilitate this, the maintainers recommend using English at least for
 the titles of Issues, Pull Requests, and Commits, while accommodating local languages in the contents.
-```
 
 </details>
 
-### Popular Use Case 🌟
+### 🌟 Featured Use Cases
 
- - **Deploy a Multi-Cloud Infra with GPUs and Enjoy muiltple LLMs in parallel (YouTube)**
-   [![Multi-Cloud LLMs in parallel](https://github.com/cloud-barista/cb-tumblebug/assets/5966944/e15feb67-ba02-4066-af62-d9f8e8330a63)](https://www.youtube.com/watch?v=SD9ZoT_OZpQ)
- - [LLM-related scripts](https://github.com/cloud-barista/cb-tumblebug/tree/main/scripts/usecases/llm)
+**🤖 NEW: AI-Powered Multi-Cloud Management**
+- Control CB-Tumblebug through AI assistants like Claude and VS Code
+- Natural language interface for infrastructure provisioning and management
+- [📖 MCP Server Guide](src/interface/mcp/README.md) | [🚀 Quick Start](src/interface/mcp/README.md#-quick-start-with-docker-compose-recommended)
 
-
----
-
-## Index 🔗
-
-1. [Prerequisites](#prerequisites-)
-1. [How to Run](#how-to-run-)
-1. [How to Use](#how-to-use-cb-tb-features-)
-1. [How to Build](#how-to-build-%EF%B8%8F)
-1. [How to Contribute](#how-to-contribute-)
-
----
-
-## Prerequisites 🌍
-
-### Environment
-
-- Linux (recommend: `Ubuntu 22.04`)
-- Docker and Docker Compose 
-- Golang (recommend: `v1.23.0`) to build the source
-
-### Minimum Hardware Requirements
-
-To run CB-Tumblebug and all related components reliably, the following hardware specifications are recommended:
-
-| Component | Minimum Spec |
-|-----------|--------------|
-| vCPU      | 4 cores or more |
-| Memory    | 6 GiB or more |
-| Disk      | 20 GiB or more free space |
-| Example   | AWS `c5a.xlarge` instance (4 vCPU, 8 GiB RAM) with `Ubuntu 22.04` |
-
-> ⚠️ Lower specs may cause failure in initialization or performance degradation due to limited resources.
-
----
-
-### Dependency
-
-Open source packages used in this project
-
-- [Dependencies](https://github.com/cloud-barista/cb-tumblebug/network/dependencies)
-- [SBOM](https://github.com/cloud-barista/cb-tumblebug/dependency-graph/sbom)
+**🎮 GPU-Powered Multi-Cloud LLM Deployment**
+[![Multi-Cloud LLMs in parallel](https://github.com/cloud-barista/cb-tumblebug/assets/5966944/e15feb67-ba02-4066-af62-d9f8e8330a63)](https://www.youtube.com/watch?v=SD9ZoT_OZpQ)
+- Deploy GPU instances across multiple clouds for AI/ML workloads
+- [🧠 LLM Scripts & Examples](https://github.com/cloud-barista/cb-tumblebug/tree/main/scripts/usecases/llm)
 
 
 ---
 
-## How to Run 🚀
+## Table of Contents �
 
-### 🧪 Quick Start (from the installaztion script)
+1. [⚡ Quick Start](#quick-start-)
+2. [🔧 Prerequisites](#prerequisites-)
+3. [🚀 Installation & Setup](#installation--setup-)
+4. [🌟 How to Use](#how-to-use-cb-tb-features-)
+5. [🛠️ Development](#development-%EF%B8%8F)
+6. [🤝 Contributing](#how-to-contribute-)
 
-If you're using a clean Linux machine (e.g., AWS EC2), 
-you can quickly set up all required environments and clone CB-TB using the automated script:
+---
+
+## Quick Start ⚡
+
+Get CB-Tumblebug running in under 5 minutes:
+
+```bash
+# 1. Automated setup (recommended for new users)
+curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/set-tb.sh | bash
+
+# 2. Start all services
+cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+make compose
+
+# 3. Configure credentials (see detailed setup below)
+./init/genCredential.sh
+# Edit ~/.cloud-barista/credentials.yaml with your cloud credentials
+./init/encCredential.sh
+./init/init.sh
+
+# 4. Access services
+# - API: http://localhost:1323/tumblebug/api
+# - MapUI: http://localhost:1324
+# - MCP Server: http://localhost:8000/sse (if enabled)
+```
+
+> 💡 **New to CB-Tumblebug?** Follow the [detailed setup guide](#installation--setup-) below for comprehensive instructions.
+
+---
+
+## Prerequisites 🔧
+
+### System Requirements
+
+| Component | Minimum Specification | Recommended |
+|-----------|----------------------|-------------|
+| **OS** | Linux (Ubuntu 22.04+) | Ubuntu 22.04 LTS |
+| **CPU** | 4 cores | 8+ cores |
+| **Memory** | 6 GiB | 16+ GiB |
+| **Storage** | 20 GiB free space | 50+ GiB SSD |
+| **Example** | AWS `c5a.xlarge` | AWS `c5a.2xlarge` |
+
+> ⚠️ **Performance Note**: Lower specifications may cause initialization failures or performance degradation.
+
+### Required Software
+
+- **Docker & Docker Compose** (latest stable)
+- **Go 1.23.0+** (for building from source)
+- **Git** (for cloning repository)
+
+### Dependencies & Security
+
+- 📦 [View Dependencies](https://github.com/cloud-barista/cb-tumblebug/network/dependencies)
+- 🛡️ [Software Bill of Materials (SBOM)](https://github.com/cloud-barista/cb-tumblebug/dependency-graph/sbom)
+
+
+---
+
+## Installation & Setup 🚀
+
+### Option 1: Automated Setup (Recommended)
+
+For new users on clean Linux systems:
+
+```bash
+# Download and run automated setup script
+curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/set-tb.sh | bash
+```
+
+> ℹ️ **Post-installation**: Log out and back in to activate Docker permissions and aliases.
 - https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/set-tb.sh
 
 ```bash
@@ -328,45 +367,108 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
 ## How to Use CB-TB Features 🌟
 
-1. [Using CB-TB MapUI](#using-cb-tb-mapui) (recommended)
-2. [Using CB-TB REST API](#using-cb-tb-rest-api) (recommended)
-3. [Using CB-TB Test Scripts](#using-cb-tb-scripts)
+1. [🤖 Using CB-TB MCP Server (AI Assistant Interface)](#using-cb-tb-mcp-server) (NEW!)
+2. [Using CB-TB MapUI](#using-cb-tb-mapui) (recommended)
+3. [Using CB-TB REST API](#using-cb-tb-rest-api) (recommended)
 
-### Using CB-TB MapUI
+### Using CB-TB MCP Server
 
-- With CB-MapUI, you can create, view, and control Mutli-Cloud infra.
-  - [CB-MapUI](https://github.com/cloud-barista/cb-mapui) is a project to visualize the deployment of MCI in a map GUI.
-  - CB-MapUI also run with CB-Tumblebug by default (edit `dockercompose.yaml` to disable)
-    - If you run the CB-MapUI container using the CB-TB script, excute
-      ```bash
-      cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-      ./scripts/runMapUI.sh
-      ```
-  - Access via web browser at http://{HostIP}:1324
-    ![image](https://github.com/cloud-barista/cb-mapui/assets/5966944/2423fbcd-0fdb-4511-85e2-488ba15ae8c0)
+**🚀 NEW: Control CB-Tumblebug with AI assistants like Claude!**
+
+The Model Context Protocol (MCP) Server enables natural language interaction with CB-Tumblebug through AI assistants:
+
+- **🧠 AI-Powered Infrastructure Management**: Deploy and manage multi-cloud resources using natural language commands
+- **🔗 Seamless Integration**: Works with Claude Desktop, VS Code, and other MCP-compatible clients  
+- **⚡ Quick Start**: Enable with `make compose` and uncomment MCP service in `docker-compose.yaml`
+
+```bash
+# Enable MCP Server (Proof of Concept)
+# 1. Uncomment cb-tumblebug-mcp-server in docker-compose.yaml
+# 2. Launch with Docker Compose
+make compose
+
+# Access MCP server at http://localhost:8000/sse
+```
+
+**📖 [Complete MCP Server Guide →](src/interface/mcp/README.md)**
+
+⚠️ **Note**: MCP Server is a Proof of Concept. Review code thoroughly before production use.
 
 ---
 
-### Using CB-TB REST API
+### Using CB-TB MapUI 🗺️
 
-- Access to REST API dashboard
+**Visual Infrastructure Management with Interactive Maps**
 
-  - http://[IP]:1323/tumblebug/api
-    - Upsteam online API document: [![Swagger API Doc](https://img.shields.io/badge/API%20Doc-Swagger-brightgreen)](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml)
-  - REST API AUTH
+CB-MapUI provides an intuitive, map-based interface for managing multi-cloud infrastructure:
 
-    CB-TB API is encoded with `basic access authentication` by default. (not fully secured yet!)
+- **🗺️ Geographic Visualization**: See your infrastructure deployed across the globe
+- **📊 Real-time Monitoring**: Monitor resource status and performance  
+- **🎮 Interactive Control**: Create, manage, and control resources visually
+- **🌐 Multi-Cloud View**: Unified view across all cloud providers
 
-    You need to encode the `Username` and `Password` entered during server startup in Base64 and include it in the API header.
+```bash
+# Access CB-MapUI (auto-started with Docker Compose)
+open http://localhost:1324
 
-- [A guide to quickly create a Multi-Cloud Infra](https://github.com/cloud-barista/cb-tumblebug/discussions/1570)
+# Or run standalone MapUI container
+./scripts/runMapUI.sh
+```
 
-- Using individual APIs
-  - Create resources required for VM provisioning by using Resource(multi-cloud infrastructure resources) management APIs
-    - [Create VM spec object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Spec%20management/post_ns__nsId__resources_spec)
-    - [Create VM image object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Image%20management/post_ns__nsId__resources_image)
-    - [Create network object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Network%20management/post_ns__nsId__resources_vNet)
-    - [Create security group object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Security%20group%20management/post_ns__nsId__resources_securityGroup)
+![CB-MapUI Interface](https://github.com/cloud-barista/cb-mapui/assets/5966944/2423fbcd-0fdb-4511-85e2-488ba15ae8c0)
+
+**Features:**
+- Drag-and-drop resource creation
+- Real-time infrastructure mapping
+- Cross-cloud resource relationships
+- Performance metrics overlay
+
+> 📖 **Learn More**: [CB-MapUI Repository](https://github.com/cloud-barista/cb-mapui)
+
+---
+
+### Using CB-TB REST API 🔌
+
+**Programmatic Multi-Cloud Infrastructure Management**
+
+CB-Tumblebug provides a comprehensive REST API for automated infrastructure management:
+
+**🌐 API Dashboard & Documentation**
+- **Interactive API Explorer**: [http://localhost:1323/tumblebug/api](http://localhost:1323/tumblebug/api)
+- **Live Documentation**: [![Swagger API Doc](https://img.shields.io/badge/API%20Doc-Swagger-brightgreen)](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml)
+
+**🔐 Authentication**
+CB-TB uses Basic Authentication (development phase - not production-ready):
+```bash
+# Include base64 encoded credentials in request headers
+Authorization: Basic <base64(username:password)>
+```
+
+**🚀 Quick Infrastructure Creation**
+Following the [Quick MCI Creation Guide](https://github.com/cloud-barista/cb-tumblebug/discussions/1570):
+
+```bash
+# 1. Create VM specification
+curl -X POST "http://localhost:1323/tumblebug/ns/default/resources/spec" \
+  -H "Authorization: Basic <credentials>" \
+  -d '{"name": "web-spec", "connectionName": "aws-ap-northeast-2"}'
+
+# 2. Create VM image  
+curl -X POST "http://localhost:1323/tumblebug/ns/default/resources/image" \
+  -H "Authorization: Basic <credentials>" \
+  -d '{"name": "ubuntu-image", "connectionName": "aws-ap-northeast-2"}'
+
+# 3. Create Multi-Cloud Infrastructure
+curl -X POST "http://localhost:1323/tumblebug/ns/default/mci" \
+  -H "Authorization: Basic <credentials>" \
+  -d @mci-config.json
+```
+
+**🛠️ Core API Categories**
+- **Infrastructure Resources**: VM specs, images, networks, security groups
+- **Multi-Cloud Infrastructure (MCI)**: Provision and manage distributed infrastructure
+- **Monitoring & Control**: Performance metrics, scaling, lifecycle management
+- **Credentials & Connections**: Secure cloud provider configuration
     - [Create access key object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Access%20key%20management/post_ns__nsId__resources_sshKey)
   - Create, view, control, execute remote commands, shut down, and delete MCI using the MCI(multi-cloud infrastructure service) management APIs
     - [Create MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/post_ns__nsId__mci)
@@ -375,156 +477,6 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     - [Terminate and Delete MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/delete_ns__nsId__mci__mciId_)
   - CB-TB optimal and dynamic provisioning
     - [CB-TB optimal and dynamic provisioning](https://github.com/cloud-barista/cb-tumblebug/wiki/Dynamic-and-optimal-mci-provisioning-guide)
-
----
-
-### Using CB-TB Scripts
-
-[`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/) provides Bash shell-based scripts that simplify and automate the MCI (MC-Infra) provisioning procedures, which require complex steps.
-
-<details>
-<summary>[Note] Details </summary>
-  
-- Step 1: [Setup Test Environment](#setup-test-environment)
-- Step 2: [Integrated Tests](#integrated-tests)
-
-
-#### Setup Test Environment
-
-1. Go to [`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/tree/main/src/testclient/scripts)
-2. Configure [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env)
-   - Provide basic test information such as CB-Spider and CB-TB server endpoints, cloud regions, test image names, test spec names, etc.
-   - Much information for various cloud types has already been investigated and input, so it can be used without modification. (However, check for charges based on the specified spec)
-     - How to modify test VM image: [`IMAGE_NAME[$IX,$IY]=ami-061eb2b23f9f8839c`](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/conf.env#L49)
-     - How to modify test VM spec: [`SPEC_NAME[$IX,$IY]=m4.4xlarge`](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/conf.env#L50)
-3. Configure [`testSet.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/testSet.env)
-   - Set the cloud and region configurations to be used for MCI provisioning in a file (you can change the existing `testSet.env` or copy and use it)
-   - Specify the types of CSPs to combine
-     - Change the number in [NumCSP=](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/testSet.env#L9) to specify the total number of CSPs to combine
-     - Specify the types of CSPs to combine by rearranging the lines in [L15-L24](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/testSet.env#L15) (use up to the number specified in NumCSP)
-     - Example: To combine aws and alibaba, change [NumCSP=2](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/testSet.env#L9) and rearrange `IndexAWS=$((++IX))`, `IndexAlibaba=$((++IX))`
-   - Specify the regions of the CSPs to combine
-     - Go to each CSP setting item [`# AWS (Total: 21 Regions)`](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/testSet.env#L44)
-     - Specify the number of regions to configure in `NumRegion[$IndexAWS]=2` (in the example, it is set to 2)
-     - Set the desired regions by rearranging the lines of the region list (if `NumRegion[$IndexAWS]=2`, the top 2 listed regions will be selected)
-   - **Be aware!**
-     - Be aware that creating VMs on public CSPs such as AWS, GCP, Azure, etc. may incur charges.
-     - With the default setting of [`testSet.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/testSet.env), TestClouds (`TestCloud01`, `TestCloud02`, `TestCloud03`) will be used to create mock VMs.
-     - `TestCloud01`, `TestCloud02`, `TestCloud03` are not real CSPs. They are used for testing purposes (do not support SSH into VM).
-     - Anyway, please be aware of cloud usage costs when using public CSPs.
-
-#### Integrated Tests
-
-- You can test the entire process at once by executing `create-all.sh` and `clean-all.sh` included in `src/testclient/scripts/sequentialFullTest/`
-
-  ```bash
-  └── sequentialFullTest # Automatic testing from cloud information registration to NS creation, Resource creation, and MCI creation
-      ├── check-test-config.sh # Check the multi-cloud infrastructure configuration specified in the current testSet
-      ├── create-all.sh # Automatic testing from cloud information registration to NS creation, Resource creation, and MCI creation
-      ├── gen-sshKey.sh # Generate SSH key files to access MCI
-      ├── command-mci.sh # Execute remote commands on the created MCI (multiple VMs)
-      ├── deploy-nginx-mci.sh # Automatically deploy Nginx on the created MCI (multiple VMs)
-      ├── create-mci-for-df.sh # Create MCI for hosting CB-Dragonfly
-      ├── deploy-dragonfly-docker.sh # Automatically deploy CB-Dragonfly on MCI and set up the environment
-      ├── clean-all.sh # Delete all objects in reverse order of creation
-      ├── create-k8scluster-only.sh # Create a K8s cluster for the multi-cloud infrastructure specified in the testSet
-      ├── get-k8scluster.sh # Get each K8s cluster information for the multi-cloud infrastructure specified in the testSet
-      ├── clean-k8scluster-only.sh # Delete each K8s cluster for the multi-cloud infrastructure specified in the testSet
-      ├── force-clean-k8scluster-only.sh # Force delete each K8s cluster for the multi-cloud infrastructure specified in the testSet if deletion fails
-      ├── add-k8snodegroup.sh # Add a new K8s node group to each K8s cluster
-      ├── remove-k8snodegroup.sh # Delete the new K8s node group in each K8s cluster
-      ├── set-k8snodegroup-autoscaling.sh # Change the autoscaling setting of teach K8s node group to off
-      ├── change-k8snodegroup-autoscalesize.sh # Change the autoscale size of each K8s node group
-      ├── deploy-weavescope-to-k8scluster.sh # Deploy weavescope to each K8s cluster
-      ├── deploy-nginx-with-pvc-to-k8scluster.sh # Deploy nginx to each K8s cluster
-      ├── undeploy-nginx-with-pvc-to-k8scluster.sh # Undeploy nginx from each K8s cluster
-      ├── upgrade-k8scluster.sh # Upgrade each K8s cluster
-      └── executionStatus # Logs of the tests performed (information is added when testAll is executed and removed when cleanAll is executed. You can check the ongoing tasks)
-  ```
-
-- MCI Creation Test
-
-  - `./create-all.sh -n shson -f ../testSetCustom.env` # Create MCI with the cloud combination configured in ../testSetCustom.env
-  - Automatically proceed with the process to check the MCI creation configuration specified in `../testSetCustom.env`
-  - Example of execution result
-
-    ```bash
-    Table: All VMs in the MCI : cb-shson
-
-    ID              Status   PublicIP       PrivateIP      CloudType  CloudRegion     CreatedTime
-    --              ------   --------       ---------      ---------  -----------     -----------
-    aws-ap-southeast-1-0   Running  xx.250.xx.73   192.168.2.180  aws        ap-southeast-1  2021-09-17   14:59:30
-    aws-ca-central-1-0   Running  x.97.xx.230    192.168.4.98   aws        ca-central-1    2021-09-17   14:59:58
-    gcp-asia-east1-0  Running  xx.229.xxx.26  192.168.3.2    gcp        asia-east1      2021-09-17   14:59:42
-
-    [DATE: 17/09/2021 15:00:00] [ElapsedTime: 49s (0m:49s)] [Command: ./create-mci-only.sh all 1 shson ../testSetCustom.env 1]
-
-    [Executed Command List]
-    [Resource:aws-ap-southeast-1(28s)] create-resource-ns-cloud.sh (Resource) aws 1 shson ../testSetCustom.env
-    [Resource:aws-ca-central-1(34s)] create-resource-ns-cloud.sh (Resource) aws 2 shson ../testSetCustom.env
-    [Resource:gcp-asia-east1(93s)] create-resource-ns-cloud.sh (Resource) gcp 1 shson ../testSetCustom.env
-    [MCI:cb-shsonvm4(19s+More)] create-mci-only.sh (MCI) all 1 shson ../testSetCustom.env
-
-    [DATE: 17/09/2021 15:00:00] [ElapsedTime: 149s (2m:29s)] [Command: ./create-all.sh -n shson -f ../testSetCustom.env -x 1]
-    ```
-
-- MCI Removal Test (Use the input parameters used in creation for deletion)
-
-  - `./clean-all.sh -n shson -f ../testSetCustom.env` # Perform removal of created resources according to `../testSetCustom.env`
-  - **Be aware!**
-    - If you created MCI (VMs) for testing in public clouds, the VMs may incur charges.
-    - You need to terminate MCI by using `clean-all` to avoid unexpected billing.
-    - Anyway, please be aware of cloud usage costs when using public CSPs.
-
-- Generate MCI SSH access keys and access each VM
-
-  - `./gen-sshKey.sh -n shson -f ../testSetCustom.env` # Return access keys for all VMs configured in MCI
-  - Example of execution result
-
-    ```bash
-    ...
-    [GENERATED PRIVATE KEY (PEM, PPK)]
-    [MCI INFO: mc-shson]
-     [VMIP]: 13.212.254.59   [MCIID]: mc-shson   [VMID]: aws-ap-southeast-1-0
-     ./sshkey-tmp/aws-ap-southeast-1-shson.pem
-     ./sshkey-tmp/aws-ap-southeast-1-shson.ppk
-     ...
-
-    [SSH COMMAND EXAMPLE]
-     [VMIP]: 13.212.254.59   [MCIID]: mc-shson   [VMID]: aws-ap-southeast-1-0
-     ssh -i ./sshkey-tmp/aws-ap-southeast-1-shson.pem cb-user@13.212.254.59 -o StrictHostKeyChecking=no
-     ...
-     [VMIP]: 35.182.30.37   [MCIID]: mc-shson   [VMID]: aws-ca-central-1-0
-     ssh -i ./sshkey-tmp/aws-ca-central-1-shson.pem cb-user@35.182.30.37 -o StrictHostKeyChecking=no
-    ```
-
-- Verify MCI via SSH remote command execution
-
-  - `./command-mci.sh -n shson -f ../testSetCustom.env` # Execute IP and hostname retrieval for all VMs in MCI
-
-- K8s Cluster Test
-
-  ```bash
-  ./create-resource-ns-cloud.sh -n tb -f ../testSet.env # Create Resource required for K8s cluster creation
-  ./create-k8scluster-only.sh -n tb -f ../testSet.env -x 1 -z 1 # Create a K8s cluster to specified CSPs (-x maximum number of nodes, -z additional name for K8s node group and K8s cluster)
-  ./get-k8scluster.sh -n tb -f ../testSet.env -z 1 # Get each K8s cluster information
-  ./add-k8snodegroup.sh -n tb -f ../testSet.env -x 1 -z 1 # Add a new K8s node group to each K8s cluster
-  ./change-k8snodegroup-autoscalesize.sh -n tb -f ../testSet.env -x 1 -z 1 # Change the autoscale size of each K8s node group
-  ./deploy-weavescope-to-k8scluster.sh -n tb -f ../testSet.env -y n # Deploy weavescope to each K8s cluster with loadbalancer
-  # Register a default storageclass (kubectl apply -f ./ebs-sc.yaml for AWS or ./cinder-sc.yaml for NHNCloud)
-  # Update storage size in nginx-with-pvc.yaml (1GB to 20GB for Alibaba, 10GB for Tencent)
-  ./deploy-nginx-with-pvc-to-k8scluster.sh -n tb -f ../testSet.env -y n # Deploy nginx with pvc to each K8s cluster
-  ./undeploy-nginx-with-pvc-to-k8scluster.sh -n tb -f ../testSet.env -y n # Undeploy nginx with pvc from each K8s cluster
-  ./upgrade-k8scluster.sh -n tb -f ../testSet.env -x 1 -z 1 # Upgrade each K8s cluster
-  ./set-k8snodegroup-autoscaling.sh -n tb -f ../testSet.env -z 1 # Change the autoscaling setting of each new K8s node group to off
-  ./remove-k8snodegroup.sh -n tb -f ../testSet.env -z 1 # Delete each new K8s node group
-  ./clean-k8scluster-only.sh -n tb -f ../testSet.env -z 1 # Delete each K8s cluster
-  ./force-clean-k8scluster-only.sh -n tb -f ../testSet.env -z 1 # Force delete each K8s cluster if deletion fails
-  ./clean-resource-ns-cloud.h -n tb -f ../testSet.env # Delete the related Resources
-  ```
-
-
-</details>
 
 ---
 

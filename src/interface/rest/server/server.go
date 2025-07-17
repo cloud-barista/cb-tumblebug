@@ -30,16 +30,16 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/cloud-barista/cb-tumblebug/src/api/rest/docs"
-	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/auth"
+	"github.com/cloud-barista/cb-tumblebug/src/interface/rest/docs"
+	"github.com/cloud-barista/cb-tumblebug/src/interface/rest/server/auth"
 
-	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
-	rest_label "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common/label"
-	rest_infra "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/infra"
-	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares"
-	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares/authmw"
-	rest_resource "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/resource"
-	rest_netutil "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/util"
+	rest_common "github.com/cloud-barista/cb-tumblebug/src/interface/rest/server/common"
+	rest_label "github.com/cloud-barista/cb-tumblebug/src/interface/rest/server/common/label"
+	rest_infra "github.com/cloud-barista/cb-tumblebug/src/interface/rest/server/infra"
+	"github.com/cloud-barista/cb-tumblebug/src/interface/rest/server/middlewares"
+	"github.com/cloud-barista/cb-tumblebug/src/interface/rest/server/middlewares/authmw"
+	rest_resource "github.com/cloud-barista/cb-tumblebug/src/interface/rest/server/resource"
+	rest_netutil "github.com/cloud-barista/cb-tumblebug/src/interface/rest/server/util"
 
 	"crypto/subtle"
 	"fmt"
@@ -52,7 +52,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	// echo-swagger middleware
-	_ "github.com/cloud-barista/cb-tumblebug/src/api/rest/docs"
+	_ "github.com/cloud-barista/cb-tumblebug/src/interface/rest/docs"
 	echoSwagger "github.com/swaggo/echo-swagger"
 )
 

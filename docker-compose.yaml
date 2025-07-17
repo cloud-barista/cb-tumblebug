@@ -232,6 +232,27 @@ services:
     #   retries: 3
     #   start_period: 10s
 
+  # TB-MCP (Tumblebug Model Context Protocol Server)
+  # This provides MCP interface for CB-Tumblebug to work with AI assistants like Claude
+  cb-tumblebug-mcp-server:
+    build:
+      context: ./src/interface/mcp
+      dockerfile: Dockerfile
+    container_name: cb-tumblebug-mcp-server
+    networks:
+      - internal_network
+      - external_network
+    ports:
+      - "8000:8000"
+    environment:
+      # TB-MCP Configuration
+      - TUMBLEBUG_API_BASE_URL=http://cb-tumblebug:1323/tumblebug
+      - TUMBLEBUG_USERNAME=default
+      - TUMBLEBUG_PASSWORD=default
+      - PYTHONUNBUFFERED=1
+      - MCP_SERVER_HOST=0.0.0.0
+      - MCP_SERVER_PORT=8000
+
   # # mc-terrarium (PoC): resource extentions such as VPN for CB-Tumblebug by using OpenTofu
   # mc-terrarium:
   #   image: cloudbaristaorg/mc-terrarium:0.0.22
@@ -289,7 +310,7 @@ services:
   #     - 1325:8080
   #   volumes:
   #     # cb-tumblebug swagger.yaml mount
-  #     - ./src/api/rest/docs/swagger.yaml:/swagger.yaml
+  #     - ./src/interface/rest/docs/swagger.yaml:/swagger.yaml
   #   environment:
   #     # Options: https://github.com/swagger-api/swagger-ui/blob/37b8c1a8b67200dd425216ab8f97b725a429a5c0/docs/usage/configuration.md#docker
   #     - SWAGGER_JSON=/swagger.yaml
