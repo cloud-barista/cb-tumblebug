@@ -70,3 +70,12 @@ log/
 
 # .env file for docker-compose
 .env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.uv
+uv.lock
