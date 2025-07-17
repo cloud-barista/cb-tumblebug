@@ -5,7 +5,7 @@ on:
       - main
     paths:
       - 'src/core/**/**.go'
-      - 'src/api/rest/server/**/**.go'
+      - 'src/interface/rest/server/**/**.go'
 jobs:
   update-swagger-doc:
     name: Update Swagger doc
@@ -38,12 +38,12 @@ jobs:
       # - name: Commit generated Swagger docs
       #   uses: stefanzweifel/git-auto-commit-action@v4
       #   with:
-      #     file_pattern: src/api/rest/docs/**
+      #     file_pattern: src/interface/rest/docs/**
       #     commit_message: Update Swagger docs
 
       - name: Force-Add Swagger doc files
         run: |
-          cd src/api/rest/docs/
+          cd src/interface/rest/docs/
           git add -f -v docs.go swagger.json swagger.yaml
 
       - name: Create Pull Request
