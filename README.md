@@ -6,7 +6,7 @@
 [![Repo Size](https://img.shields.io/github/repo-size/cloud-barista/cb-tumblebug)](#)
 [![GoDoc](https://godoc.org/github.com/cloud-barista/cb-tumblebug?status.svg)](https://pkg.go.dev/github.com/cloud-barista/cb-tumblebug@main)
 [![Codebase](https://img.shields.io/badge/Visual-Codebase-blue)](https://mango-dune-07a8b7110.1.azurestaticapps.net/?repo=cloud-barista%2Fcb-tumblebug)
-[![Swagger API Doc](https://img.shields.io/badge/API%20Doc-Swagger-brightgreen)](https://cloud-barista.github.io/api/?url=https://converter.swagger.io/api/convert?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.json#/)
+[![Swagger API Doc](https://img.shields.io/badge/API%20Doc-Swagger-brightgreen)](https://cloud-barista.github.io/api/?url=https://converter.swagger.io/api/convert?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.json#/)
 
 [![License](https://img.shields.io/github/license/cloud-barista/cb-tumblebug?color=blue)](https://github.com/cloud-barista/cb-tumblebug/blob/main/LICENSE)
 [![Release Version](https://img.shields.io/github/v/release/cloud-barista/cb-tumblebug?color=blue)](https://github.com/cloud-barista/cb-tumblebug/releases/latest)
@@ -435,7 +435,7 @@ CB-Tumblebug provides a comprehensive REST API for automated infrastructure mana
 
 **🌐 API Dashboard & Documentation**
 - **Interactive API Explorer**: [http://localhost:1323/tumblebug/api](http://localhost:1323/tumblebug/api)
-- **Live Documentation**: [![Swagger API Doc](https://img.shields.io/badge/API%20Doc-Swagger-brightgreen)](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml)
+- **Live Documentation**: [![Swagger API Doc](https://img.shields.io/badge/API%20Doc-Swagger-brightgreen)](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml)
 
 **🔐 Authentication**
 CB-TB uses Basic Authentication (development phase - not production-ready):
@@ -469,12 +469,12 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/mci" \
 - **Multi-Cloud Infrastructure (MCI)**: Provision and manage distributed infrastructure
 - **Monitoring & Control**: Performance metrics, scaling, lifecycle management
 - **Credentials & Connections**: Secure cloud provider configuration
-    - [Create access key object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Access%20key%20management/post_ns__nsId__resources_sshKey)
+    - [Create access key object](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20Resource%20Access%20key%20management/post_ns__nsId__resources_sshKey)
   - Create, view, control, execute remote commands, shut down, and delete MCI using the MCI(multi-cloud infrastructure service) management APIs
-    - [Create MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/post_ns__nsId__mci)
-    - [MCI remote command](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Remote%20command/post_ns__nsId__cmd_mci__mciId_)
-    - [View and control MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/get_ns__nsId__mci__mciId_)
-    - [Terminate and Delete MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/delete_ns__nsId__mci__mciId_)
+    - [Create MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/post_ns__nsId__mci)
+    - [MCI remote command](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Remote%20command/post_ns__nsId__cmd_mci__mciId_)
+    - [View and control MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/get_ns__nsId__mci__mciId_)
+    - [Terminate and Delete MCI](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/interface/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCI%20Provisioning%20management/delete_ns__nsId__mci__mciId_)
   - CB-TB optimal and dynamic provisioning
     - [CB-TB optimal and dynamic provisioning](https://github.com/cloud-barista/cb-tumblebug/wiki/Dynamic-and-optimal-mci-provisioning-guide)
 
@@ -568,7 +568,7 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/mci" \
 
   **Note** To update the Swagger API documentation, run `make swag`
 
-  - API documentation file will be generated at `cb-tumblebug/src/api/rest/docs/swagger.yaml`
+  - API documentation file will be generated at `cb-tumblebug/src/interface/rest/docs/swagger.yaml`
   - API documentation can be viewed in a web browser at http://localhost:1323/tumblebug/api (provided when CB-TB is running)
   - Detailed information on [how to update the API](https://github.com/cloud-barista/cb-tumblebug/wiki/API-Document-Update)
 
