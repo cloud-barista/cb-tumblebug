@@ -1185,7 +1185,7 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 }
 
 // SearchImage returns a list of images based on the search criteria
-func SearchImage(nsId, providerName, regionName, osType, osArchitecture string, isGPUImage, isKubernetesImage, isRegisteredByAsset, includeDeprecatedImage *bool, keywords ...string) ([]model.TbImageInfo, int, error) {
+func SearchImage(nsId string, req model.SearchImageRequest) ([]model.TbImageInfo, int, error) {
 	err := common.CheckString(nsId)
 	cnt := 0
 	if err != nil {
@@ -1196,19 +1196,19 @@ func SearchImage(nsId, providerName, regionName, osType, osArchitecture string, 
 	var images []model.TbImageInfo
 	sqlQuery := model.ORM.Where("namespace = ?", nsId)
 
-	if providerName != "" {
-		sqlQuery = sqlQuery.Where("provider_name = ?", providerName)
+	if req.ProviderName != "" {
+		sqlQuery = sqlQuery.Where("provider_name = ?", req.ProviderName)
 	}
 
 	// regionName needs to be searched from region_list
-	if regionName != "" {
+	if req.RegionName != "" {
 		sqlQuery = sqlQuery.Where(
-			model.ORM.Where("LOWER(region_list) LIKE ?", "%"+strings.ToLower(regionName)+"%").
+			model.ORM.Where("LOWER(region_list) LIKE ?", "%"+strings.ToLower(req.RegionName)+"%").
 				Or("LOWER(region_list) LIKE ?", "%"+strings.ToLower(model.StrCommon)+"%"))
 	}
 
-	if osType != "" {
-		osTypeLower := strings.ToLower(osType)
+	if req.OSType != "" {
+		osTypeLower := strings.ToLower(req.OSType)
 		osKeywords := strings.Fields(osTypeLower)
 
 		if len(osKeywords) == 1 {
@@ -1224,48 +1224,49 @@ func SearchImage(nsId, providerName, regionName, osType, osArchitecture string, 
 		}
 	}
 
-	if osArchitecture != "" {
-		sqlQuery = sqlQuery.Where("LOWER(os_architecture) = ?", strings.ToLower(osArchitecture))
+	if req.OSArchitecture != "" {
+		sqlQuery = sqlQuery.Where("LOWER(os_architecture) = ?", strings.ToLower(string(req.OSArchitecture)))
 	}
 
-	if isGPUImage != nil {
-		sqlQuery = sqlQuery.Where("is_gpu_image = ?", *isGPUImage)
+	if req.IsGPUImage != nil {
+		sqlQuery = sqlQuery.Where("is_gpu_image = ?", *req.IsGPUImage)
 	}
 
-	if isKubernetesImage != nil {
-		sqlQuery = sqlQuery.Where("is_kubernetes_image = ?", *isKubernetesImage)
+	if req.IsKubernetesImage != nil {
+		sqlQuery = sqlQuery.Where("is_kubernetes_image = ?", *req.IsKubernetesImage)
 	}
 
 	// Check if isRegisteredByAsset is true
 	// If it is true, filter by system_label = StrFromAssets
-	if isRegisteredByAsset != nil {
-		if *isRegisteredByAsset {
+	if req.IsRegisteredByAsset != nil {
+		if *req.IsRegisteredByAsset {
 			sqlQuery = sqlQuery.Where("system_label = ?", model.StrFromAssets)
 		}
 	}
 
 	// Check if includeDeprecated is nil or false
-	if includeDeprecatedImage != nil {
-		if !*includeDeprecatedImage {
+	if req.IncludeDeprecatedImage != nil {
+		if !*req.IncludeDeprecatedImage {
 			sqlQuery = sqlQuery.Where("image_status != ?", model.ImageDeprecated)
 		}
 	} else {
 		sqlQuery = sqlQuery.Where("image_status != ?", model.ImageDeprecated)
 	}
 
-	if len(keywords) > 0 {
+	if len(req.DetailSearchKeys) > 0 {
 		// Build a single query to check if all keywords are included in either os_type or details
-		for _, keyword := range keywords {
+		for _, keyword := range req.DetailSearchKeys {
 			keyword = strings.ToLower(keyword)
 			sqlQuery = sqlQuery.Where("(LOWER(details) LIKE ?)", "%"+keyword+"%")
 		}
 	}
 
 	log.Info().Msgf("SearchImage: providerName=%s, regionName=%s, osType=%s, isGPUImage=%v, isKubernetesImage=%v, isRegisteredByAsset=%v, includeDeprecatedImage=%v",
-		providerName, regionName, osType, isGPUImage, isKubernetesImage, isRegisteredByAsset, includeDeprecatedImage)
+		req.ProviderName, req.RegionName, req.OSType, req.IsGPUImage, req.IsKubernetesImage, req.IsRegisteredByAsset, req.IncludeDeprecatedImage)
 
 	result := sqlQuery.Find(&images)
 	log.Info().Msgf("SearchImage: Found %d images for namespace %s", len(images), nsId)
+
 	if result.Error != nil {
 		log.Error().Err(result.Error).Msg("Failed to retrieve images")
 		return nil, cnt, result.Error
@@ -1495,18 +1496,15 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 		isRegisteredByAsset := true
 		includeDeprecatedImage := false
 
-		images, imageCnt, err := SearchImage(
-			model.SystemCommonNs,
-			providerName,
-			regionName,
-			imageIdentifier,
-			"",
-			nil,
-			nil,
-			&isRegisteredByAsset,
-			&includeDeprecatedImage,
-			"",
-		)
+		req := model.SearchImageRequest{
+			ProviderName:           providerName,
+			RegionName:             regionName,
+			OSType:                 imageIdentifier,
+			IsRegisteredByAsset:    &isRegisteredByAsset,
+			IncludeDeprecatedImage: &includeDeprecatedImage,
+		}
+
+		images, imageCnt, err := SearchImage(model.SystemCommonNs, req)
 		if err != nil || imageCnt == 0 {
 			log.Info().Err(result.Error).Msgf("Failed to get image %s by OS type", imageIdentifier)
 		} else {

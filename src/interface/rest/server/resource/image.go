@@ -373,18 +373,7 @@ func RestSearchImage(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, cnt, err := resource.SearchImage(
-		nsId,
-		u.ProviderName,
-		u.RegionName,
-		u.OSType,
-		string(u.OSArchitecture),
-		u.IsGPUImage,
-		u.IsKubernetesImage,
-		u.IsRegisteredByAsset,
-		u.IncludeDeprecatedImage,
-		u.DetailSearchKeys...,
-	)
+	content, cnt, err := resource.SearchImage(nsId, *u)
 
 	result := model.SearchImageResponse{}
 	result.ImageCount = cnt
