@@ -33,8 +33,8 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 			// log.Debug().Msgf("Request body: %s", string(reqBody))
 			// log.Debug().Msgf("Response body: %s", string(resBody))
 
-			// Dump the response body if content type is "application/json" or "application/json; charset=UTF-8"
-			if contentType == echo.MIMEApplicationJSONCharsetUTF8 || contentType == echo.MIMEApplicationJSON {
+			// Dump the response body if content type is "application/json"
+			if contentType == echo.MIMEApplicationJSON {
 				// Load or check the request by ID
 				v, ok := clientManager.RequestMap.Load(reqID)
 				if !ok {
@@ -80,7 +80,15 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 				if c.Response().Status >= 400 {
 					details.Status = "Error"
 					if data, ok := resData.(map[string]interface{}); ok {
-						details.ErrorResponse = data["message"].(string)
+						if message, exists := data["message"]; exists && message != nil {
+							if msgStr, ok := message.(string); ok {
+								details.ErrorResponse = msgStr
+							} else {
+								details.ErrorResponse = "Error response message is not a string"
+							}
+						} else {
+							details.ErrorResponse = "No error message found"
+						}
 					}
 				}
 
