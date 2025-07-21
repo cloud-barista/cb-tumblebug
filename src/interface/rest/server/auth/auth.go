@@ -3,6 +3,7 @@ package auth
 import (
 	"net/http"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
@@ -28,19 +29,91 @@ type AuthsInfo struct {
 // @Security Bearer
 func TestJWTAuth(c echo.Context) error {
 
-	auth := c.Get("authenticated").(bool)
-	token := c.Get("token").(string)
-	name := c.Get("name").(string)
-	role := c.Get("role").(string)
-	exp := c.Get("expired-time").(string)
+	// Check if values exist and handle type assertions safely
+	authVal := c.Get("authenticated")
+	if authVal == nil {
+		log.Error().Msg("authenticated value is nil")
+		msg := model.SimpleMsg{
+			Message: "authentication information not found",
+		}
+		return c.JSON(http.StatusUnauthorized, msg)
+	}
+	auth, ok := authVal.(bool)
+	if !ok {
+		log.Error().Msg("authenticated value is not a boolean")
+		msg := model.SimpleMsg{
+			Message: "invalid authentication data",
+		}
+		return c.JSON(http.StatusInternalServerError, msg)
+	}
 
-	log.Debug().
-		Bool("authenticated", auth).
-		Str("token", token).
-		Str("name", name).
-		Str("role", role).
-		Str("expired-time", exp).
-		Msg("TestJWTAuth")
+	tokenVal := c.Get("token")
+	if tokenVal == nil {
+		log.Error().Msg("token value is nil")
+		msg := model.SimpleMsg{
+			Message: "token information not found",
+		}
+		return c.JSON(http.StatusUnauthorized, msg)
+	}
+	token, ok := tokenVal.(string)
+	if !ok {
+		log.Error().Msg("token value is not a string")
+		msg := model.SimpleMsg{
+			Message: "invalid token data",
+		}
+		return c.JSON(http.StatusInternalServerError, msg)
+	}
+
+	nameVal := c.Get("name")
+	if nameVal == nil {
+		log.Error().Msg("name value is nil")
+		msg := model.SimpleMsg{
+			Message: "name information not found",
+		}
+		return c.JSON(http.StatusUnauthorized, msg)
+	}
+	name, ok := nameVal.(string)
+	if !ok {
+		log.Error().Msg("name value is not a string")
+		msg := model.SimpleMsg{
+			Message: "invalid name data",
+		}
+		return c.JSON(http.StatusInternalServerError, msg)
+	}
+
+	roleVal := c.Get("role")
+	if roleVal == nil {
+		log.Error().Msg("role value is nil")
+		msg := model.SimpleMsg{
+			Message: "role information not found",
+		}
+		return c.JSON(http.StatusUnauthorized, msg)
+	}
+	role, ok := roleVal.(string)
+	if !ok {
+		log.Error().Msg("role value is not a string")
+		msg := model.SimpleMsg{
+			Message: "invalid role data",
+		}
+		return c.JSON(http.StatusInternalServerError, msg)
+	}
+
+	expVal := c.Get("expired-time")
+	if expVal == nil {
+		log.Error().Msg("expired-time value is nil")
+		msg := model.SimpleMsg{
+			Message: "expiration information not found",
+		}
+		return c.JSON(http.StatusUnauthorized, msg)
+	}
+	exp, ok := expVal.(string)
+	if !ok {
+		log.Error().Msg("expired-time value is not a string")
+		msg := model.SimpleMsg{
+			Message: "invalid expiration data",
+		}
+		return c.JSON(http.StatusInternalServerError, msg)
+	}
 
 	res := &AuthsInfo{
 		Authenticated: auth,
