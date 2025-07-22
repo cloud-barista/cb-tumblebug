@@ -1339,7 +1339,7 @@ func LoadAssets() (*model.IdList, error) {
 		log.Error().Err(err).Msg("FetchImagesForAllConnConfigs failed")
 	}
 	elapsedFetchSpec := time.Since(startTime)
-	log.Debug().Msgf("resultFetchSpecsForAllConnConfigs: %+v elapsed: [%s]", resultFetchSpecsForAllConnConfigs, elapsedFetchSpec)
+	log.Debug().Msgf("resultFetchSpecsForAllConnConfigs.RegisteredSpecs: %+v elapsed: [%s]", resultFetchSpecsForAllConnConfigs.RegisteredSpecs, elapsedFetchSpec)
 
 	startTime = time.Now()
 	err = UpdateSpecsFromAsset(model.SystemCommonNs)
@@ -1359,7 +1359,7 @@ func LoadAssets() (*model.IdList, error) {
 		log.Error().Err(err).Msg("FetchImagesForAllConnConfigs failed")
 	}
 	elapsedFetchImg := time.Since(startTime)
-	log.Debug().Msgf("resultFetchImagesForAllConnConfigs: %+v elapsed: [%s]", resultFetchImagesForAllConnConfigs, elapsedFetchImg)
+	log.Debug().Msgf("resultFetchImagesForAllConnConfigs.RegisteredImages: %+v elapsed: [%s]", resultFetchImagesForAllConnConfigs.RegisteredImages, elapsedFetchImg)
 
 	startTime = time.Now()
 	resultUpdateImagesFromAsset, err := UpdateImagesFromAsset(model.SystemCommonNs)

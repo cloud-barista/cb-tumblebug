@@ -1308,13 +1308,13 @@ func FetchPriceForConnConfig(config model.ConnConfig) error {
 
 	// Perform batch update if we have data to update
 	if len(batchUpdates) > 0 {
-		updateCount, err := BulkUpdateSpec(model.SystemCommonNs, batchUpdates)
+		_, err := BulkUpdateSpec(model.SystemCommonNs, batchUpdates)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to batch update specs for %s", config.ConfigName)
 			batchUpdates = nil
 			return err
 		}
-		log.Debug().Msgf("Successfully updated %d specs for %s", updateCount, config.ConfigName)
+		// log.Debug().Msgf("Successfully updated %d specs for %s", updateCount, config.ConfigName)
 	}
 
 	// Clear the batch map to help GC
