@@ -3,7 +3,7 @@
 # These owners will be the default owners for everything in this repo.
 # @jihoon-seo is the emeritus maintainer, and we are deeply grateful for his invaluable contributions over the years
 # They will be requested for review when someone opens a pull request.
-*       @seokho-son @yunkon-kim @sykim-etri
+*       @seokho-son @yunkon-kim
 
 # These subderectory owners own any files in the .github/
 # directory which includes github workflows.
