@@ -1,79 +1,16 @@
 providerName,regionName,cspImageName,osType,description,supportedInstance,infraType
-AWS,ap-southeast-1,ami-061eb2b23f9f8839c,Ubuntu 18.04,,,vm
-AWS,ap-northeast-1,ami-06b060f6dd92163e3,Ubuntu 20.04,Ubuntu Server 20.04 LTS (HVM) with SQL Server 2022 Standard,,vm
-AWS,ap-southeast-1,ami-02ee763250491e04a,Ubuntu 22.04,,,vm
-AWS,ap-southeast-1,ami-0d55f20871d03244b,Debian 10,,,vm
-AWS,ca-central-1,ami-0d0eaed20348a3389,Ubuntu 18.04,,,vm
-AWS,ca-central-1,ami-0163eef3f762a1e37,Ubuntu 20.04,Ubuntu Server 20.04 LTS (HVM) with SQL Server 2022 Standard,,vm
-AWS,ca-central-1,ami-0b6937ac543fe96d7,Ubuntu 22.04,,,vm
-AWS,ca-central-1,ami-0b572790c607396bb,Debian 10,,,vm
-AWS,us-west-1,ami-0dd655843c87b6930,Ubuntu 18.04,,,vm
-AWS,us-west-1,ami-0710bb577045071ff,Ubuntu 20.04,Ubuntu Server 20.04 LTS (HVM) with SQL Server 2022 Standard,,vm
-AWS,us-west-1,ami-085284d24fe829cd0,Ubuntu 22.04,,,vm
-AWS,us-west-1,ami-0a2a0146cce54add1,Debian 10,,,vm
-AWS,us-east-1,ami-085925f297f89fce1,Ubuntu 18.04,,,vm
-AWS,us-east-1,ami-032346ab877c418af,Ubuntu 20.04,Ubuntu Server 20.04 LTS (HVM) with SQL Server 2022 Standard,,vm
-AWS,us-east-1,ami-052efd3df9dad4825,Ubuntu 22.04,,,vm
-AWS,us-east-1,ami-0e3370550517d663c,Debian 10,,,vm
-AWS,ap-northeast-1,ami-0cd744adeca97abb1,Ubuntu 18.04,,,vm
-AWS,ap-northeast-1,ami-08eec9ed020969fb6,Ubuntu 20.04,Ubuntu Server 20.04 LTS (HVM) with SQL Server 2022 Standard,,vm
-AWS,ap-northeast-1,ami-07200fa04af91f087,Ubuntu 22.04,,,vm
-AWS,ap-northeast-1,ami-039ed92b1a75d78cc,Debian 10,,,vm
-AWS,ap-northeast-1,ami-0bded5720a0796acb,Ubuntu 20.04,Deep Learning OSS Nvidia Driver AMI GPU TensorFlow 2.15 (Ubuntu 20.04) 20240423,G4dn G5 G6 Gr6 P4 P4de P5,vm
-AWS,ap-south-1,ami-0123b531fc646552f,Ubuntu 18.04,,,vm
-AWS,ap-south-1,ami-0b2ec65899cc867ef,Ubuntu 20.04,Ubuntu Server 20.04 LTS (HVM) with SQL Server 2022 Standard,,vm
-AWS,ap-south-1,ami-068257025f72f470d,Ubuntu 22.04,,,vm
-AWS,ap-south-1,ami-01c4fc7cb18b931d3,Debian 10,,,vm
-AWS,ap-southeast-2,ami-00a54827eb7ffcd3c,Ubuntu 18.04,,,vm
-AWS,ap-southeast-2,ami-090c5c0d13f82b2a1,Ubuntu 20.04,Ubuntu Server 20.04 LTS (HVM) with SQL Server 2022 Standard,,vm
-AWS,ap-southeast-2,ami-0e040c48614ad1327,Ubuntu 22.04,,,vm
-AWS,eu-west-2,ami-0be057a22c63962cb,Ubuntu 18.04,,,vm
-AWS,eu-west-2,ami-0cf5d174a5c8791f1,Ubuntu 20.04,Ubuntu Server 20.04 LTS (HVM) with SQL Server 2022 Standard,,vm
-AWS,eu-west-2,ami-0fb391cce7a602d1f,Ubuntu 22.04,,,vm
-AWS,us-east-2,ami-01e7ca2ef94a0ae86,Ubuntu 18.04,,,vm
-AWS,us-east-2,ami-094be4c7f1e506a7a,Ubuntu 20.04,Ubuntu Server 20.04 LTS (HVM) with SQL Server 2022 Standard,,vm
-AWS,us-east-2,ami-02f3416038bdb17fb,Ubuntu 22.04,,,vm
-AWS,us-east-2,ami-0ad87058f66b00409,Debian 10,,,vm
-AWS,us-east-2,ami-028faa7f1b7384e6e,Ubuntu 20.04,Deep Learning OSS Nvidia Driver AMI GPU TensorFlow 2.15 (Ubuntu 20.04) 20240423,G4dn G5 G6 Gr6 P4 P4de P5,vm
-AWS,us-west-2,ami-02701bcdc5509e57b,Ubuntu 18.04,,,vm
-AWS,us-west-2,ami-0d70546e43a941d70,Ubuntu 22.04,,,vm
-AWS,ap-northeast-3,ami-0e958e6a9363c29ad,Ubuntu 18.04,,,vm
-AWS,ap-northeast-3,ami-096d800410995ae84,Ubuntu 22.04,,,vm
-AWS,eu-central-1,ami-0e0102e3ff768559b,Ubuntu 18.04,,,vm
-AWS,eu-central-1,ami-065deacbcaac64cf2,Ubuntu 22.04,,,vm
-AWS,eu-west-1,ami-06fd78dc2f0b69910,Ubuntu 18.04,,,vm
-AWS,eu-west-1,ami-0d75513e7706cf2d9,Ubuntu 22.04,,,vm
-AWS,eu-west-3,ami-0a0d71ff90f62f72a,Ubuntu 18.04,,,vm
-AWS,eu-west-3,ami-09e513e9eacab10c1,Ubuntu 22.04,,,vm
-AWS,eu-north-1,ami-0f269726c071d0e96,Ubuntu 18.04,,,vm
-AWS,eu-north-1,ami-0440e5026412ff23f,Ubuntu 22.04,,,vm
-AWS,sa-east-1,ami-0bd91caaa9bc42cf3,Ubuntu 18.04,,,vm
-AWS,sa-east-1,ami-08ae71fd7f1449df1,Ubuntu 22.04,,,vm
 AWS,ap-northeast-2,ami-00379ec40a3e30f87,Ubuntu 18.04,,,vm
 AWS,ap-northeast-2,ami-08b2c3a9f2695e351,Ubuntu 20.04,Ubuntu Server 20.04 LTS (HVM) with SQL Server 2022 Standard,,vm
 AWS,ap-northeast-2,ami-058165de3b7202099,Ubuntu 22.04,,,vm
-AWS,ap-east-1,ami-036915aa0cb1d91a1,Ubuntu 18.04,,,vm
-AWS,ap-east-1,ami-0ecb6d8435affe2b6,Ubuntu 22.04,,,vm
-AWS,me-south-1,ami-026dde872642a6ffe,Ubuntu 18.04,,,vm
-AWS,me-south-1,ami-0c9b2924fcd9b73a4,Ubuntu 22.04,,,vm
-AWS,me-south-1,ami-08ca9d63b8d4ec276,Debian 10,,,vm
-AWS,af-south-1,ami-0e4b4778694305983,Ubuntu 18.04,,,vm
-AWS,af-south-1,ami-080bc3824e96f9b8d,Ubuntu 22.04,,,vm
-AWS,eu-south-1,ami-0f274cb646afd3475,Ubuntu 18.04,,,vm
-AWS,eu-south-1,ami-0fdd5958b81f36e68,Ubuntu 22.04,,,vm
 AZURE,all,Canonical:0001-com-ubuntu-server-focal:20_04-lts:20.04.202505200,Ubuntu 20.04,,,vm
 AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210,Ubuntu 22.04,,,vm
 AZURE,all,Debian:debian-11:11:0.20250528.2126,Debian 10,,,vm
 AZURE,all,Debian:debian-10:10:0.20240430.1733,Debian 11,,,vm
 AZURE,all,MicrosoftWindowsServer:WindowsServer:2019-Datacenter:17763.7322.250524,Windows 2019,,,vm
 GCP,all,https://www.googleapis.com/compute/v1/projects/deeplearning-platform-release/global/images/tf-2-15-cu121-v20240417-debian-11,Debian 11,"Google, Deep Learning VM for TensorFlow 2.15 with CUDA 12.1, M120, Debian 11, Python 3.10, with TensorFlow 2.15 for CUDA 12.1 with Intel MKL-DNN preinstalled",,vm
-ALIBABA,all,ubuntu_18_04_x64_20G_alibase_20240223.vhd,Ubuntu 18.04,,,vm
-ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20250415.vhd,Ubuntu 20.04,,,vm
-ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20250415.vhd,Ubuntu 22.04,,,vm
 ALIBABA,all,aliyun_3_x64_20G_alibase_20250117.vhd,Alibaba Cloud Linux 3.2104,,,vm|k8s
 TENCENT,all,img-pi0ii46r,Ubuntu 18.04,,,vm|k8s
 TENCENT,all,img-22trbn9x,Ubuntu 20.04,,,vm|k8s
-TENCENT,all,img-487zeit5,Ubuntu 22.04,,,vm
 NHNCLOUD,KR1,b7bd50d9-bdc2-460d-8b6a-358436ae3897,Ubuntu 20.04,Ubuntu Server 20.04.6 LTS (2024.05.21),,vm
 NHNCLOUD,KR1,280399f1-af96-41b7-b13b-2fae3752e97f,Ubuntu 22.04,Ubuntu Server 22.04.4 LTS (2024.05.21),,vm
 NHNCLOUD,KR1,62202a6a-5de2-4e13-8461-351f4a93a664,Ubuntu 20.04 Container,Ubuntu Server 20.04.6 LTS - Container (2025.02.25),,k8s

@@ -19,9 +19,40 @@ import yaml
 import json
 import requests
 import shutil
+import re
 
 
 nominatim_base_url = 'https://nominatim.openstreetmap.org/search'
+
+# Azure regions that DO NOT support VM creation (mostly disaster recovery regions)
+AZURE_NON_VM_REGIONS = {
+    'australiacentral2',
+    'brazilsoutheast', 
+    'francesouth',
+    'germanynorth',
+    'norwaywest',
+    'southafricawest',
+    'switzerlandwest',
+    'uaecentral',
+    'jioindiacentral',
+    'brazilus',
+    'eastus2euap',
+    'eastusstg',
+    'centraluseuap',
+}
+
+# Azure regions that DO support VM creation (primary regions)
+AZURE_VM_REGIONS = {
+    'australiacentral', 'australiaeast', 'australiasoutheast', 'brazilsouth', 'canadacentral', 
+    'canadaeast', 'centralindia', 'centralus', 'eastasia', 'eastus2', 'eastus', 'francecentral', 
+    'germanywestcentral', 'japaneast', 'japanwest', 'jioindiawest', 'koreacentral', 'koreasouth', 
+    'northcentralus', 'northeurope', 'norwayeast', 'southafricanorth', 'southcentralus', 
+    'southindia', 'southeastasia', 'swedencentral', 'switzerlandnorth', 'uaenorth', 'uksouth', 
+    'ukwest', 'westcentralus', 'westeurope', 'westindia', 'westus2', 'westus3', 'westus', 
+    'qatarcentral', 'israelcentral', 'polandcentral', 'italynorth', 'spaincentral', 
+    'mexicocentral', 'austriaeast', 'chilecentral', 'malaysiawest', 'newzealandnorth', 
+    'indonesiacentral'
+}
 
 csp_commands = {
     'aws': {
@@ -42,7 +73,6 @@ csp_connection_names = {
     'ibm': 'ibm-us-east',
     'alibaba': 'alibaba-us-east-1',
     'tencent': 'tencent-ap-singapore',
-    'ncp': 'ncp-kr',
     'ncpvpc': 'ncpvpc-kr',
     'ktcloudvpc': 'ktcloudvpc-kr1',
     'nhncloud': 'nhncloud-kr1'
@@ -159,6 +189,139 @@ def fetch_region_description(region_name):
 
     return description
 
+# Write YAML with Azure non-VM regions commented out
+def write_yaml_with_azure_comments(cloud_info, output_file_path):
+    """
+    Write YAML file with Azure non-VM regions commented out.
+    Modifies description field and maintains original indentation.
+    """
+    try:
+        # First, modify the cloud_info to add disaster recovery info to descriptions
+        if 'azure' in cloud_info.get('cloud', {}):
+            azure_regions = cloud_info['cloud']['azure']['region']
+            for region_name in azure_regions:
+                if region_name in AZURE_NON_VM_REGIONS:
+                    # Add disaster recovery info to description (keep it short to avoid line breaks)
+                    current_desc = azure_regions[region_name].get('description', region_name)
+                    azure_regions[region_name]['description'] = f"{current_desc} - DR region (No VM support)"
+        
+        # Write YAML
+        with open(output_file_path, 'w') as file:
+            yaml.dump(cloud_info, file, default_flow_style=False, sort_keys=False)
+        
+        # Read the file and comment out Azure non-VM regions
+        with open(output_file_path, 'r') as file:
+            content = file.read()
+        
+        modified_lines = content.split('\n')
+        
+        # Process Azure regions that don't support VM creation
+        if 'azure' in cloud_info.get('cloud', {}):
+            lines = content.split('\n')
+            modified_lines = []
+            in_azure_region = False
+            in_non_vm_region = False
+            current_region = None
+            region_indent = 0
+            
+            for line in lines:
+                # Check if we're in Azure section
+                if re.match(r'^  azure:', line):
+                    in_azure_region = True
+                    modified_lines.append(line)
+                    continue
+                    
+                # Check if we've left Azure section
+                if in_azure_region and re.match(r'^  \w+:', line) and not re.match(r'^    ', line):
+                    in_azure_region = False
+                    in_non_vm_region = False
+                    
+                # If we're in Azure region section
+                if in_azure_region and re.match(r'^      \w+:', line):
+                    # Extract region name
+                    region_match = re.match(r'^( +)(\w+):', line)
+                    if region_match:
+                        region_indent = len(region_match.group(1))
+                        current_region = region_match.group(2)
+                        
+                        # Check if this region should be commented
+                        if current_region in AZURE_NON_VM_REGIONS:
+                            in_non_vm_region = True
+                            # Comment out the region line maintaining original indentation
+                            modified_lines.append(f"      # {current_region}:")
+                        else:
+                            in_non_vm_region = False
+                            modified_lines.append(line)
+                    else:
+                        modified_lines.append(line)
+                        
+                # If we're in a non-VM region, comment out all lines but preserve exact indentation
+                elif in_non_vm_region and line.startswith(' ' * region_indent):
+                    if line.strip():  # Only process non-empty lines
+                        # Add # and space at the very beginning, preserving all original spaces
+                        modified_lines.append(f"      #{line[6:]}")
+                    else:
+                        modified_lines.append('')  # Keep empty lines as is
+                    
+                # Check if we've left the current region
+                elif in_non_vm_region and line.strip() and not line.startswith(' ' * region_indent):
+                    in_non_vm_region = False
+                    modified_lines.append(line)
+                    
+                else:
+                    modified_lines.append(line)
+        
+        # Write modified content back
+        with open(output_file_path, 'w') as file:
+            file.write('\n'.join(modified_lines))
+        
+        # Add header comment to the file
+        add_header_comment(output_file_path)
+                
+    except IOError as e:
+        print(f"Error writing to file {output_file_path}: {e}")
+
+def add_header_comment(file_path):
+    """
+    Add header comment to the beginning of the YAML file
+    """
+    header_comment = """# Configuration for Cloud Service Providers (CSPs)
+# This file is used to define the CSPs and their regions.
+
+# The file is in YAML format and contains the following fields:
+# cloud: Top level key
+#   <csp>: Name of the CSP
+#     description: Description of the CSP
+#     driver: Name of the driver library file (a prepared CB-Spider Driver)
+#     link: 
+#     -URLs to the official documentation of the CSP
+#     region: List of regions
+#       <region>:
+#         description: Description of the region
+#         location: Location details of the region
+#           display: Display name
+#           latitude: Latitude
+#           longitude: Longitude
+#         zone: List of availability zones in the region
+#           <zone>:
+#           - <ID/Name of the availability zon>
+
+# Note: Special regions not supporting VM provisioning are disabled. Enable them by removing the comment.
+
+"""
+    
+    try:
+        # Read existing content
+        with open(file_path, 'r') as file:
+            content = file.read()
+        
+        # Write header + content
+        with open(file_path, 'w') as file:
+            file.write(header_comment + content)
+            
+    except IOError as e:
+        print(f"Error adding header comment to {file_path}: {e}")
+        
 # Compare and update the cloudinfo.yaml file with the latest data
 def compare_and_update_yaml(cloud_info, output_file_path, region_zones):
     current_regions_and_zones = region_zones
@@ -179,7 +342,14 @@ def compare_and_update_yaml(cloud_info, output_file_path, region_zones):
 
         print()
         print(f"- Missing regions: {missing_regions_msg}")
-        print(f"- Obsoleted regions: {extra_regions_msg}\n\n") 
+        print(f"- Obsoleted regions: {extra_regions_msg}")
+        
+        # Azure specific: show non-VM regions
+        if csp == 'azure':
+            non_vm_regions = current_csp_regions & AZURE_NON_VM_REGIONS
+            if non_vm_regions:
+                print(f"- Non-VM regions (will be commented): {', '.join(non_vm_regions)}")
+        print("\n")
 
         for region in current_csp_regions:
             if region in missing_in_file:
@@ -200,11 +370,8 @@ def compare_and_update_yaml(cloud_info, output_file_path, region_zones):
                 print(f"Updated zones for region: {region}")
                 print(f"Zones: {', '.join(current_regions_and_zones[csp][region])}\n")
 
-    try:
-        with open(output_file_path, 'w') as file:
-            yaml.dump(cloud_info, file, default_flow_style=False, sort_keys=False)
-    except IOError as e:
-        print(f"Error writing to file {output_file_path}: {e}")
+    # Write YAML with Azure non-VM regions commented out
+    write_yaml_with_azure_comments(cloud_info, output_file_path)
 
 # Run git diff to show the changes in the updated file
 def run_git_diff(original_file, updated_file):

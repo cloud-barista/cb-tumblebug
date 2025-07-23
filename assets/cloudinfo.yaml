@@ -19,6 +19,8 @@
 #           <zone>:
 #           - <ID/Name of the availability zon>
 
+# Note: Special regions not supporting VM provisioning are disabled. Enable them by removing the comment.
+
 cloud:
   alibaba:
     description: Alibaba Cloud
@@ -45,6 +47,7 @@ cloud:
           longitude: 126.78
         zone:
         - ap-northeast-2a
+        - ap-northeast-2b
       ap-south-1:
         description: Mumbai
         location:
@@ -82,6 +85,7 @@ cloud:
         zone:
         - ap-southeast-3a
         - ap-southeast-3b
+        - ap-southeast-3c
       ap-southeast-5:
         description: Indonesia (Jakarta)
         location:
@@ -199,6 +203,7 @@ cloud:
         - cn-shanghai-l
         - cn-shanghai-m
         - cn-shanghai-n
+        - cn-shanghai-o
       cn-shenzhen:
         description: China (Shenzhen)
         location:
@@ -294,6 +299,7 @@ cloud:
           longitude: 100.4935089
         zone:
         - ap-southeast-7a
+        - ap-southeast-7b
       cn-nanjing:
         description: China (Nanjing - Local Region)
         location:
@@ -326,6 +332,14 @@ cloud:
           longitude: 114.2999353
         zone:
         - cn-wuhan-lr-a
+      na-south-1:
+        desc: Mexico
+        location:
+          display: Mexico City, Mexico
+          latitude: 19.4326
+          longitude: -99.1332
+        zone:
+        - na-south-1a
   aws:
     description: Amazon Web Services
     driver: aws-driver-v1.0.so
@@ -638,13 +652,13 @@ cloud:
           latitude: -35.3075
           longitude: 149.1244
         zone: []
-      australiacentral2:
-        description: Australia Central 2
-        location:
-          display: Australia Central 2
-          latitude: -35.3085
-          longitude: 149.1254
-        zone: []
+      # australiacentral2:
+      #  description: Australia Central 2 - DR region (No VM support)
+      #  location:
+      #    display: Australia Central 2
+      #    latitude: -35.3085
+      #    longitude: 149.1254
+      #  zone: []
       australiaeast:
         description: Australia East
         location:
@@ -749,20 +763,20 @@ cloud:
         - '1'
         - '2'
         - '3'
-      francesouth:
-        description: France South
-        location:
-          display: France South
-          latitude: 43.8345
-          longitude: 2.1972
-        zone: []
-      germanynorth:
-        description: Germany North
-        location:
-          display: Germany North
-          latitude: 53.0736
-          longitude: 8.8064
-        zone: []
+      # francesouth:
+      #  description: France South - DR region (No VM support)
+      #  location:
+      #    display: France South
+      #    latitude: 43.8345
+      #    longitude: 2.1972
+      #  zone: []
+      # germanynorth:
+      #  description: Germany North - DR region (No VM support)
+      #  location:
+      #    display: Germany North
+      #    latitude: 53.0736
+      #    longitude: 8.8064
+      #  zone: []
       germanywestcentral:
         description: Germany West Central
         location:
@@ -789,7 +803,10 @@ cloud:
           display: Japan West
           latitude: 34.6939
           longitude: 135.5022
-        zone: []
+        zone:
+        - '1'
+        - '2'
+        - '3'
       koreacentral:
         description: Korea Central
         location:
@@ -834,13 +851,13 @@ cloud:
         - '1'
         - '2'
         - '3'
-      norwaywest:
-        description: Norway West
-        location:
-          display: Norway West
-          latitude: 58.97
-          longitude: 5.7331
-        zone: []
+      # norwaywest:
+      #  description: Norway West - DR region (No VM support)
+      #  location:
+      #    display: Norway West
+      #    latitude: 58.97
+      #    longitude: 5.7331
+      #  zone: []
       southafricanorth:
         description: South Africa North
         location:
@@ -851,13 +868,13 @@ cloud:
         - '1'
         - '2'
         - '3'
-      southafricawest:
-        description: South Africa West
-        location:
-          display: South Africa West
-          latitude: -34.0757
-          longitude: 18.8433
-        zone: []
+      # southafricawest:
+      #  description: South Africa West - DR region (No VM support)
+      #  location:
+      #    display: South Africa West
+      #    latitude: -34.0757
+      #    longitude: 18.8433
+      #  zone: []
       southcentralus:
         description: South Central US
         location:
@@ -895,20 +912,20 @@ cloud:
         - '1'
         - '2'
         - '3'
-      switzerlandwest:
-        description: Switzerland West
-        location:
-          display: Switzerland West
-          latitude: 46.2044
-          longitude: 6.1432
-        zone: []
-      uaecentral:
-        description: UAE Central
-        location:
-          display: UAE Central
-          latitude: 24.4667
-          longitude: 54.3667
-        zone: []
+      # switzerlandwest:
+      #  description: Switzerland West - DR region (No VM support)
+      #  location:
+      #    display: Switzerland West
+      #    latitude: 46.2044
+      #    longitude: 6.1432
+      #  zone: []
+      # uaecentral:
+      #  description: UAE Central - DR region (No VM support)
+      #  location:
+      #    display: UAE Central
+      #    latitude: 24.4667
+      #    longitude: 54.3667
+      #  zone: []
       uaenorth:
         description: UAE North
         location:
@@ -1024,13 +1041,13 @@ cloud:
         - '1'
         - '2'
         - '3'
-      brazilsoutheast:
-        description: brazil southeast
-        location:
-          display: brazil southeast
-          latitude: -22.4666667
-          longitude: -45
-        zone: []
+      # brazilsoutheast:
+      #  description: brazil southeast - DR region (No VM support)
+      #  location:
+      #    display: brazil southeast
+      #    latitude: -22.4666667
+      #    longitude: -45
+      #  zone: []
       jioindiawest:
         description: Jio India West
         location:
@@ -1105,6 +1122,56 @@ cloud:
           display: Mexico
           latitude: 20.588818
           longitude: -100.389888
+        zone:
+        - '1'
+        - '2'
+        - '3'
+      chilecentral:
+        desc: Chile Central
+        location:
+          display: Santiago, Chile
+          latitude: -33.4378
+          longitude: -70.6504
+        zone:
+        - '1'
+        - '2'
+        - '3'
+      indonesiacentral:
+        desc: Indonesia Central
+        location:
+          display: Jakarta, Indonesia
+          latitude: -6.2088
+          longitude: 106.8456
+        zone:
+        - '1'
+        - '2'
+        - '3'
+      malaysiawest:
+        desc: Malaysia West
+        location:
+          display: Kuala Lumpur, Malaysia
+          latitude: 3.139
+          longitude: 101.6869
+        zone:
+        - '1'
+        - '2'
+        - '3'
+      austriaeast:
+        desc: Austria East
+        location:
+          display: Vienna, Austria
+          latitude: 48.2082
+          longitude: 16.3738
+        zone:
+        - '1'
+        - '2'
+        - '3'
+      newzealandnorth:
+        desc: New Zealand North
+        location:
+          display: Auckland, New Zealand
+          latitude: -36.8485
+          longitude: 174.7633
         zone:
         - '1'
         - '2'
@@ -1516,6 +1583,26 @@ cloud:
         - europe-west10-a
         - europe-west10-b
         - europe-west10-c
+      northamerica-south1:
+        desc: Mexico City, Mexico
+        location:
+          display: Mexico City, Mexico
+          latitude: 19.4326
+          longitude: -99.1332
+        zone:
+        - northamerica-south1-a
+        - northamerica-south1-b
+        - northamerica-south1-c
+      europe-north2:
+        desc: Stockholm, Sweden
+        location:
+          display: Stockholm, Sweden
+          latitude: 59.3293
+          longitude: 18.0686
+        zone:
+        - europe-north2-a
+        - europe-north2-b
+        - europe-north2-c
   ibm:
     description: IBM Cloud
     driver: ibm-driver-v1.0.so
@@ -1620,6 +1707,16 @@ cloud:
         - eu-es-1
         - eu-es-2
         - eu-es-3
+      ca-mon:
+        desc: Montreal, Quebec, Canada
+        location:
+          display: Montreal, Quebec, Canada
+          latitude: 45.5089
+          longitude: -73.5617
+        zone:
+        - ca-mon-1
+        - ca-mon-2
+        - ca-mon-3
   ktcloudvpc:
     description: KT Cloud (VPC)
     driver: ktcloudvpc-driver-v1.0.so
@@ -1633,65 +1730,6 @@ cloud:
           longitude: 126.874278
         zone:
         - DX-M1
-  ncp:
-    description: Naver Cloud Platform (Classic without VPC)
-    driver: ncp-driver-v1.0.so
-    region:
-      KR:
-        id: KR
-        description: Korea
-        location:
-          display: Seoul (South Korea)
-          latitude: 37.4754
-          longitude: 126.8831
-        zone:
-        - KR-1
-        - KR-2
-      USWN:
-        id: USWN
-        description: US West
-        location:
-          display: US Western
-          latitude: 37.351
-          longitude: -121.963
-        zone:
-        - USWN-1
-      HK:
-        id: HK
-        description: Hong Kong
-        location:
-          display: Hong Kong
-          latitude: 22.31356
-          longitude: 114.17369
-        zone:
-        - HK-1
-      SGN:
-        id: SGN
-        description: Singapore
-        location:
-          display: Singapore
-          latitude: 1.3402
-          longitude: 103.7041
-        zone:
-        - SGN-1
-      JPN:
-        id: JPN
-        description: Japan
-        location:
-          display: Japan
-          latitude: 35.6893
-          longitude: 139.6917
-        zone:
-        - JPN-1
-      DEN:
-        id: DEN
-        description: Germany
-        location:
-          display: Germany
-          latitude: 50.1108
-          longitude: 8.6821
-        zone:
-        - DEN-1
   ncpvpc:
     description: Naver Cloud Platform (VPC)
     driver: ncpvpc-driver-v1.0.so
@@ -1760,6 +1798,14 @@ cloud:
         zone:
         - jp-pub-a
         - jp-pub-b
+      US1:
+        desc: US West (California)
+        location:
+          display: California, USA
+          latitude: 37.7749
+          longitude: -122.4194
+        zone:
+        - us-pub-a
   openstack:
     description: OpenStack
     driver: openstack-driver-v1.0.so

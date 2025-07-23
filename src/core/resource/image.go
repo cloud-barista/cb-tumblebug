@@ -600,7 +600,7 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 		spiderImage := spiderImageList.Image[i]
 
 		if spiderImage.ImageStatus == model.ImageUnavailable {
-			log.Debug().Msgf("Skipping image in the unavailable status: %s (%s)", spiderImage.IId.NameId, connConfig)
+			// log.Debug().Msgf("Skipping image in the unavailable status: %s (%s)", spiderImage.IId.NameId, connConfig)
 
 			// Clear the processed item immediately
 			spiderImageList.Image[i] = model.SpiderImageInfo{}
@@ -647,7 +647,7 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 		runtime.GC()
 	}
 
-	log.Debug().Msgf("Memory cleanup completed for connection %s", connConfig)
+	// log.Debug().Msgf("Memory cleanup completed for connection %s", connConfig)
 	return imageCount, nil
 }
 
@@ -1148,7 +1148,7 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 			}(i, row, lenImages)
 		} else {
 			// Update existing image with new information from the asset file
-			log.Info().Msgf("Found existing image, Provider: %s, Region: %s, CspImageName: %s", providerName, regionName, imageReqTmp.CspImageName)
+			// log.Info().Msgf("Found existing image, Provider: %s, Region: %s, CspImageName: %s", providerName, regionName, imageReqTmp.CspImageName)
 			tmpImageInfo := existingImage
 			// Update registered image object with OsType info
 			expandedInfraType := expandInfraType(infraType)
