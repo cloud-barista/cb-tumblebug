@@ -96,6 +96,8 @@ var (
 
 	APILogSkipPatterns = [][]string{
 		{"/tumblebug/api"},
+		{"/tumblebug/readyz"},
+		{"/tumblebug/httpVersion"},
 		{"/mci", "option=status"},
 		{"/k8sCluster"},
 		{"/resources/vNet"},
