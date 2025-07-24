@@ -54,6 +54,11 @@ func WhichPrivateNetworkByCidr(cidr string) (string, error) {
 		return "", fmt.Errorf("invalid CIDR '%s': %w", cidr, err)
 	}
 
+	// Check if the IP is private
+	if !ip.IsPrivate() {
+		return "", fmt.Errorf("not a private IP address: '%s'", ip)
+	}
+
 	return WhichPrivateNetworkByIp(ip.String())
 }
 
