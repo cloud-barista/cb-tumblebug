@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SWAGGER_FILE="$(dirname "$0")/../../src/api/rest/docs/swagger.yaml"
+SWAGGER_FILE="$(dirname "$0")/../../src/interface/rest/docs/swagger.yaml"
 SWAGGER_FILE_v3="$SWAGGER_FILE"
 
 echo "Converting Swagger 2.0 to 3.0.1..."

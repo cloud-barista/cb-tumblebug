@@ -13566,6 +13566,11 @@
                         "2.17"
                     ]
                 },
+                "includeBasicImageOnly": {
+                    "description": "IncludeBasicImageOnly is to return basic OS distribution only without additional applications.\nIf true, the search results will include only the basic OS distribution without additional applications.\nIf false or not specified, the search results will include images with additional applications installed.",
+                    "type": "boolean",
+                    "example": false
+                },
                 "includeDeprecatedImage": {
                     "description": "Whether the search results should include deprecated images or not.\nIf not specified, deprecated images will not be included in the search results.\nIn usual, deprecated images are not recommended to use, but they can be used if necessary.",
                     "type": "boolean",
@@ -13585,6 +13590,11 @@
                     "description": "Whether the image is registered by CB-Tumblebug asset file or not.",
                     "type": "boolean",
                     "example": false
+                },
+                "maxResults": {
+                    "description": "MaxResults is the maximum number of images to be returned in the search results.\nIf not specified, all images will be returned.\nIf specified, the number of images returned will be limited to the specified value.",
+                    "type": "integer",
+                    "example": 100
                 },
                 "osArchitecture": {
                     "description": "The architecture of the operating system of the image. (ex: \"x86_64\", \"arm64\", etc.)",
@@ -13652,6 +13662,16 @@
                     "items": {
                         "type": "boolean"
                     }
+                },
+                "maxResults": {
+                    "description": "MaxResults is the maximum number of images to be returned in the search results.\nIf not specified, all images will be returned.\nIf specified, the number of images returned will be limited to the specified value.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        100
+                    ]
                 },
                 "osArchitecture": {
                     "description": "The architecture of the operating system of the image. (ex: \"x86_64\", \"arm64\", etc.)",
@@ -14849,6 +14869,10 @@
                 "infraType": {
                     "description": "vm|k8s|kubernetes|container, etc.",
                     "type": "string"
+                },
+                "isBasicImage": {
+                    "type": "boolean",
+                    "default": false
                 },
                 "isGPUImage": {
                     "type": "boolean",

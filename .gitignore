@@ -43,9 +43,9 @@ src/testclient/scripts/sequentialFullTest/ansibleAutoConf/*
 src/testclient/scripts/credentials*
 
 # Swagger docs for REST APIs
-src/api/rest/docs/docs.go
-src/api/rest/docs/swagger.json
-src/api/rest/docs/swagger.yaml
+src/interface/rest/docs/docs.go
+src/interface/rest/docs/swagger.json
+src/interface/rest/docs/swagger.yaml
 
 # Config file for CB-Tumblebug
 conf/*
