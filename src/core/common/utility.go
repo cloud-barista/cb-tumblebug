@@ -1618,6 +1618,79 @@ func ExtractOSInfo(combinedInfo string) string {
 	return ""
 }
 
+// CheckBasicOSImage checks if the given combined info matches any basic OS image patterns
+// Returns true if the image is considered a basic OS image based on predefined patterns
+func CheckBasicOSImage(combinedInfo string) bool {
+	if combinedInfo == "" {
+		return false
+	}
+
+	// Loop through all OS types from extraction patterns
+	for _, osInfo := range RuntimeExtractPatternsInfo.ExtractPatterns.OSType {
+		// Check if any basic image patterns match
+		for _, pattern := range osInfo.PatternsForBasicImage {
+			if matchesPattern(combinedInfo, pattern) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// matchesPattern checks if a string matches a pattern with wildcard support
+// The pattern supports '*' as wildcard that matches any sequence of characters
+func matchesPattern(text, pattern string) bool {
+	if pattern == "" {
+		return text == ""
+	}
+
+	// Split pattern by '*' to get literal parts
+	parts := strings.Split(pattern, "*")
+
+	// If no wildcards, do exact match (case-insensitive)
+	if len(parts) == 1 {
+		return strings.EqualFold(text, pattern)
+	}
+
+	textLower := strings.ToLower(text)
+
+	// Check if text starts with first part
+	if len(parts[0]) > 0 {
+		if !strings.HasPrefix(textLower, strings.ToLower(parts[0])) {
+			return false
+		}
+		textLower = textLower[len(parts[0]):]
+	}
+
+	// Check if text ends with last part
+	if len(parts[len(parts)-1]) > 0 {
+		lastPart := strings.ToLower(parts[len(parts)-1])
+		if !strings.HasSuffix(textLower, lastPart) {
+			return false
+		}
+		textLower = textLower[:len(textLower)-len(lastPart)]
+	}
+
+	// Check middle parts in order
+	for i := 1; i < len(parts)-1; i++ {
+		part := strings.ToLower(parts[i])
+		if part == "" {
+			continue // empty part between consecutive wildcards
+		}
+
+		index := strings.Index(textLower, part)
+		if index == -1 {
+			return false
+		}
+
+		// Move past this part
+		textLower = textLower[index+len(part):]
+	}
+
+	return true
+}
+
 // IsGPUImage checks if an image has GPU support
 func IsGPUImage(combinedInfo string) bool {
 	if combinedInfo == "" {
