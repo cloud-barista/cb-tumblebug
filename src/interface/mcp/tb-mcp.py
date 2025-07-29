@@ -604,10 +604,15 @@ def recommend_vm_spec(
         - id: Specification ID (use as 'commonSpec' in create_mci_dynamic())
         - vCPU: Number of virtual CPUs
         - memoryGiB: Memory in GB
-        - costPerHour: Estimated hourly cost
+        - costPerHour: Estimated hourly cost (if -1, pricing information is unavailable)
         - providerName: Cloud provider
         - regionName: Region name
         
+    **PRICING INFORMATION:**
+    When costPerHour is -1, it indicates that pricing information is not available 
+    in the API response. In such cases, you may need to refer to the cloud provider's 
+    official pricing documentation or use external pricing APIs for accurate costs.
+    
     **CRITICAL for MCI Creation:**
     The 'id' field from results becomes the 'commonSpec' parameter in create_mci_dynamic().
     Format is typically: {provider}+{region}+{spec_name} (e.g., "aws+ap-northeast-2+t2.small")
