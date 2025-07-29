@@ -556,7 +556,7 @@ def recommend_vm_spec(
     priority_policy: str = "location",
     latitude: Optional[float] = None,
     longitude: Optional[float] = None
-) -> Dict:
+) -> Any:
     """
     Recommend VM specifications for MCI creation.
     This function works together with search_images() to provide complete MCI creation parameters.
@@ -575,7 +575,7 @@ def recommend_vm_spec(
         filter_policies={
             "ProviderName": "aws",
             "vCPU": {"min": 2, "max": 4},
-            "MemoryGiB": {"min": 4}
+            "memoryGiB": {"min": 4}
         },
         priority_policy="cost"
     )
@@ -587,7 +587,7 @@ def recommend_vm_spec(
     Args:
         filter_policies: Filter criteria including:
                         - vCPU: {"min": 2, "max": 8} for CPU requirements
-                        - MemoryGiB: {"min": 4, "max": 16} for memory requirements
+                        - memoryGiB: {"min": 4, "max": 16} for memory requirements
                         - ProviderName: "aws", "azure", "gcp" for specific provider
                         - CspSpecName: Specific CSP spec name
                         - RegionName: Specific region
@@ -612,48 +612,58 @@ def recommend_vm_spec(
     The 'id' field from results becomes the 'commonSpec' parameter in create_mci_dynamic().
     Format is typically: {provider}+{region}+{spec_name} (e.g., "aws+ap-northeast-2+t2.small")
     """
-    # Configure filter policies
+    # Configure filter policies according to API spec
     if filter_policies is None:
         filter_policies = {}
     
     policies = []
     for metric, values in filter_policies.items():
-        condition = []
-        if isinstance(values, dict):
-            if "min" in values and values["min"]:
-                condition.append({"operand": str(values["min"]), "operator": ">="})
-            if "max" in values and values["max"]:
-                condition.append({"operand": str(values["max"]), "operator": "<="})
-        else:
-            if values:
-                condition.append({"operand": str(values)})
+        condition_operations = []
         
-        if condition:
-            policies.append({"metric": metric, "condition": condition})
+        # Handle different types of filter values
+        if isinstance(values, dict):
+            # Handle min/max range filters
+            if "min" in values and values["min"] is not None:
+                condition_operations.append({"operand": str(values["min"]), "operator": ">="})
+            if "max" in values and values["max"] is not None:
+                condition_operations.append({"operand": str(values["max"]), "operator": "<="})
+        else:
+            # Handle exact match filters (for strings like ProviderName)
+            if values is not None:
+                condition_operations.append({"operand": str(values), "operator": "=="})
+        
+        # Only add the policy if there are conditions
+        if condition_operations:
+            policies.append({
+                "metric": metric,
+                "condition": condition_operations
+            })
     
-    # Configure priority policy
-    priority = {}
-    if priority_policy == "location" and latitude is not None and longitude is not None:
-        priority = {
-            "metric": "location",
-            "parameter": [{"key": "coordinateClose", "val": [f"{latitude}/{longitude}"]}],
+    # Configure priority policy according to API spec
+    priority_policies = []
+    if priority_policy and priority_policy != "none":
+        priority_config = {
+            "metric": priority_policy,
             "weight": "1.0"
         }
-    elif priority_policy == "cost":
-        priority = {
-            "metric": "cost",
-            "weight": "1.0"
-        }
-    elif priority_policy == "performance":
-        priority = {
-            "metric": "performance",
-            "weight": "1.0"
-        }
+        
+        # Add location parameters if specified
+        if priority_policy == "location" and latitude is not None and longitude is not None:
+            priority_config["parameter"] = [
+                {"key": "coordinateClose", "val": [f"{latitude}/{longitude}"]}
+            ]
+        
+        priority_policies.append(priority_config)
     
+    # Build the request data according to model.DeploymentPlan
     data = {
-        "filter": {"policy": policies},
-        "limit": limit,
-        "priority": {"policy": [priority] if priority else []}
+        "filter": {
+            "policy": policies
+        },
+        "limit": str(limit),
+        "priority": {
+            "policy": priority_policies
+        }
     }
     
     return api_request("POST", "/mciRecommendVm", json_data=data)
