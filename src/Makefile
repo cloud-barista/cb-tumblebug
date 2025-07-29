@@ -29,5 +29,5 @@ swag swagger:
 	@echo "- go install github.com/swaggo/swag/cmd/swag@latest"
 	@echo ""
 
-	~/go/bin/swag i -o ./api/rest/docs
+	~/go/bin/swag i -o ./interface/rest/docs
 	../scripts/misc/convert-swagger-version.sh
