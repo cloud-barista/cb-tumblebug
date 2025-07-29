@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -150,6 +151,28 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	}
 	tumblebugImage.OSPlatform = spiderImage.OSPlatform
 	tumblebugImage.OSDistribution = spiderImage.OSDistribution
+	if providerName == csp.NHNCloud {
+		// For NHN Cloud, we need to extract the OS distribution from KeyValueList
+		tumblebugImage.OSDistribution = common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
+	}
+	if providerName == csp.NCP {
+		// For NCP, we need to extract the hypervisor type from KeyValueList and append it to the OSDistribution
+		hypervisorInfo := common.LookupKeyValueList(spiderImage.KeyValueList, "HypervisorType")
+		if hypervisorInfo != "" {
+			if strings.Contains(strings.ToUpper(hypervisorInfo), "KVM") {
+				hypervisorInfo = "KVM"
+			} else if strings.Contains(strings.ToUpper(hypervisorInfo), "XEN") {
+				hypervisorInfo = "Xen"
+			}
+		} else {
+			// If hypervisor type is not found, we can set it to "Unknown"
+			hypervisorInfo = "Unknown"
+		}
+		tumblebugImage.OSDistribution += " (Hypervisor:" + hypervisorInfo + ")"
+	}
+
+	tumblebugImage.IsBasicImage = common.CheckBasicOSImage(tumblebugImage.OSDistribution)
+
 	tumblebugImage.OSDiskType = spiderImage.OSDiskType
 	tumblebugImage.OSDiskSizeGB, _ = strconv.ParseFloat(spiderImage.OSDiskSizeGB, 64)
 
@@ -1273,7 +1296,233 @@ func SearchImage(nsId string, req model.SearchImageRequest) ([]model.TbImageInfo
 	}
 	cnt = len(images)
 
+	// Filter duplicate images with same OS details but different dates, keeping only the latest 2
+	allowedDuplicationCount := 2
+
+	if len(images) > 0 {
+		filteredImages := filterDuplicateImagesByDate(images, allowedDuplicationCount)
+		log.Info().Msgf("SearchImage: Filtered %d duplicate images, %d images remaining",
+			len(images)-len(filteredImages), len(filteredImages))
+		images = filteredImages
+		cnt = len(images)
+	}
+
+	// Sort images by OS disctibution in descending order
+	sort.Slice(images, func(i, j int) bool {
+		return images[i].OSDistribution > images[j].OSDistribution
+	})
+
+	// Additional filtering: Keep only the top image for each group with same base distribution text
+	if len(images) > 0 {
+		finalImages := filterDuplicateImagesByVersion(images)
+		log.Info().Msgf("SearchImage: Additional filtering removed %d images, %d images remaining",
+			len(images)-len(finalImages), len(finalImages))
+		images = finalImages
+		cnt = len(images)
+	}
+
 	return images, cnt, nil
+}
+
+// filterDuplicateImagesByDate filters duplicate images keeping only the latest 2 versions
+// of images with same OSType, OSArchitecture, OSPlatform, and similar OSDistribution (excluding dates)
+func filterDuplicateImagesByDate(images []model.TbImageInfo, allowedDuplicationCount int) []model.TbImageInfo {
+
+	if allowedDuplicationCount < 1 {
+		return images
+	}
+
+	type ImageGroup struct {
+		Images []model.TbImageInfo
+		Key    string
+	}
+
+	// Group images by normalized key (excluding date patterns)
+	imageGroups := make(map[string]*ImageGroup)
+
+	for _, img := range images {
+		// Create a normalized key excluding date patterns
+		normalizedDistribution := normalizeDateInDistribution(img.OSDistribution)
+		key := fmt.Sprintf("%s|%s|%s|%s",
+			strings.ToLower(img.OSType),
+			strings.ToLower(string(img.OSArchitecture)),
+			strings.ToLower(string(img.OSPlatform)),
+			normalizedDistribution)
+
+		if group, exists := imageGroups[key]; exists {
+			group.Images = append(group.Images, img)
+		} else {
+			imageGroups[key] = &ImageGroup{
+				Images: []model.TbImageInfo{img},
+				Key:    key,
+			}
+		}
+	}
+
+	var result []model.TbImageInfo
+
+	for _, group := range imageGroups {
+		if len(group.Images) <= allowedDuplicationCount {
+			// If allowedDuplicationCount or fewer images, keep all
+			result = append(result, group.Images...)
+		} else {
+			// Sort by date extracted from distribution string and keep latest allowedDuplicationCount
+			sortedImages := sortImagesByDateInDistribution(group.Images)
+			// Keep the latest allowedDuplicationCount images
+			result = append(result, sortedImages[:allowedDuplicationCount]...)
+		}
+	}
+
+	return result
+}
+
+// filterDuplicateImagesByVersion keeps only the first (top) image for each group with same base distribution text
+func filterDuplicateImagesByVersion(images []model.TbImageInfo) []model.TbImageInfo {
+	if len(images) == 0 {
+		return images
+	}
+
+	seen := make(map[string]bool)
+	var result []model.TbImageInfo
+
+	for _, img := range images {
+		// Create grouping key based on OSType, OSArchitecture, OSPlatform, and base distribution text
+		baseDistribution := removeNumbersFromDistribution(img.OSDistribution)
+		key := fmt.Sprintf("%s|%s|%s|%s",
+			strings.ToLower(img.OSType),
+			strings.ToLower(string(img.OSArchitecture)),
+			strings.ToLower(string(img.OSPlatform)),
+			strings.ToLower(baseDistribution))
+
+		// Keep only the first image for each unique key (since images are already sorted)
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, img)
+		}
+	}
+
+	return result
+}
+
+// removeNumbersFromDistribution removes all numbers from distribution string to get base text
+func removeNumbersFromDistribution(distribution string) string {
+	// Remove all numbers (including version numbers, dates, etc.)
+	re := regexp.MustCompile(`\d+`)
+	normalized := re.ReplaceAllString(distribution, "")
+
+	// Clean up extra spaces, dashes, and dots
+	normalized = regexp.MustCompile(`[.\-_\s]+`).ReplaceAllString(normalized, " ")
+	normalized = strings.TrimSpace(normalized)
+
+	return normalized
+}
+
+// normalizeDateInDistribution removes date patterns from distribution string for grouping
+func normalizeDateInDistribution(distribution string) string {
+	// Pattern 1: YYYYMMDD (e.g., 20250712, 20250508)
+	re1 := regexp.MustCompile(`-?\d{8}`)
+	normalized := re1.ReplaceAllString(distribution, "")
+
+	// Pattern 2: YYYY-MM-DD or YYYY.MM.DD
+	re2 := regexp.MustCompile(`-?\d{4}[-.]?\d{2}[-.]?\d{2}`)
+	normalized = re2.ReplaceAllString(normalized, "")
+
+	// Pattern 3: YYYYMMDDHHMM (e.g., 202506030226)
+	re3 := regexp.MustCompile(`-?\d{12}`)
+	normalized = re3.ReplaceAllString(normalized, "")
+
+	// Pattern 4: ISO date format (e.g., 2025-06-03T02-30-35.058Z)
+	re4 := regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d{3}Z`)
+	normalized = re4.ReplaceAllString(normalized, "")
+
+	// Clean up extra dashes and spaces
+	normalized = regexp.MustCompile(`--+`).ReplaceAllString(normalized, "-")
+	normalized = regexp.MustCompile(`^-|-$`).ReplaceAllString(normalized, "")
+	normalized = strings.TrimSpace(normalized)
+
+	return strings.ToLower(normalized)
+}
+
+// sortImagesByDateInDistribution sorts images by dates found in distribution strings (newest first)
+func sortImagesByDateInDistribution(images []model.TbImageInfo) []model.TbImageInfo {
+	sort.Slice(images, func(i, j int) bool {
+		dateI := extractLatestDateFromDistribution(images[i].OSDistribution)
+		dateJ := extractLatestDateFromDistribution(images[j].OSDistribution)
+
+		// If dates are equal, compare by creation date or name
+		if dateI.Equal(dateJ) {
+			// Parse creation date if available
+			if images[i].CreationDate != "" && images[j].CreationDate != "" {
+				timeI, errI := time.Parse("2006-01-02T15:04:05.000Z", images[i].CreationDate)
+				timeJ, errJ := time.Parse("2006-01-02T15:04:05.000Z", images[j].CreationDate)
+				if errI == nil && errJ == nil {
+					return timeI.After(timeJ)
+				}
+			}
+			// Fallback to name comparison for stable sorting
+			return images[i].Name > images[j].Name
+		}
+
+		return dateI.After(dateJ) // Newest first
+	})
+
+	return images
+}
+
+// extractLatestDateFromDistribution extracts the latest date from distribution string
+func extractLatestDateFromDistribution(distribution string) time.Time {
+	var latestDate time.Time
+
+	// Pattern 1: YYYYMMDD (e.g., 20250712)
+	re1 := regexp.MustCompile(`\d{8}`)
+	matches1 := re1.FindAllString(distribution, -1)
+	for _, match := range matches1 {
+		if date, err := time.Parse("20060102", match); err == nil {
+			if date.After(latestDate) {
+				latestDate = date
+			}
+		}
+	}
+
+	// Pattern 2: YYYY-MM-DD or YYYY.MM.DD
+	re2 := regexp.MustCompile(`\d{4}[-.]?\d{2}[-.]?\d{2}`)
+	matches2 := re2.FindAllString(distribution, -1)
+	for _, match := range matches2 {
+		// Try different date formats
+		formats := []string{"2006-01-02", "2006.01.02", "20060102"}
+		for _, format := range formats {
+			if date, err := time.Parse(format, match); err == nil {
+				if date.After(latestDate) {
+					latestDate = date
+				}
+				break
+			}
+		}
+	}
+
+	// Pattern 3: YYYYMMDDHHMM (e.g., 202506030226)
+	re3 := regexp.MustCompile(`\d{12}`)
+	matches3 := re3.FindAllString(distribution, -1)
+	for _, match := range matches3 {
+		if date, err := time.Parse("200601021504", match); err == nil {
+			if date.After(latestDate) {
+				latestDate = date
+			}
+		}
+	}
+
+	// Pattern 4: ISO date format (e.g., 2025-06-03T02-30-35.058Z)
+	re4 := regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d{3}Z`)
+	matches4 := re4.FindAllString(distribution, -1)
+	for _, match := range matches4 {
+		if date, err := time.Parse("2006-01-02T15-04-05.000Z", match); err == nil {
+			if date.After(latestDate) {
+				latestDate = date
+			}
+		}
+	}
+
+	return latestDate
 }
 
 // SearchImageOptions returns the available options for searching images

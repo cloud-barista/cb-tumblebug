@@ -98,6 +98,7 @@ type TbImageInfo struct {
 
 	IsGPUImage        bool `json:"isGPUImage,omitempty" gorm:"column:is_gpu_image" enum:"true|false" default:"false" description:"Whether the image is GPU-enabled or not."`
 	IsKubernetesImage bool `json:"isKubernetesImage,omitempty" gorm:"column:is_kubernetes_image" enum:"true|false" default:"false" description:"Whether the image is Kubernetes-enabled or not."`
+	IsBasicImage      bool `json:"isBasicImage,omitempty" gorm:"column:is_basic_image" enum:"true|false" default:"false" description:"Whether the image is a basic OS image or not."`
 
 	OSType string `json:"osType,omitempty" gorm:"column:os_type" example:"ubuntu 22.04" description:"Simplified OS name and version string"`
 
@@ -156,6 +157,16 @@ type SearchImageRequest struct {
 	// In usual, deprecated images are not recommended to use, but they can be used if necessary.
 	IncludeDeprecatedImage *bool `json:"includeDeprecatedImage" example:"false" description:"Include deprecated images in the search results."`
 
+	// IncludeBasicImageOnly is to return basic OS distribution only without additional applications.
+	// If true, the search results will include only the basic OS distribution without additional applications.
+	// If false or not specified, the search results will include images with additional applications installed.
+	IncludeBasicImageOnly *bool `json:"includeBasicImageOnly" example:"false" description:"Return basic OS distribution only without additional applications."`
+
+	// MaxResults is the maximum number of images to be returned in the search results.
+	// If not specified, all images will be returned.
+	// If specified, the number of images returned will be limited to the specified value.
+	MaxResults *int `json:"maxResults" example:"100" description:"Maximum number of images to be returned in the search results. If not specified, all images will be returned."`
+
 	// Keywords for searching images in detail.
 	// Space-separated for AND condition (ex: "sql 2022", "ubuntu 22.04", etc.).
 	// Used for if the user wants to search images with specific keywords in their details.
@@ -195,6 +206,11 @@ type SearchImageRequestOptions struct {
 	// If not specified, deprecated images will not be included in the search results.
 	// In usual, deprecated images are not recommended to use, but they can be used if necessary.
 	IncludeDeprecatedImage []bool `json:"includeDeprecatedImage" description:"Include deprecated images in the search results."`
+
+	// MaxResults is the maximum number of images to be returned in the search results.
+	// If not specified, all images will be returned.
+	// If specified, the number of images returned will be limited to the specified value.
+	MaxResults []int `json:"maxResults" example:"100" description:"Maximum number of images to be returned in the search results. If not specified, all images will be returned."`
 
 	// Keywords for searching images in detail.
 	// Space-separated for AND condition (ex: "sql 2022", "ubuntu 22.04", etc.).

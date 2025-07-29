@@ -588,7 +588,7 @@ func fetchSpecsForAllConnConfigsInternal(nsId string, option *model.SpecFetchOpt
 						} else {
 							connResult.Success = true
 							connResult.SpecCount = specCount
-							log.Info().Msgf("[%s][Provider-%s][Conn-%d] Successfully fetched %d specs from %s",
+							log.Info().Msgf("[%s][%s][%d] Successfully fetched %d specs from %s",
 								nsId, provider, index, specCount, connName)
 						}
 					}
@@ -1228,7 +1228,7 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 
 		// Mark as successful and collect prices
 		successCount++
-		log.Debug().Msgf("Successfully processed connection: %s", result.ConnConfig.ConfigName)
+		// log.Debug().Msgf("Successfully processed connection: %s", result.ConnConfig.ConfigName)
 	}
 
 	// Report any errors
@@ -1254,7 +1254,7 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 
 // FetchPriceForConnConfig lookups all Price for region of conn config, processes them in batch
 func FetchPriceForConnConfig(config model.ConnConfig) error {
-	log.Debug().Msg("FetchPriceForConnConfig(" + config.ConfigName + ")")
+	log.Debug().Msg("Init fetching prices for connection: " + config.ConfigName)
 
 	// Reuse existing LookupPriceList function
 	priceInConnection, err := LookupPriceList(config)
@@ -1263,7 +1263,13 @@ func FetchPriceForConnConfig(config model.ConnConfig) error {
 		return err
 	}
 
+	if strings.EqualFold(csp.GCP, config.ProviderName) {
+		log.Info().Msgf("GCP price %v", priceInConnection)
+	}
+
 	if len(priceInConnection.PriceList) == 0 {
+		log.Info().Msgf("No prices found for connection %s",
+			config.ConfigName)
 		return nil
 	}
 

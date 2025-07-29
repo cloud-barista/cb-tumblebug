@@ -66,10 +66,11 @@ type ExtractPatterns struct {
 
 // OSTypeDetail is structure for OS type detail information
 type OSTypeDetail struct {
-	Name           string   `mapstructure:"name" json:"name"`
-	Versions       []string `mapstructure:"versions" json:"versions"`
-	DefaultVersion string   `mapstructure:"defaultVersion" json:"default_version"`
-	Patterns       []string `mapstructure:"patterns" json:"patterns"`
+	Name                  string   `mapstructure:"name" json:"name"`
+	Versions              []string `mapstructure:"versions" json:"versions"`
+	DefaultVersion        string   `mapstructure:"defaultVersion" json:"default_version"`
+	Patterns              []string `mapstructure:"patterns" json:"patterns"`
+	PatternsForBasicImage []string `mapstructure:"patternsForBasicImage" json:"patternsForBasicImage"`
 }
 
 /*

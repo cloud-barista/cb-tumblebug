@@ -5,9 +5,10 @@ extractionPatterns:
   osType:
     ubuntu:
       name: "Ubuntu"
-      versions: ["16.04", "18.04", "20.04", "22.04", "22.10", "23.04", "24.04"]
+      versions: ["16.04", "18.04", "20.04", "22.04", "22.10", "23.10", "23.04", "24.04", "24.10", "25.04"]
       defaultVersion: ""
       patterns: ["ubuntu", "canonical"]
+      patternsForBasicImage: ["Ubuntu * 64 bit", "ubuntu/images/*", "0001-com-ubuntu-server*", "Canonical, Ubuntu, * LTS Minimal*", "Ubuntu Linux * LTS*", "ubuntu-*-64bit", "ubuntu-*-base (Hypervisor:KVM)", "Ubuntu Server * LTS (*)", "Ubuntu Server * LTS 64bit"]
     centos:
       name: "CentOS"
       versions: ["7", "8", "9"]
