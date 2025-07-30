@@ -8354,6 +8354,66 @@ const docTemplate = `{
                     }
                 }
             },
+            "put": {
+                "description": "Update Security Group: Synchronize the firewall rules of the specified Security Group to match the requested list exactly.\nThis API will add missing rules and delete extra rules so that the Security Group's rules become identical to the requested set.\nOnly firewall rules are updated; other metadata (name, description, etc.) is not changed.\n\nUsage:\nUse this API to update (synchronize) the firewall rules of a Security Group. The rules in the request body will become the only rules in the Security Group after the operation.\n- All existing rules not present in the request will be deleted.\n- All rules in the request that do not exist will be added.\n- If a rule exists but differs in CIDR or port range, it will be replaced.\n- Special protocols (ICMP, ALL, etc.) are handled in the same way.\n\nNotes:\n- \"Ports\" field supports single port (\"22\"), port range (\"80-100\"), and multiple ports/ranges (\"22,80-100,443\").\n- The valid port number range is 0 to 65535 (inclusive).\n- \"Protocol\" can be TCP, UDP, ICMP, ALL, etc. (as supported by the cloud provider).\n- \"Direction\" must be either \"inbound\" or \"outbound\".\n- \"CIDR\" is the allowed IP range.\n- All existing rules not in the request (including default ICMP, ALL, etc.) will be deleted.\n- Metadata (name, description, etc.) is not changed.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Security Group Management"
+                ],
+                "summary": "Update Security Group (Synchronize Firewall Rules)",
+                "operationId": "PutSecurityGroup",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Security Group ID",
+                        "name": "securityGroupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an securityGroup object (only firewallRules field is used for update)",
+                        "name": "securityGroupInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.TbSecurityGroupUpdateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated Security Group info with synchronized firewall rules",
+                        "schema": {
+                            "$ref": "#/definitions/model.TbSecurityGroupInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "description": "Delete Security Group",
                 "consumes": [
@@ -14791,30 +14851,35 @@ const docTemplate = `{
         "model.TbFirewallRuleInfo": {
             "type": "object",
             "required": [
-                "direction",
-                "fromPort",
-                "ipprotocol",
-                "toPort"
+                "Direction",
+                "Protocol"
             ],
             "properties": {
-                "cidr": {
-                    "type": "string"
+                "CIDR": {
+                    "type": "string",
+                    "example": "0.0.0.0/0"
                 },
-                "direction": {
-                    "description": "` + "`" + `json:\"direction\"` + "`" + `",
-                    "type": "string"
+                "Direction": {
+                    "type": "string",
+                    "enum": [
+                        "inbound",
+                        "outbound"
+                    ],
+                    "example": "inbound"
                 },
-                "fromPort": {
-                    "description": "` + "`" + `json:\"fromPort\"` + "`" + `",
-                    "type": "string"
+                "Ports": {
+                    "type": "string",
+                    "example": "1-65535,22,5555"
                 },
-                "ipprotocol": {
-                    "description": "` + "`" + `json:\"ipProtocol\"` + "`" + `",
-                    "type": "string"
-                },
-                "toPort": {
-                    "description": "` + "`" + `json:\"toPort\"` + "`" + `",
-                    "type": "string"
+                "Protocol": {
+                    "type": "string",
+                    "enum": [
+                        "TCP",
+                        "UDP",
+                        "ICMP",
+                        "ALL"
+                    ],
+                    "example": "TCP"
                 }
             }
         },
@@ -16261,7 +16326,8 @@ const docTemplate = `{
                 },
                 "cspResourceId": {
                     "description": "CspResourceId is required to register object from CSP (option=register)",
-                    "type": "string"
+                    "type": "string",
+                    "example": "required for option=register only. ex: csp-06eb41e14121c550a"
                 },
                 "description": {
                     "type": "string"
@@ -16278,6 +16344,17 @@ const docTemplate = `{
                 },
                 "vNetId": {
                     "type": "string"
+                }
+            }
+        },
+        "model.TbSecurityGroupUpdateReq": {
+            "type": "object",
+            "properties": {
+                "firewallRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbFirewallRuleInfo"
+                    }
                 }
             }
         },
