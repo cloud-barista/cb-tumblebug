@@ -3,7 +3,7 @@ Copyright 2019 The Cloud-Barista Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,6 +30,19 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// parsePort parses a port string to int, returns -1 if invalid
+func parsePort(s string) int {
+	if s == "*" || s == "-1" {
+		return 0
+	}
+	var p int
+	_, err := fmt.Sscanf(s, "%d", &p)
+	if err != nil {
+		return -1
+	}
+	return p
+}
+
 // TbSecurityGroupReqStructLevelValidation is a function to validate 'TbSecurityGroupReq' object.
 func TbSecurityGroupReqStructLevelValidation(sl validator.StructLevel) {
 
@@ -40,6 +53,56 @@ func TbSecurityGroupReqStructLevelValidation(sl validator.StructLevel) {
 		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
 		sl.ReportError(u.Name, "name", "Name", err.Error(), "")
 	}
+}
+
+// SpiderSecurityRuleInfo → TbFirewallRuleInfo
+func ConvertSpiderToTbFirewallRuleInfo(s model.SpiderSecurityRuleInfo) model.TbFirewallRuleInfo {
+	ports := s.FromPort
+	if s.FromPort != s.ToPort {
+		ports = s.FromPort + "-" + s.ToPort
+	}
+	if strings.EqualFold(s.IPProtocol, "ICMP") {
+		ports = ""
+	}
+	return model.TbFirewallRuleInfo{
+		Ports:     ports,
+		Protocol:  s.IPProtocol,
+		Direction: s.Direction,
+		CIDR:      s.CIDR,
+	}
+}
+
+// TbFirewallRuleInfo → SpiderSecurityRuleInfo
+func ConvertTbToSpiderSecurityRuleInfo(t model.TbFirewallRuleInfo) model.SpiderSecurityRuleInfo {
+	var from, to string
+	if strings.EqualFold(t.Protocol, "ICMP") {
+		from, to = "-1", "-1"
+	} else {
+		from, to = parsePortsToFromTo(t.Ports)
+	}
+	return model.SpiderSecurityRuleInfo{
+		FromPort:   from,
+		ToPort:     to,
+		IPProtocol: t.Protocol,
+		Direction:  t.Direction,
+		CIDR:       t.CIDR,
+	}
+}
+
+// parsePortsToFromTo parses a port string to FromPort and ToPort
+func parsePortsToFromTo(ports string) (string, string) {
+	parts := strings.Split(ports, ",")
+	if len(parts) == 0 {
+		return "", ""
+	}
+	p := strings.TrimSpace(parts[0])
+	if strings.Contains(p, "-") {
+		rangeParts := strings.SplitN(p, "-", 2)
+		if len(rangeParts) == 2 {
+			return strings.TrimSpace(rangeParts[0]), strings.TrimSpace(rangeParts[1])
+		}
+	}
+	return p, p
 }
 
 // CreateSecurityGroup accepts SG creation request, creates and returns an TB SG object
@@ -159,16 +222,13 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 	// requestBody.ReqInfo.SecurityRules = u.FirewallRules
 	if u.FirewallRules != nil {
 		for _, v := range *u.FirewallRules {
-			jsonBody, err := json.Marshal(v)
-			if err != nil {
-				log.Error().Err(err).Msg("")
+
+			if !isValidPorts(v.Ports) {
+				err := fmt.Errorf("invalid port range in rule: %v", v)
+				return model.TbSecurityGroupInfo{}, err
 			}
 
-			spiderSecurityRuleInfo := model.SpiderSecurityRuleInfo{}
-			err = json.Unmarshal(jsonBody, &spiderSecurityRuleInfo)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-			}
+			spiderSecurityRuleInfo := ConvertTbToSpiderSecurityRuleInfo(v)
 
 			requestBody.ReqInfo.SecurityRules = append(requestBody.ReqInfo.SecurityRules, spiderSecurityRuleInfo)
 		}
@@ -238,7 +298,7 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 	// content.FirewallRules = tempSpiderSecurityInfo.SecurityRules
 	tempTbFirewallRules := []model.TbFirewallRuleInfo{}
 	for _, v := range tempSpiderSecurityInfo.SecurityRules {
-		tempTbFirewallRule := model.TbFirewallRuleInfo(v) // type casting
+		tempTbFirewallRule := ConvertSpiderToTbFirewallRuleInfo(v)
 		tempTbFirewallRules = append(tempTbFirewallRules, tempTbFirewallRule)
 	}
 	content.FirewallRules = tempTbFirewallRules
@@ -314,7 +374,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 			return temp, err
 		}
 
-		req[i].IPProtocol = strings.ToUpper(req[i].IPProtocol)
+		req[i].Protocol = strings.ToUpper(req[i].Protocol)
 		req[i].Direction = strings.ToLower(req[i].Direction)
 	}
 
@@ -350,7 +410,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 
 		for _, newRule := range req {
 			if reflect.DeepEqual(oldRule, newRule) {
-				err := fmt.Errorf("One of submitted firewall rules already exists in the SG %s.", securityGroupId)
+				err := fmt.Errorf("one of submitted firewall rules already exists in the SG %s.", securityGroupId)
 				return oldSecurityGroup, err
 			}
 		}
@@ -358,11 +418,12 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 
 	var tempSpiderSecurityInfo *model.SpiderSecurityInfo
 
-	if objectOnly == false { // then, call CB-Spider CreateSecurityRule API
+	if !objectOnly { // then, call CB-Spider CreateSecurityRule API
 		requestBody := model.SpiderSecurityRuleReqInfoWrapper{}
 		requestBody.ConnectionName = oldSecurityGroup.ConnectionName
 		for _, newRule := range req {
-			requestBody.ReqInfo.RuleInfoList = append(requestBody.ReqInfo.RuleInfoList, model.SpiderSecurityRuleInfo(newRule)) // Is this really works?
+			spRule := ConvertTbToSpiderSecurityRuleInfo(newRule)
+			requestBody.ReqInfo.RuleInfoList = append(requestBody.ReqInfo.RuleInfoList, model.SpiderSecurityRuleInfo(spRule))
 		}
 
 		url := fmt.Sprintf("%s/securitygroup/%s/rules", model.SpiderRestUrl, oldSecurityGroup.CspResourceName)
@@ -403,7 +464,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 	newSecurityGroup.FirewallRules = nil
 
 	for _, newSpiderSecurityRule := range tempSpiderSecurityInfo.SecurityRules {
-		newSecurityGroup.FirewallRules = append(newSecurityGroup.FirewallRules, model.TbFirewallRuleInfo(newSpiderSecurityRule))
+		newSecurityGroup.FirewallRules = append(newSecurityGroup.FirewallRules, ConvertSpiderToTbFirewallRuleInfo(newSpiderSecurityRule))
 	}
 	Val, _ := json.Marshal(newSecurityGroup)
 
@@ -458,7 +519,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 			return temp, err
 		}
 
-		req[i].IPProtocol = strings.ToUpper(req[i].IPProtocol)
+		req[i].Protocol = strings.ToUpper(req[i].Protocol)
 		req[i].Direction = strings.ToLower(req[i].Direction)
 	}
 
@@ -520,7 +581,8 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 		return oldSecurityGroup, err
 	} else {
 		for _, v := range rulesToDelete {
-			requestBody.ReqInfo.RuleInfoList = append(requestBody.ReqInfo.RuleInfoList, model.SpiderSecurityRuleInfo(v))
+			spRule := ConvertTbToSpiderSecurityRuleInfo(v)
+			requestBody.ReqInfo.RuleInfoList = append(requestBody.ReqInfo.RuleInfoList, spRule)
 		}
 	}
 
@@ -600,7 +662,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 	newSecurityGroup = oldSecurityGroup
 	newSecurityGroup.FirewallRules = nil
 	for _, newSpiderSecurityRule := range tempSpiderSecurityInfo.SecurityRules {
-		newSecurityGroup.FirewallRules = append(newSecurityGroup.FirewallRules, model.TbFirewallRuleInfo(newSpiderSecurityRule))
+		newSecurityGroup.FirewallRules = append(newSecurityGroup.FirewallRules, ConvertSpiderToTbFirewallRuleInfo(newSpiderSecurityRule))
 	}
 	Val, _ := json.Marshal(newSecurityGroup)
 
@@ -621,4 +683,157 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 	// 	return err
 	// }
 	return newSecurityGroup, nil
+}
+
+// GetSecurityGroup retrieves a security group object from the key-value store
+func GetSecurityGroup(nsId string, securityGroupId string) (model.TbSecurityGroupInfo, error) {
+	sg := model.TbSecurityGroupInfo{}
+
+	tempInterface, err := GetResource(nsId, model.StrSecurityGroup, securityGroupId)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the TbSecurityGroupInfo " + securityGroupId + ".")
+		return sg, err
+	}
+	err = common.CopySrcToDest(&tempInterface, &sg)
+	if err != nil {
+		err := fmt.Errorf("failed to CopySrcToDest() %s", securityGroupId)
+		return sg, err
+	}
+	return sg, nil
+}
+
+// UpdateFirewallRules updates the firewall rules of a security group
+func UpdateFirewallRules(nsId string, securityGroupId string, desiredRules []model.TbFirewallRuleInfo) (model.TbSecurityGroupInfo, error) {
+
+	for _, rule := range desiredRules {
+		if !strings.EqualFold(rule.Protocol, "ICMP") {
+			if !isValidPorts(rule.Ports) {
+				err := fmt.Errorf("invalid port range in rule: %v", rule)
+				return model.TbSecurityGroupInfo{}, err
+			}
+		}
+	}
+
+	sg, err := GetSecurityGroup(nsId, securityGroupId)
+	if err != nil {
+		return sg, err
+	}
+	currentRules := sg.FirewallRules
+
+	toAdd, toDelete := diffFirewallRules(currentRules, desiredRules)
+
+	if len(toDelete) > 0 {
+		_, err := DeleteFirewallRules(nsId, securityGroupId, toDelete)
+		if err != nil {
+			return sg, err
+		}
+	}
+
+	if len(toAdd) > 0 {
+		_, err := CreateFirewallRules(nsId, securityGroupId, toAdd, false)
+		if err != nil {
+			return sg, err
+		}
+	}
+
+	return GetSecurityGroup(nsId, securityGroupId)
+}
+
+// isValidPorts checks if a Ports string is valid (all ranges/values 0~65535)
+func isValidPorts(ports string) bool {
+	ranges := parsePortsToRanges(ports)
+	if len(ranges) == 0 {
+		return false
+	}
+	for _, r := range ranges {
+		if r[0] < 0 || r[0] > 65535 || r[1] < 0 || r[1] > 65535 || r[0] > r[1] {
+			return false
+		}
+	}
+	return true
+}
+
+// diffFirewallRules applies simplified AWS rule update logic:
+// - If Direction and IPProtocol are the same, and port range overlaps, delete old and add new.
+// - If Direction, IPProtocol, FromPort, ToPort are the same but CIDR is different, delete old and add new.
+// - If all fields are the same, do nothing.
+// - Otherwise, add new rule.
+func diffFirewallRules(current, desired []model.TbFirewallRuleInfo) (toAdd, toDelete []model.TbFirewallRuleInfo) {
+	usedCurrent := make([]bool, len(current))
+	for _, d := range desired {
+		matched := false
+		for i, c := range current {
+			if strings.EqualFold(d.Direction, c.Direction) && strings.EqualFold(d.Protocol, c.Protocol) {
+				if portsOverlap(d.Ports, c.Ports) {
+					if d.Ports == c.Ports {
+						if d.CIDR != c.CIDR {
+							toDelete = append(toDelete, c)
+							toAdd = append(toAdd, d)
+							usedCurrent[i] = true
+							matched = true
+							break
+						} else {
+							usedCurrent[i] = true
+							matched = true
+							break
+						}
+					} else {
+						toDelete = append(toDelete, c)
+						toAdd = append(toAdd, d)
+						usedCurrent[i] = true
+						matched = true
+						break
+					}
+				}
+			}
+		}
+		if !matched {
+			toAdd = append(toAdd, d)
+		}
+	}
+	for i, c := range current {
+		if !usedCurrent[i] {
+			toDelete = append(toDelete, c)
+		}
+	}
+	return
+}
+
+// portsOverlap checks if two port ranges overlap
+func portsOverlap(portsA, portsB string) bool {
+	rangesA := parsePortsToRanges(portsA)
+	rangesB := parsePortsToRanges(portsB)
+	for _, ra := range rangesA {
+		for _, rb := range rangesB {
+			if ra[0] <= rb[1] && ra[1] >= rb[0] {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// parsePortsToRanges parses a string of ports (e.g., "22, 80-90, 443") into a slice of port ranges.
+func parsePortsToRanges(ports string) [][2]int {
+	var result [][2]int
+	for _, p := range strings.Split(ports, ",") {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		if strings.Contains(p, "-") {
+			rangeParts := strings.SplitN(p, "-", 2)
+			from := parsePort(rangeParts[0])
+			to := parsePort(rangeParts[1])
+			if from != -1 && to != -1 {
+				result = append(result, [2]int{from, to})
+			}
+		} else {
+			v := parsePort(p)
+			if v != -1 {
+				result = append(result, [2]int{v, v})
+			}
+		}
+	}
+	return result
 }

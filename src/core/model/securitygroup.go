@@ -3,7 +3,7 @@ Copyright 2019 The Cloud-Barista Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -71,16 +71,15 @@ type TbSecurityGroupReq struct { // Tumblebug
 	FirewallRules  *[]TbFirewallRuleInfo `json:"firewallRules"` // validate:"required"`
 
 	// CspResourceId is required to register object from CSP (option=register)
-	CspResourceId string `json:"cspResourceId"`
+	CspResourceId string `json:"cspResourceId" example:"required for option=register only. ex: csp-06eb41e14121c550a"`
 }
 
 // TbFirewallRuleInfo is a struct to handle firewall rule info of CB-Tumblebug.
 type TbFirewallRuleInfo struct {
-	FromPort   string `validate:"required"` //`json:"fromPort"`
-	ToPort     string `validate:"required"` //`json:"toPort"`
-	IPProtocol string `validate:"required"` //`json:"ipProtocol"`
-	Direction  string `validate:"required"` //`json:"direction"`
-	CIDR       string
+	Ports     string `json:"Ports" example:"1-65535,22,5555"`
+	Protocol  string `validate:"required" json:"Protocol" example:"TCP" enums:"TCP,UDP,ICMP,ALL"`
+	Direction string `validate:"required" json:"Direction" example:"inbound" enums:"inbound,outbound"`
+	CIDR      string `json:"CIDR" example:"0.0.0.0/0"`
 }
 
 // TbSecurityGroupInfo is a struct that represents TB security group object.
@@ -115,4 +114,9 @@ type TbSecurityGroupInfo struct {
 
 	// Disabled for now
 	//ResourceGroupName  string `json:"resourceGroupName"`
+}
+
+// TbSecurityGroupUpdateReq is a struct to handle 'Update security group' request toward CB-Tumblebug.
+type TbSecurityGroupUpdateReq struct {
+	FirewallRules []TbFirewallRuleInfo `json:"firewallRules"`
 }

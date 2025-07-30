@@ -1497,14 +1497,14 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 			reqTmp.VNetId = resourceName
 
 			// open all firewall for default securityGroup
-			rule := model.TbFirewallRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "tcp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+			rule := model.TbFirewallRuleInfo{Ports: "1-65535", Protocol: "tcp", Direction: "inbound", CIDR: "0.0.0.0/0"}
 			var ruleList []model.TbFirewallRuleInfo
 			ruleList = append(ruleList, rule)
-			rule = model.TbFirewallRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "udp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+			rule = model.TbFirewallRuleInfo{Ports: "1-65535", Protocol: "udp", Direction: "inbound", CIDR: "0.0.0.0/0"}
 			ruleList = append(ruleList, rule)
 			// CloudIt only offers tcp, udp Protocols
 			if !strings.EqualFold(provider, "cloudit") {
-				rule = model.TbFirewallRuleInfo{FromPort: "-1", ToPort: "-1", IPProtocol: "icmp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+				rule = model.TbFirewallRuleInfo{Protocol: "icmp", Direction: "inbound", CIDR: "0.0.0.0/0"}
 				ruleList = append(ruleList, rule)
 			}
 
