@@ -3,7 +3,7 @@ Copyright 2019 The Cloud-Barista Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,6 +16,8 @@ package infra
 
 import (
 	"fmt"
+
+	resource "github.com/cloud-barista/cb-tumblebug/src/core/resource"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
@@ -373,4 +375,82 @@ func RestGetMciGroupIds(c echo.Context) error {
 	var err error
 	content.IdList, err = infra.ListSubGroupId(nsId, mciId)
 	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestGetMciAssociatedResources godoc
+// @ID GetMciAssociatedResources
+// @Summary Get associated resource ID list for a given MCI
+// @Description Get associated resource ID list for a given MCI (VNet, Subnet, SecurityGroup, SSHKey, etc.)
+// @Tags [MC-Infra] MCI Provisioning and Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Success 200 {object} model.MciAssociatedResourceList
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/associatedResources [get]
+func RestGetMciAssociatedResources(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+
+	result, err := infra.GetMciAssociatedResources(nsId, mciId)
+	return clientManager.EndRequestWithLog(c, err, result)
+}
+
+// RestPutMciAssociatedSecurityGroups godoc
+// @ID PutMciAssociatedSecurityGroups
+// @Summary Update all Security Groups associated with a given MCI
+// @Description Update all Security Groups associated with a given MCI. The firewall rules of all Security Groups will be synchronized to match the requested set.
+// @Tags [MC-Infra] MCI Provisioning and Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param securityGroupInfo body model.TbSecurityGroupUpdateReq true "Details for SecurityGroup update (only firewallRules field is used for update)"
+// @Success 200 {array} model.TbSecurityGroupInfo "Updated Security Group info list with synchronized firewall rules"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/associatedSecurityGroups [put]
+// @Summary Update all Security Groups associated with a given MCI (Synchronize Firewall Rules)
+// @Description Update all Security Groups associated with a given MCI. The firewall rules of all associated Security Groups will be synchronized to match the requested set.
+// @Description
+// @Description This API will add missing rules and delete extra rules so that each Security Group's rules become identical to the requested set.
+// @Description Only firewall rules are updated; other metadata (name, description, etc.) is not changed.
+// @Description
+// @Description Usage:
+// @Description Use this API to update (synchronize) the firewall rules of all Security Groups associated with the specified MCI. The rules in the request body will become the only rules in each Security Group after the operation.
+// @Description - All existing rules not present in the request will be deleted.
+// @Description - All rules in the request that do not exist will be added.
+// @Description - If a rule exists but differs in CIDR or port range, it will be replaced.
+// @Description - Special protocols (ICMP, etc.) are handled in the same way.
+// @Description
+// @Description Notes:
+// @Description - "Ports" field supports single port ("22"), port range ("80-100"), and multiple ports/ranges ("22,80-100,443").
+// @Description - The valid port number range is 0 to 65535 (inclusive).
+// @Description - "Protocol" can be TCP, UDP, ICMP, etc. (as supported by the cloud provider).
+// @Description - "Direction" must be either "inbound" or "outbound".
+// @Description - "CIDR" is the allowed IP range.
+// @Description - All existing rules not in the request (including default ICMP, etc.) will be deleted.
+// @Description - Metadata (name, description, etc.) is not changed.
+// @Success 200 {object} model.TbRestWrapperSecurityGroupUpdateResponse "Updated Security Group info list with synchronized firewall rules"
+func RestPutMciAssociatedSecurityGroups(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+
+	req := &model.TbSecurityGroupUpdateReq{}
+	if err := c.Bind(req); err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	assocList := model.MciAssociatedResourceList{}
+	assocList, err := infra.GetMciAssociatedResources(nsId, mciId)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Use the new parallel processing function
+	response := resource.UpdateMultipleFirewallRules(nsId, assocList.SecurityGroupIds, req.FirewallRules)
+
+	return clientManager.EndRequestWithLog(c, nil, response)
 }

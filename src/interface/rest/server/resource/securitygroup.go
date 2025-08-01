@@ -63,15 +63,15 @@ func RestPostSecurityGroup(c echo.Context) error {
 // @Description - All existing rules not present in the request will be deleted.
 // @Description - All rules in the request that do not exist will be added.
 // @Description - If a rule exists but differs in CIDR or port range, it will be replaced.
-// @Description - Special protocols (ICMP, ALL, etc.) are handled in the same way.
+// @Description - Special protocols (ICMP, etc.) are handled in the same way.
 // @Description
 // @Description Notes:
 // @Description - "Ports" field supports single port ("22"), port range ("80-100"), and multiple ports/ranges ("22,80-100,443").
 // @Description - The valid port number range is 0 to 65535 (inclusive).
-// @Description - "Protocol" can be TCP, UDP, ICMP, ALL, etc. (as supported by the cloud provider).
+// @Description - "Protocol" can be TCP, UDP, ICMP, etc. (as supported by the cloud provider).
 // @Description - "Direction" must be either "inbound" or "outbound".
 // @Description - "CIDR" is the allowed IP range.
-// @Description - All existing rules not in the request (including default ICMP, ALL, etc.) will be deleted.
+// @Description - All existing rules not in the request (including default ICMP, etc.) will be deleted.
 // @Description - Metadata (name, description, etc.) is not changed.
 // @Tags [Infra Resource] Security Group Management
 // @Accept  json
@@ -79,7 +79,7 @@ func RestPostSecurityGroup(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param securityGroupId path string true "Security Group ID"
 // @Param securityGroupInfo body model.TbSecurityGroupUpdateReq true "Details for an securityGroup object (only firewallRules field is used for update)"
-// @Success 200 {object} model.TbSecurityGroupInfo "Updated Security Group info with synchronized firewall rules"
+// @Success 200 {object} model.TbSecurityGroupUpdateResponse "Updated Security Group info with synchronized firewall rules"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId} [put]

@@ -21,21 +21,32 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type TbFirewallRulesWrapper struct {
-	FirewallRules []model.TbFirewallRuleInfo `json:"firewallRules"` // validate:"required"`
-}
-
 // RestPostFirewallRules godoc
 // @ID PostFirewallRules
-// @Summary Create FirewallRules
-// @Description Create FirewallRules
+// @Summary Add new FirewallRules to existing rules
+// @Description Add new FirewallRules: Add the provided firewall rules to the existing rules in the Security Group.
+// @Description This API will only add new rules without deleting or modifying existing ones.
+// @Description If a rule with identical properties already exists, it will be skipped to avoid duplicates.
+// @Description
+// @Description Usage:
+// @Description Use this API to add new firewall rules to a Security Group while preserving existing rules.
+// @Description - Only new rules that don't already exist will be added.
+// @Description - Existing rules remain unchanged.
+// @Description - If an identical rule already exists, it will be skipped.
+// @Description
+// @Description Notes:
+// @Description - "Ports" field supports single port ("22"), port range ("80-100"), and multiple ports/ranges ("22,80-100,443").
+// @Description - The valid port number range is 0 to 65535 (inclusive).
+// @Description - "Protocol" can be TCP, UDP, ICMP, ALL, etc. (as supported by the cloud provider).
+// @Description - "Direction" must be either "inbound" or "outbound".
+// @Description - "CIDR" is the allowed IP range.
 // @Tags [Infra Resource] Security Group Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param securityGroupId path string true "Security Group ID"
-// @Param firewallRuleReq body TbFirewallRulesWrapper true "FirewallRules to create"
-// @Success 200 {object} model.TbSecurityGroupInfo
+// @Param firewallRuleReq body model.TbSecurityGroupUpdateReq true "FirewallRules to add (only firewallRules field is used)"
+// @Success 200 {object} model.TbSecurityGroupUpdateResponse "Updated Security Group info with added firewall rules"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [post]
@@ -44,13 +55,35 @@ func RestPostFirewallRules(c echo.Context) error {
 	nsId := c.Param("nsId")
 	securityGroupId := c.Param("securityGroupId")
 
-	u := &TbFirewallRulesWrapper{}
+	u := &model.TbSecurityGroupUpdateReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := resource.CreateFirewallRules(nsId, securityGroupId, *&u.FirewallRules, false)
-	return clientManager.EndRequestWithLog(c, err, content)
+	// Convert TbFirewallRuleReq to TbFirewallRuleInfo for addition
+	var rulesToAdd []model.TbFirewallRuleInfo
+	for _, ruleReq := range u.FirewallRules {
+		// Convert each rule request to info object(s)
+		ruleInfos := resource.ConvertFirewallRuleRequestObjToInfoObjs(ruleReq)
+		rulesToAdd = append(rulesToAdd, ruleInfos...)
+	}
+
+	sgInfo, err := resource.CreateFirewallRules(nsId, securityGroupId, rulesToAdd, false)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Convert TbSecurityGroupInfo to TbSecurityGroupUpdateResponse for consistency
+	response := model.TbSecurityGroupUpdateResponse{
+		Id:       sgInfo.Id,
+		Name:     sgInfo.Name,
+		Success:  true,
+		Message:  "Successfully added new firewall rules",
+		Updated:  sgInfo,
+		Previous: sgInfo, // Since we don't have the previous state, use current state
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, response)
 }
 
 /* function RestPutFirewallRules not yet implemented
@@ -101,15 +134,27 @@ type RestGetAllFirewallRulesResponse struct {
 
 // RestDelFirewallRules godoc
 // @ID DelFirewallRules
-// @Summary Delete FirewallRules
-// @Description Delete FirewallRules
+// @Summary Delete specific FirewallRules (Replace with remaining rules)
+// @Description Delete specific FirewallRules: Remove specified rules from the Security Group while keeping other existing rules.
+// @Description This API will remove only the specified rules from the Security Group, leaving all other rules intact.
+// @Description
+// @Description Usage:
+// @Description Use this API to remove specific firewall rules from a Security Group. Only the rules matching the provided criteria will be deleted.
+// @Description - Rules that exactly match the provided Direction, Protocol, Port, and CIDR will be removed.
+// @Description - All other existing rules will remain unchanged.
+// @Description
+// @Description Notes:
+// @Description - "Ports" field supports single port ("22"), port range ("80-100"), and multiple ports/ranges ("22,80-100,443").
+// @Description - "Protocol" can be TCP, UDP, ICMP, ALL, etc. (as supported by the cloud provider).
+// @Description - "Direction" must be either "inbound" or "outbound".
+// @Description - "CIDR" is the allowed IP range.
 // @Tags [Infra Resource] Security Group Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param securityGroupId path string true "Security Group ID"
-// @Param firewallRuleReq body TbFirewallRulesWrapper true "FirewallRules to delete"
-// @Success 200 {object} model.TbSecurityGroupInfo
+// @Param firewallRuleReq body model.TbSecurityGroupUpdateReq true "FirewallRules to delete (only firewallRules field is used)"
+// @Success 200 {object} model.TbSecurityGroupUpdateResponse "Updated Security Group info after rule deletion"
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [delete]
 func RestDelFirewallRules(c echo.Context) error {
@@ -117,11 +162,33 @@ func RestDelFirewallRules(c echo.Context) error {
 	nsId := c.Param("nsId")
 	securityGroupId := c.Param("securityGroupId")
 
-	u := &TbFirewallRulesWrapper{}
+	u := &model.TbSecurityGroupUpdateReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := resource.DeleteFirewallRules(nsId, securityGroupId, *&u.FirewallRules)
-	return clientManager.EndRequestWithLog(c, err, content)
+	// Convert TbFirewallRuleReq to TbFirewallRuleInfo for deletion
+	var rulesToDelete []model.TbFirewallRuleInfo
+	for _, ruleReq := range u.FirewallRules {
+		// Convert each rule request to info object(s)
+		ruleInfos := resource.ConvertFirewallRuleRequestObjToInfoObjs(ruleReq)
+		rulesToDelete = append(rulesToDelete, ruleInfos...)
+	}
+
+	sgInfo, err := resource.DeleteFirewallRules(nsId, securityGroupId, rulesToDelete)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Convert TbSecurityGroupInfo to TbSecurityGroupUpdateResponse for consistency
+	response := model.TbSecurityGroupUpdateResponse{
+		Id:       sgInfo.Id,
+		Name:     sgInfo.Name,
+		Success:  true,
+		Message:  "Successfully deleted specified firewall rules",
+		Updated:  sgInfo,
+		Previous: sgInfo, // Since we don't have the previous state, use current state
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, response)
 }

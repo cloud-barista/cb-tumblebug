@@ -64,22 +64,41 @@ type SpiderSecurityInfoList struct {
 
 // TbSecurityGroupReq is a struct to handle 'Create security group' request toward CB-Tumblebug.
 type TbSecurityGroupReq struct { // Tumblebug
-	Name           string                `json:"name" validate:"required"`
-	ConnectionName string                `json:"connectionName" validate:"required"`
-	VNetId         string                `json:"vNetId" validate:"required"`
-	Description    string                `json:"description"`
-	FirewallRules  *[]TbFirewallRuleInfo `json:"firewallRules"` // validate:"required"`
+	Name           string               `json:"name" validate:"required"`
+	ConnectionName string               `json:"connectionName" validate:"required"`
+	VNetId         string               `json:"vNetId" validate:"required"`
+	Description    string               `json:"description"`
+	FirewallRules  *[]TbFirewallRuleReq `json:"firewallRules"` // validate:"required"`
 
 	// CspResourceId is required to register object from CSP (option=register)
 	CspResourceId string `json:"cspResourceId" example:"required for option=register only. ex: csp-06eb41e14121c550a"`
 }
 
+// TbFirewallRuleReq is a struct to get a request for firewall rule info of CB-Tumblebug.
+type TbFirewallRuleReq struct {
+	// Ports is to get multiple ports or port ranges as a string (e.g. "22,900-1000,2000-3000")
+	// This allows flexibility in specifying single ports or ranges in a comma-separated format.
+	// This field is used to handle both single ports and port ranges in a unified way.
+	// It can accept a single port (e.g. "22"), a range (e.g. "900-1000"), or multiple ports/ranges (e.g. "22,900-1000,2000-3000").
+	Ports string `json:"Ports" example:"22,900-1000,2000-3000"`
+	// Protocol is the protocol type for the rule (TCP, UDP, ICMP). Don't use ALL here.
+	Protocol string `validate:"required" json:"Protocol" example:"TCP" enums:"TCP,UDP,ICMP"`
+	// Direction is the direction of the rule (inbound or outbound)
+	Direction string `validate:"required" json:"Direction" example:"inbound" enums:"inbound,outbound"`
+	// CIDR is the allowed IP range (e.g. 0.0.0.0/0, 10.0.0/8)
+	CIDR string `json:"CIDR" example:"0.0.0.0/0"`
+}
+
 // TbFirewallRuleInfo is a struct to handle firewall rule info of CB-Tumblebug.
 type TbFirewallRuleInfo struct {
-	Ports     string `json:"Ports" example:"1-65535,22,5555"`
-	Protocol  string `validate:"required" json:"Protocol" example:"TCP" enums:"TCP,UDP,ICMP,ALL"`
+	// Port is the single port (e.g. "22") or port range (e.g. "1-65535") for the rule
+	Port string `json:"Port" example:"1-65535"`
+	// Protocol is the protocol type for the rule (TCP, UDP, ICMP, ALL)
+	Protocol string `validate:"required" json:"Protocol" example:"TCP" enums:"TCP,UDP,ICMP,ALL"`
+	// Direction is the direction of the rule (inbound or outbound)
 	Direction string `validate:"required" json:"Direction" example:"inbound" enums:"inbound,outbound"`
-	CIDR      string `json:"CIDR" example:"0.0.0.0/0"`
+	// CIDR is the allowed IP range (e.g. 0.0.0.0/0, 10.0.0/8)
+	CIDR string `json:"CIDR" example:"0.0.0.0/0"`
 }
 
 // TbSecurityGroupInfo is a struct that represents TB security group object.
@@ -116,7 +135,31 @@ type TbSecurityGroupInfo struct {
 	//ResourceGroupName  string `json:"resourceGroupName"`
 }
 
+// TbSecurityGroupUpdateResponse is a struct to handle 'Update security group' response toward CB-Tumblebug.
+type TbSecurityGroupUpdateResponse struct {
+	Id       string              `json:"id"`
+	Name     string              `json:"name"`
+	Success  bool                `json:"success"`
+	Message  string              `json:"message,omitempty"`
+	Updated  TbSecurityGroupInfo `json:"updated,omitempty"`
+	Previous TbSecurityGroupInfo `json:"previous,omitempty"`
+}
+
+// TbRestWrapperSecurityGroupUpdateResponse is a struct to handle 'Update security group' response toward CB-Tumblebug.
+type TbRestWrapperSecurityGroupUpdateResponse struct {
+	Response []TbSecurityGroupUpdateResponse `json:"response"`
+	Summary  TbUpdateSummary                 `json:"summary"`
+}
+
+// TbUpdateSummary provides overall summary of the update operation
+type TbUpdateSummary struct {
+	Total      int  `json:"total"`
+	Success    int  `json:"success"`
+	Failed     int  `json:"failed"`
+	AllSuccess bool `json:"allSuccess"`
+}
+
 // TbSecurityGroupUpdateReq is a struct to handle 'Update security group' request toward CB-Tumblebug.
 type TbSecurityGroupUpdateReq struct {
-	FirewallRules []TbFirewallRuleInfo `json:"firewallRules"`
+	FirewallRules []TbFirewallRuleReq `json:"firewallRules"`
 }

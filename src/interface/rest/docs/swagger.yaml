@@ -3066,6 +3066,121 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/mci/{mciId}/associatedResources:
+    get:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: Get associated resource ID list for a given MCI
+      description: "Get associated resource ID list for a given MCI (VNet, Subnet,\
+        \ SecurityGroup, SSHKey, etc.)"
+      operationId: GetMciAssociatedResources
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.MciAssociatedResourceList'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/mci/{mciId}/associatedSecurityGroups:
+    put:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: Update all Security Groups associated with a given MCI (Synchronize
+        Firewall Rules)
+      description: |-
+        Update all Security Groups associated with a given MCI. The firewall rules of all Security Groups will be synchronized to match the requested set.
+        Update all Security Groups associated with a given MCI. The firewall rules of all associated Security Groups will be synchronized to match the requested set.
+
+        This API will add missing rules and delete extra rules so that each Security Group's rules become identical to the requested set.
+        Only firewall rules are updated; other metadata (name, description, etc.) is not changed.
+
+        Usage:
+        Use this API to update (synchronize) the firewall rules of all Security Groups associated with the specified MCI. The rules in the request body will become the only rules in each Security Group after the operation.
+        - All existing rules not present in the request will be deleted.
+        - All rules in the request that do not exist will be added.
+        - If a rule exists but differs in CIDR or port range, it will be replaced.
+        - Special protocols (ICMP, etc.) are handled in the same way.
+
+        Notes:
+        - "Ports" field supports single port ("22"), port range ("80-100"), and multiple ports/ranges ("22,80-100,443").
+        - The valid port number range is 0 to 65535 (inclusive).
+        - "Protocol" can be TCP, UDP, ICMP, etc. (as supported by the cloud provider).
+        - "Direction" must be either "inbound" or "outbound".
+        - "CIDR" is the allowed IP range.
+        - All existing rules not in the request (including default ICMP, etc.) will be deleted.
+        - Metadata (name, description, etc.) is not changed.
+      operationId: PutMciAssociatedSecurityGroups
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      requestBody:
+        description: Details for SecurityGroup update (only firewallRules field is
+          used for update)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.TbSecurityGroupUpdateReq'
+        required: true
+      responses:
+        "200":
+          description: Updated Security Group info list with synchronized firewall
+            rules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.TbRestWrapperSecurityGroupUpdateResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: securityGroupInfo
   /ns/{nsId}/mci/{mciId}/bastion/{bastionVmId}:
     delete:
       tags:
@@ -6394,15 +6509,15 @@ paths:
         - All existing rules not present in the request will be deleted.
         - All rules in the request that do not exist will be added.
         - If a rule exists but differs in CIDR or port range, it will be replaced.
-        - Special protocols (ICMP, ALL, etc.) are handled in the same way.
+        - Special protocols (ICMP, etc.) are handled in the same way.
 
         Notes:
         - "Ports" field supports single port ("22"), port range ("80-100"), and multiple ports/ranges ("22,80-100,443").
         - The valid port number range is 0 to 65535 (inclusive).
-        - "Protocol" can be TCP, UDP, ICMP, ALL, etc. (as supported by the cloud provider).
+        - "Protocol" can be TCP, UDP, ICMP, etc. (as supported by the cloud provider).
         - "Direction" must be either "inbound" or "outbound".
         - "CIDR" is the allowed IP range.
-        - All existing rules not in the request (including default ICMP, ALL, etc.) will be deleted.
+        - All existing rules not in the request (including default ICMP, etc.) will be deleted.
         - Metadata (name, description, etc.) is not changed.
       operationId: PutSecurityGroup
       parameters:
@@ -6433,7 +6548,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSecurityGroupInfo'
+                $ref: '#/components/schemas/model.TbSecurityGroupUpdateResponse'
         "404":
           description: Not Found
           content:
@@ -9557,6 +9672,69 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.MciSubGroupAccessInfo'
+    model.MciAssociatedResourceList:
+      type: object
+      properties:
+        connectionNames:
+          type: array
+          items:
+            type: string
+        cspSubnetIds:
+          type: array
+          items:
+            type: string
+        cspVNetIds:
+          type: array
+          items:
+            type: string
+        cspVmIds:
+          type: array
+          items:
+            type: string
+        cspVmNames:
+          type: array
+          items:
+            type: string
+        dataDiskIds:
+          type: array
+          items:
+            type: string
+        imageIds:
+          type: array
+          items:
+            type: string
+        providerNames:
+          type: array
+          items:
+            type: string
+        securityGroupIds:
+          type: array
+          items:
+            type: string
+        specIds:
+          type: array
+          items:
+            type: string
+        sshKeyIds:
+          type: array
+          items:
+            type: string
+        subGroupIds:
+          type: array
+          items:
+            type: string
+        subnetIds:
+          type: array
+          items:
+            type: string
+        vNetIds:
+          type: array
+          items:
+            type: string
+        vmIds:
+          type: array
+          items:
+            type: string
     model.MciCmdReq:
       required:
       - command
@@ -11207,24 +11385,64 @@ components:
       properties:
         CIDR:
           type: string
+          description: "CIDR is the allowed IP range (e.g. 0.0.0.0/0, 10.0.0/8)"
           example: 0.0.0.0/0
         Direction:
           type: string
+          description: Direction is the direction of the rule (inbound or outbound)
           example: inbound
           enum:
           - inbound
           - outbound
-        Ports:
+        Port:
           type: string
-          example: "1-65535,22,5555"
+          description: Port is the single port (e.g. "22") or port range (e.g. "1-65535")
+            for the rule
+          example: 1-65535
         Protocol:
           type: string
+          description: "Protocol is the protocol type for the rule (TCP, UDP, ICMP,\
+            \ ALL)"
           example: TCP
           enum:
           - TCP
           - UDP
           - ICMP
           - ALL
+    model.TbFirewallRuleReq:
+      required:
+      - Direction
+      - Protocol
+      type: object
+      properties:
+        CIDR:
+          type: string
+          description: "CIDR is the allowed IP range (e.g. 0.0.0.0/0, 10.0.0/8)"
+          example: 0.0.0.0/0
+        Direction:
+          type: string
+          description: Direction is the direction of the rule (inbound or outbound)
+          example: inbound
+          enum:
+          - inbound
+          - outbound
+        Ports:
+          type: string
+          description: |-
+            Ports is to get multiple ports or port ranges as a string (e.g. "22,900-1000,2000-3000")
+            This allows flexibility in specifying single ports or ranges in a comma-separated format.
+            This field is used to handle both single ports and port ranges in a unified way.
+            It can accept a single port (e.g. "22"), a range (e.g. "900-1000"), or multiple ports/ranges (e.g. "22,900-1000,2000-3000").
+          example: "22,900-1000,2000-3000"
+        Protocol:
+          type: string
+          description: "Protocol is the protocol type for the rule (TCP, UDP, ICMP).\
+            \ Don't use ALL here."
+          example: TCP
+          enum:
+          - TCP
+          - UDP
+          - ICMP
     model.TbIdNameInDetailInfo:
       type: object
       properties:
@@ -12242,6 +12460,15 @@ components:
           type: string
         name:
           type: string
+    model.TbRestWrapperSecurityGroupUpdateResponse:
+      type: object
+      properties:
+        response:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.TbSecurityGroupUpdateResponse'
+        summary:
+          $ref: '#/components/schemas/model.TbUpdateSummary'
     model.TbScaleOutSubGroupReq:
       required:
       - numVMsToAdd
@@ -12325,7 +12552,7 @@ components:
           type: array
           description: validate:"required"`
           items:
-            $ref: '#/components/schemas/model.TbFirewallRuleInfo'
+            $ref: '#/components/schemas/model.TbFirewallRuleReq'
         name:
           type: string
         vNetId:
@@ -12336,7 +12563,22 @@ components:
         firewallRules:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbFirewallRuleInfo'
+            $ref: '#/components/schemas/model.TbFirewallRuleReq'
+    model.TbSecurityGroupUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        message:
+          type: string
+        name:
+          type: string
+        previous:
+          $ref: '#/components/schemas/model.TbSecurityGroupInfo'
+        success:
+          type: boolean
+        updated:
+          $ref: '#/components/schemas/model.TbSecurityGroupInfo'
     model.TbSetK8sNodeGroupAutoscalingReq:
       type: object
       properties:
@@ -12628,6 +12870,17 @@ components:
           example: subnet00
         zone:
           type: string
+    model.TbUpdateSummary:
+      type: object
+      properties:
+        allSuccess:
+          type: boolean
+        failed:
+          type: integer
+        success:
+          type: integer
+        total:
+          type: integer
     model.TbUpgradeK8sClusterReq:
       type: object
       properties:

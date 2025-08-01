@@ -4044,6 +4044,123 @@
                 }
             }
         },
+        "/ns/{nsId}/mci/{mciId}/associatedResources": {
+            "get": {
+                "description": "Get associated resource ID list for a given MCI (VNet, Subnet, SecurityGroup, SSHKey, etc.)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Provisioning and Management"
+                ],
+                "summary": "Get associated resource ID list for a given MCI",
+                "operationId": "GetMciAssociatedResources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MciAssociatedResourceList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mci/{mciId}/associatedSecurityGroups": {
+            "put": {
+                "description": "Update all Security Groups associated with a given MCI. The firewall rules of all Security Groups will be synchronized to match the requested set.\nUpdate all Security Groups associated with a given MCI. The firewall rules of all associated Security Groups will be synchronized to match the requested set.\n\nThis API will add missing rules and delete extra rules so that each Security Group's rules become identical to the requested set.\nOnly firewall rules are updated; other metadata (name, description, etc.) is not changed.\n\nUsage:\nUse this API to update (synchronize) the firewall rules of all Security Groups associated with the specified MCI. The rules in the request body will become the only rules in each Security Group after the operation.\n- All existing rules not present in the request will be deleted.\n- All rules in the request that do not exist will be added.\n- If a rule exists but differs in CIDR or port range, it will be replaced.\n- Special protocols (ICMP, etc.) are handled in the same way.\n\nNotes:\n- \"Ports\" field supports single port (\"22\"), port range (\"80-100\"), and multiple ports/ranges (\"22,80-100,443\").\n- The valid port number range is 0 to 65535 (inclusive).\n- \"Protocol\" can be TCP, UDP, ICMP, etc. (as supported by the cloud provider).\n- \"Direction\" must be either \"inbound\" or \"outbound\".\n- \"CIDR\" is the allowed IP range.\n- All existing rules not in the request (including default ICMP, etc.) will be deleted.\n- Metadata (name, description, etc.) is not changed.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Provisioning and Management"
+                ],
+                "summary": "Update all Security Groups associated with a given MCI (Synchronize Firewall Rules)",
+                "operationId": "PutMciAssociatedSecurityGroups",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for SecurityGroup update (only firewallRules field is used for update)",
+                        "name": "securityGroupInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.TbSecurityGroupUpdateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated Security Group info list with synchronized firewall rules",
+                        "schema": {
+                            "$ref": "#/definitions/model.TbRestWrapperSecurityGroupUpdateResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mci/{mciId}/bastion/{bastionVmId}": {
             "delete": {
                 "description": "Remove a bastion VM from all vNets",
@@ -8348,7 +8465,7 @@
                 }
             },
             "put": {
-                "description": "Update Security Group: Synchronize the firewall rules of the specified Security Group to match the requested list exactly.\nThis API will add missing rules and delete extra rules so that the Security Group's rules become identical to the requested set.\nOnly firewall rules are updated; other metadata (name, description, etc.) is not changed.\n\nUsage:\nUse this API to update (synchronize) the firewall rules of a Security Group. The rules in the request body will become the only rules in the Security Group after the operation.\n- All existing rules not present in the request will be deleted.\n- All rules in the request that do not exist will be added.\n- If a rule exists but differs in CIDR or port range, it will be replaced.\n- Special protocols (ICMP, ALL, etc.) are handled in the same way.\n\nNotes:\n- \"Ports\" field supports single port (\"22\"), port range (\"80-100\"), and multiple ports/ranges (\"22,80-100,443\").\n- The valid port number range is 0 to 65535 (inclusive).\n- \"Protocol\" can be TCP, UDP, ICMP, ALL, etc. (as supported by the cloud provider).\n- \"Direction\" must be either \"inbound\" or \"outbound\".\n- \"CIDR\" is the allowed IP range.\n- All existing rules not in the request (including default ICMP, ALL, etc.) will be deleted.\n- Metadata (name, description, etc.) is not changed.",
+                "description": "Update Security Group: Synchronize the firewall rules of the specified Security Group to match the requested list exactly.\nThis API will add missing rules and delete extra rules so that the Security Group's rules become identical to the requested set.\nOnly firewall rules are updated; other metadata (name, description, etc.) is not changed.\n\nUsage:\nUse this API to update (synchronize) the firewall rules of a Security Group. The rules in the request body will become the only rules in the Security Group after the operation.\n- All existing rules not present in the request will be deleted.\n- All rules in the request that do not exist will be added.\n- If a rule exists but differs in CIDR or port range, it will be replaced.\n- Special protocols (ICMP, etc.) are handled in the same way.\n\nNotes:\n- \"Ports\" field supports single port (\"22\"), port range (\"80-100\"), and multiple ports/ranges (\"22,80-100,443\").\n- The valid port number range is 0 to 65535 (inclusive).\n- \"Protocol\" can be TCP, UDP, ICMP, etc. (as supported by the cloud provider).\n- \"Direction\" must be either \"inbound\" or \"outbound\".\n- \"CIDR\" is the allowed IP range.\n- All existing rules not in the request (including default ICMP, etc.) will be deleted.\n- Metadata (name, description, etc.) is not changed.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8390,7 +8507,7 @@
                     "200": {
                         "description": "Updated Security Group info with synchronized firewall rules",
                         "schema": {
-                            "$ref": "#/definitions/model.TbSecurityGroupInfo"
+                            "$ref": "#/definitions/model.TbSecurityGroupUpdateResponse"
                         }
                     },
                     "404": {
@@ -12612,6 +12729,101 @@
                 }
             }
         },
+        "model.MciAssociatedResourceList": {
+            "type": "object",
+            "properties": {
+                "connectionNames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cspSubnetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cspVNetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cspVmIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cspVmNames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "dataDiskIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "imageIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "providerNames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "specIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sshKeyIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "subGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "subnetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "vNetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "vmIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "model.MciCmdReq": {
             "type": "object",
             "required": [
@@ -14849,10 +15061,51 @@
             ],
             "properties": {
                 "CIDR": {
+                    "description": "CIDR is the allowed IP range (e.g. 0.0.0.0/0, 10.0.0/8)",
                     "type": "string",
                     "example": "0.0.0.0/0"
                 },
                 "Direction": {
+                    "description": "Direction is the direction of the rule (inbound or outbound)",
+                    "type": "string",
+                    "enum": [
+                        "inbound",
+                        "outbound"
+                    ],
+                    "example": "inbound"
+                },
+                "Port": {
+                    "description": "Port is the single port (e.g. \"22\") or port range (e.g. \"1-65535\") for the rule",
+                    "type": "string",
+                    "example": "1-65535"
+                },
+                "Protocol": {
+                    "description": "Protocol is the protocol type for the rule (TCP, UDP, ICMP, ALL)",
+                    "type": "string",
+                    "enum": [
+                        "TCP",
+                        "UDP",
+                        "ICMP",
+                        "ALL"
+                    ],
+                    "example": "TCP"
+                }
+            }
+        },
+        "model.TbFirewallRuleReq": {
+            "type": "object",
+            "required": [
+                "Direction",
+                "Protocol"
+            ],
+            "properties": {
+                "CIDR": {
+                    "description": "CIDR is the allowed IP range (e.g. 0.0.0.0/0, 10.0.0/8)",
+                    "type": "string",
+                    "example": "0.0.0.0/0"
+                },
+                "Direction": {
+                    "description": "Direction is the direction of the rule (inbound or outbound)",
                     "type": "string",
                     "enum": [
                         "inbound",
@@ -14861,16 +15114,17 @@
                     "example": "inbound"
                 },
                 "Ports": {
+                    "description": "Ports is to get multiple ports or port ranges as a string (e.g. \"22,900-1000,2000-3000\")\nThis allows flexibility in specifying single ports or ranges in a comma-separated format.\nThis field is used to handle both single ports and port ranges in a unified way.\nIt can accept a single port (e.g. \"22\"), a range (e.g. \"900-1000\"), or multiple ports/ranges (e.g. \"22,900-1000,2000-3000\").",
                     "type": "string",
-                    "example": "1-65535,22,5555"
+                    "example": "22,900-1000,2000-3000"
                 },
                 "Protocol": {
+                    "description": "Protocol is the protocol type for the rule (TCP, UDP, ICMP). Don't use ALL here.",
                     "type": "string",
                     "enum": [
                         "TCP",
                         "UDP",
-                        "ICMP",
-                        "ALL"
+                        "ICMP"
                     ],
                     "example": "TCP"
                 }
@@ -16221,6 +16475,20 @@
                 }
             }
         },
+        "model.TbRestWrapperSecurityGroupUpdateResponse": {
+            "type": "object",
+            "properties": {
+                "response": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbSecurityGroupUpdateResponse"
+                    }
+                },
+                "summary": {
+                    "$ref": "#/definitions/model.TbUpdateSummary"
+                }
+            }
+        },
         "model.TbScaleOutSubGroupReq": {
             "type": "object",
             "required": [
@@ -16329,7 +16597,7 @@
                     "description": "validate:\"required\"`",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.TbFirewallRuleInfo"
+                        "$ref": "#/definitions/model.TbFirewallRuleReq"
                     }
                 },
                 "name": {
@@ -16346,8 +16614,31 @@
                 "firewallRules": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.TbFirewallRuleInfo"
+                        "$ref": "#/definitions/model.TbFirewallRuleReq"
                     }
+                }
+            }
+        },
+        "model.TbSecurityGroupUpdateResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "previous": {
+                    "$ref": "#/definitions/model.TbSecurityGroupInfo"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "updated": {
+                    "$ref": "#/definitions/model.TbSecurityGroupInfo"
                 }
             }
         },
@@ -16747,6 +17038,23 @@
                 },
                 "zone": {
                     "type": "string"
+                }
+            }
+        },
+        "model.TbUpdateSummary": {
+            "type": "object",
+            "properties": {
+                "allSuccess": {
+                    "type": "boolean"
+                },
+                "failed": {
+                    "type": "integer"
+                },
+                "success": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },
