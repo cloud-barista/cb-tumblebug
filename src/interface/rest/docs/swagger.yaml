@@ -6599,8 +6599,24 @@ paths:
     post:
       tags:
       - "[Infra Resource] Security Group Management"
-      summary: Create FirewallRules
-      description: Create FirewallRules
+      summary: Add new FirewallRules to existing rules
+      description: |-
+        Add new FirewallRules: Add the provided firewall rules to the existing rules in the Security Group.
+        This API will only add new rules without deleting or modifying existing ones.
+        If a rule with identical properties already exists, it will be skipped to avoid duplicates.
+
+        Usage:
+        Use this API to add new firewall rules to a Security Group while preserving existing rules.
+        - Only new rules that don't already exist will be added.
+        - Existing rules remain unchanged.
+        - If an identical rule already exists, it will be skipped.
+
+        Notes:
+        - "Ports" field supports single port ("22"), port range ("80-100"), and multiple ports/ranges ("22,80-100,443").
+        - The valid port number range is 0 to 65535 (inclusive).
+        - "Protocol" can be TCP, UDP, ICMP, ALL, etc. (as supported by the cloud provider).
+        - "Direction" must be either "inbound" or "outbound".
+        - "CIDR" is the allowed IP range.
       operationId: PostFirewallRules
       parameters:
       - name: nsId
@@ -6617,19 +6633,19 @@ paths:
         schema:
           type: string
       requestBody:
-        description: FirewallRules to create
+        description: FirewallRules to add (only firewallRules field is used)
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/resource.TbFirewallRulesWrapper'
+              $ref: '#/components/schemas/model.TbSecurityGroupUpdateReq'
         required: true
       responses:
         "200":
-          description: OK
+          description: Updated Security Group info with added firewall rules
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSecurityGroupInfo'
+                $ref: '#/components/schemas/model.TbSecurityGroupUpdateResponse'
         "404":
           description: Not Found
           content:
@@ -6646,8 +6662,21 @@ paths:
     delete:
       tags:
       - "[Infra Resource] Security Group Management"
-      summary: Delete FirewallRules
-      description: Delete FirewallRules
+      summary: Delete specific FirewallRules (Replace with remaining rules)
+      description: |-
+        Delete specific FirewallRules: Remove specified rules from the Security Group while keeping other existing rules.
+        This API will remove only the specified rules from the Security Group, leaving all other rules intact.
+
+        Usage:
+        Use this API to remove specific firewall rules from a Security Group. Only the rules matching the provided criteria will be deleted.
+        - Rules that exactly match the provided Direction, Protocol, Port, and CIDR will be removed.
+        - All other existing rules will remain unchanged.
+
+        Notes:
+        - "Ports" field supports single port ("22"), port range ("80-100"), and multiple ports/ranges ("22,80-100,443").
+        - "Protocol" can be TCP, UDP, ICMP, ALL, etc. (as supported by the cloud provider).
+        - "Direction" must be either "inbound" or "outbound".
+        - "CIDR" is the allowed IP range.
       operationId: DelFirewallRules
       parameters:
       - name: nsId
@@ -6664,19 +6693,19 @@ paths:
         schema:
           type: string
       requestBody:
-        description: FirewallRules to delete
+        description: FirewallRules to delete (only firewallRules field is used)
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/resource.TbFirewallRulesWrapper'
+              $ref: '#/components/schemas/model.TbSecurityGroupUpdateReq'
         required: true
       responses:
         "200":
-          description: OK
+          description: Updated Security Group info after rule deletion
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSecurityGroupInfo'
+                $ref: '#/components/schemas/model.TbSecurityGroupUpdateResponse'
         "404":
           description: Not Found
           content:
@@ -13621,14 +13650,6 @@ components:
           type: string
         cspResourceId:
           type: string
-    resource.TbFirewallRulesWrapper:
-      type: object
-      properties:
-        firewallRules:
-          type: array
-          description: validate:"required"`
-          items:
-            $ref: '#/components/schemas/model.TbFirewallRuleInfo'
   securitySchemes:
     BasicAuth:
       type: http
