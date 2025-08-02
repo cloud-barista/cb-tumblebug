@@ -8579,7 +8579,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/resources/securityGroup/{securityGroupId}/rules": {
             "post": {
-                "description": "Create FirewallRules",
+                "description": "Add new FirewallRules: Add the provided firewall rules to the existing rules in the Security Group.\nThis API will only add new rules without deleting or modifying existing ones.\nIf a rule with identical properties already exists, it will be skipped to avoid duplicates.\n\nUsage:\nUse this API to add new firewall rules to a Security Group while preserving existing rules.\n- Only new rules that don't already exist will be added.\n- Existing rules remain unchanged.\n- If an identical rule already exists, it will be skipped.\n\nNotes:\n- \"Ports\" field supports single port (\"22\"), port range (\"80-100\"), and multiple ports/ranges (\"22,80-100,443\").\n- The valid port number range is 0 to 65535 (inclusive).\n- \"Protocol\" can be TCP, UDP, ICMP, ALL, etc. (as supported by the cloud provider).\n- \"Direction\" must be either \"inbound\" or \"outbound\".\n- \"CIDR\" is the allowed IP range.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8589,7 +8589,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Security Group Management"
                 ],
-                "summary": "Create FirewallRules",
+                "summary": "Add new FirewallRules to existing rules",
                 "operationId": "PostFirewallRules",
                 "parameters": [
                     {
@@ -8608,20 +8608,20 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "FirewallRules to create",
+                        "description": "FirewallRules to add (only firewallRules field is used)",
                         "name": "firewallRuleReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.TbFirewallRulesWrapper"
+                            "$ref": "#/definitions/model.TbSecurityGroupUpdateReq"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Updated Security Group info with added firewall rules",
                         "schema": {
-                            "$ref": "#/definitions/model.TbSecurityGroupInfo"
+                            "$ref": "#/definitions/model.TbSecurityGroupUpdateResponse"
                         }
                     },
                     "404": {
@@ -8639,7 +8639,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete FirewallRules",
+                "description": "Delete specific FirewallRules: Remove specified rules from the Security Group while keeping other existing rules.\nThis API will remove only the specified rules from the Security Group, leaving all other rules intact.\n\nUsage:\nUse this API to remove specific firewall rules from a Security Group. Only the rules matching the provided criteria will be deleted.\n- Rules that exactly match the provided Direction, Protocol, Port, and CIDR will be removed.\n- All other existing rules will remain unchanged.\n\nNotes:\n- \"Ports\" field supports single port (\"22\"), port range (\"80-100\"), and multiple ports/ranges (\"22,80-100,443\").\n- \"Protocol\" can be TCP, UDP, ICMP, ALL, etc. (as supported by the cloud provider).\n- \"Direction\" must be either \"inbound\" or \"outbound\".\n- \"CIDR\" is the allowed IP range.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8649,7 +8649,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Security Group Management"
                 ],
-                "summary": "Delete FirewallRules",
+                "summary": "Delete specific FirewallRules (Replace with remaining rules)",
                 "operationId": "DelFirewallRules",
                 "parameters": [
                     {
@@ -8668,20 +8668,20 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "FirewallRules to delete",
+                        "description": "FirewallRules to delete (only firewallRules field is used)",
                         "name": "firewallRuleReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/resource.TbFirewallRulesWrapper"
+                            "$ref": "#/definitions/model.TbSecurityGroupUpdateReq"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Updated Security Group info after rule deletion",
                         "schema": {
-                            "$ref": "#/definitions/model.TbSecurityGroupInfo"
+                            "$ref": "#/definitions/model.TbSecurityGroupUpdateResponse"
                         }
                     },
                     "404": {
@@ -18100,18 +18100,6 @@ const docTemplate = `{
                 },
                 "cspResourceId": {
                     "type": "string"
-                }
-            }
-        },
-        "resource.TbFirewallRulesWrapper": {
-            "type": "object",
-            "properties": {
-                "firewallRules": {
-                    "description": "validate:\"required\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.TbFirewallRuleInfo"
-                    }
                 }
             }
         }
