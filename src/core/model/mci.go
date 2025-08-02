@@ -3,7 +3,7 @@ Copyright 2019 The Cloud-Barista Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -341,7 +341,7 @@ type SpiderVMInfo struct {
 	PublicDNS         string
 	PrivateIP         string
 	PrivateDNS        string
-	RootDiskName    string // "/dev/sda1", ...
+	RootDiskName      string // "/dev/sda1", ...
 	SSHAccessPoint    string
 	KeyValueList      []KeyValue
 }
@@ -362,7 +362,27 @@ type TbSubGroupInfo struct {
 	SubGroupSize string   `json:"subGroupSize"`
 }
 
-// TbVmInfo is struct to define a server instance object
+// MciAssociatedResourceList is struct for associated resource IDs of an MCI
+type MciAssociatedResourceList struct {
+	ConnectionNames []string `json:"connectionNames"`
+	ProviderNames   []string `json:"providerNames"`
+
+	SubGroupIds []string `json:"subGroupIds"`
+	VmIds       []string `json:"vmIds"`
+	CspVmNames  []string `json:"cspVmNames"`
+	CspVmIds    []string `json:"cspVmIds"`
+	ImageIds    []string `json:"imageIds"`
+	SpecIds     []string `json:"specIds"`
+
+	VNetIds          []string `json:"vNetIds"`
+	CspVNetIds       []string `json:"cspVNetIds"`
+	SubnetIds        []string `json:"subnetIds"`
+	CspSubnetIds     []string `json:"cspSubnetIds"`
+	SecurityGroupIds []string `json:"securityGroupIds"`
+	DataDiskIds      []string `json:"dataDiskIds"`
+	SSHKeyIds        []string `json:"sshKeyIds"`
+}
+
 type TbVmInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
@@ -404,14 +424,14 @@ type TbVmInfo struct {
 	Label       map[string]string `json:"label"`
 	Description string            `json:"description"`
 
-	Region         RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-	PublicIP       string     `json:"publicIP"`
-	SSHPort        string     `json:"sshPort"`
-	PublicDNS      string     `json:"publicDNS"`
-	PrivateIP      string     `json:"privateIP"`
-	PrivateDNS     string     `json:"privateDNS"`
-	RootDiskType   string     `json:"rootDiskType"`
-	RootDiskSize   string     `json:"rootDiskSize"`
+	Region       RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	PublicIP     string     `json:"publicIP"`
+	SSHPort      string     `json:"sshPort"`
+	PublicDNS    string     `json:"publicDNS"`
+	PrivateIP    string     `json:"privateIP"`
+	PrivateDNS   string     `json:"privateDNS"`
+	RootDiskType string     `json:"rootDiskType"`
+	RootDiskSize string     `json:"rootDiskSize"`
 	RootDiskName string     `json:"rootDiskName"`
 
 	ConnectionName   string     `json:"connectionName"`

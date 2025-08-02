@@ -17,6 +17,7 @@ package resource
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"reflect"
 	"strings"
@@ -24,6 +25,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
@@ -64,8 +66,13 @@ func ConvertSpiderToTbFirewallRuleInfo(s model.SpiderSecurityRuleInfo) model.TbF
 	if strings.EqualFold(s.IPProtocol, "ICMP") {
 		ports = ""
 	}
+	// if one of FromPort or ToPort is empty or "-1", set ports to empty string
+	if s.FromPort == "" || s.ToPort == "" || s.FromPort == "-1" || s.ToPort == "-1" {
+		ports = ""
+	}
+
 	return model.TbFirewallRuleInfo{
-		Ports:     ports,
+		Port:      ports,
 		Protocol:  s.IPProtocol,
 		Direction: s.Direction,
 		CIDR:      s.CIDR,
@@ -75,10 +82,12 @@ func ConvertSpiderToTbFirewallRuleInfo(s model.SpiderSecurityRuleInfo) model.TbF
 // TbFirewallRuleInfo → SpiderSecurityRuleInfo
 func ConvertTbToSpiderSecurityRuleInfo(t model.TbFirewallRuleInfo) model.SpiderSecurityRuleInfo {
 	var from, to string
-	if strings.EqualFold(t.Protocol, "ICMP") {
+
+	// if Port is empty or "-1", set both from, to to "-1"
+	if t.Port == "" || t.Port == "-1" {
 		from, to = "-1", "-1"
 	} else {
-		from, to = parsePortsToFromTo(t.Ports)
+		from, to = parsePortsToFromTo(t.Port)
 	}
 	return model.SpiderSecurityRuleInfo{
 		FromPort:   from,
@@ -87,6 +96,24 @@ func ConvertTbToSpiderSecurityRuleInfo(t model.TbFirewallRuleInfo) model.SpiderS
 		Direction:  t.Direction,
 		CIDR:       t.CIDR,
 	}
+}
+
+// ConvertFirewallRuleRequestObjToInfoObjs converts a TbFirewallRuleReq object to a slice of TbFirewallRuleInfo objects.
+// It handles single ports, port ranges, and multiple ports/ranges in a comma-separated format.
+func ConvertFirewallRuleRequestObjToInfoObjs(req model.TbFirewallRuleReq) []model.TbFirewallRuleInfo {
+	var infos []model.TbFirewallRuleInfo
+	seperator := ","
+	ports := strings.Split(req.Ports, seperator)
+
+	for _, port := range ports {
+		infos = append(infos, model.TbFirewallRuleInfo{
+			Port:      port,
+			Protocol:  req.Protocol,
+			Direction: req.Direction,
+			CIDR:      req.CIDR,
+		})
+	}
+	return infos
 }
 
 // parsePortsToFromTo parses a port string to FromPort and ToPort
@@ -222,15 +249,21 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 	// requestBody.ReqInfo.SecurityRules = u.FirewallRules
 	if u.FirewallRules != nil {
 		for _, v := range *u.FirewallRules {
+			expandedRules := ConvertFirewallRuleRequestObjToInfoObjs(v)
 
-			if !isValidPorts(v.Ports) {
-				err := fmt.Errorf("invalid port range in rule: %v", v)
-				return model.TbSecurityGroupInfo{}, err
+			for _, rule := range expandedRules {
+
+				if !strings.EqualFold(rule.Protocol, "ICMP") {
+					if !isValidPorts(rule.Port) {
+						err := fmt.Errorf("invalid port range in rule: %v", rule)
+						return model.TbSecurityGroupInfo{}, err
+					}
+				}
+
+				spiderSecurityRuleInfo := ConvertTbToSpiderSecurityRuleInfo(rule)
+
+				requestBody.ReqInfo.SecurityRules = append(requestBody.ReqInfo.SecurityRules, spiderSecurityRuleInfo)
 			}
-
-			spiderSecurityRuleInfo := ConvertTbToSpiderSecurityRuleInfo(v)
-
-			requestBody.ReqInfo.SecurityRules = append(requestBody.ReqInfo.SecurityRules, spiderSecurityRuleInfo)
 		}
 	}
 
@@ -309,7 +342,6 @@ func CreateSecurityGroup(nsId string, u *model.TbSecurityGroupReq, option string
 		content.SystemLabel = "Registered from CSP resource"
 	}
 
-	log.Info().Msg("PUT CreateSecurityGroup")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = kvstore.Put(Key, string(Val))
@@ -487,7 +519,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []model.TbFire
 	return newSecurityGroup, nil
 }
 
-// DeleteFirewallRules accepts firewallRule creation request, creates and returns an TB securityGroup object
+// DeleteFirewallRules accepts firewallRule deletion request, deletes specified rules and returns an TB securityGroup object
 func DeleteFirewallRules(nsId string, securityGroupId string, req []model.TbFirewallRuleInfo) (model.TbSecurityGroupInfo, error) {
 
 	err := common.CheckString(nsId)
@@ -703,40 +735,151 @@ func GetSecurityGroup(nsId string, securityGroupId string) (model.TbSecurityGrou
 }
 
 // UpdateFirewallRules updates the firewall rules of a security group
-func UpdateFirewallRules(nsId string, securityGroupId string, desiredRules []model.TbFirewallRuleInfo) (model.TbSecurityGroupInfo, error) {
+func UpdateFirewallRules(nsId string, securityGroupId string, desiredRules []model.TbFirewallRuleReq) (model.TbSecurityGroupUpdateResponse, error) {
 
+	// extend the TbFirewallRuleReq to TbFirewallRuleInfos
+	desiredRulesInfos := []model.TbFirewallRuleInfo{}
 	for _, rule := range desiredRules {
+		expandedRules := ConvertFirewallRuleRequestObjToInfoObjs(rule)
+		desiredRulesInfos = append(desiredRulesInfos, expandedRules...)
+	}
+
+	for _, rule := range desiredRulesInfos {
 		if !strings.EqualFold(rule.Protocol, "ICMP") {
-			if !isValidPorts(rule.Ports) {
+			if !isValidPorts(rule.Port) {
 				err := fmt.Errorf("invalid port range in rule: %v", rule)
-				return model.TbSecurityGroupInfo{}, err
+				return model.TbSecurityGroupUpdateResponse{
+					Id:      securityGroupId,
+					Name:    securityGroupId, // fallback to ID if name not available
+					Success: false,
+					Message: fmt.Sprintf("Invalid port range in rule: %v", rule),
+				}, err
 			}
 		}
 	}
 
-	sg, err := GetSecurityGroup(nsId, securityGroupId)
+	previousSg, err := GetSecurityGroup(nsId, securityGroupId)
 	if err != nil {
-		return sg, err
+		return model.TbSecurityGroupUpdateResponse{
+			Id:      securityGroupId,
+			Name:    securityGroupId,
+			Success: false,
+			Message: fmt.Sprintf("Failed to get security group: %v", err),
+		}, err
 	}
-	currentRules := sg.FirewallRules
+	currentRules := previousSg.FirewallRules
 
-	toAdd, toDelete := diffFirewallRules(currentRules, desiredRules)
+	toAdd, toDelete := diffFirewallRules(currentRules, desiredRulesInfos)
 
+	// add log info for debugging
+	log.Info().Msgf("Current rules: %v", currentRules)
+	log.Info().Msgf("Desired rules: %v", desiredRulesInfos)
+	log.Info().Msgf("Rules to add: %v", toAdd)
+	log.Info().Msgf("Rules to delete: %v", toDelete)
+
+	isSensitiveProvider := strings.EqualFold(previousSg.ConnectionConfig.ProviderName, csp.NCP)
+
+	var deleteErrors []string
 	if len(toDelete) > 0 {
-		_, err := DeleteFirewallRules(nsId, securityGroupId, toDelete)
-		if err != nil {
-			return sg, err
+
+		if isSensitiveProvider {
+			// Process each rule deletion sequentially for sensitive provider for better stability
+			log.Info().Msg("Using sequential deletion for sensitive provider")
+			for _, ruleToDelete := range toDelete {
+				_, err := DeleteFirewallRules(nsId, securityGroupId, []model.TbFirewallRuleInfo{ruleToDelete})
+				// wait for seconds before next
+				time.Sleep(5 * time.Second)
+				// If deletion fails, log the error and continue with next rule
+				if err != nil {
+					log.Info().Err(err).Msgf("Failed to delete firewall rule: %v. Continuing with next rule.", ruleToDelete)
+					deleteErrors = append(deleteErrors, fmt.Sprintf("Delete rule failed (%s-%s-%s-%s): %v",
+						ruleToDelete.Direction, ruleToDelete.Protocol, ruleToDelete.Port, ruleToDelete.CIDR, err))
+				}
+			}
+		} else {
+			// Process all rules at once for other providers
+			log.Info().Msg("Using batch deletion for non-sensitive provider")
+			_, err := DeleteFirewallRules(nsId, securityGroupId, toDelete)
+			if err != nil {
+				log.Info().Err(err).Msg("Failed to delete some firewall rules. Continuing with adding new rules.")
+				deleteErrors = append(deleteErrors, fmt.Sprintf("Delete failed: %v", err))
+			}
 		}
 	}
 
+	var addErrors []string
 	if len(toAdd) > 0 {
-		_, err := CreateFirewallRules(nsId, securityGroupId, toAdd, false)
-		if err != nil {
-			return sg, err
+
+		if isSensitiveProvider {
+			// Process each rule addition sequentially for sensitive provider for better stability
+			log.Info().Msg("Using sequential addition for sensitive provider")
+			for _, ruleToAdd := range toAdd {
+				_, err := CreateFirewallRules(nsId, securityGroupId, []model.TbFirewallRuleInfo{ruleToAdd}, false)
+				// wait for seconds before next
+				time.Sleep(5 * time.Second)
+				if err != nil {
+					addErrors = append(addErrors, fmt.Sprintf("Add rule failed (%s-%s-%s-%s): %v",
+						ruleToAdd.Direction, ruleToAdd.Protocol, ruleToAdd.Port, ruleToAdd.CIDR, err))
+					log.Info().Err(err).Msgf("Failed to add firewall rule: %v. Continuing with next rule.", ruleToAdd)
+				}
+			}
+		} else {
+			// Process all rules at once for other providers
+			log.Info().Msg("Using batch addition for non-sensitive provider")
+			_, err := CreateFirewallRules(nsId, securityGroupId, toAdd, false)
+			if err != nil {
+				addErrors = append(addErrors, fmt.Sprintf("Add failed: %v", err))
+			}
+		}
+
+		// If there were any add errors, return the error response
+		if len(addErrors) > 0 {
+			errorMessage := "Failed to add firewall rules"
+			if len(deleteErrors) > 0 {
+				errorMessage += "; Also failed to delete some rules"
+			}
+			return model.TbSecurityGroupUpdateResponse{
+				Id:       securityGroupId,
+				Name:     previousSg.Name,
+				Success:  false,
+				Message:  errorMessage + ": " + strings.Join(addErrors, "; "),
+				Previous: previousSg,
+			}, fmt.Errorf("failed to add firewall rules: %s", strings.Join(addErrors, "; "))
 		}
 	}
 
-	return GetSecurityGroup(nsId, securityGroupId)
+	updatedSg, err := GetSecurityGroup(nsId, securityGroupId)
+	if err != nil {
+		return model.TbSecurityGroupUpdateResponse{
+			Id:       securityGroupId,
+			Name:     previousSg.Name,
+			Success:  false,
+			Message:  fmt.Sprintf("Failed to get updated security group: %v", err),
+			Previous: previousSg,
+		}, err
+	}
+
+	// Determine success status and message
+	success := len(addErrors) == 0 && len(deleteErrors) == 0
+	var message string
+	if success {
+		message = "Security group rules updated successfully"
+	} else {
+		var allErrors []string
+		allErrors = append(allErrors, deleteErrors...)
+		allErrors = append(allErrors, addErrors...)
+		message = "Partial success with warnings: " + strings.Join(allErrors, "; ")
+	}
+
+	resp := model.TbSecurityGroupUpdateResponse{
+		Id:       securityGroupId,
+		Name:     updatedSg.Name,
+		Success:  success,
+		Message:  message,
+		Updated:  updatedSg,
+		Previous: previousSg,
+	}
+	return resp, nil
 }
 
 // isValidPorts checks if a Ports string is valid (all ranges/values 0~65535)
@@ -764,8 +907,8 @@ func diffFirewallRules(current, desired []model.TbFirewallRuleInfo) (toAdd, toDe
 		matched := false
 		for i, c := range current {
 			if strings.EqualFold(d.Direction, c.Direction) && strings.EqualFold(d.Protocol, c.Protocol) {
-				if portsOverlap(d.Ports, c.Ports) {
-					if d.Ports == c.Ports {
+				if portsOverlap(d.Port, c.Port) {
+					if d.Port == c.Port {
 						if d.CIDR != c.CIDR {
 							toDelete = append(toDelete, c)
 							toAdd = append(toAdd, d)
@@ -796,7 +939,36 @@ func diffFirewallRules(current, desired []model.TbFirewallRuleInfo) (toAdd, toDe
 			toDelete = append(toDelete, c)
 		}
 	}
-	return
+	// remove duplicates in toAdd
+	uniqueAdd := make(map[string]model.TbFirewallRuleInfo)
+	for _, rule := range toAdd {
+		key := fmt.Sprintf("%s-%s-%s-%s", rule.Direction, rule.Protocol, rule.Port, rule.CIDR)
+		if _, exists := uniqueAdd[key]; !exists {
+			uniqueAdd[key] = rule
+		}
+	}
+	toAdd = make([]model.TbFirewallRuleInfo, 0, len(uniqueAdd))
+	for _, rule := range uniqueAdd {
+		toAdd = append(toAdd, rule)
+	}
+	// remove duplicates in toDelete
+	uniqueDelete := make(map[string]model.TbFirewallRuleInfo)
+	for _, rule := range toDelete {
+		key := fmt.Sprintf("%s-%s-%s-%s", rule.Direction, rule.Protocol, rule.Port, rule.CIDR)
+		if _, exists := uniqueDelete[key]; !exists {
+			uniqueDelete[key] = rule
+		}
+	}
+	toDelete = make([]model.TbFirewallRuleInfo, 0, len(uniqueDelete))
+	for _, rule := range uniqueDelete {
+		// skip if the rule is Protocol:ALL outbound 0.0.0.0/0 (it is the default rule)
+		if strings.EqualFold(rule.Direction, "outbound") && rule.CIDR == "0.0.0.0/0" && strings.EqualFold(rule.Protocol, "ALL") {
+			continue
+		}
+		toDelete = append(toDelete, rule)
+	}
+
+	return toAdd, toDelete
 }
 
 // portsOverlap checks if two port ranges overlap
@@ -836,4 +1008,135 @@ func parsePortsToRanges(ports string) [][2]int {
 		}
 	}
 	return result
+}
+
+// UpdateFirewallRulesBatch updates firewall rules for multiple security groups
+func UpdateFirewallRulesBatch(nsId string, securityGroupIds []string, desiredRules []model.TbFirewallRuleReq) model.TbRestWrapperSecurityGroupUpdateResponse {
+	var responses []model.TbSecurityGroupUpdateResponse
+	var successCount, failedCount int
+
+	for _, sgId := range securityGroupIds {
+		response, err := UpdateFirewallRules(nsId, sgId, desiredRules)
+		if err != nil {
+			// Even if there's an error, we still want to include the response
+			if response.Id == "" {
+				response.Id = sgId
+				response.Name = sgId
+				response.Success = false
+				response.Message = fmt.Sprintf("Update failed: %v", err)
+			}
+			failedCount++
+		} else {
+			if response.Success {
+				successCount++
+			} else {
+				failedCount++
+			}
+		}
+		responses = append(responses, response)
+	}
+
+	summary := model.TbUpdateSummary{
+		Total:      len(securityGroupIds),
+		Success:    successCount,
+		Failed:     failedCount,
+		AllSuccess: failedCount == 0,
+	}
+
+	return model.TbRestWrapperSecurityGroupUpdateResponse{
+		Response: responses,
+		Summary:  summary,
+	}
+}
+
+// UpdateMultipleFirewallRules updates firewall rules for multiple security groups with parallel processing
+func UpdateMultipleFirewallRules(nsId string, securityGroupIds []string, desiredRules []model.TbFirewallRuleReq) model.TbRestWrapperSecurityGroupUpdateResponse {
+	// Handle empty input
+	if len(securityGroupIds) == 0 {
+		return model.TbRestWrapperSecurityGroupUpdateResponse{
+			Response: []model.TbSecurityGroupUpdateResponse{},
+			Summary: model.TbUpdateSummary{
+				Total:      0,
+				Success:    0,
+				Failed:     0,
+				AllSuccess: true,
+			},
+		}
+	}
+
+	// Use channels for parallel processing
+	type result struct {
+		response model.TbSecurityGroupUpdateResponse
+		index    int
+	}
+
+	// Create buffered channels
+	resultChan := make(chan result, len(securityGroupIds))
+
+	// Launch goroutines for parallel processing
+	for i, sgId := range securityGroupIds {
+		go func(index int, securityGroupId string) {
+			// Add defer to handle any panics in goroutines
+			defer func() {
+				if r := recover(); r != nil {
+					log.Error().Msgf("Panic in UpdateFirewallRules for SG %s: %v", securityGroupId, r)
+					resultChan <- result{
+						response: model.TbSecurityGroupUpdateResponse{
+							Id:      securityGroupId,
+							Name:    securityGroupId,
+							Success: false,
+							Message: fmt.Sprintf("Internal error occurred: %v", r),
+						},
+						index: index,
+					}
+				}
+			}()
+
+			response, err := UpdateFirewallRules(nsId, securityGroupId, desiredRules)
+			if err != nil {
+				// Even if there's an error, we still want to include the response
+				if response.Id == "" {
+					response.Id = securityGroupId
+					response.Name = securityGroupId
+					response.Success = false
+					response.Message = fmt.Sprintf("Update failed: %v", err)
+				}
+			}
+			resultChan <- result{response: response, index: index}
+		}(i, sgId)
+	}
+
+	// Collect results maintaining original order
+	responses := make([]model.TbSecurityGroupUpdateResponse, len(securityGroupIds))
+	var successCount, failedCount int
+
+	// Wait for all goroutines to complete
+	for i := 0; i < len(securityGroupIds); i++ {
+		res := <-resultChan
+		responses[res.index] = res.response
+
+		if res.response.Success {
+			successCount++
+		} else {
+			failedCount++
+		}
+	}
+
+	// Close the channel
+	close(resultChan)
+
+	summary := model.TbUpdateSummary{
+		Total:      len(securityGroupIds),
+		Success:    successCount,
+		Failed:     failedCount,
+		AllSuccess: failedCount == 0,
+	}
+
+	log.Info().Msgf("UpdateMultipleFirewallRules completed: %d total, %d success, %d failed",
+		summary.Total, summary.Success, summary.Failed)
+
+	return model.TbRestWrapperSecurityGroupUpdateResponse{
+		Response: responses,
+		Summary:  summary,
+	}
 }

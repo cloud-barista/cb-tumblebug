@@ -3,7 +3,7 @@ Copyright 2019 The Cloud-Barista Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -1437,6 +1437,110 @@ func UpdateVmInfo(nsId string, mciId string, vmInfoData model.TbVmInfo) {
 			log.Error().Err(err).Msg("")
 		}
 	}
+}
+
+// GetMciAssociatedResources returns a list of associated resource IDs for given MCI info
+func GetMciAssociatedResources(nsId string, mciId string) (model.MciAssociatedResourceList, error) {
+
+	mciInfo, err := GetMciObject(nsId, mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return model.MciAssociatedResourceList{}, err
+	}
+
+	vNetSet := make(map[string]struct{})
+	cspVNetSet := make(map[string]struct{})
+	subnetSet := make(map[string]struct{})
+	cspSubnetSet := make(map[string]struct{})
+	sgSet := make(map[string]struct{})
+	dataDiskSet := make(map[string]struct{})
+	sshKeySet := make(map[string]struct{})
+	imageSet := make(map[string]struct{})
+	specSet := make(map[string]struct{})
+	connNameSet := make(map[string]struct{})
+	providerNameSet := make(map[string]struct{})
+	vmIdSet := make(map[string]struct{})
+	subGroupIdSet := make(map[string]struct{})
+	cspVmNameSet := make(map[string]struct{})
+	cspVmIdSet := make(map[string]struct{})
+
+	for _, vm := range mciInfo.Vm {
+		if vm.VNetId != "" {
+			vNetSet[vm.VNetId] = struct{}{}
+		}
+		if vm.CspVNetId != "" {
+			cspVNetSet[vm.CspVNetId] = struct{}{}
+		}
+		if vm.SubnetId != "" {
+			subnetSet[vm.SubnetId] = struct{}{}
+		}
+		if vm.CspSubnetId != "" {
+			cspSubnetSet[vm.CspSubnetId] = struct{}{}
+		}
+		for _, sg := range vm.SecurityGroupIds {
+			if sg != "" {
+				sgSet[sg] = struct{}{}
+			}
+		}
+		for _, dd := range vm.DataDiskIds {
+			if dd != "" {
+				dataDiskSet[dd] = struct{}{}
+			}
+		}
+		if vm.SshKeyId != "" {
+			sshKeySet[vm.SshKeyId] = struct{}{}
+		}
+		if vm.ImageId != "" {
+			imageSet[vm.ImageId] = struct{}{}
+		}
+		if vm.SpecId != "" {
+			specSet[vm.SpecId] = struct{}{}
+		}
+		if vm.ConnectionName != "" {
+			connNameSet[vm.ConnectionName] = struct{}{}
+		}
+		if vm.ConnectionConfig.ProviderName != "" {
+			providerNameSet[vm.ConnectionConfig.ProviderName] = struct{}{}
+		}
+		if vm.Id != "" {
+			vmIdSet[vm.Id] = struct{}{}
+		}
+		if vm.SubGroupId != "" {
+			subGroupIdSet[vm.SubGroupId] = struct{}{}
+		}
+		if vm.CspResourceName != "" {
+			cspVmNameSet[vm.CspResourceName] = struct{}{}
+		}
+		if vm.CspResourceId != "" {
+			cspVmIdSet[vm.CspResourceId] = struct{}{}
+		}
+	}
+
+	toSlice := func(m map[string]struct{}) []string {
+		s := make([]string, 0, len(m))
+		for k := range m {
+			s = append(s, k)
+		}
+		return s
+	}
+
+	return model.MciAssociatedResourceList{
+		VNetIds:          toSlice(vNetSet),
+		CspVNetIds:       toSlice(cspVNetSet),
+		SubnetIds:        toSlice(subnetSet),
+		CspSubnetIds:     toSlice(cspSubnetSet),
+		SecurityGroupIds: toSlice(sgSet),
+		DataDiskIds:      toSlice(dataDiskSet),
+		SSHKeyIds:        toSlice(sshKeySet),
+		ImageIds:         toSlice(imageSet),
+		SpecIds:          toSlice(specSet),
+		ConnectionNames:  toSlice(connNameSet),
+		ProviderNames:    toSlice(providerNameSet),
+		VmIds:            toSlice(vmIdSet),
+		SubGroupIds:      toSlice(subGroupIdSet),
+		CspVmNames:       toSlice(cspVmNameSet),
+		CspVmIds:         toSlice(cspVmIdSet),
+	}, nil
 }
 
 // ProvisionDataDisk is func to provision DataDisk to VM (create and attach to VM)

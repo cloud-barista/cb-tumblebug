@@ -3,7 +3,7 @@ Copyright 2019 The Cloud-Barista Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -375,6 +375,9 @@ func RunServer() {
 
 	g.POST("/:nsId/mciDynamic", rest_infra.RestPostMciDynamic)
 	g.POST("/:nsId/mci/:mciId/vmDynamic", rest_infra.RestPostMciVmDynamic)
+
+	g.GET("/:nsId/mci/:mciId/associatedResources", rest_infra.RestGetMciAssociatedResources)
+	g.PUT("/:nsId/mci/:mciId/associatedSecurityGroups", rest_infra.RestPutMciAssociatedSecurityGroups)
 
 	//g.GET("/:nsId/mci/:mciId", rest_infra.RestGetMci, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
 	//g.GET("/:nsId/mci", rest_infra.RestGetAllMci, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
