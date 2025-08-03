@@ -1119,10 +1119,10 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 				common.RandomSleep(0, lenImages/8)
 				log.Info().Msgf("Failed to get existing image, Provider: %s, Region: %s, CspImageName: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err.Error())
 
-				if regionName == model.StrCommon {
+				if strings.EqualFold(regionName, model.StrCommon) {
 					// If region is common, check all regions for the provider
 					for _, connConfig := range connectionList.Connectionconfig {
-						if connConfig.ProviderName == providerName {
+						if strings.EqualFold(connConfig.ProviderName, providerName) {
 							regionNameForConnection = connConfig.RegionDetail.RegionName
 							imageReqTmp.ConnectionName = providerName + "-" + regionNameForConnection
 

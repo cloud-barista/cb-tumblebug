@@ -145,7 +145,7 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 
 			// Remove VMs in model.StatusFailed or model.StatusUndefined
 			log.Debug().Msgf("[vmInfo.Status] %v", v.Status)
-			if v.Status == model.StatusFailed || v.Status == model.StatusUndefined {
+			if strings.EqualFold(v.Status, model.StatusFailed) || strings.EqualFold(v.Status, model.StatusUndefined) {
 				// Delete VM sequentially for safety (for performance, need to use goroutine)
 				err := DelMciVm(nsId, mciId, v.Id, "force")
 				if err != nil {

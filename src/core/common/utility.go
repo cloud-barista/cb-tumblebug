@@ -217,16 +217,16 @@ func PrintJsonPretty(v interface{}) {
 // GenResourceKey is func to generate a key from resource type and id
 func GenResourceKey(nsId string, resourceType string, resourceId string) string {
 
-	if resourceType == model.StrImage ||
-		resourceType == model.StrCustomImage ||
-		resourceType == model.StrSSHKey ||
-		resourceType == model.StrSpec ||
-		resourceType == model.StrVNet ||
-		resourceType == model.StrVPN ||
-		resourceType == model.StrSqlDB ||
-		resourceType == model.StrObjectStorage ||
-		resourceType == model.StrSecurityGroup ||
-		resourceType == model.StrDataDisk {
+	if strings.EqualFold(resourceType, model.StrImage) ||
+		strings.EqualFold(resourceType, model.StrCustomImage) ||
+		strings.EqualFold(resourceType, model.StrSSHKey) ||
+		strings.EqualFold(resourceType, model.StrSpec) ||
+		strings.EqualFold(resourceType, model.StrVNet) ||
+		strings.EqualFold(resourceType, model.StrVPN) ||
+		strings.EqualFold(resourceType, model.StrSqlDB) ||
+		strings.EqualFold(resourceType, model.StrObjectStorage) ||
+		strings.EqualFold(resourceType, model.StrSecurityGroup) ||
+		strings.EqualFold(resourceType, model.StrDataDisk) {
 		//resourceType == "publicIp" ||
 		//resourceType == "vNic" {
 		return "/ns/" + nsId + "/resources/" + resourceType + "/" + resourceId
@@ -255,7 +255,7 @@ func GenK8sClusterKey(nsId string, k8sClusterId string) string {
 // GenChildResourceKey is func to generate a key from resource type and id
 func GenChildResourceKey(nsId string, resourceType string, parentResourceId string, resourceId string) string {
 
-	if resourceType == model.StrSubnet {
+	if strings.EqualFold(resourceType, model.StrSubnet) {
 		parentResourceType := model.StrVNet
 		// return "/ns/" + nsId + "/resources/" + resourceType + "/" + resourceId
 		return fmt.Sprintf("/ns/%s/resources/%s/%s/%s/%s", nsId, parentResourceType, parentResourceId, resourceType, resourceId)
@@ -653,7 +653,7 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 	req.CredentialHolder = strings.ToLower(req.CredentialHolder)
 	req.ProviderName = strings.ToLower(req.ProviderName)
 	genneratedCredentialName := req.CredentialHolder + "-" + req.ProviderName
-	if req.CredentialHolder == model.DefaultCredentialHolder {
+	if strings.EqualFold(req.CredentialHolder, model.DefaultCredentialHolder) {
 		// credential with default credential holder (e.g., admin) has no prefix
 		genneratedCredentialName = req.ProviderName
 	}
@@ -719,7 +719,7 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 	for _, region := range allRegisteredRegions.Region {
 		if strings.ToLower(region.ProviderName) == callResult.ProviderName {
 			configName := callResult.CredentialHolder + "-" + region.RegionName
-			if callResult.CredentialHolder == model.DefaultCredentialHolder {
+			if strings.EqualFold(callResult.CredentialHolder, model.DefaultCredentialHolder) {
 				configName = region.RegionName
 			}
 			connConfig := model.ConnConfig{

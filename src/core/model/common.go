@@ -98,7 +98,7 @@ const (
 	StrSSHKey                string = "sshKey"
 	StrImage                 string = "image"
 	StrCustomImage           string = "customImage"
-	StrSecurityGroup         string = "sg"
+	StrSecurityGroup         string = "securityGroup"
 	StrSG                    string = "sg"
 	StrSpec                  string = "spec"
 	StrVNet                  string = "vNet"
