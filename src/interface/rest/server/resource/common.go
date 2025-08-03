@@ -341,7 +341,7 @@ func RestDelAllSharedResources(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	content, err := resource.DelAllSharedResources(nsId)
+	content, err := resource.DeleteSharedResources(nsId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

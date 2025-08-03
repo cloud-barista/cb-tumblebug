@@ -365,7 +365,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		return err
 	}
 
-	if resourceType == model.StrVNet {
+	if strings.EqualFold(resourceType, model.StrVNet) {
 		// var subnetKeys []string
 		subnets := childResources.([]model.TbSubnetInfo)
 		for _, v := range subnets {
@@ -383,7 +383,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 
 		}
-	} else if resourceType == model.StrCustomImage {
+	} else if strings.EqualFold(resourceType, model.StrCustomImage) {
 		// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
 		result := model.ORM.Delete(&model.TbSpecInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
 		if result.Error != nil {
@@ -428,16 +428,13 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 		return nil, err
 	}
 
-	if resourceType == model.StrImage ||
-		resourceType == model.StrCustomImage ||
-		resourceType == model.StrSSHKey ||
-		resourceType == model.StrSpec ||
-		resourceType == model.StrVNet ||
-		//resourceType == "subnet" ||
-		//resourceType == "publicIp" ||
-		//resourceType == "vNic" ||
-		resourceType == model.StrSecurityGroup ||
-		resourceType == model.StrDataDisk {
+	if strings.EqualFold(resourceType, model.StrImage) ||
+		strings.EqualFold(resourceType, model.StrCustomImage) ||
+		strings.EqualFold(resourceType, model.StrSSHKey) ||
+		strings.EqualFold(resourceType, model.StrSpec) ||
+		strings.EqualFold(resourceType, model.StrVNet) ||
+		strings.EqualFold(resourceType, model.StrSecurityGroup) ||
+		strings.EqualFold(resourceType, model.StrDataDisk) {
 		// continue
 	} else {
 		err = fmt.Errorf("invalid resource type")
@@ -483,16 +480,13 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 		return nil, err
 	}
 
-	if resourceType == model.StrImage ||
-		resourceType == model.StrCustomImage ||
-		resourceType == model.StrSSHKey ||
-		resourceType == model.StrSpec ||
-		resourceType == model.StrVNet ||
-		//resourceType == "subnet" ||
-		//resourceType == "publicIp" ||
-		//resourceType == "vNic" ||
-		resourceType == model.StrSecurityGroup ||
-		resourceType == model.StrDataDisk {
+	if strings.EqualFold(resourceType, model.StrImage) ||
+		strings.EqualFold(resourceType, model.StrCustomImage) ||
+		strings.EqualFold(resourceType, model.StrSSHKey) ||
+		strings.EqualFold(resourceType, model.StrSpec) ||
+		strings.EqualFold(resourceType, model.StrVNet) ||
+		strings.EqualFold(resourceType, model.StrSecurityGroup) ||
+		strings.EqualFold(resourceType, model.StrDataDisk) {
 		// continue
 	} else {
 		errString := "Cannot list " + resourceType + "s."
@@ -1402,11 +1396,11 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 
 	var resList []string
 	if resType == "all" {
-		resList = append(resList, "vnet")
-		resList = append(resList, "sshkey")
-		resList = append(resList, "sg")
+		resList = append(resList, model.StrVNet)
+		resList = append(resList, model.StrSSHKey)
+		resList = append(resList, model.StrSecurityGroup)
 	} else {
-		resList = append(resList, strings.ToLower(resType))
+		resList = append(resList, resType)
 	}
 
 	// TODO: This is a temporary solution. need to be changed after the policy is decided.
@@ -1441,8 +1435,8 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 	description := "Generated Default Resource"
 
 	for _, resType := range resList {
-		if resType == "vnet" {
-			log.Debug().Msg("vnet")
+		if strings.EqualFold(resType, model.StrVNet) {
+			log.Debug().Msg(model.StrVNet)
 
 			reqTmp := model.TbVNetReq{}
 			reqTmp.ConnectionName = connectionName
@@ -1485,8 +1479,8 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 				return err
 			}
 			common.PrintJsonPretty(resultInfo)
-		} else if resType == "sg" || resType == "securitygroup" {
-			log.Debug().Msg("sg")
+		} else if strings.EqualFold(resType, model.StrSecurityGroup) {
+			log.Debug().Msg(model.StrSecurityGroup)
 
 			reqTmp := model.TbSecurityGroupReq{}
 
@@ -1520,8 +1514,8 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 			}
 			common.PrintJsonPretty(resultInfo)
 
-		} else if resType == "sshkey" {
-			log.Debug().Msg("sshkey")
+		} else if strings.EqualFold(resType, model.StrSSHKey) {
+			log.Debug().Msg(model.StrSSHKey)
 
 			reqTmp := model.TbSshKeyReq{}
 
@@ -1545,8 +1539,8 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 	return nil
 }
 
-// DelAllSharedResources deletes all Default securityGroup, sshKey, vNet objects
-func DelAllSharedResources(nsId string) (model.IdList, error) {
+// DeleteSharedResources deletes all Default securityGroup, sshKey, vNet objects
+func DeleteSharedResources(nsId string) (model.IdList, error) {
 
 	output := model.IdList{}
 	err := common.CheckString(nsId)
