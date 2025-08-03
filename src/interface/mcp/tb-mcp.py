@@ -2060,6 +2060,70 @@ def control_mci(ns_id: str, mci_id: str, action: str) -> Dict:
 # Command & File Management
 #####################################
 
+# Helper function: Summarize command output
+def _summarize_command_output(output: str, max_lines: int = 5, max_chars: int = 1000) -> Dict:
+    """
+    Summarize command output to reduce token usage while preserving important information.
+    
+    Args:
+        output: Raw command output
+        max_lines: Maximum number of lines to show from start and end
+        max_chars: Maximum character limit for the output
+    
+    Returns:
+        Dictionary with summarized output and metadata
+    """
+    if not output:
+        return {
+            "summary": "",
+            "truncated": False,
+            "original_length": 0,
+            "lines_count": 0
+        }
+    
+    original_length = len(output)
+    lines = output.split('\n')
+    total_lines = len(lines)
+    
+    # If output is short enough, return as-is
+    if original_length <= max_chars and total_lines <= max_lines * 2:
+        return {
+            "summary": output.strip(),
+            "truncated": False,
+            "original_length": original_length,
+            "lines_count": total_lines
+        }
+    
+    # Create summary with first and last lines
+    if total_lines > max_lines * 2:
+        first_lines = lines[:max_lines]
+        last_lines = lines[-max_lines:]
+        
+        summary_parts = []
+        summary_parts.extend(first_lines)
+        summary_parts.append(f"... [truncated {total_lines - (max_lines * 2)} lines] ...")
+        summary_parts.extend(last_lines)
+        
+        summary = '\n'.join(summary_parts)
+    else:
+        summary = output
+    
+    # If still too long, truncate by characters
+    if len(summary) > max_chars:
+        half_chars = (max_chars - 50) // 2  # Reserve space for truncation message
+        summary = (
+            summary[:half_chars] + 
+            f"\n... [truncated {original_length - max_chars} characters] ...\n" + 
+            summary[-half_chars:]
+        )
+    
+    return {
+        "summary": summary.strip(),
+        "truncated": True,
+        "original_length": original_length,
+        "lines_count": total_lines
+    }
+
 # Tool: Execute remote command to VMs in MCI
 @mcp.tool()
 def execute_command_mci(
@@ -2068,11 +2132,21 @@ def execute_command_mci(
     commands: List[str], 
     subgroup_id: Optional[str] = None, 
     vm_id: Optional[str] = None,
-    label_selector: Optional[str] = None
+    label_selector: Optional[str] = None,
+    summarize_output: bool = True,
+    max_output_lines: int = 5,
+    max_output_chars: int = 1000
 ) -> Dict:
     """
     Execute remote commands based on SSH on VMs of an MCI.
     This allows executing commands on all VMs in the MCI or specific VMs based on subgroup or label selector.
+    
+    **Output Summarization:**
+    By default, command outputs (stdout/stderr) are summarized to reduce token usage:
+    - Shows first and last N lines of output
+    - Truncates long outputs with clear indicators
+    - Preserves important context while reducing size
+    - Full output metadata is included for reference
     
     Args:
         ns_id: Namespace ID
@@ -2081,9 +2155,16 @@ def execute_command_mci(
         subgroup_id: Subgroup ID (optional)
         vm_id: VM ID (optional)
         label_selector: Label selector (optional)
+        summarize_output: Whether to summarize long outputs to reduce token usage (default: True)
+        max_output_lines: Maximum lines to show from start/end of output (default: 5)
+        max_output_chars: Maximum characters per output field (default: 1000)
     
     Returns:
-        Command execution result
+        Command execution result with summarized outputs (if enabled):
+        - results: List of VM execution results
+        - Each result includes: mciId, vmId, vmIp, command, stdout, stderr, err
+        - When summarized: stdout/stderr include summary info and truncation indicators
+        - output_summary: Metadata about output summarization
     """
     data = {
         "command": commands
@@ -2103,7 +2184,112 @@ def execute_command_mci(
         query_string = "&".join([f"{k}={v}" for k, v in params.items()])
         url += f"?{query_string}"
     
-    return api_request("POST", url, json_data=data)
+    result = api_request("POST", url, json_data=data)
+    
+    # Apply output summarization if enabled
+    if summarize_output and "results" in result:
+        total_original_size = 0
+        total_summarized_size = 0
+        summarization_applied = False
+        
+        for vm_result in result["results"]:
+            # Summarize stdout for each command
+            if "stdout" in vm_result:
+                if isinstance(vm_result["stdout"], list):
+                    summarized_stdout = []
+                    for i, stdout_item in enumerate(vm_result["stdout"]):
+                        if isinstance(stdout_item, str):
+                            summary_info = _summarize_command_output(
+                                stdout_item, max_output_lines, max_output_chars
+                            )
+                            total_original_size += summary_info["original_length"]
+                            total_summarized_size += len(summary_info["summary"])
+                            if summary_info["truncated"]:
+                                summarization_applied = True
+                            summarized_stdout.append({
+                                "command_index": i,
+                                "output": summary_info["summary"],
+                                "truncated": summary_info["truncated"],
+                                "original_length": summary_info["original_length"],
+                                "lines_count": summary_info["lines_count"]
+                            })
+                        else:
+                            summarized_stdout.append(stdout_item)
+                    vm_result["stdout"] = summarized_stdout
+                elif isinstance(vm_result["stdout"], str):
+                    summary_info = _summarize_command_output(
+                        vm_result["stdout"], max_output_lines, max_output_chars
+                    )
+                    total_original_size += summary_info["original_length"]
+                    total_summarized_size += len(summary_info["summary"])
+                    if summary_info["truncated"]:
+                        summarization_applied = True
+                    vm_result["stdout"] = {
+                        "output": summary_info["summary"],
+                        "truncated": summary_info["truncated"],
+                        "original_length": summary_info["original_length"],
+                        "lines_count": summary_info["lines_count"]
+                    }
+            
+            # Summarize stderr for each command
+            if "stderr" in vm_result:
+                if isinstance(vm_result["stderr"], list):
+                    summarized_stderr = []
+                    for i, stderr_item in enumerate(vm_result["stderr"]):
+                        if isinstance(stderr_item, str):
+                            summary_info = _summarize_command_output(
+                                stderr_item, max_output_lines, max_output_chars
+                            )
+                            total_original_size += summary_info["original_length"]
+                            total_summarized_size += len(summary_info["summary"])
+                            if summary_info["truncated"]:
+                                summarization_applied = True
+                            summarized_stderr.append({
+                                "command_index": i,
+                                "output": summary_info["summary"],
+                                "truncated": summary_info["truncated"],
+                                "original_length": summary_info["original_length"],
+                                "lines_count": summary_info["lines_count"]
+                            })
+                        else:
+                            summarized_stderr.append(stderr_item)
+                    vm_result["stderr"] = summarized_stderr
+                elif isinstance(vm_result["stderr"], str):
+                    summary_info = _summarize_command_output(
+                        vm_result["stderr"], max_output_lines, max_output_chars
+                    )
+                    total_original_size += summary_info["original_length"]
+                    total_summarized_size += len(summary_info["summary"])
+                    if summary_info["truncated"]:
+                        summarization_applied = True
+                    vm_result["stderr"] = {
+                        "output": summary_info["summary"],
+                        "truncated": summary_info["truncated"],
+                        "original_length": summary_info["original_length"],
+                        "lines_count": summary_info["lines_count"]
+                    }
+        
+        # Add summarization metadata
+        result["output_summary"] = {
+            "summarization_enabled": True,
+            "summarization_applied": summarization_applied,
+            "total_original_size": total_original_size,
+            "total_summarized_size": total_summarized_size,
+            "size_reduction_percent": round(
+                ((total_original_size - total_summarized_size) / total_original_size * 100) 
+                if total_original_size > 0 else 0, 2
+            ),
+            "max_lines_per_output": max_output_lines,
+            "max_chars_per_output": max_output_chars,
+            "note": "Output has been summarized to reduce token usage. Use summarize_output=False to get full output."
+        }
+    else:
+        result["output_summary"] = {
+            "summarization_enabled": False,
+            "note": "Full output returned without summarization."
+        }
+    
+    return result
 
 # Tool: Transfer file to VMs in MCI
 @mcp.tool()
