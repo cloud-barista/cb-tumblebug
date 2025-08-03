@@ -59,6 +59,71 @@ func TbVmReqStructLevelValidation(sl validator.StructLevel) {
 
 var holdingMciMap sync.Map
 
+// CreatedResource represents a resource created during dynamic MCI provisioning
+type CreatedResource struct {
+	Type string `json:"type"` // "vnet", "sshkey", "securitygroup"
+	Id   string `json:"id"`   // Resource ID
+}
+
+// VmReqWithCreatedResources contains VM request and list of created resources for rollback
+type VmReqWithCreatedResources struct {
+	VmReq            *model.TbVmReq    `json:"vmReq"`
+	CreatedResources []CreatedResource `json:"createdResources"`
+}
+
+// rollbackCreatedResources deletes only the resources that were created during this MCI creation
+func rollbackCreatedResources(nsId string, createdResources []CreatedResource) error {
+	var errors []string
+
+	vNetIds := make([]string, 0)
+	sshKeyIds := make([]string, 0)
+	securityGroupIds := make([]string, 0)
+
+	for _, res := range createdResources {
+		switch res.Type {
+		case model.StrVNet:
+			vNetIds = append(vNetIds, res.Id)
+		case model.StrSSHKey:
+			sshKeyIds = append(sshKeyIds, res.Id)
+		case model.StrSecurityGroup:
+			securityGroupIds = append(securityGroupIds, res.Id)
+		}
+	}
+
+	for _, res := range sshKeyIds {
+		if err := resource.DelResource(nsId, model.StrSSHKey, res, "false"); err != nil {
+			errors = append(errors, fmt.Sprintf("Failed to delete SSHKey %s: %v", res, err))
+			log.Error().Err(err).Msgf("Failed to rollback SSHKey: %s", res)
+		} else {
+			log.Info().Msgf("Successfully rolled back SSHKey: %s", res)
+		}
+	}
+
+	for _, res := range securityGroupIds {
+		if err := resource.DelResource(nsId, model.StrSecurityGroup, res, "false"); err != nil {
+			errors = append(errors, fmt.Sprintf("Failed to delete SecurityGroup %s: %v", res, err))
+			log.Error().Err(err).Msgf("Failed to rollback SecurityGroup: %s", res)
+		} else {
+			log.Info().Msgf("Successfully rolled back SecurityGroup: %s", res)
+		}
+	}
+
+	for _, res := range vNetIds {
+		if err := resource.DelResource(nsId, model.StrVNet, res, "false"); err != nil {
+			errors = append(errors, fmt.Sprintf("Failed to delete VNet %s: %v", res, err))
+			log.Error().Err(err).Msgf("Failed to rollback VNet: %s", res)
+		} else {
+			log.Info().Msgf("Successfully rolled back VNet: %s", res)
+		}
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("rollback completed with errors: %s", strings.Join(errors, "; "))
+	}
+
+	return nil
+}
+
 // MCI and VM Provisioning
 
 // CreateMciVm is func to post (create) MciVm
@@ -980,64 +1045,71 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 
 	// Check if vmRequest has elements
 	if len(vmRequest) > 0 {
+		var allCreatedResources []CreatedResource
+
 		// Process the first vmRequest[0] synchronously
-		req, err := getVmReqFromDynamicReq(reqID, nsId, &vmRequest[0])
+		result, err := getVmReqFromDynamicReq(reqID, nsId, &vmRequest[0])
 		if err != nil {
 			// Rollback if any error occurs
 			log.Info().Msg("Rolling back created default resources")
 			time.Sleep(5 * time.Second)
-			if rollbackResult, rollbackErr := resource.DelAllSharedResources(nsId); rollbackErr != nil {
-				return emptyMci, fmt.Errorf("failed in rollback operation: %w", rollbackErr)
+			rollbackErr := rollbackCreatedResources(nsId, result.CreatedResources)
+			if rollbackErr != nil {
+				return emptyMci, fmt.Errorf("failed in rollback operation: %w, original error: %w", rollbackErr, err)
 			} else {
-				ids := strings.Join(rollbackResult.IdList, ", ")
-				return emptyMci, fmt.Errorf("rollback results [%s]: %w", ids, err)
+				return emptyMci, fmt.Errorf("rollback completed successfully, original error: %w", err)
 			}
 		}
-		mciReq.Vm = append(mciReq.Vm, *req)
+		mciReq.Vm = append(mciReq.Vm, *result.VmReq)
+		allCreatedResources = append(allCreatedResources, result.CreatedResources...)
 
 		// Process the rest of vmRequest[1:] in goroutines
 		if len(vmRequest) > 1 {
 			var wg sync.WaitGroup
 			var mutex sync.Mutex
-			errChan := make(chan error, len(vmRequest)-1) // Error channel to collect errors
+			type vmResult struct {
+				result *VmReqWithCreatedResources
+				err    error
+			}
+			resultChan := make(chan vmResult, len(vmRequest)-1)
 
 			for _, k := range vmRequest[1:] {
 				wg.Add(1)
-
-				// Launch a goroutine for each VM request
 				go func(vmReq model.TbVmDynamicReq) {
 					defer wg.Done()
-
-					req, err := getVmReqFromDynamicReq(reqID, nsId, &vmReq)
-					if err != nil {
-						log.Error().Err(err).Msg("Failed to prepare resources for dynamic MCI creation")
-						errChan <- err
-						return
-					}
-
-					// Safely append to the shared mciReq.Vm slice
-					mutex.Lock()
-					mciReq.Vm = append(mciReq.Vm, *req)
-					mutex.Unlock()
+					result, err := getVmReqFromDynamicReq(reqID, nsId, &vmReq)
+					resultChan <- vmResult{result: result, err: err}
 				}(k)
 			}
 
 			// Wait for all goroutines to complete
 			wg.Wait()
-			close(errChan) // Close the error channel after processing
+			close(resultChan)
 
-			// Check for any errors from the goroutines
-			for err := range errChan {
-				if err != nil {
-					// Rollback if any error occurs
-					log.Info().Msg("Rolling back created default resources")
-					time.Sleep(5 * time.Second)
-					if rollbackResult, rollbackErr := resource.DelAllSharedResources(nsId); rollbackErr != nil {
-						return emptyMci, fmt.Errorf("failed in rollback operation: %w", rollbackErr)
-					} else {
-						ids := strings.Join(rollbackResult.IdList, ", ")
-						return emptyMci, fmt.Errorf("rollback results [%s]: %w", ids, err)
-					}
+			// Collect results and check for errors
+			var hasError bool
+			for vmRes := range resultChan {
+				if vmRes.err != nil {
+					log.Error().Err(vmRes.err).Msg("Failed to prepare resources for dynamic MCI creation")
+					hasError = true
+				} else {
+					// Safely append to the shared mciReq.Vm slice
+					mutex.Lock()
+					mciReq.Vm = append(mciReq.Vm, *vmRes.result.VmReq)
+					allCreatedResources = append(allCreatedResources, vmRes.result.CreatedResources...)
+					mutex.Unlock()
+				}
+			}
+
+			// If there were any errors, rollback all created resources
+			if hasError {
+				log.Info().Msg("Rolling back all created default resources due to errors")
+				time.Sleep(5 * time.Second)
+				rollbackErr := rollbackCreatedResources(nsId, allCreatedResources)
+				if rollbackErr != nil {
+					return emptyMci, fmt.Errorf("failed in rollback operation: %w", rollbackErr)
+				} else {
+					return emptyMci, fmt.Errorf("rollback completed successfully after errors in resource preparation")
 				}
 			}
 		}
@@ -1076,13 +1148,13 @@ func CreateMciVmDynamic(nsId string, mciId string, req *model.TbVmDynamicReq) (*
 		return emptyMci, err
 	}
 
-	vmReq, err := getVmReqFromDynamicReq("", nsId, req)
+	vmReqResult, err := getVmReqFromDynamicReq("", nsId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyMci, err
 	}
 
-	return CreateMciGroupVm(nsId, mciId, vmReq, true)
+	return CreateMciGroupVm(nsId, mciId, vmReqResult.VmReq, true)
 }
 
 // checkCommonResAvailableForVmDynamicReq is func to check common resources availability for VmDynamicReq
@@ -1132,10 +1204,11 @@ func checkCommonResAvailableForVmDynamicReq(req *model.TbVmDynamicReq, nsId stri
 	return err
 }
 
-// getVmReqForDynamicMci is func to getVmReqFromDynamicReq
-func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq) (*model.TbVmReq, error) {
+// getVmReqFromDynamicReq is func to getVmReqFromDynamicReq with created resource tracking
+func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq) (*VmReqWithCreatedResources, error) {
 
 	onDemand := true
+	var createdResources []CreatedResource
 
 	vmRequest := req
 	// Check whether VM names meet requirement.
@@ -1146,7 +1219,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	specInfo, err := resource.GetSpec(model.SystemCommonNs, req.CommonSpec)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &model.TbVmReq{}, err
+		return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err
 	}
 
 	// remake vmReqest from given input and check resource availability
@@ -1162,7 +1235,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	if err != nil {
 		err := fmt.Errorf("Failed to get ConnectionName (" + vmReq.ConnectionName + ") for Spec (" + k.CommonSpec + ") is not found.")
 		log.Error().Err(err).Msg("")
-		return &model.TbVmReq{}, err
+		return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err
 	}
 
 	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
@@ -1188,7 +1261,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 		if !onDemand {
 			err := fmt.Errorf("Failed to get the vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
 			log.Error().Err(err).Msg("Failed to get the vNet")
-			return &model.TbVmReq{}, err
+			return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
 
@@ -1200,9 +1273,11 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 			err2 := resource.CreateSharedResource(nsId, model.StrVNet, vmReq.ConnectionName)
 			if err2 != nil {
 				log.Error().Err(err2).Msg("Failed to create new default vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
-				return &model.TbVmReq{}, err2
+				return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err2
 			} else {
 				log.Info().Msg("Created new default vNet: " + vmReq.VNetId)
+				// Track the newly created VNet
+				createdResources = append(createdResources, CreatedResource{Type: model.StrVNet, Id: vmReq.VNetId})
 			}
 		}
 	} else {
@@ -1217,7 +1292,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 		if !onDemand {
 			err := fmt.Errorf("Failed to get the SSHKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
 			log.Error().Err(err).Msg("Failed to get the SSHKey")
-			return &model.TbVmReq{}, err
+			return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
 
@@ -1229,13 +1304,15 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 			err2 := resource.CreateSharedResource(nsId, model.StrSSHKey, vmReq.ConnectionName)
 			if err2 != nil {
 				log.Error().Err(err2).Msg("Failed to create new default SSHKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
-				return &model.TbVmReq{}, err2
+				return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err2
 			} else {
-				log.Info().Msg("Created new default SSHKey: " + vmReq.VNetId)
+				log.Info().Msg("Created new default SSHKey: " + vmReq.SshKeyId)
+				// Track the newly created SSHKey
+				createdResources = append(createdResources, CreatedResource{Type: model.StrSSHKey, Id: vmReq.SshKeyId})
 			}
 		}
 	} else {
-		log.Info().Msg("Found and utilize default SSHKey: " + vmReq.VNetId)
+		log.Info().Msg("Found and utilize default SSHKey: " + vmReq.SshKeyId)
 	}
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
@@ -1246,7 +1323,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 		if !onDemand {
 			err := fmt.Errorf("Failed to get the securityGroup " + securityGroup + " from " + vmReq.ConnectionName)
 			log.Error().Err(err).Msg("Failed to get the securityGroup")
-			return &model.TbVmReq{}, err
+			return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
 
@@ -1258,9 +1335,11 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 			err2 := resource.CreateSharedResource(nsId, model.StrSecurityGroup, vmReq.ConnectionName)
 			if err2 != nil {
 				log.Error().Err(err2).Msg("Failed to create new default securityGroup " + securityGroup + " from " + vmReq.ConnectionName)
-				return &model.TbVmReq{}, err2
+				return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err2
 			} else {
 				log.Info().Msg("Created new default securityGroup: " + securityGroup)
+				// Track the newly created SecurityGroup
+				createdResources = append(createdResources, CreatedResource{Type: model.StrSecurityGroup, Id: securityGroup})
 			}
 		}
 	} else {
@@ -1281,7 +1360,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	common.PrintJsonPretty(vmReq)
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared resources for VM:" + vmReq.Name, Info: vmReq, Time: time.Now()})
 
-	return vmReq, nil
+	return &VmReqWithCreatedResources{VmReq: vmReq, CreatedResources: createdResources}, nil
 }
 
 // CreateVmObject is func to add VM to MCI
