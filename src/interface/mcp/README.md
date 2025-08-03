@@ -13,6 +13,17 @@ The CB-Tumblebug MCP Server provides a standardized interface for AI assistants 
 
 **Disclaimer**: This is a proof-of-concept implementation. Use at your own risk and ensure proper security measures are in place before deploying in any environment with sensitive data or production workloads.
 
+## 🏗️ Architecture
+
+For detailed system architecture and component interactions, see our comprehensive architecture diagrams:
+
+📋 **[Complete Architecture Documentation](./architecture.md)** - Detailed system diagrams and protocol flows
+
+Key architectural components:
+- **[Overall System Architecture](./architecture.md#overall-system-architecture)** - Complete system overview with AI assistants, MCP protocol, and cloud providers
+- **[Docker Compose Network](./architecture.md#docker-compose-network-architecture)** - Container communication and networking
+- **[MCP Protocol Flows](./architecture.md#mcp-protocol-flow-sse-transport)** - Claude Desktop and VS Code integration patterns
+- **[Configuration Flow](./architecture.md#configuration-flow)** - Server initialization and client connection types
 
 ## 🚀 Quick Start with Docker Compose (Recommended)
 
@@ -148,6 +159,10 @@ environment:
 
 ## 🧠 AI Assistant Integration
 
+For detailed protocol flows and integration patterns, see:
+- **[MCP Protocol Flow (SSE Transport)](./architecture.md#mcp-protocol-flow-sse-transport)** - Claude Desktop integration workflow
+- **[VS Code Copilot Direct Integration](./architecture.md#vs-code-copilot-direct-integration)** - Direct SSE connection pattern
+
 ### Claude Desktop Configuration
 
 Add the following configuration to your Claude Desktop `claude_desktop_config.json`:
@@ -185,6 +200,9 @@ For VS Code with MCP extension, use:
 
 ## 📚 Core Capabilities
 
+For a visual overview of all available tools and their API mappings, see:
+**[MCP Tool Categories and API Mapping](./architecture.md#mcp-tool-categories-and-api-mapping)** - Complete tool organization and endpoint mapping
+
 ### 1. Namespace Management
 - Create, read, update, delete namespaces
 - List and manage namespace resources
@@ -218,6 +236,9 @@ For VS Code with MCP extension, use:
 
 
 ## 🔍 Testing and Debugging
+
+For network architecture and debugging reference, see:
+**[Docker Compose Network Architecture](./architecture.md#docker-compose-network-architecture)** - Container communication patterns and port mappings
 
 ### Model Context Protocol Inspector
 
