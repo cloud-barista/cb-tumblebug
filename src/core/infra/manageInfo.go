@@ -868,7 +868,7 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 		// set master IP of MCI (Default rule: select 1st Running VM as master)
 		vmtmp, err := GetVmObject(nsId, mciId, v)
 		if err == nil {
-			if vmtmp.Status == model.StatusRunning {
+			if strings.EqualFold(vmtmp.Status, model.StatusRunning) {
 				mciStatus.MasterVmId = vmtmp.Id
 				mciStatus.MasterIp = vmtmp.PublicIP
 				mciStatus.MasterSSHPort = vmtmp.SSHPort
@@ -1257,41 +1257,41 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.TbVmStatusInfo
 	vmStatusTmp.SystemMessage = temp.SystemMessage
 
 	//Correct undefined status using TargetAction
-	if vmStatusTmp.TargetAction == model.ActionCreate {
-		if callResult.Status == model.StatusUndefined {
+	if strings.EqualFold(vmStatusTmp.TargetAction, model.ActionCreate) {
+		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
 			callResult.Status = model.StatusCreating
 		}
-		if temp.Status == model.StatusFailed {
+		if strings.EqualFold(temp.Status, model.StatusFailed) {
 			callResult.Status = model.StatusFailed
 		}
 	}
-	if vmStatusTmp.TargetAction == model.ActionTerminate {
-		if callResult.Status == model.StatusUndefined {
+	if strings.EqualFold(vmStatusTmp.TargetAction, model.ActionTerminate) {
+		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
 			callResult.Status = model.StatusTerminated
 		}
-		if callResult.Status == model.StatusSuspending {
+		if strings.EqualFold(callResult.Status, model.StatusSuspending) {
 			callResult.Status = model.StatusTerminating
 		}
 	}
-	if vmStatusTmp.TargetAction == model.ActionResume {
-		if callResult.Status == model.StatusUndefined {
+	if strings.EqualFold(vmStatusTmp.TargetAction, model.ActionResume) {
+		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
 			callResult.Status = model.StatusResuming
 		}
-		if callResult.Status == model.StatusCreating {
+		if strings.EqualFold(callResult.Status, model.StatusCreating) {
 			callResult.Status = model.StatusResuming
 		}
 	}
 	// for action reboot, some csp's native status are suspending, suspended, creating, resuming
-	if vmStatusTmp.TargetAction == model.ActionReboot {
-		if callResult.Status == model.StatusUndefined {
+	if strings.EqualFold(vmStatusTmp.TargetAction, model.ActionReboot) {
+		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
 			callResult.Status = model.StatusRebooting
 		}
-		if callResult.Status == model.StatusSuspending || callResult.Status == model.StatusSuspended || callResult.Status == model.StatusCreating || callResult.Status == model.StatusResuming {
+		if strings.EqualFold(callResult.Status, model.StatusSuspending) || strings.EqualFold(callResult.Status, model.StatusSuspended) || strings.EqualFold(callResult.Status, model.StatusCreating) || strings.EqualFold(callResult.Status, model.StatusResuming) {
 			callResult.Status = model.StatusRebooting
 		}
 	}
 
-	if vmStatusTmp.Status == model.StatusTerminated {
+	if strings.EqualFold(vmStatusTmp.Status, model.StatusTerminated) {
 		callResult.Status = model.StatusTerminated
 	}
 
@@ -1593,11 +1593,11 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	json.Unmarshal([]byte(keyValue.Value), &vm)
 
 	isInList := common.CheckElement(dataDiskId, vm.DataDiskIds)
-	if command == model.DetachDataDisk && !isInList && !force {
+	if strings.EqualFold(command, model.DetachDataDisk) && !isInList && !force {
 		err := fmt.Errorf("Failed to find the dataDisk %s in the attached dataDisk list %v", dataDiskId, vm.DataDiskIds)
 		log.Error().Err(err).Msg("")
 		return model.TbVmInfo{}, err
-	} else if command == model.AttachDataDisk && isInList && !force {
+	} else if strings.EqualFold(command, model.AttachDataDisk) && isInList && !force {
 		err := fmt.Errorf("The dataDisk %s is already in the attached dataDisk list %v", dataDiskId, vm.DataDiskIds)
 		log.Error().Err(err).Msg("")
 		return model.TbVmInfo{}, err

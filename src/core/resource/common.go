@@ -1140,16 +1140,16 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 	}
 
 	// Check resourceType's validity
-	if resourceType == model.StrImage ||
-		resourceType == model.StrCustomImage ||
-		resourceType == model.StrSSHKey ||
-		resourceType == model.StrSpec ||
-		resourceType == model.StrVNet ||
-		resourceType == model.StrVPN ||
-		resourceType == model.StrSqlDB ||
-		resourceType == model.StrObjectStorage ||
-		resourceType == model.StrSecurityGroup ||
-		resourceType == model.StrDataDisk {
+	if strings.EqualFold(resourceType, model.StrImage) ||
+		strings.EqualFold(resourceType, model.StrCustomImage) ||
+		strings.EqualFold(resourceType, model.StrSSHKey) ||
+		strings.EqualFold(resourceType, model.StrSpec) ||
+		strings.EqualFold(resourceType, model.StrVNet) ||
+		strings.EqualFold(resourceType, model.StrVPN) ||
+		strings.EqualFold(resourceType, model.StrSqlDB) ||
+		strings.EqualFold(resourceType, model.StrObjectStorage) ||
+		strings.EqualFold(resourceType, model.StrSecurityGroup) ||
+		strings.EqualFold(resourceType, model.StrDataDisk) {
 		//resourceType == "subnet" ||
 		//resourceType == "publicIp" ||
 		//resourceType == "vNic" {
@@ -1205,7 +1205,7 @@ func CheckChildResource(nsId string, resourceType string, parentResourceId strin
 
 	var parentResourceType string
 	// Check resourceType's validity
-	if resourceType == model.StrSubnet {
+	if strings.EqualFold(resourceType, model.StrSubnet) {
 		parentResourceType = model.StrVNet
 		// continue
 	} else {
@@ -1666,14 +1666,14 @@ func expandInfraType(infraType string) string {
 // GetCspResourceName is func to retrieve CSP native resource ID
 func GetCspResourceName(nsId string, resourceType string, resourceId string) (string, error) {
 
-	if resourceType == model.StrSpec {
+	if strings.EqualFold(resourceType, model.StrSpec) {
 		specInfo, err := GetSpec(nsId, resourceId)
 		if err != nil {
 			return "", err
 		}
 		return specInfo.CspSpecName, nil
 	}
-	if resourceType == model.StrImage {
+	if strings.EqualFold(resourceType, model.StrImage) {
 		imageInfo, err := GetImage(nsId, resourceId)
 		if err != nil {
 			return "", err

@@ -76,7 +76,7 @@ func OrchestrationController() {
 				log.Debug().Msg("\n[MCI-Policy-StateMachine] mciPolicyTmp.Policy[policyIndex],[" + v + "]")
 
 				switch {
-				case mciPolicyTmp.Policy[policyIndex].Status == model.AutoStatusReady:
+				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusReady):
 					log.Debug().Msg("- PolicyStatus[" + model.AutoStatusReady + "],[" + v + "]")
 					mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusChecking
 					UpdateMciPolicyInfo(nsId, mciPolicyTmp)
@@ -211,11 +211,11 @@ func OrchestrationController() {
 					UpdateMciPolicyInfo(nsId, mciPolicyTmp)
 					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 
-				case mciPolicyTmp.Policy[policyIndex].Status == model.AutoStatusChecking:
+				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusChecking):
 					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 					//mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusDetected
 
-				case mciPolicyTmp.Policy[policyIndex].Status == model.AutoStatusDetected:
+				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusDetected):
 					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 					mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusOperating
 					UpdateMciPolicyInfo(nsId, mciPolicyTmp)
@@ -232,7 +232,7 @@ func OrchestrationController() {
 					log.Debug().Msg("[autoAction] " + autoAction.ActionType)
 
 					switch {
-					case autoAction.ActionType == model.AutoActionScaleOut:
+					case strings.EqualFold(autoAction.ActionType, model.AutoActionScaleOut):
 
 						labels := map[string]string{
 							model.LabelDeploymentType: model.StrAutoGen,
@@ -243,7 +243,7 @@ func OrchestrationController() {
 						//vmReqTmp := autoAction.Vm
 						// autoAction.VmDynamicReq.SubGroupSize = "1"
 
-						if autoAction.PlacementAlgo == "random" {
+						if strings.EqualFold(autoAction.PlacementAlgo, "random") {
 							log.Debug().Msg("[autoAction.PlacementAlgo] " + autoAction.PlacementAlgo)
 							// var vmTmpErr error
 							// existingVm, vmTmpErr := GetVmTemplate(nsId, mciPolicyTmp.Id, autoAction.PlacementAlgo)
@@ -294,7 +294,7 @@ func OrchestrationController() {
 							}
 						}
 
-					case autoAction.ActionType == model.AutoActionScaleIn:
+					case strings.EqualFold(autoAction.ActionType, model.AutoActionScaleIn):
 						log.Debug().Msg("[Action] " + autoAction.ActionType)
 
 						// ScaleIn MCI.
@@ -321,7 +321,7 @@ func OrchestrationController() {
 					UpdateMciPolicyInfo(nsId, mciPolicyTmp)
 					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 
-				case mciPolicyTmp.Policy[policyIndex].Status == model.AutoStatusStabilizing:
+				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusStabilizing):
 					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 
 					//initialize Evaluation history so that controller does not act too early.
@@ -332,20 +332,20 @@ func OrchestrationController() {
 					mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
 					UpdateMciPolicyInfo(nsId, mciPolicyTmp)
 
-				case mciPolicyTmp.Policy[policyIndex].Status == model.AutoStatusOperating:
+				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusOperating):
 					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 					//mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
 					//UpdateMciPolicyInfo(nsId, mciPolicyTmp)
 
-				case mciPolicyTmp.Policy[policyIndex].Status == model.AutoStatusTimeout:
+				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusTimeout):
 					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 
-				case mciPolicyTmp.Policy[policyIndex].Status == model.AutoStatusError:
+				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusError):
 					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 					mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusReady
 					UpdateMciPolicyInfo(nsId, mciPolicyTmp)
 
-				case mciPolicyTmp.Policy[policyIndex].Status == model.AutoStatusSuspended:
+				case strings.EqualFold(mciPolicyTmp.Policy[policyIndex].Status, model.AutoStatusSuspended):
 					log.Debug().Msg("- PolicyStatus[" + mciPolicyTmp.Policy[policyIndex].Status + "],[" + v + "]")
 
 				default:

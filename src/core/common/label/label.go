@@ -505,9 +505,9 @@ func ListCSPResourceLabel(labelType, uid string, connectionName string) (labels 
 // convertTermToSpider converts internal label type to CSP resource type
 func convertTermToSpider(labelType string) string {
 	// Spider ResourceType Enum: all, image, vpc, subnet, sg, keypair, vm, nlb, disk, myimage, cluster, nodegroup
-	if labelType == model.StrVNet {
+	if strings.EqualFold(labelType, model.StrVNet) {
 		return model.StrVPC
-	} else if labelType == model.StrSecurityGroup {
+	} else if strings.EqualFold(labelType, model.StrSecurityGroup) {
 		return model.StrSG
 	} else {
 		return labelType
