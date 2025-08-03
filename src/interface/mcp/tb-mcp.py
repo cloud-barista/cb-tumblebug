@@ -31,6 +31,11 @@
 # For testing, you can use the Model Context Protocol Inspector.
 # https://modelcontextprotocol.io/docs/tools/inspector
 
+# IMPORTANT POLICY: install_mon_agent
+# By default, monitoring agent installation is set to "no" unless explicitly requested by user.
+# When install_mon_agent="no" (default), the parameter is omitted from API requests to reduce overhead.
+# Only when user explicitly requests install_mon_agent="yes", it will be included in the API call.
+
 
 import os
 import requests
@@ -213,6 +218,437 @@ def delete_namespace(ns_id: str) -> Dict:
 
 
 #####################################
+# Namespace Helper Functions
+#####################################
+
+def select_best_image(image_list: List[Dict]) -> Dict:
+    """
+    Select the best image from search results based on priority:
+    1. isBasicImage: true (highest priority)
+    2. General/basic OS images (determined by LLM analysis)
+    3. Fallback to first available image
+    
+    Args:
+        image_list: List of image dictionaries from search_images() result
+    
+    Returns:
+        Selected image dictionary with selection reasoning
+    """
+    if not image_list:
+        return None
+    
+    # Priority 1: Find images with isBasicImage: true
+    basic_images = [img for img in image_list if img.get("isBasicImage", False)]
+    if basic_images:
+        selected = basic_images[0]
+        selected["_selection_reason"] = "isBasicImage: true (highest priority)"
+        return selected
+    
+    # Priority 2: Use LLM-based analysis to find the most suitable basic OS image
+    # Create a prompt for the MCP client to analyze and select the best image
+    image_analysis_data = []
+    for i, img in enumerate(image_list):
+        analysis_item = {
+            "index": i,
+            "name": img.get("name", ""),
+            "description": img.get("description", ""),
+            "guestOS": img.get("guestOS", ""),
+            "cspImageName": img.get("cspImageName", "")
+        }
+        image_analysis_data.append(analysis_item)
+    
+    # Since this is a helper function, we'll implement a simple heuristic-based approach
+    # that can still be intelligent without hardcoded patterns
+    def calculate_image_suitability_score(image):
+        """
+        Calculate suitability score based on intelligent analysis of image metadata
+        """
+        name = image.get("name", "").lower()
+        description = image.get("description", "").lower()
+        guest_os = image.get("guestOS", "").lower()
+        
+        # Combine all text for analysis
+        combined_text = f"{name} {description} {guest_os}"
+        
+        score = 0
+        selection_reasons = []
+        
+        # Boost score for standard OS indicators
+        os_indicators = ["ubuntu", "centos", "amazon", "rhel", "debian", "suse", "windows"]
+        for indicator in os_indicators:
+            if indicator in combined_text:
+                score += 10
+                selection_reasons.append(f"Standard OS: {indicator}")
+                break
+        
+        # Boost score for basic/official indicators
+        basic_indicators = ["official", "standard", "base", "minimal", "lts"]
+        for indicator in basic_indicators:
+            if indicator in combined_text:
+                score += 5
+                selection_reasons.append(f"Basic image indicator: {indicator}")
+        
+        # Reduce score for specialized software indicators
+        specialized_indicators = [
+            "gpu", "cuda", "nvidia",  # GPU/ML
+            "docker", "kubernetes", "k8s",  # Container platforms
+            "lamp", "wordpress", "drupal",  # Web applications
+            "mysql", "postgres", "mongodb", "elastic",  # Databases
+            "hadoop", "spark", "kafka",  # Big data
+            "jenkins", "gitlab", "bamboo",  # CI/CD
+            "tensorflow", "pytorch", "jupyter",  # ML frameworks
+            "nginx", "apache", "tomcat", "jboss",  # Web servers
+            "node", "python", "ruby", "go", "java", "dotnet"  # Runtime environments
+        ]
+        
+        for indicator in specialized_indicators:
+            if indicator in combined_text:
+                score -= 3
+                selection_reasons.append(f"Specialized software detected: {indicator}")
+        
+        # Prefer shorter names (usually more basic)
+        if len(name) < 30:
+            score += 2
+            selection_reasons.append("Concise name (likely basic)")
+        elif len(name) > 60:
+            score -= 2
+            selection_reasons.append("Long name (possibly specialized)")
+        
+        # Boost score for recent year indicators (more up-to-date)
+        current_year = "2024"
+        recent_years = ["2024", "2023", "2022"]
+        for year in recent_years:
+            if year in combined_text:
+                score += 1
+                selection_reasons.append(f"Recent version: {year}")
+                break
+        
+        return score, selection_reasons
+    
+    # Score all images
+    scored_images = []
+    for img in image_list:
+        score, reasons = calculate_image_suitability_score(img)
+        scored_images.append((img, score, reasons))
+    
+    # Sort by score (highest first)
+    scored_images.sort(key=lambda x: x[1], reverse=True)
+    
+    # Return the best scored image
+    if scored_images:
+        best_image, best_score, reasons = scored_images[0]
+        best_image["_selection_reason"] = f"Best general OS image (score: {best_score})"
+        best_image["_analysis_details"] = reasons
+        return best_image
+    
+    # Fallback: return first image if no scoring worked
+    fallback_image = image_list[0]
+    fallback_image["_selection_reason"] = "Fallback to first available image"
+    return fallback_image
+
+# Tool: Advanced image selection with context analysis
+@mcp.tool()
+def select_best_image_with_context(
+    image_list: List[Dict], 
+    use_case: str = "general",
+    requirements: Optional[str] = None
+) -> Dict:
+    """
+    Advanced image selection using contextual analysis for specific use cases.
+    This function provides more sophisticated image selection than the basic select_best_image helper.
+    
+    Args:
+        image_list: List of image dictionaries from search_images() result
+        use_case: Type of use case ("general", "web-server", "database", "development", "production")
+        requirements: Additional requirements or preferences in natural language
+    
+    Returns:
+        Selected image with detailed analysis and reasoning
+    """
+    if not image_list:
+        return {"error": "No images provided for selection"}
+    
+    # Priority 1: Always prefer isBasicImage: true
+    basic_images = [img for img in image_list if img.get("isBasicImage", False)]
+    if basic_images:
+        selected = basic_images[0]
+        return {
+            "selected_image": selected,
+            "csp_image_name": selected.get("cspImageName"),
+            "selection_reason": "isBasicImage: true (highest priority)",
+            "confidence": "high",
+            "use_case_match": "excellent"
+        }
+    
+    # Priority 2: Context-aware analysis
+    analysis_results = []
+    
+    for img in image_list:
+        name = img.get("name", "").lower()
+        description = img.get("description", "").lower()
+        guest_os = img.get("guestOS", "").lower()
+        combined_text = f"{name} {description} {guest_os}"
+        
+        score = 0
+        reasons = []
+        
+        # Base OS recognition
+        if any(os in combined_text for os in ["ubuntu", "centos", "amazon", "rhel", "debian"]):
+            score += 15
+            reasons.append("Standard Linux distribution")
+        elif "windows" in combined_text:
+            score += 15
+            reasons.append("Windows operating system")
+        
+        # Use case specific scoring
+        if use_case == "web-server":
+            if any(term in combined_text for term in ["nginx", "apache", "web"]):
+                score += 10
+                reasons.append("Web server optimized")
+            if any(term in combined_text for term in ["lamp", "lemp"]):
+                score += 5
+                reasons.append("Web stack included")
+        elif use_case == "database":
+            if any(term in combined_text for term in ["mysql", "postgres", "mongodb"]):
+                score += 10
+                reasons.append("Database software included")
+        elif use_case == "development":
+            if any(term in combined_text for term in ["dev", "development", "sdk"]):
+                score += 5
+                reasons.append("Development environment")
+        elif use_case == "production":
+            if any(term in combined_text for term in ["production", "stable", "lts"]):
+                score += 10
+                reasons.append("Production ready")
+        
+        # General quality indicators
+        if any(term in combined_text for term in ["official", "standard", "base"]):
+            score += 8
+            reasons.append("Official/standard image")
+        
+        if any(term in combined_text for term in ["minimal", "clean"]):
+            score += 5
+            reasons.append("Minimal installation")
+        
+        # Avoid over-specialized images for general use
+        if use_case == "general":
+            specialized_terms = ["gpu", "cuda", "docker", "kubernetes", "hadoop", "spark"]
+            if any(term in combined_text for term in specialized_terms):
+                score -= 10
+                reasons.append("Specialized software detected (may not be suitable for general use)")
+        
+        # Name length consideration
+        if len(name) < 40:
+            score += 2
+            reasons.append("Concise name")
+        
+        analysis_results.append({
+            "image": img,
+            "score": score,
+            "reasons": reasons,
+            "combined_text": combined_text[:100] + "..." if len(combined_text) > 100 else combined_text
+        })
+    
+    # Sort by score and select the best
+    analysis_results.sort(key=lambda x: x["score"], reverse=True)
+    
+    if analysis_results:
+        best = analysis_results[0]
+        confidence = "high" if best["score"] >= 20 else "medium" if best["score"] >= 10 else "low"
+        
+        return {
+            "selected_image": best["image"],
+            "csp_image_name": best["image"].get("cspImageName"),
+            "selection_reason": f"Best match for {use_case} use case (score: {best['score']})",
+            "analysis_details": best["reasons"],
+            "confidence": confidence,
+            "use_case_match": "excellent" if best["score"] >= 25 else "good" if best["score"] >= 15 else "fair",
+            "alternative_options": [
+                {
+                    "image_name": alt["image"].get("name", ""),
+                    "score": alt["score"],
+                    "reasons": alt["reasons"][:2]  # Top 2 reasons
+                }
+                for alt in analysis_results[1:3]  # Show top 2 alternatives
+            ]
+        }
+    
+    # Fallback
+    fallback = image_list[0]
+    return {
+        "selected_image": fallback,
+        "csp_image_name": fallback.get("cspImageName"),
+        "selection_reason": "Fallback to first available image",
+        "confidence": "low",
+        "use_case_match": "unknown"
+    }
+
+#####################################
+# Namespace Helper Functions
+#####################################
+
+# Helper function: Check and manage namespace for MCI operations
+@mcp.tool()
+def check_and_prepare_namespace(preferred_ns_id: Optional[str] = None) -> Dict:
+    """
+    Check available namespaces and help user select or create one for MCI operations.
+    This function provides intelligent namespace management by:
+    1. Listing existing namespaces
+    2. Suggesting namespace selection if available
+    3. Offering to create a new namespace if none exist or user prefers
+    
+    Args:
+        preferred_ns_id: Preferred namespace ID to check (optional)
+    
+    Returns:
+        Namespace management guidance including:
+        - available_namespaces: List of existing namespaces
+        - recommendation: Suggested action
+        - preferred_namespace: Information about preferred namespace if specified
+    """
+    # Get all existing namespaces
+    ns_result = get_namespaces()
+    
+    if "error" in ns_result:
+        return {
+            "error": "Failed to retrieve namespaces",
+            "details": ns_result["error"],
+            "recommendation": "Please check your connection to Tumblebug API"
+        }
+    
+    available_namespaces = ns_result.get("namespaces", [])
+    
+    result = {
+        "available_namespaces": available_namespaces,
+        "total_count": len(available_namespaces)
+    }
+    
+    # If preferred namespace is specified, check if it exists
+    if preferred_ns_id:
+        preferred_exists = any(ns.get("id") == preferred_ns_id for ns in available_namespaces)
+        if preferred_exists:
+            result["preferred_namespace"] = {
+                "id": preferred_ns_id,
+                "exists": True,
+                "status": "ready_to_use"
+            }
+            result["recommendation"] = f"Preferred namespace '{preferred_ns_id}' exists and is ready to use for MCI creation."
+        else:
+            result["preferred_namespace"] = {
+                "id": preferred_ns_id,
+                "exists": False,
+                "status": "needs_creation"
+            }
+            result["recommendation"] = f"Preferred namespace '{preferred_ns_id}' does not exist. You can create it using create_namespace() function."
+    
+    # Provide guidance based on available namespaces
+    if len(available_namespaces) == 0:
+        result["recommendation"] = "No namespaces found. You need to create a namespace first using create_namespace() before creating MCI."
+        result["suggested_action"] = "create_namespace"
+    elif len(available_namespaces) == 1:
+        single_ns = available_namespaces[0]
+        result["recommendation"] = f"One namespace available: '{single_ns.get('id', 'unknown')}'. You can use this for MCI creation or create a new one if needed."
+        result["suggested_namespace"] = single_ns.get("id", "unknown")
+        result["suggested_action"] = "use_existing_or_create_new"
+    else:
+        result["recommendation"] = f"Multiple namespaces available ({len(available_namespaces)}). Please select one for MCI creation or create a new one."
+        result["suggested_action"] = "select_existing_or_create_new"
+        result["namespace_options"] = [ns.get("id", "unknown") for ns in available_namespaces]
+    
+    return result
+
+# Helper function: Validate namespace exists
+@mcp.tool() 
+def validate_namespace(ns_id: str) -> Dict:
+    """
+    Validate if a namespace exists and provide its details
+    
+    Args:
+        ns_id: Namespace ID to validate
+    
+    Returns:
+        Validation result with namespace details or error
+    """
+    try:
+        ns_info = get_namespace(ns_id)
+        if "error" in ns_info:
+            return {
+                "valid": False,
+                "namespace_id": ns_id,
+                "error": "Namespace does not exist",
+                "suggestion": f"Create namespace '{ns_id}' using create_namespace() or choose from existing namespaces using check_and_prepare_namespace()"
+            }
+        
+        return {
+            "valid": True,
+            "namespace_id": ns_id,
+            "namespace_info": ns_info,
+            "status": "ready_for_mci_creation"
+        }
+    except Exception as e:
+        return {
+            "valid": False,
+            "namespace_id": ns_id,
+            "error": f"Failed to validate namespace: {str(e)}",
+            "suggestion": "Check your connection and try again"
+        }
+
+# Helper function: Create namespace with validation
+@mcp.tool()
+def create_namespace_with_validation(name: str, description: Optional[str] = None) -> Dict:
+    """
+    Create a new namespace with validation and confirmation
+    
+    Args:
+        name: Name of the namespace to create
+        description: Description of the namespace (optional)
+    
+    Returns:
+        Creation result with validation status
+    """
+    # First check if namespace already exists
+    validation = validate_namespace(name)
+    if validation["valid"]:
+        return {
+            "created": False,
+            "namespace_id": name,
+            "message": f"Namespace '{name}' already exists",
+            "existing_info": validation["namespace_info"],
+            "suggestion": "You can use this existing namespace for MCI creation"
+        }
+    
+    # Create the namespace
+    try:
+        result = create_namespace(name, description)
+        if "error" in result:
+            return {
+                "created": False,
+                "namespace_id": name,
+                "error": result["error"],
+                "suggestion": "Please check the namespace name and try again"
+            }
+        
+        # Validate the created namespace
+        validation = validate_namespace(name)
+        
+        return {
+            "created": True,
+            "namespace_id": name,
+            "namespace_info": result,
+            "validation": validation,
+            "status": "ready_for_mci_creation",
+            "message": f"Namespace '{name}' created successfully and ready for MCI creation"
+        }
+    except Exception as e:
+        return {
+            "created": False,
+            "namespace_id": name,
+            "error": f"Failed to create namespace: {str(e)}",
+            "suggestion": "Please check your input and connection"
+        }
+
+
+#####################################
 # Connection Management
 #####################################
 
@@ -344,6 +780,51 @@ def resource_overview() -> Dict:
     """
     return api_request("GET", "/inspectResourcesOverview")
 
+# Tool: Check resource exists
+@mcp.tool()
+def check_resource_exists(ns_id: str, resource_type: str, resource_id: str) -> Dict:
+    """
+    Check if a specific resource exists in the namespace.
+    This is useful for validating resources before using them in MCI creation.
+    
+    Args:
+        ns_id: Namespace ID
+        resource_type: Type of resource (e.g., "vNet", "securityGroup", "sshKey", "image", "spec")
+        resource_id: Resource ID to check
+    
+    Returns:
+        Resource existence information
+    """
+    return api_request("GET", f"/ns/{ns_id}/checkResource/{resource_type}/{resource_id}")
+
+# Tool: Get all specs in namespace
+@mcp.tool()
+def get_specs(ns_id: str) -> Dict:
+    """
+    Get all VM specifications available in the namespace.
+    
+    Args:
+        ns_id: Namespace ID
+    
+    Returns:
+        List of VM specifications
+    """
+    return api_request("GET", f"/ns/{ns_id}/resources/spec")
+
+# Tool: Get all images in namespace  
+@mcp.tool()
+def get_images(ns_id: str) -> Dict:
+    """
+    Get all images available in the namespace.
+    
+    Args:
+        ns_id: Namespace ID
+    
+    Returns:
+        List of images
+    """
+    return api_request("GET", f"/ns/{ns_id}/resources/image")
+
 # # Tool: Register CSP resources
 # @mcp.tool()
 # def register_csp_resources(ns_id: str, mci_flag: str = "n") -> Dict:
@@ -465,6 +946,28 @@ def get_vms(ns_id: str, mci_id: str, subgroup_id: str) -> Dict:
     """
     return api_request("GET", f"/ns/{ns_id}/mci/{mci_id}/subgroup/{subgroup_id}")
 
+# Tool: Get MCI associated resources
+@mcp.tool()
+def get_mci_associated_resources(ns_id: str, mci_id: str) -> Dict:
+    """
+    Get associated resource IDs for a given MCI.
+    This function returns all resources (VNet, SecurityGroup, SSHKey, etc.) that are used by the MCI.
+    
+    Args:
+        ns_id: Namespace ID
+        mci_id: MCI ID
+    
+    Returns:
+        Associated resource information including:
+        - vNetIds: List of VNet IDs used by the MCI
+        - securityGroupIds: List of Security Group IDs
+        - sshKeyIds: List of SSH Key IDs
+        - imageIds: List of Image IDs
+        - specIds: List of Spec IDs
+        - And other resource associations
+    """
+    return api_request("GET", f"/ns/{ns_id}/mci/{mci_id}/associatedResources")
+
 # Tool: Get image search options
 @mcp.tool()
 def get_image_search_options(ns_id: str = "system") -> Dict:
@@ -528,9 +1031,14 @@ def search_images(
           - guestOS: Guest operating system
           - architecture: OS architecture
           - creationDate: Image creation date
+          - isBasicImage: Boolean indicating if this is a basic OS image (PRIORITY indicator)
           
-    Important: The 'cspImageName' from search results becomes the 'commonImage' 
-    parameter when creating MCIs via create_mci_dynamic().
+    Important: 
+    - The 'cspImageName' from search results becomes the 'commonImage' parameter when creating MCIs
+    - For optimal image selection, use select_best_image() helper function which intelligently prioritizes:
+      1. Images with isBasicImage: true (highest priority)
+      2. General OS images through intelligent analysis of image metadata
+      3. Fallback to first available image with detailed reasoning
     """
     data = {}
     
@@ -737,42 +1245,42 @@ def create_mci_dynamic(
     This is the RECOMMENDED method for MCI creation as it automatically handles resource selection.
     
     **CRITICAL WORKFLOW:**
-    1. Use get_image_search_options() to see available search parameters
-    2. Use search_images() to find suitable images based on your criteria
-    3. From search results, identify the 'cspImageName' of your desired image
-    4. Use recommend_vm_spec() to find appropriate VM specifications
+    1. Use recommend_vm_spec() to find appropriate VM specifications (determines CSP and region)
+    2. From spec results, identify target CSP and region
+    3. Use search_images() to find suitable images in the selected CSP/region
+    4. From search results, identify the 'cspImageName' of your desired image
     5. Create VM configurations with 'cspImageName' as 'commonImage' and spec ID as 'commonSpec'
     
     **Example workflow:**
     ```
-    # 1. Get search options
-    options = get_image_search_options()
+    # 1. Get VM specs first (determines CSP and region)
+    specs = recommend_vm_spec(
+        filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}}
+    )
     
-    # 2. Search for Ubuntu 22.04 images in AWS ap-northeast-2
+    # 2. Pick a suitable spec (e.g., "aws+ap-northeast-2+t2.small")
+    chosen_spec = specs[0]["id"]  # e.g., "aws+ap-northeast-2+t2.small"
+    provider = chosen_spec.split('+')[0]  # Extract "aws"
+    region = chosen_spec.split('+')[1]    # Extract "ap-northeast-2"
+    
+    # 3. Search for images in the selected CSP/region
     images = search_images(
-        provider_name="aws", 
-        region_name="ap-northeast-2", 
+        provider_name=provider,
+        region_name=region,
         os_type="ubuntu 22.04"
     )
     
-    # 3. From results, pick a cspImageName (e.g., "ami-0e06732ba3ca8c6cc")
-    # 4. Get VM specs
-    specs = recommend_vm_spec(filter_policies={"ProviderName": "aws"})
+    # 4. Select the best image (intelligent analysis with reasoning)
+    best_image = select_best_image(images["imageList"])
+    chosen_image = best_image["cspImageName"]
     
     # 5. Create VM configurations
     vm_configs = [
         {
-            "commonImage": "ami-0e06732ba3ca8c6cc",  # From search_images()
-            "commonSpec": "aws+ap-northeast-2+t2.small",  # From recommend_vm_spec()
+            "commonImage": chosen_image,        # From Step 4
+            "commonSpec": chosen_spec,          # From Step 2
             "name": "vm-1",
             "description": "First VM",
-            "subGroupSize": "1"
-        },
-        {
-            "commonImage": "ami-0e06732ba3ca8c6cc",
-            "commonSpec": "aws+ap-northeast-2+t2.medium", 
-            "name": "vm-2",
-            "description": "Second VM with different spec",
             "subGroupSize": "1"
         }
     ]
@@ -801,6 +1309,7 @@ def create_mci_dynamic(
             - label: Key-value pairs for VM labeling (optional)
         description: MCI description (optional)
         install_mon_agent: Whether to install monitoring agent ("yes"/"no", default "no")
+                          Note: Only requests "yes" when explicitly needed. Default behavior omits this parameter.
         system_label: System label for special purposes (optional)
         label: Key-value pairs for MCI labeling (optional)
         post_command: Post-deployment command configuration with format:
@@ -820,10 +1329,24 @@ def create_mci_dynamic(
     - Each VM configuration in vm_configurations must have commonImage and commonSpec
     - Use subGroupSize > 1 to create multiple VMs with same configuration
     """
+    # Validate namespace first
+    ns_validation = validate_namespace(ns_id)
+    if not ns_validation["valid"]:
+        return {
+            "error": f"Namespace '{ns_id}' validation failed",
+            "details": ns_validation.get("error", "Unknown error"),
+            "suggestion": ns_validation.get("suggestion", ""),
+            "namespace_guidance": "Use check_and_prepare_namespace() to see available namespaces or create_namespace_with_validation() to create a new one"
+        }
+    
     # Validate required VM configuration fields
     for i, vm_config in enumerate(vm_configurations):
         if "commonImage" not in vm_config or "commonSpec" not in vm_config:
-            raise ValueError(f"VM configuration {i} must include both 'commonImage' and 'commonSpec'")
+            return {
+                "error": f"VM configuration {i} validation failed",
+                "details": "VM configuration must include both 'commonImage' and 'commonSpec'",
+                "suggestion": "Use search_images() to get 'commonImage' and recommend_vm_spec() to get 'commonSpec'"
+            }
     
     # Build request data according to model.TbMciDynamicReq spec
     data = {
@@ -834,7 +1357,8 @@ def create_mci_dynamic(
     # Add optional fields
     if description:
         data["description"] = description
-    if install_mon_agent:
+    # Only include installMonAgent if explicitly set to "yes"
+    if install_mon_agent and install_mon_agent.lower() == "yes":
         data["installMonAgent"] = install_mon_agent
     if system_label:
         data["systemLabel"] = system_label
@@ -847,7 +1371,16 @@ def create_mci_dynamic(
     if hold:
         url += "?option=hold"
     
-    return api_request("POST", url, json_data=data)
+    result = api_request("POST", url, json_data=data)
+    
+    # Add namespace info to result for reference
+    if "error" not in result:
+        result["namespace_info"] = {
+            "namespace_id": ns_id,
+            "validation": "passed"
+        }
+    
+    return result
 
 # Tool: Create MCI Dynamic (Simplified)
 @mcp.tool()
@@ -866,19 +1399,37 @@ def create_simple_mci(
     This is a wrapper around create_mci_dynamic() for easier usage when all VMs use the same configuration.
     
     **WORKFLOW:**
-    1. Use search_images() to find your desired image and get its cspImageName
-    2. Use recommend_vm_spec() to find appropriate VM specifications
-    3. Use this function with the found image and spec
+    1. Use recommend_vm_spec() to find appropriate VM specifications (determines CSP and region)
+    2. From spec results, extract CSP and region information  
+    3. Use search_images() to find your desired image in the selected CSP/region
+    4. Use this function with the found spec and image
     
     **Example:**
     ```
-    # Find an Ubuntu image
-    images = search_images(provider_name="aws", region_name="ap-northeast-2", os_type="ubuntu")
-    image_name = images[0]["cspImageName"]  # e.g., "ami-0e06732ba3ca8c6cc"
-    
-    # Get VM specs
-    specs = recommend_vm_spec(filter_policies={"ProviderName": "aws"})
+    # Find VM specs first (determines CSP and region)
+    specs = recommend_vm_spec(
+        filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}}
+    )
     spec_id = specs[0]["id"]  # e.g., "aws+ap-northeast-2+t2.small"
+    
+    # Extract CSP and region from spec
+    provider = spec_id.split('+')[0]  # "aws"
+    region = spec_id.split('+')[1]    # "ap-northeast-2"
+    
+    # Find the best image in the selected CSP/region
+    images = search_images(
+        provider_name=provider, 
+        region_name=region, 
+        os_type="ubuntu"
+    )
+    
+    # Automatically select the best image (intelligent analysis with detailed reasoning)
+    best_image = select_best_image(images.get("imageList", []))
+    image_name = best_image["cspImageName"]  # e.g., "ami-0e06732ba3ca8c6cc"
+    
+    # Optional: Check selection reasoning
+    # selection_reason = best_image.get("_selection_reason", "")
+    # analysis_details = best_image.get("_analysis_details", [])
     
     # Create MCI with 3 identical VMs
     mci = create_simple_mci(
@@ -897,7 +1448,8 @@ def create_simple_mci(
         common_spec: VM specification ID from recommend_vm_spec() results
         vm_count: Number of identical VMs to create (default: 1)
         description: MCI description
-        install_mon_agent: Whether to install monitoring agent ("yes"/"no")
+        install_mon_agent: Whether to install monitoring agent ("yes"/"no", default "no")
+                          Note: Only requests "yes" when explicitly needed. Default behavior omits this parameter.
         hold: Whether to hold provisioning for review
     
     Returns:
@@ -923,6 +1475,438 @@ def create_simple_mci(
         install_mon_agent=install_mon_agent,
         hold=hold
     )
+
+# Tool: Smart MCI Creation with Spec-First Workflow
+@mcp.tool()
+def create_mci_with_spec_first(
+    name: str,
+    vm_requirements: List[Dict],
+    preferred_ns_id: Optional[str] = None,
+    create_ns_if_missing: bool = False,
+    ns_description: Optional[str] = None,
+    description: str = "MCI created with spec-first workflow",
+    install_mon_agent: str = "no",
+    hold: bool = False
+) -> Dict:
+    """
+    Smart MCI creation using spec-first workflow for optimal CSP/region selection.
+    This function finds VM specifications first (which determines CSP and region), 
+    then searches for compatible images in the selected CSP/region.
+    
+    **SPEC-FIRST WORKFLOW BENEFITS:**
+    - Optimal CSP and region selection based on performance/cost requirements
+    - Intelligent image selection using smart metadata analysis (no hardcoded patterns)
+    - Automatic image compatibility with selected specifications
+    - Reduced complexity in multi-CSP environments
+    - Better resource optimization with detailed selection reasoning
+    
+    **Example Usage:**
+    ```python
+    # Create MCI with performance requirements
+    result = create_mci_with_spec_first(
+        name="web-servers",
+        vm_requirements=[
+            {
+                "name": "web-server",
+                "count": 2,
+                "vCPU": {"min": 2, "max": 4},
+                "memoryGiB": {"min": 4, "max": 8},
+                "os_type": "ubuntu 22.04",
+                "priority": "cost"
+            },
+            {
+                "name": "database",
+                "count": 1, 
+                "vCPU": {"min": 4},
+                "memoryGiB": {"min": 8},
+                "os_type": "ubuntu 22.04",
+                "priority": "performance"
+            }
+        ],
+        preferred_ns_id="production",
+        create_ns_if_missing=True
+    )
+    ```
+    
+    Args:
+        name: MCI name
+        vm_requirements: List of VM requirement dictionaries, each containing:
+            - name: VM group name (required)
+            - count: Number of VMs (default: 1)
+            - vCPU: CPU requirements {"min": 2, "max": 8} (optional)
+            - memoryGiB: Memory requirements {"min": 4, "max": 16} (optional)
+            - os_type: Operating system (e.g., "ubuntu 22.04") (optional)
+            - os_architecture: Architecture (e.g., "x86_64") (optional)
+            - priority: "cost", "performance", or "location" (default: "cost")
+            - provider_preference: Preferred CSP (e.g., "aws", "azure") (optional)
+            - region_preference: Preferred region (optional)
+        preferred_ns_id: Preferred namespace ID (optional)
+        create_ns_if_missing: Whether to create namespace if it doesn't exist
+        ns_description: Description for new namespace if created
+        description: MCI description
+        install_mon_agent: Whether to install monitoring agent ("yes"/"no", default "no")
+                          Note: Only requests "yes" when explicitly needed. Default behavior omits this parameter.
+        hold: Whether to hold provisioning
+    
+    Returns:
+        Comprehensive result including:
+        - namespace_management: Namespace handling results
+        - spec_selection: Selected specifications for each VM group
+        - image_selection: Selected images for each VM group
+        - vm_configurations: Final VM configurations
+        - mci_creation: MCI creation results
+        - status: Overall operation status
+    """
+    result = {
+        "namespace_management": {},
+        "spec_selection": {},
+        "image_selection": {},
+        "vm_configurations": [],
+        "mci_creation": {},
+        "status": "in_progress"
+    }
+    
+    # Step 1: Handle namespace management
+    if preferred_ns_id:
+        ns_validation = validate_namespace(preferred_ns_id)
+        if ns_validation["valid"]:
+            target_ns_id = preferred_ns_id
+            result["namespace_management"]["action"] = "used_existing"
+        else:
+            if create_ns_if_missing:
+                creation_result = create_namespace_with_validation(
+                    preferred_ns_id, 
+                    ns_description or f"Namespace for MCI {name}"
+                )
+                if creation_result.get("created") or creation_result.get("message"):
+                    target_ns_id = preferred_ns_id
+                    result["namespace_management"]["action"] = "created_new"
+                    result["namespace_management"]["creation_result"] = creation_result
+                else:
+                    result["status"] = "failed"
+                    result["error"] = "Failed to create namespace"
+                    return result
+            else:
+                result["status"] = "namespace_selection_needed"
+                result["error"] = f"Namespace '{preferred_ns_id}' does not exist"
+                return result
+    else:
+        ns_check = check_and_prepare_namespace()
+        if len(ns_check["available_namespaces"]) == 0:
+            result["status"] = "namespace_creation_needed"
+            result["error"] = "No namespaces available"
+            return result
+        elif len(ns_check["available_namespaces"]) == 1:
+            target_ns_id = ns_check["suggested_namespace"]
+            result["namespace_management"]["action"] = "used_only_available"
+        else:
+            result["status"] = "namespace_selection_needed"
+            result["error"] = "Multiple namespaces available, specify preferred_ns_id"
+            result["available_namespaces"] = ns_check["namespace_options"]
+            return result
+    
+    result["namespace_management"]["final_namespace_id"] = target_ns_id
+    
+    # Step 2: Process each VM requirement (spec-first approach)
+    vm_configs = []
+    
+    for req_idx, vm_req in enumerate(vm_requirements):
+        req_name = vm_req.get("name", f"vm-group-{req_idx + 1}")
+        vm_count = vm_req.get("count", 1)
+        
+        # Build filter policies for spec recommendation
+        filter_policies = {}
+        if "vCPU" in vm_req:
+            filter_policies["vCPU"] = vm_req["vCPU"]
+        if "memoryGiB" in vm_req:
+            filter_policies["memoryGiB"] = vm_req["memoryGiB"]
+        if "provider_preference" in vm_req:
+            filter_policies["ProviderName"] = vm_req["provider_preference"]
+        if "region_preference" in vm_req:
+            filter_policies["RegionName"] = vm_req["region_preference"]
+        
+        # Step 2a: Find VM specifications
+        priority = vm_req.get("priority", "cost")
+        specs_result = recommend_vm_spec(
+            filter_policies=filter_policies,
+            priority_policy=priority,
+            limit="10"
+        )
+        
+        if not specs_result or "error" in specs_result:
+            result["status"] = "failed"
+            result["error"] = f"Failed to find specifications for {req_name}"
+            result["spec_selection"][req_name] = {"error": specs_result}
+            return result
+        
+        # Select the best spec
+        if isinstance(specs_result, list) and len(specs_result) > 0:
+            chosen_spec = specs_result[0]
+        elif isinstance(specs_result, dict) and "result" in specs_result:
+            chosen_spec = specs_result["result"][0] if specs_result["result"] else None
+        else:
+            result["status"] = "failed"
+            result["error"] = f"Invalid spec recommendation response for {req_name}"
+            return result
+        
+        if not chosen_spec:
+            result["status"] = "failed"
+            result["error"] = f"No suitable specifications found for {req_name}"
+            return result
+        
+        spec_id = chosen_spec["id"]
+        result["spec_selection"][req_name] = {
+            "selected_spec": chosen_spec,
+            "spec_id": spec_id
+        }
+        
+        # Step 2b: Extract CSP and region from spec
+        try:
+            spec_parts = spec_id.split('+')
+            provider = spec_parts[0]
+            region = spec_parts[1]
+        except (IndexError, AttributeError):
+            result["status"] = "failed"
+            result["error"] = f"Invalid spec ID format: {spec_id}"
+            return result
+        
+        # Step 2c: Search for images in the selected CSP/region
+        image_search_params = {
+            "provider_name": provider,
+            "region_name": region
+        }
+        
+        if "os_type" in vm_req:
+            image_search_params["os_type"] = vm_req["os_type"]
+        if "os_architecture" in vm_req:
+            image_search_params["os_architecture"] = vm_req["os_architecture"]
+        
+        images_result = search_images(**image_search_params)
+        
+        if not images_result or "error" in images_result:
+            result["status"] = "failed"
+            result["error"] = f"Failed to find images for {req_name} in {provider}/{region}"
+            result["image_selection"][req_name] = {"error": images_result}
+            return result
+        
+        # Select the best suitable image using intelligent selection
+        image_list = images_result.get("imageList", [])
+        if not image_list:
+            result["status"] = "failed"
+            result["error"] = f"No images found for {req_name} in {provider}/{region}"
+            return result
+        
+        chosen_image = select_best_image(image_list)
+        if not chosen_image:
+            result["status"] = "failed" 
+            result["error"] = f"Failed to select suitable image for {req_name}"
+            return result
+            
+        csp_image_name = chosen_image["cspImageName"]
+        
+        result["image_selection"][req_name] = {
+            "selected_image": chosen_image,
+            "csp_image_name": csp_image_name,
+            "provider": provider,
+            "region": region,
+            "selection_reason": chosen_image.get("_selection_reason", "Selected by intelligent analysis"),
+            "is_basic_image": chosen_image.get("isBasicImage", False),
+            "analysis_details": chosen_image.get("_analysis_details", [])
+        }
+        
+        # Step 2d: Create VM configurations for this requirement
+        for vm_idx in range(vm_count):
+            vm_config = {
+                "commonImage": csp_image_name,
+                "commonSpec": spec_id,
+                "name": f"{req_name}-{vm_idx + 1}" if vm_count > 1 else req_name,
+                "description": f"VM {vm_idx + 1} of {vm_count} for {req_name}",
+                "subGroupSize": "1"
+            }
+            vm_configs.append(vm_config)
+    
+    result["vm_configurations"] = vm_configs
+    
+    # Step 3: Create MCI with all configurations
+    mci_result = create_mci_dynamic(
+        ns_id=target_ns_id,
+        name=name,
+        vm_configurations=vm_configs,
+        description=description,
+        install_mon_agent=install_mon_agent,
+        hold=hold
+    )
+    
+    result["mci_creation"] = mci_result
+    
+    if "error" not in mci_result:
+        result["status"] = "success"
+        result["summary"] = {
+            "namespace_id": target_ns_id,
+            "mci_id": mci_result.get("id", name),
+            "mci_name": name,
+            "total_vms": len(vm_configs),
+            "vm_groups": len(vm_requirements),
+            "selected_csps": list(set([img["provider"] for img in result["image_selection"].values()])),
+            "selected_regions": list(set([img["region"] for img in result["image_selection"].values()]))
+        }
+    else:
+        result["status"] = "mci_creation_failed"
+        result["error"] = "MCI creation failed after successful resource selection"
+    
+    return result
+
+# Tool: Smart MCI Creation with Namespace Management
+@mcp.tool()
+def create_mci_with_namespace_management(
+    name: str,
+    vm_configurations: List[Dict],
+    preferred_ns_id: Optional[str] = None,
+    create_ns_if_missing: bool = False,
+    ns_description: Optional[str] = None,
+    description: str = "MCI created with smart namespace management",
+    install_mon_agent: str = "no",
+    hold: bool = False
+) -> Dict:
+    """
+    Smart MCI creation with automatic namespace management.
+    This function handles namespace selection/creation automatically before creating MCI.
+    
+    **INTELLIGENT WORKFLOW:**
+    1. Check available namespaces
+    2. If preferred_ns_id specified and exists → use it
+    3. If preferred_ns_id specified but doesn't exist → create it (if create_ns_if_missing=True)
+    4. If no preferred_ns_id → guide user to select from available or create new
+    5. Create MCI once namespace is ready
+    
+    **Example Usage:**
+    ```python
+    # Auto-create namespace if it doesn't exist
+    result = create_mci_with_namespace_management(
+        name="my-infrastructure",
+        vm_configurations=[...],
+        preferred_ns_id="my-project",
+        create_ns_if_missing=True,
+        ns_description="Project namespace"
+    )
+    
+    # Or let it guide namespace selection
+    result = create_mci_with_namespace_management(
+        name="my-infrastructure", 
+        vm_configurations=[...]
+    )
+    ```
+    
+    Args:
+        name: MCI name
+        vm_configurations: List of VM configurations (same as create_mci_dynamic)
+        preferred_ns_id: Preferred namespace ID (optional)
+        create_ns_if_missing: Whether to create namespace if it doesn't exist (default: False)
+        ns_description: Description for new namespace if created
+        description: MCI description
+        install_mon_agent: Whether to install monitoring agent ("yes"/"no", default "no")
+                          Note: Only requests "yes" when explicitly needed. Default behavior omits this parameter.
+        hold: Whether to hold provisioning
+    
+    Returns:
+        Smart creation result including namespace management info and MCI creation result
+    """
+    result = {
+        "namespace_management": {},
+        "mci_creation": {},
+        "status": "in_progress"
+    }
+    
+    # Step 1: Check and prepare namespace
+    ns_check = check_and_prepare_namespace(preferred_ns_id)
+    result["namespace_management"]["check_result"] = ns_check
+    
+    target_ns_id = None
+    
+    # Step 2: Handle namespace selection/creation
+    if preferred_ns_id:
+        # User has a preference
+        ns_validation = validate_namespace(preferred_ns_id)
+        if ns_validation["valid"]:
+            # Preferred namespace exists, use it
+            target_ns_id = preferred_ns_id
+            result["namespace_management"]["action"] = "used_existing_preferred"
+            result["namespace_management"]["namespace_id"] = preferred_ns_id
+        else:
+            # Preferred namespace doesn't exist
+            if create_ns_if_missing:
+                # Create the preferred namespace
+                creation_result = create_namespace_with_validation(
+                    preferred_ns_id, 
+                    ns_description or f"Namespace for MCI {name}"
+                )
+                result["namespace_management"]["creation_result"] = creation_result
+                
+                if creation_result.get("created") or creation_result.get("message"):
+                    target_ns_id = preferred_ns_id
+                    result["namespace_management"]["action"] = "created_preferred"
+                    result["namespace_management"]["namespace_id"] = preferred_ns_id
+                else:
+                    result["status"] = "failed"
+                    result["error"] = "Failed to create preferred namespace"
+                    result["suggestion"] = f"Namespace '{preferred_ns_id}' could not be created. " + creation_result.get("suggestion", "")
+                    return result
+            else:
+                result["status"] = "namespace_selection_needed"
+                result["error"] = f"Preferred namespace '{preferred_ns_id}' does not exist"
+                result["suggestion"] = f"Set create_ns_if_missing=True to auto-create, or use check_and_prepare_namespace() to see available options"
+                result["available_options"] = ns_check
+                return result
+    else:
+        # No preference specified, guide user
+        if len(ns_check["available_namespaces"]) == 0:
+            result["status"] = "namespace_creation_needed"
+            result["error"] = "No namespaces available"
+            result["suggestion"] = "Create a namespace first using create_namespace_with_validation() or specify preferred_ns_id with create_ns_if_missing=True"
+            return result
+        elif len(ns_check["available_namespaces"]) == 1:
+            # Use the only available namespace
+            target_ns_id = ns_check["suggested_namespace"]
+            result["namespace_management"]["action"] = "used_only_available"
+            result["namespace_management"]["namespace_id"] = target_ns_id
+        else:
+            # Multiple namespaces available, need user selection
+            result["status"] = "namespace_selection_needed"
+            result["suggestion"] = "Multiple namespaces available. Specify preferred_ns_id parameter to select one:"
+            result["available_namespaces"] = ns_check["namespace_options"]
+            return result
+    
+    # Step 3: Create MCI with selected/created namespace
+    if target_ns_id:
+        result["namespace_management"]["final_namespace_id"] = target_ns_id
+        
+        mci_result = create_mci_dynamic(
+            ns_id=target_ns_id,
+            name=name,
+            vm_configurations=vm_configurations,
+            description=description,
+            install_mon_agent=install_mon_agent,
+            hold=hold
+        )
+        
+        result["mci_creation"] = mci_result
+        
+        if "error" not in mci_result:
+            result["status"] = "success"
+            result["summary"] = {
+                "namespace_id": target_ns_id,
+                "mci_id": mci_result.get("id", name),
+                "mci_name": name,
+                "vm_count": len(vm_configurations)
+            }
+        else:
+            result["status"] = "mci_creation_failed"
+            result["error"] = "MCI creation failed after successful namespace setup"
+    else:
+        result["status"] = "failed"
+        result["error"] = "No valid namespace could be determined"
+    
+    return result
 
 # Tool: Delete MCI
 @mcp.tool()
@@ -1205,31 +2189,77 @@ def mci_management_prompt() -> str:
     """Prompt for MCI management"""
     return """
     You are a Multi-Cloud Infrastructure (MCI) management expert for Cloud-Barista CB-Tumblebug.
-    You can perform comprehensive MCI operations including:
+    You can perform comprehensive MCI operations with intelligent namespace management:
     
-    **COMPLETE MCI CREATION WORKFLOW:**
-    1. **Image Discovery**: Use get_image_search_options() and search_images() to find suitable OS images
-    2. **Spec Selection**: Use recommend_vm_spec() to find optimal VM specifications  
-    3. **MCI Creation**: Use create_mci_dynamic() with image and spec information
-    4. **Management**: Monitor, control, and manage your infrastructure
+    **COMPLETE MCI CREATION WORKFLOW WITH SMART NAMESPACE MANAGEMENT:**
+    1. **Namespace Check**: Use check_and_prepare_namespace() to see available namespaces
+    2. **Namespace Setup**: Create new namespace if needed with create_namespace_with_validation()
+    3. **Spec Selection**: Use recommend_vm_spec() to find optimal VM specifications (determines CSP and region)
+    4. **Image Discovery**: Use search_images() to find suitable OS images in the selected CSP/region
+    5. **Smart MCI Creation**: Use create_mci_with_namespace_management() for automated namespace handling
+    6. **Management**: Monitor, control, and manage your infrastructure
     
-    **Key Functions Available:**
-    - get_image_search_options(): Discover available search parameters
-    - search_images(): Find images by OS, provider, region (returns cspImageName)
-    - recommend_vm_spec(): Find VM specs by requirements (returns spec ID)
-    - create_mci_dynamic(): Create infrastructure (needs cspImageName + spec ID)
+    **SMART NAMESPACE MANAGEMENT FUNCTIONS:**
+    - check_and_prepare_namespace(): Check available namespaces and get recommendations
+    - validate_namespace(): Verify if a specific namespace exists
+    - create_namespace_with_validation(): Create namespace with validation
+    - create_mci_with_namespace_management(): Smart MCI creation with auto namespace handling
+    - create_mci_with_spec_first(): Advanced MCI creation with spec-first workflow (RECOMMENDED for new requests)
+    
+    **TRADITIONAL MCI FUNCTIONS:**
+    - recommend_vm_spec(): Find VM specs by requirements (returns spec ID, determines CSP/region)
+    - search_images(): Find images by CSP/region/OS (returns cspImageName)
+    - create_mci_dynamic(): Create infrastructure (needs cspImageName + spec ID + valid namespace)
     - control_mci(): Manage MCI lifecycle (suspend, resume, reboot, terminate)
     - execute_command(): Run commands on VMs
     - transfer_file(): Upload files to VMs
     
-    **IMPORTANT WORKFLOW EXAMPLE:**
+    **RECOMMENDED WORKFLOW EXAMPLE (SPEC-FIRST):**
     ```
-    1. options = get_image_search_options()  # See available search criteria
-    2. images = search_images(provider_name="aws", os_type="ubuntu 22.04")  
-    3. specs = recommend_vm_spec(filter_policies={"ProviderName": "aws"})
-    4. mci = create_mci_dynamic(
-         commonImage="ami-xxx",      # From step 2: cspImageName
-         commonSpec="aws+region+type" # From step 3: spec ID
+    1. # Create MCI with requirements (spec-first approach)
+       result = create_mci_with_spec_first(
+           name="my-infrastructure",
+           vm_requirements=[
+               {
+                   "name": "web-servers",
+                   "count": 2,
+                   "vCPU": {"min": 2, "max": 4},
+                   "memoryGiB": {"min": 4},
+                   "os_type": "ubuntu 22.04",
+                   "priority": "cost"
+               }
+           ],
+           preferred_ns_id="my-project",
+           create_ns_if_missing=True
+       )
+    ```
+    
+    **TRADITIONAL WORKFLOW EXAMPLE:**
+    ```
+    1. # Check/create namespace manually
+       ns_result = create_namespace_with_validation("my-project")
+       
+    2. # Find specifications first (determines CSP and region)
+       specs = recommend_vm_spec(
+           filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}}
+       )
+       chosen_spec = specs[0]["id"]  # e.g., "aws+ap-northeast-2+t2.small"
+       
+    3. # Extract CSP and region, then find images
+       provider = chosen_spec.split('+')[0]  # "aws"
+       region = chosen_spec.split('+')[1]    # "ap-northeast-2"
+       images = search_images(
+           provider_name=provider, 
+           region_name=region, 
+           os_type="ubuntu 22.04"
+       )
+       
+    4. # Select the best image and create MCI
+       best_image = select_best_image(images["imageList"])
+       mci = create_mci_dynamic(
+           ns_id="my-project",
+           commonImage=best_image["cspImageName"],  # From step 4 (best image)
+           commonSpec=chosen_spec                   # From step 2
        )
     ```
     
@@ -1308,59 +2338,108 @@ def workflow_demo_prompt() -> str:
 # Prompt: Image search and MCI creation workflow guide
 @mcp.prompt()
 def image_mci_workflow_prompt() -> str:
-    """Complete workflow guide for image search and MCI creation"""
+    """Complete workflow guide for image search and MCI creation with smart namespace management"""
     return """
-    You are an expert guide for the complete Image Search → MCI Creation workflow in CB-Tumblebug.
+    You are an expert guide for the complete Namespace Management → Image Search → MCI Creation workflow in CB-Tumblebug.
     
-    **STEP-BY-STEP WORKFLOW:**
+    **SMART WORKFLOW (RECOMMENDED):**
     
-    **Step 1: Discover Available Search Options**
-    Use get_image_search_options() to understand available search parameters:
-    - osArchitecture: "x86_64", "arm64"
-    - osType: "ubuntu 22.04", "centos 7", "windows server 2019"
-    - providerName: "aws", "azure", "gcp"
-    - regionName: "ap-northeast-2", "us-east-1", "koreacentral"
-    
-    **Step 2: Search for Images**
-    Use search_images() with specific criteria:
+    **Step 0: Smart Namespace Management**
+    Use create_mci_with_namespace_management() for automated handling:
+    ```python
+    result = create_mci_with_namespace_management(
+        name="my-infrastructure",
+        vm_configurations=[{
+            "commonImage": "ami-xxx",     # From image search
+            "commonSpec": "aws+region+spec"  # From spec recommendation
+        }],
+        preferred_ns_id="my-project",     # Optional: preferred namespace
+        create_ns_if_missing=True         # Auto-create if missing
+    )
     ```
-    search_images(
-        provider_name="aws",
-        region_name="ap-northeast-2", 
+    
+    **MANUAL STEP-BY-STEP WORKFLOW:**
+    
+    **Step 0: Namespace Preparation**
+    Check and prepare namespace first:
+    ```python
+    # Check what's available
+    ns_check = check_and_prepare_namespace("my-project")
+    
+    # Create if needed
+    ns_result = create_namespace_with_validation("my-project", "My project namespace")
+    ```
+    
+    **Step 1: Find VM Specifications (determines CSP and region)**
+    Use recommend_vm_spec() to find appropriate specs based on requirements:
+    ```python
+    specs = recommend_vm_spec(
+        filter_policies={
+            "vCPU": {"min": 2, "max": 4},
+            "memoryGiB": {"min": 4, "max": 8}
+        },
+        priority_policy="cost"
+    )
+    ```
+    
+    **Step 2: Extract CSP and Region Information**
+    From spec results, identify target CSP and region:
+    ```python
+    chosen_spec = specs[0]["id"]  # e.g., "aws+ap-northeast-2+t2.small"
+    provider = chosen_spec.split('+')[0]  # Extract "aws"
+    region = chosen_spec.split('+')[1]    # Extract "ap-northeast-2"
+    ```
+    
+    **Step 3: Search for Images in Selected CSP/Region**
+    Use search_images() with the determined CSP and region:
+    ```python
+    images = search_images(
+        provider_name=provider,
+        region_name=region,
         os_type="ubuntu 22.04"
     )
     ```
     
-    **Step 3: Identify Image Details**
+    **Step 4: Identify Image Details**
     From search results, find the 'cspImageName' (e.g., "ami-0e06732ba3ca8c6cc")
+    Use select_best_image() to choose the optimal image through intelligent analysis:
+    1. Images with isBasicImage: true (highest priority)
+    2. General OS images identified through smart metadata analysis
+    3. Fallback to first available image with detailed reasoning
     This is the CRITICAL value needed for MCI creation.
     
-    **Step 4: Get VM Specifications**
-    Use recommend_vm_spec() to find appropriate specs:
-    ```
-    recommend_vm_spec(
-        filter_policies={"ProviderName": "aws", "vCPU": {"min": 2}}
-    )
-    ```
-    
-    **Step 5: Create MCI**
+    **Step 5: Create MCI (with validated namespace)**
     Use create_mci_dynamic() with the found values:
-    ```
-    create_mci_dynamic(
-        ns_id="default",
+    ```python
+    # Select the best image using intelligent selection
+    best_image = select_best_image(images["imageList"])
+    
+    mci = create_mci_dynamic(
+        ns_id="my-project",                          # Validated namespace
         name="my-infrastructure",
-        common_image="ami-0e06732ba3ca8c6cc",  # From Step 3
-        common_spec="aws+ap-northeast-2+t2.small",  # From Step 4
-        vm_count=2
+        vm_configurations=[{
+            "commonImage": best_image["cspImageName"],   # From Step 4 (best image)
+            "commonSpec": chosen_spec                    # From Step 2
+        }]
     )
     ```
     
     **KEY RELATIONSHIPS:**
-    - search_images() → cspImageName → commonImage parameter
-    - recommend_vm_spec() → specification ID → commonSpec parameter
-    - Both are required for create_mci_dynamic()    
+    - check_and_prepare_namespace() → namespace guidance
+    - validate_namespace() → namespace verification
+    - recommend_vm_spec() → spec ID (determines CSP/region) → commonSpec parameter
+    - search_images() → cspImageName (in selected CSP/region) → commonImage parameter
+    - All are required for successful MCI creation
+    
+    **NAMESPACE MANAGEMENT BENEFITS:**
+    - Automatic namespace validation before MCI creation
+    - Smart recommendations for namespace selection/creation
+    - Prevention of MCI creation failures due to invalid namespaces
+    - Unified workflow with clear error messages and suggestions
+    
     **IMPORTANT NOTES:**
-    - Always use search_images() before MCI creation
+    - Always ensure namespace exists before MCI creation
+    - Use smart functions for automated namespace handling
     - The cspImageName is provider-specific (AMI ID for AWS, Image ID for Azure, etc.)
     - commonSpec format: {provider}+{region}+{spec_name}
     - Test with hold=True first to review configuration
