@@ -315,7 +315,6 @@ def select_best_image(image_list: List[Dict]) -> Dict:
             selection_reasons.append("Long name (possibly specialized)")
         
         # Boost score for recent year indicators (more up-to-date)
-        current_year = "2024"
         recent_years = ["2024", "2023", "2022"]
         for year in recent_years:
             if year in combined_text:
@@ -349,7 +348,7 @@ def select_best_image(image_list: List[Dict]) -> Dict:
 # Tool: Advanced image selection with context analysis
 @mcp.tool()
 def select_best_image_with_context(
-    image_list: List[Dict], 
+    image_list: List[Dict],
     use_case: str = "general",
     requirements: Optional[str] = None
 ) -> Dict:
@@ -547,7 +546,11 @@ def check_and_prepare_namespace(preferred_ns_id: Optional[str] = None) -> Dict:
         result["suggested_action"] = "create_namespace"
     elif len(available_namespaces) == 1:
         single_ns = available_namespaces[0]
-        result["recommendation"] = f"One namespace available: '{single_ns.get('id', 'unknown')}'. You can use this for MCI creation or create a new one if needed."
+        ns_id = single_ns.get('id', 'unknown')
+        result["recommendation"] = (
+            f"One namespace available: '{ns_id}'. "
+            "You can use this for MCI creation or create a new one if needed."
+        )
         result["suggested_namespace"] = single_ns.get("id", "unknown")
         result["suggested_action"] = "use_existing_or_create_new"
     else:
@@ -558,7 +561,7 @@ def check_and_prepare_namespace(preferred_ns_id: Optional[str] = None) -> Dict:
     return result
 
 # Helper function: Validate namespace exists
-@mcp.tool() 
+@mcp.tool()
 def validate_namespace(ns_id: str) -> Dict:
     """
     Validate if a namespace exists and provide its details
@@ -811,7 +814,7 @@ def get_specs(ns_id: str) -> Dict:
     """
     return api_request("GET", f"/ns/{ns_id}/resources/spec")
 
-# Tool: Get all images in namespace  
+# Tool: Get all images in namespace
 @mcp.tool()
 def get_images(ns_id: str) -> Dict:
     """
@@ -1575,7 +1578,7 @@ def create_mci_with_spec_first(
         else:
             if create_ns_if_missing:
                 creation_result = create_namespace_with_validation(
-                    preferred_ns_id, 
+                    preferred_ns_id,
                     ns_description or f"Namespace for MCI {name}"
                 )
                 if creation_result.get("created") or creation_result.get("message"):
@@ -1698,7 +1701,7 @@ def create_mci_with_spec_first(
         
         chosen_image = select_best_image(image_list)
         if not chosen_image:
-            result["status"] = "failed" 
+            result["status"] = "failed"
             result["error"] = f"Failed to select suitable image for {req_name}"
             return result
             
@@ -1854,7 +1857,10 @@ def create_mci_with_namespace_management(
             else:
                 result["status"] = "namespace_selection_needed"
                 result["error"] = f"Preferred namespace '{preferred_ns_id}' does not exist"
-                result["suggestion"] = f"Set create_ns_if_missing=True to auto-create, or use check_and_prepare_namespace() to see available options"
+                result["suggestion"] = (
+                    "Set create_ns_if_missing=True to auto-create, or use "
+                    "check_and_prepare_namespace() to see available options"
+                )
                 result["available_options"] = ns_check
                 return result
     else:
@@ -1862,7 +1868,10 @@ def create_mci_with_namespace_management(
         if len(ns_check["available_namespaces"]) == 0:
             result["status"] = "namespace_creation_needed"
             result["error"] = "No namespaces available"
-            result["suggestion"] = "Create a namespace first using create_namespace_with_validation() or specify preferred_ns_id with create_ns_if_missing=True"
+            result["suggestion"] = (
+                "Create a namespace first using create_namespace_with_validation() or "
+                "specify preferred_ns_id with create_ns_if_missing=True"
+            )
             return result
         elif len(ns_check["available_namespaces"]) == 1:
             # Use the only available namespace
