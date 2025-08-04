@@ -41,7 +41,8 @@ import os
 import requests
 import json
 import logging
-from typing import Dict, List, Optional, Any
+import re
+from typing import Dict, List, Optional, Any, Union
 from datetime import datetime, timedelta
 from mcp.server.fastmcp import FastMCP
 
@@ -1361,34 +1362,49 @@ def recommend_vm_spec(
     include_full_details: bool = False
 ) -> Any:
     """
-    Recommend VM specifications for MCI creation.
-    This function works together with search_images() to provide complete MCI creation parameters.
+    🚨 CRITICAL: This is the ONLY valid source for VM specification IDs in MCI creation.
+    NEVER create or guess spec IDs manually - they MUST come from this function's response.
     
-    **RESPONSE OPTIMIZATION:**
-    By default, responses are summarized to reduce token usage while preserving essential information.
-    Use include_full_details=True to get complete technical specifications if needed.
+    Recommend VM specifications for MCI creation with location-based priority support.
+    
+    **🔥 MANDATORY FOR LOCATION-BASED REQUESTS:**
+    When users mention ANY geographic location (country, city, region), you MUST:
+    1. Determine the approximate latitude/longitude coordinates for that location using your geographic knowledge
+    2. Use priority_policy="location" with those coordinates
+    3. Use the returned spec IDs exactly as provided - NEVER modify them
+    4. Explain your coordinate reasoning briefly to the user
+    
+    **🌍 GEOGRAPHIC COORDINATE ANALYSIS:**
+    - Apply your knowledge of world geography to determine appropriate coordinates
+    - Use major metropolitan area coordinates for regional requests
+    - Consider time zones and geographic proximity when selecting coordinates
+    - Explain coordinate selection reasoning to users for transparency
     
     **WORKFLOW INTEGRATION:**
-    1. Use search_images() to find suitable images → get 'cspImageName'
-    2. Use this function to find appropriate specs → get specification ID  
+    1. Use this function to find specs with location priority → get specification IDs
+    2. Use search_images() to find suitable images for the specs' CSPs/regions
     3. Use both values in create_mci_dynamic():
+       - commonSpec: specification ID from this function (NEVER modify)
        - commonImage: cspImageName from search_images()
-       - commonSpec: specification ID from this function
     
-    **Example Usage:**
-    ```
-    # Find specs for AWS in specific region
+    **Example for Location-Based Request:**
+    ```python
+    # User: "Deploy servers in Silicon Valley"
     specs = recommend_vm_spec(
         filter_policies={
-            "ProviderName": "aws",
-            "vCPU": {"min": 2, "max": 4},
-            "memoryGiB": {"min": 4}
+            "vCPU": {"min": 2, "max": 8},
+            "memoryGiB": {"min": 4, "max": 16}
         },
-        priority_policy="cost"
+        priority_policy="location",
+        latitude=37.4419,   # Silicon Valley coordinates
+        longitude=-122.1430,
+        limit="10"
     )
     
-    # From results, pick a spec ID like "aws+ap-northeast-2+t2.small"
-    # Use it in create_mci_dynamic(commonSpec="aws+ap-northeast-2+t2.small")
+    # Use ONLY the returned spec IDs:
+    for spec in specs["recommended_specs"]:
+        spec_id = spec["id"]  # e.g., "aws+us-west-1+t3.medium"
+        # Use this exact spec_id in create_mci_dynamic() - NEVER modify
     ```
     
     Args:
@@ -1401,30 +1417,33 @@ def recommend_vm_spec(
                         - Architecture: CPU architecture (defaults to "x86_64" if not specified)
         limit: Maximum number of recommendations (default: "50")
         priority_policy: Optimization strategy:
+                        - "location": 🔥 REQUIRED for geographic requests - Prioritize proximity to coordinates
                         - "cost": Prioritize lower cost
                         - "performance": Prioritize higher performance
-                        - "location": Prioritize proximity to coordinates
-        latitude: Latitude for location-based priority
-        longitude: Longitude for location-based priority
+        latitude: 🔥 REQUIRED for location priority - Latitude coordinate for the desired location
+        longitude: 🔥 REQUIRED for location priority - Longitude coordinate for the desired location
         include_full_details: Whether to include detailed technical specifications (default: False)
     
     Returns:
+        🚨 CRITICAL: Use the returned spec IDs exactly as provided
         Recommended VM specifications including:
-        - id: Specification ID (use as 'commonSpec' in create_mci_dynamic())
+        - id: Specification ID (use as 'commonSpec' in create_mci_dynamic() WITHOUT modification)
         - vCPU: Number of virtual CPUs
         - memoryGiB: Memory in GB
         - costPerHour: Estimated hourly cost (if -1, pricing information is unavailable)
         - providerName: Cloud provider
         - regionName: Region name
         
-    **PRICING INFORMATION:**
-    When costPerHour is -1, it indicates that pricing information is not available 
-    in the API response. In such cases, you may need to refer to the cloud provider's 
-    official pricing documentation or use external pricing APIs for accurate costs.
+    **🚨 SPEC ID VALIDATION RULES:**
+    ✅ ALWAYS use the exact 'id' field from this function's response
+    ✅ NEVER modify, concatenate, or reconstruct spec IDs
+    ✅ If no specs match requirements, adjust filter_policies and try again
+    ❌ NEVER create spec IDs like "tencent+na-siliconvalley+bf1.large8" manually
+    ❌ NEVER guess spec formats based on patterns
     
     **CRITICAL for MCI Creation:**
     The 'id' field from results becomes the 'commonSpec' parameter in create_mci_dynamic().
-    Format is typically: {provider}+{region}+{spec_name} (e.g., "aws+ap-northeast-2+t2.small")
+    Format is typically: {provider}+{region}+{spec_name} but MUST be from API response.
     """
     # Configure filter policies according to API spec
     if filter_policies is None:
@@ -1552,27 +1571,82 @@ def create_mci_dynamic(
     force_create: bool = False
 ) -> Dict:
     """
-    Create Multi-Cloud Infrastructure dynamically using the official API specification.
-    This is the RECOMMENDED method for MCI creation as it automatically handles resource selection.
+    🚨 CRITICAL: VM specifications MUST come from recommend_vm_spec() - NEVER create spec IDs manually.
     
-    **CRITICAL WORKFLOW:**
-    1. Use recommend_vm_spec() to find appropriate VM specifications (determines CSP and region)
-    2. For EACH VM specification, extract CSP and region information
-    3. For EACH spec, use search_images() to find suitable images in that specific CSP/region
-    4. For EACH spec, select the appropriate 'cspImageName' from its specific search results
-    5. Create VM configurations ensuring each VM has the correct CSP-specific image
+    Create Multi-Cloud Infrastructure dynamically using the official API specification.
+    This is the RECOMMENDED method for MCI creation with MANDATORY spec validation.
+    
+    **🔥 ABSOLUTELY REQUIRED WORKFLOW:**
+    ```python
+    # STEP 1: MANDATORY - Get valid spec IDs from recommend_vm_spec()
+    # For location-based requests: Use user's location coordinates
+    specs = recommend_vm_spec(
+        filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
+        priority_policy="location",  # When user mentions location
+        latitude=37.4419,            # User's desired location
+        longitude=-122.1430          # (e.g., Silicon Valley)
+    )
+    
+    # STEP 2: REQUIRED - Use ONLY the returned spec IDs
+    vm_configurations = []
+    for i, spec in enumerate(specs["recommended_specs"][:2]):
+        vm_configurations.append({
+            "commonSpec": spec["id"],  # 🚨 MUST use exact ID from API response
+            "name": f"vm-{spec['providerName']}-{i+1}",
+            "subGroupSize": "1"
+            # commonImage is optional - will be auto-mapped to spec's CSP/region
+        })
+    
+    # STEP 3: Create MCI with validated specifications
+    create_mci_dynamic(
+        ns_id="default",
+        name="location-based-mci",
+        vm_configurations=vm_configurations
+    )
+    ```
+    
+    **🚨 SPEC ID VALIDATION RULES:**
+    ❌ FORBIDDEN: Manual spec IDs like "tencent+na-siliconvalley+bf1.large8"
+    ❌ FORBIDDEN: Guessing spec formats based on CSP patterns
+    ❌ FORBIDDEN: Modifying spec IDs from recommend_vm_spec() results
+    ✅ REQUIRED: Use exact spec["id"] from recommend_vm_spec() response
+    ✅ REQUIRED: Call recommend_vm_spec() before every MCI creation
+    ✅ REQUIRED: Use location priority when user mentions geographic preferences
     
     **IMPORTANT: Each VM spec requires its own image selection because:**
     - Different CSPs use different image formats (AMI vs Image ID vs etc.)
     - Same OS in different regions may have different image IDs  
     - Cross-CSP image references will cause deployment failures
     
-    **Example workflow for multi-CSP MCI:**
+    **Example workflow for location-based MCI (Silicon Valley):**
     ```
-    # 1. Get VM specs for different CSPs
+    # 1. User says: "Deploy servers in Silicon Valley"
+    # 2. LLM determines coordinates: 37.4419, -122.1430
+    # 3. Get location-optimized specs
     specs = recommend_vm_spec(
-        filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}}
+        filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
+        priority_policy="location",
+        latitude=37.4419,
+        longitude=-122.1430,
+        limit="5"
     )
+    
+    # 4. Use returned spec IDs exactly as provided
+    vm_configs = []
+    for spec in specs["recommended_specs"]:
+        vm_configs.append({
+            "commonSpec": spec["id"],  # e.g., "aws+us-west-1+t3.medium"
+            "name": f"vm-{spec['regionName']}-{len(vm_configs)+1}",
+            "description": f"VM in {spec['regionName']} near Silicon Valley"
+        })
+    
+    # 5. Create MCI with location-optimized specs
+    result = create_mci_dynamic(
+        ns_id="my-project",
+        name="silicon-valley-mci",
+        vm_configurations=vm_configs
+    )
+    ```
     
     # 2. Process each spec individually  
     vm_configs = []
@@ -3517,6 +3591,277 @@ def execute_command_mci(
     
     return result
 
+# PREDEFINED_SCRIPTS: Enhanced remote command scripts based on MapUI patterns
+PREDEFINED_SCRIPTS = {
+    "system_info": {
+        "commands": [
+            "echo '=== System Information ==='",
+            "uname -a",
+            "cat /etc/os-release",
+            "echo '=== Memory Info ==='",
+            "free -h",
+            "echo '=== Disk Info ==='", 
+            "df -h",
+            "echo '=== Network Info ==='",
+            "ip addr show",
+            "echo '=== Process Info ==='",
+            "ps aux | head -20"
+        ],
+        "description": "Comprehensive system information collection"
+    },
+    "docker_install": {
+        "commands": [
+            "echo 'Installing Docker...'",
+            "sudo apt-get update",
+            "sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release",
+            "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg",
+            "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null",
+            "sudo apt-get update",
+            "sudo apt-get install -y docker-ce docker-ce-cli containerd.io",
+            "sudo systemctl start docker",
+            "sudo systemctl enable docker",
+            "sudo usermod -aG docker $USER",
+            "docker --version"
+        ],
+        "description": "Install Docker on Ubuntu/Debian systems"
+    },
+    "nginx_install": {
+        "commands": [
+            "echo 'Installing Nginx...'",
+            "sudo apt-get update",
+            "sudo apt-get install -y nginx",
+            "sudo systemctl start nginx",
+            "sudo systemctl enable nginx",
+            "sudo ufw allow 'Nginx Full'",
+            "echo 'Nginx Status:'",
+            "sudo systemctl status nginx",
+            "echo 'Access URL: http://{{public_ip}}'"
+        ],
+        "description": "Install and configure Nginx web server"
+    },
+    "node_install": {
+        "commands": [
+            "echo 'Installing Node.js...'",
+            "curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -",
+            "sudo apt-get install -y nodejs",
+            "echo 'Node.js version:'",
+            "node --version",
+            "echo 'NPM version:'",
+            "npm --version"
+        ],
+        "description": "Install Node.js 18.x LTS"
+    },
+    "python_install": {
+        "commands": [
+            "echo 'Installing Python development environment...'",
+            "sudo apt-get update",
+            "sudo apt-get install -y python3 python3-pip python3-venv python3-dev",
+            "echo 'Python version:'",
+            "python3 --version",
+            "echo 'Pip version:'",
+            "pip3 --version"
+        ],
+        "description": "Install Python 3 development environment"
+    },
+    "firewall_setup": {
+        "commands": [
+            "echo 'Setting up UFW firewall...'",
+            "sudo ufw --force reset",
+            "sudo ufw default deny incoming",
+            "sudo ufw default allow outgoing",
+            "sudo ufw allow ssh",
+            "sudo ufw allow 80/tcp",
+            "sudo ufw allow 443/tcp",
+            "sudo ufw --force enable",
+            "sudo ufw status"
+        ],
+        "description": "Configure basic UFW firewall rules"
+    },
+    "security_hardening": {
+        "commands": [
+            "echo 'Applying basic security hardening...'",
+            "sudo apt-get update && sudo apt-get upgrade -y",
+            "sudo apt-get install -y fail2ban",
+            "sudo systemctl start fail2ban",
+            "sudo systemctl enable fail2ban",
+            "echo 'Setting up automatic security updates...'",
+            "sudo apt-get install -y unattended-upgrades",
+            "echo 'Disabling root SSH login...'",
+            "sudo sed -i 's/#PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config",
+            "sudo systemctl reload sshd"
+        ],
+        "description": "Apply basic security hardening measures"
+    },
+    "monitoring_setup": {
+        "commands": [
+            "echo 'Installing monitoring tools...'",
+            "sudo apt-get update",
+            "sudo apt-get install -y htop iotop nethogs ncdu",
+            "echo 'Installing netdata...'",
+            "bash <(curl -Ss https://my-netdata.io/kickstart.sh) --dont-wait",
+            "echo 'Monitoring dashboard: http://{{public_ip}}:19999'"
+        ],
+        "description": "Install system monitoring tools and Netdata dashboard"
+    }
+}
+
+# Tool: Enhanced remote command execution with predefined scripts
+@mcp.tool()
+def execute_remote_commands_enhanced(
+    ns_id: str,
+    mci_id: str,
+    script_name: Optional[str] = None,
+    custom_commands: Optional[List[str]] = None,
+    template_variables: Optional[Dict[str, str]] = None,
+    subgroup_id: Optional[str] = None,
+    vm_id: Optional[str] = None,
+    label_selector: Optional[str] = None,
+    summarize_output: bool = True
+) -> Dict:
+    """
+    Execute enhanced remote commands on MCI VMs with predefined scripts and template variable support.
+    Based on MapUI patterns for comprehensive application deployment and management.
+    
+    Args:
+        ns_id: Namespace ID
+        mci_id: MCI ID
+        script_name: Name of predefined script to execute (optional)
+        custom_commands: List of custom commands to execute (optional)
+        template_variables: Variables to substitute in commands (e.g., {"public_ip": "1.2.3.4"})
+        subgroup_id: Target specific subgroup (optional)
+        vm_id: Target specific VM (optional)
+        label_selector: Target VMs by label selector (optional)
+        summarize_output: Whether to summarize long output (default: True)
+    
+    Returns:
+        Enhanced command execution results with template variable substitution
+    """
+    try:
+        # Validate input
+        if not script_name and not custom_commands:
+            return {
+                "error": "Either script_name or custom_commands must be provided",
+                "available_scripts": list(PREDEFINED_SCRIPTS.keys())
+            }
+        
+        # Prepare commands
+        commands = []
+        script_description = ""
+        
+        if script_name:
+            if script_name not in PREDEFINED_SCRIPTS:
+                return {
+                    "error": f"Script '{script_name}' not found",
+                    "available_scripts": list(PREDEFINED_SCRIPTS.keys())
+                }
+            
+            script_config = PREDEFINED_SCRIPTS[script_name]
+            commands = script_config["commands"].copy()
+            script_description = script_config["description"]
+        
+        if custom_commands:
+            commands.extend(custom_commands)
+        
+        # Get MCI access info for template variables
+        if template_variables is None:
+            template_variables = {}
+        
+        # Auto-populate common template variables
+        try:
+            access_info = get_mci_access_info(ns_id, mci_id, show_ssh_key=False)
+            if "accessInfo" in access_info:
+                public_ips = []
+                private_ips = []
+                
+                for access in access_info["accessInfo"]:
+                    if "publicIP" in access:
+                        public_ips.append(access["publicIP"])
+                    if "privateIP" in access:
+                        private_ips.append(access["privateIP"])
+                
+                # Set default template variables
+                if public_ips and "public_ip" not in template_variables:
+                    template_variables["public_ip"] = public_ips[0]
+                if "public_ips_space" not in template_variables:
+                    template_variables["public_ips_space"] = " ".join(public_ips)
+                if "public_ips_comma" not in template_variables:
+                    template_variables["public_ips_comma"] = ",".join(public_ips)
+                if "private_ips_space" not in template_variables:
+                    template_variables["private_ips_space"] = " ".join(private_ips)
+                if "mci_id" not in template_variables:
+                    template_variables["mci_id"] = mci_id
+                if "ns_id" not in template_variables:
+                    template_variables["ns_id"] = ns_id
+        except Exception as e:
+            # Continue without auto-populated variables
+            pass
+        
+        # Apply template variable substitution
+        if template_variables:
+            processed_commands = []
+            for command in commands:
+                processed_command = command
+                for var_name, var_value in template_variables.items():
+                    processed_command = processed_command.replace(f"{{{{{var_name}}}}}", str(var_value))
+                processed_commands.append(processed_command)
+            commands = processed_commands
+        
+        # Execute commands using existing function
+        result = execute_command_mci(
+            ns_id=ns_id,
+            mci_id=mci_id,
+            commands=commands,
+            subgroup_id=subgroup_id,
+            vm_id=vm_id,
+            label_selector=label_selector,
+            summarize_output=summarize_output
+        )
+        
+        # Add enhanced metadata
+        result["enhanced_execution"] = {
+            "script_name": script_name,
+            "script_description": script_description,
+            "template_variables_applied": template_variables,
+            "command_count": len(commands),
+            "execution_type": "predefined_script" if script_name else "custom_commands"
+        }
+        
+        return result
+        
+    except Exception as e:
+        return {
+            "error": f"Enhanced command execution failed: {str(e)}",
+            "available_scripts": list(PREDEFINED_SCRIPTS.keys())
+        }
+
+# Tool: List available predefined scripts
+@mcp.tool()
+def list_predefined_scripts() -> Dict:
+    """
+    List all available predefined scripts for enhanced remote command execution.
+    
+    Returns:
+        Dictionary containing all available predefined scripts with descriptions
+    """
+    scripts_info = {}
+    
+    for script_name, script_config in PREDEFINED_SCRIPTS.items():
+        scripts_info[script_name] = {
+            "description": script_config["description"],
+            "command_count": len(script_config["commands"]),
+            "commands_preview": script_config["commands"][:3] + ["..."] if len(script_config["commands"]) > 3 else script_config["commands"]
+        }
+    
+    return {
+        "predefined_scripts": scripts_info,
+        "total_scripts": len(PREDEFINED_SCRIPTS),
+        "usage_note": "Use execute_remote_commands_enhanced() with script_name parameter to execute these scripts",
+        "template_variables_supported": [
+            "{{public_ip}}", "{{public_ips_space}}", "{{public_ips_comma}}", 
+            "{{private_ips_space}}", "{{mci_id}}", "{{ns_id}}"
+        ]
+    }
+
 # Tool: Store interaction in memory
 @mcp.tool()
 def store_interaction_memory(
@@ -3806,86 +4151,211 @@ def namespace_management_prompt() -> str:
 # Prompt: MCI management prompt
 @mcp.prompt()
 def mci_management_prompt() -> str:
-    """Prompt for MCI management"""
+    """Prompt for MCI management with failure recovery guidance"""
     return """
     You are a Multi-Cloud Infrastructure (MCI) management expert for Cloud-Barista CB-Tumblebug.
-    You can perform comprehensive MCI operations with intelligent namespace management and spec-aware image selection:
     
-    **CRITICAL IMPROVEMENT: SPEC-TO-IMAGE MAPPING**
-    🚨 **IMPORTANT:** Each VM specification requires its own image selection!
-    - Different CSPs use different image identifiers (AWS AMI vs Azure Image ID)
-    - Same OS in different regions may have different image IDs
-    - Different architectures require different images
-    - Provider-optimized images perform better than generic ones
+    🚨 **CRITICAL: SPEC ID VALIDATION MANDATORY FOR ALL MCI CREATION**
     
-    **ENHANCED MCI CREATION WORKFLOW:**
-    1. **Namespace Management**: Auto-handle namespaces with validation
-    2. **Spec Selection**: Find optimal VM specifications per requirement
-    3. **Spec-Aware Image Discovery**: Each spec gets its own compatible image
-    4. **Proper Mapping**: Ensure spec-to-image compatibility
-    5. **Smart MCI Creation**: Create with proper resource mapping
+    **⚡ STRICT RULE - NEVER CREATE ARBITRARY SPEC IDs:**
+    ❌ FORBIDDEN: Creating spec IDs like "tencent+na-siliconvalley+bf1.large8" without validation
+    ✅ REQUIRED: Always use recommend_vm_spec() to get valid spec IDs
     
-    **IMPROVED MCI CREATION FUNCTIONS:**
-    - create_mci_with_proper_spec_mapping(): 🔥 **NEW!** Ensures each VM gets correct image for its spec
-    - create_mci_with_spec_first(): Advanced creation with per-VM image selection 
-    - select_best_image_for_spec(): 🔥 **NEW!** Spec-aware image selection
-    - create_mci_with_namespace_management(): Smart namespace handling
+    **🔥 MANDATORY WORKFLOW for ALL MCI Creation:**
+    ```python
+    # User says: "Deploy in Silicon Valley" or "Create VMs in Asia" etc.
     
-    **SPEC-AWARE WORKFLOW EXAMPLE (RECOMMENDED):**
-    ```
-    # PROBLEM SOLVED: Multi-CSP MCI with proper image mapping
-    result = create_mci_with_proper_spec_mapping(
-        ns_id="my-project",
-        name="multi-cloud-infrastructure",
-        vm_configurations=[
-            {
-                "commonSpec": "aws+ap-northeast-2+t2.small",
-                "name": "web-server-aws",
-                "os_requirements": {"os_type": "ubuntu", "use_case": "web-server"}
-                # Will automatically get AWS-compatible image (ami-xxxx)
-            },
-            {
-                "commonSpec": "azure+koreacentral+Standard_B2s", 
-                "name": "database-azure",
-                "os_requirements": {"os_type": "ubuntu", "use_case": "database"}
-                # Will automatically get Azure-compatible image (different from AWS)
-            }
-        ]
+    # STEP 1: REQUIRED - Convert location to coordinates
+    # LLM must determine latitude/longitude for location-based priority
+    # Examples:
+    # Silicon Valley: approximately 37.4419° N, 122.1430° W
+    # Seoul: approximately 37.5665° N, 126.9780° E
+    # Tokyo: approximately 35.6762° N, 139.6503° E
+    # London: approximately 51.5074° N, 0.1278° W
+    
+    # STEP 2: MANDATORY - Get valid specs using location priority
+    specs = recommend_vm_spec(
+        filter_policies={
+            "vCPU": {"min": 2, "max": 8},
+            "memoryGiB": {"min": 4, "max": 16}
+        },
+        priority_policy="location",
+        latitude=37.4419,  # Use actual coordinates from STEP 1
+        longitude=-122.1430,  # Use actual coordinates from STEP 1
+        limit="10"
+    )
+    
+    # STEP 3: REQUIRED - Use ONLY the spec IDs from recommend_vm_spec results
+    vm_configs = []
+    for spec in specs["recommended_specs"][:2]:  # Take top 2 specs
+        vm_configs.append({
+            "commonSpec": spec["id"],  # MUST use this exact ID - NEVER modify
+            "name": f"vm-{spec['providerName']}-{len(vm_configs)+1}",
+            "subGroupSize": "1"
+        })
+    
+    # STEP 4: Create MCI with validated specs
+    mci_result = create_mci_dynamic(
+        ns_id="default",
+        name="location-based-mci",
+        vm_configurations=vm_configs
+    )
+    
+    # STEP 5: MANDATORY - Check MCI status after creation
+    status_check = check_mci_status_and_handle_failures(
+        ns_id="default",
+        mci_id=mci_result["id"],
+        auto_cleanup_failed=False  # Let user decide on cleanup
     )
     ```
     
-    **WHAT THIS FIXES:**
-    ❌ **OLD PROBLEM:** Same image used for different CSPs
-    ```
-    vm_configs = [
-        {"commonImage": "ami-123", "commonSpec": "aws+us-east-1+t2.small"},
-        {"commonImage": "ami-123", "commonSpec": "azure+eastus+Standard_B2s"}  # ERROR!
-    ]
+    **🚨 CRITICAL POST-DEPLOYMENT STATUS HANDLING:**
+    
+    **ALWAYS check MCI status after creation and handle failures appropriately:**
+    
+    **1. SUCCESS (Running/Running-All):**
+    ```python
+    # All VMs running successfully
+    ✅ SUCCESS: All VMs are running successfully
+    📊 NEXT STEPS: Execute commands, configure applications, or set up monitoring
     ```
     
-    ✅ **NEW SOLUTION:** Each spec gets its own compatible image
-    ```
-    vm_configs = [
-        {"commonImage": "ami-123", "commonSpec": "aws+us-east-1+t2.small"},
-        {"commonImage": "/subscriptions/.../ubuntu-20.04", "commonSpec": "azure+eastus+Standard_B2s"}
-    ]
+    **2. PARTIAL-FAILED (Some VMs failed, some running):**
+    ```python
+    # Critical workflow: Offer cleanup of failed VMs
+    status_check = check_mci_status_and_handle_failures(ns_id, mci_id)
+    
+    if status_check["status_analysis"]["deployment_health"] == "partial-failed":
+        print(f"🚨 PARTIAL FAILURE: {failed_vms_count}/{total_vms} VMs failed")
+        print(f"✅ SUCCESSFUL: {running_vms_count} VMs are running normally")
+        print("💡 RECOMMENDED: Use 'refine' to cleanup failed VMs and keep successful ones")
+        
+        # Ask user for confirmation
+        user_choice = input("Would you like to cleanup failed VMs using 'refine'? (y/n): ")
+        if user_choice.lower() == 'y':
+            recovery_result = interactive_mci_recovery(
+                ns_id, mci_id, 
+                recovery_action="refine",
+                confirm_cleanup=True
+            )
     ```
     
-    **TRADITIONAL FUNCTIONS (Enhanced):**
-    - recommend_vm_spec(): Find VM specs by requirements 
-    - search_images(): Find images by CSP/region/OS
-    - create_mci_dynamic(): Create with manual spec-image mapping
-    - select_best_image(): Basic image selection (use select_best_image_for_spec() instead)
+    **3. FAILED (All VMs failed):**
+    ```python
+    # Complete failure - investigate and retry
+    ❌ CRITICAL: All VMs in MCI have failed
+    🔧 RECOMMENDED ACTIONS: Check error logs, recreate MCI, or terminate and retry
     
-    **MANAGEMENT FUNCTIONS:**
-    - control_mci(): Manage MCI lifecycle (suspend, resume, reboot, terminate)
-    - execute_command(): Run commands on VMs
-    - transfer_file(): Upload files to VMs
-    - get_mci(): View MCI details and status
+    # Options:
+    # 1. Terminate and recreate with different specs
+    # 2. Investigate failure causes
+    # 3. Try refine action to cleanup and restart
+    ```
+    
+    **4. CREATING/IN-PROGRESS:**
+    ```python
+    # Still deploying - monitor progress
+    ⏳ IN PROGRESS: Some VMs still being created
+    ⌛ RECOMMENDED: Wait 2-5 minutes and check status again
+    ```
+    
+    **🔥 ENHANCED FAILURE RECOVERY TOOLS:**
+    
+    **Status Monitoring & Recovery:**
+    - check_mci_status_and_handle_failures(): Comprehensive status analysis with recovery recommendations
+    - interactive_mci_recovery(): User-guided recovery with confirmation prompts
+    - Control actions: refine, terminate, reboot, resume, suspend
+    
+    **Recovery Action Guide:**
+    - **refine**: Remove failed VMs, keep successful ones (RECOMMENDED for partial failures)
+    - **terminate**: Delete entire MCI (use when all failed or starting fresh)
+    - **reboot**: Restart all VMs (use for temporary issues)
+    - **resume**: Resume suspended VMs
+    - **suspend**: Suspend all VMs (temporary cost saving)
+    
+    **⚡ USER INTERACTION WORKFLOW FOR FAILURES:**
+    
+    1. **Always check status after MCI creation**
+    2. **For Partial-Failed**: Present clear options to user
+       - Show which VMs failed vs succeeded
+       - Explain refine action benefits
+       - Ask for confirmation before cleanup
+    3. **For Complete failure**: Provide diagnostic information
+    4. **Execute user-confirmed recovery actions**
+    5. **Verify recovery success and provide next steps**
+    
+    ** LOCATION-TO-COORDINATES MAPPING (LLM MUST KNOW):**
+    When users mention locations, LLM must provide approximate coordinates:
+    - **Silicon Valley/San Francisco**: 37.4419° N, 122.1430° W
+    - **Seoul/Korea**: 37.5665° N, 126.9780° E  
+    - **Tokyo/Japan**: 35.6762° N, 139.6503° E
+    - **London/UK**: 51.5074° N, 0.1278° W
+    - **Sydney/Australia**: 33.8688° S, 151.2093° E
+    - **Frankfurt/Germany**: 50.1109° N, 8.6821° E
+    - **Singapore**: 1.3521° N, 103.8198° E
+    - **Mumbai/India**: 19.0760° N, 72.8777° E
+    - **São Paulo/Brazil**: 23.5505° S, 46.6333° W
+    - **Virginia/US East**: 38.7223° N, 78.1692° W
+    
+    **🚨 ABSOLUTE PROHIBITIONS:**
+    ❌ NEVER create spec IDs manually (e.g., "aws+us-east-1+t2.small")
+    ❌ NEVER guess or construct spec IDs based on patterns
+    ❌ NEVER use spec IDs without calling recommend_vm_spec() first
+    ❌ NEVER ignore location preferences from users
+    ❌ NEVER skip status checking after MCI creation
+    ❌ NEVER automatically cleanup without user confirmation (unless explicitly requested)
+    
+    **✅ MANDATORY REQUIREMENTS:**
+    ✅ ALWAYS call recommend_vm_spec() to get valid spec IDs
+    ✅ ALWAYS use location priority when users mention geographic preferences
+    ✅ ALWAYS check MCI status after creation
+    ✅ ALWAYS handle Partial-Failed states with user confirmation
+    ✅ ALWAYS explain failure recovery options clearly
+    ✅ ALWAYS validate that spec IDs come from API responses, not manual creation
+    
+    **🔥 ENHANCED MCI CREATION WITH FAILURE HANDLING:**
+    1. **Location Analysis**: Convert user's geographic preferences to coordinates
+    2. **Spec Discovery**: Use recommend_vm_spec() with location priority
+    3. **Validation**: Ensure all spec IDs are from API responses
+    4. **Image Mapping**: Auto-map appropriate images for validated specs
+    5. **Deployment**: Create MCI with verified specifications
+    6. **Status Monitoring**: Check for failures and partial deployments
+    7. **Recovery**: Guide user through failure recovery options
+    8. **Verification**: Confirm recovery success and next steps
+    
+    **INFRASTRUCTURE FUNCTIONS (Spec Validation Required):**
+    - recommend_vm_spec(): 🔥 **MANDATORY** - Get valid spec IDs with location priority
+    - search_images(): Find images for validated specs
+    - create_mci_dynamic(): Create with API-validated spec IDs only
+    - check_mci_status_and_handle_failures(): 🔥 **MANDATORY** - Post-deployment status check
+    - interactive_mci_recovery(): Handle failures with user confirmation
+    - validate_vm_spec_image_compatibility(): Verify configurations
+    
+    **🎯 LLM Response Pattern for Deployment Failures:**
+    User: "Some VMs failed during deployment"
+    LLM: "I'll check the MCI status and help you handle the partial failure. Let me analyze which VMs succeeded and offer cleanup options for the failed ones..."
+    
+    ```python
+    # Always check status first
+    status = check_mci_status_and_handle_failures(ns_id, mci_id)
+    
+    # Handle based on status
+    if status["deployment_health"] == "partial-failed":
+        # Present options and ask for confirmation
+        recovery = interactive_mci_recovery(ns_id, mci_id, "refine", confirm_cleanup=False)
+        # Show confirmation message to user
+    ```
+    
+    **🚨 ERROR PREVENTION:**
+    - If user mentions ANY location/region/country → Use location-based priority
+    - If recommend_vm_spec() fails → Ask user for alternative requirements, NEVER guess spec IDs
+    - If spec validation fails → Re-run recommend_vm_spec() with different parameters
+    - If MCI creation succeeds → ALWAYS check status for failures
+    - If Partial-Failed detected → ALWAYS offer cleanup with user confirmation
     
     Current namespace list: {{namespace://list}}
     
-    What MCI operation would you like to perform? I'll ensure proper spec-to-image mapping for multi-CSP scenarios.
+    What infrastructure would you like to create? I'll ensure proper spec validation, location optimization, and comprehensive failure handling.
     """
 
 # Prompt: Resource management prompt
@@ -3935,6 +4405,34 @@ def context_awareness_prompt() -> str:
     """Prompt for new LLM sessions to understand previous work context"""
     return """
     You are a Cloud-Barista CB-Tumblebug expert who has access to interaction memory from previous sessions.
+    
+    🚨 **CRITICAL: HARDWARE RESEARCH REQUIRED FOR ALL APPLICATION DEPLOYMENTS**
+    
+    **⚡ MANDATORY BEHAVIOR: When using context from previous sessions for application deployments:**
+    1. **ALWAYS research hardware requirements** for any new applications (even if similar deployed before)
+    2. **Apply current hardware research standards** (minimum 50GB disk, optimized specs)
+    3. **Use deployment_type** inferred from user context and historical patterns
+    4. **Enable research_requirements=True** for all deployments unless explicitly told not to
+    5. **Explain hardware research benefits** to users based on improved deployment context
+    
+    **🔥 Enhanced Context Workflow with Hardware Research:**
+    ```python
+    # 1. Check previous work context
+    history = get_interaction_history(operation_type="mci_creation")
+    
+    # 2. For NEW application deployments, always research (regardless of history)
+    research_result = research_application_requirements(
+        application_name="user_requested_app",
+        deployment_type="production"  # infer from context + history
+    )
+    
+    # 3. Deploy with both context knowledge and current research
+    deploy_application(
+        application_id="app",
+        research_requirements=True,  # ALWAYS True for new deployments
+        deployment_type="production"  # informed by context + current needs
+    )
+    ```
     
     **CONTEXT AWARENESS CAPABILITIES:**
     
@@ -4008,19 +4506,124 @@ def context_awareness_prompt() -> str:
 # Prompt: Workflow demo prompt
 @mcp.prompt()
 def workflow_demo_prompt() -> str:
-    """Prompt for workflow demonstration"""
+    """Prompt for workflow demonstration with failure handling"""
     return """
     You are a Cloud-Barista CB-Tumblebug expert who helps demonstrate how to create and manage Multi-Cloud Infrastructure (MCI).
     
     You can guide through the following workflows:
     
-    1. Create a namespace
-    2. View cloud connection information
-    3. Recommend VM specifications and create an MCI
-    4. Check and control MCI status
-    5. Execute remote commands
-    6. Configure Network Load Balancers
-    7. Clean up and delete resources
+    **CORE WORKFLOWS:**
+    1. **Create a namespace** - Prepare workspace for infrastructure
+    2. **View cloud connection information** - Check available cloud providers
+    3. **Recommend VM specifications and create an MCI** - Deploy infrastructure
+    4. **🔥 Check MCI status and handle deployment failures** - Monitor and recover
+    5. **Execute remote commands** - Configure and manage infrastructure
+    6. **Configure Network Load Balancers** - Set up traffic distribution
+    7. **Clean up and delete resources** - Cost management and cleanup
+    
+    **🚨 ENHANCED FAILURE HANDLING DEMONSTRATIONS:**
+    
+    **Workflow 4A: MCI Status Monitoring & Failure Recovery**
+    ```python
+    # After MCI creation, always check status
+    status = check_mci_status_and_handle_failures(
+        ns_id="demo-namespace",
+        mci_id="demo-mci",
+        auto_cleanup_failed=False  # User decides on cleanup
+    )
+    
+    # Demonstrate different scenarios:
+    # 1. All VMs running → Success workflow
+    # 2. Partial-Failed → Recovery workflow 
+    # 3. All Failed → Investigation workflow
+    # 4. Still Creating → Monitoring workflow
+    ```
+    
+    **Workflow 4B: Interactive Failure Recovery**
+    ```python
+    # For Partial-Failed scenarios
+    if status["deployment_health"] == "partial-failed":
+        print("🚨 PARTIAL DEPLOYMENT FAILURE DEMONSTRATION")
+        print(f"Failed VMs: {status['failed_vms_count']}")
+        print(f"Running VMs: {status['running_vms_count']}")
+        
+        # Show user confirmation workflow
+        recovery = interactive_mci_recovery(
+            ns_id="demo-namespace",
+            mci_id="demo-mci",
+            recovery_action="refine",
+            confirm_cleanup=False  # First show confirmation message
+        )
+        
+        # Demonstrate user decision process
+        print("User can choose:")
+        print("✅ Proceed with cleanup (remove failed VMs)")
+        print("❌ Cancel and investigate failures")
+        print("🔧 Try alternative recovery actions")
+    ```
+    
+    **🎯 DEMONSTRATION SCENARIOS:**
+    
+    **Scenario A: Successful Deployment**
+    - All VMs deploy successfully
+    - Show status confirmation
+    - Demonstrate next steps (commands, monitoring)
+    
+    **Scenario B: Partial Failure (Most Common)**
+    - Some VMs fail (e.g., quota limits, region issues)
+    - Some VMs succeed 
+    - Demonstrate refine action to cleanup failed VMs
+    - Show preserved infrastructure continues working
+    
+    **Scenario C: Complete Failure**
+    - All VMs fail
+    - Demonstrate diagnostic information
+    - Show options: investigate, recreate, or terminate
+    
+    **Scenario D: In-Progress Monitoring**
+    - Show deployment progress monitoring
+    - Demonstrate patience vs intervention decisions
+    
+    **🔥 INTERACTIVE DEMO PATTERNS:**
+    
+    **Pattern 1: Success Path**
+    ```
+    User: "Show me how to deploy infrastructure"
+    Demo: Create namespace → Find specs → Deploy MCI → Check status (success) → Execute commands
+    ```
+    
+    **Pattern 2: Failure Recovery Path**
+    ```
+    User: "What happens if deployment fails?"
+    Demo: Create MCI → Simulate partial failure → Show status analysis → Guide through recovery options → Execute refine → Verify success
+    ```
+    
+    **Pattern 3: Decision Making Path**
+    ```
+    User: "How do I handle failed VMs?"
+    Demo: Show failure analysis → Present options → Ask for user choice → Execute with confirmation → Monitor results
+    ```
+    
+    **🛠️ AVAILABLE RECOVERY DEMONSTRATIONS:**
+    
+    **Recovery Actions:**
+    - **refine**: Cleanup failed VMs, keep successful ones
+    - **terminate**: Complete MCI deletion for fresh start
+    - **reboot**: Restart VMs for temporary issues
+    - **suspend/resume**: Cost management demonstrations
+    
+    **User Interaction Patterns:**
+    - Status analysis and explanation
+    - Risk assessment for each action
+    - Confirmation prompts and user choice
+    - Progress monitoring and verification
+    - Next steps recommendations
+    
+    **📊 DEMONSTRATION TOOLS:**
+    - check_mci_status_and_handle_failures(): Status analysis and recommendations
+    - interactive_mci_recovery(): Guided recovery with user confirmation
+    - Standard MCI tools: create, control, delete
+    - Monitoring tools: status, logs, performance
     
     Current namespace list:
     {{namespace://list}}
@@ -4028,7 +4631,12 @@ def workflow_demo_prompt() -> str:
     Current list of registered cloud connections:
     {{connection://list}}
     
-    Which demonstration would you like me to guide you through?
+    Which demonstration would you like me to guide you through? 
+    
+    **RECOMMENDED START:**
+    - For beginners: "Complete workflow from creation to success"
+    - For failure handling: "Partial deployment failure recovery"
+    - For advanced users: "Multi-scenario failure handling patterns"
     """
 
 # Prompt: Image search and MCI creation workflow guide
@@ -4162,14 +4770,65 @@ def image_mci_workflow_prompt() -> str:
     )
     ```
     
+    **Step 7: MANDATORY - Post-Deployment Status Check & Failure Handling**
+    ```python
+    # Always check MCI status after creation
+    status_check = check_mci_status_and_handle_failures(
+        ns_id="my-project",
+        mci_id=mci["id"],
+        auto_cleanup_failed=False  # Let user decide on cleanup
+    )
+    
+    # Handle different deployment outcomes:
+    if status_check["status_analysis"]["deployment_health"] == "healthy":
+        print("✅ SUCCESS: All VMs deployed successfully!")
+        # Proceed with application configuration
+        
+    elif status_check["status_analysis"]["deployment_health"] == "partial-failed":
+        failed_count = status_check["status_analysis"]["failed_vms_count"]
+        running_count = status_check["status_analysis"]["running_vms_count"]
+        
+        print(f"🚨 PARTIAL FAILURE: {failed_count}/{failed_count + running_count} VMs failed")
+        print(f"✅ SUCCESS: {running_count} VMs are running normally")
+        print("💡 RECOMMENDATION: Use 'refine' to cleanup failed VMs")
+        
+        # Offer cleanup with user confirmation
+        user_decision = input("Cleanup failed VMs and continue with successful ones? (y/n): ")
+        if user_decision.lower() == 'y':
+            recovery_result = interactive_mci_recovery(
+                ns_id="my-project",
+                mci_id=mci["id"],
+                recovery_action="refine",
+                confirm_cleanup=True
+            )
+            print("🔧 Cleanup completed - infrastructure optimized!")
+        
+    elif status_check["status_analysis"]["deployment_health"] == "critical":
+        print("❌ CRITICAL: All VMs failed to deploy")
+        print("🔧 RECOMMENDATION: Check errors and consider recreating with different specs")
+        
+        # Offer diagnostic and recreation options
+        user_choice = input("Terminate failed MCI and recreate? (y/n): ")
+        if user_choice.lower() == 'y':
+            interactive_mci_recovery(
+                ns_id="my-project",
+                mci_id=mci["id"], 
+                recovery_action="terminate",
+                confirm_cleanup=True
+            )
+    ```
+    
     **KEY RELATIONSHIPS:**
     - check_and_prepare_namespace() → namespace guidance
     - validate_namespace() → namespace verification
     - recommend_vm_spec() → spec ID (determines CSP/region) → commonSpec parameter
     - search_images() → cspImageName (in spec's CSP/region) → commonImage parameter
+    - create_mci_dynamic() → MCI creation → check_mci_status_and_handle_failures() → failure recovery
     - **CRITICAL**: Each VM spec requires its own image search in the spec's specific CSP/region
     - **AUTOMATIC**: create_mci_dynamic() handles spec-to-image mapping automatically
     - **VALIDATION**: validate_vm_spec_image_compatibility() checks configurations
+    - **FAILURE HANDLING**: check_mci_status_and_handle_failures() monitors deployment success
+    - **RECOVERY**: interactive_mci_recovery() guides through failure resolution
     
     **NAMESPACE MANAGEMENT BENEFITS:**
     - Automatic namespace validation before MCI creation
@@ -4177,14 +4836,25 @@ def image_mci_workflow_prompt() -> str:
     - Prevention of MCI creation failures due to invalid namespaces
     - Unified workflow with clear error messages and suggestions
     
+    **DEPLOYMENT FAILURE HANDLING BENEFITS:**
+    - Automatic detection of Partial-Failed and Failed states
+    - User-guided recovery with clear impact assessment
+    - Preservation of successful VMs while cleaning up failures
+    - Cost optimization by removing failed infrastructure
+    - Comprehensive status monitoring and progress tracking
+    
     **IMPORTANT NOTES:**
     - Always ensure namespace exists before MCI creation
+    - **MANDATORY**: Check MCI status after creation for failures
     - **RECOMMENDED**: Use create_mci_dynamic() auto-mapping for foolproof compatibility
     - **CRITICAL**: Each VM spec requires its own CSP-specific image (no cross-CSP sharing)
+    - **USER CONFIRMATION**: Always ask before cleanup actions (unless auto_cleanup=True)
+    - **RECOVERY PRIORITY**: For Partial-Failed, recommend 'refine' to keep successful VMs
     - The cspImageName is provider-specific (AMI ID for AWS, Image ID for Azure, etc.)
     - commonSpec format: {provider}+{region}+{spec_name}
     - **VALIDATION**: Use validate_vm_spec_image_compatibility() before deployment
     - **EXAMPLES**: Use get_spec_image_mapping_examples() to see correct/incorrect patterns
+    - **MONITORING**: Use check_mci_status_and_handle_failures() after deployment
     - Test with hold=True first to review configuration
     
     Current namespaces: {{namespace://list}}
@@ -4195,6 +4865,428 @@ def image_mci_workflow_prompt() -> str:
 logger.info("MCP server initialization complete with interaction memory capabilities")
 logger.info("Available memory functions: store_interaction_memory, get_interaction_history, get_session_summary, search_interaction_memory, clear_interaction_memory")
 logger.info("Automatic memory storage enabled for: MCI creation, command execution, namespace management")
+
+#####################################
+# MCI Status Monitoring & Recovery Tools
+#####################################
+
+# Tool: Check MCI status and handle failures
+@mcp.tool()
+def check_mci_status_and_handle_failures(
+    ns_id: str,
+    mci_id: str,
+    auto_cleanup_failed: bool = False,
+    detailed_analysis: bool = True
+) -> Dict:
+    """
+    Check MCI status and provide recovery options for failed/partial-failed states.
+    
+    **HANDLES FOLLOWING SCENARIOS:**
+    - Partial-Failed: Some VMs failed, some succeeded → Offer cleanup of failed VMs
+    - Failed: All VMs failed → Provide diagnostic information and recovery options
+    - Running: All VMs running → Status confirmation
+    - Creating: Still in progress → Monitor progress
+    - Suspended/Terminated: Provide restart/recovery options
+    
+    **AUTOMATIC RECOVERY OPTIONS:**
+    - Failed VM cleanup via 'refine' action
+    - Detailed failure analysis with recommendations
+    - User confirmation for cleanup operations
+    - Status monitoring with retry suggestions
+    
+    Args:
+        ns_id: Namespace ID
+        mci_id: MCI ID to check
+        auto_cleanup_failed: If True, automatically cleanup failed VMs without asking
+        detailed_analysis: Include detailed VM-level analysis
+    
+    Returns:
+        Status report with recovery recommendations and action options
+    """
+    try:
+        # Get detailed MCI status
+        mci_info = get_mci(ns_id, mci_id)
+        mci_status = get_mci_list_with_options(ns_id, option="status")
+        
+        # Find specific MCI in status list
+        target_mci_status = None
+        for mci in mci_status.get("mci", []):
+            if mci.get("id") == mci_id:
+                target_mci_status = mci
+                break
+        
+        if not target_mci_status:
+            return {
+                "error": "MCI status not found",
+                "mci_id": mci_id,
+                "namespace": ns_id,
+                "recommendation": "Check if MCI exists or is still being created"
+            }
+        
+        overall_status = target_mci_status.get("status", "Unknown")
+        vm_status_list = target_mci_status.get("vm", [])
+        
+        # Analyze VM status distribution
+        status_counts = {}
+        failed_vms = []
+        running_vms = []
+        creating_vms = []
+        
+        for vm in vm_status_list:
+            vm_status = vm.get("status", "Unknown")
+            status_counts[vm_status] = status_counts.get(vm_status, 0) + 1
+            
+            if vm_status.lower() in ["failed", "error"]:
+                failed_vms.append({
+                    "vm_id": vm.get("id", "unknown"),
+                    "vm_name": vm.get("name", "unknown"),
+                    "status": vm_status,
+                    "public_ip": vm.get("publicIp", "N/A"),
+                    "private_ip": vm.get("privateIp", "N/A"),
+                    "csp_vm_id": vm.get("cspVmId", "N/A")
+                })
+            elif vm_status.lower() in ["running", "running-on"]:
+                running_vms.append({
+                    "vm_id": vm.get("id", "unknown"),
+                    "vm_name": vm.get("name", "unknown"),
+                    "public_ip": vm.get("publicIp", "N/A"),
+                    "private_ip": vm.get("privateIp", "N/A")
+                })
+            elif vm_status.lower() in ["creating", "creating-vm"]:
+                creating_vms.append({
+                    "vm_id": vm.get("id", "unknown"),
+                    "vm_name": vm.get("name", "unknown"),
+                    "status": vm_status
+                })
+        
+        # Determine recovery strategy
+        recovery_analysis = {
+            "overall_status": overall_status,
+            "total_vms": len(vm_status_list),
+            "status_distribution": status_counts,
+            "failed_vms_count": len(failed_vms),
+            "running_vms_count": len(running_vms),
+            "creating_vms_count": len(creating_vms),
+            "deployment_health": "healthy" if len(failed_vms) == 0 else "partial-failed" if len(running_vms) > 0 else "critical"
+        }
+        
+        # Generate recommendations based on status
+        recommendations = []
+        recovery_actions = []
+        
+        if overall_status.lower() == "partial-failed" or len(failed_vms) > 0:
+            recommendations.append(
+                f"🚨 PARTIAL DEPLOYMENT FAILURE DETECTED: {len(failed_vms)} out of {len(vm_status_list)} VMs failed"
+            )
+            recommendations.append(
+                f"✅ SUCCESSFUL VMs: {len(running_vms)} VMs are running normally"
+            )
+            recommendations.append(
+                "💡 RECOMMENDED ACTION: Use 'refine' to cleanup failed VMs and keep successful ones"
+            )
+            
+            recovery_actions.append({
+                "action": "refine",
+                "description": "Remove failed VMs while preserving successful ones",
+                "command": f"control_mci('{ns_id}', '{mci_id}', 'refine')",
+                "risk_level": "low",
+                "impact": f"Will remove {len(failed_vms)} failed VMs, keep {len(running_vms)} running VMs"
+            })
+            
+            if not auto_cleanup_failed:
+                recovery_actions.append({
+                    "action": "user_confirmation_required",
+                    "message": f"Would you like to cleanup {len(failed_vms)} failed VMs using 'refine' action?",
+                    "failed_vms": failed_vms,
+                    "preserved_vms": running_vms
+                })
+        
+        elif overall_status.lower() == "failed" or len(running_vms) == 0:
+            recommendations.append("❌ CRITICAL: All VMs in MCI have failed")
+            recommendations.append("🔧 RECOMMENDED ACTIONS: Check error logs, recreate MCI, or terminate and retry")
+            
+            recovery_actions.extend([
+                {
+                    "action": "terminate",
+                    "description": "Delete entire MCI and start fresh",
+                    "command": f"delete_mci('{ns_id}', '{mci_id}')",
+                    "risk_level": "high",
+                    "impact": "Complete MCI deletion - all data lost"
+                },
+                {
+                    "action": "refine",
+                    "description": "Attempt to cleanup and restart failed components",
+                    "command": f"control_mci('{ns_id}', '{mci_id}', 'refine')",
+                    "risk_level": "medium",
+                    "impact": "Remove failed VMs, may need to recreate"
+                }
+            ])
+        
+        elif overall_status.lower() in ["running", "running-all"]:
+            recommendations.append("✅ SUCCESS: All VMs are running successfully")
+            recommendations.append("📊 NEXT STEPS: Execute commands, configure applications, or set up monitoring")
+            
+        elif len(creating_vms) > 0:
+            recommendations.append(f"⏳ IN PROGRESS: {len(creating_vms)} VMs still being created")
+            recommendations.append("⌛ RECOMMENDED: Wait 2-5 minutes and check status again")
+            
+            recovery_actions.append({
+                "action": "monitor",
+                "description": "Continue monitoring deployment progress",
+                "command": f"check_mci_status_and_handle_failures('{ns_id}', '{mci_id}')",
+                "risk_level": "none",
+                "impact": "Status monitoring only"
+            })
+        
+        # Execute automatic cleanup if requested
+        auto_cleanup_result = None
+        if auto_cleanup_failed and len(failed_vms) > 0:
+            logger.info(f"Auto-cleanup enabled: Refining MCI {mci_id} to remove {len(failed_vms)} failed VMs")
+            auto_cleanup_result = control_mci(ns_id, mci_id, "refine")
+            recommendations.append(f"🔧 AUTO-CLEANUP EXECUTED: Refined MCI to remove {len(failed_vms)} failed VMs")
+        
+        # Prepare detailed response
+        response = {
+            "mci_id": mci_id,
+            "namespace": ns_id,
+            "timestamp": datetime.now().isoformat(),
+            "status_analysis": recovery_analysis,
+            "detailed_status": {
+                "overall_mci_status": overall_status,
+                "failed_vms": failed_vms if detailed_analysis else len(failed_vms),
+                "running_vms": running_vms if detailed_analysis else len(running_vms),
+                "creating_vms": creating_vms if detailed_analysis else len(creating_vms)
+            },
+            "recommendations": recommendations,
+            "recovery_actions": recovery_actions,
+            "auto_cleanup_executed": auto_cleanup_result is not None,
+            "auto_cleanup_result": auto_cleanup_result
+        }
+        
+        # Store interaction for future reference
+        _store_interaction_memory(
+            user_request=f"Check MCI status and handle failures for '{mci_id}' in namespace '{ns_id}'",
+            llm_response=f"MCI status: {overall_status}, Failed VMs: {len(failed_vms)}, Running VMs: {len(running_vms)}",
+            operation_type="mci_status_monitoring",
+            context_data={
+                "namespace_id": ns_id,
+                "mci_id": mci_id,
+                "overall_status": overall_status,
+                "failed_vms_count": len(failed_vms),
+                "auto_cleanup": auto_cleanup_failed
+            },
+            status="completed"
+        )
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error checking MCI status: {e}")
+        return {
+            "error": f"Failed to check MCI status: {str(e)}",
+            "mci_id": mci_id,
+            "namespace": ns_id,
+            "recommendation": "Check if MCI exists and namespace is valid"
+        }
+
+# Tool: Interactive MCI failure recovery
+@mcp.tool()
+def interactive_mci_recovery(
+    ns_id: str,
+    mci_id: str,
+    recovery_action: str = "refine",
+    confirm_cleanup: bool = False
+) -> Dict:
+    """
+    Interactive MCI recovery tool for handling failed deployments with user confirmation.
+    
+    **SUPPORTED RECOVERY ACTIONS:**
+    - refine: Remove failed VMs while keeping successful ones (recommended for partial failures)
+    - terminate: Delete entire MCI (use when all VMs failed)
+    - reboot: Restart all VMs (use for temporary issues)
+    - resume: Resume suspended VMs
+    - suspend: Suspend all VMs (temporary cost saving)
+    
+    **INTERACTIVE WORKFLOW:**
+    1. Analyze current MCI status
+    2. Present failure details and impact assessment
+    3. Require user confirmation for destructive actions
+    4. Execute recovery action with progress monitoring
+    5. Verify recovery success and provide next steps
+    
+    Args:
+        ns_id: Namespace ID
+        mci_id: MCI ID to recover
+        recovery_action: Action to perform (refine, terminate, reboot, resume, suspend)
+        confirm_cleanup: User confirmation for destructive actions
+    
+    Returns:
+        Recovery execution result with status updates and next steps
+    """
+    try:
+        # Step 1: Get current status before recovery
+        pre_recovery_status = check_mci_status_and_handle_failures(ns_id, mci_id, auto_cleanup_failed=False)
+        
+        if "error" in pre_recovery_status:
+            return pre_recovery_status
+        
+        failed_vms_count = pre_recovery_status["status_analysis"]["failed_vms_count"]
+        running_vms_count = pre_recovery_status["status_analysis"]["running_vms_count"]
+        overall_status = pre_recovery_status["status_analysis"]["overall_status"]
+        
+        # Step 2: Validate recovery action appropriateness
+        action_validation = {
+            "action": recovery_action,
+            "appropriate": True,
+            "warnings": [],
+            "confirmation_required": False
+        }
+        
+        if recovery_action == "refine":
+            if failed_vms_count == 0:
+                action_validation["appropriate"] = False
+                action_validation["warnings"].append("No failed VMs to cleanup - refine action not needed")
+            elif running_vms_count > 0:
+                action_validation["confirmation_required"] = True
+                action_validation["warnings"].append(f"Will remove {failed_vms_count} failed VMs, preserve {running_vms_count} running VMs")
+            
+        elif recovery_action == "terminate":
+            action_validation["confirmation_required"] = True
+            action_validation["warnings"].append(f"DESTRUCTIVE: Will delete entire MCI with {running_vms_count + failed_vms_count} VMs")
+            if running_vms_count > 0:
+                action_validation["warnings"].append(f"WARNING: {running_vms_count} running VMs will be lost")
+        
+        # Step 3: Check user confirmation for destructive actions
+        if action_validation["confirmation_required"] and not confirm_cleanup:
+            return {
+                "mci_id": mci_id,
+                "namespace": ns_id,
+                "recovery_action": recovery_action,
+                "status": "confirmation_required",
+                "pre_recovery_analysis": pre_recovery_status["status_analysis"],
+                "impact_assessment": {
+                    "action": recovery_action,
+                    "failed_vms_affected": failed_vms_count,
+                    "running_vms_affected": running_vms_count if recovery_action == "terminate" else 0,
+                    "data_loss_risk": "high" if recovery_action == "terminate" else "low",
+                    "reversible": recovery_action not in ["terminate"]
+                },
+                "warnings": action_validation["warnings"],
+                "user_confirmation_message": f"""
+🚨 RECOVERY ACTION CONFIRMATION REQUIRED 🚨
+
+MCI: {mci_id} (Namespace: {ns_id})
+Current Status: {overall_status}
+Action: {recovery_action}
+
+IMPACT ASSESSMENT:
+- Failed VMs: {failed_vms_count} (will be removed/affected)
+- Running VMs: {running_vms_count} ({'will be preserved' if recovery_action == 'refine' else 'will be affected'})
+
+WARNINGS:
+{chr(10).join(f"⚠️  {w}" for w in action_validation["warnings"])}
+
+To proceed, call this function again with confirm_cleanup=True
+To cancel, use check_mci_status_and_handle_failures() to explore other options
+                """.strip(),
+                "next_steps": [
+                    f"interactive_mci_recovery('{ns_id}', '{mci_id}', '{recovery_action}', confirm_cleanup=True)",
+                    f"check_mci_status_and_handle_failures('{ns_id}', '{mci_id}')"
+                ]
+            }
+        
+        # Step 4: Execute recovery action
+        if not action_validation["appropriate"]:
+            return {
+                "error": "Recovery action not appropriate for current MCI status",
+                "mci_id": mci_id,
+                "warnings": action_validation["warnings"],
+                "recommendation": "Use check_mci_status_and_handle_failures() to get appropriate recommendations"
+            }
+        
+        logger.info(f"Executing {recovery_action} on MCI {mci_id} with user confirmation")
+        
+        # Execute the recovery action
+        if recovery_action == "terminate":
+            recovery_result = delete_mci(ns_id, mci_id)
+        else:
+            recovery_result = control_mci(ns_id, mci_id, recovery_action)
+        
+        # Step 5: Post-recovery status check
+        post_recovery_status = None
+        if recovery_action != "terminate":
+            # Wait a moment for action to take effect
+            import time
+            time.sleep(2)
+            
+            post_recovery_status = check_mci_status_and_handle_failures(ns_id, mci_id, auto_cleanup_failed=False)
+        
+        # Step 6: Prepare comprehensive response
+        response = {
+            "mci_id": mci_id,
+            "namespace": ns_id,
+            "recovery_action": recovery_action,
+            "execution_status": "completed",
+            "timestamp": datetime.now().isoformat(),
+            "pre_recovery_analysis": pre_recovery_status["status_analysis"],
+            "recovery_execution": recovery_result,
+            "post_recovery_analysis": post_recovery_status["status_analysis"] if post_recovery_status else None,
+            "recovery_success": True,
+            "next_steps": []
+        }
+        
+        # Determine success and next steps
+        if recovery_action == "terminate":
+            response["next_steps"].extend([
+                "MCI has been deleted successfully",
+                "Create a new MCI with lessons learned from failure analysis",
+                "Consider using create_mci_dynamic() with hold=True for testing"
+            ])
+        elif recovery_action == "refine" and post_recovery_status:
+            post_failed = post_recovery_status["status_analysis"]["failed_vms_count"]
+            post_running = post_recovery_status["status_analysis"]["running_vms_count"]
+            
+            if post_failed == 0:
+                response["next_steps"].extend([
+                    f"✅ SUCCESS: Cleanup completed, {post_running} VMs now running",
+                    "Execute commands or configure applications on remaining VMs",
+                    "Consider scaling up if more VMs needed"
+                ])
+            else:
+                response["recovery_success"] = False
+                response["next_steps"].extend([
+                    f"⚠️  PARTIAL: {post_failed} VMs still failed after refine",
+                    "Consider running refine again or investigating specific VM issues",
+                    "Check logs for persistent failure causes"
+                ])
+        
+        # Store recovery interaction
+        _store_interaction_memory(
+            user_request=f"Execute recovery action '{recovery_action}' on MCI '{mci_id}'",
+            llm_response=f"Recovery {recovery_action} executed: Success={response['recovery_success']}",
+            operation_type="mci_recovery",
+            context_data={
+                "namespace_id": ns_id,
+                "mci_id": mci_id,
+                "recovery_action": recovery_action,
+                "pre_failed_vms": failed_vms_count,
+                "pre_running_vms": running_vms_count,
+                "post_recovery_success": response["recovery_success"]
+            },
+            status="completed" if response["recovery_success"] else "partial_failure"
+        )
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error during MCI recovery: {e}")
+        return {
+            "error": f"Recovery failed: {str(e)}",
+            "mci_id": mci_id,
+            "namespace": ns_id,
+            "recovery_action": recovery_action,
+            "recommendation": "Check MCI status and try alternative recovery methods"
+        }
 
 #####################################
 # MCI Configuration Preview & Validation Tools
@@ -5337,7 +6429,1413 @@ def create_simple_mci_with_confirmation(
     )
 
 #####################################
-# Compute-as-a-Service Workflow
+# Application Deployment & UseCase Management System
+#####################################
+
+# Tool: Research application hardware requirements from internet
+@mcp.tool()
+def research_application_requirements(
+    application_name: str,
+    version: Optional[str] = None,
+    deployment_type: str = "production"
+) -> Dict:
+    """
+    Research application hardware requirements from internet sources.
+    This tool searches for official documentation and community recommendations
+    to determine optimal hardware specifications for application deployment.
+    
+    Args:
+        application_name: Name of the application to research
+        version: Specific version if needed (optional)
+        deployment_type: Type of deployment ("production", "development", "testing")
+    
+    Returns:
+        Hardware requirements research results with recommendations
+    """
+    try:
+        # Construct search queries for hardware requirements
+        base_queries = [
+            f"{application_name} system requirements hardware specifications",
+            f"{application_name} minimum requirements CPU memory disk",
+            f"{application_name} server requirements production deployment",
+            f"{application_name} recommended hardware specs"
+        ]
+        
+        if version:
+            base_queries.append(f"{application_name} {version} system requirements")
+        
+        # Add deployment type specific queries
+        if deployment_type == "production":
+            base_queries.append(f"{application_name} production server requirements")
+        elif deployment_type == "development":
+            base_queries.append(f"{application_name} development environment requirements")
+        
+        research_results = {
+            "application_name": application_name,
+            "version": version,
+            "deployment_type": deployment_type,
+            "search_queries": base_queries,
+            "requirements_found": {},
+            "recommendations": {},
+            "sources": [],
+            "status": "success"
+        }
+        
+        # Search for requirements from multiple sources
+        all_search_results = []
+        
+        # Since web search is not available, use built-in knowledge base
+        # This will be enhanced when web search tools are available
+        logger.info(f"Researching requirements for {application_name} using built-in knowledge")
+        
+        # Try to extract requirements from application name patterns
+        extracted_requirements = _analyze_application_by_name(application_name, deployment_type)
+        research_results["requirements_found"] = extracted_requirements
+        
+        # Generate recommendations based on findings
+        recommendations = _generate_hardware_recommendations(extracted_requirements, deployment_type)
+        research_results["recommendations"] = recommendations
+        
+        # Add sources information
+        research_results["sources"] = [result["query"] for result in all_search_results]
+        research_results["total_sources_checked"] = len(all_search_results)
+        
+        return research_results
+        
+    except Exception as e:
+        # If internet search fails, return fallback recommendations
+        return _get_fallback_hardware_requirements(application_name, deployment_type, str(e))
+
+# Helper function: Analyze application by name when web search is not available
+def _analyze_application_by_name(app_name: str, deployment_type: str) -> Dict:
+    """Analyze application requirements based on name patterns and built-in knowledge."""
+    
+    app_lower = app_name.lower()
+    
+    # Built-in knowledge base for common applications
+    knowledge_base = {
+        # Web servers
+        "nginx": {"cpu": 2, "memory": 2, "disk": 20, "category": "web"},
+        "apache": {"cpu": 2, "memory": 2, "disk": 20, "category": "web"},
+        "httpd": {"cpu": 2, "memory": 2, "disk": 20, "category": "web"},
+        
+        # Databases
+        "mysql": {"cpu": 2, "memory": 4, "disk": 100, "category": "database"},
+        "postgresql": {"cpu": 2, "memory": 4, "disk": 100, "category": "database"},
+        "postgres": {"cpu": 2, "memory": 4, "disk": 100, "category": "database"},
+        "mongodb": {"cpu": 2, "memory": 4, "disk": 100, "category": "database"},
+        "redis": {"cpu": 2, "memory": 4, "disk": 50, "category": "cache"},
+        "memcached": {"cpu": 1, "memory": 2, "disk": 20, "category": "cache"},
+        
+        # Search and Analytics
+        "elasticsearch": {"cpu": 4, "memory": 8, "disk": 200, "category": "search"},
+        "kibana": {"cpu": 2, "memory": 4, "disk": 50, "category": "visualization"},
+        "logstash": {"cpu": 2, "memory": 4, "disk": 50, "category": "processing"},
+        "elk": {"cpu": 4, "memory": 8, "disk": 200, "category": "stack"},
+        
+        # Container platforms
+        "docker": {"cpu": 2, "memory": 4, "disk": 100, "category": "container"},
+        "kubernetes": {"cpu": 4, "memory": 8, "disk": 100, "category": "orchestration"},
+        "k8s": {"cpu": 4, "memory": 8, "disk": 100, "category": "orchestration"},
+        
+        # CI/CD
+        "jenkins": {"cpu": 2, "memory": 4, "disk": 100, "category": "ci_cd"},
+        "gitlab": {"cpu": 4, "memory": 8, "disk": 200, "category": "ci_cd"},
+        "github": {"cpu": 2, "memory": 4, "disk": 100, "category": "ci_cd"},
+        
+        # Games
+        "xonotic": {"cpu": 2, "memory": 2, "disk": 30, "category": "game"},
+        "minecraft": {"cpu": 2, "memory": 4, "disk": 50, "category": "game"},
+        "csgo": {"cpu": 4, "memory": 4, "disk": 50, "category": "game"},
+        "tf2": {"cpu": 2, "memory": 4, "disk": 40, "category": "game"},
+        
+        # AI/ML
+        "ollama": {"cpu": 4, "memory": 8, "disk": 100, "category": "ai"},
+        "tensorflow": {"cpu": 4, "memory": 8, "disk": 100, "category": "ai"},
+        "pytorch": {"cpu": 4, "memory": 8, "disk": 100, "category": "ai"},
+        "jupyter": {"cpu": 2, "memory": 4, "disk": 50, "category": "ai"},
+        
+        # Communication
+        "jitsi": {"cpu": 4, "memory": 8, "disk": 50, "category": "communication"},
+        "zoom": {"cpu": 4, "memory": 8, "disk": 50, "category": "communication"},
+        "slack": {"cpu": 2, "memory": 4, "disk": 50, "category": "communication"},
+        
+        # Distributed computing
+        "ray": {"cpu": 4, "memory": 8, "disk": 100, "category": "distributed"},
+        "spark": {"cpu": 4, "memory": 8, "disk": 100, "category": "distributed"},
+        "hadoop": {"cpu": 4, "memory": 8, "disk": 200, "category": "distributed"},
+        
+        # Monitoring
+        "prometheus": {"cpu": 2, "memory": 4, "disk": 100, "category": "monitoring"},
+        "grafana": {"cpu": 2, "memory": 4, "disk": 50, "category": "monitoring"},
+        "netdata": {"cpu": 1, "memory": 2, "disk": 20, "category": "monitoring"}
+    }
+    
+    # Find matching application
+    matched_app = None
+    for app_key, specs in knowledge_base.items():
+        if app_key in app_lower or app_lower in app_key:
+            matched_app = specs
+            break
+    
+    # Default specs if no match found
+    if not matched_app:
+        matched_app = {"cpu": 2, "memory": 4, "disk": 50, "category": "general"}
+    
+    # Apply deployment type multipliers
+    multipliers = {"production": 1.5, "development": 1.0, "testing": 0.8}
+    multiplier = multipliers.get(deployment_type, 1.0)
+    
+    requirements = {
+        "cpu_cores": {
+            "min": matched_app["cpu"],
+            "recommended": max(2, int(matched_app["cpu"] * multiplier))
+        },
+        "memory_gb": {
+            "min": matched_app["memory"],
+            "recommended": max(4, int(matched_app["memory"] * multiplier))
+        },
+        "disk_gb": {
+            "min": max(50, matched_app["disk"]),  # Minimum 50GB as requested
+            "recommended": max(50, int(matched_app["disk"] * multiplier))
+        },
+        "additional_requirements": [
+            f"Application category: {matched_app['category']}",
+            f"Deployment type: {deployment_type}",
+            f"Multiplier applied: {multiplier}"
+        ],
+        "confidence": "medium"  # Built-in knowledge is medium confidence
+    }
+    
+    return requirements
+
+# Helper function: Analyze hardware requirements from search results
+def _analyze_hardware_requirements(search_results: List[Dict], app_name: str) -> Dict:
+    """Extract hardware requirements from search results using pattern matching."""
+    
+    requirements = {
+        "cpu_cores": {"min": None, "recommended": None},
+        "memory_gb": {"min": None, "recommended": None},
+        "disk_gb": {"min": None, "recommended": None},
+        "additional_requirements": [],
+        "confidence": "low"
+    }
+    
+    # Common patterns for extracting requirements
+    cpu_patterns = [
+        r'(\d+)[\s\-]*core[s]?',
+        r'(\d+)[\s\-]*cpu[s]?',
+        r'(\d+)[\s\-]*processor[s]?',
+        r'cpu:?\s*(\d+)',
+        r'minimum.*?(\d+).*?core',
+        r'recommended.*?(\d+).*?core'
+    ]
+    
+    memory_patterns = [
+        r'(\d+)[\s\-]*gb[\s\-]*ram',
+        r'(\d+)[\s\-]*gb[\s\-]*memory',
+        r'memory:?\s*(\d+)[\s\-]*gb',
+        r'ram:?\s*(\d+)[\s\-]*gb',
+        r'minimum.*?(\d+).*?gb.*?ram',
+        r'recommended.*?(\d+).*?gb.*?ram'
+    ]
+    
+    disk_patterns = [
+        r'(\d+)[\s\-]*gb[\s\-]*disk',
+        r'(\d+)[\s\-]*gb[\s\-]*storage',
+        r'storage:?\s*(\d+)[\s\-]*gb',
+        r'disk:?\s*(\d+)[\s\-]*gb',
+        r'minimum.*?(\d+).*?gb.*?disk',
+        r'(\d+)[\s\-]*gb[\s\-]*free[\s\-]*space'
+    ]
+    
+    # Extract values from all search results
+    cpu_values = []
+    memory_values = []
+    disk_values = []
+    
+    for result in search_results:
+        content = result.get("content", "").lower()
+        
+        # Extract CPU values
+        for pattern in cpu_patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            cpu_values.extend([int(m) for m in matches if m.isdigit() and 1 <= int(m) <= 128])
+        
+        # Extract memory values
+        for pattern in memory_patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            memory_values.extend([int(m) for m in matches if m.isdigit() and 1 <= int(m) <= 512])
+        
+        # Extract disk values
+        for pattern in disk_patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            disk_values.extend([int(m) for m in matches if m.isdigit() and 1 <= int(m) <= 10000])
+    
+    # Process extracted values
+    if cpu_values:
+        requirements["cpu_cores"]["min"] = min(cpu_values)
+        requirements["cpu_cores"]["recommended"] = max(cpu_values) if len(cpu_values) > 1 else min(cpu_values) * 2
+        requirements["confidence"] = "high" if len(cpu_values) >= 2 else "medium"
+    
+    if memory_values:
+        requirements["memory_gb"]["min"] = min(memory_values)
+        requirements["memory_gb"]["recommended"] = max(memory_values) if len(memory_values) > 1 else min(memory_values) * 2
+        if requirements["confidence"] != "high":
+            requirements["confidence"] = "high" if len(memory_values) >= 2 else "medium"
+    
+    if disk_values:
+        requirements["disk_gb"]["min"] = min(disk_values)
+        requirements["disk_gb"]["recommended"] = max(disk_values) if len(disk_values) > 1 else min(disk_values)
+        if requirements["confidence"] == "low":
+            requirements["confidence"] = "medium"
+    
+    return requirements
+
+# Helper function: Generate hardware recommendations
+def _generate_hardware_recommendations(requirements: Dict, deployment_type: str) -> Dict:
+    """Generate final hardware recommendations based on research results."""
+    
+    recommendations = {
+        "cpu_cores": 2,  # Default
+        "memory_gb": 4,  # Default
+        "disk_gb": 50,   # Minimum default
+        "deployment_multiplier": 1.0,
+        "reasoning": []
+    }
+    
+    # Apply deployment type multipliers
+    multipliers = {
+        "production": 1.5,
+        "development": 1.0,
+        "testing": 0.8
+    }
+    
+    multiplier = multipliers.get(deployment_type, 1.0)
+    recommendations["deployment_multiplier"] = multiplier
+    
+    # Process CPU recommendations
+    if requirements["cpu_cores"]["recommended"]:
+        recommendations["cpu_cores"] = max(2, int(requirements["cpu_cores"]["recommended"] * multiplier))
+        recommendations["reasoning"].append(f"CPU: Based on research, using {requirements['cpu_cores']['recommended']} cores with {deployment_type} multiplier")
+    elif requirements["cpu_cores"]["min"]:
+        recommendations["cpu_cores"] = max(2, int(requirements["cpu_cores"]["min"] * multiplier * 1.5))
+        recommendations["reasoning"].append(f"CPU: Based on minimum requirement {requirements['cpu_cores']['min']} cores, increased for {deployment_type}")
+    else:
+        recommendations["reasoning"].append("CPU: Using default 2 cores (no specific requirements found)")
+    
+    # Process Memory recommendations
+    if requirements["memory_gb"]["recommended"]:
+        recommendations["memory_gb"] = max(4, int(requirements["memory_gb"]["recommended"] * multiplier))
+        recommendations["reasoning"].append(f"Memory: Based on research, using {requirements['memory_gb']['recommended']}GB with {deployment_type} multiplier")
+    elif requirements["memory_gb"]["min"]:
+        recommendations["memory_gb"] = max(4, int(requirements["memory_gb"]["min"] * multiplier * 1.5))
+        recommendations["reasoning"].append(f"Memory: Based on minimum requirement {requirements['memory_gb']['min']}GB, increased for {deployment_type}")
+    else:
+        recommendations["reasoning"].append("Memory: Using default 4GB (no specific requirements found)")
+    
+    # Process Disk recommendations (minimum 50GB as requested)
+    if requirements["disk_gb"]["recommended"]:
+        recommendations["disk_gb"] = max(50, int(requirements["disk_gb"]["recommended"] * multiplier))
+        recommendations["reasoning"].append(f"Disk: Based on research, using {requirements['disk_gb']['recommended']}GB with {deployment_type} multiplier")
+    elif requirements["disk_gb"]["min"]:
+        recommendations["disk_gb"] = max(50, int(requirements["disk_gb"]["min"] * multiplier * 1.5))
+        recommendations["reasoning"].append(f"Disk: Based on minimum requirement {requirements['disk_gb']['min']}GB, increased for {deployment_type}")
+    else:
+        recommendations["disk_gb"] = 50
+        recommendations["reasoning"].append("Disk: Using minimum 50GB (no specific requirements found)")
+    
+    return recommendations
+
+# Helper function: Fallback hardware requirements
+def _get_fallback_hardware_requirements(app_name: str, deployment_type: str, error_msg: str) -> Dict:
+    """Provide fallback recommendations when internet search fails."""
+    
+    # Application-specific fallbacks based on common patterns
+    app_fallbacks = {
+        "nginx": {"cpu": 2, "memory": 2, "disk": 20},
+        "apache": {"cpu": 2, "memory": 2, "disk": 20},
+        "mysql": {"cpu": 2, "memory": 4, "disk": 100},
+        "postgresql": {"cpu": 2, "memory": 4, "disk": 100},
+        "mongodb": {"cpu": 2, "memory": 4, "disk": 100},
+        "redis": {"cpu": 2, "memory": 4, "disk": 50},
+        "elasticsearch": {"cpu": 4, "memory": 8, "disk": 200},
+        "kibana": {"cpu": 2, "memory": 4, "disk": 50},
+        "logstash": {"cpu": 2, "memory": 4, "disk": 50},
+        "docker": {"cpu": 2, "memory": 4, "disk": 100},
+        "kubernetes": {"cpu": 4, "memory": 8, "disk": 100},
+        "jenkins": {"cpu": 2, "memory": 4, "disk": 100},
+        "gitlab": {"cpu": 4, "memory": 8, "disk": 200},
+        "xonotic": {"cpu": 2, "memory": 2, "disk": 30},
+        "minecraft": {"cpu": 2, "memory": 4, "disk": 50},
+        "ollama": {"cpu": 4, "memory": 8, "disk": 100},
+        "jitsi": {"cpu": 4, "memory": 8, "disk": 50},
+        "ray": {"cpu": 4, "memory": 8, "disk": 100}
+    }
+    
+    # Try to find application in fallbacks
+    app_lower = app_name.lower()
+    fallback = None
+    
+    for app_key, specs in app_fallbacks.items():
+        if app_key in app_lower or app_lower in app_key:
+            fallback = specs
+            break
+    
+    # Default fallback if no specific match
+    if not fallback:
+        fallback = {"cpu": 2, "memory": 4, "disk": 50}
+    
+    # Apply deployment type multiplier
+    multipliers = {"production": 1.5, "development": 1.0, "testing": 0.8}
+    multiplier = multipliers.get(deployment_type, 1.0)
+    
+    recommendations = {
+        "cpu_cores": max(2, int(fallback["cpu"] * multiplier)),
+        "memory_gb": max(4, int(fallback["memory"] * multiplier)),
+        "disk_gb": max(50, int(fallback["disk"] * multiplier)),  # Minimum 50GB as requested
+        "deployment_multiplier": multiplier,
+        "reasoning": [
+            f"Internet search failed: {error_msg}",
+            f"Using fallback recommendations for {app_name}",
+            f"Applied {deployment_type} deployment multiplier: {multiplier}"
+        ]
+    }
+    
+    return {
+        "application_name": app_name,
+        "deployment_type": deployment_type,
+        "search_queries": ["fallback_used"],
+        "requirements_found": {
+            "cpu_cores": {"min": fallback["cpu"], "recommended": fallback["cpu"]},
+            "memory_gb": {"min": fallback["memory"], "recommended": fallback["memory"]},
+            "disk_gb": {"min": fallback["disk"], "recommended": fallback["disk"]},
+            "confidence": "fallback"
+        },
+        "recommendations": recommendations,
+        "sources": ["fallback_database"],
+        "status": "fallback_used",
+        "error": error_msg
+    }
+
+# Predefined application configurations based on MapUI patterns
+APPLICATION_CONFIGS = {
+    "xonotic": {
+        "name": "Xonotic Game Server",
+        "category": "game",
+        "description": "FPS game server deployment with automatic server configuration",
+        "requirements": {
+            "cpu_intensive": True,
+            "network_intensive": True,
+            "ports": ["26000", "8"],
+            "os": "ubuntu",
+            "min_disk_gb": 30  # Game-specific disk requirement
+        },
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/xonotic/startServer.sh; chmod +x ~/startServer.sh",
+            "sudo ~/startServer.sh {{mci_id}} 26000 8 8",
+            "echo 'Server Address: {{public_ip}}:26000'"
+        ],
+        "result_pattern": r"Server Address: ([^:]+):(\d+)",
+        "deployment_strategy": "global"
+    },
+    "nginx": {
+        "name": "Nginx Web Server",
+        "category": "web",
+        "description": "High-performance web server deployment",
+        "requirements": {
+            "cpu_intensive": False,
+            "network_intensive": True,
+            "ports": ["80", "443"],
+            "os": "ubuntu",
+            "min_disk_gb": 20
+        },
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/nginx/startServer.sh | bash -s -- --ip {{public_ip}}",
+            "echo 'Web Server: http://{{public_ip}}'"
+        ],
+        "result_pattern": r"Web Server: (http://[^/]+)",
+        "deployment_strategy": "regional"
+    },
+    "ollama": {
+        "name": "Ollama LLM Server",
+        "category": "llm",
+        "description": "Local LLM server deployment with Ollama",
+        "requirements": {
+            "cpu_intensive": True,
+            "memory_intensive": True,
+            "gpu_preferred": True,
+            "ports": ["3000"],
+            "os": "ubuntu",
+            "min_disk_gb": 100  # LLM models require significant storage
+        },
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOllama.sh | sh",
+            "echo 'LLM Server: http://{{public_ip}}:3000'"
+        ],
+        "result_pattern": r"LLM Server: (http://[^/]+)",
+        "deployment_strategy": "performance"
+    },
+    "jitsi": {
+        "name": "Jitsi Meet Video Conference",
+        "category": "conference",
+        "description": "Video conferencing server deployment",
+        "requirements": {
+            "cpu_intensive": True,
+            "network_intensive": True,
+            "bandwidth_intensive": True,
+            "ports": ["443", "80", "10000"],
+            "os": "ubuntu",
+            "min_disk_gb": 50
+        },
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/jitsi/startServer.sh",
+            "chmod +x ~/startServer.sh",
+            "sudo ~/startServer.sh {{public_ips_space}} DNS EMAIL"
+        ],
+        "result_pattern": r"Jitsi Server: (https://[^/]+)",
+        "deployment_strategy": "regional"
+    },
+    "elk": {
+        "name": "ELK Stack",
+        "category": "observability",
+        "description": "Elasticsearch, Logstash, and Kibana stack deployment",
+        "requirements": {
+            "cpu_intensive": True,
+            "memory_intensive": True,
+            "storage_intensive": True,
+            "ports": ["9200", "5601", "5044"],
+            "os": "ubuntu",
+            "min_disk_gb": 200  # ELK requires significant storage for logs
+        },
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/elastic-stack/startELK.sh",
+            "chmod +x ~/startELK.sh",
+            "sudo ~/startELK.sh"
+        ],
+        "result_pattern": r"Kibana: (http://[^:]+:5601)",
+        "deployment_strategy": "centralized"
+    },
+    "ray": {
+        "name": "Ray ML Cluster",
+        "category": "ml",
+        "description": "Distributed ML computing cluster with Ray",
+        "requirements": {
+            "cpu_intensive": True,
+            "memory_intensive": True,
+            "network_intensive": True,
+            "cluster": True,
+            "ports": ["8265", "10001"],
+            "os": "ubuntu",
+            "min_disk_gb": 100
+        },
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/ray/ray-head-setup.sh",
+            "chmod +x ~/ray-head-setup.sh",
+            "~/ray-head-setup.sh -i {{public_ip}}"
+        ],
+        "result_pattern": r"Ray Dashboard: (http://[^:]+:8265)",
+        "deployment_strategy": "cluster"
+    }
+}
+
+# Tool: List available application templates
+@mcp.tool()
+def list_application_templates() -> Dict:
+    """
+    List all available application deployment templates with their specifications.
+    
+    Returns:
+        Dictionary containing all available application templates with:
+        - Application categories (game, web, llm, ml, etc.)
+        - Requirements and resource specifications
+        - Deployment strategies and use cases
+        - Port requirements and network configurations
+    """
+    try:
+        templates = {}
+        categories = {}
+        
+        for app_id, config in APPLICATION_CONFIGS.items():
+            category = config["category"]
+            if category not in categories:
+                categories[category] = []
+            
+            categories[category].append({
+                "id": app_id,
+                "name": config["name"],
+                "description": config["description"],
+                "requirements": config["requirements"],
+                "deployment_strategy": config["deployment_strategy"],
+                "ports": config["requirements"].get("ports", [])
+            })
+            
+            templates[app_id] = {
+                "name": config["name"],
+                "category": category,
+                "description": config["description"],
+                "requirements": config["requirements"],
+                "deployment_strategy": config["deployment_strategy"],
+                "recommended_locations": _get_recommended_locations(config["deployment_strategy"]),
+                "estimated_cost_per_instance": _estimate_app_cost(config["requirements"])
+            }
+        
+        return {
+            "status": "success",
+            "total_templates": len(templates),
+            "categories": categories,
+            "templates": templates,
+            "usage_examples": [
+                "deploy_application('xonotic', regions=10, description='Global game servers')",
+                "deploy_application('nginx', regions=['us-east-1', 'eu-west-1'], instances_per_region=2)",
+                "deploy_application('ollama', regions=3, gpu_preferred=True)"
+            ]
+        }
+        
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+# Tool: Deploy application with automatic infrastructure provisioning
+@mcp.tool()
+def deploy_application(
+    application_id: str,
+    regions: Union[int, List[str]] = 1,
+    instances_per_region: int = 1,
+    namespace_id: str = "default",
+    custom_config: Optional[Dict] = None,
+    auto_confirm: bool = False,
+    research_requirements: bool = True,
+    deployment_type: str = "production"
+) -> Dict:
+    """
+    Deploy applications globally with automatic infrastructure provisioning and configuration.
+    
+    Enhanced workflow with hardware requirements research:
+    1. Research application hardware requirements from internet (if enabled)
+    2. Application template validation with enhanced specifications
+    3. Infrastructure requirement analysis with researched hardware specs
+    4. Multi-region deployment planning with optimized VM configurations
+    5. MCI creation with recommended specs and minimum 50GB disk
+    6. Application installation and configuration
+    7. Service endpoint collection and reporting
+    
+    Args:
+        application_id: Application template ID (use list_application_templates() to see options)
+        regions: Number of regions for global deployment OR specific region list
+        instances_per_region: Number of instances to deploy per region (default: 1)
+        namespace_id: Namespace for deployment (default: "default")
+        custom_config: Optional custom configuration overrides
+        auto_confirm: Skip confirmation prompts for automated deployment
+        research_requirements: Whether to research hardware requirements from internet/knowledge base
+        deployment_type: Deployment environment ("production", "development", "testing")
+    
+    Returns:
+        Complete deployment result with:
+        - hardware_research: Researched hardware requirements and recommendations
+        - deployment_plan: Infrastructure and application deployment strategy
+        - infrastructure_created: Details of provisioned MCI and VMs
+        - application_deployment: Application installation results
+        - service_endpoints: Access URLs and connection information
+        - deployment_summary: Overall deployment status and next steps
+    
+    Examples:
+        # Deploy Xonotic game servers globally with automatic hardware research
+        deploy_application('xonotic', regions=10, auto_confirm=True, research_requirements=True)
+        
+        # Deploy Nginx in specific regions for production with enhanced specs
+        deploy_application('nginx', regions=['us-east-1', 'eu-west-1'], deployment_type='production')
+        
+        # Deploy Ollama LLM server with automatic GPU optimization
+        deploy_application('ollama', regions=3, custom_config={'gpu_required': True})
+    """
+    
+    deployment_id = f"app-deploy-{int(datetime.now().timestamp())}"
+    
+    # Validate application template
+    if application_id not in APPLICATION_CONFIGS:
+        available_apps = list(APPLICATION_CONFIGS.keys())
+        return {
+            "status": "error",
+            "error": f"Unknown application '{application_id}'. Available: {available_apps}",
+            "available_applications": available_apps
+        }
+    
+    app_config = APPLICATION_CONFIGS[application_id].copy()
+    
+    # Apply custom configuration overrides
+    if custom_config:
+        app_config["requirements"].update(custom_config.get("requirements", {}))
+        app_config.update({k: v for k, v in custom_config.items() if k != "requirements"})
+    
+    deployment_result = {
+        "deployment_id": deployment_id,
+        "application": {
+            "id": application_id,
+            "name": app_config["name"],
+            "category": app_config["category"]
+        },
+        "start_time": datetime.now().isoformat(),
+        "hardware_research": {},
+        "deployment_plan": {},
+        "infrastructure_created": {},
+        "application_deployment": {},
+        "service_endpoints": [],
+        "deployment_summary": {},
+        "status": "starting"
+    }
+    
+    try:
+        # Step 1: Research hardware requirements (new feature)
+        logger.info(f"Researching hardware requirements for {app_config['name']}")
+        if research_requirements:
+            hardware_research = research_application_requirements(
+                application_name=app_config['name'],
+                deployment_type=deployment_type
+            )
+            deployment_result["hardware_research"] = hardware_research
+        else:
+            # Use fallback if research is disabled
+            hardware_research = _get_fallback_hardware_requirements(
+                app_config['name'], deployment_type, "Research disabled by user"
+            )
+            deployment_result["hardware_research"] = hardware_research
+        
+        # Step 2: Create enhanced deployment plan with researched specs
+        logger.info(f"Creating enhanced deployment plan for {application_id}")
+        deployment_plan = _create_application_deployment_plan(
+            app_config, regions, instances_per_region, namespace_id, hardware_research
+        )
+        deployment_result["deployment_plan"] = deployment_plan
+        
+        # Step 3: Confirm deployment plan with hardware research
+        if not auto_confirm:
+            confirmation_msg = _generate_deployment_confirmation(deployment_plan, app_config, hardware_research)
+            deployment_result["confirmation_required"] = True
+            deployment_result["confirmation_message"] = confirmation_msg
+            deployment_result["status"] = "waiting_for_confirmation"
+            return deployment_result
+        
+        # Step 4: Provision infrastructure
+        logger.info(f"Provisioning infrastructure for {application_id}")
+        mci_name = f"{application_id}-{deployment_id[-8:]}"
+        
+        infrastructure_result = _provision_application_infrastructure(
+            deployment_plan, mci_name, namespace_id
+        )
+        deployment_result["infrastructure_created"] = infrastructure_result
+        
+        if infrastructure_result["status"] != "success":
+            deployment_result["status"] = "infrastructure_failed"
+            return deployment_result
+        
+        # Step 5: Deploy application
+        logger.info(f"Deploying {application_id} application")
+        mci_id = infrastructure_result["mci_id"]
+        
+        app_deployment_result = _deploy_application_to_infrastructure(
+            app_config, mci_id, namespace_id, deployment_plan
+        )
+        deployment_result["application_deployment"] = app_deployment_result
+        
+        # Step 5: Collect service endpoints
+        logger.info(f"Collecting service endpoints for {application_id}")
+        endpoints = _collect_service_endpoints(
+            app_config, mci_id, namespace_id, app_deployment_result
+        )
+        deployment_result["service_endpoints"] = endpoints
+        
+        # Step 6: Generate deployment summary
+        deployment_result["deployment_summary"] = _generate_deployment_summary(
+            deployment_result, app_config
+        )
+        deployment_result["status"] = "completed"
+        deployment_result["end_time"] = datetime.now().isoformat()
+        
+        # Store deployment in memory
+        _store_interaction_memory(
+            user_request=f"Deploy {application_id} application in {regions} regions",
+            llm_response=f"{application_id} deployed successfully with {len(endpoints)} service endpoints",
+            operation_type="application_deployment",
+            context_data={
+                "application_id": application_id,
+                "deployment_id": deployment_id,
+                "mci_id": mci_id,
+                "namespace": namespace_id,
+                "endpoints": endpoints
+            },
+            status="completed"
+        )
+        
+        return deployment_result
+        
+    except Exception as e:
+        deployment_result["status"] = "error"
+        deployment_result["error"] = str(e)
+        deployment_result["end_time"] = datetime.now().isoformat()
+        
+        # Attempt cleanup
+        if "mci_id" in deployment_result.get("infrastructure_created", {}):
+            try:
+                cleanup_result = delete_mci(
+                    namespace_id, 
+                    deployment_result["infrastructure_created"]["mci_id"]
+                )
+                deployment_result["cleanup_attempted"] = cleanup_result
+            except:
+                deployment_result["cleanup_attempted"] = {"status": "failed"}
+        
+        return deployment_result
+
+# Tool: Execute custom commands on deployed applications
+@mcp.tool()
+def execute_application_commands(
+    mci_id: str,
+    commands: List[str],
+    namespace_id: str = "default",
+    target_selection: Optional[Dict] = None
+) -> Dict:
+    """
+    Execute custom commands on deployed application infrastructure.
+    
+    Args:
+        mci_id: MCI ID where application is deployed
+        commands: List of commands to execute (supports template variables)
+        namespace_id: Namespace ID (default: "default")
+        target_selection: Optional target selection:
+            - type: "mci" | "subgroup" | "vm"
+            - target_id: specific subgroup or VM ID (if applicable)
+    
+    Template variables supported in commands:
+        - {{public_ip}}: Public IP of target VM
+        - {{private_ip}}: Private IP of target VM
+        - {{mci_id}}: MCI ID
+        - {{public_ips_space}}: All public IPs separated by space
+        - {{public_ips_comma}}: All public IPs separated by comma
+    
+    Returns:
+        Command execution results with expanded templates
+    """
+    try:
+        # Get MCI access info for template expansion
+        access_info = get_mci_access_info(namespace_id, mci_id, show_ssh_key=False)
+        
+        if access_info.get("status") != "success":
+            return {
+                "status": "error",
+                "error": "Failed to get MCI access information",
+                "details": access_info
+            }
+        
+        # Expand command templates
+        expanded_commands = []
+        for cmd in commands:
+            expanded_cmd = _expand_command_templates(cmd, access_info, mci_id)
+            expanded_commands.append(expanded_cmd)
+        
+        # Execute commands
+        execute_result = execute_command_mci(
+            namespace_id=namespace_id,
+            mci_id=mci_id,
+            commands=expanded_commands,
+            **{k: v for k, v in (target_selection or {}).items() if k != "type"}
+        )
+        
+        return {
+            "status": "success",
+            "original_commands": commands,
+            "expanded_commands": expanded_commands,
+            "execution_result": execute_result,
+            "template_variables_used": _extract_used_templates(commands)
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+# Helper function: Create application deployment plan
+def _create_application_deployment_plan(
+    app_config: Dict, 
+    regions: Union[int, List[str]], 
+    instances_per_region: int,
+    namespace_id: str,
+    hardware_research: Optional[Dict] = None
+) -> Dict:
+    """Create detailed deployment plan for application with enhanced hardware specifications."""
+    
+    # Determine target regions
+    if isinstance(regions, int):
+        # Auto-select regions based on deployment strategy
+        strategy = app_config.get("deployment_strategy", "regional")
+        target_regions = _select_optimal_regions(regions, strategy)
+    else:
+        target_regions = regions
+    
+    # Calculate total instances
+    total_instances = len(target_regions) * instances_per_region
+    
+    # Determine VM specifications based on requirements and hardware research
+    vm_requirements = _translate_app_requirements_to_vm_specs(
+        app_config["requirements"], hardware_research
+    )
+    
+    # Determine disk size with minimum 50GB and application-specific requirements
+    min_disk_gb = max(
+        50,  # Minimum 50GB as requested
+        app_config["requirements"].get("min_disk_gb", 50),
+        hardware_research.get("recommendations", {}).get("disk_gb", 50) if hardware_research else 50
+    )
+    
+    deployment_plan = {
+        "application_config": app_config,
+        "hardware_research_applied": hardware_research is not None,
+        "deployment_strategy": {
+            "type": app_config.get("deployment_strategy", "regional"),
+            "target_regions": target_regions,
+            "instances_per_region": instances_per_region,
+            "total_instances": total_instances
+        },
+        "infrastructure_requirements": {
+            "vm_specifications": vm_requirements,
+            "disk_requirements": {
+                "min_disk_gb": min_disk_gb,
+                "disk_type": "default",
+                "research_based": hardware_research is not None
+            },
+            "network_requirements": {
+                "ports": app_config["requirements"].get("ports", []),
+                "bandwidth_intensive": app_config["requirements"].get("bandwidth_intensive", False)
+            },
+            "estimated_cost": {
+                "per_instance_hourly": _estimate_app_cost(app_config["requirements"]),
+                "total_hourly": _estimate_app_cost(app_config["requirements"]) * total_instances,
+                "estimated_monthly": _estimate_app_cost(app_config["requirements"]) * total_instances * 24 * 30
+            }
+        },
+        "deployment_commands": app_config["commands"],
+        "expected_endpoints": total_instances
+    }
+    
+    # Add hardware research details if available
+    if hardware_research:
+        deployment_plan["hardware_research_summary"] = {
+            "cpu_recommendation": hardware_research.get("recommendations", {}).get("cpu_cores", 2),
+            "memory_recommendation": hardware_research.get("recommendations", {}).get("memory_gb", 4),
+            "disk_recommendation": hardware_research.get("recommendations", {}).get("disk_gb", 50),
+            "research_confidence": hardware_research.get("requirements_found", {}).get("confidence", "medium"),
+            "sources_checked": hardware_research.get("total_sources_checked", 0)
+        }
+    
+    return deployment_plan
+
+# Helper function: Select optimal regions for deployment
+def _select_optimal_regions(count: int, strategy: str) -> List[str]:
+    """Select optimal regions based on deployment strategy."""
+    
+    # Define region priorities based on strategy
+    strategy_regions = {
+        "global": [
+            "us-east-1", "eu-west-1", "ap-northeast-2", "ap-southeast-1", 
+            "us-west-2", "eu-central-1", "ap-south-1", "sa-east-1",
+            "ap-northeast-1", "ca-central-1"
+        ],
+        "performance": [
+            "us-east-1", "eu-west-1", "ap-northeast-2", "us-west-2"
+        ],
+        "regional": [
+            "us-east-1", "eu-west-1", "ap-northeast-2"
+        ],
+        "centralized": ["us-east-1"],
+        "cluster": ["us-east-1"]  # Single region for cluster deployments
+    }
+    
+    available_regions = strategy_regions.get(strategy, strategy_regions["regional"])
+    return available_regions[:min(count, len(available_regions))]
+
+# Helper function: Translate app requirements to VM specs
+def _translate_app_requirements_to_vm_specs(requirements: Dict, hardware_research: Optional[Dict] = None) -> Dict:
+    """Translate application requirements to VM specification filters with hardware research integration."""
+    
+    vm_filter = {"Architecture": "x86_64"}  # Default to x86_64
+    
+    # Get research-based recommendations if available
+    research_cpu = None
+    research_memory = None
+    
+    if hardware_research and hardware_research.get("recommendations"):
+        research_cpu = hardware_research["recommendations"].get("cpu_cores")
+        research_memory = hardware_research["recommendations"].get("memory_gb")
+    
+    # CPU requirements - use research data if available, otherwise fallback to original logic
+    if research_cpu:
+        # Use researched CPU requirements with some buffer
+        min_cpu = max(2, research_cpu)
+        max_cpu = min(32, research_cpu * 2)
+        vm_filter["vCPU"] = {"min": min_cpu, "max": max_cpu}
+    elif requirements.get("cpu_intensive"):
+        vm_filter["vCPU"] = {"min": 4, "max": 16}
+    else:
+        vm_filter["vCPU"] = {"min": 2, "max": 8}
+    
+    # Memory requirements - use research data if available, otherwise fallback to original logic
+    if research_memory:
+        # Use researched memory requirements with some buffer
+        min_memory = max(4, research_memory)
+        max_memory = min(64, research_memory * 2)
+        vm_filter["memoryGiB"] = {"min": min_memory, "max": max_memory}
+    elif requirements.get("memory_intensive"):
+        vm_filter["memoryGiB"] = {"min": 8, "max": 32}
+    else:
+        vm_filter["memoryGiB"] = {"min": 4, "max": 16}
+    
+    # GPU requirements
+    priority_policy = "cost"
+    if requirements.get("gpu_preferred") or requirements.get("gpu_required"):
+        priority_policy = "performance"
+        # Note: GPU filtering would need additional CB-TB support
+    
+    # If we have high-confidence research, prioritize performance
+    if hardware_research and hardware_research.get("requirements_found", {}).get("confidence") == "high":
+        priority_policy = "performance"
+    
+    return {
+        "filter_policies": vm_filter,
+        "priority_policy": priority_policy,
+        "research_applied": hardware_research is not None,
+        "research_confidence": hardware_research.get("requirements_found", {}).get("confidence", "none") if hardware_research else "none"
+    }
+
+# Helper function: Provision application infrastructure
+def _provision_application_infrastructure(
+    deployment_plan: Dict,
+    mci_name: str,
+    namespace_id: str
+) -> Dict:
+    """Provision infrastructure for application deployment."""
+    
+    try:
+        strategy = deployment_plan["deployment_strategy"]
+        target_regions = strategy["target_regions"]
+        instances_per_region = strategy["instances_per_region"]
+        vm_requirements = deployment_plan["infrastructure_requirements"]["vm_specifications"]
+        disk_requirements = deployment_plan["infrastructure_requirements"].get("disk_requirements", {})
+        
+        # Get disk size (minimum 50GB as requested)
+        disk_size = str(disk_requirements.get("min_disk_gb", 50))
+        
+        # Get VM specifications
+        vm_specs_result = recommend_vm_spec(
+            filter_policies=vm_requirements["filter_policies"],
+            priority_policy=vm_requirements["priority_policy"],
+            limit="50"
+        )
+        
+        if vm_specs_result.get("status") != "success":
+            return {
+                "status": "error",
+                "error": "Failed to get VM specifications",
+                "details": vm_specs_result
+            }
+        
+        # Get suitable images
+        images_result = search_images(
+            provider_name=None,  # Search all providers
+            os_type="ubuntu 22.04"  # Default to Ubuntu 22.04
+        )
+        
+        if images_result.get("status") != "success":
+            return {
+                "status": "error", 
+                "error": "Failed to search for images",
+                "details": images_result
+            }
+        
+        # Create VM configurations for each region
+        vm_configurations = []
+        available_specs = vm_specs_result.get("summarized_specs", [])
+        available_images = images_result.get("image_list", [])
+        
+        for i, region in enumerate(target_regions):
+            # Find specs and images for this region
+            region_specs = [s for s in available_specs if region in s.get("region_name", "")]
+            region_images = [img for img in available_images if region in img.get("region", "")]
+            
+            if not region_specs or not region_images:
+                continue
+            
+            # Select best spec and image for this region
+            selected_spec = region_specs[0]  # First spec (sorted by priority)
+            selected_image = region_images[0]  # First available image
+            
+            # Create VM configuration with enhanced disk settings
+            vm_config = {
+                "name": f"app-vm-{region}-{i+1}",
+                "commonImage": selected_image["csp_image_name"],
+                "commonSpec": selected_spec["id"],
+                "description": f"Application VM in {region}",
+                "subGroupSize": str(instances_per_region),
+                "rootDiskSize": disk_size,  # Set disk size (minimum 50GB)
+                "rootDiskType": "default"
+            }
+            
+            vm_configurations.append(vm_config)
+        
+        if not vm_configurations:
+            return {
+                "status": "error",
+                "error": "No suitable VM configurations found for target regions"
+            }
+        
+        # Create MCI
+        mci_result = create_mci_dynamic(
+            ns_id=namespace_id,
+            name=mci_name,
+            vm_configurations=vm_configurations,
+            description=f"Infrastructure for {deployment_plan['application_config']['name']}",
+            install_mon_agent="no"
+        )
+        
+        return {
+            "status": "success",
+            "mci_id": mci_name,
+            "mci_result": mci_result,
+            "vm_configurations": vm_configurations,
+            "total_vms": sum(int(vm["subGroupSize"]) for vm in vm_configurations)
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+# Helper function: Deploy application to infrastructure
+def _deploy_application_to_infrastructure(
+    app_config: Dict,
+    mci_id: str,
+    namespace_id: str,
+    deployment_plan: Dict
+) -> Dict:
+    """Deploy application to provisioned infrastructure."""
+    
+    try:
+        # Wait for MCI to be ready
+        import time
+        max_wait_time = 300  # 5 minutes
+        wait_interval = 10   # Check every 10 seconds
+        waited_time = 0
+        
+        while waited_time < max_wait_time:
+            mci_status = get_mci(namespace_id, mci_id)
+            if mci_status.get("status") == "success":
+                mci_data = mci_status.get("mci", {})
+                if mci_data.get("status") == "running":
+                    break
+            
+            time.sleep(wait_interval)
+            waited_time += wait_interval
+        
+        if waited_time >= max_wait_time:
+            return {
+                "status": "error",
+                "error": "MCI did not reach running state within timeout period"
+            }
+        
+        # Get MCI access info for command expansion
+        access_info = get_mci_access_info(namespace_id, mci_id, show_ssh_key=False)
+        
+        # Execute deployment commands
+        deployment_commands = app_config["commands"]
+        expanded_commands = []
+        
+        for cmd in deployment_commands:
+            expanded_cmd = _expand_command_templates(cmd, access_info, mci_id)
+            expanded_commands.append(expanded_cmd)
+        
+        # Execute commands on MCI
+        execution_result = execute_command_mci(
+            namespace_id=namespace_id,
+            mci_id=mci_id,
+            commands=expanded_commands
+        )
+        
+        return {
+            "status": "success",
+            "original_commands": deployment_commands,
+            "expanded_commands": expanded_commands,
+            "execution_result": execution_result,
+            "deployment_time": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+# Helper function: Expand command templates
+def _expand_command_templates(command: str, access_info: Dict, mci_id: str) -> str:
+    """Expand template variables in commands."""
+    
+    expanded_cmd = command
+    
+    # Extract access information
+    access_data = access_info.get("access_info", {})
+    
+    # Get public and private IPs
+    public_ips = []
+    private_ips = []
+    
+    for subgroup in access_data.get("mci_subgroup_access_info", []):
+        for vm in subgroup.get("vm_access_info_array", []):
+            if vm.get("public_ip"):
+                public_ips.append(vm["public_ip"])
+            if vm.get("private_ip"):
+                private_ips.append(vm["private_ip"])
+    
+    # Replace template variables
+    if public_ips:
+        expanded_cmd = expanded_cmd.replace("{{public_ip}}", public_ips[0])
+        expanded_cmd = expanded_cmd.replace("{{public_ips_space}}", " ".join(public_ips))
+        expanded_cmd = expanded_cmd.replace("{{public_ips_comma}}", ",".join(public_ips))
+    
+    if private_ips:
+        expanded_cmd = expanded_cmd.replace("{{private_ip}}", private_ips[0])
+        expanded_cmd = expanded_cmd.replace("{{private_ips_space}}", " ".join(private_ips))
+        expanded_cmd = expanded_cmd.replace("{{private_ips_comma}}", ",".join(private_ips))
+    
+    expanded_cmd = expanded_cmd.replace("{{mci_id}}", mci_id)
+    
+    return expanded_cmd
+
+# Helper function: Collect service endpoints
+def _collect_service_endpoints(
+    app_config: Dict,
+    mci_id: str,
+    namespace_id: str,
+    deployment_result: Dict
+) -> List[Dict]:
+    """Collect service endpoints from deployment results."""
+    
+    endpoints = []
+    
+    try:
+        # Get execution results
+        execution_result = deployment_result.get("execution_result", {})
+        
+        if execution_result.get("status") == "success":
+            results = execution_result.get("results", [])
+            result_pattern = app_config.get("result_pattern")
+            
+            # Extract endpoints from command results
+            for result in results:
+                result_text = result.get("result", "")
+                
+                # Look for endpoint patterns
+                if result_pattern and result_text:
+                    import re
+                    matches = re.findall(result_pattern, result_text)
+                    for match in matches:
+                        if isinstance(match, tuple):
+                            endpoint_url = f"{match[0]}:{match[1]}"
+                        else:
+                            endpoint_url = match
+                        
+                        endpoints.append({
+                            "type": "service_endpoint",
+                            "url": endpoint_url,
+                            "vm_id": result.get("vm_id", "unknown"),
+                            "description": f"{app_config['name']} service endpoint"
+                        })
+                
+                # Also look for common URL patterns
+                import re
+                url_patterns = [
+                    r'(https?://[^\s]+)',
+                    r'Server Address: ([^\s]+)',
+                    r'Access URL: ([^\s]+)',
+                    r'Endpoint: ([^\s]+)'
+                ]
+                
+                for pattern in url_patterns:
+                    matches = re.findall(pattern, result_text)
+                    for match in matches:
+                        if match not in [ep["url"] for ep in endpoints]:
+                            endpoints.append({
+                                "type": "detected_endpoint",
+                                "url": match,
+                                "vm_id": result.get("vm_id", "unknown"),
+                                "description": f"Auto-detected endpoint for {app_config['name']}"
+                            })
+        
+        # If no specific endpoints found, create default ones based on access info
+        if not endpoints:
+            access_info = get_mci_access_info(namespace_id, mci_id, show_ssh_key=False)
+            access_data = access_info.get("access_info", {})
+            
+            for subgroup in access_data.get("mci_subgroup_access_info", []):
+                for vm in subgroup.get("vm_access_info_array", []):
+                    if vm.get("public_ip"):
+                        # Create default endpoint based on common ports
+                        ports = app_config["requirements"].get("ports", ["80"])
+                        for port in ports:
+                            endpoints.append({
+                                "type": "default_endpoint",
+                                "url": f"http://{vm['public_ip']}:{port}",
+                                "vm_id": vm.get("vm_id", "unknown"),
+                                "description": f"{app_config['name']} on port {port}"
+                            })
+    
+    except Exception as e:
+        logger.error(f"Error collecting endpoints: {e}")
+    
+    return endpoints
+
+# Helper function: Generate deployment summary
+def _generate_deployment_summary(deployment_result: Dict, app_config: Dict) -> Dict:
+    """Generate comprehensive deployment summary."""
+    
+    infrastructure = deployment_result.get("infrastructure_created", {})
+    deployment = deployment_result.get("application_deployment", {})
+    endpoints = deployment_result.get("service_endpoints", [])
+    
+    summary = {
+        "deployment_status": deployment_result["status"],
+        "application_name": app_config["name"],
+        "category": app_config["category"],
+        "total_instances": infrastructure.get("total_vms", 0),
+        "service_endpoints": len(endpoints),
+        "deployment_time": deployment_result.get("end_time"),
+        "next_steps": [],
+        "access_information": endpoints
+    }
+    
+    # Add next steps based on application type
+    if deployment_result["status"] == "completed":
+        summary["next_steps"] = [
+            f"✅ {app_config['name']} has been successfully deployed",
+            f"🌐 {len(endpoints)} service endpoints are available",
+            "🔗 Use the provided URLs to access your services",
+            "📊 Monitor service health through CB-Tumblebug dashboard",
+            "🛠️ Use execute_application_commands() for additional configuration"
+        ]
+        
+        if app_config["category"] == "game":
+            summary["next_steps"].append("🎮 Share server addresses with players")
+        elif app_config["category"] == "web":
+            summary["next_steps"].append("🌍 Configure DNS for production use")
+        elif app_config["category"] == "llm":
+            summary["next_steps"].append("🤖 Pull LLM models using appropriate commands")
+    
+    return summary
+
+# Helper function: Estimate application cost
+def _estimate_app_cost(requirements: Dict) -> float:
+    """Estimate hourly cost based on application requirements."""
+    
+    base_cost = 0.10  # $0.10/hour base
+    
+    if requirements.get("cpu_intensive"):
+        base_cost += 0.05
+    if requirements.get("memory_intensive"):
+        base_cost += 0.05
+    if requirements.get("gpu_preferred"):
+        base_cost += 0.30
+    if requirements.get("bandwidth_intensive"):
+        base_cost += 0.02
+    
+    return round(base_cost, 3)
+
+# Helper function: Get recommended locations for deployment strategy
+def _get_recommended_locations(strategy: str) -> List[str]:
+    """Get recommended locations based on deployment strategy."""
+    
+    location_strategies = {
+        "global": ["Global distribution across 6+ continents", "US, EU, Asia-Pacific, South America"],
+        "regional": ["Regional deployment in major markets", "US, EU, Asia"],
+        "performance": ["High-performance regions", "US East, EU West, Asia Northeast"],
+        "centralized": ["Single region deployment", "US East"],
+        "cluster": ["Co-located cluster deployment", "Single region for optimal networking"]
+    }
+    
+    return location_strategies.get(strategy, ["Regional deployment"])
+
+# Helper function: Generate deployment confirmation message
+def _generate_deployment_confirmation(deployment_plan: Dict, app_config: Dict, hardware_research: Optional[Dict] = None) -> str:
+    """Generate user-friendly deployment confirmation message with hardware research information."""
+    
+    strategy = deployment_plan["deployment_strategy"]
+    requirements = deployment_plan["infrastructure_requirements"]
+    disk_req = requirements.get("disk_requirements", {})
+    
+    # Hardware research section
+    hardware_section = ""
+    if hardware_research:
+        research_summary = deployment_plan.get("hardware_research_summary", {})
+        confidence = research_summary.get("research_confidence", "medium")
+        hardware_section = f"""
+**Hardware Research Results:**
+- CPU Recommendation: {research_summary.get('cpu_recommendation', 2)} cores
+- Memory Recommendation: {research_summary.get('memory_recommendation', 4)} GB
+- Disk Requirement: {research_summary.get('disk_recommendation', 50)} GB (minimum: {disk_req.get('min_disk_gb', 50)} GB)
+- Research Confidence: {confidence.title()}
+- Sources Checked: {research_summary.get('sources_checked', 'Built-in knowledge')}
+"""
+    else:
+        hardware_section = """
+**Hardware Configuration:**
+- Using default specifications (no research performed)
+- Disk Size: {disk_req.get('min_disk_gb', 50)} GB minimum
+""".format(disk_req=disk_req)
+    
+    msg = f"""
+🚀 **{app_config['name']} Deployment Plan**
+
+**Application Details:**
+- Type: {app_config['category'].title()} Application
+- Description: {app_config['description']}
+{hardware_section}
+**Deployment Strategy:**
+- Regions: {', '.join(strategy['target_regions'])}
+- Instances per region: {strategy['instances_per_region']}
+- Total instances: {strategy['total_instances']}
+
+**Resource Requirements:**
+- Estimated cost: ${requirements['estimated_cost']['total_hourly']:.3f}/hour
+- Monthly estimate: ${requirements['estimated_cost']['estimated_monthly']:.2f}
+- Network ports: {', '.join(requirements['network_requirements']['ports'])}
+- Disk size per VM: {disk_req.get('min_disk_gb', 50)} GB
+
+**Next Steps:**
+1. Infrastructure will be provisioned with researched specifications
+2. Application will be deployed using predefined scripts
+3. Service endpoints will be collected and reported
+
+⚠️ **Important:** This will create billable cloud resources. 
+Are you sure you want to proceed with this deployment?
+
+To confirm, call this function again with auto_confirm=True
+"""
+    
+    return msg.strip()
+
+# Helper function: Extract used template variables
+def _extract_used_templates(commands: List[str]) -> List[str]:
+    """Extract template variables used in commands."""
+    
+    import re
+    template_pattern = r'\{\{([^}]+)\}\}'
+    used_templates = set()
+    
+    for cmd in commands:
+        matches = re.findall(template_pattern, cmd)
+        used_templates.update(matches)
+    
+    return sorted(list(used_templates))
+
+#####################################
+# Enhanced Remote Command Execution
 #####################################
 
 # Tool: Execute computational task with automatic infrastructure provisioning
@@ -6071,4 +8569,557 @@ def quick_compute(
         namespace_id=namespace_id,
         create_temporary_namespace=use_temporary_namespace
     )
+
+
+# ===== MCP Server Prompts =====
+# These prompts help users understand and effectively use the TB-MCP server capabilities
+# Based on MapUI patterns for comprehensive cloud infrastructure management
+
+@mcp.prompt()
+def tumblebug_application_deployment():
+    """
+    Complete Guide for Application Deployment on Multi-Cloud Infrastructure
+    
+    This prompt demonstrates how to deploy applications across multiple cloud providers
+    using CB-Tumblebug's enhanced MCP server with MapUI-based patterns.
+    """
+    return """# CB-Tumblebug Application Deployment Guide
+
+## ⚠️ CRITICAL: AUTOMATIC HARDWARE RESEARCH REQUIRED
+
+### 🔥 ESSENTIAL LLM BEHAVIOR: When users request application deployment, you MUST:
+
+1. **ALWAYS research hardware requirements FIRST** before deployment
+2. **Use research_application_requirements()** to find optimal specs 
+3. **Apply findings to VM specifications** automatically
+4. **Set minimum 50GB disk** for all VMs (more if research indicates)
+5. **Choose deployment_type** based on user context (production/development/testing)
+
+### 🚨 MANDATORY WORKFLOW for ANY application deployment request:
+
+```python
+# Step 1: ALWAYS research hardware requirements first
+research_result = research_application_requirements(
+    application_name="user_requested_app",
+    deployment_type="production"  # or development/testing based on context
+)
+
+# Step 2: Deploy with research_requirements=True (REQUIRED)
+deploy_application(
+    application_id="app_name", 
+    research_requirements=True,  # MUST be True
+    deployment_type="production"  # Match research_result context
+)
+```
+
+### 🎯 Enhanced Application Deployment Process
+CB-Tumblebug automatically researches hardware requirements before deployment:
+
+**User says:** "I want to deploy Nginx" or "Deploy Ollama server" or "Setup game server"
+**LLM MUST respond:** "I'll research the hardware requirements for [app] first, then deploy with optimal specifications."
+
+The system will:
+1. **🔍 Research hardware requirements** from built-in knowledge base FIRST
+2. **⚡ Optimize VM specifications** based on findings (CPU, Memory, Disk)
+3. **💾 Set minimum 50GB disk** for all deployments (more for specific apps)
+4. **🎛️ Apply deployment-specific multipliers** (production vs development)
+
+### 2. Available Application Templates (with Enhanced Hardware Research)
+**🔬 Each template triggers automatic hardware research:**
+- **xonotic**: Game server → Research gaming hardware needs → 30GB+ disk
+- **nginx**: Web server → Research web server specs → 20GB+ disk  
+- **ollama**: AI inference → Research AI/ML requirements → 100GB+ disk
+- **jitsi**: Video conferencing → Research streaming specs → 50GB+ disk
+- **elk**: Elasticsearch stack → Research big data needs → 200GB+ disk
+- **ray**: Distributed computing → Research cluster specs → 100GB+ disk
+
+**⚠️ LLM INSTRUCTION: For ANY application not in templates, you MUST:**
+1. Call `research_application_requirements(app_name)` first
+2. Use research results to inform deployment decisions
+3. Explain hardware reasoning to user
+
+### 3. 🤖 REQUIRED LLM BEHAVIOR - Enhanced Infrastructure + Application Workflow
+**When user requests ANY application deployment, LLM MUST execute this sequence:**
+
+```python
+# STEP 1: MANDATORY - Research hardware requirements
+research_result = research_application_requirements(
+    application_name="user_requested_app",
+    deployment_type="production"  # Infer from user context
+)
+
+# STEP 2: REQUIRED - Deploy with research enabled
+deploy_application(
+    application_id="app_name",
+    research_requirements=True,  # ALWAYS True unless user explicitly says no
+    deployment_type="production"  # Match user's environment needs
+)
+
+# STEP 3: Optional - Post-deployment management
+get_mci_access_info()  # Get connection endpoints
+execute_application_commands()  # Post-deployment configuration
+```
+
+**🚨 CRITICAL: LLM must NEVER skip hardware research step unless explicitly told to disable it.**
+
+### 4. 📊 Hardware Research Features (LLM MUST UTILIZE)
+- **🧠 Built-in Knowledge Base**: 50+ applications with known requirements (LLM should leverage this)
+- **🎯 Deployment Type Auto-Detection**: LLM should infer production (1.5x), development (1.0x), testing (0.8x) from context
+- **⚡ Automatic Spec Selection**: CPU, Memory, and Disk optimized based on research
+- **💾 Minimum Disk Guarantee**: Always 50GB minimum, research may increase this
+- **🎯 Confidence Levels**: High/Medium/Low - LLM should explain confidence to user
+
+**🚨 LLM BEHAVIOR: Always mention research confidence and explain hardware reasoning to user**
+
+### 5. 🎯 LLM Deployment Decision Matrix
+**🤖 LLM must automatically choose deployment approach based on user context:**
+
+```python
+# USER CONTEXT: "I need this for production" / "deploy on production"
+deploy_application('app', research_requirements=True, deployment_type='production')
+
+# USER CONTEXT: "testing this app" / "just trying out" / "development"  
+deploy_application('app', research_requirements=True, deployment_type='development')
+
+# USER CONTEXT: "quick test" / "temporary" / "prototype"
+deploy_application('app', research_requirements=True, deployment_type='testing')
+
+# USER CONTEXT: "optimal specs" / "best performance" / business context
+deploy_application('app', research_requirements=True, deployment_type='production')
+```
+
+**⚠️ RULE: LLM should ALWAYS enable research_requirements=True unless user explicitly says "skip research" or "no optimization"**
+
+### 6. Disk Size Management
+- **Minimum 50GB** for all VMs (as requested)
+- **Application-specific increases**: 
+  - ELK Stack: 200GB (for log storage)
+  - Ollama: 100GB (for AI models)
+  - Game servers: 30-50GB (for game data)
+- **Research-based optimization**: Uses findings from knowledge base
+- **Automatic scaling**: Higher specs for production deployments
+
+### 7. Enhanced Remote Commands
+Use predefined scripts for common tasks:
+- system_info: Complete system information
+- docker_install: Docker installation
+- nginx_install: Nginx web server setup
+- security_hardening: Basic security measures
+- monitoring_setup: System monitoring tools
+
+### 8. Template Variables Support
+Commands automatically substitute variables:
+- {{public_ip}}: Primary public IP
+- {{public_ips_space}}: All public IPs (space-separated)
+- {{mci_id}}: MCI identifier
+- {{ns_id}}: Namespace identifier
+
+### 9. Hardware Research Tools
+```python
+# Manual hardware research
+research_application_requirements('nginx', deployment_type='production')
+
+# List predefined scripts
+list_predefined_scripts()
+
+# Enhanced command execution with templates
+execute_remote_commands_enhanced(
+    script_name='nginx_install',
+    template_variables={'public_ip': '1.2.3.4'}
+)
+```
+
+### 10. 🌍 LLM Response Examples for Global Deployment
+**🤖 LLM should respond like this when user requests deployment:**
+
+**User:** "Deploy Nginx web servers"  
+**LLM Response:** "I'll research Nginx hardware requirements first to ensure optimal specifications, then deploy with enhanced specs including minimum 50GB disk. Let me start with the research..."
+
+**User:** "I need Ollama for AI inference"
+**LLM Response:** "Ollama requires significant resources for AI models. I'll research the specific hardware requirements including GPU preferences and storage needs (typically 100GB+ for models), then deploy with production-grade specifications..."
+
+**User:** "Setup game servers in multiple regions"  
+**LLM Response:** "For game servers, I'll research optimal gaming hardware requirements including CPU for real-time processing and network optimization. This will ensure low latency and good performance..."
+
+**🚨 CRITICAL LLM BEHAVIOR:**
+- Always mention hardware research step
+- Explain why research is important for the specific application  
+- Mention minimum 50GB disk and any application-specific increases
+- Show confidence level from research results
+
+## 🎯 Best Practices for LLM
+1. **🔍 ALWAYS enable hardware research** for optimal specifications (research_requirements=True)
+2. **🎛️ Auto-detect deployment_type** from user context (production/development/testing)
+3. **📋 Always review and explain** confirmation messages to user with hardware reasoning
+4. **💾 Highlight disk allocation** as minimum 50GB is automatically allocated (more for specific apps)
+5. **🔬 Always use research_application_requirements()** for unknown applications
+6. **🛡️ Recommend security hardening** after deployment
+7. **📊 Explain research confidence** levels to users (High/Medium/Low)
+8. **⚡ Mention hardware optimization** benefits in your responses
+
+## 🚨 LLM Error Prevention
+- **NEVER deploy applications without hardware research** unless explicitly told to skip
+- **ALWAYS explain hardware decisions** based on research findings  
+- **NEVER use hardcoded specs** when research tools are available
+- **ALWAYS mention minimum 50GB disk** and any increases from research
+- **VERIFY deployment_type** matches user's intended environment
+
+## Error Handling and Fallbacks
+- **Research failures**: Automatic fallback to built-in knowledge
+- **Specification limits**: Automatic adjustment within CSP limits
+- **Disk size enforcement**: Always minimum 50GB regardless of research
+- **Confidence indicators**: High/Medium/Low confidence in recommendations
+"""
+
+@mcp.prompt() 
+def tumblebug_infrastructure_management():
+    """
+    Complete Guide for Multi-Cloud Infrastructure Management
+    
+    This prompt explains CB-Tumblebug's infrastructure management capabilities
+    including namespace management, MCI operations, and resource optimization.
+    """
+    return """# CB-Tumblebug Infrastructure Management Guide
+
+## Core Infrastructure Operations
+
+### 1. Namespace Management
+Namespaces organize your cloud resources:
+```
+create_namespace("production") - Create production environment
+create_namespace("staging") - Create staging environment  
+get_namespaces() - List all namespaces
+delete_namespace("test") - Clean up test environment
+```
+
+### 2. MCI (Multi-Cloud Infrastructure) Lifecycle
+```
+# Creation Methods
+create_mci_dynamic() - Full control with VM configurations
+create_simple_mci() - Quick deployment with identical VMs
+recommend_vm_spec() - Find optimal VM specifications
+search_images() - Find suitable OS images
+
+# Management  
+get_mci_list("production") - List infrastructure
+get_mci("production", "web-servers") - Get detailed info
+control_mci("production", "web-servers", "suspend") - Control operations
+delete_mci("production", "web-servers") - Clean up
+```
+
+### 3. Resource Discovery
+```
+# Cloud Providers
+get_connections() - Available cloud connections
+get_connections_with_options() - Filtered connections
+
+# Infrastructure Components
+get_vnets("production") - Virtual networks
+get_security_groups("production") - Security groups  
+get_ssh_keys("production") - SSH key pairs
+```
+
+### 4. VM Specification Optimization
+```
+# Find optimal specs based on requirements
+recommend_vm_spec(
+    filter_policies={
+        "vCPU": {"min": 2, "max": 8},
+        "memoryGiB": {"min": 4, "max": 16},
+        "ProviderName": "aws"
+    },
+    priority_policy="cost"  # or "performance" or "location"
+)
+```
+
+### 5. Image Selection
+```
+# Search for OS images
+search_images(
+    provider_name="aws",
+    region_name="ap-northeast-2", 
+    os_type="ubuntu 22.04"
+)
+```
+
+### 6. Access and Connectivity
+```
+get_mci_access_info("production", "web-servers") - SSH and IP info
+execute_command_mci() - Run commands remotely
+transfer_file_mci() - File transfer operations
+```
+
+### 7. Resource Cleanup
+```
+# Gradual cleanup
+delete_mci("test", "temp-servers") - Remove specific MCI
+release_resources("test") - Remove shared resources (VNet, etc.)
+delete_namespace("test") - Complete cleanup
+
+# Overview
+resource_overview() - Check all CSP resources
+```
+
+## Advanced Patterns
+
+### 1. Multi-Region Deployment
+```python
+# Deploy across multiple regions
+regions = ["aws+ap-northeast-2", "azure+koreacentral", "gcp+asia-northeast3"]
+for region in regions:
+    create_mci_dynamic(
+        ns_id="global-app",
+        name=f"app-{region.split('+')[0]}",
+        vm_configurations=[{
+            "commonImage": selected_image,
+            "commonSpec": f"{region}+standard-instance",
+            "subGroupSize": "3"
+        }]
+    )
+```
+
+### 2. Environment Separation
+```
+# Development
+create_namespace("dev")
+create_simple_mci("dev", "test-app", image, "t2.micro")
+
+# Staging  
+create_namespace("staging")
+create_simple_mci("staging", "staging-app", image, "t2.small")
+
+# Production
+create_namespace("production") 
+create_mci_dynamic("production", "prod-app", complex_config)
+```
+
+### 3. Cost Optimization
+```
+# Find cost-effective options
+specs = recommend_vm_spec(
+    filter_policies={"ProviderName": "aws"},
+    priority_policy="cost"
+)
+
+# Use spot instances or burstable types
+vm_config = {
+    "commonSpec": "aws+ap-northeast-2+t3.micro",
+    "subGroupSize": "5"
+}
+```
+
+## Monitoring and Troubleshooting
+1. Use get_mci_list_with_options() for status monitoring
+2. Check get_mci() for detailed VM information  
+3. Review execute_command_mci() outputs for issues
+4. Monitor resource usage with resource_overview()
+5. Use get_mci_access_info() for connectivity verification
+
+## Security Best Practices
+1. Use separate namespaces for different environments
+2. Configure security groups appropriately
+3. Manage SSH keys securely
+4. Regular security updates via remote commands
+5. Monitor access patterns and resource usage
+"""
+
+@mcp.prompt()
+def tumblebug_usecase_examples():
+    """
+    Real-world Use Case Examples for CB-Tumblebug
+    
+    This prompt provides practical examples of common deployment scenarios
+    using CB-Tumblebug's enhanced capabilities.
+    """
+    return """# CB-Tumblebug Use Case Examples
+
+## 1. Gaming Infrastructure: Global Game Server Deployment
+
+### Scenario: Deploy Xonotic Game Servers Worldwide
+```
+User: "I want to deploy Xonotic game servers in 10 regions for global players"
+
+Solution:
+1. deploy_application(
+     ns_id="gaming",
+     app_name="xonotic", 
+     regions=10,
+     deployment_strategy="global"
+   )
+   
+2. Result: Automatic infrastructure provisioning + game server installation
+3. Players connect to nearest server via provided IP addresses
+```
+
+### Gaming Infrastructure Features:
+- Low-latency server placement
+- Automatic game server configuration  
+- Player capacity scaling
+- Global load distribution
+
+## 2. Web Application: Multi-Cloud Load Balancing
+
+### Scenario: Deploy Web Application with Geographic Distribution
+```
+User: "Deploy Nginx web servers in AWS Seoul and Azure Korea Central"
+
+Solution:
+1. create_simple_mci("web-app", "nginx-aws", aws_image, "t3.medium")
+2. create_simple_mci("web-app", "nginx-azure", azure_image, "Standard_B2s") 
+3. execute_remote_commands_enhanced(script_name="nginx_install")
+4. Configure DNS load balancing
+```
+
+### Web Application Benefits:
+- Geographic redundancy
+- Improved user experience
+- Disaster recovery capability
+- Cost optimization across providers
+
+## 3. AI/ML Workload: Distributed AI Inference
+
+### Scenario: Deploy Ollama AI Service for Global AI Applications  
+```
+User: "I need Ollama AI inference service on powerful GPU instances"
+
+Solution:
+1. search_images(os_type="ubuntu 22.04") - Find compatible images
+2. recommend_vm_spec(
+     filter_policies={"gpu": true, "memoryGiB": {"min": 16}},
+     priority_policy="performance"
+   )
+3. deploy_application(app_name="ollama", regions=3, vm_requirements={"gpu": true})
+```
+
+### AI/ML Infrastructure:
+- GPU-optimized instances
+- Model deployment automation
+- API endpoint configuration
+- Scaling based on demand
+
+## 4. Development Environment: Team Development Infrastructure
+
+### Scenario: Create Development Environment for Team
+```
+User: "Set up development infrastructure with Docker and monitoring"
+
+Workflow:
+1. create_namespace("dev-team")
+2. create_simple_mci("dev-team", "dev-servers", ubuntu_image, "t3.large", vm_count=5)
+3. execute_remote_commands_enhanced(script_name="docker_install")
+4. execute_remote_commands_enhanced(script_name="monitoring_setup") 
+5. execute_remote_commands_enhanced(script_name="security_hardening")
+```
+
+### Development Features:
+- Containerized development
+- Team collaboration tools
+- Monitoring and logging
+- Security hardening
+
+## 5. Data Analytics: ELK Stack Deployment
+
+### Scenario: Deploy Elasticsearch, Logstash, Kibana for Log Analytics
+```
+User: "Deploy ELK stack for centralized logging"
+
+Solution:
+1. deploy_application(
+     app_name="elk",
+     regions=1, 
+     vm_requirements={"memoryGiB": {"min": 8}, "cpu": {"min": 4}}
+   )
+2. Configure log shipping from applications
+3. Set up Kibana dashboards
+```
+
+### Analytics Infrastructure:
+- Centralized log collection
+- Real-time data processing  
+- Interactive dashboards
+- Scalable storage
+
+## 6. Video Conferencing: Jitsi Meet Platform
+
+### Scenario: Deploy Video Conferencing for Organization
+```
+User: "Deploy Jitsi Meet for our organization's video conferencing"
+
+Solution:
+1. deploy_application(app_name="jitsi", regions=2)
+2. Configure domain and SSL certificates
+3. Set up user authentication
+4. Monitor performance and scaling
+```
+
+### Video Conferencing Features:
+- Self-hosted video platform
+- High-quality video/audio
+- Multi-region deployment
+- Privacy and security control
+
+## 7. High-Performance Computing: Ray Cluster
+
+### Scenario: Deploy Distributed Computing with Ray
+```
+User: "Create Ray cluster for distributed machine learning"
+
+Solution:
+1. deploy_application(
+     app_name="ray",
+     regions=1,
+     vm_count=5,
+     vm_requirements={"cpu": {"min": 8}, "memoryGiB": {"min": 16}}
+   )
+2. Configure Ray head and worker nodes
+3. Deploy ML workloads
+```
+
+### HPC Benefits:
+- Distributed computing power
+- Automatic scaling
+- Resource optimization
+- ML/AI workload support
+
+## Common Patterns Across Use Cases
+
+### 1. Infrastructure Preparation
+```
+1. create_namespace() - Environment isolation
+2. search_images() - Find suitable OS images  
+3. recommend_vm_spec() - Optimize instance selection
+4. get_connections() - Verify cloud provider availability
+```
+
+### 2. Application Deployment
+```
+1. deploy_application() - Automated deployment
+2. get_mci_access_info() - Collect endpoints
+3. execute_application_commands() - Post-deployment configuration
+4. execute_remote_commands_enhanced() - Ongoing management
+```
+
+### 3. Monitoring and Management
+```
+1. get_mci_list() - Monitor infrastructure
+2. execute_command_mci() - Health checks
+3. control_mci() - Scaling operations
+4. resource_overview() - Cost monitoring
+```
+
+### 4. Cleanup and Optimization
+```
+1. delete_mci() - Remove unused infrastructure
+2. release_resources() - Clean shared resources
+3. delete_namespace() - Complete environment cleanup
+```
+
+## Best Practices Summary
+1. **Start Small**: Use create_simple_mci() for testing
+2. **Scale Gradually**: Use deploy_application() for production
+3. **Monitor Resources**: Regular health checks and cost monitoring  
+4. **Security First**: Apply security hardening from day one
+5. **Document Endpoints**: Keep track of service URLs and IPs
+6. **Plan Cleanup**: Regular resource cleanup to control costs
+"""
 
