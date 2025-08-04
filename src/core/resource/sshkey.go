@@ -17,6 +17,7 @@ package resource
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
@@ -26,6 +27,42 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
+
+// normalizePrivateKey normalizes private key format from various CSP sources.
+// It handles Tencent Cloud's escaped newlines and ensures consistent format across providers.
+func normalizePrivateKey(privateKey string, keyValueList []model.KeyValue) string {
+	// If PrivateKey is already available and properly formatted, use it
+	if privateKey != "" && strings.Contains(privateKey, "\n") {
+		return privateKey
+	}
+
+	// Handle Tencent Cloud format with keyValueList containing escaped newlines
+	if privateKey == "" && len(keyValueList) > 0 {
+		for _, kv := range keyValueList {
+			if kv.Key == "PrivateKey" {
+				// Replace escaped newlines with actual newlines
+				normalizedKey := strings.ReplaceAll(kv.Value, "\\n", "\n")
+				log.Debug().
+					Str("original", kv.Value[:min(50, len(kv.Value))]).
+					Str("normalized", normalizedKey[:min(50, len(normalizedKey))]).
+					Msg("Normalized private key from keyValueList")
+				return normalizedKey
+			}
+		}
+	}
+
+	// Handle case where privateKey contains escaped newlines
+	if strings.Contains(privateKey, "\\n") {
+		normalizedKey := strings.ReplaceAll(privateKey, "\\n", "\n")
+		log.Debug().
+			Str("original", privateKey[:min(50, len(privateKey))]).
+			Str("normalized", normalizedKey[:min(50, len(normalizedKey))]).
+			Msg("Normalized private key from escaped format")
+		return normalizedKey
+	}
+
+	return privateKey
+}
 
 // TbSshKeyReqStructLevelValidation is a function to validate 'TbSshKeyReq' object.
 func TbSshKeyReqStructLevelValidation(sl validator.StructLevel) {
@@ -151,7 +188,10 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 	content.Fingerprint = tempSpiderKeyPairInfo.Fingerprint
 	content.Username = tempSpiderKeyPairInfo.VMUserID
 	content.PublicKey = tempSpiderKeyPairInfo.PublicKey
-	content.PrivateKey = tempSpiderKeyPairInfo.PrivateKey
+
+	// Normalize private key format from various CSP sources at storage time
+	content.PrivateKey = normalizePrivateKey(tempSpiderKeyPairInfo.PrivateKey, tempSpiderKeyPairInfo.KeyValueList)
+
 	content.Description = u.Description
 	content.KeyValueList = tempSpiderKeyPairInfo.KeyValueList
 	content.AssociatedObjectList = []string{}
@@ -172,7 +212,8 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 		// content.Fingerprint = u.Fingerprint
 		content.Username = u.Username
 		content.PublicKey = u.PublicKey
-		content.PrivateKey = u.PrivateKey
+		// Normalize private key for register option as well
+		content.PrivateKey = normalizePrivateKey(u.PrivateKey, content.KeyValueList)
 	}
 
 	log.Info().Msg("PUT CreateSshKey")

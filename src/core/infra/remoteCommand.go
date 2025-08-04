@@ -252,8 +252,37 @@ func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName stri
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
+
+	// Validate bastion IP before proceeding
+	if bastionIp == "" {
+		err = fmt.Errorf("bastion VM (ID: %s) does not have a public IP address", bastionNode.VmId)
+		log.Error().Err(err).Msg("")
+		return map[int]string{}, map[int]string{}, err
+	}
+
+	// Validate IP address format
+	if net.ParseIP(bastionIp) == nil {
+		err = fmt.Errorf("bastion VM (ID: %s) has invalid IP address: %s", bastionNode.VmId, bastionIp)
+		log.Error().Err(err).Msg("")
+		return map[int]string{}, map[int]string{}, err
+	}
+
 	bastionUserName, bastionSshKey, err := VerifySshUserName(nsId, bastionNode.MciId, bastionNode.VmId, bastionIp, bastionSshPort, givenUserName)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return map[int]string{}, map[int]string{}, err
+	}
+
 	bastionEndpoint := fmt.Sprintf("%s:%s", bastionIp, bastionSshPort)
+
+	// Log bastion connection details for debugging
+	log.Debug().
+		Str("bastionVmId", bastionNode.VmId).
+		Str("bastionIp", bastionIp).
+		Str("bastionPort", bastionSshPort).
+		Str("bastionEndpoint", bastionEndpoint).
+		Str("bastionUserName", bastionUserName).
+		Msg("Bastion connection details")
 
 	bastionSshInfo := model.SshInfo{
 		EndPoint:   bastionEndpoint,
@@ -417,7 +446,9 @@ func CheckConnectivity(host string, port string) error {
 
 	var lastErr error
 	for i := 0; i < retrycheck; i++ {
-		timeout := time.Duration(float64(initialTimeout) * (1.5 * float64(i)))
+		// Fix timeout calculation: start with initialTimeout for first attempt (i=0)
+		// then progressively increase for subsequent attempts
+		timeout := time.Duration(float64(initialTimeout) * (1.0 + 0.5*float64(i)))
 		if timeout > maxTimeout {
 			timeout = maxTimeout
 		}
@@ -486,7 +517,16 @@ func GetVmSshKey(nsId string, mciId string, vmId string) (string, string, string
 		return "", "", "", err
 	}
 
-	return keyContent.Username, keyContent.VerifiedUsername, keyContent.PrivateKey, nil
+	// Private key should already be normalized at storage time
+	privateKey := keyContent.PrivateKey
+
+	if privateKey == "" {
+		err = fmt.Errorf("private key not found in SSH key resource")
+		log.Error().Err(err).Msg("")
+		return "", "", "", err
+	}
+
+	return keyContent.Username, keyContent.VerifiedUsername, privateKey, nil
 }
 
 // UpdateVmSshKey is func to update VM SShKey
@@ -534,10 +574,18 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string) 
 	stdoutMap := make(map[int]string)
 	stderrMap := make(map[int]string)
 
+	// Log connection details for debugging DNS issues
+	log.Debug().
+		Str("bastionEndpoint", bastionInfo.EndPoint).
+		Str("bastionUserName", bastionInfo.UserName).
+		Str("targetEndpoint", targetInfo.EndPoint).
+		Str("targetUserName", targetInfo.UserName).
+		Msg("SSH connection attempt details")
+
 	// Parse the private key for the bastion host
 	bastionSigner, err := ssh.ParsePrivateKey(bastionInfo.PrivateKey)
 	if err != nil {
-		return stdoutMap, stderrMap, err
+		return stdoutMap, stderrMap, fmt.Errorf("failed to parse bastion private key: %v", err)
 	}
 
 	// Create an SSH client configuration for the bastion host
@@ -581,7 +629,9 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string) 
 	var lastErr error
 
 	for i := range retryCount {
-		timeout := min(time.Duration(float64(initialTimeout)*(1.5*float64(i))), maxTimeout)
+		// Fix timeout calculation: start with initialTimeout for first attempt (i=0)
+		// then progressively increase for subsequent attempts
+		timeout := min(time.Duration(float64(initialTimeout)*(1.0+0.5*float64(i))), maxTimeout)
 
 		log.Debug().Msgf("[Check Target via Bastion] %v:%v (Attempt %d/%d, Timeout: %v)",
 			targetHost, targetPort, i+1, retryCount, timeout)
@@ -594,21 +644,34 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string) 
 
 		go func() {
 			// Setup the bastion host connection
+			log.Debug().Str("bastionEndpoint", bastionInfo.EndPoint).Msg("Attempting to dial bastion host")
 			client, err := ssh.Dial("tcp", bastionInfo.EndPoint, bastionConfig)
 			if err != nil {
 				err = fmt.Errorf("failed to establish SSH connection to bastion host: %v", err)
+				log.Error().
+					Str("bastionEndpoint", bastionInfo.EndPoint).
+					Str("bastionUserName", bastionInfo.UserName).
+					Err(err).
+					Msg("Bastion SSH connection failed")
 				errCh <- err
 				return
 			}
+			log.Debug().Str("bastionEndpoint", bastionInfo.EndPoint).Msg("Successfully connected to bastion host")
 
 			sshClientCh <- client
 
+			log.Debug().Str("targetEndpoint", targetInfo.EndPoint).Msg("Attempting to dial target host via bastion")
 			targetConn, err := client.Dial("tcp", targetInfo.EndPoint)
 			if err != nil {
 				client.Close()
+				log.Error().
+					Str("targetEndpoint", targetInfo.EndPoint).
+					Err(err).
+					Msg("Target connection via bastion failed")
 				errCh <- err
 				return
 			}
+			log.Debug().Str("targetEndpoint", targetInfo.EndPoint).Msg("Successfully connected to target host via bastion")
 
 			connCh <- targetConn
 		}()
