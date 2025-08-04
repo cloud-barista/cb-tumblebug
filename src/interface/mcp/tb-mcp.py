@@ -31,10 +31,6 @@
 # For testing, you can use the Model Context Protocol Inspector.
 # https://modelcontextprotocol.io/docs/tools/inspector
 
-# IMPORTANT POLICY: install_mon_agent
-# By default, monitoring agent installation is set to "no" unless explicitly requested by user.
-# When install_mon_agent="no" (default), the parameter is omitted from API requests to reduce overhead.
-# Only when user explicitly requests install_mon_agent="yes", it will be included in the API call.
 
 
 import os
@@ -1516,7 +1512,6 @@ def recommend_vm_spec(
 #     name: str,
 #     description: str = "Created via MCP",
 #     vm_config: List[Dict] = None,
-#     install_mon_agent: str = "no",
 #     post_command: Optional[Dict] = None,
 #     hold: bool = False
 # ) -> Dict:
@@ -1529,7 +1524,6 @@ def recommend_vm_spec(
 #         name: MCI name
 #         description: MCI description
 #         vm_config: Detailed VM configuration list with specific resource IDs
-#         install_mon_agent: Whether to install monitoring agent (yes/no)
 #         post_command: Post-deployment command configuration
 #         hold: Whether to hold provisioning
     
@@ -1542,7 +1536,6 @@ def recommend_vm_spec(
 #     data = {
 #         "name": name,
 #         "description": description,
-#         "installMonAgent": install_mon_agent,
 #         "vm": vm_config
 #     }
     
@@ -1562,7 +1555,6 @@ def create_mci_dynamic(
     name: str,
     vm_configurations: List[Dict],
     description: str = "MCI created dynamically via MCP",
-    install_mon_agent: str = "no",
     system_label: str = "",
     label: Optional[Dict[str, str]] = None,
     post_command: Optional[Dict] = None,
@@ -1702,8 +1694,6 @@ def create_mci_dynamic(
             - label: Key-value pairs for VM labeling (optional)
             - os_requirements: Dict with os_type, use_case for auto image selection (optional)
         description: MCI description (optional)
-        install_mon_agent: Whether to install monitoring agent ("yes"/"no", default "no")
-                          Note: Only requests "yes" when explicitly needed. Default behavior omits this parameter.
         system_label: System label for special purposes (optional)
         label: Key-value pairs for MCI labeling (optional)
         post_command: Post-deployment command configuration with format:
@@ -1767,7 +1757,6 @@ def create_mci_dynamic(
             name=name,
             vm_configurations=vm_configurations,
             description=description,
-            install_mon_agent=install_mon_agent,
             hold=hold
         )
         
@@ -1777,7 +1766,6 @@ def create_mci_dynamic(
             "name": name,
             "vm_configurations": vm_configurations,
             "description": description,
-            "install_mon_agent": install_mon_agent,
             "system_label": system_label,
             "label": label,
             "post_command": post_command,
@@ -1949,8 +1937,6 @@ def create_mci_dynamic(
     if description:
         data["description"] = description
     # Only include installMonAgent if explicitly set to "yes"
-    if install_mon_agent and install_mon_agent.lower() == "yes":
-        data["installMonAgent"] = install_mon_agent
     if system_label:
         data["systemLabel"] = system_label
     if label:
@@ -1969,7 +1955,6 @@ def create_mci_dynamic(
         "namespace_id": ns_id,
         "mci_name": name,
         "vm_count": len(vm_configurations),
-        "install_mon_agent": install_mon_agent,
         "hold": hold
     }
     
@@ -2013,7 +1998,6 @@ def create_mci_with_proper_spec_mapping(
     name: str,
     vm_configurations: List[Dict],
     description: str = "MCI created with proper spec-to-image mapping",
-    install_mon_agent: str = "no",
     hold: bool = False,
     skip_confirmation: bool = False
 ) -> Dict:
@@ -2059,7 +2043,6 @@ def create_mci_with_proper_spec_mapping(
             - subGroupSize: Number of VMs in subgroup (optional)
             - os_requirements: Dict with os_type, use_case, etc. (optional)
         description: MCI description
-        install_mon_agent: Whether to install monitoring agent
         hold: Whether to hold provisioning
         skip_confirmation: Skip user confirmation step (for automated workflows, default: False)
     
@@ -2074,7 +2057,6 @@ def create_mci_with_proper_spec_mapping(
             name=name,
             vm_configurations=vm_configurations,
             description=description,
-            install_mon_agent=install_mon_agent,
             hold=hold
         )
         
@@ -2084,7 +2066,6 @@ def create_mci_with_proper_spec_mapping(
             "name": name,
             "vm_configurations": vm_configurations,
             "description": description,
-            "install_mon_agent": install_mon_agent,
             "hold": hold
         }
         creation_summary["_next_action"] = {
@@ -2231,7 +2212,6 @@ def create_mci_with_proper_spec_mapping(
             name=name,
             vm_configurations=final_vm_configs,
             description=description,
-            install_mon_agent=install_mon_agent,
             hold=hold
         )
         
@@ -2267,7 +2247,6 @@ def create_simple_mci(
     common_image: Optional[str] = None,
     vm_count: int = 1,
     description: str = "MCI created via simplified MCP interface",
-    install_mon_agent: str = "no",
     hold: bool = False,
     skip_confirmation: bool = False,
     force_create: bool = False
@@ -2347,8 +2326,6 @@ def create_simple_mci(
         common_image: CSP-specific image identifier from search_images() results (optional - auto-selected if omitted)
         vm_count: Number of identical VMs to create (default: 1)
         description: MCI description
-        install_mon_agent: Whether to install monitoring agent ("yes"/"no", default "no")
-                          Note: Only requests "yes" when explicitly needed. Default behavior omits this parameter.
         hold: Whether to hold provisioning for review
         skip_confirmation: Skip user confirmation step (for automated workflows, default: False)
         force_create: Bypass confirmation and create MCI immediately (default: False)
@@ -2383,7 +2360,6 @@ def create_simple_mci(
         name=name,
         vm_configurations=vm_configurations,
         description=description,
-        install_mon_agent=install_mon_agent,
         hold=hold,
         skip_confirmation=skip_confirmation,
         force_create=force_create  # Pass through force_create setting
@@ -2396,7 +2372,6 @@ def create_mci_with_spec_first(
     create_ns_if_missing: bool = False,
     ns_description: Optional[str] = None,
     description: str = "MCI created with spec-first workflow",
-    install_mon_agent: str = "no",
     hold: bool = False
 ) -> Dict:
     """
@@ -2455,8 +2430,6 @@ def create_mci_with_spec_first(
         create_ns_if_missing: Whether to create namespace if it doesn't exist
         ns_description: Description for new namespace if created
         description: MCI description
-        install_mon_agent: Whether to install monitoring agent ("yes"/"no", default "no")
-                          Note: Only requests "yes" when explicitly needed. Default behavior omits this parameter.
         hold: Whether to hold provisioning
     
     Returns:
@@ -2657,7 +2630,6 @@ def create_mci_with_spec_first(
         name=name,
         vm_configurations=vm_configs,
         description=description,
-        install_mon_agent=install_mon_agent,
         hold=hold
     )
     
@@ -2689,7 +2661,6 @@ def create_mci_with_namespace_management(
     create_ns_if_missing: bool = False,
     ns_description: Optional[str] = None,
     description: str = "MCI created with smart namespace management",
-    install_mon_agent: str = "no",
     hold: bool = False
 ) -> Dict:
     """
@@ -2728,8 +2699,6 @@ def create_mci_with_namespace_management(
         create_ns_if_missing: Whether to create namespace if it doesn't exist (default: False)
         ns_description: Description for new namespace if created
         description: MCI description
-        install_mon_agent: Whether to install monitoring agent ("yes"/"no", default "no")
-                          Note: Only requests "yes" when explicitly needed. Default behavior omits this parameter.
         hold: Whether to hold provisioning
     
     Returns:
@@ -2815,7 +2784,6 @@ def create_mci_with_namespace_management(
             name=name,
             vm_configurations=vm_configurations,
             description=description,
-            install_mon_agent=install_mon_agent,
             hold=hold
         )
         
@@ -5299,7 +5267,6 @@ def preview_mci_configuration(
     name: str,
     vm_configurations: List[Dict],
     description: str = "MCI to be created",
-    install_mon_agent: str = "no"
 ) -> Dict:
     """
     Preview MCI configuration before actual creation.
@@ -5319,7 +5286,6 @@ def preview_mci_configuration(
         name: MCI name
         vm_configurations: List of VM configurations to preview
         description: MCI description
-        install_mon_agent: Whether monitoring agent will be installed
     
     Returns:
         Comprehensive preview with configuration summary and recommendations
@@ -5329,7 +5295,6 @@ def preview_mci_configuration(
             "name": name,
             "namespace_id": ns_id,
             "description": description,
-            "monitoring_agent": install_mon_agent,
             "total_vms": len(vm_configurations)
         },
         "namespace_validation": {},
@@ -5511,12 +5476,6 @@ def preview_mci_configuration(
             "action": "Verify cross-cloud networking and security requirements"
         })
     
-    if install_mon_agent.lower() == "yes":
-        recommendations.append({
-            "priority": "info",
-            "message": "Monitoring agent will be installed on all VMs",
-            "action": "Ensure proper network access for monitoring data collection"
-        })
     
     if validation_issues > 0:
         recommendations.append({
@@ -5707,14 +5666,13 @@ def generate_mci_creation_summary(
         name: MCI name
         vm_configurations: VM configurations
         description: MCI description
-        install_mon_agent: Monitoring agent setting
         hold: Whether to hold for review
     
     Returns:
         Comprehensive summary with detailed cost analysis and confirmation prompt
     """
     # Get detailed preview first
-    preview = preview_mci_configuration(ns_id, name, vm_configurations, description, install_mon_agent)
+    preview = preview_mci_configuration(ns_id, name, vm_configurations, description)
     
     # Enhanced summary structure
     summary = {
@@ -5857,8 +5815,7 @@ def generate_mci_creation_summary(
         "complexity": deployment_complexity,
         "total_instances": total_instances,
         "estimated_total_time": f"{max(5, len(vm_configurations) * 2)}-{max(10, len(vm_configurations) * 5)} minutes",
-        "parallel_deployment": len(csp_distribution) > 1,
-        "monitoring_enabled": install_mon_agent.lower() == "yes"
+        "parallel_deployment": len(csp_distribution) > 1
     }
     
     # Risk assessment
@@ -5969,7 +5926,6 @@ def generate_mci_creation_summary(
         "auto_mapped_images": resource_summary.get("auto_mapped_images", 0),
         "manual_images": resource_summary.get("manual_images", 0),
         "validation_issues": resource_summary.get("validation_issues", 0),
-        "monitoring_agent": install_mon_agent
     }
     
     # Resource estimate
@@ -6281,7 +6237,6 @@ def create_mci_with_confirmation(
     name: str,
     vm_configurations: List[Dict],
     description: str = "MCI created with user confirmation",
-    install_mon_agent: str = "no",
     hold: bool = False,
     force_create: bool = False
 ) -> Dict:
@@ -6304,7 +6259,6 @@ def create_mci_with_confirmation(
         name: MCI name  
         vm_configurations: List of VM configurations
         description: MCI description
-        install_mon_agent: Whether to install monitoring agent
         hold: Whether to hold provisioning
         force_create: Set to True to actually create MCI after reviewing summary
     
@@ -6338,7 +6292,6 @@ def create_mci_with_confirmation(
             name=name,
             vm_configurations=vm_configurations,
             description=description,
-            install_mon_agent=install_mon_agent,
             hold=hold
         )
         
@@ -6355,7 +6308,6 @@ def create_mci_with_confirmation(
             "name": name,
             "vm_configurations": vm_configurations,
             "description": description,
-            "install_mon_agent": install_mon_agent,
             "hold": hold,
             "force_create": False
         }
@@ -6369,7 +6321,6 @@ def create_mci_with_confirmation(
             name=name,
             vm_configurations=vm_configurations,
             description=description,
-            install_mon_agent=install_mon_agent,
             hold=hold,
             skip_confirmation=True  # Skip internal confirmation since user already confirmed
         )
@@ -6383,7 +6334,6 @@ def create_simple_mci_with_confirmation(
     common_spec: str,
     vm_count: int = 1,
     description: str = "Simple MCI created with confirmation",
-    install_mon_agent: str = "no",
     hold: bool = False,
     force_create: bool = False
 ) -> Dict:
@@ -6398,7 +6348,6 @@ def create_simple_mci_with_confirmation(
         common_spec: Spec to use for all VMs
         vm_count: Number of identical VMs to create
         description: MCI description
-        install_mon_agent: Whether to install monitoring agent
         hold: Whether to hold provisioning
         force_create: Set to True for actual creation after review
     
@@ -6423,7 +6372,6 @@ def create_simple_mci_with_confirmation(
         name=name,
         vm_configurations=vm_configurations,
         description=description,
-        install_mon_agent=install_mon_agent,
         hold=hold,
         force_create=force_create
     )
@@ -7493,7 +7441,6 @@ def _provision_application_infrastructure(
             name=mci_name,
             vm_configurations=vm_configurations,
             description=f"Infrastructure for {deployment_plan['application_config']['name']}",
-            install_mon_agent="no"
         )
         
         return {
