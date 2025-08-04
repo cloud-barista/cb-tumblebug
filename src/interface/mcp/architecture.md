@@ -13,7 +13,7 @@ graph TB
     
     subgraph "MCP Protocol Layer"
         direction LR
-        MCPRemote[mcp-remote<br/>stdio → SSE Bridge]
+        MCPRemote[mcp-remote<br/>STDIO → SSE Bridge]
         PostgresMCP[PostgreSQL MCP<br/>Direct DB Access]
     end
     
@@ -46,17 +46,17 @@ graph TB
     end
     
     %% Main AI Assistant Flows
-    Claude -->|MCP stdio| MCPRemote
+    Claude -->|MCP STDIO| MCPRemote
     VSCode -->|MCP SSE| TBMCPCode
     MCPInspector -->|MCP SSE| TBMCPCode
     
     %% PostgreSQL Direct Access
-    Claude -.->|SQL MCP| PostgresMCP
-    VSCode -.->|SQL MCP| PostgresMCP
+    Claude -.->|MCP STDIO| PostgresMCP
+    VSCode -.->|MCP STDIO| PostgresMCP
     PostgresMCP -.->|SQL :5432| Postgres
     
     %% MCP Bridge Flow
-    MCPRemote -->|SSE :8000| TBMCPCode
+    MCPRemote -->|MCP SSE| TBMCPCode
     
     %% Internal Service Flow
     TBMCPCode -->|REST API| TBCore
