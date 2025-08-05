@@ -70,10 +70,10 @@ mcp = FastMCP(name="cb-tumblebug", host=host, port=port)
 def api_request(method, endpoint, json_data=None, params=None, files=None, headers=None):
     url = f"{TUMBLEBUG_API_BASE_URL}{endpoint}"
     
-    # Request configuration
+    # Enhanced request configuration with improved timeout handling
     request_config = {
         "auth": (TUMBLEBUG_USERNAME, TUMBLEBUG_PASSWORD),
-        "timeout": 600000  # 600 seconds (10 minutes) timeout
+        "timeout": (60, 600)  # (connection_timeout, read_timeout) - 10 minutes max for MCI operations
     }
     
     # Add parameters according to method
@@ -115,12 +115,40 @@ def api_request(method, endpoint, json_data=None, params=None, files=None, heade
         else:
             return {"message": "Success (No content)"}
             
+    except requests.exceptions.Timeout as e:
+        logger.error(f"Request timeout after 10 minutes: {str(e)}")
+        return {
+            "error": "Request timeout - operation took longer than 10 minutes",
+            "error_type": "timeout",
+            "suggestion": "Try breaking down the operation into smaller steps or check resource availability"
+        }
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Connection error: {str(e)}")
+        return {
+            "error": "Connection error - unable to reach CB-Tumblebug server",
+            "error_type": "connection_error",
+            "suggestion": "Check if CB-Tumblebug server is running and accessible"
+        }
     except requests.RequestException as e:
-        # Output error information for debugging
+        # Enhanced error handling for different response codes
         logger.error(f"API request error: {str(e)}")
         if hasattr(e, 'response') and e.response is not None:
             logger.error(f"Status code: {e.response.status_code}")
             logger.error(f"Response text: {e.response.text[:200]}")
+            
+            # Handle specific error cases
+            if e.response.status_code == 400:
+                try:
+                    error_data = json.loads(e.response.text)
+                    if "rollback completed successfully" in str(error_data):
+                        return {
+                            "error": "Resource creation failed and was rolled back",
+                            "error_type": "resource_creation_failed",
+                            "details": error_data,
+                            "suggestion": "Check resource quotas, network settings, or try a different region/provider"
+                        }
+                except json.JSONDecodeError:
+                    pass
         
         error_response = None
         
@@ -1505,6 +1533,158 @@ def recommend_vm_spec(
     # Summarize response to reduce token usage
     return _summarize_vm_specs(raw_response, include_details=include_full_details)
 
+# Tool: Review MCI Dynamic Request (Pre-validation)
+@mcp.tool()
+def review_mci_dynamic_request(
+    ns_id: str,
+    name: str,
+    vm_configurations: List[Dict],
+    description: str = "MCI created dynamically via MCP",
+    system_label: str = "",
+    label: Optional[Dict[str, str]] = None,
+    post_command: Optional[Dict] = None,
+    hold: bool = False
+) -> Dict:
+    """
+    🔍 CRITICAL PRE-VALIDATION: Review and validate MCI Dynamic Request before actual creation.
+    
+    **MANDATORY USAGE BEFORE MCI CREATION:**
+    This tool performs comprehensive validation of your MCI creation request to:
+    - Validate VM specifications and configurations
+    - Check resource availability and compatibility
+    - Identify potential issues before deployment
+    - Provide optimization recommendations
+    - Estimate costs and deployment time
+    
+    **RECOMMENDED WORKFLOW:**
+    ```python
+    # STEP 1: ALWAYS review before creating MCI
+    review_result = review_mci_dynamic_request(
+        ns_id="my-project",
+        name="web-app-cluster",
+        vm_configurations=vm_configs  # From recommend_vm_spec()
+    )
+    
+    # STEP 2: Check validation results
+    if review_result.get("validation_passed", False):
+        # Safe to proceed with MCI creation
+        mci = create_mci_dynamic(...)
+    else:
+        # Address validation issues first
+        print("Validation failed:", review_result.get("issues", []))
+    ```
+    
+    **VALIDATION CHECKS PERFORMED:**
+    - ✅ VM specification validity (commonSpec format and existence)
+    - ✅ Image compatibility with specifications  
+    - ✅ Resource quotas and availability
+    - ✅ Network configuration validation
+    - ✅ Security group and SSH key requirements
+    - ✅ Cross-CSP compatibility issues
+    - ✅ Cost estimation and optimization suggestions
+    
+    Args:
+        ns_id: Namespace ID for MCI deployment
+        name: MCI name (must be unique within namespace)
+        vm_configurations: List of VM configuration dictionaries. Each VM config should include:
+            - commonSpec: VM specification ID from recommend_vm_spec() (REQUIRED)
+            - commonImage: CSP-specific image identifier (optional - auto-mapped if omitted)
+            - name: VM or subGroup name (optional)
+            - description: VM description (optional)
+            - subGroupSize: Number of VMs in subgroup (default "1")
+            - connectionName: Specific connection name (optional)
+            - rootDiskSize: Root disk size in GB (optional)
+            - rootDiskType: Root disk type (optional)
+            - vmUserPassword: VM user password (optional)
+            - label: Key-value pairs for VM labeling (optional)
+        description: MCI description
+        system_label: System label for special purposes
+        label: Key-value pairs for MCI labeling
+        post_command: Post-deployment command configuration with format:
+            {"command": ["command1", "command2"], "userName": "username"}
+        hold: Whether to hold provisioning for review
+    
+    Returns:
+        Comprehensive validation results including:
+        - validation_passed: Boolean indicating if validation passed
+        - summary: High-level validation summary
+        - vm_validations: Detailed validation for each VM configuration
+        - issues: List of critical issues that must be addressed
+        - warnings: List of warnings and recommendations
+        - info: General information and suggestions
+        - estimated_cost: Cost estimation if available
+        - deployment_time_estimate: Expected deployment duration
+        - optimization_suggestions: Recommendations for improvement
+        
+    **EXAMPLE RESPONSE:**
+    ```json
+    {
+        "validation_passed": true,
+        "summary": "All VM configurations are valid",
+        "vm_validations": [
+            {
+                "vm_index": 0,
+                "status": "valid",
+                "spec_info": {...},
+                "image_info": {...},
+                "issues": [],
+                "warnings": [],
+                "info": ["Custom root disk type configured: gp3"]
+            }
+        ],
+        "estimated_cost": "~$0.15/hour",
+        "deployment_time_estimate": "3-5 minutes",
+        "optimization_suggestions": [...]
+    }
+    ```
+    
+    **⚠️ IMPORTANT NOTES:**
+    - This tool does NOT create actual infrastructure
+    - Use create_mci_dynamic() only after successful validation
+    - Address all critical issues before proceeding
+    - Consider optimization suggestions for better performance/cost
+    """
+    # Build request data according to model.TbMciDynamicReq spec
+    data = {
+        "name": name,
+        "description": description,
+        "vm": vm_configurations
+    }
+    
+    # Add optional parameters
+    if system_label:
+        data["systemLabel"] = system_label
+    if label:
+        data["label"] = label
+    if post_command:
+        data["postCommand"] = post_command
+    if hold:
+        data["hold"] = hold
+    
+    # Make API request to review endpoint
+    url = f"/ns/{ns_id}/mciDynamicReview"
+    result = api_request("POST", url, json_data=data)
+    
+    # Enhance result with additional guidance
+    if isinstance(result, dict):
+        # Add user-friendly summary if validation passed
+        if result.get("summary", {}).get("validationPassed", False):
+            result["_guidance"] = "✅ Validation passed! You can proceed with create_mci_dynamic() using the same parameters."
+            result["_next_step"] = f"create_mci_dynamic(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>)"
+        else:
+            result["_guidance"] = "❌ Validation failed. Please address the issues before proceeding with MCI creation."
+            result["_next_step"] = "Fix the reported issues and run review_mci_dynamic_request() again."
+        
+        # Add workflow recommendations
+        result["_workflow_tips"] = [
+            "Always run review_mci_dynamic_request() before create_mci_dynamic()",
+            "Address all critical issues (errors) before deployment",
+            "Consider optimization suggestions for better performance",
+            "Use hold=True in create_mci_dynamic() for manual review if needed"
+        ]
+    
+    return result
+
 # # Tool: Create MCI (Traditional method)
 # @mcp.tool()
 # def create_mci(
@@ -1749,7 +1929,56 @@ def create_mci_dynamic(
     - Use subGroupSize > 1 to create multiple VMs with same configuration
     - For multi-CSP deployments, each VM will automatically get its provider-specific image
     """
-    # STEP 0: User confirmation workflow (unless explicitly skipped or forced)
+    
+    # STEP 0: AUTOMATIC PRE-VALIDATION (always performed unless explicitly skipped)
+    if not force_create:
+        print("🔍 Performing automatic pre-validation of MCI configuration...")
+        
+        # Run comprehensive validation using review API
+        review_result = review_mci_dynamic_request(
+            ns_id=ns_id,
+            name=name,
+            vm_configurations=vm_configurations,
+            description=description,
+            system_label=system_label,
+            label=label,
+            post_command=post_command,
+            hold=hold
+        )
+        
+        # Check validation results
+        validation_passed = review_result.get("summary", {}).get("validationPassed", False)
+        
+        if not validation_passed:
+            # Critical validation failure - cannot proceed
+            return {
+                "error": "❌ MCI configuration validation failed",
+                "validation_result": review_result,
+                "critical_issues": review_result.get("summary", {}).get("totalErrors", 0),
+                "warnings": review_result.get("summary", {}).get("totalWarnings", 0),
+                "guidance": [
+                    "Fix all critical issues before proceeding with MCI creation",
+                    "Check vm_validations array for specific VM configuration problems",
+                    "Use review_mci_dynamic_request() for detailed validation analysis",
+                    "Ensure all commonSpec values come from recommend_vm_spec() results"
+                ],
+                "next_steps": [
+                    "1. Address all errors reported in validation_result",
+                    "2. Re-run review_mci_dynamic_request() to verify fixes",
+                    "3. Use create_mci_dynamic() again after validation passes"
+                ]
+            }
+        else:
+            print("✅ Pre-validation passed! Proceeding with MCI creation workflow...")
+            
+            # Add validation summary to any confirmation workflow
+            if not skip_confirmation:
+                print("📊 Validation Summary:")
+                print(f"   • Total VMs validated: {len(vm_configurations)}")
+                print(f"   • Warnings: {review_result.get('summary', {}).get('totalWarnings', 0)}")
+                print(f"   • Info messages: {review_result.get('summary', {}).get('totalInfo', 0)}")
+    
+    # STEP 1: User confirmation workflow (unless explicitly skipped or forced)
     if not skip_confirmation and not force_create:
         # Generate comprehensive creation summary with cost analysis
         creation_summary = generate_mci_creation_summary(
@@ -6891,14 +7120,34 @@ APPLICATION_CONFIGS = {
 @mcp.tool()
 def list_application_templates() -> Dict:
     """
-    List all available application deployment templates with their specifications.
+    List predefined applications with optimized usecase commands (Strategy A).
+    
+    🚨 CRITICAL: This tool identifies applications that have tested, optimized deployment scripts.
+    
+    **LLM Decision Logic:**
+    1. Call this tool FIRST when user requests application deployment
+    2. If application found in results → Use Strategy A (exact usecase commands)
+    3. If application NOT found → Use Strategy B (LLM-generated commands)
+    
+    **Applications with Predefined Scripts:**
+    - xonotic: Game server with specific port configuration
+    - nginx: Web server with optimized startup script
+    - ollama: LLM server with model deployment
+    - jitsi: Video conference with domain configuration
+    - elk: Elasticsearch, Logstash, Kibana stack
+    - ray: Distributed ML computing cluster
+    
+    **For Predefined Applications - Use Exact Commands:**
+    ✅ Use the exact wget/curl commands from APPLICATION_CONFIGS
+    ✅ Follow the specific parameter patterns ({{mci_id}}, {{public_ip}}, etc.)
+    ✅ DO NOT modify or recreate these scripts
     
     Returns:
-        Dictionary containing all available application templates with:
-        - Application categories (game, web, llm, ml, etc.)
-        - Requirements and resource specifications
-        - Deployment strategies and use cases
-        - Port requirements and network configurations
+        Dictionary containing predefined applications with:
+        - Application categories and descriptions
+        - Deployment strategies and requirements
+        - Port configurations and network requirements
+        - Cost estimates and location recommendations
     """
     try:
         templates = {}
@@ -6943,18 +7192,391 @@ def list_application_templates() -> Dict:
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
-# Tool: Deploy application with automatic infrastructure provisioning
+# Tool: Get application deployment guides and commands
 @mcp.tool()
-def deploy_application(
-    application_id: str,
-    regions: Union[int, List[str]] = 1,
-    instances_per_region: int = 1,
-    namespace_id: str = "default",
-    custom_config: Optional[Dict] = None,
-    auto_confirm: bool = False,
-    research_requirements: bool = True,
+def get_application_deployment_guide(
+    application_name: str,
     deployment_type: str = "production"
 ) -> Dict:
+    """
+    Get REFERENCE deployment guide for applications (Reference Only for Strategy B).
+    
+    🚨 IMPORTANT: This provides REFERENCE INFORMATION ONLY
+    
+    **Usage Strategy:**
+    - For APPLICATION_CONFIGS apps (xonotic, nginx, ollama, jitsi, elk, ray): IGNORE this tool completely
+    - For general apps (mongodb, jenkins, redis, etc.): Use hardware specs only, generate your own commands
+    
+    **What to Use:**
+    ✅ Hardware requirements (cpu_cores, memory_gb, disk_gb)
+    ✅ VM spec filters (vCPU, memoryGiB constraints)
+    ✅ Priority policy (cost, performance)
+    
+    **What to Ignore:**
+    ❌ Installation commands (generate your own based on LLM knowledge)
+    ❌ Verification commands (create appropriate ones)
+    ❌ Generic deployment workflow (use the 9-step workflow instead)
+    
+    **Correct LLM Workflow:**
+    1. Check list_application_templates() first
+    2. If app in APPLICATION_CONFIGS → Use Strategy A (ignore this tool)
+    3. If app NOT in APPLICATION_CONFIGS → Use Strategy B (use hardware specs only)
+    
+    Args:
+        application_name: Name of the application to deploy
+        deployment_type: Deployment environment ("production", "development", "testing")
+    
+    Returns:
+        Reference guide with hardware requirements and generic examples:
+        - Hardware requirements and VM spec recommendations (USE THESE)
+        - Generic installation commands (REFERENCE ONLY - Generate your own)
+        - Basic verification examples (REFERENCE ONLY - Create appropriate ones)
+        - Expected ports and access patterns (USE FOR REFERENCE)
+    """
+    app_lower = application_name.lower()
+    
+    # Application-specific deployment guides
+    deployment_guides = {
+        "nginx": {
+            "name": "Nginx Web Server",
+            "category": "web",
+            "description": "High-performance web server deployment",
+            "hardware_requirements": {
+                "cpu_cores": {"min": 1, "recommended": 2},
+                "memory_gb": {"min": 2, "recommended": 4},
+                "disk_gb": {"min": 20, "recommended": 50}
+            },
+            "vm_spec_filter": {
+                "vCPU": {"min": 2},
+                "memoryGiB": {"min": 4}
+            },
+            "priority": "cost",
+            "installation_commands": [
+                "sudo apt-get update -y",
+                "sudo apt-get install -y nginx",
+                "sudo systemctl start nginx",
+                "sudo systemctl enable nginx",
+                "sudo systemctl status nginx",
+                "echo 'Web Server accessible at: http://{{public_ip}}'"
+            ],
+            "verification_commands": [
+                "curl -I http://{{public_ip}}",
+                "sudo systemctl is-active nginx"
+            ],
+            "expected_ports": ["80", "443"],
+            "access_pattern": "http://{{public_ip}}"
+        },
+        "apache": {
+            "name": "Apache Web Server",
+            "category": "web",
+            "description": "Apache HTTP server deployment",
+            "hardware_requirements": {
+                "cpu_cores": {"min": 1, "recommended": 2},
+                "memory_gb": {"min": 2, "recommended": 4},
+                "disk_gb": {"min": 20, "recommended": 50}
+            },
+            "vm_spec_filter": {
+                "vCPU": {"min": 2},
+                "memoryGiB": {"min": 4}
+            },
+            "priority": "cost",
+            "installation_commands": [
+                "sudo apt-get update -y",
+                "sudo apt-get install -y apache2",
+                "sudo systemctl start apache2",
+                "sudo systemctl enable apache2",
+                "sudo systemctl status apache2",
+                "echo 'Apache Server accessible at: http://{{public_ip}}'"
+            ],
+            "verification_commands": [
+                "curl -I http://{{public_ip}}",
+                "sudo systemctl is-active apache2"
+            ],
+            "expected_ports": ["80", "443"],
+            "access_pattern": "http://{{public_ip}}"
+        },
+        "mysql": {
+            "name": "MySQL Database Server",
+            "category": "database",
+            "description": "MySQL database server deployment",
+            "hardware_requirements": {
+                "cpu_cores": {"min": 2, "recommended": 4},
+                "memory_gb": {"min": 4, "recommended": 8},
+                "disk_gb": {"min": 100, "recommended": 200}
+            },
+            "vm_spec_filter": {
+                "vCPU": {"min": 2},
+                "memoryGiB": {"min": 4}
+            },
+            "priority": "performance",
+            "installation_commands": [
+                "sudo apt-get update -y",
+                "sudo apt-get install -y mysql-server",
+                "sudo systemctl start mysql",
+                "sudo systemctl enable mysql",
+                "sudo mysql_secure_installation",
+                "echo 'MySQL Server running on: {{public_ip}}:3306'"
+            ],
+            "verification_commands": [
+                "sudo systemctl is-active mysql",
+                "sudo mysql -e 'SELECT VERSION();'"
+            ],
+            "expected_ports": ["3306"],
+            "access_pattern": "mysql://{{public_ip}}:3306"
+        },
+        "postgresql": {
+            "name": "PostgreSQL Database Server",
+            "category": "database",
+            "description": "PostgreSQL database server deployment",
+            "hardware_requirements": {
+                "cpu_cores": {"min": 2, "recommended": 4},
+                "memory_gb": {"min": 4, "recommended": 8},
+                "disk_gb": {"min": 100, "recommended": 200}
+            },
+            "vm_spec_filter": {
+                "vCPU": {"min": 2},
+                "memoryGiB": {"min": 8}
+            },
+            "priority": "performance",
+            "installation_commands": [
+                "sudo apt-get update -y",
+                "sudo apt-get install -y postgresql postgresql-contrib",
+                "sudo systemctl start postgresql",
+                "sudo systemctl enable postgresql",
+                "sudo -u postgres psql -c \"SELECT version();\"",
+                "echo 'PostgreSQL Server running on: {{public_ip}}:5432'"
+            ],
+            "verification_commands": [
+                "sudo systemctl is-active postgresql",
+                "sudo -u postgres psql -c 'SELECT version();'"
+            ],
+            "expected_ports": ["5432"],
+            "access_pattern": "postgresql://{{public_ip}}:5432"
+        },
+        "docker": {
+            "name": "Docker Container Runtime",
+            "category": "container",
+            "description": "Docker container runtime deployment",
+            "hardware_requirements": {
+                "cpu_cores": {"min": 2, "recommended": 4},
+                "memory_gb": {"min": 4, "recommended": 8},
+                "disk_gb": {"min": 50, "recommended": 100}
+            },
+            "vm_spec_filter": {
+                "vCPU": {"min": 2},
+                "memoryGiB": {"min": 4}
+            },
+            "priority": "cost",
+            "installation_commands": [
+                "sudo apt-get update -y",
+                "sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release",
+                "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg",
+                "echo \"deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null",
+                "sudo apt-get update -y",
+                "sudo apt-get install -y docker-ce docker-ce-cli containerd.io",
+                "sudo systemctl start docker",
+                "sudo systemctl enable docker",
+                "sudo usermod -aG docker $USER",
+                "echo 'Docker installed successfully on: {{public_ip}}'"
+            ],
+            "verification_commands": [
+                "sudo docker --version",
+                "sudo docker run hello-world"
+            ],
+            "expected_ports": ["2376"],
+            "access_pattern": "docker://{{public_ip}}:2376"
+        },
+        "node": {
+            "name": "Node.js Runtime",
+            "category": "runtime",
+            "description": "Node.js application runtime deployment",
+            "hardware_requirements": {
+                "cpu_cores": {"min": 2, "recommended": 4},
+                "memory_gb": {"min": 2, "recommended": 4},
+                "disk_gb": {"min": 50, "recommended": 100}
+            },
+            "vm_spec_filter": {
+                "vCPU": {"min": 2},
+                "memoryGiB": {"min": 4}
+            },
+            "priority": "cost",
+            "installation_commands": [
+                "sudo apt-get update -y",
+                "curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -",
+                "sudo apt-get install -y nodejs",
+                "node --version",
+                "npm --version",
+                "echo 'Node.js installed on: {{public_ip}}'"
+            ],
+            "verification_commands": [
+                "node --version",
+                "npm --version"
+            ],
+            "expected_ports": ["3000", "8080"],
+            "access_pattern": "http://{{public_ip}}:3000"
+        },
+        "python": {
+            "name": "Python Development Environment",
+            "category": "runtime",
+            "description": "Python development environment setup",
+            "hardware_requirements": {
+                "cpu_cores": {"min": 2, "recommended": 4},
+                "memory_gb": {"min": 2, "recommended": 4},
+                "disk_gb": {"min": 50, "recommended": 100}
+            },
+            "vm_spec_filter": {
+                "vCPU": {"min": 2},
+                "memoryGiB": {"min": 4}
+            },
+            "priority": "cost",
+            "installation_commands": [
+                "sudo apt-get update -y",
+                "sudo apt-get install -y python3 python3-pip python3-venv",
+                "python3 --version",
+                "pip3 --version",
+                "python3 -m venv ~/venv",
+                "echo 'Python environment ready on: {{public_ip}}'"
+            ],
+            "verification_commands": [
+                "python3 --version",
+                "pip3 --version"
+            ],
+            "expected_ports": ["8000", "5000"],
+            "access_pattern": "ssh://{{public_ip}}"
+        }
+    }
+    
+    # Find matching application
+    matched_app = None
+    for app_key, config in deployment_guides.items():
+        if app_key in app_lower or app_lower in app_key:
+            matched_app = config.copy()
+            break
+    
+    # Default guide for unknown applications
+    if not matched_app:
+        matched_app = {
+            "name": f"{application_name} (Generic)",
+            "category": "general",
+            "description": f"Generic deployment guide for {application_name}",
+            "hardware_requirements": {
+                "cpu_cores": {"min": 2, "recommended": 4},
+                "memory_gb": {"min": 4, "recommended": 8},
+                "disk_gb": {"min": 50, "recommended": 100}
+            },
+            "vm_spec_filter": {
+                "vCPU": {"min": 2},
+                "memoryGiB": {"min": 4}
+            },
+            "priority": "cost",
+            "installation_commands": [
+                "sudo apt-get update -y",
+                f"# Install {application_name} - customize these commands",
+                f"# sudo apt-get install -y {application_name.lower()}",
+                f"echo '{application_name} installation completed on: {{{{public_ip}}}}'"
+            ],
+            "verification_commands": [
+                f"# Verify {application_name} installation",
+                f"# systemctl is-active {application_name.lower()}"
+            ],
+            "expected_ports": ["80", "443"],
+            "access_pattern": "http://{{public_ip}}"
+        }
+    
+    # Apply deployment type adjustments
+    if deployment_type == "production":
+        # Increase resources for production
+        for resource in ["cpu_cores", "memory_gb", "disk_gb"]:
+            if resource in matched_app["hardware_requirements"]:
+                matched_app["hardware_requirements"][resource]["recommended"] = int(
+                    matched_app["hardware_requirements"][resource]["recommended"] * 1.5
+                )
+    
+    # Generate comprehensive deployment guide
+    deployment_guide = {
+        "application_info": {
+            "name": matched_app["name"],
+            "category": matched_app["category"],
+            "description": matched_app["description"],
+            "deployment_type": deployment_type
+        },
+        "hardware_requirements": matched_app["hardware_requirements"],
+        "deployment_workflow": {
+            "step_1_namespace": {
+                "title": "Create or Validate Namespace",
+                "description": "Ensure you have a proper namespace for deployment",
+                "tools_to_use": ["check_and_prepare_namespace", "create_namespace_with_validation"],
+                "example": "check_and_prepare_namespace('my-app-ns')"
+            },
+            "step_2_vm_specs": {
+                "title": "Get VM Specifications",
+                "description": "Find appropriate VM specifications based on application requirements",
+                "tools_to_use": ["recommend_vm_spec"],
+                "filter_policies": matched_app["vm_spec_filter"],
+                "priority_policy": matched_app["priority"],
+                "example": f"recommend_vm_spec(filter_policies={matched_app['vm_spec_filter']}, priority_policy='{matched_app['priority']}')"
+            },
+            "step_3_validation": {
+                "title": "Validate MCI Configuration",
+                "description": "Review MCI configuration before creation",
+                "tools_to_use": ["review_mci_dynamic_request"],
+                "example": "review_mci_dynamic_request(ns_id='my-app-ns', name='my-app-mci', vm_configurations=vm_configs)"
+            },
+            "step_4_mci_creation": {
+                "title": "Create MCI Infrastructure",
+                "description": "Create the multi-cloud infrastructure",
+                "tools_to_use": ["create_mci_dynamic"],
+                "example": "create_mci_dynamic(ns_id='my-app-ns', name='my-app-mci', vm_configurations=vm_configs)"
+            },
+            "step_5_application_deployment": {
+                "title": "Deploy Application",
+                "description": "Install and configure the application using remote commands",
+                "tools_to_use": ["execute_command_mci"],
+                "commands": matched_app["installation_commands"],
+                "example": "execute_command_mci(ns_id='my-app-ns', mci_id='my-app-mci', commands=installation_commands)"
+            },
+            "step_6_verification": {
+                "title": "Verify Deployment",
+                "description": "Verify the application is running correctly",
+                "tools_to_use": ["execute_command_mci", "get_mci_access_info"],
+                "commands": matched_app["verification_commands"],
+                "example": "execute_command_mci(ns_id='my-app-ns', mci_id='my-app-mci', commands=verification_commands)"
+            },
+            "step_7_access_info": {
+                "title": "Collect Access Information",
+                "description": "Get endpoints and access information",
+                "tools_to_use": ["get_mci_access_info"],
+                "expected_access": matched_app["access_pattern"],
+                "expected_ports": matched_app["expected_ports"],
+                "example": "get_mci_access_info(ns_id='my-app-ns', mci_id='my-app-mci')"
+            }
+        },
+        "commands": {
+            "installation": matched_app["installation_commands"],
+            "verification": matched_app["verification_commands"]
+        },
+        "expected_results": {
+            "ports": matched_app["expected_ports"],
+            "access_pattern": matched_app["access_pattern"],
+            "service_endpoints": f"Application will be accessible via {matched_app['access_pattern']}"
+        },
+        "troubleshooting": {
+            "common_issues": [
+                "Check if the application service is running: systemctl status <service>",
+                "Verify ports are open: sudo netstat -tlnp | grep <port>",
+                "Check logs: journalctl -u <service> -f",
+                "Verify firewall rules: sudo ufw status"
+            ],
+            "useful_commands": [
+                "ps aux | grep <application>",
+                "sudo systemctl restart <service>",
+                "tail -f /var/log/<application>.log",
+                "curl -I http://{{public_ip}}"
+            ]
+        }
+    }
+    
+    return deployment_guide
     """
     Deploy applications globally with automatic infrastructure provisioning and configuration.
     
@@ -8525,197 +9147,688 @@ def quick_compute(
 @mcp.prompt()
 def tumblebug_application_deployment():
     """
-    Complete Guide for Application Deployment on Multi-Cloud Infrastructure
+    Application Deployment Strategy and Workflow Guide
     
-    This prompt demonstrates how to deploy applications across multiple cloud providers
-    using CB-Tumblebug's enhanced MCP server with MapUI-based patterns.
+    This prompt guides LLMs to use different approaches based on application type:
+    - Known applications (APPLICATION_CONFIGS): Use existing usecase commands
+    - General applications: LLM generates deployment commands based on reference guides
     """
     return """# CB-Tumblebug Application Deployment Guide
 
-## ⚠️ CRITICAL: AUTOMATIC HARDWARE RESEARCH REQUIRED
+## 🚀 DEPLOYMENT STRATEGY: Intelligent Application-Specific Approach
 
-### 🔥 ESSENTIAL LLM BEHAVIOR: When users request application deployment, you MUST:
+### 🎯 LLM DECISION MATRIX: Choose Deployment Method Based on Application Type
 
-1. **ALWAYS research hardware requirements FIRST** before deployment
-2. **Use research_application_requirements()** to find optimal specs 
-3. **Apply findings to VM specifications** automatically
-4. **Set minimum 50GB disk** for all VMs (more if research indicates)
-5. **Choose deployment_type** based on user context (production/development/testing)
+**🤖 LLM MUST first determine the application type and use appropriate strategy:**
 
-### 🚨 MANDATORY WORKFLOW for ANY application deployment request:
+#### 📋 STEP 1: Application Type Detection
+```python
+# 1. Check if application is in predefined APPLICATION_CONFIGS
+list_application_templates()  # Get available predefined applications
+
+# 2. If found in APPLICATION_CONFIGS → Use Strategy A (Usecase Commands)
+# 3. If NOT found → Use Strategy B (LLM-Generated Commands)
+```
+
+### 🎯 STRATEGY A: Predefined Applications (APPLICATION_CONFIGS)
+
+**📋 For applications in APPLICATION_CONFIGS (xonotic, nginx, ollama, jitsi, elk, ray):**
+
+#### ✅ USE EXISTING USECASE COMMANDS - DO NOT REINVENT
+```python
+# EXAMPLE: Xonotic Game Server
+execute_command_mci(ns_id, mci_id, [
+    "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/xonotic/startServer.sh; chmod +x ~/startServer.sh",
+    "sudo ~/startServer.sh {{mci_id}} 26000 8 8",
+    "echo 'Server Address: {{public_ip}}:26000'"
+])
+
+# EXAMPLE: Nginx Web Server  
+execute_command_mci(ns_id, mci_id, [
+    "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/nginx/startServer.sh | bash -s -- --ip {{public_ip}}",
+    "echo 'Web Server: http://{{public_ip}}'"
+])
+
+# EXAMPLE: Ollama LLM Server
+execute_command_mci(ns_id, mci_id, [
+    "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOllama.sh | sh",
+    "echo 'LLM Server: http://{{public_ip}}:3000'"
+])
+
+# EXAMPLE: Jitsi Meet Conference
+execute_command_mci(ns_id, mci_id, [
+    "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/jitsi/startServer.sh",
+    "chmod +x ~/startServer.sh",
+    "sudo ~/startServer.sh {{public_ips_space}} DNS EMAIL"
+])
+
+# EXAMPLE: ELK Stack
+execute_command_mci(ns_id, mci_id, [
+    "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/elastic-stack/startELK.sh",
+    "chmod +x ~/startELK.sh",
+    "sudo ~/startELK.sh"
+])
+
+# EXAMPLE: Ray ML Cluster
+execute_command_mci(ns_id, mci_id, [
+    "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/ray/ray-head-setup.sh",
+    "chmod +x ~/ray-head-setup.sh",
+    "~/ray-head-setup.sh -i {{public_ip}}"
+])
+```
+
+**🚨 CRITICAL for Strategy A:**
+- **ALWAYS use the exact usecase commands from APPLICATION_CONFIGS**
+- **DO NOT modify or recreate these scripts**
+- **These are tested, optimized deployment scripts**
+- **Follow the exact command patterns shown above**
+
+### 🎯 STRATEGY B: General Applications (LLM-Generated Commands)
+
+**🧠 For applications NOT in APPLICATION_CONFIGS:**
+
+#### ✅ LLM MUST GENERATE SMART DEPLOYMENT COMMANDS
+```python
+# 1. Get reference guide (for hardware requirements only)
+guide = get_application_deployment_guide("application_name", "production")
+
+# 2. Use guide ONLY for hardware specs, NOT for exact commands
+vm_spec_filter = guide["vm_spec_filter"]  # Use this for VM specifications
+installation_commands = guide["commands"]["installation"]  # IGNORE - Generate your own
+
+# 3. LLM generates intelligent deployment commands based on application knowledge
+```
+
+**🤖 LLM Command Generation Examples:**
 
 ```python
-# Step 1: ALWAYS research hardware requirements first
-research_result = research_application_requirements(
-    application_name="user_requested_app",
-    deployment_type="production"  # or development/testing based on context
-)
+# Example 1: MongoDB deployment (LLM-generated)
+execute_command_mci(ns_id, mci_id, [
+    "sudo apt-get update -y",
+    "wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -",
+    "echo 'deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse' | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list",
+    "sudo apt-get update -y",
+    "sudo apt-get install -y mongodb-org",
+    "sudo systemctl start mongod",
+    "sudo systemctl enable mongod",
+    "sudo systemctl status mongod",
+    "echo 'MongoDB Server: {{public_ip}}:27017'"
+])
 
-# Step 2: Deploy with research_requirements=True (REQUIRED)
-deploy_application(
-    application_id="app_name", 
-    research_requirements=True,  # MUST be True
-    deployment_type="production"  # Match research_result context
+# Example 2: Jenkins CI/CD (LLM-generated)
+execute_command_mci(ns_id, mci_id, [
+    "sudo apt-get update -y",
+    "sudo apt-get install -y openjdk-11-jdk",
+    "wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -",
+    "sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'",
+    "sudo apt-get update -y",
+    "sudo apt-get install -y jenkins",
+    "sudo systemctl start jenkins",
+    "sudo systemctl enable jenkins",
+    "sudo cat /var/lib/jenkins/secrets/initialAdminPassword",
+    "echo 'Jenkins Server: http://{{public_ip}}:8080'"
+])
+
+# Example 3: Redis Cache (LLM-generated)
+execute_command_mci(ns_id, mci_id, [
+    "sudo apt-get update -y",
+    "sudo apt-get install -y redis-server",
+    "sudo sed -i 's/bind 127.0.0.1/bind 0.0.0.0/' /etc/redis/redis.conf",
+    "sudo systemctl restart redis-server",
+    "sudo systemctl enable redis-server",
+    "redis-cli ping",
+    "echo 'Redis Server: {{public_ip}}:6379'"
+])
+
+# Example 4: Apache Kafka (LLM-generated)
+execute_command_mci(ns_id, mci_id, [
+    "sudo apt-get update -y",
+    "sudo apt-get install -y openjdk-11-jdk",
+    "wget https://downloads.apache.org/kafka/2.8.2/kafka_2.13-2.8.2.tgz",
+    "tar -xzf kafka_2.13-2.8.2.tgz",
+    "cd kafka_2.13-2.8.2",
+    "bin/zookeeper-server-start.sh config/zookeeper.properties &",
+    "sleep 10",
+    "bin/kafka-server-start.sh config/server.properties &",
+    "echo 'Kafka Server: {{public_ip}}:9092'"
+])
+```
+
+**🧠 LLM Command Generation Guidelines:**
+1. **Think about the application's typical installation process**
+2. **Consider package managers (apt, yum, snap, docker)**
+3. **Include service startup and enablement**
+4. **Add configuration for network access if needed**
+5. **Include verification commands**
+6. **Provide clear access information**
+7. **Use your knowledge of the application's standard deployment**
+
+### 🔄 UNIFIED 9-STEP DEPLOYMENT WORKFLOW
+
+**🚨 REGARDLESS of Strategy A or B, ALWAYS follow this workflow:**
+
+#### Step 1: 📖 Application Type Detection
+```python
+# Check if predefined application exists
+templates = list_application_templates()
+
+# If not predefined, get reference guide for hardware specs only
+guide = get_application_deployment_guide("application_name", "production")
+```
+
+#### Step 2: 🏗️ Prepare Namespace
+```python
+check_and_prepare_namespace("my-app-namespace")
+```
+
+#### Step 3: 🎯 Get VM Specifications
+```python
+# Use hardware requirements from APPLICATION_CONFIGS or deployment guide
+specs = recommend_vm_spec(
+    filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
+    priority_policy="cost"
 )
 ```
 
-### 🎯 Enhanced Application Deployment Process
-CB-Tumblebug automatically researches hardware requirements before deployment:
-
-**User says:** "I want to deploy Nginx" or "Deploy Ollama server" or "Setup game server"
-**LLM MUST respond:** "I'll research the hardware requirements for [app] first, then deploy with optimal specifications."
-
-The system will:
-1. **🔍 Research hardware requirements** from built-in knowledge base FIRST
-2. **⚡ Optimize VM specifications** based on findings (CPU, Memory, Disk)
-3. **💾 Set minimum 50GB disk** for all deployments (more for specific apps)
-4. **🎛️ Apply deployment-specific multipliers** (production vs development)
-
-### 2. Available Application Templates (with Enhanced Hardware Research)
-**🔬 Each template triggers automatic hardware research:**
-- **xonotic**: Game server → Research gaming hardware needs → 30GB+ disk
-- **nginx**: Web server → Research web server specs → 20GB+ disk  
-- **ollama**: AI inference → Research AI/ML requirements → 100GB+ disk
-- **jitsi**: Video conferencing → Research streaming specs → 50GB+ disk
-- **elk**: Elasticsearch stack → Research big data needs → 200GB+ disk
-- **ray**: Distributed computing → Research cluster specs → 100GB+ disk
-
-**⚠️ LLM INSTRUCTION: For ANY application not in templates, you MUST:**
-1. Call `research_application_requirements(app_name)` first
-2. Use research results to inform deployment decisions
-3. Explain hardware reasoning to user
-
-### 3. 🤖 REQUIRED LLM BEHAVIOR - Enhanced Infrastructure + Application Workflow
-**When user requests ANY application deployment, LLM MUST execute this sequence:**
-
+#### Step 4: 🔧 Build VM Configurations
 ```python
-# STEP 1: MANDATORY - Research hardware requirements
-research_result = research_application_requirements(
-    application_name="user_requested_app",
-    deployment_type="production"  # Infer from user context
-)
-
-# STEP 2: REQUIRED - Deploy with research enabled
-deploy_application(
-    application_id="app_name",
-    research_requirements=True,  # ALWAYS True unless user explicitly says no
-    deployment_type="production"  # Match user's environment needs
-)
-
-# STEP 3: Optional - Post-deployment management
-get_mci_access_info()  # Get connection endpoints
-execute_application_commands()  # Post-deployment configuration
+vm_configurations = [{
+    "commonSpec": spec["id"],
+    "name": f"vm-{app_name}-1",
+    "description": f"VM for {app_name}",
+    "subGroupSize": "1"
+}]
 ```
 
-**🚨 CRITICAL: LLM must NEVER skip hardware research step unless explicitly told to disable it.**
-
-### 4. 📊 Hardware Research Features (LLM MUST UTILIZE)
-- **🧠 Built-in Knowledge Base**: 50+ applications with known requirements (LLM should leverage this)
-- **🎯 Deployment Type Auto-Detection**: LLM should infer production (1.5x), development (1.0x), testing (0.8x) from context
-- **⚡ Automatic Spec Selection**: CPU, Memory, and Disk optimized based on research
-- **💾 Minimum Disk Guarantee**: Always 50GB minimum, research may increase this
-- **🎯 Confidence Levels**: High/Medium/Low - LLM should explain confidence to user
-
-**🚨 LLM BEHAVIOR: Always mention research confidence and explain hardware reasoning to user**
-
-### 5. 🎯 LLM Deployment Decision Matrix
-**🤖 LLM must automatically choose deployment approach based on user context:**
-
+#### Step 5: ✅ Validate Configuration (MANDATORY)
 ```python
-# USER CONTEXT: "I need this for production" / "deploy on production"
-deploy_application('app', research_requirements=True, deployment_type='production')
-
-# USER CONTEXT: "testing this app" / "just trying out" / "development"  
-deploy_application('app', research_requirements=True, deployment_type='development')
-
-# USER CONTEXT: "quick test" / "temporary" / "prototype"
-deploy_application('app', research_requirements=True, deployment_type='testing')
-
-# USER CONTEXT: "optimal specs" / "best performance" / business context
-deploy_application('app', research_requirements=True, deployment_type='production')
+review = review_mci_dynamic_request(ns_id, name, vm_configurations)
 ```
 
-**⚠️ RULE: LLM should ALWAYS enable research_requirements=True unless user explicitly says "skip research" or "no optimization"**
-
-### 6. Disk Size Management
-- **Minimum 50GB** for all VMs (as requested)
-- **Application-specific increases**: 
-  - ELK Stack: 200GB (for log storage)
-  - Ollama: 100GB (for AI models)
-  - Game servers: 30-50GB (for game data)
-- **Research-based optimization**: Uses findings from knowledge base
-- **Automatic scaling**: Higher specs for production deployments
-
-### 7. Enhanced Remote Commands
-Use predefined scripts for common tasks:
-- system_info: Complete system information
-- docker_install: Docker installation
-- nginx_install: Nginx web server setup
-- security_hardening: Basic security measures
-- monitoring_setup: System monitoring tools
-
-### 8. Template Variables Support
-Commands automatically substitute variables:
-- {{public_ip}}: Primary public IP
-- {{public_ips_space}}: All public IPs (space-separated)
-- {{mci_id}}: MCI identifier
-- {{ns_id}}: Namespace identifier
-
-### 9. Hardware Research Tools
+#### Step 6: 🚀 Create Infrastructure
 ```python
-# Manual hardware research
-research_application_requirements('nginx', deployment_type='production')
+mci = create_mci_dynamic(ns_id, name, vm_configurations, force_create=True)
+```
 
-# List predefined scripts
-list_predefined_scripts()
+#### Step 7: 📦 Install Application
+```python
+# Strategy A: Use predefined APPLICATION_CONFIGS commands
+# Strategy B: Use LLM-generated intelligent commands
+execute_command_mci(ns_id, mci_id, deployment_commands)
+```
 
-# Enhanced command execution with templates
-execute_remote_commands_enhanced(
-    script_name='nginx_install',
-    template_variables={'public_ip': '1.2.3.4'}
+#### Step 8: 🔍 Verify Deployment
+```python
+# Generate appropriate verification commands
+execute_command_mci(ns_id, mci_id, verification_commands)
+```
+
+#### Step 9: 📋 Collect Access Information
+```python
+access_info = get_mci_access_info(ns_id, mci_id)
+```
+
+### 🎯 LLM BEHAVIOR REQUIREMENTS
+
+**🚨 CRITICAL LLM Decision Rules:**
+1. **ALWAYS check list_application_templates() first**
+2. **IF application in templates → Use Strategy A (exact usecase commands)**
+3. **IF application NOT in templates → Use Strategy B (LLM-generated commands)**
+4. **Use get_application_deployment_guide() as REFERENCE ONLY for Strategy B**
+5. **NEVER skip validation step**
+6. **ALWAYS complete all 9 steps**
+
+### 📋 Example Decision Process:
+
+```
+User: "Deploy xonotic game server"
+LLM Decision: 
+1. Check templates → xonotic found in APPLICATION_CONFIGS
+2. Use Strategy A → Execute exact usecase commands
+3. Commands: wget startServer.sh; sudo ~/startServer.sh {{mci_id}} 26000 8 8
+
+User: "Deploy MongoDB database"  
+LLM Decision:
+1. Check templates → mongodb NOT in APPLICATION_CONFIGS
+2. Use Strategy B → Generate intelligent deployment commands
+3. Commands: LLM creates MongoDB installation script (as shown above)
+
+User: "Deploy nginx web server"
+LLM Decision:
+1. Check templates → nginx found in APPLICATION_CONFIGS  
+2. Use Strategy A → Use exact nginx usecase script
+3. Commands: curl startServer.sh | bash -s -- --ip {{public_ip}}
+```
+
+### 🎯 SUCCESS METRICS
+
+**✅ Successful deployment must:**
+1. Follow correct strategy (A or B) based on application type
+2. Complete all 9 workflow steps
+3. Pass MCI configuration validation
+4. Execute appropriate installation commands
+5. Verify deployment success
+6. Provide clear access information
+
+**🚨 This intelligent approach ensures:**
+- **Predefined apps**: Use tested, optimized scripts
+- **General apps**: LLM creativity with reliable workflow
+- **All apps**: Consistent validation and verification
+
+### 📚 DEPLOYMENT GUIDES: Reference Information Only
+
+**🔍 About get_application_deployment_guide():**
+
+This tool provides **REFERENCE INFORMATION ONLY** for Strategy B (general applications):
+
+```python
+# ✅ Correct usage for Strategy B
+guide = get_application_deployment_guide("mongodb", "production")
+vm_spec_filter = guide["vm_spec_filter"]  # Use for VM specifications
+# installation_commands = guide["commands"]["installation"]  # IGNORE - Generate your own
+
+# ❌ Wrong usage
+# Do NOT copy commands directly from deployment guides for general apps
+# Do NOT use deployment guides for APPLICATION_CONFIGS apps
+```
+
+**📋 Deployment Guide Contents:**
+- **Hardware Requirements**: CPU, memory, disk specifications (USE THIS)
+- **VM Spec Filters**: Filter policies for recommend_vm_spec() (USE THIS)
+- **Installation Commands**: Generic examples (REFERENCE ONLY - Don't copy)
+- **Verification Commands**: Basic verification examples (REFERENCE ONLY)
+
+**🎯 LLM Strategy for Deployment Guides:**
+1. **Strategy A Apps**: Ignore deployment guides completely - use APPLICATION_CONFIGS commands
+2. **Strategy B Apps**: Use hardware specs from guides, generate your own installation commands
+3. **Unknown Apps**: Use generic deployment guide as starting reference only
+
+**⚠️ IMPORTANT NOTES:**
+- Deployment guides are NOT optimized, tested scripts
+- They provide generic installation patterns for reference
+- LLM should use domain knowledge to create better commands
+- Always prefer APPLICATION_CONFIGS commands when available
+
+## 🚨 ERROR HANDLING AND RECOVERY
+
+### Common Error Scenarios and Solutions
+
+#### 1. **Resource Creation Failures and Rollbacks**
+```
+Error: "rollback completed successfully after errors in resource preparation"
+```
+
+**🔍 Diagnosis:**
+- Infrastructure provisioning failed during resource creation
+- CB-Tumblebug performed automatic rollback
+- Common causes: quota limits, network issues, region availability
+
+**✅ LLM Recovery Actions:**
+1. **Check Resource Availability:**
+   ```python
+   # Verify cloud connections and quotas
+   connections = get_connections_with_options(filter_verified=True)
+   
+   # Try different regions or providers
+   specs = recommend_vm_spec(
+       filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
+       priority_policy="cost"  # Try cost-optimized specs
+   )
+   ```
+
+2. **Simplify Configuration:**
+   ```python
+   # Reduce VM count or specs
+   vm_configurations = [{
+       "commonSpec": "smaller_spec_id",  # Use smaller instance
+       "subGroupSize": "1"               # Start with single VM
+   }]
+   ```
+
+3. **Validate Before Retry:**
+   ```python
+   # Always validate before retrying
+   review = review_mci_dynamic_request(ns_id, name, vm_configurations)
+   ```
+
+#### 2. **Timeout Errors (10+ minute operations)**
+```
+Error: "Request timeout - operation took longer than 10 minutes"
+```
+
+**🔍 Diagnosis:**
+- Very long MCI creation times exceed client connection timeout
+- Complex multi-region deployments or large cluster operations
+- Resource contention or CSP-side delays
+
+**✅ LLM Recovery Actions:**
+1. **Check MCI Status:**
+   ```python
+   # Check if MCI was partially created despite timeout
+   mci_list = get_mci_list_with_options(ns_id, option="status")
+   
+   # Look for the MCI name in results
+   for mci in mci_list.get("mci", []):
+       if mci["name"] == "your-mci-name":
+           print(f"MCI Status: {mci['status']}")
+   ```
+
+2. **Retry with Simpler Configuration:**
+   ```python
+   # Start with single region/provider
+   vm_configurations = [{
+       "commonSpec": single_region_spec,
+       "subGroupSize": "1"
+   }]
+   ```
+
+3. **Use Staged Deployment:**
+   ```python
+   # Deploy incrementally
+   # Phase 1: Core infrastructure
+   create_mci_dynamic(ns_id, "core-mci", [core_vm])
+   
+   # Phase 2: Additional resources
+   create_mci_dynamic(ns_id, "additional-mci", [additional_vms])
+   ```
+
+#### 3. **Connection Errors**
+```
+Error: "Connection error - unable to reach CB-Tumblebug server"
+```
+
+**✅ LLM Recovery Actions:**
+1. **Verify Service Status:**
+   ```python
+   # Test basic connectivity
+   try:
+       namespaces = get_namespaces()
+       print("✅ Connection restored")
+   except:
+       print("❌ Still cannot connect")
+   ```
+
+2. **Inform User:**
+   - Explain the connection issue clearly
+   - Suggest checking CB-Tumblebug server status
+   - Provide retry instructions
+
+#### 4. **Validation Failures**
+```
+Error: "MCI configuration validation failed"
+```
+
+**✅ LLM Recovery Actions:**
+1. **Analyze Validation Results:**
+   ```python
+   review = review_mci_dynamic_request(ns_id, name, vm_configurations)
+   
+   # Check each VM's validation status
+   for vm in review.get("vm_validations", []):
+       if vm.get("issues"):
+           print(f"VM {vm['vm_index']}: {vm['issues']}")
+   ```
+
+2. **Fix Common Issues:**
+   - Use exact spec IDs from recommend_vm_spec()
+   - Ensure compatible image-spec combinations
+   - Verify resource quotas and limits
+
+### 🎯 LLM Error Communication Guidelines
+
+**✅ DO:**
+- Explain errors in user-friendly terms
+- Provide specific recovery steps
+- Offer alternative approaches
+- Show what was attempted and why it failed
+
+**❌ DON'T:**
+- Simply repeat technical error messages
+- Give up after first failure
+- Ignore timeout or connection issues
+- Skip validation steps to "save time"
+
+**📝 Error Response Template:**
+```
+I encountered a [specific error type] while [operation attempted]. 
+
+🔍 **What happened:** [User-friendly explanation]
+
+🛠️ **I'm trying these solutions:**
+1. [First recovery action]
+2. [Second recovery action]
+3. [Alternative approach]
+
+⏳ **Please wait while I resolve this...**
+```
+
+## � STEP-BY-STEP APPLICATION DEPLOYMENT WORKFLOW
+
+### Step 1: Get Application Deployment Guide
+```python
+# First, get detailed deployment guide for the application
+guide = get_application_deployment_guide("nginx", "production")
+# This provides hardware requirements, installation commands, and verification steps
+```
+
+### Step 2: Create or Validate Namespace
+```python
+# Ensure proper namespace exists
+namespace_result = check_and_prepare_namespace("my-app")
+# Or create new one: create_namespace_with_validation("my-app-production")
+```
+
+### Step 3: Get VM Specifications (Using Application Requirements)
+```python
+# Use hardware requirements from deployment guide
+specs = recommend_vm_spec(
+    filter_policies=guide["deployment_workflow"]["step_2_vm_specs"]["filter_policies"],
+    priority_policy=guide["deployment_workflow"]["step_2_vm_specs"]["priority_policy"]
 )
 ```
 
-### 10. 🌍 LLM Response Examples for Global Deployment
-**🤖 LLM should respond like this when user requests deployment:**
+### Step 4: Build VM Configuration
+```python
+# Create VM configurations using recommended specs
+vm_configurations = []
+for i, spec in enumerate(specs["recommended_specs"][:2]):
+    vm_configurations.append({
+        "commonSpec": spec["id"],  # Use exact spec ID from API
+        "name": f"app-vm-{i+1}",
+        "description": f"VM for {application_name} in {spec['regionName']}",
+        "subGroupSize": "1"
+        # commonImage: Auto-mapped based on spec
+    })
+```
 
-**User:** "Deploy Nginx web servers"  
-**LLM Response:** "I'll research Nginx hardware requirements first to ensure optimal specifications, then deploy with enhanced specs including minimum 50GB disk. Let me start with the research..."
+### Step 5: Validate MCI Configuration (MANDATORY)
+```python
+# Always validate before creating MCI
+review_result = review_mci_dynamic_request(
+    ns_id="my-app",
+    name="my-app-mci",
+    vm_configurations=vm_configurations
+)
 
-**User:** "I need Ollama for AI inference"
-**LLM Response:** "Ollama requires significant resources for AI models. I'll research the specific hardware requirements including GPU preferences and storage needs (typically 100GB+ for models), then deploy with production-grade specifications..."
+# Check validation results
+if review_result.get("summary", {}).get("validationPassed", False):
+    print("✅ Configuration validated - safe to proceed")
+else:
+    print("❌ Validation failed - fix issues first")
+    # Handle validation errors
+```
 
-**User:** "Setup game servers in multiple regions"  
-**LLM Response:** "For game servers, I'll research optimal gaming hardware requirements including CPU for real-time processing and network optimization. This will ensure low latency and good performance..."
+### Step 6: Create MCI Infrastructure
+```python
+# Create the infrastructure
+mci_result = create_mci_dynamic(
+    ns_id="my-app",
+    name="my-app-mci",
+    vm_configurations=vm_configurations,
+    description="Infrastructure for my application",
+    force_create=True  # Skip confirmation since we validated
+)
+```
 
-**🚨 CRITICAL LLM BEHAVIOR:**
-- Always mention hardware research step
-- Explain why research is important for the specific application  
-- Mention minimum 50GB disk and any application-specific increases
-- Show confidence level from research results
+### Step 7: Deploy Application Using Remote Commands
+```python
+# Get installation commands from deployment guide
+installation_commands = guide["commands"]["installation"]
 
-## 🎯 Best Practices for LLM
-1. **🔍 ALWAYS enable hardware research** for optimal specifications (research_requirements=True)
-2. **🎛️ Auto-detect deployment_type** from user context (production/development/testing)
-3. **📋 Always review and explain** confirmation messages to user with hardware reasoning
-4. **💾 Highlight disk allocation** as minimum 50GB is automatically allocated (more for specific apps)
-5. **🔬 Always use research_application_requirements()** for unknown applications
-6. **🛡️ Recommend security hardening** after deployment
-7. **📊 Explain research confidence** levels to users (High/Medium/Low)
-8. **⚡ Mention hardware optimization** benefits in your responses
+# Execute installation commands
+deployment_result = execute_command_mci(
+    ns_id="my-app",
+    mci_id="my-app-mci",  # From mci_result
+    commands=installation_commands
+)
+```
 
-## 🚨 LLM Error Prevention
-- **NEVER deploy applications without hardware research** unless explicitly told to skip
-- **ALWAYS explain hardware decisions** based on research findings  
-- **NEVER use hardcoded specs** when research tools are available
-- **ALWAYS mention minimum 50GB disk** and any increases from research
-- **VERIFY deployment_type** matches user's intended environment
+### Step 8: Verify Deployment
+```python
+# Get verification commands from deployment guide
+verification_commands = guide["commands"]["verification"]
 
-## Error Handling and Fallbacks
-- **Research failures**: Automatic fallback to built-in knowledge
-- **Specification limits**: Automatic adjustment within CSP limits
-- **Disk size enforcement**: Always minimum 50GB regardless of research
-- **Confidence indicators**: High/Medium/Low confidence in recommendations
+# Verify installation
+verification_result = execute_command_mci(
+    ns_id="my-app",
+    mci_id="my-app-mci",
+    commands=verification_commands
+)
+```
+
+### Step 9: Collect Access Information
+```python
+# Get access information and endpoints
+access_info = get_mci_access_info("my-app", "my-app-mci", show_ssh_key=False)
+
+# Display access URLs using the pattern from deployment guide
+access_pattern = guide["expected_results"]["access_pattern"]
+# e.g., "http://{{public_ip}}" becomes "http://1.2.3.4"
+```
+
+## 🔧 SUPPORTED APPLICATIONS WITH DEPLOYMENT GUIDES
+
+The following applications have detailed deployment guides available:
+
+### **Web Servers**
+- **nginx**: High-performance web server (recommended specs: 2 CPU, 4GB RAM)
+- **apache**: Apache HTTP server (recommended specs: 2 CPU, 4GB RAM)
+
+### **Databases**
+- **mysql**: MySQL database server (recommended specs: 2 CPU, 4GB RAM, 100GB disk)
+- **postgresql**: PostgreSQL database (recommended specs: 2 CPU, 8GB RAM, 100GB disk)
+
+### **Development Tools**
+- **docker**: Container runtime (recommended specs: 2 CPU, 4GB RAM, 100GB disk)
+- **node**: Node.js development environment (recommended specs: 2 CPU, 4GB RAM)
+- **python**: Python development environment (recommended specs: 2 CPU, 4GB RAM)
+
+### **For Unknown Applications**
+```python
+# For applications not in the guide, get generic deployment template
+guide = get_application_deployment_guide("my-custom-app", "production")
+# Provides generic deployment workflow with customizable commands
+```
+
+## 💡 WHY THIS APPROACH IS BETTER
+
+### ✅ **Advantages of Step-by-Step Approach:**
+1. **Reliability**: Each step can be verified before proceeding
+2. **Debugging**: Easy to identify and fix issues at each stage
+3. **Flexibility**: Customize each step based on specific requirements
+4. **Transparency**: User sees exactly what's happening
+5. **Error Recovery**: Can retry individual steps without full redeployment
+
+### ❌ **Problems with Automated deploy_application():**
+1. **Black Box**: Difficult to debug when something fails
+2. **All-or-Nothing**: Single failure breaks entire deployment
+3. **Less Flexible**: Hard to customize for specific needs
+4. **Complex Rollback**: Difficult to clean up partial deployments
+
+## 🚨 CRITICAL LLM BEHAVIOR REQUIREMENTS
+
+### When User Requests Application Deployment:
+
+1. **ALWAYS use get_application_deployment_guide() FIRST**
+2. **Follow the 9-step workflow above**
+3. **NEVER skip the validation step (Step 5)**
+4. **Use exact spec IDs from recommend_vm_spec()**
+5. **Execute installation commands from the deployment guide**
+6. **Verify deployment before declaring success**
+
+### Example User Request Handling:
+```
+User: "Deploy nginx web server"
+
+LLM Response:
+"I'll deploy nginx using the reliable step-by-step approach:
+1. First, let me get the nginx deployment guide...
+2. I'll create/validate the namespace...
+3. Get optimal VM specifications for nginx...
+4. Validate the MCI configuration...
+5. Create the infrastructure...
+6. Install nginx using remote commands...
+7. Verify the deployment...
+8. Provide access information..."
+```
+
+### Example Commands Flow:
+```python
+# 1. Get deployment guide
+guide = get_application_deployment_guide("nginx", "production")
+
+# 2. Prepare namespace
+check_and_prepare_namespace("web-servers")
+
+# 3. Get VM specs
+specs = recommend_vm_spec(
+    filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
+    priority_policy="cost"
+)
+
+# 4. Build VM config
+vm_configs = [{
+    "commonSpec": specs["recommended_specs"][0]["id"],
+    "name": "nginx-vm-1",
+    "description": "Nginx web server VM"
+}]
+
+# 5. Validate
+review = review_mci_dynamic_request("web-servers", "nginx-mci", vm_configs)
+
+# 6. Create MCI (if validation passed)
+mci = create_mci_dynamic("web-servers", "nginx-mci", vm_configs, force_create=True)
+
+# 7. Install nginx
+execute_command_mci("web-servers", "nginx-mci", [
+    "sudo apt-get update -y",
+    "sudo apt-get install -y nginx",
+    "sudo systemctl start nginx",
+    "sudo systemctl enable nginx",
+    "echo 'Web Server accessible at: http://{{public_ip}}'"
+])
+
+# 8. Verify
+execute_command_mci("web-servers", "nginx-mci", [
+    "curl -I http://{{public_ip}}",
+    "sudo systemctl is-active nginx"
+])
+
+# 9. Get access info
+access_info = get_mci_access_info("web-servers", "nginx-mci")
+```
+
+## 🎯 SUCCESS METRICS
+
+### A successful application deployment should:
+1. ✅ Complete all 9 steps without errors
+2. ✅ Pass MCI configuration validation
+3. ✅ Successfully execute installation commands
+4. ✅ Pass verification commands
+5. ✅ Provide clear access information to user
+6. ✅ Include troubleshooting guidance
+
+This approach ensures reliable, debuggable, and maintainable application deployments.
 """
 
 @mcp.prompt() 
@@ -9068,5 +10181,167 @@ Solution:
 4. **Security First**: Apply security hardening from day one
 5. **Document Endpoints**: Keep track of service URLs and IPs
 6. **Plan Cleanup**: Regular resource cleanup to control costs
+
+## 🔍 MCI Validation and Quality Assurance Workflow
+
+### MANDATORY Pre-Validation Process
+
+**✅ ALWAYS Follow This Workflow for MCI Creation:**
+
+```python
+# STEP 1: Search for appropriate VM specifications
+specs = recommend_vm_spec(
+    filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
+    priority_policy="cost"  # or "performance" or "location"
+)
+
+# STEP 2: Build VM configurations using ONLY returned spec IDs
+vm_configurations = []
+for i, spec in enumerate(specs["recommended_specs"][:2]):
+    vm_configurations.append({
+        "commonSpec": spec["id"],  # 🚨 CRITICAL: Use exact ID from API
+        "name": f"vm-{spec['providerName']}-{i+1}",
+        "description": f"VM in {spec['regionName']}",
+        "subGroupSize": "1"
+        # commonImage: Optional - auto-mapped if omitted
+    })
+
+# STEP 3: MANDATORY - Review configuration before creation
+review_result = review_mci_dynamic_request(
+    ns_id="my-project",
+    name="web-app-cluster", 
+    vm_configurations=vm_configurations,
+    description="Production web application cluster"
+)
+
+# STEP 4: Check validation results
+if review_result.get("summary", {}).get("validationPassed", False):
+    print("✅ Configuration validated successfully!")
+    print(f"Estimated cost: {review_result.get('estimated_cost', 'N/A')}")
+    print(f"Deployment time: {review_result.get('deployment_time_estimate', 'N/A')}")
+    
+    # STEP 5: Proceed with MCI creation
+    mci_result = create_mci_dynamic(
+        ns_id="my-project",
+        name="web-app-cluster",
+        vm_configurations=vm_configurations,
+        force_create=True  # Skip confirmation since we already reviewed
+    )
+    
+else:
+    print("❌ Validation failed!")
+    print("Issues to fix:")
+    for vm_validation in review_result.get("vm_validations", []):
+        if vm_validation.get("issues"):
+            print(f"VM {vm_validation['vm_index']}: {vm_validation['issues']}")
+```
+
+### Automatic Pre-Validation in create_mci_dynamic()
+
+**The create_mci_dynamic() function now includes automatic pre-validation:**
+
+1. **Automatic Review**: Every call to create_mci_dynamic() automatically runs review_mci_dynamic_request()
+2. **Validation Gate**: MCI creation is blocked if critical validation issues are found
+3. **Enhanced Feedback**: Detailed validation results guide you to fix configuration problems
+4. **Smart Recovery**: Clear guidance on how to address validation failures
+
+### Enhanced Error Prevention
+
+**🚨 CRITICAL VALIDATIONS PERFORMED:**
+
+✅ **VM Specification Validation**
+- Ensures commonSpec IDs are valid and available
+- Verifies specifications exist in target CSP/region
+- Validates resource quotas and limits
+
+✅ **Image Compatibility Validation**  
+- Checks image-spec compatibility across CSPs
+- Validates architecture compatibility (x86_64, ARM)
+- Ensures images are available in target regions
+
+✅ **Resource Availability Validation**
+- Verifies sufficient compute quotas
+- Checks network resource availability
+- Validates storage capacity and types
+
+✅ **Cost and Time Estimation**
+- Provides hourly and monthly cost estimates
+- Estimates deployment completion time
+- Identifies potential cost optimization opportunities
+
+✅ **Security and Compliance Validation**
+- Validates SSH key requirements
+- Checks security group configurations
+- Ensures network security policies
+
+### Example: Validated MCI Creation Workflow
+
+**Recommended Pattern for Error-Resilient MCI Creation:**
+
+1. **Get VM Specifications**: Use recommend_vm_spec() to get valid spec IDs
+2. **Build Configurations**: Create VM configs using exact spec IDs from API
+3. **Validate Configuration**: Use review_mci_dynamic_request() to check setup
+4. **Handle Validation Results**: Address any issues before proceeding
+5. **Create Infrastructure**: Use create_mci_dynamic() with force_create=True
+
+**Example Usage Pattern:**
+- Call recommend_vm_spec() with your requirements
+- Use returned spec["id"] values in vm_configurations
+- Run review_mci_dynamic_request() to validate
+- Check validation_passed status before proceeding
+- Use create_mci_dynamic() with validated configurations
+
+### LLM Integration Guidelines
+
+**When working with MCI creation, LLMs should:**
+
+1. **Always Use Validation**: Never skip the review_mci_dynamic_request() step
+2. **Interpret Results**: Analyze validation results and explain issues to users
+3. **Provide Guidance**: Offer specific steps to fix validation failures
+4. **Optimize Configurations**: Suggest improvements based on validation feedback
+5. **Estimate Costs**: Present cost implications clearly to users
+6. **Plan Deployments**: Use validation insights to optimize deployment strategies
+
+### Validation Result Analysis
+
+**Understanding Validation Responses:**
+
+```python
+{
+    "validation_passed": true,  # Overall validation status
+    "summary": {
+        "validationPassed": true,
+        "totalVms": 2,
+        "totalErrors": 0,      # Critical issues (blocks creation)
+        "totalWarnings": 1,    # Recommendations for optimization  
+        "totalInfo": 2         # General information and tips
+    },
+    "vm_validations": [        # Per-VM validation details
+        {
+            "vm_index": 0,
+            "status": "valid",
+            "spec_info": {...},  # VM specification details
+            "image_info": {...}, # Image mapping details
+            "issues": [],        # Critical problems (must fix)
+            "warnings": [],      # Optimization suggestions
+            "info": [           # General information
+                "Custom root disk type configured: gp3"
+            ]
+        }
+    ],
+    "estimated_cost": "~$0.15/hour (~$108/month)",
+    "deployment_time_estimate": "3-5 minutes",
+    "optimization_suggestions": [...]
+}
+```
+
+**Response to Validation Results:**
+
+- ✅ **validation_passed: true** → Safe to proceed with create_mci_dynamic()
+- ❌ **validation_passed: false** → Must fix issues before creation
+- ⚠️ **warnings > 0** → Consider optimization suggestions
+- ℹ️ **info messages** → Informational, no action required
+
+This comprehensive validation system ensures reliable, cost-effective, and properly configured MCI deployments.
 """
 
