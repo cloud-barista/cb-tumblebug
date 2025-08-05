@@ -568,12 +568,12 @@ func LookupImage(connConfig string, imageId string) (model.SpiderImageInfo, erro
 
 	if connConfig == "" {
 		content := model.SpiderImageInfo{}
-		err := fmt.Errorf("LookupImage() called with empty connConfig.")
+		err := fmt.Errorf("lookupImage() called with empty connConfig")
 		log.Error().Err(err).Msg("")
 		return content, err
 	} else if imageId == "" {
 		content := model.SpiderImageInfo{}
-		err := fmt.Errorf("LookupImage() called with empty imageId.")
+		err := fmt.Errorf("lookupImage() called with empty imageId")
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
@@ -1672,28 +1672,23 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate model.TbImageInfo, 
 	return fieldsToUpdate, nil
 }
 
-// GetImage accepts namespace Id and imageKey(Id,CspResourceName,GuestOS,...), and returns the TB image object
-func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
+// GetImage accepts namespace Id and imageKey(CspImageName), and returns the TB image object
+func GetImage(nsId string, cspImageName string) (model.TbImageInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
 		return model.TbImageInfo{}, err
 	}
 
-	log.Debug().Msg("[Get image] " + imageKey)
+	log.Debug().Msg("[Get image] " + cspImageName)
 
-	// make comparison case-insensitive
-	nsId = strings.ToLower(nsId)
-	imageKey = strings.ToLower(imageKey)
-	imageKey = strings.ReplaceAll(imageKey, " ", "")
-
-	providerName, regionName, _, imageIdentifier, err := ResolveProviderRegionZoneResourceKey(imageKey)
+	providerName, regionName, _, imageIdentifier, err := ResolveProviderRegionZoneResourceKey(cspImageName)
 	if err != nil {
 		// imageKey does not include information for providerName, regionName
-		image := model.TbImageInfo{Namespace: nsId, Id: imageKey}
+		image := model.TbImageInfo{Namespace: nsId, Id: cspImageName}
 
 		// 1) Check if the image is a custom image
 		// ex: custom-img-487zeit5
-		tempInterface, err := GetResource(nsId, model.StrCustomImage, imageKey)
+		tempInterface, err := GetResource(nsId, model.StrCustomImage, cspImageName)
 		customImage := model.TbCustomImageInfo{}
 		if err == nil {
 			err = common.CopySrcToDest(&tempInterface, &customImage)
@@ -1708,10 +1703,10 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 
 		// 2) Check if the image is a registered image in the given namespace
 		// ex: img-487zeit5
-		image = model.TbImageInfo{Namespace: nsId, Id: imageKey}
-		result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(id) = ?", nsId, imageKey).First(&image)
+		image = model.TbImageInfo{Namespace: nsId, Id: cspImageName}
+		result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(id) = ?", nsId, cspImageName).First(&image)
 		if result.Error != nil {
-			log.Info().Err(result.Error).Msgf("Cannot get image %s by ID from %s", imageKey, nsId)
+			log.Info().Err(result.Error).Msgf("Cannot get image %s by ID from %s", cspImageName, nsId)
 		} else {
 			return image, nil
 		}
@@ -1721,10 +1716,10 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 
 		// 1) Check if the image is a registered image in the common namespace model.SystemCommonNs by ImageId
 		// ex: tencent+ap-jakarta+ubuntu22.04 or tencent+ap-jakarta+img-487zeit5
-		image := model.TbImageInfo{Namespace: model.SystemCommonNs, Id: imageKey}
-		result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(id) = ?", model.SystemCommonNs, imageKey).First(&image)
+		image := model.TbImageInfo{Namespace: model.SystemCommonNs, Id: cspImageName}
+		result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(id) = ?", model.SystemCommonNs, cspImageName).First(&image)
 		if result.Error != nil {
-			log.Info().Err(result.Error).Msgf("Cannot get image %s by ID from %s", imageKey, model.SystemCommonNs)
+			log.Info().Err(result.Error).Msgf("Cannot get image %s by ID from %s", cspImageName, model.SystemCommonNs)
 		} else {
 			return image, nil
 		}
@@ -1762,7 +1757,7 @@ func GetImage(nsId string, imageKey string) (model.TbImageInfo, error) {
 		}
 	}
 
-	return model.TbImageInfo{}, fmt.Errorf("The imageKey %s not found by any of ID, CspImageName, GuestOS", imageKey)
+	return model.TbImageInfo{}, fmt.Errorf("The imageKey %s not found by any of ID, CspImageName, GuestOS", cspImageName)
 }
 
 // GetImageByPrimaryKey retrieves image information based on namespace, provider, and CSP image name

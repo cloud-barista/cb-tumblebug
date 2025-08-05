@@ -216,6 +216,34 @@ type TbMciDynamicReq struct {
 
 	Description string `json:"description" example:"Made in CB-TB"`
 
+	// Vm is array of VM requests for multi-cloud infrastructure
+	// Example: Multiple VM groups across different CSPs
+	// [
+	//   {
+	//     "name": "aws-group",
+	//     "subGroupSize": "3",
+	//     "commonSpec": "aws+ap-northeast-2+t3.nano",
+	//     "commonImage": "ami-01f71f215b23ba262",
+	//     "rootDiskSize": "50",
+	//     "label": {"role": "worker", "csp": "aws"}
+	//   },
+	//   {
+	//     "name": "azure-group",
+	//     "subGroupSize": "2",
+	//     "commonSpec": "azure+koreasouth+standard_b1s",
+	//     "commonImage": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210",
+	//     "rootDiskSize": "50",
+	//     "label": {"role": "head", "csp": "azure"}
+	//   },
+	//   {
+	//     "name": "gcp-group",
+	//     "subGroupSize": "1",
+	//     "commonSpec": "gcp+asia-northeast3+g1-small",
+	//     "commonImage": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712",
+	//     "rootDiskSize": "50",
+	//     "label": {"role": "test", "csp": "gcp"}
+	//   }
+	// ]
 	Vm []TbVmDynamicReq `json:"vm" validate:"required"`
 
 	// PostCommand is for the command to bootstrap the VMs
@@ -225,28 +253,28 @@ type TbMciDynamicReq struct {
 // TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
 type TbVmDynamicReq struct {
 	// VM name or subGroup name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
-	Name string `json:"name" example:"g1-1"`
+	Name string `json:"name" example:"g1"`
 
 	// if subGroupSize is (not empty) && (> 0), subGroup will be generated. VMs will be created accordingly.
 	SubGroupSize string `json:"subGroupSize" example:"3" default:"1"`
 
 	// Label is for describing the object by keywords
-	Label map[string]string `json:"label"`
+	Label map[string]string `json:"label" example:"{\"role\":\"worker\",\"env\":\"test\"}"`
 
-	Description string `json:"description" example:"Description"`
+	Description string `json:"description" example:"Created via CB-Tumblebug"`
 
 	// CommonSpec is field for id of a spec in common namespace
-	CommonSpec string `json:"commonSpec" validate:"required" example:"aws+ap-northeast-2+t2.small"`
+	CommonSpec string `json:"commonSpec" validate:"required" example:"aws+ap-northeast-2+t3.nano"`
 	// CommonImage is field for id of a image in common namespace
-	CommonImage string `json:"commonImage" validate:"required" example:"ubuntu18.04"`
+	CommonImage string `json:"commonImage" validate:"required" example:"ami-01f71f215b23ba262"`
 
-	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..." default:"default"` // "default", Integer (GB): ["50", ..., "1000"]
+	RootDiskType string `json:"rootDiskType,omitempty" example:"gp3" default:"default"` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
+	RootDiskSize string `json:"rootDiskSize,omitempty" example:"50" default:"default"`  // "default", Integer (GB): ["50", ..., "1000"]
 
-	VmUserPassword string `json:"vmUserPassword,omitempty" default:""`
+	VmUserPassword string `json:"vmUserPassword,omitempty" example:"" default:""`
 	// if ConnectionName is given, the VM tries to use associtated credential.
 	// if not, it will use predefined ConnectionName in Spec objects
-	ConnectionName string `json:"connectionName,omitempty" default:""`
+	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2" default:""`
 }
 
 // MciConnectionConfigCandidatesReq is struct for a request to check requirements to create a new MCI instance dynamically (with default resource option)
@@ -275,6 +303,88 @@ type CheckVmDynamicReqInfo struct {
 	// Latest system message such as error message
 	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
 
+}
+
+// ReviewMciDynamicReqInfo is struct for review result of MCI dynamic request
+type ReviewMciDynamicReqInfo struct {
+	// Overall assessment of the MCI request
+	OverallStatus  string `json:"overallStatus" example:"Ready/Warning/Error"`
+	OverallMessage string `json:"overallMessage" example:"All VMs can be created successfully"`
+	CreationViable bool   `json:"creationViable"`
+	EstimatedCost  string `json:"estimatedCost,omitempty" example:"$0.50/hour"`
+
+	// MCI-level information
+	MciName      string `json:"mciName"`
+	TotalVmCount int    `json:"totalVmCount"`
+
+	// VM-level validation results
+	VmReviews []ReviewVmDynamicReqInfo `json:"vmReviews"`
+
+	// Resource availability summary
+	ResourceSummary ReviewResourceSummary `json:"resourceSummary"`
+
+	// Recommendations for improvement
+	Recommendations []string `json:"recommendations,omitempty"`
+}
+
+// ReviewVmDynamicReqInfo is struct for review result of individual VM in MCI dynamic request
+type ReviewVmDynamicReqInfo struct {
+	// VM request information
+	VmName       string `json:"vmName"`
+	SubGroupSize string `json:"subGroupSize"`
+
+	// Validation status
+	Status    string `json:"status" example:"Ready/Warning/Error"`
+	Message   string `json:"message" example:"VM can be created successfully"`
+	CanCreate bool   `json:"canCreate"`
+
+	// Resource validation details
+	SpecValidation  ReviewResourceValidation `json:"specValidation"`
+	ImageValidation ReviewResourceValidation `json:"imageValidation"`
+
+	// Connection and region info
+	ConnectionName string `json:"connectionName"`
+	ProviderName   string `json:"providerName"`
+	RegionName     string `json:"regionName"`
+
+	// Cost estimation
+	EstimatedCost string `json:"estimatedCost,omitempty" example:"$0.10/hour"`
+
+	// General information and configuration notes
+	Info []string `json:"info,omitempty"`
+
+	// Warnings and errors
+	Warnings []string `json:"warnings,omitempty"`
+	Errors   []string `json:"errors,omitempty"`
+}
+
+// ReviewResourceValidation is struct for resource validation details
+type ReviewResourceValidation struct {
+	ResourceId    string `json:"resourceId"`
+	ResourceName  string `json:"resourceName,omitempty"`
+	IsAvailable   bool   `json:"isAvailable"`
+	Status        string `json:"status" example:"Available/Unavailable/Unknown"`
+	Message       string `json:"message,omitempty"`
+	CspResourceId string `json:"cspResourceId,omitempty"`
+}
+
+// ReviewResourceSummary is struct for overall resource summary
+type ReviewResourceSummary struct {
+	TotalProviders  int      `json:"totalProviders"`
+	TotalRegions    int      `json:"totalRegions"`
+	UniqueSpecs     []string `json:"uniqueSpecs"`
+	UniqueImages    []string `json:"uniqueImages"`
+	ConnectionNames []string `json:"connectionNames"`
+
+	// Provider and region details
+	ProviderNames []string `json:"providerNames"`
+	RegionNames   []string `json:"regionNames"`
+
+	// Resource availability counts
+	AvailableSpecs    int `json:"availableSpecs"`
+	UnavailableSpecs  int `json:"unavailableSpecs"`
+	AvailableImages   int `json:"availableImages"`
+	UnavailableImages int `json:"unavailableImages"`
 }
 
 //

@@ -111,7 +111,7 @@ func RestPostSystemMci(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciReq body model.TbMciDynamicReq true "Request body to provision MCI dynamically. Must include commonSpec and commonImage info of each VM request.(ex: {name: mci01,vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]} ) You can use /mciRecommendVm and /mciDynamicCheckRequest to get it) Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
+// @Param mciReq body model.TbMciDynamicReq true "Request body to provision MCI dynamically. Must include commonSpec and commonImage info of each VM request. Example multi-cloud setup: {\"name\":\"mc-infra\",\"description\":\"Multi-cloud infrastructure\",\"vm\":[{\"name\":\"aws-workers\",\"subGroupSize\":\"3\",\"commonSpec\":\"aws+ap-northeast-2+t3.nano\",\"commonImage\":\"ami-01f71f215b23ba262\",\"rootDiskSize\":\"50\",\"label\":{\"role\":\"worker\",\"csp\":\"aws\"}},{\"name\":\"azure-head\",\"subGroupSize\":\"2\",\"commonSpec\":\"azure+koreasouth+standard_b1s\",\"commonImage\":\"Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210\",\"rootDiskSize\":\"50\",\"label\":{\"role\":\"head\",\"csp\":\"azure\"}},{\"name\":\"gcp-test\",\"subGroupSize\":\"1\",\"commonSpec\":\"gcp+asia-northeast3+g1-small\",\"commonImage\":\"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712\",\"rootDiskSize\":\"50\",\"label\":{\"role\":\"test\",\"csp\":\"gcp\"}}}]. Use /mciRecommendVm and /mciDynamicCheckRequest for resource discovery. Guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
 // @Param option query string false "Option for MCI creation" Enums(hold)
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} model.TbMciInfo
@@ -133,6 +133,63 @@ func RestPostMciDynamic(c echo.Context) error {
 	result, err := infra.CreateMciDynamic(reqID, nsId, req, option)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create MCI dynamically")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestPostMciDynamicReview godoc
+// @ID PostMciDynamicReview
+// @Summary Review and Validate MCI Dynamic Request
+// @Description Review and validate MCI dynamic request comprehensively before actual provisioning.
+// @Description This endpoint performs comprehensive validation of MCI dynamic creation requests without actually creating resources.
+// @Description It checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.
+// @Description
+// @Description **Key Features:**
+// @Description - Validates all VM specifications and images against CSP availability
+// @Description - Provides cost estimation (including partial estimates when some costs are unknown)
+// @Description - Identifies potential configuration issues and warnings
+// @Description - Recommends optimization strategies
+// @Description - Shows provider and region distribution
+// @Description - Non-invasive validation (no resources are created)
+// @Description
+// @Description **Review Status:**
+// @Description - `Ready`: All VMs can be created successfully
+// @Description - `Warning`: VMs can be created but with configuration warnings
+// @Description - `Error`: Critical errors prevent MCI creation
+// @Description
+// @Description **Use Cases:**
+// @Description - Pre-validation before expensive MCI creation
+// @Description - Cost estimation and planning
+// @Description - Configuration optimization
+// @Description - Multi-cloud resource planning
+// @Tags [MC-Infra] MCI Provisioning and Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciReq body model.TbMciDynamicReq true "Request body to review MCI dynamic provisioning. Must include commonSpec and commonImage info of each VM request. Same format as /mciDynamic endpoint. (ex: {name: mci01, vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04, commonSpec: aws+ap-northeast-2+t2.small}]})"
+// @Param option query string false "Option for MCI creation review (same as actual creation)" Enums(hold)
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Success 200 {object} model.ReviewMciDynamicReqInfo "Comprehensive review result with validation status, cost estimation, and recommendations"
+// @Failure 400 {object} model.SimpleMsg "Invalid request format or parameters"
+// @Failure 404 {object} model.SimpleMsg "Namespace not found or invalid"
+// @Failure 500 {object} model.SimpleMsg "Internal server error during validation"
+// @Router /ns/{nsId}/mciDynamicReview [post]
+func RestPostMciDynamicReview(c echo.Context) error {
+	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+
+	nsId := c.Param("nsId")
+	option := c.QueryParam("option")
+
+	req := &model.TbMciDynamicReq{}
+	if err := c.Bind(req); err != nil {
+		log.Warn().Err(err).Msg("invalid request for MCI dynamic review")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result, err := infra.ReviewMciDynamicReq(reqID, nsId, req, option)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to review MCI dynamic request")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	return c.JSON(http.StatusOK, result)
