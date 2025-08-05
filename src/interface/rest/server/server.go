@@ -374,6 +374,7 @@ func RunServer() {
 	e.POST("/tumblebug/systemMci", rest_infra.RestPostSystemMci)
 
 	g.POST("/:nsId/mciDynamic", rest_infra.RestPostMciDynamic)
+	g.POST("/:nsId/mciDynamicReview", rest_infra.RestPostMciDynamicReview)
 	g.POST("/:nsId/mci/:mciId/vmDynamic", rest_infra.RestPostMciVmDynamic)
 
 	g.GET("/:nsId/mci/:mciId/associatedResources", rest_infra.RestGetMciAssociatedResources)

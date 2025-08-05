@@ -883,7 +883,7 @@ func CheckMciDynamicReq(req *model.MciConnectionConfigCandidatesReq) (*model.Che
 
 	connectionConfigList, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
 	if err != nil {
-		err := fmt.Errorf("Cannot load ConnectionConfigList in MCI dynamic request check.")
+		err := fmt.Errorf("cannot load ConnectionConfigList in MCI dynamic request check")
 		log.Error().Err(err).Msg("")
 		return &mciReqInfo, err
 	}
@@ -1026,6 +1026,9 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 	// Check whether VM names meet requirement.
 	errStr := ""
 	for i, k := range vmRequest {
+		// log VM request details
+		log.Debug().Msgf("[%d] VM Request: %+v", i, k)
+
 		err = checkCommonResAvailableForVmDynamicReq(&k, nsId)
 		if err != nil {
 			log.Error().Err(err).Msgf("[%d] Failed to find common resource for MCI provision", i)
@@ -1133,6 +1136,296 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 	return CreateMci(nsId, &mciReq, option)
 }
 
+// ValidateMciDynamicReq is func to validate MCI dynamic request before actual provisioning
+func ValidateMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, deployOption string) (*model.ReviewMciDynamicReqInfo, error) {
+	return ReviewMciDynamicReq(reqID, nsId, req, deployOption)
+}
+
+// ReviewMciDynamicReq is func to review and validate MCI dynamic request comprehensively
+func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, deployOption string) (*model.ReviewMciDynamicReqInfo, error) {
+
+	log.Debug().Msgf("Starting MCI dynamic request review for: %s", req.Name)
+
+	reviewResult := &model.ReviewMciDynamicReqInfo{
+		MciName:      req.Name,
+		TotalVmCount: len(req.Vm),
+		VmReviews:    make([]model.ReviewVmDynamicReqInfo, 0),
+		ResourceSummary: model.ReviewResourceSummary{
+			UniqueSpecs:     make([]string, 0),
+			UniqueImages:    make([]string, 0),
+			ConnectionNames: make([]string, 0),
+			ProviderNames:   make([]string, 0),
+			RegionNames:     make([]string, 0),
+		},
+		Recommendations: make([]string, 0),
+	}
+
+	// Basic validation
+	err := common.CheckString(nsId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid namespace: %w", err)
+	}
+
+	// Check if MCI name is valid and doesn't exist
+	check, err := CheckMci(nsId, req.Name)
+	if err != nil {
+		return nil, fmt.Errorf("invalid mci name: %w", err)
+	}
+	if check {
+		reviewResult.OverallStatus = "Error"
+		reviewResult.OverallMessage = fmt.Sprintf("MCI '%s' already exists in namespace '%s'", req.Name, nsId)
+		reviewResult.CreationViable = false
+		return reviewResult, nil
+	}
+
+	if len(req.Vm) == 0 {
+		reviewResult.OverallStatus = "Error"
+		reviewResult.OverallMessage = "No VM requests provided"
+		reviewResult.CreationViable = false
+		return reviewResult, nil
+	}
+
+	// Track resource summary
+	specMap := make(map[string]bool)
+	imageMap := make(map[string]bool)
+	connectionMap := make(map[string]bool)
+	providerMap := make(map[string]bool)
+	regionMap := make(map[string]bool)
+
+	// Validate each VM request
+	allViable := true
+	hasWarnings := false
+	totalEstimatedCost := 0.0
+	vmWithUnknownCost := 0
+
+	for i, vmReq := range req.Vm {
+		vmReview := model.ReviewVmDynamicReqInfo{
+			VmName:       vmReq.Name,
+			SubGroupSize: vmReq.SubGroupSize,
+			CanCreate:    true,
+			Status:       "Ready",
+			Info:         make([]string, 0),
+			Warnings:     make([]string, 0),
+			Errors:       make([]string, 0),
+		}
+
+		// Validate VM name
+		if vmReq.Name == "" {
+			vmReview.Warnings = append(vmReview.Warnings, "VM SubGroup name not specified, will be auto-generated")
+			hasWarnings = true
+		}
+
+		// Validate SubGroupSize
+		if vmReq.SubGroupSize == "" {
+			vmReq.SubGroupSize = "1"
+			vmReview.Warnings = append(vmReview.Warnings, "SubGroupSize not specified, defaulting to 1")
+			hasWarnings = true
+		}
+
+		// Validate CommonSpec
+		specInfo, err := resource.GetSpec(model.SystemCommonNs, vmReq.CommonSpec)
+		var specInfoPtr *model.TbSpecInfo
+		if err != nil {
+			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Failed to get spec '%s': %v", vmReq.CommonSpec, err))
+			vmReview.SpecValidation = model.ReviewResourceValidation{
+				ResourceId:  vmReq.CommonSpec,
+				IsAvailable: false,
+				Status:      "Unavailable",
+				Message:     err.Error(),
+			}
+			vmReview.CanCreate = false
+			allViable = false
+		} else {
+			specInfoPtr = &specInfo
+			vmReview.ConnectionName = specInfo.ConnectionName
+			vmReview.ProviderName = specInfo.ProviderName
+			vmReview.RegionName = specInfo.RegionName
+
+			// Check if spec is available in CSP
+			cspSpec, err := resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
+			if err != nil {
+				vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %v", vmReq.CommonSpec, err))
+				vmReview.SpecValidation = model.ReviewResourceValidation{
+					ResourceId:    vmReq.CommonSpec,
+					ResourceName:  specInfo.CspSpecName,
+					IsAvailable:   false,
+					Status:        "Unavailable",
+					Message:       err.Error(),
+					CspResourceId: specInfo.CspSpecName,
+				}
+				vmReview.CanCreate = false
+				allViable = false
+			} else {
+				vmReview.SpecValidation = model.ReviewResourceValidation{
+					ResourceId:    vmReq.CommonSpec,
+					ResourceName:  specInfo.CspSpecName,
+					IsAvailable:   true,
+					Status:        "Available",
+					CspResourceId: cspSpec.Name,
+				}
+
+				// Add cost estimation if available
+				if specInfo.CostPerHour > 0 {
+					vmReview.EstimatedCost = fmt.Sprintf("$%.4f/hour", specInfo.CostPerHour)
+					totalEstimatedCost += float64(specInfo.CostPerHour)
+				} else {
+					vmReview.EstimatedCost = "Cost estimation unavailable"
+					vmReview.Warnings = append(vmReview.Warnings, "Cost estimation not available for this spec")
+					hasWarnings = true
+					vmWithUnknownCost++
+				}
+			}
+
+			// Track resource summary
+			specMap[vmReq.CommonSpec] = true
+			connectionMap[specInfo.ConnectionName] = true
+			providerMap[specInfo.ProviderName] = true
+			regionMap[specInfo.RegionName] = true
+		}
+
+		// Validate CommonImage
+		if specInfoPtr != nil {
+			cspImage, err := resource.LookupImage(specInfoPtr.ConnectionName, vmReq.CommonImage)
+			if err != nil {
+				vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Image '%s' not available in CSP: %v", vmReq.CommonImage, err))
+				vmReview.ImageValidation = model.ReviewResourceValidation{
+					ResourceId:    vmReq.CommonImage,
+					IsAvailable:   false,
+					Status:        "Unavailable",
+					Message:       err.Error(),
+					CspResourceId: vmReq.CommonImage,
+				}
+				vmReview.CanCreate = false
+				allViable = false
+			} else {
+				vmReview.ImageValidation = model.ReviewResourceValidation{
+					ResourceId:    vmReq.CommonImage,
+					ResourceName:  cspImage.Name,
+					IsAvailable:   true,
+					Status:        "Available",
+					CspResourceId: cspImage.IId.SystemId,
+				}
+			}
+
+			imageMap[vmReq.CommonImage] = true
+		}
+
+		// Validate ConnectionName if specified
+		if vmReq.ConnectionName != "" {
+			_, err := common.GetConnConfig(vmReq.ConnectionName)
+			if err != nil {
+				vmReview.Warnings = append(vmReview.Warnings, fmt.Sprintf("Specified connection '%s' not found, will use default from spec", vmReq.ConnectionName))
+				hasWarnings = true
+			} else {
+				vmReview.ConnectionName = vmReq.ConnectionName
+			}
+		}
+
+		// Validate RootDisk settings
+		if vmReq.RootDiskType != "" && vmReq.RootDiskType != "default" {
+			vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk type configured: %s, be sure it's supported by the provider", vmReq.RootDiskType))
+		}
+		if vmReq.RootDiskSize != "" && vmReq.RootDiskSize != "default" {
+			vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk size configured: %s GB, be sure it meets minimum requirements", vmReq.RootDiskSize))
+		}
+
+		// Set VM review status
+		if len(vmReview.Errors) > 0 {
+			vmReview.Status = "Error"
+			vmReview.Message = fmt.Sprintf("VM has %d error(s) that prevent creation", len(vmReview.Errors))
+		} else if len(vmReview.Warnings) > 0 {
+			vmReview.Status = "Warning"
+			vmReview.Message = fmt.Sprintf("VM can be created but has %d warning(s)", len(vmReview.Warnings))
+		} else {
+			vmReview.Status = "Ready"
+			vmReview.Message = "VM can be created successfully"
+		}
+
+		reviewResult.VmReviews = append(reviewResult.VmReviews, vmReview)
+		log.Debug().Msgf("[%d] VM '%s' review completed: %s", i, vmReq.Name, vmReview.Status)
+	}
+
+	// Build resource summary
+	for spec := range specMap {
+		reviewResult.ResourceSummary.UniqueSpecs = append(reviewResult.ResourceSummary.UniqueSpecs, spec)
+	}
+	for image := range imageMap {
+		reviewResult.ResourceSummary.UniqueImages = append(reviewResult.ResourceSummary.UniqueImages, image)
+	}
+	for conn := range connectionMap {
+		reviewResult.ResourceSummary.ConnectionNames = append(reviewResult.ResourceSummary.ConnectionNames, conn)
+	}
+	for provider := range providerMap {
+		reviewResult.ResourceSummary.ProviderNames = append(reviewResult.ResourceSummary.ProviderNames, provider)
+	}
+	for region := range regionMap {
+		reviewResult.ResourceSummary.RegionNames = append(reviewResult.ResourceSummary.RegionNames, region)
+	}
+
+	reviewResult.ResourceSummary.TotalProviders = len(providerMap)
+	reviewResult.ResourceSummary.TotalRegions = len(regionMap)
+
+	// Count available/unavailable resources
+	for _, vmReview := range reviewResult.VmReviews {
+		if vmReview.SpecValidation.IsAvailable {
+			reviewResult.ResourceSummary.AvailableSpecs++
+		} else {
+			reviewResult.ResourceSummary.UnavailableSpecs++
+		}
+		if vmReview.ImageValidation.IsAvailable {
+			reviewResult.ResourceSummary.AvailableImages++
+		} else {
+			reviewResult.ResourceSummary.UnavailableImages++
+		}
+	}
+
+	// Set overall status and cost estimation
+	if totalEstimatedCost > 0 {
+		if vmWithUnknownCost > 0 {
+			reviewResult.EstimatedCost = fmt.Sprintf("$%.4f/hour (partial - %d VMs have unknown costs)", totalEstimatedCost, vmWithUnknownCost)
+		} else {
+			reviewResult.EstimatedCost = fmt.Sprintf("$%.4f/hour", totalEstimatedCost)
+		}
+	} else if vmWithUnknownCost > 0 {
+		reviewResult.EstimatedCost = fmt.Sprintf("Cost estimation unavailable for all %d VMs", vmWithUnknownCost)
+	}
+
+	reviewResult.CreationViable = allViable
+
+	if !allViable {
+		reviewResult.OverallStatus = "Error"
+		reviewResult.OverallMessage = fmt.Sprintf("MCI cannot be created due to critical errors in VM configurations (Providers: %v, Regions: %v)",
+			reviewResult.ResourceSummary.ProviderNames, reviewResult.ResourceSummary.RegionNames)
+		reviewResult.Recommendations = append(reviewResult.Recommendations, "Fix all VM configuration errors before attempting to create MCI")
+	} else if hasWarnings {
+		reviewResult.OverallStatus = "Warning"
+		reviewResult.OverallMessage = fmt.Sprintf("MCI can be created but has some configuration warnings (Providers: %v, Regions: %v)",
+			reviewResult.ResourceSummary.ProviderNames, reviewResult.ResourceSummary.RegionNames)
+		reviewResult.Recommendations = append(reviewResult.Recommendations, "Review and address warnings for optimal configuration")
+	} else {
+		reviewResult.OverallStatus = "Ready"
+		reviewResult.OverallMessage = fmt.Sprintf("All VMs can be created successfully (Providers: %v, Regions: %v)",
+			reviewResult.ResourceSummary.ProviderNames, reviewResult.ResourceSummary.RegionNames)
+	}
+
+	// Add specific recommendations
+	if reviewResult.ResourceSummary.TotalProviders > 3 {
+		reviewResult.Recommendations = append(reviewResult.Recommendations, "Consider consolidating to fewer cloud providers to simplify management")
+	}
+	if reviewResult.ResourceSummary.TotalRegions > 5 {
+		reviewResult.Recommendations = append(reviewResult.Recommendations, "Large number of regions may increase latency between VMs")
+	}
+	if totalEstimatedCost > 10.0 {
+		reviewResult.Recommendations = append(reviewResult.Recommendations, "High estimated cost - consider using smaller instance types if appropriate")
+	}
+	if vmWithUnknownCost > 0 {
+		reviewResult.Recommendations = append(reviewResult.Recommendations, fmt.Sprintf("Cost estimation unavailable for %d VMs - actual costs may be higher than shown", vmWithUnknownCost))
+	}
+
+	log.Debug().Msgf("MCI review completed: %s - %s", reviewResult.OverallStatus, reviewResult.OverallMessage)
+	return reviewResult, nil
+}
+
 // CreateMciVmDynamic is func to create requested VM in a dynamic way and add it to MCI
 func CreateMciVmDynamic(nsId string, mciId string, req *model.TbVmDynamicReq) (*model.TbMciInfo, error) {
 
@@ -1148,6 +1441,12 @@ func CreateMciVmDynamic(nsId string, mciId string, req *model.TbVmDynamicReq) (*
 		return emptyMci, err
 	}
 
+	err = checkCommonResAvailableForVmDynamicReq(req, nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyMci, err
+	}
+
 	vmReqResult, err := getVmReqFromDynamicReq("", nsId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1160,45 +1459,26 @@ func CreateMciVmDynamic(nsId string, mciId string, req *model.TbVmDynamicReq) (*
 // checkCommonResAvailableForVmDynamicReq is func to check common resources availability for VmDynamicReq
 func checkCommonResAvailableForVmDynamicReq(req *model.TbVmDynamicReq, nsId string) error {
 
-	vmRequest := req
-	// Check whether VM names meet requirement.
-	k := vmRequest
-
-	vmReq := &model.TbVmReq{}
+	log.Debug().Msgf("Checking common resources for VM Dynamic Request: %+v", req)
+	log.Debug().Msgf("Namespace ID: %s", nsId)
 
 	specInfo, err := resource.GetSpec(model.SystemCommonNs, req.CommonSpec)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-
-	// remake vmReqest from given input and check resource availability
-	vmReq.ConnectionName = specInfo.ConnectionName
-
-	// If ConnectionName is specified by the request, Use ConnectionName from the request
-	if k.ConnectionName != "" {
-		vmReq.ConnectionName = k.ConnectionName
-	}
-
-	// validate the GetConnConfig for spec
-	connection, err := common.GetConnConfig(vmReq.ConnectionName)
+	// check if the spec is available in the CSP
+	_, err = resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
 	if err != nil {
-		err := fmt.Errorf("Failed to get ConnectionName (" + vmReq.ConnectionName + ") for Spec (" + k.CommonSpec + ") is not found.")
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("Failed to get the Spec from the CSP")
 		return err
 	}
 
-	// 1) try if there is matched custom image in the namespace
-	_, err = resource.GetImage(nsId, k.CommonImage)
-	if err == nil {
-		return nil
-	}
-
-	// 2) try if there is a matched image with modified ImageId by osType in the CommonImage list
-	modifiedImageKey := resource.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.RegionDetail.RegionName, "", k.CommonImage)
-	_, err = resource.GetImage(model.SystemCommonNs, modifiedImageKey)
-	if err == nil {
-		return nil
+	// check if the image is available in the CSP
+	_, err = resource.LookupImage(specInfo.ConnectionName, req.CommonImage)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get the Image from the CSP")
+		return err
 	}
 
 	return err
@@ -1243,15 +1523,14 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 
 	vmReq.SpecId = specInfo.Id
 	vmReq.ImageId = k.CommonImage
-	_, err = resource.GetImage(nsId, k.CommonImage)
+
+	// check if the image is available in the CSP
+	_, err = resource.LookupImage(connection.ConfigName, vmReq.ImageId)
 	if err != nil {
-		// set modifiedImageKey if there is no matched custom image in the namespace
-		modifiedImageKey := resource.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.RegionDetail.RegionName, "", k.CommonImage)
-		_, err = resource.GetImage(model.SystemCommonNs, modifiedImageKey)
-		if err == nil {
-			vmReq.ImageId = modifiedImageKey
-		}
+		log.Error().Err(err).Msg("Failed to get the Image from database as well as the CSP")
+		return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err
 	}
+	// Need enhancement to handle custom image request
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
 
@@ -1476,30 +1755,9 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 		// Try lookup customImage
 		requestBody.ReqInfo.ImageName, err = resource.GetCspResourceName(nsId, model.StrCustomImage, vmInfoData.ImageId)
 		if requestBody.ReqInfo.ImageName == "" || err != nil {
-			log.Warn().Msgf("Not found %s from CustomImage in ns: %s, find it from UserImage", vmInfoData.ImageId, nsId)
-			errAgg := err.Error()
-			// If customImage doesn't exist, then try lookup image
-			requestBody.ReqInfo.ImageName, err = resource.GetCspResourceName(nsId, model.StrImage, vmInfoData.ImageId)
-			if requestBody.ReqInfo.ImageName == "" || err != nil {
-				log.Warn().Msgf("Not found %s from UserImage in ns: %s, find CommonImage from SystemCommonNs", vmInfoData.ImageId, nsId)
-				errAgg += err.Error()
-				// If cannot find the resource, use common resource
-				requestBody.ReqInfo.ImageName, err = resource.GetCspResourceName(model.SystemCommonNs, model.StrImage, vmInfoData.ImageId)
-				if requestBody.ReqInfo.ImageName == "" || err != nil {
-					errAgg += err.Error()
-					err = fmt.Errorf(errAgg)
-					log.Error().Err(err).Msgf("Not found %s both from ns %s and SystemCommonNs", vmInfoData.ImageId, nsId)
-
-					vmInfoData.Status = model.StatusFailed
-					vmInfoData.SystemMessage = err.Error()
-					UpdateVmInfo(nsId, mciId, *vmInfoData)
-					return err
-				} else {
-					log.Info().Msgf("Use the CommonImage: %s in SystemCommonNs", requestBody.ReqInfo.ImageName)
-				}
-			} else {
-				log.Info().Msgf("Use the UserImage: %s in ns: %s", requestBody.ReqInfo.ImageName, nsId)
-			}
+			log.Debug().Msgf("Not found %s from CustomImage in ns: %s, Use the ImageName directly", vmInfoData.ImageId, nsId)
+			// If the image is not a custom image, use the requested image name directly
+			requestBody.ReqInfo.ImageName = vmInfoData.ImageId
 		} else {
 			customImageFlag = true
 			requestBody.ReqInfo.ImageType = model.MyImage
@@ -1934,18 +2192,14 @@ func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.TbK8sClusterDyna
 		strings.EqualFold(dReq.CommonImage, "") {
 		// do nothing
 	} else {
-		osType := strings.ReplaceAll(dReq.CommonImage, " ", "")
-		imageId := resource.GetProviderRegionZoneResourceKey(connConfig.ProviderName, connConfig.RegionDetail.RegionName, "", osType)
-		// incase of user provided image id completely (e.g. aws+ap-northeast-2+ubuntu22.04)
-		if strings.Contains(dReq.CommonImage, "+") {
-			imageId = dReq.CommonImage
-		}
-		_, err = resource.GetImage(model.SystemCommonNs, imageId)
+
+		// check if the image is available in the CSP
+		_, err = resource.LookupImage(dReq.ConnectionName, dReq.CommonImage)
 		if err != nil {
-			err := fmt.Errorf("Failed to get Image " + dReq.CommonImage + " from " + connName)
-			log.Error().Err(err).Msg("")
+			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return err
 		}
+
 	}
 
 	return nil
@@ -2013,18 +2267,14 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8s
 		strings.EqualFold(dReq.CommonImage, "") {
 		// do nothing
 	} else {
-		osType := strings.ReplaceAll(dReq.CommonImage, " ", "")
-		k8sngReq.ImageId = resource.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.RegionDetail.RegionName, "", osType)
-		// incase of user provided image id completely (e.g. aws+ap-northeast-2+ubuntu22.04)
-		if strings.Contains(dReq.CommonImage, "+") {
-			k8sngReq.ImageId = dReq.CommonImage
-		}
-		_, err = resource.GetImage(model.SystemCommonNs, k8sngReq.ImageId)
+
+		// check if the image is available in the CSP
+		_, err = resource.LookupImage(dReq.ConnectionName, dReq.CommonImage)
 		if err != nil {
-			err := fmt.Errorf("Failed to get the Image " + k8sngReq.ImageId + " from " + k8sReq.ConnectionName)
-			log.Err(err).Msg("")
+			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return emptyK8sReq, err
 		}
+
 	}
 
 	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
@@ -2232,16 +2482,10 @@ func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo 
 		strings.EqualFold(dReq.CommonImage, "") {
 		// do nothing
 	} else {
-		osType := strings.ReplaceAll(dReq.CommonImage, " ", "")
-		k8sNgReq.ImageId = resource.GetProviderRegionZoneResourceKey(k8sClusterInfo.ConnectionConfig.ProviderName, k8sClusterInfo.ConnectionConfig.RegionDetail.RegionName, "", osType)
-		// incase of user provided image id completely (e.g. aws+ap-northeast-2+ubuntu22.04)
-		if strings.Contains(dReq.CommonImage, "+") {
-			k8sNgReq.ImageId = dReq.CommonImage
-		}
-		_, err = resource.GetImage(model.SystemCommonNs, k8sNgReq.ImageId)
+		// check if the image is available in the CSP
+		_, err = resource.LookupImage(k8sClusterInfo.ConnectionName, dReq.CommonImage)
 		if err != nil {
-			err := fmt.Errorf("Failed to get the Image " + k8sNgReq.ImageId + " from " + k8sClusterInfo.ConnectionName)
-			log.Err(err).Msg("")
+			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return emptyK8sNgReq, err
 		}
 	}

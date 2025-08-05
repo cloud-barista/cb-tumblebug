@@ -277,12 +277,12 @@ func RestUpdateImagesFromAsset(c echo.Context) error {
 // RestGetImage godoc
 // @ID GetImage
 // @Summary Get image
-// @Description GetImage returns an image object if there are matched images for the given namespace and imageKey(Id, CspResourceName, GuestOS,...)
+// @Description GetImage returns an image object if there are matched images for the given namespace and imageKey(Id, CspResourceName)
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param imageId path string true "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts vaious input types as Image Key: [1. registerd ID: ({providerName}+{regionName}+{GuestOS}). 2. cspImageName. 3. GuestOS)]"
+// @Param imageId path string true "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts vaious input types as Image Key: cspImageName"
 // @Success 200 {object} model.TbImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg

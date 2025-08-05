@@ -4755,10 +4755,7 @@ paths:
           type: string
       requestBody:
         description: "Request body to provision MCI dynamically. Must include commonSpec\
-          \ and commonImage info of each VM request.(ex: {name: mci01,vm: [{commonImage:\
-          \ aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]}\
-          \ ) You can use /mciRecommendVm and /mciDynamicCheckRequest to get it) Check\
-          \ the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
+          \ and commonImage info of each VM request. Example multi-cloud setup: {\\"
         content:
           application/json:
             schema:
@@ -4779,6 +4776,92 @@ paths:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
           description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: mciReq
+  /ns/{nsId}/mciDynamicReview:
+    post:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: Review and Validate MCI Dynamic Request
+      description: |-
+        Review and validate MCI dynamic request comprehensively before actual provisioning.
+        This endpoint performs comprehensive validation of MCI dynamic creation requests without actually creating resources.
+        It checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.
+
+        **Key Features:**
+        - Validates all VM specifications and images against CSP availability
+        - Provides cost estimation (including partial estimates when some costs are unknown)
+        - Identifies potential configuration issues and warnings
+        - Recommends optimization strategies
+        - Shows provider and region distribution
+        - Non-invasive validation (no resources are created)
+
+        **Review Status:**
+        - `Ready`: All VMs can be created successfully
+        - `Warning`: VMs can be created but with configuration warnings
+        - `Error`: Critical errors prevent MCI creation
+
+        **Use Cases:**
+        - Pre-validation before expensive MCI creation
+        - Cost estimation and planning
+        - Configuration optimization
+        - Multi-cloud resource planning
+      operationId: PostMciDynamicReview
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: option
+        in: query
+        description: Option for MCI creation review (same as actual creation)
+        schema:
+          type: string
+          enum:
+          - hold
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: "Request body to review MCI dynamic provisioning. Must include\
+          \ commonSpec and commonImage info of each VM request. Same format as /mciDynamic\
+          \ endpoint. (ex: {name: mci01, vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04,\
+          \ commonSpec: aws+ap-northeast-2+t2.small}]})"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.TbMciDynamicReq'
+        required: true
+      responses:
+        "200":
+          description: "Comprehensive review result with validation status, cost estimation,\
+            \ and recommendations"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ReviewMciDynamicReqInfo'
+        "400":
+          description: Invalid request format or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Namespace not found or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal server error during validation
           content:
             application/json:
               schema:
@@ -5913,7 +5996,7 @@ paths:
       - "[Infra Resource] Image Management"
       summary: Get image
       description: "GetImage returns an image object if there are matched images for\
-        \ the given namespace and imageKey(Id, CspResourceName, GuestOS,...)"
+        \ the given namespace and imageKey(Id, CspResourceName)"
       operationId: GetImage
       parameters:
       - name: nsId
@@ -5927,8 +6010,7 @@ paths:
         in: path
         description: "(Note: imageId param will be refined in next release, enabled\
           \ for temporal support) This param accepts vaious input types as Image Key:\
-          \ [1. registerd ID: ({providerName}+{regionName}+{GuestOS}). 2. cspImageName.\
-          \ 3. GuestOS)]"
+          \ cspImageName"
         required: true
         schema:
           type: string
@@ -10468,6 +10550,143 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.SpiderRegionZoneInfo'
+    model.ReviewMciDynamicReqInfo:
+      type: object
+      properties:
+        creationViable:
+          type: boolean
+        estimatedCost:
+          type: string
+          example: $0.50/hour
+        mciName:
+          type: string
+          description: MCI-level information
+        overallMessage:
+          type: string
+          example: All VMs can be created successfully
+        overallStatus:
+          type: string
+          description: Overall assessment of the MCI request
+          example: Ready/Warning/Error
+        recommendations:
+          type: array
+          description: Recommendations for improvement
+          items:
+            type: string
+        resourceSummary:
+          type: object
+          description: Resource availability summary
+          allOf:
+          - $ref: '#/components/schemas/model.ReviewResourceSummary'
+        totalVmCount:
+          type: integer
+        vmReviews:
+          type: array
+          description: VM-level validation results
+          items:
+            $ref: '#/components/schemas/model.ReviewVmDynamicReqInfo'
+    model.ReviewResourceSummary:
+      type: object
+      properties:
+        availableImages:
+          type: integer
+        availableSpecs:
+          type: integer
+          description: Resource availability counts
+        connectionNames:
+          type: array
+          items:
+            type: string
+        providerNames:
+          type: array
+          description: Provider and region details
+          items:
+            type: string
+        regionNames:
+          type: array
+          items:
+            type: string
+        totalProviders:
+          type: integer
+        totalRegions:
+          type: integer
+        unavailableImages:
+          type: integer
+        unavailableSpecs:
+          type: integer
+        uniqueImages:
+          type: array
+          items:
+            type: string
+        uniqueSpecs:
+          type: array
+          items:
+            type: string
+    model.ReviewResourceValidation:
+      type: object
+      properties:
+        cspResourceId:
+          type: string
+        isAvailable:
+          type: boolean
+        message:
+          type: string
+        resourceId:
+          type: string
+        resourceName:
+          type: string
+        status:
+          type: string
+          example: Available/Unavailable/Unknown
+    model.ReviewVmDynamicReqInfo:
+      type: object
+      properties:
+        canCreate:
+          type: boolean
+        connectionName:
+          type: string
+          description: Connection and region info
+        errors:
+          type: array
+          items:
+            type: string
+        estimatedCost:
+          type: string
+          description: Cost estimation
+          example: $0.10/hour
+        imageValidation:
+          $ref: '#/components/schemas/model.ReviewResourceValidation'
+        info:
+          type: array
+          description: General information and configuration notes
+          items:
+            type: string
+        message:
+          type: string
+          example: VM can be created successfully
+        providerName:
+          type: string
+        regionName:
+          type: string
+        specValidation:
+          type: object
+          description: Resource validation details
+          allOf:
+          - $ref: '#/components/schemas/model.ReviewResourceValidation'
+        status:
+          type: string
+          description: Validation status
+          example: Ready/Warning/Error
+        subGroupSize:
+          type: string
+        vmName:
+          type: string
+          description: VM request information
+        warnings:
+          type: array
+          description: Warnings and errors
+          items:
+            type: string
     model.SearchImageRequest:
       type: object
       properties:
@@ -12111,6 +12330,35 @@ components:
           example: ""
         vm:
           type: array
+          description: |-
+            Vm is array of VM requests for multi-cloud infrastructure
+            Example: Multiple VM groups across different CSPs
+            [
+              {
+                "name": "aws-group",
+                "subGroupSize": "3",
+                "commonSpec": "aws+ap-northeast-2+t3.nano",
+                "commonImage": "ami-01f71f215b23ba262",
+                "rootDiskSize": "50",
+                "label": {"role": "worker", "csp": "aws"}
+              },
+              {
+                "name": "azure-group",
+                "subGroupSize": "2",
+                "commonSpec": "azure+koreasouth+standard_b1s",
+                "commonImage": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210",
+                "rootDiskSize": "50",
+                "label": {"role": "head", "csp": "azure"}
+              },
+              {
+                "name": "gcp-group",
+                "subGroupSize": "1",
+                "commonSpec": "gcp+asia-northeast3+g1-small",
+                "commonImage": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712",
+                "rootDiskSize": "50",
+                "label": {"role": "test", "csp": "gcp"}
+              }
+            ]
           items:
             $ref: '#/components/schemas/model.TbVmDynamicReq'
     model.TbMciInfo:
@@ -13004,33 +13252,37 @@ components:
         commonImage:
           type: string
           description: CommonImage is field for id of a image in common namespace
-          example: ubuntu18.04
+          example: ami-01f71f215b23ba262
         commonSpec:
           type: string
           description: CommonSpec is field for id of a spec in common namespace
-          example: aws+ap-northeast-2+t2.small
+          example: aws+ap-northeast-2+t3.nano
         connectionName:
           type: string
           description: |-
             if ConnectionName is given, the VM tries to use associtated credential.
             if not, it will use predefined ConnectionName in Spec objects
+          example: aws-ap-northeast-2
         description:
           type: string
-          example: Description
+          example: Created via CB-Tumblebug
         label:
           type: object
           additionalProperties:
             type: string
           description: Label is for describing the object by keywords
+          example:
+            '"env"': "\"test\"}"
+            '{"role"': '"worker"'
         name:
           type: string
           description: "VM name or subGroup name if is (not empty) && (> 0). If it\
             \ is a group, actual VM name will be generated with -N postfix."
-          example: g1-1
+          example: g1
         rootDiskSize:
           type: string
           description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
-          example: "default, 30, 42, ..."
+          example: "50"
           default: default
         rootDiskType:
           type: string
@@ -13039,7 +13291,7 @@ components:
             \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
             \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT:\
             \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
-          example: "default, TYPE1, ..."
+          example: gp3
           default: default
         subGroupSize:
           type: string
@@ -13049,6 +13301,7 @@ components:
           default: "1"
         vmUserPassword:
           type: string
+          example: ""
     model.TbVmInfo:
       type: object
       properties:
