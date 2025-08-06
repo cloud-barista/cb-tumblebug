@@ -67,14 +67,26 @@ logger.info(f"Password configured: {'Yes' if TUMBLEBUG_PASSWORD else 'No'}")
 mcp = FastMCP(name="cb-tumblebug", host=host, port=port)
 
 # Helper function: API request wrapper
-def api_request(method, endpoint, json_data=None, params=None, files=None, headers=None):
+def api_request(method, endpoint, json_data=None, params=None, files=None, headers=None, timeout_override=None):
     url = f"{TUMBLEBUG_API_BASE_URL}{endpoint}"
     
     # Enhanced request configuration with improved timeout handling
-    request_config = {
-        "auth": (TUMBLEBUG_USERNAME, TUMBLEBUG_PASSWORD),
-        "timeout": (60, 600)  # (connection_timeout, read_timeout) - 10 minutes max for MCI operations
-    }
+    # Special handling for remote command execution endpoints
+    default_timeout = (60, 600)  # 10 minutes default
+    
+    # Extended timeout for remote command execution (up to 20 minutes)
+    if "/cmd/mci/" in endpoint or timeout_override:
+        extended_timeout = timeout_override or (60, 1200)  # 20 minutes for command execution
+        request_config = {
+            "auth": (TUMBLEBUG_USERNAME, TUMBLEBUG_PASSWORD),
+            "timeout": extended_timeout
+        }
+        logger.info(f"Using extended timeout for remote command: {extended_timeout[1]/60} minutes")
+    else:
+        request_config = {
+            "auth": (TUMBLEBUG_USERNAME, TUMBLEBUG_PASSWORD),
+            "timeout": default_timeout
+        }
     
     # Add parameters according to method
     if params:
@@ -116,12 +128,22 @@ def api_request(method, endpoint, json_data=None, params=None, files=None, heade
             return {"message": "Success (No content)"}
             
     except requests.exceptions.Timeout as e:
-        logger.error(f"Request timeout after 10 minutes: {str(e)}")
-        return {
-            "error": "Request timeout - operation took longer than 10 minutes",
-            "error_type": "timeout",
-            "suggestion": "Try breaking down the operation into smaller steps or check resource availability"
-        }
+        timeout_duration = request_config["timeout"][1] / 60  # Convert to minutes
+        logger.error(f"Request timeout after {timeout_duration} minutes: {str(e)}")
+        
+        # Special message for remote command timeouts
+        if "/cmd/mci/" in endpoint:
+            return {
+                "error": f"Remote command execution timeout after {timeout_duration} minutes",
+                "error_type": "command_execution_timeout",
+                "suggestion": "The remote commands are taking longer than expected. This can happen with complex installations, large downloads, or system updates. Consider breaking commands into smaller batches or checking VM resources."
+            }
+        else:
+            return {
+                "error": f"Request timeout - operation took longer than {timeout_duration} minutes",
+                "error_type": "timeout",
+                "suggestion": "Try breaking down the operation into smaller steps or check resource availability"
+            }
     except requests.exceptions.ConnectionError as e:
         logger.error(f"Connection error: {str(e)}")
         return {
@@ -3604,6 +3626,27 @@ def execute_command_mci(
     Execute remote commands based on SSH on VMs of an MCI.
     This allows executing commands on all VMs in the MCI or specific VMs based on subgroup or label selector.
     
+    🚨 **CRITICAL PERFORMANCE WARNING:**
+    Remote command execution can take significant time depending on:
+    - Command complexity and execution time
+    - Number of VMs in MCI (commands run on all VMs sequentially)
+    - Network latency to target VMs
+    - Application installation and configuration time
+    
+    **Expected Response Times:**
+    - Simple commands (ls, ps, etc.): 10-30 seconds
+    - Package installation (apt install): 1-5 minutes
+    - Application deployment scripts: 5-15 minutes
+    - Complex setups (databases, clusters): 10-20 minutes
+    - Large software downloads: Up to 20+ minutes
+    
+    **LLM Usage Guidelines:**
+    1. ⏰ Inform users about potential delays before execution
+    2. 📋 Break complex deployments into smaller command batches
+    3. 🔄 Use verification commands to check progress
+    4. ⚡ Consider summarize_output=True for large outputs
+    5. 🎯 Group related commands to minimize API calls
+    
     **Output Summarization:**
     By default, command outputs (stdout/stderr) are summarized to reduce token usage:
     - Shows first and last N lines of output
@@ -3918,6 +3961,15 @@ def execute_remote_commands_enhanced(
     """
     Execute enhanced remote commands on MCI VMs with predefined scripts and template variable support.
     Based on MapUI patterns for comprehensive application deployment and management.
+    
+    🚨 **CRITICAL PERFORMANCE WARNING:**
+    Enhanced remote command execution can take significant time:
+    - Predefined scripts may include complex installations
+    - Security hardening can take 5-10 minutes
+    - Monitoring setup with multiple tools: 10-15 minutes
+    - System updates and package installations: 5-20 minutes
+    
+    **LLM MUST inform users about expected delays before execution.**
     
     Args:
         ns_id: Namespace ID
@@ -6947,7 +6999,16 @@ def _get_fallback_hardware_requirements(app_name: str, deployment_type: str, err
         "minecraft": {"cpu": 2, "memory": 4, "disk": 50},
         "ollama": {"cpu": 4, "memory": 8, "disk": 100},
         "jitsi": {"cpu": 4, "memory": 8, "disk": 50},
-        "ray": {"cpu": 4, "memory": 8, "disk": 100}
+        "ray": {"cpu": 4, "memory": 8, "disk": 100},
+        # New MapUI applications
+        "vllm": {"cpu": 4, "memory": 8, "disk": 100},
+        "nvidia": {"cpu": 2, "memory": 4, "disk": 50},
+        "openwebui": {"cpu": 2, "memory": 4, "disk": 100},
+        "westward": {"cpu": 2, "memory": 4, "disk": 50},
+        "weavescope": {"cpu": 2, "memory": 4, "disk": 50},
+        "elk": {"cpu": 4, "memory": 8, "disk": 200},
+        "cross_nat": {"cpu": 1, "memory": 2, "disk": 30},
+        "stress": {"cpu": 2, "memory": 2, "disk": 30}
     }
     
     # Try to find application in fallbacks
@@ -7000,7 +7061,7 @@ APPLICATION_CONFIGS = {
     "xonotic": {
         "name": "Xonotic Game Server",
         "category": "game",
-        "description": "FPS game server deployment with automatic server configuration",
+        "description": "FPS game server deployment with automatic server configuration using CB-Tumblebug built-in functions",
         "requirements": {
             "cpu_intensive": True,
             "network_intensive": True,
@@ -7010,8 +7071,8 @@ APPLICATION_CONFIGS = {
         },
         "commands": [
             "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/xonotic/startServer.sh; chmod +x ~/startServer.sh",
-            "sudo ~/startServer.sh {{mci_id}} 26000 8 8",
-            "echo 'Server Address: {{public_ip}}:26000'"
+            "sudo ~/startServer.sh Cloud-Barista-$$Func(GetMciId()) 26000 8 8",
+            "echo '$$Func(GetPublicIP(target=this,postfix=:26000))'"
         ],
         "result_pattern": r"Server Address: ([^:]+):(\d+)",
         "deployment_strategy": "global"
@@ -7019,7 +7080,7 @@ APPLICATION_CONFIGS = {
     "nginx": {
         "name": "Nginx Web Server",
         "category": "web",
-        "description": "High-performance web server deployment",
+        "description": "High-performance web server deployment using CB-Tumblebug built-in functions",
         "requirements": {
             "cpu_intensive": False,
             "network_intensive": True,
@@ -7028,8 +7089,8 @@ APPLICATION_CONFIGS = {
             "min_disk_gb": 20
         },
         "commands": [
-            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/nginx/startServer.sh | bash -s -- --ip {{public_ip}}",
-            "echo 'Web Server: http://{{public_ip}}'"
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/nginx/startServer.sh | bash -s -- --ip $$Func(GetPublicIP(target=this))",
+            "echo '$$Func(GetPublicIP(target=this, prefix=http://))'"
         ],
         "result_pattern": r"Web Server: (http://[^/]+)",
         "deployment_strategy": "regional"
@@ -7037,18 +7098,18 @@ APPLICATION_CONFIGS = {
     "ollama": {
         "name": "Ollama LLM Server",
         "category": "llm",
-        "description": "Local LLM server deployment with Ollama",
+        "description": "Local LLM server deployment with Ollama using CB-Tumblebug built-in functions",
         "requirements": {
             "cpu_intensive": True,
             "memory_intensive": True,
             "gpu_preferred": True,
             "ports": ["3000"],
             "os": "ubuntu",
-            "min_disk_gb": 100  # LLM models require significant storage
+            "min_disk_gb": 300  # LLM models require significant storage
         },
         "commands": [
             "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOllama.sh | sh",
-            "echo 'LLM Server: http://{{public_ip}}:3000'"
+            "echo '$$Func(GetPublicIP(target=this, prefix=http://, postfix=:3000))'"
         ],
         "result_pattern": r"LLM Server: (http://[^/]+)",
         "deployment_strategy": "performance"
@@ -7056,7 +7117,7 @@ APPLICATION_CONFIGS = {
     "jitsi": {
         "name": "Jitsi Meet Video Conference",
         "category": "conference",
-        "description": "Video conferencing server deployment",
+        "description": "Video conferencing server deployment using CB-Tumblebug built-in functions",
         "requirements": {
             "cpu_intensive": True,
             "network_intensive": True,
@@ -7068,7 +7129,7 @@ APPLICATION_CONFIGS = {
         "commands": [
             "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/jitsi/startServer.sh",
             "chmod +x ~/startServer.sh",
-            "sudo ~/startServer.sh {{public_ips_space}} DNS EMAIL"
+            "sudo ~/startServer.sh $$Func(GetPublicIPs(separator=' ')) DNS EMAIL"
         ],
         "result_pattern": r"Jitsi Server: (https://[^/]+)",
         "deployment_strategy": "regional"
@@ -7096,7 +7157,7 @@ APPLICATION_CONFIGS = {
     "ray": {
         "name": "Ray ML Cluster",
         "category": "ml",
-        "description": "Distributed ML computing cluster with Ray",
+        "description": "Distributed ML computing cluster with Ray using CB-Tumblebug built-in functions",
         "requirements": {
             "cpu_intensive": True,
             "memory_intensive": True,
@@ -7109,12 +7170,519 @@ APPLICATION_CONFIGS = {
         "commands": [
             "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/ray/ray-head-setup.sh",
             "chmod +x ~/ray-head-setup.sh",
-            "~/ray-head-setup.sh -i {{public_ip}}"
+            "~/ray-head-setup.sh -i $$Func(GetPublicIP(target=this))"
         ],
         "result_pattern": r"Ray Dashboard: (http://[^:]+:8265)",
         "deployment_strategy": "cluster"
+    },
+    "vllm": {
+        "name": "vLLM Server",
+        "category": "llm",
+        "description": "High-performance LLM inference server with vLLM using CB-Tumblebug built-in functions",
+        "requirements": {
+            "cpu_intensive": True,
+            "memory_intensive": True,
+            "gpu_preferred": True,
+            "ports": ["5000"],
+            "os": "ubuntu",
+            "min_disk_gb": 100
+        },
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/llmServer.py",
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/startServer.sh; chmod +x ~/startServer.sh",
+            "~/startServer.sh --ip $$Func(GetPublicIPs(separator=' ')) --port 5000 --token 1024 --model tiiuae/falcon-7b-instruct"
+        ],
+        "result_pattern": r"vLLM Server: (http://[^:]+:5000)",
+        "deployment_strategy": "performance"
+    },
+    "nvidia_driver": {
+        "name": "NVIDIA CUDA Driver",
+        "category": "driver",
+        "description": "NVIDIA CUDA driver installation for GPU computing",
+        "requirements": {
+            "gpu_required": True,
+            "cpu_intensive": False,
+            "memory_intensive": False,
+            "ports": [],
+            "os": "ubuntu",
+            "min_disk_gb": 50
+        },
+        "commands": [
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/installCudaDriver.sh | sh",
+            "nvidia-smi",
+            "echo 'NVIDIA Driver installed successfully'"
+        ],
+        "result_pattern": r"NVIDIA Driver installed successfully",
+        "deployment_strategy": "performance"
+    },
+    "ollama_pull": {
+        "name": "Ollama Model Pull (Dynamic Selection)",
+        "category": "llm",
+        "description": "Pull LLM models for Ollama using dynamic model selection from ollama.com. Use get_ollama_model_discovery_guide() to find latest models, then deploy_ollama_pull_with_models() for custom deployment.",
+        "requirements": {
+            "cpu_intensive": True,
+            "memory_intensive": True,
+            "gpu_preferred": True,
+            "ports": ["3000"],
+            "os": "ubuntu",
+            "min_disk_gb": 150
+        },
+        "commands": [
+            "# This is a fallback command - prefer using deploy_ollama_pull_with_models() with user-selected models",
+            "OLLAMA_HOST=0.0.0.0:3000 ollama pull $$Func(AssignTask(task='Ask user to visit https://ollama.com/search for latest models'))",
+            "echo 'Visit https://ollama.com/search to discover and select models'",
+            "echo 'Then use deploy_ollama_pull_with_models() for custom deployment'"
+        ],
+        "result_pattern": r"Visit https://ollama.com/search",
+        "deployment_strategy": "performance",
+        "recommended_workflow": "Use get_ollama_model_discovery_guide() then deploy_ollama_pull_with_models()"
+    },
+    "openwebui": {
+        "name": "Open WebUI",
+        "category": "web",
+        "description": "Web interface for LLM models with Open WebUI using CB-Tumblebug built-in functions",
+        "requirements": {
+            "cpu_intensive": True,
+            "memory_intensive": True,
+            "network_intensive": True,
+            "ports": ["80", "3000"],
+            "os": "ubuntu",
+            "min_disk_gb": 100
+        },
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOpenWebUI.sh; chmod +x ~/deployOpenWebUI.sh",
+            "sudo ~/deployOpenWebUI.sh \"$$Func(GetPublicIPs(target=this, separator=;, prefix=http://, postfix=:3000))\"",
+            "echo '$$Func(GetPublicIP(target=this, prefix=http://))'"
+        ],
+        "result_pattern": r"Open WebUI: (http://[^/]+)",
+        "deployment_strategy": "regional"
+    },
+    "ray_worker": {
+        "name": "Ray Worker Node",
+        "category": "ml",
+        "description": "Ray worker node to join existing Ray cluster using CB-Tumblebug built-in functions",
+        "requirements": {
+            "cpu_intensive": True,
+            "memory_intensive": True,
+            "network_intensive": True,
+            "cluster": True,
+            "ports": ["10001"],
+            "os": "ubuntu",
+            "min_disk_gb": 100
+        },
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/ray/ray-worker-setup.sh",
+            "chmod +x ~/ray-worker-setup.sh",
+            "~/ray-worker-setup.sh -i $$Func(GetPublicIP(target=this)) -h $$Func(GetPublicIP(target=mc-ray.g1-1))"
+        ],
+        "result_pattern": r"Ray Worker connected to head node",
+        "deployment_strategy": "cluster"
+    },
+    "westward": {
+        "name": "Westward Game",
+        "category": "game",
+        "description": "Westward strategy game server deployment",
+        "requirements": {
+            "cpu_intensive": True,
+            "network_intensive": True,
+            "ports": ["80", "443"],
+            "os": "ubuntu",
+            "min_disk_gb": 50
+        },
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setgame.sh",
+            "chmod +x ~/setgame.sh; sudo ~/setgame.sh",
+            "echo 'Westward Game Server Ready'"
+        ],
+        "result_pattern": r"Westward Game Server Ready",
+        "deployment_strategy": "regional"
+    },
+    "weavescope": {
+        "name": "Weave Scope",
+        "category": "monitoring",
+        "description": "Container monitoring and visualization with Weave Scope using CB-Tumblebug built-in functions",
+        "requirements": {
+            "cpu_intensive": True,
+            "memory_intensive": True,
+            "network_intensive": True,
+            "ports": ["4040"],
+            "os": "ubuntu",
+            "min_disk_gb": 50
+        },
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/weavescope/startServer.sh",
+            "chmod +x ~/startServer.sh",
+            "sudo ~/startServer.sh $$Func(GetPublicIPs(separator=' ')) $$Func(GetPrivateIPs(separator=' '))"
+        ],
+        "result_pattern": r"Weave Scope: (http://[^:]+:4040)",
+        "deployment_strategy": "centralized"
+    },
+    "cross_nat": {
+        "name": "Cross-Cloud NAT Setup",
+        "category": "network",
+        "description": "Setup cross-cloud NAT for multi-cloud networking using CB-Tumblebug built-in functions",
+        "requirements": {
+            "cpu_intensive": False,
+            "memory_intensive": False,
+            "network_intensive": True,
+            "ports": [],
+            "os": "ubuntu",
+            "min_disk_gb": 30
+        },
+        "commands": [
+            "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setup-cross-cloud-nat.sh",
+            "chmod +x ~/setup-cross-cloud-nat.sh",
+            "~/setup-cross-cloud-nat.sh pub=$$Func(GetPublicIPs(target=this)) priv=$$Func(GetPrivateIPs(target=this))"
+        ],
+        "result_pattern": r"Cross-cloud NAT setup completed",
+        "deployment_strategy": "global"
+    },
+    "stress_test": {
+        "name": "System Stress Test",
+        "category": "testing",
+        "description": "CPU stress testing for performance validation",
+        "requirements": {
+            "cpu_intensive": True,
+            "memory_intensive": False,
+            "network_intensive": False,
+            "ports": [],
+            "os": "ubuntu",
+            "min_disk_gb": 30
+        },
+        "commands": [
+            "sudo apt install -y stress > /dev/null; stress -c 16 -t 60",
+            "echo 'Stress test completed - 16 cores for 60 seconds'",
+            ""
+        ],
+        "result_pattern": r"Stress test completed",
+        "deployment_strategy": "regional"
     }
 }
+
+# Tool: Get Ollama model discovery guide
+@mcp.tool()
+def get_ollama_model_discovery_guide(
+    use_case: Optional[str] = None,
+    category: Optional[str] = None
+) -> Dict:
+    """
+    Provide guidance for discovering latest Ollama models dynamically.
+    
+    Instead of static model lists, this tool provides LLM with instructions 
+    on how to find the most current model information from official sources.
+    
+    **CRITICAL LLM Instructions:**
+    1. Visit https://ollama.com/search to find latest models
+    2. Use search filters on ollama.com for specific categories
+    3. Check model tags, sizes, and descriptions on model pages
+    4. Verify model names before deployment
+    5. Consider hardware requirements based on model size
+    
+    **Model Discovery Workflow:**
+    1. Browse https://ollama.com/search for current models
+    2. Filter by category (code, chat, embedding, vision, etc.)
+    3. Check individual model pages for details and tags
+    4. Note model variants (7B, 13B, 70B, etc.)
+    5. Select appropriate models for deployment
+    
+    **Popular Categories to Search:**
+    - Code: deepseek-coder, qwen-coder, codellama, starcoder
+    - Chat: llama, qwen, gemma, mistral, phi
+    - Reasoning: deepseek-r1, qwen-plus, o1-mini
+    - Vision: llava, moondream, bakllava
+    - Embedding: nomic-embed, mxbai-embed
+    - Lightweight: gemma2, phi3, tinyllama
+    
+    Args:
+        use_case: Optional use case hint (e.g., "coding", "chat", "research")
+        category: Optional category filter hint
+    
+    Returns:
+        Discovery guidance with search strategies and model selection tips
+    """
+    
+    discovery_guide = {
+        "model_discovery_instructions": {
+            "primary_source": "https://ollama.com/search",
+            "search_strategy": [
+                "1. Open https://ollama.com/search in browser",
+                "2. Use search bar for specific terms (e.g., 'code', 'chat', 'vision')",
+                "3. Browse categories using filters on the left sidebar",
+                "4. Click on model names to see detailed information",
+                "5. Check 'Tags' tab on model pages for available versions",
+                "6. Note memory requirements and model sizes"
+            ],
+            "verification_steps": [
+                "1. Verify model names exactly as shown on ollama.com",
+                "2. Check if model supports desired capabilities",
+                "3. Review model size vs available hardware",
+                "4. Test with 'ollama pull <model_name>' to validate"
+            ]
+        },
+        
+        "search_categories": {
+            "code_development": {
+                "popular_patterns": ["deepseek-coder", "qwen-coder", "codellama", "starcoder", "codegemma"],
+                "search_terms": ["code", "programming", "coder", "developer"],
+                "considerations": "Look for models specifically trained on code datasets"
+            },
+            "conversational_ai": {
+                "popular_patterns": ["llama", "qwen", "gemma", "mistral", "phi"],
+                "search_terms": ["chat", "instruct", "assistant"],
+                "considerations": "Check if model is instruction-tuned for better chat performance"
+            },
+            "reasoning_tasks": {
+                "popular_patterns": ["deepseek-r1", "qwen-plus", "o1", "reasoning"],
+                "search_terms": ["reasoning", "think", "r1", "analysis"],
+                "considerations": "Models optimized for step-by-step reasoning and problem solving"
+            },
+            "multimodal_vision": {
+                "popular_patterns": ["llava", "moondream", "bakllava", "vision"],
+                "search_terms": ["vision", "image", "multimodal", "visual"],
+                "considerations": "Requires models that can process both text and images"
+            },
+            "embeddings": {
+                "popular_patterns": ["nomic-embed", "mxbai-embed", "all-minilm"],
+                "search_terms": ["embed", "embedding", "similarity"],
+                "considerations": "Specialized for vector embeddings and semantic search"
+            }
+        },
+        
+        "model_selection_guidelines": {
+            "size_considerations": {
+                "1B-3B": "Lightweight, fast inference, limited capabilities",
+                "7B-8B": "Good balance of performance and resource usage",
+                "13B-14B": "Better quality, moderate resource requirements", 
+                "30B+": "High quality, requires significant RAM/VRAM",
+                "70B+": "Best quality, enterprise-grade hardware needed"
+            },
+            "hardware_matching": {
+                "8GB RAM": "Up to 7B models (quantized)",
+                "16GB RAM": "Up to 13B models comfortably",
+                "32GB RAM": "Up to 30B models",
+                "64GB+ RAM": "70B+ models possible"
+            },
+            "use_case_optimization": {
+                "development_team": "Mix of code and chat models (e.g., deepseek-coder + qwen)",
+                "chat_service": "Instruction-tuned models with good conversation flow",
+                "research": "Latest reasoning models and specialized tools",
+                "production": "Stable, well-tested models with consistent performance"
+            }
+        },
+        
+        "current_trends": {
+            "2024_2025_popular": [
+                "DeepSeek R1 series (reasoning)",
+                "Qwen 2.5 series (multilingual)",
+                "Llama 3.x series (general purpose)",
+                "Gemma 2 series (efficient)",
+                "Phi-4 series (small but capable)"
+            ],
+            "emerging_categories": [
+                "Reasoning-optimized models",
+                "Code-specific fine-tunes", 
+                "Multimodal capabilities",
+                "Efficiency-focused variants"
+            ]
+        }
+    }
+    
+    # Customize response based on use case
+    if use_case:
+        use_case_lower = use_case.lower()
+        if "code" in use_case_lower or "programming" in use_case_lower:
+            discovery_guide["recommended_focus"] = "code_development"
+            discovery_guide["specific_guidance"] = "Focus on models with 'coder' or 'code' in name, check for code-specific training data"
+        elif "chat" in use_case_lower or "conversation" in use_case_lower:
+            discovery_guide["recommended_focus"] = "conversational_ai"
+            discovery_guide["specific_guidance"] = "Look for 'instruct' or 'chat' variants, test conversation quality"
+        elif "research" in use_case_lower or "analysis" in use_case_lower:
+            discovery_guide["recommended_focus"] = "reasoning_tasks"
+            discovery_guide["specific_guidance"] = "Prioritize reasoning models and latest research releases"
+    
+    discovery_guide["dynamic_search_examples"] = [
+        {
+            "scenario": "Find latest code models",
+            "steps": [
+                "1. Go to https://ollama.com/search",
+                "2. Search 'coder' or 'code'",
+                "3. Sort by recent or popularity",
+                "4. Check model sizes and capabilities",
+                "5. Select 2-3 models for different use cases"
+            ]
+        },
+        {
+            "scenario": "Discover new reasoning models",
+            "steps": [
+                "1. Search 'reasoning' or 'r1' on ollama.com",
+                "2. Check release dates for newest models",
+                "3. Read model descriptions for reasoning capabilities",
+                "4. Compare performance claims",
+                "5. Test with sample reasoning tasks"
+            ]
+        }
+    ]
+    
+    return discovery_guide
+
+# Tool: Deploy Ollama with custom model selection
+@mcp.tool()
+def deploy_ollama_pull_with_models(
+    ns_id: str,
+    mci_name: str,
+    selected_models: List[str],
+    vm_configurations: Optional[List[Dict]] = None,
+    description: str = "Ollama deployment with custom model selection"
+) -> Dict:
+    """
+    Deploy Ollama with user-selected models from dynamic discovery.
+    
+    **UPDATED Workflow:**
+    1. User calls get_ollama_model_discovery_guide() to learn how to find models
+    2. User visits https://ollama.com/search to discover latest models
+    3. User selects desired models from ollama.com
+    4. This function deploys Ollama and pulls the selected models
+    
+    **Model Discovery Process:**
+    - LLM should guide user to browse https://ollama.com/search
+    - User can search by categories (code, chat, vision, etc.)
+    - User selects specific model names from ollama.com
+    - This tool validates and deploys the selected models
+    
+    **Model Distribution:**
+    - If multiple VMs: Models are distributed using CB-Tumblebug's AssignTask function
+    - If single VM: All models are downloaded to that VM
+    
+    Args:
+        ns_id: Namespace ID
+        mci_name: Name for the MCI
+        selected_models: List of model names from ollama.com (e.g., ['llama3.3:latest', 'deepseek-r1'])
+        vm_configurations: Optional VM configs (if not provided, will create optimized config)
+        description: Deployment description
+    
+    Returns:
+        Deployment result with model distribution information
+    
+    Example:
+    ```python
+    # After user discovers models from ollama.com/search
+    result = deploy_ollama_pull_with_models(
+        ns_id="ai-project",
+        mci_name="ollama-cluster", 
+        selected_models=["llama3.3:latest", "deepseek-r1:latest", "qwen2.5:14b"],
+        description="Custom LLM deployment with user-discovered models"
+    )
+    ```
+    """
+    if not selected_models:
+        return {
+            "status": "error",
+            "error": "No models selected. Please use get_ollama_model_discovery_guide() to learn how to find models on ollama.com"
+        }
+    
+    # Validate model names (basic check)
+    for model in selected_models:
+        if not isinstance(model, str) or len(model.strip()) == 0:
+            return {
+                "status": "error", 
+                "error": f"Invalid model name: {model}. Visit https://ollama.com/search to get valid model names."
+            }
+    
+    try:
+        # If no VM configurations provided, create optimized ones based on model count
+        if not vm_configurations:
+            # Get VM specifications for LLM workload
+            specs = recommend_vm_spec(
+                filter_policies={
+                    "vCPU": {"min": 4, "max": 16},
+                    "memoryGiB": {"min": 8, "max": 32}
+                },
+                priority_policy="performance",
+                limit="10"
+            )
+            
+            if not specs or not specs.get("recommended_specs"):
+                return {"status": "error", "error": "Failed to get VM specifications"}
+            
+            # Create VM configurations based on model count
+            model_count = len(selected_models)
+            vm_count = min(model_count, 4)  # Max 4 VMs for distribution
+            
+            vm_configurations = []
+            for i in range(vm_count):
+                vm_configurations.append({
+                    "commonSpec": specs["recommended_specs"][i % len(specs["recommended_specs"])]["id"],
+                    "name": f"ollama-vm-{i+1}",
+                    "description": f"Ollama VM {i+1} for LLM models",
+                    "subGroupSize": "1"
+                })
+        
+        # Create the MCI first
+        mci_result = create_mci_dynamic(
+            ns_id=ns_id,
+            name=mci_name,
+            vm_configurations=vm_configurations,
+            description=description
+        )
+        
+        if mci_result.get("status") != "success":
+            return {
+                "status": "error",
+                "error": "Failed to create MCI",
+                "details": mci_result
+            }
+        
+        # Prepare model pull commands with user-selected models
+        models_str = ", ".join(selected_models)
+        
+        ollama_commands = [
+            # First install Ollama
+            "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOllama.sh | sh",
+            
+            # Pull selected models using AssignTask for distribution
+            f"OLLAMA_HOST=0.0.0.0:3000 ollama pull $$Func(AssignTask(task='{models_str}'))",
+            
+            # Show access information and list installed models
+            "echo '$$Func(GetPublicIP(target=this, prefix=http://, postfix=:3000))'",
+            "OLLAMA_HOST=0.0.0.0:3000 ollama list"
+        ]
+        
+        # Execute the commands
+        execution_result = execute_command_mci(
+            ns_id=ns_id,
+            mci_id=mci_name,
+            commands=ollama_commands
+        )
+        
+        return {
+            "status": "success",
+            "mci_created": mci_result,
+            "selected_models": selected_models,
+            "model_count": len(selected_models),
+            "vm_count": len(vm_configurations),
+            "model_distribution": f"Models distributed across {len(vm_configurations)} VMs using AssignTask",
+            "deployment_commands": ollama_commands,
+            "execution_result": execution_result,
+            "access_instructions": [
+                "1. Wait for all models to download (may take several minutes)",
+                "2. Access Ollama API at the provided HTTP endpoints", 
+                "3. Use 'ollama list' to verify model installation",
+                "4. Each VM may have different models based on distribution"
+            ],
+            "next_steps": [
+                "Deploy Open WebUI for web interface",
+                "Configure load balancing for multiple VMs",
+                "Set up model usage monitoring",
+                "Test model inference capabilities"
+            ]
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": f"Deployment failed: {str(e)}",
+            "selected_models": selected_models
+        }
 
 # Tool: List available application templates
 @mcp.tool()
@@ -7136,6 +7704,15 @@ def list_application_templates() -> Dict:
     - jitsi: Video conference with domain configuration
     - elk: Elasticsearch, Logstash, Kibana stack
     - ray: Distributed ML computing cluster
+    - vllm: High-performance LLM inference server
+    - nvidia_driver: NVIDIA CUDA driver installation
+    - ollama_pull: Pull specific LLM models for Ollama
+    - openwebui: Web interface for LLM models
+    - ray_worker: Ray worker nodes for cluster
+    - westward: Westward strategy game server
+    - weavescope: Container monitoring and visualization
+    - cross_nat: Cross-cloud NAT networking setup
+    - stress_test: CPU stress testing utility
     
     **For Predefined Applications - Use Exact Commands:**
     ✅ Use the exact wget/curl commands from APPLICATION_CONFIGS
@@ -7503,10 +8080,10 @@ def get_application_deployment_guide(
         "hardware_requirements": matched_app["hardware_requirements"],
         "deployment_workflow": {
             "step_1_namespace": {
-                "title": "Create or Validate Namespace",
-                "description": "Ensure you have a proper namespace for deployment",
+                "title": "Check there is existing Namespace such as default, create if not with a proper naming",
+                "description": "Ensure there is the namespace (default), create if not with a proper naming, if the default namespace exist use it for deployment",
                 "tools_to_use": ["check_and_prepare_namespace", "create_namespace_with_validation"],
-                "example": "check_and_prepare_namespace('my-app-ns')"
+                "example": "check_and_prepare_namespace('default')"
             },
             "step_2_vm_specs": {
                 "title": "Get VM Specifications",
@@ -7577,184 +8154,7 @@ def get_application_deployment_guide(
     }
     
     return deployment_guide
-    """
-    Deploy applications globally with automatic infrastructure provisioning and configuration.
     
-    Enhanced workflow with hardware requirements research:
-    1. Research application hardware requirements from internet (if enabled)
-    2. Application template validation with enhanced specifications
-    3. Infrastructure requirement analysis with researched hardware specs
-    4. Multi-region deployment planning with optimized VM configurations
-    5. MCI creation with recommended specs and minimum 50GB disk
-    6. Application installation and configuration
-    7. Service endpoint collection and reporting
-    
-    Args:
-        application_id: Application template ID (use list_application_templates() to see options)
-        regions: Number of regions for global deployment OR specific region list
-        instances_per_region: Number of instances to deploy per region (default: 1)
-        namespace_id: Namespace for deployment (default: "default")
-        custom_config: Optional custom configuration overrides
-        auto_confirm: Skip confirmation prompts for automated deployment
-        research_requirements: Whether to research hardware requirements from internet/knowledge base
-        deployment_type: Deployment environment ("production", "development", "testing")
-    
-    Returns:
-        Complete deployment result with:
-        - hardware_research: Researched hardware requirements and recommendations
-        - deployment_plan: Infrastructure and application deployment strategy
-        - infrastructure_created: Details of provisioned MCI and VMs
-        - application_deployment: Application installation results
-        - service_endpoints: Access URLs and connection information
-        - deployment_summary: Overall deployment status and next steps
-    
-    Examples:
-        # Deploy Xonotic game servers globally with automatic hardware research
-        deploy_application('xonotic', regions=10, auto_confirm=True, research_requirements=True)
-        
-        # Deploy Nginx in specific regions for production with enhanced specs
-        deploy_application('nginx', regions=['us-east-1', 'eu-west-1'], deployment_type='production')
-        
-        # Deploy Ollama LLM server with automatic GPU optimization
-        deploy_application('ollama', regions=3, custom_config={'gpu_required': True})
-    """
-    
-    deployment_id = f"app-deploy-{int(datetime.now().timestamp())}"
-    
-    # Validate application template
-    if application_id not in APPLICATION_CONFIGS:
-        available_apps = list(APPLICATION_CONFIGS.keys())
-        return {
-            "status": "error",
-            "error": f"Unknown application '{application_id}'. Available: {available_apps}",
-            "available_applications": available_apps
-        }
-    
-    app_config = APPLICATION_CONFIGS[application_id].copy()
-    
-    # Apply custom configuration overrides
-    if custom_config:
-        app_config["requirements"].update(custom_config.get("requirements", {}))
-        app_config.update({k: v for k, v in custom_config.items() if k != "requirements"})
-    
-    deployment_result = {
-        "deployment_id": deployment_id,
-        "application": {
-            "id": application_id,
-            "name": app_config["name"],
-            "category": app_config["category"]
-        },
-        "start_time": datetime.now().isoformat(),
-        "hardware_research": {},
-        "deployment_plan": {},
-        "infrastructure_created": {},
-        "application_deployment": {},
-        "service_endpoints": [],
-        "deployment_summary": {},
-        "status": "starting"
-    }
-    
-    try:
-        # Step 1: Research hardware requirements (new feature)
-        logger.info(f"Researching hardware requirements for {app_config['name']}")
-        if research_requirements:
-            hardware_research = research_application_requirements(
-                application_name=app_config['name'],
-                deployment_type=deployment_type
-            )
-            deployment_result["hardware_research"] = hardware_research
-        else:
-            # Use fallback if research is disabled
-            hardware_research = _get_fallback_hardware_requirements(
-                app_config['name'], deployment_type, "Research disabled by user"
-            )
-            deployment_result["hardware_research"] = hardware_research
-        
-        # Step 2: Create enhanced deployment plan with researched specs
-        logger.info(f"Creating enhanced deployment plan for {application_id}")
-        deployment_plan = _create_application_deployment_plan(
-            app_config, regions, instances_per_region, namespace_id, hardware_research
-        )
-        deployment_result["deployment_plan"] = deployment_plan
-        
-        # Step 3: Confirm deployment plan with hardware research
-        if not auto_confirm:
-            confirmation_msg = _generate_deployment_confirmation(deployment_plan, app_config, hardware_research)
-            deployment_result["confirmation_required"] = True
-            deployment_result["confirmation_message"] = confirmation_msg
-            deployment_result["status"] = "waiting_for_confirmation"
-            return deployment_result
-        
-        # Step 4: Provision infrastructure
-        logger.info(f"Provisioning infrastructure for {application_id}")
-        mci_name = f"{application_id}-{deployment_id[-8:]}"
-        
-        infrastructure_result = _provision_application_infrastructure(
-            deployment_plan, mci_name, namespace_id
-        )
-        deployment_result["infrastructure_created"] = infrastructure_result
-        
-        if infrastructure_result["status"] != "success":
-            deployment_result["status"] = "infrastructure_failed"
-            return deployment_result
-        
-        # Step 5: Deploy application
-        logger.info(f"Deploying {application_id} application")
-        mci_id = infrastructure_result["mci_id"]
-        
-        app_deployment_result = _deploy_application_to_infrastructure(
-            app_config, mci_id, namespace_id, deployment_plan
-        )
-        deployment_result["application_deployment"] = app_deployment_result
-        
-        # Step 5: Collect service endpoints
-        logger.info(f"Collecting service endpoints for {application_id}")
-        endpoints = _collect_service_endpoints(
-            app_config, mci_id, namespace_id, app_deployment_result
-        )
-        deployment_result["service_endpoints"] = endpoints
-        
-        # Step 6: Generate deployment summary
-        deployment_result["deployment_summary"] = _generate_deployment_summary(
-            deployment_result, app_config
-        )
-        deployment_result["status"] = "completed"
-        deployment_result["end_time"] = datetime.now().isoformat()
-        
-        # Store deployment in memory
-        _store_interaction_memory(
-            user_request=f"Deploy {application_id} application in {regions} regions",
-            llm_response=f"{application_id} deployed successfully with {len(endpoints)} service endpoints",
-            operation_type="application_deployment",
-            context_data={
-                "application_id": application_id,
-                "deployment_id": deployment_id,
-                "mci_id": mci_id,
-                "namespace": namespace_id,
-                "endpoints": endpoints
-            },
-            status="completed"
-        )
-        
-        return deployment_result
-        
-    except Exception as e:
-        deployment_result["status"] = "error"
-        deployment_result["error"] = str(e)
-        deployment_result["end_time"] = datetime.now().isoformat()
-        
-        # Attempt cleanup
-        if "mci_id" in deployment_result.get("infrastructure_created", {}):
-            try:
-                cleanup_result = delete_mci(
-                    namespace_id, 
-                    deployment_result["infrastructure_created"]["mci_id"]
-                )
-                deployment_result["cleanup_attempted"] = cleanup_result
-            except:
-                deployment_result["cleanup_attempted"] = {"status": "failed"}
-        
-        return deployment_result
 
 # Tool: Execute custom commands on deployed applications
 @mcp.tool()
@@ -7766,6 +8166,15 @@ def execute_application_commands(
 ) -> Dict:
     """
     Execute custom commands on deployed application infrastructure.
+    
+    🚨 **EXECUTION TIME WARNING:**
+    Application commands may take considerable time depending on:
+    - Command complexity and processing requirements
+    - Application-specific operations (database operations, file processing, etc.)
+    - Network operations and data transfers
+    - Multiple VM coordination
+    
+    **LLM should inform users about potential delays before executing application commands.**
     
     Args:
         mci_id: MCI ID where application is deployed
@@ -8145,11 +8554,27 @@ def _deploy_application_to_infrastructure(
 
 # Helper function: Expand command templates
 def _expand_command_templates(command: str, access_info: Dict, mci_id: str) -> str:
-    """Expand template variables in commands."""
+    """
+    Expand template variables in commands with MapUI compatibility.
+    
+    Note: CB-Tumblebug built-in functions ($$Func(...)) are processed by the CB-Tumblebug server
+    during command execution, so they should be passed through as-is without modification.
+    
+    Built-in functions include:
+    - $$Func(GetPublicIP(target=this))
+    - $$Func(GetPublicIPs(separator=' '))
+    - $$Func(GetMciId())
+    - $$Func(AssignTask(task='...'))
+    - etc.
+    """
     
     expanded_cmd = command
     
-    # Extract access information
+    # Skip processing if command contains CB-Tumblebug built-in functions
+    if "$$Func(" in command:
+        return command  # Return as-is for CB-Tumblebug to process
+    
+    # Extract access information for manual template variables
     access_data = access_info.get("access_info", {})
     
     # Get public and private IPs
@@ -8163,18 +8588,26 @@ def _expand_command_templates(command: str, access_info: Dict, mci_id: str) -> s
             if vm.get("private_ip"):
                 private_ips.append(vm["private_ip"])
     
-    # Replace template variables
+    # Process only manual template variables ({{...}})
     if public_ips:
         expanded_cmd = expanded_cmd.replace("{{public_ip}}", public_ips[0])
         expanded_cmd = expanded_cmd.replace("{{public_ips_space}}", " ".join(public_ips))
         expanded_cmd = expanded_cmd.replace("{{public_ips_comma}}", ",".join(public_ips))
+        # MapUI-style semicolon separator with port
+        expanded_cmd = expanded_cmd.replace("{{public_ips_semicolon_with_port}}", 
+                                          ";".join([f"http://{ip}:3000" for ip in public_ips]))
     
     if private_ips:
         expanded_cmd = expanded_cmd.replace("{{private_ip}}", private_ips[0])
         expanded_cmd = expanded_cmd.replace("{{private_ips_space}}", " ".join(private_ips))
         expanded_cmd = expanded_cmd.replace("{{private_ips_comma}}", ",".join(private_ips))
     
+    # MCI ID replacement
     expanded_cmd = expanded_cmd.replace("{{mci_id}}", mci_id)
+    
+    # Special placeholder for Ray head IP (for worker nodes)
+    # This would need to be set by the deployment context
+    expanded_cmd = expanded_cmd.replace("{{ray_head_ip}}", public_ips[0] if public_ips else "RAY_HEAD_IP_PLACEHOLDER")
     
     return expanded_cmd
 
@@ -8419,6 +8852,17 @@ def execute_compute_task(
     """
     Execute computational tasks by automatically provisioning infrastructure,
     running the computation, collecting results, and cleaning up resources.
+    
+    🚨 **EXTENDED EXECUTION TIME WARNING:**
+    This function involves MULTIPLE time-consuming operations:
+    - Infrastructure provisioning: 3-8 minutes
+    - Environment setup and software installation: 5-15 minutes
+    - Actual computation execution: Variable (minutes to hours)
+    - Result collection and processing: 1-3 minutes
+    - Resource cleanup: 2-5 minutes
+    
+    **Total expected time: 15-30+ minutes for complete workflow**
+    **LLM MUST inform users about the extended duration before execution.**
     
     This function provides a complete compute-as-a-service workflow:
     1. Analyze computational requirements
@@ -9189,11 +9633,33 @@ execute_command_mci(ns_id, mci_id, [
     "echo 'Web Server: http://{{public_ip}}'"
 ])
 
-# EXAMPLE: Ollama LLM Server
+# EXAMPLE: Ollama LLM Server (Basic Setup)
 execute_command_mci(ns_id, mci_id, [
     "curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/deployOllama.sh | sh",
     "echo 'LLM Server: http://{{public_ip}}:3000'"
 ])
+
+# 🚀 SPECIAL CASE: Ollama Model Deployment with Dynamic Selection
+# For ollama_pull requests, use NEW ENHANCED WORKFLOW:
+
+# Step 1: Guide user to discover latest models
+discovery_guide = get_ollama_model_discovery_guide(
+    use_case="coding",  # or "chat", "research", etc.
+    category="code"     # optional category filter
+)
+
+# Step 2: Instruct user to visit ollama.com/search
+print("🔍 Please visit https://ollama.com/search to find latest models")
+print("📋 Browse categories and select models you need")
+print("✅ Note down exact model names for deployment")
+
+# Step 3: Deploy with user-selected models
+result = deploy_ollama_pull_with_models(
+    ns_id="namespace",
+    mci_name="ollama-cluster",
+    selected_models=["llama3.3:latest", "deepseek-r1:latest", "qwen2.5:14b"],  # User-selected
+    description="Custom LLM deployment with latest models"
+)
 
 # EXAMPLE: Jitsi Meet Conference
 execute_command_mci(ns_id, mci_id, [
@@ -9400,6 +9866,59 @@ LLM Decision:
 3. Commands: curl startServer.sh | bash -s -- --ip {{public_ip}}
 ```
 
+### 🚨 CRITICAL: Remote Command Execution Time Warnings
+
+**⏰ IMPORTANT PERFORMANCE CONSIDERATIONS:**
+
+Remote command execution via CB-Tumblebug API can take **significantly longer** than expected:
+
+#### ⏱️ **Expected Response Times:**
+- **Simple commands** (ls, ps, whoami): 10-30 seconds
+- **Package updates** (apt update): 1-3 minutes  
+- **Software installation** (apt install nginx): 2-5 minutes
+- **Application deployment scripts**: 5-15 minutes
+- **Complex setups** (databases, Docker, clusters): 10-20 minutes
+- **Large downloads/compilations**: **Up to 20+ minutes**
+
+#### 🚨 **LLM MUST INFORM USERS:**
+
+**Before executing remote commands, ALWAYS tell users:**
+
+```
+⏰ IMPORTANT: Remote command execution may take several minutes to complete.
+   - Simple installations: 2-5 minutes
+   - Complex applications: 10-20 minutes
+   - Please be patient during the deployment process.
+   
+🔄 The system will provide progress updates when commands complete.
+```
+
+#### 🎯 **Best Practices for LLMs:**
+
+1. **🗣️ Set Expectations:** Always warn users about potential delays
+2. **📦 Batch Commands:** Group related commands to minimize API calls
+3. **🔍 Use Verification:** Add simple verification commands to check progress
+4. **📊 Enable Summarization:** Use `summarize_output=True` for large outputs
+5. **⚡ Break Down Complex:** Split large deployments into smaller batches
+
+#### 📋 **Example User Communication:**
+
+```python
+# ✅ GOOD: Inform user before execution
+print("⏰ Starting deployment - this may take 5-10 minutes...")
+print("📦 Installing application packages and dependencies...")
+
+result = execute_command_mci(ns_id, mci_id, installation_commands)
+
+print("✅ Deployment completed! Checking service status...")
+```
+
+```python
+# ❌ BAD: No warning about timing
+result = execute_command_mci(ns_id, mci_id, installation_commands)
+# User may think system is frozen
+```
+
 ### 🎯 SUCCESS METRICS
 
 **✅ Successful deployment must:**
@@ -9602,7 +10121,7 @@ I encountered a [specific error type] while [operation attempted].
 ⏳ **Please wait while I resolve this...**
 ```
 
-## � STEP-BY-STEP APPLICATION DEPLOYMENT WORKFLOW
+## STEP-BY-STEP APPLICATION DEPLOYMENT WORKFLOW
 
 ### Step 1: Get Application Deployment Guide
 ```python
@@ -9829,6 +10348,108 @@ access_info = get_mci_access_info("web-servers", "nginx-mci")
 6. ✅ Include troubleshooting guidance
 
 This approach ensures reliable, debuggable, and maintainable application deployments.
+
+## 🚀 SPECIAL CASE: Dynamic LLM Model Discovery for Ollama
+
+### 🔍 NEW APPROACH: Real-Time Model Discovery (Recommended for Ollama)
+
+When users request Ollama deployment, use the NEW dynamic discovery workflow:
+
+#### Step 1: Provide Model Discovery Guidance
+```python
+# Give user instructions for finding latest models
+discovery_guide = get_ollama_model_discovery_guide(
+    use_case="coding",  # or user's specific use case
+    category="code"     # or user's preferred category
+)
+
+# Show the discovery instructions to user
+print("🔍 To find the latest Ollama models:")
+print("1. Visit https://ollama.com/search")
+print("2. Browse categories or search for specific model types")
+print("3. Note down exact model names you want to deploy")
+print("4. Consider model sizes vs your hardware requirements")
+```
+
+#### Step 2: User Model Selection Workflow
+```python
+# Guide user through selection process
+print("📋 Example searches on ollama.com:")
+print("- Search 'coder' for programming models")
+print("- Search 'chat' for conversational models") 
+print("- Search 'reasoning' for advanced reasoning models")
+print("- Browse by size: 7B, 13B, 70B variants")
+
+print("✅ Please select 2-5 models and provide their exact names")
+print("Example selections:")
+print("- ['llama3.3:latest', 'deepseek-r1:latest', 'qwen2.5:14b']")
+print("- ['codellama:latest', 'mistral:latest', 'gemma2:9b']")
+```
+
+#### Step 3: Deploy with User-Selected Models
+```python
+# Once user provides model selections
+selected_models = ["llama3.3:latest", "deepseek-r1:latest", "qwen2.5:14b"]  # User input
+
+# Deploy using the enhanced tool
+result = deploy_ollama_pull_with_models(
+    ns_id="ai-workspace",
+    mci_name="ollama-cluster",
+    selected_models=selected_models,
+    description="Custom LLM deployment with latest models from ollama.com"
+)
+```
+
+#### Step 4: Alternative - Fallback to APPLICATION_CONFIGS
+```python
+# If user prefers not to browse ollama.com, use APPLICATION_CONFIGS fallback
+# This will show guidance to visit ollama.com but use predefined workflow
+execute_command_mci(ns_id, mci_id, [
+    APPLICATION_CONFIGS["ollama_pull"]["commands"]  # Shows ollama.com guidance
+])
+```
+
+### 🎯 Why Dynamic Discovery is Better:
+
+#### ✅ **Advantages:**
+1. **Always Current**: Gets latest models released on ollama.com
+2. **User Choice**: User selects exactly what they need
+3. **Flexibility**: Supports any model available on ollama.com
+4. **Discovery Learning**: User learns about available options
+5. **No Maintenance**: No need to update static model lists
+
+#### 📋 **LLM Behavior for Ollama Requests:**
+```
+User: "Deploy Ollama with latest code models"
+
+LLM Response:
+"I'll help you deploy Ollama with the latest models. Let me guide you through 
+discovering the most current models available:
+
+🔍 Step 1: Model Discovery
+I'll provide guidance on finding the latest models...
+[calls get_ollama_model_discovery_guide()]
+
+📋 Step 2: Your Selection
+Please visit https://ollama.com/search and:
+- Search for 'coder' or 'code' for programming models
+- Note model sizes (7B, 13B, etc.) for your hardware
+- Select 2-5 models you'd like to deploy
+
+✅ Step 3: Deployment
+Once you provide the model names, I'll deploy them using
+deploy_ollama_pull_with_models() with your selections.
+
+This ensures you get the very latest models available!"
+```
+
+### 🚨 CRITICAL: No More Static Model Lists
+- ❌ **Avoid**: Hardcoded model lists that become outdated
+- ✅ **Use**: Dynamic discovery through ollama.com
+- ✅ **Guide**: Users to make informed selections
+- ✅ **Deploy**: Exactly what users want from latest available models
+
+This approach ensures users always get access to the newest and most relevant LLM models for their specific use cases.
 """
 
 @mcp.prompt() 
@@ -10343,5 +10964,42 @@ else:
 - ℹ️ **info messages** → Informational, no action required
 
 This comprehensive validation system ensures reliable, cost-effective, and properly configured MCI deployments.
+
+## 🕒 CRITICAL REMINDER: Remote Command Execution Timing
+
+### 🚨 **MANDATORY USER WARNINGS for ALL LLMs**
+
+**Before executing ANY remote commands, LLMs MUST inform users:**
+
+```
+⏰ IMPORTANT TIMING NOTICE:
+• Remote command execution can take 5-20+ minutes
+• Complex deployments may require up to 20 minutes
+• Please be patient during the process
+• Progress will be reported when commands complete
+
+📊 Typical timing expectations:
+- Simple commands: 10-30 seconds
+- Package installation: 2-5 minutes  
+- Application deployment: 5-15 minutes
+- Complex setups: 10-20+ minutes
+```
+
+### 🎯 **LLM Best Practices for Command Execution:**
+
+1. **⚠️ Always warn users first** before any execute_command_mci() call
+2. **📦 Batch related commands** to minimize API calls
+3. **🔍 Add verification steps** to check progress
+4. **📊 Use summarize_output=True** for large outputs
+5. **💡 Explain what's happening** during long operations
+
+### 🔧 **Technical Implementation Notes:**
+
+- **API timeout extended to 20 minutes** for remote commands
+- **Automatic output summarization** to manage response size
+- **Enhanced error handling** for timeout scenarios
+- **Progress indicators** in command responses
+
+**🎯 Remember: Setting proper expectations prevents user frustration and ensures smooth deployment experiences.**
 """
 
