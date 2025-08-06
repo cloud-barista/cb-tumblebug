@@ -20,6 +20,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
@@ -615,6 +616,8 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	// API to create a vNet
 	url := fmt.Sprintf("%s/vpc", model.SpiderRestUrl)
 
+	log.Debug().Msgf("[Request to Spider] Creating VPC (url: %s, request body: %+v)", url, spReqt)
+
 	// Cleanup object when something goes wrong
 	defer func() {
 		// Only if this operation fails, the vNet will be deleted
@@ -659,6 +662,8 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 		&spResp,
 		clientManager.MediumDuration,
 	)
+
+	log.Debug().Msgf("[Response from Spider] Creating VPC (response body: %+v)", spResp)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -864,6 +869,8 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 	queryParams := "?ConnectionName=" + vNetInfo.ConnectionName
 	url += queryParams
 
+	log.Debug().Msgf("[Request to Spider] Getting VPC (url: %s, request body: %+v)", url, spReqt)
+
 	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -874,6 +881,8 @@ func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
 		&spResp,
 		clientManager.MediumDuration,
 	)
+
+	log.Debug().Msgf("[Response from Spider] Getting VPC (response body: %+v)", spResp)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1033,27 +1042,52 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 	}
 	url += queryParam
 
-	var spResp spiderBooleanInfoResp
+	trials := 2
+	seconds := uint64(3)
+	ok := false
+	// Sleep and retry if the vNet deletion fails
+	for i := range trials {
+		if i > 0 {
+			log.Warn().Msgf("Retrying to delete vNet (%s) after %d seconds...", vNetId, seconds)
+		}
+		// Sleep for a while before retrying
+		time.Sleep(time.Duration(seconds) * time.Second)
 
-	client := resty.New()
-	method := "DELETE"
+		log.Debug().Msgf("[Request to Spider] Deleting VPC (url: %s, request body: %+v)", url, spReqt)
 
-	err = clientManager.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		clientManager.SetUseBody(spReqt),
-		&spReqt,
-		&spResp,
-		clientManager.MediumDuration,
-	)
+		var spResp spiderBooleanInfoResp
 
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyRet, err
+		client := resty.New()
+		method := "DELETE"
+
+		err = clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			clientManager.SetUseBody(spReqt),
+			&spReqt,
+			&spResp,
+			clientManager.MediumDuration,
+		)
+
+		log.Debug().Msgf("[Response from Spider] Deleting VPC (response body: %+v)", spResp)
+
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			continue
+		}
+		ok, err = strconv.ParseBool(spResp.Result)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			continue
+		}
+		if ok {
+			break
+		}
 	}
-	ok, err := strconv.ParseBool(spResp.Result)
+
+	// Finally, check if the vNet deletion was successful
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1085,6 +1119,7 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 	// [Output] the message
 	ret.Message = fmt.Sprintf("the vNet (%s) has been deleted", vNetId)
 
+	log.Info().Msgf("vNet (%s) has been deleted", vNetId)
 	return ret, nil
 }
 
@@ -1159,6 +1194,8 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	queryParams := "?ConnectionName=" + vNetInfo.ConnectionName
 	url += queryParams
 
+	log.Debug().Msgf("[Request to Spider] Refining VPC (url: %s, request body: %+v)", url, spReqt)
+
 	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -1169,6 +1206,8 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 		&spResp,
 		clientManager.MediumDuration,
 	)
+
+	log.Debug().Msgf("[Response from Spider] Refining VPC (response body: %+v)", spResp)
 
 	// if err != nil {
 	// 	log.Error().Err(err).Msg("")
@@ -1269,6 +1308,7 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	// [Output] the message
 	ret.Message = fmt.Sprintf("the vNet info (%s) has been refined", vNetId)
 
+	log.Info().Msgf("vNet (%s) has been refined", vNetId)
 	return ret, nil
 }
 
@@ -1366,6 +1406,8 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 		spReqt = spiderVPCRegisterRequest{}
 	}
 
+	log.Debug().Msgf("[Request to Spider] Registering VPC (url: %s, request body: %+v)", url, spReqt)
+
 	// Clean up the vNet object when something goes wrong
 	defer func() {
 		// Only if this operation fails, the vNet will be deleted
@@ -1410,6 +1452,8 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 		&spResp,
 		clientManager.MediumDuration,
 	)
+
+	log.Debug().Msgf("[Response from Spider] Registering VPC (response body: %+v)", spResp)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1545,6 +1589,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 		return emptyRet, err
 	}
 
+	log.Info().Msgf("vNet (%s) has been registered", vNetInfo.Id)
 	return vNetInfo, nil
 }
 
@@ -1661,6 +1706,8 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 	// API to delete a vNet
 	url := fmt.Sprintf("%s/regvpc/%s", model.SpiderRestUrl, vNetInfo.CspResourceName)
 
+	log.Debug().Msgf("[Request to Spider] Deregistering VPC (url: %s, request body: %+v)", url, spReqt)
+
 	var spResp spiderBooleanInfoResp
 
 	client := resty.New()
@@ -1676,6 +1723,8 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 		&spResp,
 		clientManager.MediumDuration,
 	)
+
+	log.Debug().Msgf("[Response from Spider] Deregistering VPC (response body: %+v)", spResp)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1713,6 +1762,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 	// [Output] the message
 	ret.Message = fmt.Sprintf("the vnet (%s) has been deregistered", vNetId)
 
+	log.Info().Msgf("vNet (%s) has been deregistered", vNetId)
 	return ret, nil
 }
 
@@ -1722,6 +1772,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 
 // DesignVNets accepts a VNet design request, designs and returns a VNet design response
 func DesignVNets(reqt *model.VNetDesignRequest) (model.VNetDesignResponse, error) {
+	log.Info().Msg("DesignVNets")
 
 	var vNetDesignResp model.VNetDesignResponse
 	var vNetReqList []model.TbVNetReq
@@ -1835,5 +1886,6 @@ func DesignVNets(reqt *model.VNetDesignRequest) (model.VNetDesignResponse, error
 		vNetDesignResp.RootNetworkCIDR = supernet
 	}
 
+	log.Info().Msgf("Designed %d vNets with supernetting enabled: %s", len(vNetReqList), vNetDesignResp.RootNetworkCIDR)
 	return vNetDesignResp, nil
 }

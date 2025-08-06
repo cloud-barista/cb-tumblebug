@@ -324,6 +324,8 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 	// API to create a subnet
 	url := fmt.Sprintf("%s/vpc/%s/subnet", model.SpiderRestUrl, vNetInfo.CspResourceName)
 
+	log.Debug().Msgf("[Request to Spider] Creating Subnet (url: %s, request body: %+v)", url, spReqt)
+
 	// Clean up the object when something goes wrong
 	defer func() {
 		// Only if this operation fails, the subnet will be deleted
@@ -356,6 +358,8 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 		&spResp,
 		clientManager.MediumDuration,
 	)
+
+	log.Debug().Msgf("[Response from Spider] Creating Subnet (response body: %+v)", spResp)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -534,6 +538,9 @@ func GetSubnet(nsId string, vNetId string, subnetId string) (model.TbSubnetInfo,
 	url += queryParams
 
 	spReqt := clientManager.NoBody
+
+	log.Debug().Msgf("[Request to Spider] Getting Subnet (url: %s, request body: %+v)", url, spReqt)
+
 	var spResp spiderSubnetInfo
 
 	err = clientManager.ExecuteHttpRequest(
@@ -546,6 +553,8 @@ func GetSubnet(nsId string, vNetId string, subnetId string) (model.TbSubnetInfo,
 		&spResp,
 		clientManager.MediumDuration,
 	)
+
+	log.Debug().Msgf("[Response from Spider] Getting Subnet (response body: %+v)", spResp)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -728,6 +737,8 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 	}
 	url += queryParams
 
+	log.Debug().Msgf("[Request to Spider] Deleting Subnet (url: %s, request body: %+v)", url, spReqt)
+
 	var spResp spiderBooleanInfoResp
 
 	client := resty.New()
@@ -743,6 +754,8 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 		&spResp,
 		clientManager.MediumDuration,
 	)
+
+	log.Debug().Msgf("[Response from Spider] Deleting Subnet (response body: %+v)", spResp)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -799,6 +812,8 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
+
+	log.Debug().Msgf("subnet (%s) has been deleted", subnetId)
 
 	// [Output] the message
 	ret.Message = fmt.Sprintf("the subnet (%s) has been deleted", subnetId)
@@ -902,6 +917,9 @@ func RefineSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 	url += queryParams
 
 	spReqt := clientManager.NoBody
+
+	log.Debug().Msgf("[Request to Spider] Refining Subnet (url: %s, request body: %+v)", url, spReqt)
+
 	var spResp spiderSubnetInfo
 
 	err = clientManager.ExecuteHttpRequest(
@@ -914,6 +932,8 @@ func RefineSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 		&spResp,
 		clientManager.MediumDuration,
 	)
+
+	log.Debug().Msgf("[Response from Spider] Refining Subnet (response body: %+v)", spResp)
 
 	// if err != nil {
 	// 	log.Error().Err(err).Msg("")
@@ -1103,6 +1123,8 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubne
 	url := fmt.Sprintf("%s/regsubnet", model.SpiderRestUrl)
 	// [Note] Spider doesn't provide "GET /vpc{VPCName}/subnet" API
 
+	log.Debug().Msgf("[Request to Spider] Registering Subnet (url: %s, request body: %+v)", url, spReqt)
+
 	// Defer function to ensure cleanup object
 	defer func() {
 		// Only if this operation fails, the subnet will be deleted
@@ -1135,6 +1157,8 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubne
 		&spResp,
 		clientManager.MediumDuration,
 	)
+
+	log.Debug().Msgf("[Response from Spider] Registering Subnet (response body: %+v)", spResp)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1330,6 +1354,8 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 	// API to deregister subnet
 	url := fmt.Sprintf("%s/regsubnet/%s", model.SpiderRestUrl, subnetInfo.CspResourceName)
 
+	log.Debug().Msgf("[Request to Spider] Deregistering Subnet (url: %s, request body: %+v)", url, spReqt)
+
 	var spResp spiderBooleanInfoResp
 
 	client := resty.New()
@@ -1345,6 +1371,8 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 		&spResp,
 		clientManager.MediumDuration,
 	)
+
+	log.Debug().Msgf("[Response from Spider] Deregistering Subnet (response body: %+v)", spResp)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
