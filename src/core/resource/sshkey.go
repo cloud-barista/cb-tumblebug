@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -133,49 +134,65 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 	requestBody.ReqInfo.Name = uid
 	requestBody.ReqInfo.CSPId = u.CspResourceId
 
-	var tempSpiderKeyPairInfo *model.SpiderKeyPairInfo
+	var tempSpiderKeyPairInfo model.SpiderKeyPairInfo
 
 	client := resty.New().SetCloseConnection(true)
-	client.SetAllowGetMethodPayload(true)
-
-	req := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody).
-		SetResult(&model.SpiderKeyPairInfo{}) // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-
-	var resp *resty.Response
 
 	var url string
+	var method string
+
 	if option == "register" && u.CspResourceId == "" {
-		url = fmt.Sprintf("%s/keypair/%s", model.SpiderRestUrl, u.Name)
-		resp, err = req.Get(url)
+		// GET request with ConnectionName as query parameter
+		url = fmt.Sprintf("%s/keypair/%s?ConnectionName=%s", model.SpiderRestUrl, u.Name, u.ConnectionName)
+		method = "GET"
+
+		requestBodyNoBody := clientManager.NoBody
+		err = clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			clientManager.SetUseBody(requestBodyNoBody),
+			&requestBodyNoBody,
+			&tempSpiderKeyPairInfo,
+			clientManager.VeryShortDuration,
+		)
+
 	} else if option == "register" && u.CspResourceId != "" {
 		url = fmt.Sprintf("%s/regkeypair", model.SpiderRestUrl)
-		resp, err = req.Post(url)
+		method = "POST"
+
+		err = clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			clientManager.SetUseBody(requestBody),
+			&requestBody,
+			&tempSpiderKeyPairInfo,
+			clientManager.VeryShortDuration,
+		)
+
 	} else { // option != "register"
 		url = fmt.Sprintf("%s/keypair", model.SpiderRestUrl)
-		resp, err = req.Post(url)
+		method = "POST"
+
+		err = clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			clientManager.SetUseBody(requestBody),
+			&requestBody,
+			&tempSpiderKeyPairInfo,
+			clientManager.VeryShortDuration,
+		)
 	}
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return emptyObj, err
 	}
-
-	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		fmt.Println("body: ", string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		return emptyObj, err
-	}
-
-	tempSpiderKeyPairInfo = resp.Result().(*model.SpiderKeyPairInfo)
-
-	common.PrintJsonPretty(tempSpiderKeyPairInfo)
 
 	content := model.TbSshKeyInfo{}
 	content.ResourceType = resourceType
@@ -216,7 +233,6 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 		content.PrivateKey = normalizePrivateKey(u.PrivateKey, content.KeyValueList)
 	}
 
-	log.Info().Msg("PUT CreateSshKey")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = kvstore.Put(Key, string(Val))

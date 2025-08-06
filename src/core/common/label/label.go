@@ -21,22 +21,125 @@ import (
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
-// cspSyncSkipMap contains resource types that should be skipped when synchronizing with CSP
-var cspSyncSkipMap = map[string]bool{
-	model.StrVPN: true,
-	// * NOTE: Add any other resource types that shouldn't be synced with CSP
+// cspSyncSkipConfig contains resource types and CSP combinations that should be skipped when synchronizing with CSP
+type CSPSyncConfig struct {
+	// GlobalSkipResourceTypes contains resource types that should be skipped for all CSPs
+	GlobalSkipResourceTypes map[string]bool
+	// CSPSpecificSkipConfig contains CSP-specific skip configurations
+	CSPSpecificSkipConfig map[string]map[string]bool // map[cspType][resourceType]bool
+	// CSPGlobalSkip contains CSPs that don't support tags for any resource types
+	CSPGlobalSkip map[string]bool // map[cspType]bool - if true, skip all resource types for this CSP
 }
 
-// isCSPSyncEnabled determines if CSP synchronization is enabled for a label type
-func isCSPSyncEnabled(labelType string) bool {
-	shouldSkip, exists := cspSyncSkipMap[labelType]
-	return !exists || !shouldSkip
+var cspSyncSkipConfig = CSPSyncConfig{
+	GlobalSkipResourceTypes: map[string]bool{
+		model.StrVPN: true,
+	},
+	CSPGlobalSkip: map[string]bool{
+		// csp.NCP:       true,
+		csp.NHNCloud: true,
+	},
+	CSPSpecificSkipConfig: map[string]map[string]bool{
+		csp.Azure: {
+			model.StrVNet: true,
+		},
+		csp.Alibaba: {
+			model.StrVNet:       true,
+			model.StrSubnet:     true,
+			model.StrKubernetes: true,
+		},
+		csp.GCP: {
+			model.StrVNet:          true,
+			model.StrSubnet:        true,
+			model.StrSecurityGroup: true,
+			model.StrSSHKey:        true,
+			model.StrCustomImage:   true,
+			model.StrNLB:           true,
+			// and currently there is some restriction on tags for GCP resources because of naming conventions
+		},
+		csp.NCP: {
+			model.StrVNet:          true,
+			model.StrSubnet:        true,
+			model.StrSecurityGroup: true,
+			model.StrSSHKey:        true,
+			model.StrDataDisk:      true,
+			model.StrCustomImage:   true,
+			model.StrNLB:           true,
+			model.StrKubernetes:    true,
+		},
+		csp.KTCloud: {
+			model.StrVNet:          true,
+			model.StrSubnet:        true,
+			model.StrSecurityGroup: true,
+			model.StrSSHKey:        true,
+			model.StrNLB:           true,
+			model.StrKubernetes:    true,
+		},
+		csp.OpenStack: {
+			model.StrSSHKey:      true,
+			model.StrDataDisk:    true,
+			model.StrCustomImage: true,
+			model.StrNLB:         true,
+			model.StrKubernetes:  true,
+		},
+	},
+}
+
+// isCSPSyncEnabled determines if CSP synchronization is enabled for a label type and connection name
+func isCSPSyncEnabled(labelType string, connectionName string) bool {
+	// Get provider name from connection configuration
+	cspType, err := getProviderNameFromConnectionName(connectionName)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get provider name from connection config")
+		return false // Skip sync if we can't determine CSP type
+	}
+
+	// Check if this CSP globally doesn't support tags for any resource types
+	if shouldSkip, exists := cspSyncSkipConfig.CSPGlobalSkip[cspType]; exists && shouldSkip {
+		return false
+	}
+
+	// Check global skip list first
+	if shouldSkip, exists := cspSyncSkipConfig.GlobalSkipResourceTypes[labelType]; exists && shouldSkip {
+		return false
+	}
+
+	// Check CSP-specific skip configuration
+	if cspSkipMap, exists := cspSyncSkipConfig.CSPSpecificSkipConfig[cspType]; exists {
+		if shouldSkip, exists := cspSkipMap[labelType]; exists && shouldSkip {
+			return false
+		}
+	}
+
+	return true
+} // getProviderNameFromConnectionName extracts provider name from connection configuration
+func getProviderNameFromConnectionName(connectionName string) (string, error) {
+	// Generate connection key
+	key := "/connection/" + connectionName
+	keyValue, err := kvstore.GetKv(key)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return "", err
+	}
+	if keyValue == (kvstore.KeyValue{}) {
+		return "", fmt.Errorf("cannot find the connection config %s", key)
+	}
+
+	var connConfig model.ConnConfig
+	err = json.Unmarshal([]byte(keyValue.Value), &connConfig)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return "", err
+	}
+
+	return connConfig.ProviderName, nil
 }
 
 // CreateOrUpdateLabel adds a new label or updates an existing label for the given resource,
@@ -75,9 +178,9 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 		}
 	}
 
-	if isCSPSyncEnabled(labelType) { // Note: In the case of VPN, label synchronization with CSP is skipped.
-		// if kvstore key has LabelConnectionName, try ListCSPResourceLabel
-		if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
+	// if kvstore key has LabelConnectionName, try ListCSPResourceLabel
+	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
+		if isCSPSyncEnabled(labelType, connectionName) { // Note: In the case of VPN or specific CSP combinations, label synchronization with CSP is skipped.
 			lbs := ListCSPResourceLabel(labelType, uid, connectionName)
 			log.Info().Msgf("ListCSPResourceLabel: %v", lbs)
 
@@ -102,9 +205,9 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 		return fmt.Errorf("failed to put label info into kvstore: %w", err)
 	}
 
-	if isCSPSyncEnabled(labelType) { // Note: In the case of VPN, label synchronization with CSP is skipped.
-		// if kvstore key has LabelConnectionName, try UpdateCSPResourceLabel
-		if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
+	// if kvstore key has LabelConnectionName, try UpdateCSPResourceLabel
+	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
+		if isCSPSyncEnabled(labelType, connectionName) { // Note: In the case of VPN or specific CSP combinations, label synchronization with CSP is skipped.
 			UpdateCSPResourceLabel(labelType, uid, labels, connectionName)
 		}
 	}
@@ -462,6 +565,13 @@ func MergeCSPResourceLabel(labelType, uid string, resourceKey string) error {
 
 // ListCSPResourceLabel best-effort lists the labels of a resource in the CSP
 func ListCSPResourceLabel(labelType, uid string, connectionName string) (labels map[string]string) {
+	labels = make(map[string]string)
+
+	// Skip if CSP synchronization is not enabled for this label type and connection name
+	if isCSPSyncEnabled(labelType, connectionName) {
+		log.Debug().Msgf("CSP tag is not supported for labelType: %s, connectionName: %s", labelType, connectionName)
+		return labels
+	}
 
 	type jsonResult struct {
 		Result       []model.KeyValue `json:"tag"`
@@ -486,7 +596,6 @@ func ListCSPResourceLabel(labelType, uid string, connectionName string) (labels 
 		&callResult,
 		clientManager.MediumDuration,
 	)
-	labels = make(map[string]string)
 
 	if err != nil {
 		log.Info().Err(err).Msg("Failed to list CSP resource label")
@@ -509,6 +618,12 @@ func convertTermToSpider(labelType string) string {
 		return model.StrVPC
 	} else if strings.EqualFold(labelType, model.StrSecurityGroup) {
 		return model.StrSG
+	} else if strings.EqualFold(labelType, model.StrCustomImage) {
+		return model.StrMyImage
+	} else if strings.EqualFold(labelType, model.StrDataDisk) {
+		return model.StrDisk
+	} else if strings.EqualFold(labelType, model.StrSSHKey) {
+		return model.StrKeypair
 	} else {
 		return labelType
 	}

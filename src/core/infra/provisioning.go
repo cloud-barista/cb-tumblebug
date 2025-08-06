@@ -1024,17 +1024,38 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 
 	vmRequest := req.Vm
 	// Check whether VM names meet requirement.
-	errStr := ""
-	for i, k := range vmRequest {
-		// log VM request details
-		log.Debug().Msgf("[%d] VM Request: %+v", i, k)
+	// Use semaphore for parallel processing with concurrency limit
+	const maxConcurrency = 10
+	semaphore := make(chan struct{}, maxConcurrency)
 
-		err = checkCommonResAvailableForVmDynamicReq(&k, nsId)
-		if err != nil {
-			log.Error().Err(err).Msgf("[%d] Failed to find common resource for MCI provision", i)
-			errStr += "{[" + strconv.Itoa(i+1) + "] " + err.Error() + "} "
-		}
+	var wg sync.WaitGroup
+	var mutex sync.Mutex
+	errStr := ""
+
+	for i, k := range vmRequest {
+		wg.Add(1)
+		go func(index int, vmReq model.TbVmDynamicReq) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }() // Release semaphore
+
+			// log VM request details
+			log.Debug().Msgf("[%d] VM Request: %+v", index, vmReq)
+
+			err := checkCommonResAvailableForVmDynamicReq(&vmReq, nsId)
+			if err != nil {
+				log.Error().Err(err).Msgf("[%d] Failed to find common resource for MCI provision", index)
+				mutex.Lock()
+				errStr += "{[" + strconv.Itoa(index+1) + "] " + err.Error() + "} "
+				mutex.Unlock()
+			}
+		}(i, k)
 	}
+
+	wg.Wait()
+
 	if errStr != "" {
 		err = fmt.Errorf(errStr)
 		return emptyMci, err
@@ -1049,71 +1070,53 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 	// Check if vmRequest has elements
 	if len(vmRequest) > 0 {
 		var allCreatedResources []CreatedResource
+		var wg sync.WaitGroup
+		var mutex sync.Mutex
 
-		// Process the first vmRequest[0] synchronously
-		result, err := getVmReqFromDynamicReq(reqID, nsId, &vmRequest[0])
-		if err != nil {
-			// Rollback if any error occurs
-			log.Info().Msg("Rolling back created default resources")
-			time.Sleep(5 * time.Second)
-			rollbackErr := rollbackCreatedResources(nsId, result.CreatedResources)
-			if rollbackErr != nil {
-				return emptyMci, fmt.Errorf("failed in rollback operation: %w, original error: %w", rollbackErr, err)
+		type vmResult struct {
+			result *VmReqWithCreatedResources
+			err    error
+		}
+		resultChan := make(chan vmResult, len(vmRequest))
+
+		// Process all vmRequests in parallel
+		for _, k := range vmRequest {
+			wg.Add(1)
+			go func(vmReq model.TbVmDynamicReq) {
+				defer wg.Done()
+				result, err := getVmReqFromDynamicReq(reqID, nsId, &vmReq)
+				resultChan <- vmResult{result: result, err: err}
+			}(k)
+		}
+
+		// Wait for all goroutines to complete
+		wg.Wait()
+		close(resultChan)
+
+		// Collect results and check for errors
+		var hasError bool
+		for vmRes := range resultChan {
+			if vmRes.err != nil {
+				log.Error().Err(vmRes.err).Msg("Failed to prepare resources for dynamic MCI creation")
+				hasError = true
 			} else {
-				return emptyMci, fmt.Errorf("rollback completed successfully, original error: %w", err)
+				// Safely append to the shared mciReq.Vm slice
+				mutex.Lock()
+				mciReq.Vm = append(mciReq.Vm, *vmRes.result.VmReq)
+				allCreatedResources = append(allCreatedResources, vmRes.result.CreatedResources...)
+				mutex.Unlock()
 			}
 		}
-		mciReq.Vm = append(mciReq.Vm, *result.VmReq)
-		allCreatedResources = append(allCreatedResources, result.CreatedResources...)
 
-		// Process the rest of vmRequest[1:] in goroutines
-		if len(vmRequest) > 1 {
-			var wg sync.WaitGroup
-			var mutex sync.Mutex
-			type vmResult struct {
-				result *VmReqWithCreatedResources
-				err    error
-			}
-			resultChan := make(chan vmResult, len(vmRequest)-1)
-
-			for _, k := range vmRequest[1:] {
-				wg.Add(1)
-				go func(vmReq model.TbVmDynamicReq) {
-					defer wg.Done()
-					result, err := getVmReqFromDynamicReq(reqID, nsId, &vmReq)
-					resultChan <- vmResult{result: result, err: err}
-				}(k)
-			}
-
-			// Wait for all goroutines to complete
-			wg.Wait()
-			close(resultChan)
-
-			// Collect results and check for errors
-			var hasError bool
-			for vmRes := range resultChan {
-				if vmRes.err != nil {
-					log.Error().Err(vmRes.err).Msg("Failed to prepare resources for dynamic MCI creation")
-					hasError = true
-				} else {
-					// Safely append to the shared mciReq.Vm slice
-					mutex.Lock()
-					mciReq.Vm = append(mciReq.Vm, *vmRes.result.VmReq)
-					allCreatedResources = append(allCreatedResources, vmRes.result.CreatedResources...)
-					mutex.Unlock()
-				}
-			}
-
-			// If there were any errors, rollback all created resources
-			if hasError {
-				log.Info().Msg("Rolling back all created default resources due to errors")
-				time.Sleep(5 * time.Second)
-				rollbackErr := rollbackCreatedResources(nsId, allCreatedResources)
-				if rollbackErr != nil {
-					return emptyMci, fmt.Errorf("failed in rollback operation: %w", rollbackErr)
-				} else {
-					return emptyMci, fmt.Errorf("rollback completed successfully after errors in resource preparation")
-				}
+		// If there were any errors, rollback all created resources
+		if hasError {
+			log.Info().Msg("Rolling back all created default resources due to errors")
+			time.Sleep(5 * time.Second)
+			rollbackErr := rollbackCreatedResources(nsId, allCreatedResources)
+			if rollbackErr != nil {
+				return emptyMci, fmt.Errorf("failed in rollback operation: %w", rollbackErr)
+			} else {
+				return emptyMci, fmt.Errorf("rollback completed successfully after errors in resource preparation")
 			}
 		}
 	}
@@ -1546,7 +1549,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 
 		// Check if the default vNet exists
 		_, err := resource.GetResource(nsId, model.StrVNet, vmReq.ConnectionName)
-		log.Debug().Err(err).Msg("checked if the default vNet does NOT exist")
+		log.Debug().Msg("checked if the default vNet does NOT exist")
 		// Create a new default vNet if it does not exist
 		if err != nil && strings.Contains(err.Error(), "does not exist") {
 			err2 := resource.CreateSharedResource(nsId, model.StrVNet, vmReq.ConnectionName)
@@ -1577,7 +1580,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 
 		// Check if the default SSHKey exists
 		_, err := resource.GetResource(nsId, model.StrSSHKey, vmReq.ConnectionName)
-		log.Debug().Err(err).Msg("checked if the default SSHKey does NOT exist")
+		log.Debug().Msg("checked if the default SSHKey does NOT exist")
 		// Create a new default SSHKey if it does not exist
 		if err != nil && strings.Contains(err.Error(), "does not exist") {
 			err2 := resource.CreateSharedResource(nsId, model.StrSSHKey, vmReq.ConnectionName)
@@ -1609,7 +1612,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 		// Check if the default security group exists
 		_, err := resource.GetResource(nsId, model.StrSecurityGroup, vmReq.ConnectionName)
 		// Create a new default security group if it does not exist
-		log.Debug().Err(err).Msg("checked if the default security group does NOT exist")
+		log.Debug().Msg("checked if the default security group does NOT exist")
 		if err != nil && strings.Contains(err.Error(), "does not exist") {
 			err2 := resource.CreateSharedResource(nsId, model.StrSecurityGroup, vmReq.ConnectionName)
 			if err2 != nil {
@@ -1651,11 +1654,11 @@ func CreateVmObject(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *m
 	key := common.GenMciKey(nsId, mciId, "")
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
-		log.Fatal().Err(err).Msg("AddVmToMci(); kvstore.GetKv() returned an error.")
+		log.Fatal().Err(err).Msg("AddVmToMci kvstore.GetKv() returned an error.")
 		return err
 	}
 	if keyValue == (kvstore.KeyValue{}) {
-		return fmt.Errorf("AddVmToMci: Cannot find mciId. Key: %s", key)
+		return fmt.Errorf("AddVmToMci Cannot find mciId. Key: %s", key)
 	}
 
 	configTmp, err := common.GetConnConfig(vmInfoData.ConnectionName)
@@ -1881,7 +1884,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 	)
 
 	if err != nil {
-		err = fmt.Errorf("Error from Spider while creating VM: %v", err)
+		err = fmt.Errorf("%v", err)
 		vmInfoData.Status = model.StatusFailed
 		vmInfoData.SystemMessage = err.Error()
 		UpdateVmInfo(nsId, mciId, *vmInfoData)

@@ -112,7 +112,7 @@ func GetFuncName() string {
 func CheckString(name string) error {
 
 	if name == "" {
-		err := fmt.Errorf("CheckString: The name cannot be an empty string.")
+		err := fmt.Errorf("empty string")
 		return err
 	}
 
@@ -285,6 +285,15 @@ func GetConnConfig(ConnConfigName string) (model.ConnConfig, error) {
 	}
 
 	return connConfig, nil
+}
+
+// GetConnConfig is func to get connection config
+func GetProviderNameFromConnConfig(ConnConfigName string) (string, error) {
+	connConfig, err := GetConnConfig(ConnConfigName)
+	if err != nil {
+		return "", err
+	}
+	return connConfig.ProviderName, nil
 }
 
 // CheckConnConfigAvailable is func to check if connection config is available by checking allkeypair list
