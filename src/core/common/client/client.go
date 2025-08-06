@@ -56,6 +56,54 @@ const (
 // NoBody is a constant for empty body
 const NoBody = "NOBODY"
 
+// cleanErrorMessage removes unwanted characters from error messages
+func cleanErrorMessage(message string) string {
+	// Remove escaped quotes, newlines, and other escape sequences
+	cleaned := strings.ReplaceAll(message, "\\\"", "")
+	cleaned = strings.ReplaceAll(cleaned, "\"", "")
+	cleaned = strings.ReplaceAll(cleaned, "\\n", " ")
+	cleaned = strings.ReplaceAll(cleaned, "\n", " ")
+	cleaned = strings.ReplaceAll(cleaned, "\\t", " ")
+	cleaned = strings.ReplaceAll(cleaned, "\t", " ")
+	cleaned = strings.ReplaceAll(cleaned, "\\r", " ")
+	cleaned = strings.ReplaceAll(cleaned, "\r", " ")
+
+	// Remove multiple spaces and trim
+	for strings.Contains(cleaned, "  ") {
+		cleaned = strings.ReplaceAll(cleaned, "  ", " ")
+	}
+
+	cleaned = strings.TrimSpace(cleaned)
+
+	// Remove surrounding curly braces if present
+	if len(cleaned) >= 2 && strings.HasPrefix(cleaned, "{") && strings.HasSuffix(cleaned, "}") {
+		cleaned = strings.TrimSpace(cleaned[1 : len(cleaned)-1])
+
+		// Remove common JSON field prefixes like "message:", "error:", etc.
+		if strings.HasPrefix(cleaned, "message:") {
+			cleaned = strings.TrimSpace(cleaned[8:]) // Remove "message:" (8 characters)
+		} else if strings.HasPrefix(cleaned, "error:") {
+			cleaned = strings.TrimSpace(cleaned[6:]) // Remove "error:" (6 characters)
+		} else if strings.HasPrefix(cleaned, "details:") {
+			cleaned = strings.TrimSpace(cleaned[8:]) // Remove "details:" (8 characters)
+		} else if strings.HasPrefix(cleaned, "info:") {
+			cleaned = strings.TrimSpace(cleaned[5:]) // Remove "info:" (5 characters)
+		}
+	}
+
+	return cleaned
+}
+
+// cleanURL removes protocol prefix from URL for cleaner error messages
+func cleanURL(url string) string {
+	if strings.HasPrefix(url, "http://") {
+		return url[7:] // Remove "http://" (7 characters)
+	} else if strings.HasPrefix(url, "https://") {
+		return url[8:] // Remove "https://" (8 characters)
+	}
+	return url
+}
+
 // SetUseBody returns false if the given body is NoBody
 func SetUseBody(requestBody interface{}) bool {
 	if str, ok := requestBody.(string); ok {
@@ -152,8 +200,8 @@ func ExecuteHttpRequest[B any, T any](
 		for {
 			if !limitConcurrentRequests(requestKey, concurrencyLimit) {
 				if retryCount >= retryLimit {
-					log.Debug().Msgf("Too many same requests: %s\n", requestKey)
-					return fmt.Errorf("Too many same requests: %s", requestKey)
+					log.Debug().Msgf("too many same requests: %s", requestKey)
+					return fmt.Errorf("too many same requests: %s", requestKey)
 				}
 				time.Sleep(retryWait)
 
@@ -206,21 +254,25 @@ func ExecuteHttpRequest[B any, T any](
 	case "DELETE":
 		resp, err = req.Delete(url)
 	default:
-		return fmt.Errorf("Unsupported rest method: %s", method)
+		return fmt.Errorf("unsupported rest method: %s", method)
 	}
 
 	if err != nil {
 		if method == "GET" {
 			requestDone(requestKey)
 		}
-		return fmt.Errorf("[Error from: %s] Message: %s", url, err.Error())
+		cleanedError := cleanErrorMessage(err.Error())
+		cleanedURL := cleanURL(url)
+		return fmt.Errorf("%s (from %s)", cleanedError, cleanedURL)
 	}
 
 	if resp.IsError() {
 		if method == "GET" {
 			requestDone(requestKey)
 		}
-		return fmt.Errorf("[Error from: %s] Status code: %s, Message: %s", url, resp.Status(), resp.Body())
+		cleanedBody := cleanErrorMessage(string(resp.Body()))
+		cleanedURL := cleanURL(url)
+		return fmt.Errorf("%s (from %s (%s))", cleanedBody, cleanedURL, resp.Status())
 	}
 
 	// Update the cache for GET method only
