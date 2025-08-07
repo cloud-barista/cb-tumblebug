@@ -59,6 +59,225 @@ func TbVmReqStructLevelValidation(sl validator.StructLevel) {
 
 var holdingMciMap sync.Map
 
+// createVmObjectSafe creates VM object without WaitGroup management
+func createVmObjectSafe(nsId, mciId string, vmInfoData *model.TbVmInfo) error {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	return CreateVmObject(&wg, nsId, mciId, vmInfoData)
+}
+
+// createVmSafe creates VM without WaitGroup management
+func createVmSafe(nsId, mciId string, vmInfoData *model.TbVmInfo, option string) error {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	return CreateVm(&wg, nsId, mciId, vmInfoData, option)
+}
+
+// Helper functions for CreateMci
+
+// contains checks if a string slice contains a specific string
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+// createSubGroup creates a subGroup with proper error handling
+func createSubGroup(nsId, mciId string, vmRequest *model.TbVmReq, subGroupSize, vmStartIndex int, uid string, req *model.TbMciReq) error {
+	log.Info().Msgf("Creating MCI subGroup object for '%s'", vmRequest.Name)
+	key := common.GenMciSubGroupKey(nsId, mciId, vmRequest.Name)
+
+	subGroupInfoData := model.TbSubGroupInfo{
+		ResourceType: model.StrSubGroup,
+		Id:           common.ToLower(vmRequest.Name),
+		Name:         common.ToLower(vmRequest.Name),
+		Uid:          common.GenUid(),
+		SubGroupSize: vmRequest.SubGroupSize,
+	}
+
+	// Build VM ID list
+	for i := vmStartIndex; i < subGroupSize+vmStartIndex; i++ {
+		subGroupInfoData.VmId = append(subGroupInfoData.VmId, subGroupInfoData.Id+"-"+strconv.Itoa(i))
+	}
+
+	// Marshal with error handling
+	val, err := json.Marshal(subGroupInfoData)
+	if err != nil {
+		return fmt.Errorf("failed to marshal subGroup data: %w", err)
+	}
+
+	if err := kvstore.Put(key, string(val)); err != nil {
+		return fmt.Errorf("failed to store subGroup data: %w", err)
+	}
+
+	// Store label info
+	labels := map[string]string{
+		model.LabelManager:        model.StrManager,
+		model.LabelNamespace:      nsId,
+		model.LabelLabelType:      model.StrSubGroup,
+		model.LabelId:             subGroupInfoData.Id,
+		model.LabelName:           subGroupInfoData.Name,
+		model.LabelUid:            subGroupInfoData.Uid,
+		model.LabelMciId:          mciId,
+		model.LabelMciName:        req.Name,
+		model.LabelMciUid:         uid,
+		model.LabelMciDescription: req.Description,
+	}
+
+	return label.CreateOrUpdateLabel(model.StrSubGroup, uid, key, labels)
+}
+
+// createMciObject creates the MCI object with proper error handling
+func createMciObject(nsId, mciId string, req *model.TbMciReq, uid string) error {
+	log.Info().Msg("Creating MCI object")
+	key := common.GenMciKey(nsId, mciId, "")
+
+	mciInfo := model.TbMciInfo{
+		ResourceType:    model.StrMCI,
+		Id:              mciId,
+		Name:            req.Name,
+		Uid:             uid,
+		Description:     req.Description,
+		Status:          model.StatusCreating,
+		TargetAction:    model.ActionCreate,
+		TargetStatus:    model.StatusRunning,
+		InstallMonAgent: req.InstallMonAgent,
+		SystemLabel:     req.SystemLabel,
+		PostCommand:     req.PostCommand,
+	}
+
+	val, err := json.Marshal(mciInfo)
+	if err != nil {
+		return fmt.Errorf("failed to marshal MCI info: %w", err)
+	}
+
+	if err := kvstore.Put(key, string(val)); err != nil {
+		return fmt.Errorf("failed to store MCI object: %w", err)
+	}
+
+	// Store label info
+	labels := map[string]string{
+		model.LabelManager:     model.StrManager,
+		model.LabelNamespace:   nsId,
+		model.LabelLabelType:   model.StrMCI,
+		model.LabelId:          mciId,
+		model.LabelName:        req.Name,
+		model.LabelUid:         uid,
+		model.LabelDescription: req.Description,
+	}
+	for key, value := range req.Label {
+		labels[key] = value
+	}
+
+	return label.CreateOrUpdateLabel(model.StrMCI, uid, key, labels)
+}
+
+// handleHoldOption handles the hold option logic
+func handleHoldOption(nsId, mciId string) error {
+	key := common.GenMciKey(nsId, mciId, "")
+	holdingMciMap.Store(key, "holding")
+
+	for {
+		value, ok := holdingMciMap.Load(key)
+		if !ok {
+			break
+		}
+		if value == "continue" {
+			holdingMciMap.Delete(key)
+			break
+		} else if value == "withdraw" {
+			holdingMciMap.Delete(key)
+			DelMci(nsId, mciId, "force")
+			return fmt.Errorf("MCI creation was withdrawn by user")
+		}
+
+		log.Info().Msgf("MCI: %s (holding)", key)
+		time.Sleep(5 * time.Second)
+	}
+
+	return nil
+}
+
+// cleanupPartialMci cleans up partially created MCI resources
+func cleanupPartialMci(nsId, mciId string) error {
+	log.Warn().Msgf("Cleaning up partial MCI: %s/%s", nsId, mciId)
+
+	// Attempt to delete MCI - this will handle cleanup of VMs and other resources
+	_, err := DelMci(nsId, mciId, "force")
+	if err != nil {
+		return fmt.Errorf("failed to cleanup partial MCI: %w", err)
+	}
+
+	return nil
+}
+
+// handleMonitoringAgent handles CB-Dragonfly monitoring agent installation
+func handleMonitoringAgent(nsId, mciId string, mciTmp model.TbMciInfo, option string) error {
+	if !strings.Contains(mciTmp.InstallMonAgent, "yes") || option == "register" {
+		return nil
+	}
+
+	log.Info().Msg("Installing CB-Dragonfly monitoring agent")
+
+	if err := CheckDragonflyEndpoint(); err != nil {
+		log.Warn().Msg("CB-Dragonfly is not available, skipping agent installation")
+		return nil
+	}
+
+	reqToMon := &model.MciCmdReq{
+		UserName: "cb-user", // TODO: Make this configurable
+	}
+
+	// Intelligent wait time based on VM count
+	waitTime := 30 * time.Second
+	if len(mciTmp.Vm) > 5 {
+		waitTime = 60 * time.Second
+	}
+
+	log.Info().Msgf("Waiting %v for safe CB-Dragonfly Agent installation", waitTime)
+	time.Sleep(waitTime)
+
+	content, err := InstallMonitorAgentToMci(nsId, mciId, model.StrMCI, reqToMon)
+	if err != nil {
+		return fmt.Errorf("failed to install monitoring agent: %w", err)
+	}
+
+	log.Info().Msg("CB-Dragonfly monitoring agent installed successfully")
+	common.PrintJsonPretty(content)
+	return nil
+}
+
+// handlePostCommands handles post-deployment command execution
+func handlePostCommands(nsId, mciId string, mciTmp model.TbMciInfo) error {
+	if len(mciTmp.PostCommand.Command) == 0 {
+		return nil
+	}
+
+	log.Info().Msg("Executing post-deployment commands")
+	log.Info().Msgf("Waiting 5 seconds for safe bootstrapping")
+	time.Sleep(5 * time.Second)
+
+	log.Info().Msgf("Executing commands: %+v", mciTmp.PostCommand)
+	output, err := RemoteCommandToMci(nsId, mciId, "", "", "", &mciTmp.PostCommand)
+	if err != nil {
+		return fmt.Errorf("failed to execute post-deployment commands: %w", err)
+	}
+
+	result := model.MciSshCmdResult{
+		Results: output,
+	}
+
+	common.PrintJsonPretty(result)
+	mciTmp.PostCommandResult = result
+	UpdateMciInfo(nsId, mciTmp)
+
+	log.Info().Msg("Post-deployment commands executed successfully")
+	return nil
+}
+
 // CreatedResource represents a resource created during dynamic MCI provisioning
 type CreatedResource struct {
 	Type string `json:"type"` // "vnet", "sshkey", "securitygroup"
@@ -74,11 +293,15 @@ type VmReqWithCreatedResources struct {
 // rollbackCreatedResources deletes only the resources that were created during this MCI creation
 func rollbackCreatedResources(nsId string, createdResources []CreatedResource) error {
 	var errors []string
+	var successes []string
 
 	vNetIds := make([]string, 0)
 	sshKeyIds := make([]string, 0)
 	securityGroupIds := make([]string, 0)
 
+	log.Info().Msgf("Starting rollback process for %d resources in namespace '%s'", len(createdResources), nsId)
+
+	// Group resources by type for logging
 	for _, res := range createdResources {
 		switch res.Type {
 		case model.StrVNet:
@@ -90,37 +313,117 @@ func rollbackCreatedResources(nsId string, createdResources []CreatedResource) e
 		}
 	}
 
+	log.Info().Msgf("Resources to rollback: VNet(%d): %v, SSHKey(%d): %v, SecurityGroup(%d): %v",
+		len(vNetIds), vNetIds, len(sshKeyIds), sshKeyIds, len(securityGroupIds), securityGroupIds)
+
+	// Use semaphore for parallel processing with concurrency limit
+	const maxConcurrency = 10
+	semaphore := make(chan struct{}, maxConcurrency)
+	var wg sync.WaitGroup
+	var mutex sync.Mutex
+
+	// Delete SSHKeys first (usually least dependent) in parallel
 	for _, res := range sshKeyIds {
-		if err := resource.DelResource(nsId, model.StrSSHKey, res, "false"); err != nil {
-			errors = append(errors, fmt.Sprintf("Failed to delete SSHKey %s: %v", res, err))
-			log.Error().Err(err).Msgf("Failed to rollback SSHKey: %s", res)
-		} else {
-			log.Info().Msgf("Successfully rolled back SSHKey: %s", res)
-		}
+		wg.Add(1)
+		go func(resourceId string) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }() // Release semaphore
+
+			if err := resource.DelResource(nsId, model.StrSSHKey, resourceId, "false"); err != nil {
+				errorMsg := fmt.Sprintf("Failed to delete SSHKey '%s' in namespace '%s': %v", resourceId, nsId, err)
+				mutex.Lock()
+				errors = append(errors, errorMsg)
+				mutex.Unlock()
+				log.Error().Err(err).Msgf("Rollback failed for SSHKey: %s", resourceId)
+			} else {
+				successMsg := fmt.Sprintf("SSHKey '%s'", resourceId)
+				mutex.Lock()
+				successes = append(successes, successMsg)
+				mutex.Unlock()
+				log.Info().Msgf("Successfully rolled back SSHKey: %s", resourceId)
+			}
+		}(res)
 	}
 
+	// Wait for all SSHKey deletions to complete
+	wg.Wait()
+	log.Info().Msgf("Completed SSHKey deletions: %d successful, %d failed", len(sshKeyIds), len(errors))
+
+	// Delete SecurityGroups second in parallel
 	for _, res := range securityGroupIds {
-		if err := resource.DelResource(nsId, model.StrSecurityGroup, res, "false"); err != nil {
-			errors = append(errors, fmt.Sprintf("Failed to delete SecurityGroup %s: %v", res, err))
-			log.Error().Err(err).Msgf("Failed to rollback SecurityGroup: %s", res)
-		} else {
-			log.Info().Msgf("Successfully rolled back SecurityGroup: %s", res)
-		}
+		wg.Add(1)
+		go func(resourceId string) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }() // Release semaphore
+
+			if err := resource.DelResource(nsId, model.StrSecurityGroup, resourceId, "false"); err != nil {
+				errorMsg := fmt.Sprintf("Failed to delete SecurityGroup '%s' in namespace '%s': %v", resourceId, nsId, err)
+				mutex.Lock()
+				errors = append(errors, errorMsg)
+				mutex.Unlock()
+				log.Error().Err(err).Msgf("Rollback failed for SecurityGroup: %s", resourceId)
+			} else {
+				successMsg := fmt.Sprintf("SecurityGroup '%s'", resourceId)
+				mutex.Lock()
+				successes = append(successes, successMsg)
+				mutex.Unlock()
+				log.Info().Msgf("Successfully rolled back SecurityGroup: %s", resourceId)
+			}
+		}(res)
 	}
 
+	// Wait for all SecurityGroup deletions to complete
+	wg.Wait()
+	log.Info().Msgf("Completed SecurityGroup deletions: %d total attempted", len(securityGroupIds))
+
+	// wait for 5 secs for safe rollback
+	time.Sleep(5 * time.Second)
+
+	// Delete VNets last (most dependent) in parallel
 	for _, res := range vNetIds {
-		if err := resource.DelResource(nsId, model.StrVNet, res, "false"); err != nil {
-			errors = append(errors, fmt.Sprintf("Failed to delete VNet %s: %v", res, err))
-			log.Error().Err(err).Msgf("Failed to rollback VNet: %s", res)
-		} else {
-			log.Info().Msgf("Successfully rolled back VNet: %s", res)
-		}
+		wg.Add(1)
+		go func(resourceId string) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }() // Release semaphore
+
+			if err := resource.DelResource(nsId, model.StrVNet, resourceId, "false"); err != nil {
+				errorMsg := fmt.Sprintf("Failed to delete VNet '%s' in namespace '%s': %v", resourceId, nsId, err)
+				mutex.Lock()
+				errors = append(errors, errorMsg)
+				mutex.Unlock()
+				log.Error().Err(err).Msgf("Rollback failed for VNet: %s", resourceId)
+			} else {
+				successMsg := fmt.Sprintf("VNet '%s'", resourceId)
+				mutex.Lock()
+				successes = append(successes, successMsg)
+				mutex.Unlock()
+				log.Info().Msgf("Successfully rolled back VNet: %s", resourceId)
+			}
+		}(res)
 	}
+
+	// Wait for all VNet deletions to complete
+	wg.Wait()
+	log.Info().Msgf("Completed VNet deletions: %d total attempted", len(vNetIds))
+
+	// Log rollback summary
+	log.Info().Msgf("Rollback summary: Success(%d): %v, Failed(%d): %d errors",
+		len(successes), successes, len(errors), len(errors))
 
 	if len(errors) > 0 {
-		return fmt.Errorf("rollback completed with errors: %s", strings.Join(errors, "; "))
+		return fmt.Errorf("rollback completed with %d errors: %s", len(errors), strings.Join(errors, "; "))
 	}
 
+	log.Info().Msgf("All %d resources successfully rolled back in namespace '%s'", len(createdResources), nsId)
 	return nil
 }
 
@@ -530,349 +833,362 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbVmReq, newSu
 
 }
 
-// CreateMci is func to create MCI obeject and deploy requested VMs (register CSP native VM with option=register)
+// CreateMci is func to create MCI object and deploy requested VMs (register CSP native VM with option=register)
 func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInfo, error) {
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		temp := &model.TbMciInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
+	// Input validation
+	if err := common.CheckString(nsId); err != nil {
+		log.Error().Err(err).Msg("Invalid namespace ID")
+		return &model.TbMciInfo{}, fmt.Errorf("invalid namespace ID: %w", err)
 	}
 
-	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
-	err = validate.Struct(req)
-	if err != nil {
+	if err := validate.Struct(req); err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			log.Err(err).Msg("")
-			return nil, err
+			log.Error().Err(err).Msg("Invalid validation error")
+			return nil, fmt.Errorf("validation failed: %w", err)
 		}
-		return nil, err
+		log.Error().Err(err).Msg("Request validation failed")
+		return nil, fmt.Errorf("request validation failed: %w", err)
 	}
 
-	// skip mci id checking for option=register
+	// Initialize failure tracking
+	var (
+		vmObjectErrors []model.VmCreationError
+		vmCreateErrors []model.VmCreationError
+		totalVmCount   int
+		errorMu        sync.Mutex
+	)
+
+	// Count total VMs to be created
+	for _, vmReq := range req.Vm {
+		if vmReq.SubGroupSize != "" {
+			if size, err := strconv.Atoi(vmReq.SubGroupSize); err == nil && size > 0 {
+				totalVmCount += size
+			} else {
+				totalVmCount += 1
+			}
+		} else {
+			totalVmCount += 1
+		}
+	}
+
+	// Helper function to add VM creation error
+	addVmError := func(errors *[]model.VmCreationError, vmName, errorMsg, phase string) {
+		errorMu.Lock()
+		defer errorMu.Unlock()
+		*errors = append(*errors, model.VmCreationError{
+			VmName:    vmName,
+			Error:     errorMsg,
+			Phase:     phase,
+			Timestamp: time.Now().Format(time.RFC3339),
+		})
+	}
+
+	// Check MCI existence (skip for register option)
 	if option != "register" {
-		check, _ := CheckMci(nsId, req.Name)
-		if check {
-			err := fmt.Errorf("The mci " + req.Name + " already exists.")
-			return nil, err
+		if exists, _ := CheckMci(nsId, req.Name); exists {
+			return nil, fmt.Errorf("MCI '%s' already exists in namespace '%s'", req.Name, nsId)
 		}
 	} else {
 		req.SystemLabel = "Registered from CSP resource"
 	}
 
-	uid := common.GenUid()
-
-	targetAction := model.ActionCreate
-	targetStatus := model.StatusRunning
-
-	mciId := req.Name
-	vmRequests := req.Vm
-
-	log.Info().Msg("Create MCI object")
-	key := common.GenMciKey(nsId, mciId, "")
-
-	mciInfo := model.TbMciInfo{
-		ResourceType:    model.StrMCI,
-		Id:              mciId,
-		Name:            req.Name,
-		Uid:             uid,
-		Description:     req.Description,
-		Status:          model.StatusCreating,
-		TargetAction:    targetAction,
-		TargetStatus:    targetStatus,
-		InstallMonAgent: req.InstallMonAgent,
-		SystemLabel:     req.SystemLabel,
-		PostCommand:     req.PostCommand,
+	// Early validation of VM requests
+	if len(req.Vm) == 0 {
+		return nil, fmt.Errorf("no VM requests provided")
 	}
 
-	val, err := json.Marshal(mciInfo)
-	if err != nil {
-		err := fmt.Errorf("System Error: CreateMci json.Marshal(mciInfo) Error")
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
+	for i, vmReq := range req.Vm {
+		if err := common.CheckString(vmReq.Name); err != nil {
+			return nil, fmt.Errorf("invalid VM name at index %d: %w", i, err)
+		}
 
-	err = kvstore.Put(key, string(val))
-	if err != nil {
-		err := fmt.Errorf("System Error: CreateMci kvstore.Put Error")
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
-
-	// Store label info using CreateOrUpdateLabel
-	labels := map[string]string{
-		model.LabelManager:     model.StrManager,
-		model.LabelNamespace:   nsId,
-		model.LabelLabelType:   model.StrMCI,
-		model.LabelId:          mciId,
-		model.LabelName:        req.Name,
-		model.LabelUid:         uid,
-		model.LabelDescription: req.Description,
-	}
-	for key, value := range req.Label {
-		labels[key] = value
-	}
-
-	err = label.CreateOrUpdateLabel(model.StrMCI, uid, key, labels)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
-
-	// Check whether VM names meet requirement.
-	for _, k := range vmRequests {
-		err = common.CheckString(k.Name)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return &model.TbMciInfo{}, err
+		// Validate connection config early
+		if _, err := common.GetConnConfig(vmReq.ConnectionName); err != nil {
+			return nil, fmt.Errorf("invalid connection config '%s' for VM '%s': %w",
+				vmReq.ConnectionName, vmReq.Name, err)
 		}
 	}
 
-	// hold option will hold the MCI creation process until the user releases it.
-	if option == "hold" {
-		key := common.GenMciKey(nsId, mciId, "")
-		holdingMciMap.Store(key, "holding")
-		for {
-			value, ok := holdingMciMap.Load(key)
-			if !ok {
-				break
+	// Initialize MCI
+	uid := common.GenUid()
+	mciId := req.Name
+
+	// Pre-calculate VM configurations to avoid duplication
+	type vmConfig struct {
+		vmInfo       model.TbVmInfo
+		subGroupSize int
+		vmIndex      int
+	}
+
+	var vmConfigs []vmConfig
+	var subGroupsCreated []string
+	vmStartIndex := 1
+
+	// Process VM requests and build configurations
+	for _, vmRequest := range req.Vm {
+		subGroupSize, err := strconv.Atoi(vmRequest.SubGroupSize)
+		if err != nil {
+			subGroupSize = 1
+		}
+
+		log.Debug().Msgf("Processing VM request '%s' with subGroupSize: %d", vmRequest.Name, subGroupSize)
+
+		// Get connection config once and validate
+		connectionConfig, err := common.GetConnConfig(vmRequest.ConnectionName)
+		if err != nil {
+			return nil, fmt.Errorf("cannot retrieve connection config for VM '%s': %w", vmRequest.Name, err)
+		}
+
+		// Create subGroup if needed
+		if subGroupSize > 0 {
+			subGroupName := common.ToLower(vmRequest.Name)
+			if !contains(subGroupsCreated, subGroupName) {
+				if err := createSubGroup(nsId, mciId, &vmRequest, subGroupSize, vmStartIndex, uid, req); err != nil {
+					return nil, fmt.Errorf("failed to create subGroup '%s': %w", subGroupName, err)
+				}
+				subGroupsCreated = append(subGroupsCreated, subGroupName)
 			}
-			if value == "continue" {
-				holdingMciMap.Delete(key)
+		}
+
+		// Build VM configurations
+		for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
+			if subGroupSize > 0 && i == subGroupSize+vmStartIndex {
 				break
-			} else if value == "withdraw" {
-				holdingMciMap.Delete(key)
-				DelMci(nsId, mciId, "force")
-				err := fmt.Errorf("Withdrawed MCI creation")
-				log.Error().Err(err).Msg("")
-				return nil, err
 			}
 
-			log.Info().Msgf("MCI: %s (holding)", key)
-			time.Sleep(5 * time.Second)
+			vmInfo := model.TbVmInfo{
+				ResourceType:     model.StrVM,
+				Uid:              common.GenUid(),
+				PublicIP:         "empty",
+				PublicDNS:        "empty",
+				Status:           model.StatusCreating,
+				TargetAction:     model.ActionCreate,
+				TargetStatus:     model.StatusRunning,
+				ConnectionName:   vmRequest.ConnectionName,
+				ConnectionConfig: connectionConfig,
+				Location:         connectionConfig.RegionDetail.Location,
+				SpecId:           vmRequest.SpecId,
+				ImageId:          vmRequest.ImageId,
+				VNetId:           vmRequest.VNetId,
+				SubnetId:         vmRequest.SubnetId,
+				SecurityGroupIds: vmRequest.SecurityGroupIds,
+				DataDiskIds:      vmRequest.DataDiskIds,
+				SshKeyId:         vmRequest.SshKeyId,
+				Description:      vmRequest.Description,
+				VmUserName:       vmRequest.VmUserName,
+				VmUserPassword:   vmRequest.VmUserPassword,
+				RootDiskType:     vmRequest.RootDiskType,
+				RootDiskSize:     vmRequest.RootDiskSize,
+				Label:            vmRequest.Label,
+				CspResourceId:    vmRequest.CspResourceId,
+			}
+
+			if subGroupSize == 0 {
+				vmInfo.Name = common.ToLower(vmRequest.Name)
+			} else {
+				vmInfo.SubGroupId = common.ToLower(vmRequest.Name)
+				vmInfo.Name = common.ToLower(vmRequest.Name) + "-" + strconv.Itoa(i)
+			}
+			vmInfo.Id = vmInfo.Name
+
+			vmConfigs = append(vmConfigs, vmConfig{
+				vmInfo:       vmInfo,
+				subGroupSize: subGroupSize,
+				vmIndex:      i,
+			})
+		}
+	}
+
+	// Create MCI object first
+	if err := createMciObject(nsId, mciId, req, uid); err != nil {
+		return nil, fmt.Errorf("failed to create MCI object: %w", err)
+	}
+
+	// Handle hold option
+	if option == "hold" {
+		if err := handleHoldOption(nsId, mciId); err != nil {
+			return nil, fmt.Errorf("hold option failed: %w", err)
 		}
 		option = "create"
 	}
 
-	//goroutin
+	// Create VM objects with error collection
 	var wg sync.WaitGroup
+	var createErrors []error
 
-	vmStartIndex := 1
+	log.Info().Msgf("Creating %d VM objects", len(vmConfigs))
 
-	for _, vmRequest := range vmRequests {
-
-		// subGroup handling
-		subGroupSize, err := strconv.Atoi(vmRequest.SubGroupSize)
-		if err != nil {
-			subGroupSize = 1
-		}
-		fmt.Printf("subGroupSize: %v\n", subGroupSize)
-
-		if subGroupSize > 0 {
-
-			log.Info().Msg("Create MCI subGroup object")
-			key := common.GenMciSubGroupKey(nsId, mciId, vmRequest.Name)
-
-			subGroupInfoData := model.TbSubGroupInfo{}
-			subGroupInfoData.ResourceType = model.StrSubGroup
-			subGroupInfoData.Id = common.ToLower(vmRequest.Name)
-			subGroupInfoData.Name = common.ToLower(vmRequest.Name)
-			subGroupInfoData.Uid = common.GenUid()
-			subGroupInfoData.SubGroupSize = vmRequest.SubGroupSize
-
-			for i := vmStartIndex; i < subGroupSize+vmStartIndex; i++ {
-				subGroupInfoData.VmId = append(subGroupInfoData.VmId, subGroupInfoData.Id+"-"+strconv.Itoa(i))
+	for _, config := range vmConfigs {
+		wg.Add(1)
+		go func(cfg vmConfig) {
+			defer wg.Done()
+			if err := createVmObjectSafe(nsId, mciId, &cfg.vmInfo); err != nil {
+				errorMu.Lock()
+				createErrors = append(createErrors, fmt.Errorf("VM object creation failed for '%s': %w", cfg.vmInfo.Name, err))
+				addVmError(&vmObjectErrors, cfg.vmInfo.Name, err.Error(), "object_creation")
+				errorMu.Unlock()
 			}
-
-			val, _ := json.Marshal(subGroupInfoData)
-			err := kvstore.Put(key, string(val))
-			if err != nil {
-				log.Error().Err(err).Msg("")
-			}
-
-			// Store label info using CreateOrUpdateLabel
-			labels := map[string]string{
-				model.LabelManager:        model.StrManager,
-				model.LabelNamespace:      nsId,
-				model.LabelLabelType:      model.StrSubGroup,
-				model.LabelId:             subGroupInfoData.Id,
-				model.LabelName:           subGroupInfoData.Name,
-				model.LabelUid:            subGroupInfoData.Uid,
-				model.LabelMciId:          mciId,
-				model.LabelMciName:        req.Name,
-				model.LabelMciUid:         uid,
-				model.LabelMciDescription: req.Description,
-			}
-			err = label.CreateOrUpdateLabel(model.StrSubGroup, uid, key, labels)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return nil, err
-			}
-
-		}
-
-		for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
-			vmInfoData := model.TbVmInfo{}
-
-			if subGroupSize == 0 { // for VM (not in a group)
-				vmInfoData.Name = common.ToLower(vmRequest.Name)
-			} else { // for VM (in a group)
-				if i == subGroupSize+vmStartIndex {
-					break
-				}
-				vmInfoData.SubGroupId = common.ToLower(vmRequest.Name)
-				vmInfoData.Name = common.ToLower(vmRequest.Name) + "-" + strconv.Itoa(i)
-
-				log.Debug().Msg("vmInfoData.Name: " + vmInfoData.Name)
-
-			}
-			vmInfoData.ResourceType = model.StrVM
-			vmInfoData.Id = vmInfoData.Name
-			vmInfoData.Uid = common.GenUid()
-
-			vmInfoData.PublicIP = "empty"
-			vmInfoData.PublicDNS = "empty"
-
-			vmInfoData.Status = model.StatusCreating
-			vmInfoData.TargetAction = targetAction
-			vmInfoData.TargetStatus = targetStatus
-
-			vmInfoData.ConnectionName = vmRequest.ConnectionName
-			vmInfoData.ConnectionConfig, err = common.GetConnConfig(vmRequest.ConnectionName)
-			if err != nil {
-				err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
-				log.Error().Err(err).Msg("")
-			}
-			vmInfoData.Location = vmInfoData.ConnectionConfig.RegionDetail.Location
-			vmInfoData.SpecId = vmRequest.SpecId
-			vmInfoData.ImageId = vmRequest.ImageId
-			vmInfoData.VNetId = vmRequest.VNetId
-			vmInfoData.SubnetId = vmRequest.SubnetId
-			vmInfoData.SecurityGroupIds = vmRequest.SecurityGroupIds
-			vmInfoData.DataDiskIds = vmRequest.DataDiskIds
-			vmInfoData.SshKeyId = vmRequest.SshKeyId
-			vmInfoData.Description = vmRequest.Description
-			vmInfoData.VmUserName = vmRequest.VmUserName
-			vmInfoData.VmUserPassword = vmRequest.VmUserPassword
-			vmInfoData.RootDiskType = vmRequest.RootDiskType
-			vmInfoData.RootDiskSize = vmRequest.RootDiskSize
-
-			vmInfoData.Label = vmRequest.Label
-
-			vmInfoData.CspResourceId = vmRequest.CspResourceId
-
-			wg.Add(1)
-			go CreateVmObject(&wg, nsId, mciId, &vmInfoData)
-		}
+		}(config)
 	}
 	wg.Wait()
 
-	for _, vmRequest := range vmRequests {
-		// subGroup handling
-		subGroupSize, err := strconv.Atoi(vmRequest.SubGroupSize)
+	// Check for VM object creation errors
+	if len(createErrors) > 0 {
+		switch req.PolicyOnPartialFailure {
+		case model.PolicyRollback:
+			log.Warn().Msgf("VM object creation failed for %d VMs, rolling back entire MCI due to policy=rollback", len(createErrors))
+			if cleanupErr := cleanupPartialMci(nsId, mciId); cleanupErr != nil {
+				log.Error().Err(cleanupErr).Msg("Failed to cleanup partial MCI")
+			}
+			return nil, fmt.Errorf("VM object creation failed, MCI rolled back: %v", createErrors)
+		case model.PolicyRefine:
+			log.Warn().Msgf("VM object creation failed for %d VMs, failed VMs will be refined after MCI creation due to policy=refine", len(createErrors))
+			// Refine will be executed after MCI creation is completed
+		default: // model.PolicyContinue or empty
+			log.Warn().Msgf("VM object creation failed for %d VMs, continuing with partial provisioning due to policy=continue", len(createErrors))
+		}
+
+		// Log detailed error information
+		for i, err := range createErrors {
+			log.Error().Msgf("VM object creation error %d: %v", i+1, err)
+		}
+	}
+
+	// Create actual VMs with intelligent delay and error handling
+	log.Info().Msgf("Creating %d VMs", len(vmConfigs))
+	createErrors = createErrors[:0] // Reset error slice
+
+	for i, config := range vmConfigs {
+		// Apply intelligent delay to avoid CSP rate limiting
+		if i > 0 {
+			delay := time.Duration(200*i) * time.Millisecond
+			if delay > 5*time.Second {
+				delay = 5 * time.Second
+			}
+			time.Sleep(delay)
+		}
+
+		vmInfoData, err := GetVmObject(nsId, mciId, config.vmInfo.Id)
 		if err != nil {
-			subGroupSize = 1
+			return nil, fmt.Errorf("failed to get VM object '%s': %w", config.vmInfo.Id, err)
 		}
 
-		for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
-			vmInfoData := model.TbVmInfo{}
-
-			if subGroupSize == 0 { // for VM (not in a group)
-				vmInfoData.Name = common.ToLower(vmRequest.Name)
-			} else { // for VM (in a group)
-				if i == subGroupSize+vmStartIndex {
-					break
-				}
-				vmInfoData.SubGroupId = common.ToLower(vmRequest.Name)
-				vmInfoData.Name = common.ToLower(vmRequest.Name) + "-" + strconv.Itoa(i)
+		wg.Add(1)
+		go func(vmData model.TbVmInfo, vmName string) {
+			defer wg.Done()
+			if err := createVmSafe(nsId, mciId, &vmData, option); err != nil {
+				errorMu.Lock()
+				createErrors = append(createErrors, fmt.Errorf("VM creation failed for '%s': %w", vmName, err))
+				addVmError(&vmCreateErrors, vmName, err.Error(), "vm_creation")
+				errorMu.Unlock()
 			}
-			vmInfoData.Id = vmInfoData.Name
-			vmId := vmInfoData.Id
-			vmInfoData, err := GetVmObject(nsId, mciId, vmId)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return nil, err
-			}
-
-			// Avoid concurrent requests to CSP.
-			time.Sleep(time.Millisecond * 1000)
-
-			wg.Add(1)
-			go CreateVm(&wg, nsId, mciId, &vmInfoData, option)
-		}
+		}(vmInfoData, config.vmInfo.Id)
 	}
 	wg.Wait()
 
+	// Check for VM creation errors
+	if len(createErrors) > 0 {
+		switch req.PolicyOnPartialFailure {
+		case model.PolicyRollback:
+			log.Error().Msgf("VM creation failed for %d VMs, rolling back entire MCI due to policy=rollback", len(createErrors))
+			if cleanupErr := cleanupPartialMci(nsId, mciId); cleanupErr != nil {
+				log.Error().Err(cleanupErr).Msg("Failed to cleanup partial MCI")
+			}
+			return nil, fmt.Errorf("VM creation failed, MCI rolled back: %v", createErrors)
+		case model.PolicyRefine:
+			log.Warn().Msgf("VM creation failed for %d VMs, failed VMs will be refined after MCI creation due to policy=refine", len(createErrors))
+			// Refine will be executed after MCI creation is completed
+		default: // model.PolicyContinue or empty
+			log.Warn().Msgf("VM creation failed for %d VMs, continuing with partial MCI due to policy=continue", len(createErrors))
+		}
+
+		// Log detailed error information
+		for i, err := range createErrors {
+			log.Error().Msgf("VM creation error %d: %v", i+1, err)
+		}
+
+		// Continue with partial MCI unless rollback was requested
+		log.Info().Msg("Continuing with partial MCI provisioning")
+	}
+
+	// Update MCI status
 	mciTmp, err := GetMciObject(nsId, mciId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
+		return nil, fmt.Errorf("failed to get MCI object after VM creation: %w", err)
 	}
 
 	mciStatusTmp, err := GetMciStatus(nsId, mciId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
+		return nil, fmt.Errorf("failed to get MCI status: %w", err)
 	}
 
 	mciTmp.Status = mciStatusTmp.Status
-
 	if mciTmp.TargetStatus == mciTmp.Status {
 		mciTmp.TargetStatus = model.StatusComplete
 		mciTmp.TargetAction = model.ActionComplete
 	}
 	UpdateMciInfo(nsId, mciTmp)
 
-	log.Debug().Msg("[MCI has been created]" + mciId)
+	log.Info().Msgf("MCI '%s' has been successfully created with %d VMs", mciId, len(vmConfigs))
 
-	// Install CB-Dragonfly monitoring agent
-	if strings.Contains(mciTmp.InstallMonAgent, "yes") && option != "register" {
+	// Install monitoring agent if requested
+	if err := handleMonitoringAgent(nsId, mciId, mciTmp, option); err != nil {
+		log.Error().Err(err).Msg("Failed to install monitoring agent, but continuing")
+	}
 
-		check := CheckDragonflyEndpoint()
-		if check != nil {
-			fmt.Printf("\n\n[Warning] CB-Dragonfly is not available\n\n")
+	// Execute post-deployment commands
+	if err := handlePostCommands(nsId, mciId, mciTmp); err != nil {
+		log.Error().Err(err).Msg("Failed to execute post-deployment commands, but continuing")
+	}
+
+	// Execute refine action if policy is set to refine and there were failures
+	var shouldRefine bool
+	if req.PolicyOnPartialFailure == model.PolicyRefine && (len(vmObjectErrors) > 0 || len(vmCreateErrors) > 0) {
+		log.Info().Msgf("Executing refine action to cleanup failed VMs in MCI '%s'", mciId)
+		if refineResult, err := HandleMciAction(nsId, mciId, model.ActionRefine, true); err != nil {
+			log.Error().Err(err).Msg("Failed to execute refine action, but continuing")
 		} else {
-			reqToMon := &model.MciCmdReq{}
-			reqToMon.UserName = "cb-user" // this MCI user name is temporal code. Need to improve.
-			// Sleep for 60 seconds for a safe DF agent installation.
-			fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation.\n")
-			time.Sleep(60 * time.Second)
-
-			fmt.Printf("\n[InstallMonitorAgentToMci]\n\n")
-			content, err := InstallMonitorAgentToMci(nsId, mciId, model.StrMCI, reqToMon)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				//mciTmp.InstallMonAgent = "no"
-			}
-			common.PrintJsonPretty(content)
-			//mciTmp.InstallMonAgent = "yes"
+			log.Info().Msgf("Refine action completed: %s", refineResult)
+			shouldRefine = true
 		}
 	}
 
-	if len(mciTmp.PostCommand.Command) > 0 {
-		log.Info().Msgf("Wait for 5 seconds for a safe bootstrapping.")
-		time.Sleep(5 * time.Second)
-		log.Info().Msgf("BootstrappingCommand: %+v", mciTmp.PostCommand)
-		output, err := RemoteCommandToMci(nsId, mciId, "", "", "", &mciTmp.PostCommand)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
-		result := model.MciSshCmdResult{}
-		for _, v := range output {
-			result.Results = append(result.Results, v)
-		}
-		common.PrintJsonPretty(result)
-
-		mciTmp.PostCommandResult = result
-		UpdateMciInfo(nsId, mciTmp)
-	}
-
+	// Get final MCI information
 	mciResult, err := GetMciInfo(nsId, mciId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
+		return nil, fmt.Errorf("failed to get final MCI information: %w", err)
 	}
+
+	// Add creation error information if there were any failures
+	if len(vmObjectErrors) > 0 || len(vmCreateErrors) > 0 {
+		successfulVmCount := totalVmCount - len(vmObjectErrors) - len(vmCreateErrors)
+		failedVmCount := len(vmObjectErrors) + len(vmCreateErrors)
+
+		var failureStrategy string
+		switch req.PolicyOnPartialFailure {
+		case model.PolicyRollback:
+			failureStrategy = model.PolicyRollback
+		case model.PolicyRefine:
+			failureStrategy = model.PolicyRefine
+		default: // model.PolicyContinue or empty
+			failureStrategy = model.PolicyContinue
+		}
+
+		mciResult.CreationErrors = &model.MciCreationErrors{
+			VmObjectCreationErrors:  vmObjectErrors,
+			VmCreationErrors:        vmCreateErrors,
+			TotalVmCount:            totalVmCount,
+			SuccessfulVmCount:       successfulVmCount,
+			FailedVmCount:           failedVmCount,
+			FailureHandlingStrategy: failureStrategy,
+		}
+
+		log.Info().Msgf("MCI '%s' creation completed with %d successful VMs out of %d total (strategy: %s, refined: %t)",
+			mciId, successfulVmCount, totalVmCount, failureStrategy, shouldRefine)
+	} else {
+		log.Info().Msgf("MCI '%s' has been successfully created with all %d VMs", mciId, totalVmCount)
+	}
+
 	return mciResult, nil
 }
 
@@ -1003,6 +1319,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 	mciReq.InstallMonAgent = req.InstallMonAgent
 	mciReq.Description = req.Description
 	mciReq.PostCommand = req.PostCommand
+	mciReq.PolicyOnPartialFailure = req.PolicyOnPartialFailure
 
 	emptyMci := &model.TbMciInfo{}
 	err := common.CheckString(nsId)
@@ -1095,28 +1412,74 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 
 		// Collect results and check for errors
 		var hasError bool
+		var failedVMs []string
+		var errorDetails []string
+		var successfulVMs []string
+
 		for vmRes := range resultChan {
 			if vmRes.err != nil {
 				log.Error().Err(vmRes.err).Msg("Failed to prepare resources for dynamic MCI creation")
 				hasError = true
+
+				// Extract VM details from error context
+				vmName := "unknown"
+				if vmRes.result != nil && vmRes.result.VmReq != nil {
+					vmName = vmRes.result.VmReq.Name
+				}
+				failedVMs = append(failedVMs, vmName)
+				errorDetails = append(errorDetails, fmt.Sprintf("VM '%s': %s", vmName, vmRes.err.Error()))
 			} else {
 				// Safely append to the shared mciReq.Vm slice
 				mutex.Lock()
 				mciReq.Vm = append(mciReq.Vm, *vmRes.result.VmReq)
 				allCreatedResources = append(allCreatedResources, vmRes.result.CreatedResources...)
+				successfulVMs = append(successfulVMs, vmRes.result.VmReq.Name)
 				mutex.Unlock()
 			}
 		}
 
 		// If there were any errors, rollback all created resources
 		if hasError {
-			log.Info().Msg("Rolling back all created default resources due to errors")
+			// Count resources by type for detailed rollback info
+			resourceSummary := make(map[string]int)
+			for _, resource := range allCreatedResources {
+				resourceSummary[resource.Type]++
+			}
+
+			log.Info().Msgf("Resource preparation failed for %d VM(s): %v", len(failedVMs), failedVMs)
+			log.Info().Msgf("Successfully prepared %d VM(s): %v", len(successfulVMs), successfulVMs)
+			log.Info().Msgf("Rolling back %d created resources: %+v", len(allCreatedResources), resourceSummary)
+
 			time.Sleep(5 * time.Second)
 			rollbackErr := rollbackCreatedResources(nsId, allCreatedResources)
+
+			// Build comprehensive error message
+			errorMsg := fmt.Sprintf("MCI '%s' creation failed due to resource preparation errors:\n", req.Name)
+			errorMsg += fmt.Sprintf("- Failed VMs (%d): %v\n", len(failedVMs), failedVMs)
+			if len(successfulVMs) > 0 {
+				errorMsg += fmt.Sprintf("- Successfully prepared VMs (%d): %v\n", len(successfulVMs), successfulVMs)
+			}
+
+			if len(allCreatedResources) > 0 {
+				errorMsg += fmt.Sprintf("- Rollback attempted for %d resources: ", len(allCreatedResources))
+				for resType, count := range resourceSummary {
+					errorMsg += fmt.Sprintf("%s(%d) ", resType, count)
+				}
+				errorMsg += "\n"
+			}
+
+			errorMsg += "Detailed errors:\n"
+			for _, detail := range errorDetails {
+				errorMsg += fmt.Sprintf("  • %s\n", detail)
+			}
+
 			if rollbackErr != nil {
-				return emptyMci, fmt.Errorf("failed in rollback operation: %w", rollbackErr)
+				errorMsg += fmt.Sprintf("CRITICAL: Rollback operation failed: %s\n", rollbackErr.Error())
+				errorMsg += "Manual cleanup may be required for created resources."
+				return emptyMci, fmt.Errorf("%s", errorMsg)
 			} else {
-				return emptyMci, fmt.Errorf("rollback completed successfully after errors in resource preparation")
+				errorMsg += "All created resources have been successfully rolled back."
+				return emptyMci, fmt.Errorf("%s", errorMsg)
 			}
 		}
 	}
@@ -1160,7 +1523,8 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 			ProviderNames:   make([]string, 0),
 			RegionNames:     make([]string, 0),
 		},
-		Recommendations: make([]string, 0),
+		Recommendations:        make([]string, 0),
+		PolicyOnPartialFailure: req.PolicyOnPartialFailure,
 	}
 
 	// Basic validation
@@ -1188,165 +1552,244 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 		return reviewResult, nil
 	}
 
-	// Track resource summary
+	// Track resource summary with thread-safe maps
 	specMap := make(map[string]bool)
 	imageMap := make(map[string]bool)
 	connectionMap := make(map[string]bool)
 	providerMap := make(map[string]bool)
 	regionMap := make(map[string]bool)
 
-	// Validate each VM request
+	// Use semaphore for parallel processing with concurrency limit
+	const maxConcurrency = 10
+	semaphore := make(chan struct{}, maxConcurrency)
+
+	// Channel to collect VM review results
+	vmReviewChan := make(chan struct {
+		index    int
+		vmReview model.ReviewVmDynamicReqInfo
+		specInfo *model.TbSpecInfo
+		viable   bool
+		warning  bool
+		cost     float64
+	}, len(req.Vm))
+
+	// WaitGroup to wait for all goroutines to complete
+	var wg sync.WaitGroup
+
+	// Validate each VM request in parallel
+	for i, vmReq := range req.Vm {
+		wg.Add(1)
+		go func(index int, vmRequest model.TbVmDynamicReq) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
+			vmReview := model.ReviewVmDynamicReqInfo{
+				VmName:       vmRequest.Name,
+				SubGroupSize: vmRequest.SubGroupSize,
+				CanCreate:    true,
+				Status:       "Ready",
+				Info:         make([]string, 0),
+				Warnings:     make([]string, 0),
+				Errors:       make([]string, 0),
+			}
+
+			viable := true
+			hasVmWarning := false
+			var specInfoPtr *model.TbSpecInfo
+			vmCost := 0.0
+
+			// Validate VM name
+			if vmRequest.Name == "" {
+				vmReview.Warnings = append(vmReview.Warnings, "VM SubGroup name not specified, will be auto-generated")
+				hasVmWarning = true
+			}
+
+			// Validate SubGroupSize
+			if vmRequest.SubGroupSize == "" {
+				vmRequest.SubGroupSize = "1"
+				vmReview.Warnings = append(vmReview.Warnings, "SubGroupSize not specified, defaulting to 1")
+				hasVmWarning = true
+			}
+
+			// Validate CommonSpec
+			specInfo, err := resource.GetSpec(model.SystemCommonNs, vmRequest.CommonSpec)
+			if err != nil {
+				vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Failed to get spec '%s': %v", vmRequest.CommonSpec, err))
+				vmReview.SpecValidation = model.ReviewResourceValidation{
+					ResourceId:  vmRequest.CommonSpec,
+					IsAvailable: false,
+					Status:      "Unavailable",
+					Message:     err.Error(),
+				}
+				vmReview.CanCreate = false
+				viable = false
+			} else {
+				specInfoPtr = &specInfo
+				vmReview.ConnectionName = specInfo.ConnectionName
+				vmReview.ProviderName = specInfo.ProviderName
+				vmReview.RegionName = specInfo.RegionName
+
+				// Check if spec is available in CSP
+				cspSpec, err := resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
+				if err != nil {
+					vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %v", vmRequest.CommonSpec, err))
+					vmReview.SpecValidation = model.ReviewResourceValidation{
+						ResourceId:    vmRequest.CommonSpec,
+						ResourceName:  specInfo.CspSpecName,
+						IsAvailable:   false,
+						Status:        "Unavailable",
+						Message:       err.Error(),
+						CspResourceId: specInfo.CspSpecName,
+					}
+					vmReview.CanCreate = false
+					viable = false
+				} else {
+					vmReview.SpecValidation = model.ReviewResourceValidation{
+						ResourceId:    vmRequest.CommonSpec,
+						ResourceName:  specInfo.CspSpecName,
+						IsAvailable:   true,
+						Status:        "Available",
+						CspResourceId: cspSpec.Name,
+					}
+
+					// Add cost estimation if available
+					if specInfo.CostPerHour > 0 {
+						vmReview.EstimatedCost = fmt.Sprintf("$%.4f/hour", specInfo.CostPerHour)
+						vmCost = float64(specInfo.CostPerHour)
+					} else {
+						vmReview.EstimatedCost = "Cost estimation unavailable"
+					}
+				}
+			}
+
+			// Validate CommonImage
+			if specInfoPtr != nil {
+				cspImage, err := resource.LookupImage(specInfoPtr.ConnectionName, vmRequest.CommonImage)
+				if err != nil {
+					vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Image '%s' not available in CSP: %v", vmRequest.CommonImage, err))
+					vmReview.ImageValidation = model.ReviewResourceValidation{
+						ResourceId:    vmRequest.CommonImage,
+						IsAvailable:   false,
+						Status:        "Unavailable",
+						Message:       err.Error(),
+						CspResourceId: vmRequest.CommonImage,
+					}
+					vmReview.CanCreate = false
+					viable = false
+				} else {
+					vmReview.ImageValidation = model.ReviewResourceValidation{
+						ResourceId:    vmRequest.CommonImage,
+						ResourceName:  cspImage.Name,
+						IsAvailable:   true,
+						Status:        "Available",
+						CspResourceId: cspImage.IId.SystemId,
+					}
+				}
+			}
+
+			// Validate ConnectionName if specified
+			if vmRequest.ConnectionName != "" {
+				_, err := common.GetConnConfig(vmRequest.ConnectionName)
+				if err != nil {
+					vmReview.Warnings = append(vmReview.Warnings, fmt.Sprintf("Specified connection '%s' not found, will use default from spec", vmRequest.ConnectionName))
+					hasVmWarning = true
+				} else {
+					vmReview.ConnectionName = vmRequest.ConnectionName
+				}
+			}
+
+			// Validate RootDisk settings
+			if vmRequest.RootDiskType != "" && vmRequest.RootDiskType != "default" {
+				vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk type configured: %s, be sure it's supported by the provider", vmRequest.RootDiskType))
+			}
+			if vmRequest.RootDiskSize != "" && vmRequest.RootDiskSize != "default" {
+				vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk size configured: %s GB, be sure it meets minimum requirements", vmRequest.RootDiskSize))
+			}
+
+			// Set VM review status
+			if len(vmReview.Errors) > 0 {
+				vmReview.Status = "Error"
+				vmReview.Message = fmt.Sprintf("VM has %d error(s) that prevent creation", len(vmReview.Errors))
+			} else if len(vmReview.Warnings) > 0 {
+				vmReview.Status = "Warning"
+				vmReview.Message = fmt.Sprintf("VM can be created but has %d warning(s)", len(vmReview.Warnings))
+			} else {
+				vmReview.Status = "Ready"
+				vmReview.Message = "VM can be created successfully"
+			}
+
+			// Send result to channel
+			vmReviewChan <- struct {
+				index    int
+				vmReview model.ReviewVmDynamicReqInfo
+				specInfo *model.TbSpecInfo
+				viable   bool
+				warning  bool
+				cost     float64
+			}{
+				index:    index,
+				vmReview: vmReview,
+				specInfo: specInfoPtr,
+				viable:   viable,
+				warning:  hasVmWarning,
+				cost:     vmCost,
+			}
+
+			log.Debug().Msgf("[%d] VM '%s' review completed: %s", index, vmRequest.Name, vmReview.Status)
+		}(i, vmReq)
+	}
+
+	// Close channel when all goroutines are done
+	go func() {
+		wg.Wait()
+		close(vmReviewChan)
+	}()
+
+	// Collect results and maintain order
+	vmReviews := make([]model.ReviewVmDynamicReqInfo, len(req.Vm))
 	allViable := true
 	hasWarnings := false
 	totalEstimatedCost := 0.0
 	vmWithUnknownCost := 0
 
-	for i, vmReq := range req.Vm {
-		vmReview := model.ReviewVmDynamicReqInfo{
-			VmName:       vmReq.Name,
-			SubGroupSize: vmReq.SubGroupSize,
-			CanCreate:    true,
-			Status:       "Ready",
-			Info:         make([]string, 0),
-			Warnings:     make([]string, 0),
-			Errors:       make([]string, 0),
-		}
+	// Process results from channel
+	for result := range vmReviewChan {
+		// Store VM review result in correct order
+		vmReviews[result.index] = result.vmReview
 
-		// Validate VM name
-		if vmReq.Name == "" {
-			vmReview.Warnings = append(vmReview.Warnings, "VM SubGroup name not specified, will be auto-generated")
-			hasWarnings = true
-		}
-
-		// Validate SubGroupSize
-		if vmReq.SubGroupSize == "" {
-			vmReq.SubGroupSize = "1"
-			vmReview.Warnings = append(vmReview.Warnings, "SubGroupSize not specified, defaulting to 1")
-			hasWarnings = true
-		}
-
-		// Validate CommonSpec
-		specInfo, err := resource.GetSpec(model.SystemCommonNs, vmReq.CommonSpec)
-		var specInfoPtr *model.TbSpecInfo
-		if err != nil {
-			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Failed to get spec '%s': %v", vmReq.CommonSpec, err))
-			vmReview.SpecValidation = model.ReviewResourceValidation{
-				ResourceId:  vmReq.CommonSpec,
-				IsAvailable: false,
-				Status:      "Unavailable",
-				Message:     err.Error(),
-			}
-			vmReview.CanCreate = false
+		// Update overall status flags
+		if !result.viable {
 			allViable = false
-		} else {
-			specInfoPtr = &specInfo
-			vmReview.ConnectionName = specInfo.ConnectionName
-			vmReview.ProviderName = specInfo.ProviderName
-			vmReview.RegionName = specInfo.RegionName
-
-			// Check if spec is available in CSP
-			cspSpec, err := resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
-			if err != nil {
-				vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %v", vmReq.CommonSpec, err))
-				vmReview.SpecValidation = model.ReviewResourceValidation{
-					ResourceId:    vmReq.CommonSpec,
-					ResourceName:  specInfo.CspSpecName,
-					IsAvailable:   false,
-					Status:        "Unavailable",
-					Message:       err.Error(),
-					CspResourceId: specInfo.CspSpecName,
-				}
-				vmReview.CanCreate = false
-				allViable = false
-			} else {
-				vmReview.SpecValidation = model.ReviewResourceValidation{
-					ResourceId:    vmReq.CommonSpec,
-					ResourceName:  specInfo.CspSpecName,
-					IsAvailable:   true,
-					Status:        "Available",
-					CspResourceId: cspSpec.Name,
-				}
-
-				// Add cost estimation if available
-				if specInfo.CostPerHour > 0 {
-					vmReview.EstimatedCost = fmt.Sprintf("$%.4f/hour", specInfo.CostPerHour)
-					totalEstimatedCost += float64(specInfo.CostPerHour)
-				} else {
-					vmReview.EstimatedCost = "Cost estimation unavailable"
-					vmReview.Warnings = append(vmReview.Warnings, "Cost estimation not available for this spec")
-					hasWarnings = true
-					vmWithUnknownCost++
-				}
-			}
-
-			// Track resource summary
-			specMap[vmReq.CommonSpec] = true
-			connectionMap[specInfo.ConnectionName] = true
-			providerMap[specInfo.ProviderName] = true
-			regionMap[specInfo.RegionName] = true
+		}
+		if result.warning {
+			hasWarnings = true
 		}
 
-		// Validate CommonImage
-		if specInfoPtr != nil {
-			cspImage, err := resource.LookupImage(specInfoPtr.ConnectionName, vmReq.CommonImage)
-			if err != nil {
-				vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Image '%s' not available in CSP: %v", vmReq.CommonImage, err))
-				vmReview.ImageValidation = model.ReviewResourceValidation{
-					ResourceId:    vmReq.CommonImage,
-					IsAvailable:   false,
-					Status:        "Unavailable",
-					Message:       err.Error(),
-					CspResourceId: vmReq.CommonImage,
-				}
-				vmReview.CanCreate = false
-				allViable = false
-			} else {
-				vmReview.ImageValidation = model.ReviewResourceValidation{
-					ResourceId:    vmReq.CommonImage,
-					ResourceName:  cspImage.Name,
-					IsAvailable:   true,
-					Status:        "Available",
-					CspResourceId: cspImage.IId.SystemId,
-				}
-			}
-
-			imageMap[vmReq.CommonImage] = true
+		// Update cost calculation
+		if result.cost > 0 {
+			totalEstimatedCost += result.cost
+		} else if result.vmReview.EstimatedCost == "Cost estimation unavailable" {
+			vmWithUnknownCost++
 		}
 
-		// Validate ConnectionName if specified
-		if vmReq.ConnectionName != "" {
-			_, err := common.GetConnConfig(vmReq.ConnectionName)
-			if err != nil {
-				vmReview.Warnings = append(vmReview.Warnings, fmt.Sprintf("Specified connection '%s' not found, will use default from spec", vmReq.ConnectionName))
-				hasWarnings = true
-			} else {
-				vmReview.ConnectionName = vmReq.ConnectionName
-			}
+		// Update resource summary maps (thread-safe since we're processing sequentially here)
+		if result.specInfo != nil {
+			specMap[req.Vm[result.index].CommonSpec] = true
+			connectionMap[result.specInfo.ConnectionName] = true
+			providerMap[result.specInfo.ProviderName] = true
+			regionMap[result.specInfo.RegionName] = true
 		}
 
-		// Validate RootDisk settings
-		if vmReq.RootDiskType != "" && vmReq.RootDiskType != "default" {
-			vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk type configured: %s, be sure it's supported by the provider", vmReq.RootDiskType))
+		if req.Vm[result.index].CommonImage != "" {
+			imageMap[req.Vm[result.index].CommonImage] = true
 		}
-		if vmReq.RootDiskSize != "" && vmReq.RootDiskSize != "default" {
-			vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk size configured: %s GB, be sure it meets minimum requirements", vmReq.RootDiskSize))
-		}
-
-		// Set VM review status
-		if len(vmReview.Errors) > 0 {
-			vmReview.Status = "Error"
-			vmReview.Message = fmt.Sprintf("VM has %d error(s) that prevent creation", len(vmReview.Errors))
-		} else if len(vmReview.Warnings) > 0 {
-			vmReview.Status = "Warning"
-			vmReview.Message = fmt.Sprintf("VM can be created but has %d warning(s)", len(vmReview.Warnings))
-		} else {
-			vmReview.Status = "Ready"
-			vmReview.Message = "VM can be created successfully"
-		}
-
-		reviewResult.VmReviews = append(reviewResult.VmReviews, vmReview)
-		log.Debug().Msgf("[%d] VM '%s' review completed: %s", i, vmReq.Name, vmReview.Status)
 	}
+
+	// Store VM reviews in result
+	reviewResult.VmReviews = vmReviews
 
 	// Build resource summary
 	for spec := range specMap {
@@ -1425,7 +1868,74 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 		reviewResult.Recommendations = append(reviewResult.Recommendations, fmt.Sprintf("Cost estimation unavailable for %d VMs - actual costs may be higher than shown", vmWithUnknownCost))
 	}
 
-	log.Debug().Msgf("MCI review completed: %s - %s", reviewResult.OverallStatus, reviewResult.OverallMessage)
+	// Add PolicyOnPartialFailure analysis and recommendations
+	policy := req.PolicyOnPartialFailure
+	if policy == "" {
+		policy = model.PolicyContinue // default value
+		reviewResult.PolicyOnPartialFailure = model.PolicyContinue
+	}
+
+	var policyDescription, policyRecommendation string
+
+	switch policy {
+	case model.PolicyContinue:
+		policyDescription = "If some VMs fail during creation, MCI will be created with successfully provisioned VMs only. Failed VMs will remain in 'StatusFailed' state and can be fixed later using 'refine' action."
+		reviewResult.Recommendations = append(reviewResult.Recommendations,
+			"Failure Policy: 'continue' - Partial deployment allowed, failed VMs can be refined later")
+		if reviewResult.TotalVmCount > 1 {
+			policyRecommendation = "With multiple VMs, consider 'rollback' policy for all-or-nothing deployment, or 'refine' policy for automatic cleanup"
+			reviewResult.Recommendations = append(reviewResult.Recommendations,
+				"With multiple VMs, partial failures are possible. Consider using 'rollback' policy if you need all-or-nothing deployment, or 'refine' policy for automatic cleanup of failed VMs.")
+		}
+	case model.PolicyRollback:
+		policyDescription = "If any VM fails during creation, the entire MCI will be deleted automatically. This ensures all-or-nothing deployment but may waste resources if only a few VMs fail."
+		reviewResult.Recommendations = append(reviewResult.Recommendations,
+			"Failure Policy: 'rollback' - All-or-nothing deployment, entire MCI deleted on any failure")
+		if reviewResult.TotalVmCount > 5 {
+			policyRecommendation = "With many VMs, rollback policy increases risk of complete deployment failure. Consider 'continue' or 'refine' policy for better reliability"
+			reviewResult.Recommendations = append(reviewResult.Recommendations,
+				"WARNING: With many VMs, rollback policy increases risk of complete deployment failure. Consider 'continue' or 'refine' policy for better reliability.")
+		}
+		if reviewResult.ResourceSummary.TotalProviders > 2 {
+			reviewResult.Recommendations = append(reviewResult.Recommendations,
+				"WARNING: Multiple cloud providers increase failure probability. Rollback policy may cause complete deployment failure due to single provider issues.")
+		}
+	case model.PolicyRefine:
+		policyDescription = "If some VMs fail during creation, MCI will be created with successful VMs, and failed VMs will be automatically cleaned up using refine action. This provides the best balance between reliability and resource efficiency."
+		reviewResult.Recommendations = append(reviewResult.Recommendations,
+			"Failure Policy: 'refine' - Automatic cleanup of failed VMs, optimal balance of reliability and efficiency")
+		if reviewResult.TotalVmCount > 10 {
+			policyRecommendation = "With many VMs, 'refine' policy provides optimal balance between reliability and resource efficiency"
+			reviewResult.Recommendations = append(reviewResult.Recommendations,
+				"RECOMMENDED: With many VMs, 'refine' policy provides optimal balance between reliability and resource efficiency.")
+		}
+	default:
+		policyDescription = fmt.Sprintf("Unknown failure policy '%s'. Will default to 'continue'. Valid options: continue, rollback, refine", policy)
+		policyRecommendation = "Use one of the valid failure policies: continue, rollback, refine"
+		reviewResult.Recommendations = append(reviewResult.Recommendations,
+			fmt.Sprintf("WARNING: Unknown failure policy '%s'. Will default to 'continue'. Valid options: continue, rollback, refine", policy))
+	}
+
+	reviewResult.PolicyDescription = policyDescription
+	reviewResult.PolicyRecommendation = policyRecommendation
+
+	// Add policy-specific warnings based on deployment context
+	if reviewResult.OverallStatus == "Warning" && policy == model.PolicyRollback {
+		reviewResult.Recommendations = append(reviewResult.Recommendations,
+			"CAUTION: Configuration warnings detected with 'rollback' policy. Address warnings to prevent complete deployment failure.")
+	}
+
+	if len(reviewResult.ResourceSummary.ProviderNames) > 1 && policy == model.PolicyRollback {
+		reviewResult.Recommendations = append(reviewResult.Recommendations,
+			"TIP: Multi-cloud deployment with 'rollback' policy is risky. Consider 'refine' policy for better fault tolerance across providers.")
+	}
+
+	if deployOption == "hold" {
+		reviewResult.Recommendations = append(reviewResult.Recommendations,
+			fmt.Sprintf("DEPLOYMENT HOLD: MCI creation will be held for review. Failure policy '%s' will apply when deployment is resumed with control continue.", policy))
+	}
+
+	log.Debug().Msgf("MCI review completed: %s - %s (Policy: %s)", reviewResult.OverallStatus, reviewResult.OverallMessage, policy)
 	return reviewResult, nil
 }
 
@@ -1501,8 +2011,9 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 
 	specInfo, err := resource.GetSpec(model.SystemCommonNs, req.CommonSpec)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err
+		detailedErr := fmt.Errorf("failed to find VM specification '%s': %w. Please verify the spec exists and is properly configured", req.CommonSpec, err)
+		log.Error().Err(err).Msgf("Spec lookup failed for VM '%s' with CommonSpec '%s'", req.Name, req.CommonSpec)
+		return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{Name: req.Name}, CreatedResources: createdResources}, detailedErr
 	}
 
 	// remake vmReqest from given input and check resource availability
@@ -1516,9 +2027,10 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	// validate the GetConnConfig for spec
 	connection, err := common.GetConnConfig(vmReq.ConnectionName)
 	if err != nil {
-		err := fmt.Errorf("Failed to get ConnectionName (" + vmReq.ConnectionName + ") for Spec (" + k.CommonSpec + ") is not found.")
-		log.Error().Err(err).Msg("")
-		return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err
+		detailedErr := fmt.Errorf("failed to get connection configuration '%s' for VM '%s' with spec '%s': %w. Please verify the connection exists and is properly configured",
+			vmReq.ConnectionName, req.Name, k.CommonSpec, err)
+		log.Error().Err(err).Msgf("Connection config lookup failed for VM '%s', ConnectionName '%s', Spec '%s'", req.Name, vmReq.ConnectionName, k.CommonSpec)
+		return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{Name: req.Name, ConnectionName: vmReq.ConnectionName}, CreatedResources: createdResources}, detailedErr
 	}
 
 	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
@@ -1530,8 +2042,11 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	// check if the image is available in the CSP
 	_, err = resource.LookupImage(connection.ConfigName, vmReq.ImageId)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get the Image from database as well as the CSP")
-		return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err
+		detailedErr := fmt.Errorf("failed to find image '%s' for VM '%s' in CSP '%s' (connection: %s): %w. Please verify the image exists and is accessible in the target region",
+			vmReq.ImageId, req.Name, connection.ProviderName, connection.ConfigName, err)
+		log.Error().Err(err).Msgf("Image lookup failed for VM '%s', ImageId '%s', Provider '%s', Connection '%s'",
+			req.Name, vmReq.ImageId, connection.ProviderName, connection.ConfigName)
+		return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, ImageId: vmReq.ImageId}, CreatedResources: createdResources}, detailedErr
 	}
 	// Need enhancement to handle custom image request
 
@@ -1541,9 +2056,11 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	_, err = resource.GetResource(nsId, model.StrVNet, vmReq.VNetId)
 	if err != nil {
 		if !onDemand {
-			err := fmt.Errorf("Failed to get the vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
-			log.Error().Err(err).Msg("Failed to get the vNet")
-			return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err
+			detailedErr := fmt.Errorf("failed to get required VNet '%s' for VM '%s' from connection '%s': %w. VNet must exist when onDemand is disabled",
+				vmReq.VNetId, req.Name, vmReq.ConnectionName, err)
+			log.Error().Err(err).Msgf("VNet lookup failed for VM '%s', VNetId '%s', Connection '%s' (onDemand disabled)",
+				req.Name, vmReq.VNetId, vmReq.ConnectionName)
+			return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, VNetId: vmReq.VNetId}, CreatedResources: createdResources}, detailedErr
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
 
@@ -1554,8 +2071,11 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 		if err != nil && strings.Contains(err.Error(), "does not exist") {
 			err2 := resource.CreateSharedResource(nsId, model.StrVNet, vmReq.ConnectionName)
 			if err2 != nil {
-				log.Error().Err(err2).Msg("Failed to create new default vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
-				return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err2
+				detailedErr := fmt.Errorf("failed to create default VNet for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or network configuration issues",
+					req.Name, nsId, vmReq.ConnectionName, err2)
+				log.Error().Err(err2).Msgf("VNet creation failed for VM '%s', VNetId '%s', Namespace '%s', Connection '%s'",
+					req.Name, vmReq.VNetId, nsId, vmReq.ConnectionName)
+				return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, VNetId: vmReq.VNetId}, CreatedResources: createdResources}, detailedErr
 			} else {
 				log.Info().Msg("Created new default vNet: " + vmReq.VNetId)
 				// Track the newly created VNet
@@ -1572,9 +2092,11 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	_, err = resource.GetResource(nsId, model.StrSSHKey, vmReq.SshKeyId)
 	if err != nil {
 		if !onDemand {
-			err := fmt.Errorf("Failed to get the SSHKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
-			log.Error().Err(err).Msg("Failed to get the SSHKey")
-			return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err
+			detailedErr := fmt.Errorf("failed to get required SSHKey '%s' for VM '%s' from connection '%s': %w. SSHKey must exist when onDemand is disabled",
+				vmReq.SshKeyId, req.Name, vmReq.ConnectionName, err)
+			log.Error().Err(err).Msgf("SSHKey lookup failed for VM '%s', SshKeyId '%s', Connection '%s' (onDemand disabled)",
+				req.Name, vmReq.SshKeyId, vmReq.ConnectionName)
+			return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, SshKeyId: vmReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
 
@@ -1585,8 +2107,11 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 		if err != nil && strings.Contains(err.Error(), "does not exist") {
 			err2 := resource.CreateSharedResource(nsId, model.StrSSHKey, vmReq.ConnectionName)
 			if err2 != nil {
-				log.Error().Err(err2).Msg("Failed to create new default SSHKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
-				return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err2
+				detailedErr := fmt.Errorf("failed to create default SSHKey for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or key generation issues",
+					req.Name, nsId, vmReq.ConnectionName, err2)
+				log.Error().Err(err2).Msgf("SSHKey creation failed for VM '%s', SshKeyId '%s', Namespace '%s', Connection '%s'",
+					req.Name, vmReq.SshKeyId, nsId, vmReq.ConnectionName)
+				return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, SshKeyId: vmReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
 			} else {
 				log.Info().Msg("Created new default SSHKey: " + vmReq.SshKeyId)
 				// Track the newly created SSHKey
@@ -1603,9 +2128,11 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 	_, err = resource.GetResource(nsId, model.StrSecurityGroup, securityGroup)
 	if err != nil {
 		if !onDemand {
-			err := fmt.Errorf("Failed to get the securityGroup " + securityGroup + " from " + vmReq.ConnectionName)
-			log.Error().Err(err).Msg("Failed to get the securityGroup")
-			return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err
+			detailedErr := fmt.Errorf("failed to get required SecurityGroup '%s' for VM '%s' from connection '%s': %w. SecurityGroup must exist when onDemand is disabled",
+				securityGroup, req.Name, vmReq.ConnectionName, err)
+			log.Error().Err(err).Msgf("SecurityGroup lookup failed for VM '%s', SecurityGroup '%s', Connection '%s' (onDemand disabled)",
+				req.Name, securityGroup, vmReq.ConnectionName)
+			return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
 
@@ -1616,8 +2143,11 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbVmDynamicReq
 		if err != nil && strings.Contains(err.Error(), "does not exist") {
 			err2 := resource.CreateSharedResource(nsId, model.StrSecurityGroup, vmReq.ConnectionName)
 			if err2 != nil {
-				log.Error().Err(err2).Msg("Failed to create new default securityGroup " + securityGroup + " from " + vmReq.ConnectionName)
-				return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{}, CreatedResources: createdResources}, err2
+				detailedErr := fmt.Errorf("failed to create default SecurityGroup for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or firewall rule configuration issues",
+					req.Name, nsId, vmReq.ConnectionName, err2)
+				log.Error().Err(err2).Msgf("SecurityGroup creation failed for VM '%s', SecurityGroup '%s', Namespace '%s', Connection '%s'",
+					req.Name, securityGroup, nsId, vmReq.ConnectionName)
+				return &VmReqWithCreatedResources{VmReq: &model.TbVmReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
 			} else {
 				log.Info().Msg("Created new default securityGroup: " + securityGroup)
 				// Track the newly created SecurityGroup
@@ -1888,7 +2418,8 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 		vmInfoData.Status = model.StatusFailed
 		vmInfoData.SystemMessage = err.Error()
 		UpdateVmInfo(nsId, mciId, *vmInfoData)
-		log.Error().Err(err).Msg("")
+		msg := fmt.Sprintf("Failed to create VM %s request body to Spider: %v", vmInfoData.Name, requestBody)
+		log.Error().Err(err).Msg(msg)
 		return err
 	}
 

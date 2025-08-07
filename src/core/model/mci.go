@@ -75,6 +75,18 @@ const (
 	StatusComplete string = "None"
 )
 
+// Provisioning failure handling policies
+const (
+	// PolicyContinue continues with partial MCI creation when some VMs fail
+	PolicyContinue string = "continue"
+
+	// PolicyRollback cleans up entire MCI when any VM creation fails
+	PolicyRollback string = "rollback"
+
+	// PolicyRefine marks failed VMs for refinement when creation fails
+	PolicyRefine string = "refine"
+)
+
 const StrAutoGen string = "autogen"
 
 // DefaultSystemLabel is const for string to specify the Default System Label
@@ -106,6 +118,12 @@ type TbMciReq struct {
 
 	// PostCommand is for the command to bootstrap the VMs
 	PostCommand MciCmdReq `json:"postCommand" validate:"omitempty"`
+
+	// PolicyOnPartialFailure determines how to handle VM creation failures
+	// - "continue": Continue with partial MCI creation (default)
+	// - "rollback": Cleanup entire MCI when any VM fails
+	// - "refine": Mark failed VMs for refinement
+	PolicyOnPartialFailure string `json:"policyOnPartialFailure" example:"continue" default:"continue" enums:"continue,rollback,refine"`
 }
 
 // ResourceStatusInfo is struct for status information of a resource
@@ -160,6 +178,45 @@ type TbMciInfo struct {
 
 	// PostCommandResult is the result of the command for bootstraping the VMs
 	PostCommandResult MciSshCmdResult `json:"postCommandResult"`
+
+	// CreationErrors contains information about VM creation failures (if any)
+	CreationErrors *MciCreationErrors `json:"creationErrors,omitempty"`
+}
+
+// MciCreationErrors represents errors that occurred during MCI creation
+type MciCreationErrors struct {
+	// VmObjectCreationErrors contains errors from VM object creation phase
+	VmObjectCreationErrors []VmCreationError `json:"vmObjectCreationErrors,omitempty"`
+
+	// VmCreationErrors contains errors from actual VM creation phase
+	VmCreationErrors []VmCreationError `json:"vmCreationErrors,omitempty"`
+
+	// TotalVmCount is the total number of VMs that were supposed to be created
+	TotalVmCount int `json:"totalVmCount"`
+
+	// SuccessfulVmCount is the number of VMs that were successfully created
+	SuccessfulVmCount int `json:"successfulVmCount"`
+
+	// FailedVmCount is the number of VMs that failed to be created
+	FailedVmCount int `json:"failedVmCount"`
+
+	// FailureHandlingStrategy indicates how failures were handled
+	FailureHandlingStrategy string `json:"failureHandlingStrategy,omitempty"` // "rollback", "refine", "continue"
+}
+
+// VmCreationError represents a single VM creation error
+type VmCreationError struct {
+	// VmName is the name of the VM that failed
+	VmName string `json:"vmName"`
+
+	// Error is the error message
+	Error string `json:"error"`
+
+	// Phase indicates when the error occurred
+	Phase string `json:"phase"` // "object_creation", "vm_creation"
+
+	// Timestamp when the error occurred
+	Timestamp string `json:"timestamp"`
 }
 
 // TbVmReq is struct to get requirements to create a new server instance
@@ -205,16 +262,14 @@ type TbScaleOutSubGroupReq struct {
 type TbMciDynamicReq struct {
 	Name string `json:"name" validate:"required" example:"mci01"`
 
+	// PolicyOnPartialFailure determines how to handle VM creation failures
+	// - "continue": Continue with partial MCI creation (default)
+	// - "rollback": Cleanup entire MCI when any VM fails
+	// - "refine": Mark failed VMs for refinement
+	PolicyOnPartialFailure string `json:"policyOnPartialFailure" example:"continue" default:"continue" enums:"continue,rollback,refine"`
+
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:no)
 	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
-
-	// Label is for describing the object by keywords
-	Label map[string]string `json:"label"`
-
-	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
-	SystemLabel string `json:"systemLabel" example:"" default:""`
-
-	Description string `json:"description" example:"Made in CB-TB"`
 
 	// Vm is array of VM requests for multi-cloud infrastructure
 	// Example: Multiple VM groups across different CSPs
@@ -248,6 +303,14 @@ type TbMciDynamicReq struct {
 
 	// PostCommand is for the command to bootstrap the VMs
 	PostCommand MciCmdReq `json:"postCommand"`
+
+	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
+	SystemLabel string `json:"systemLabel" example:"" default:""`
+
+	Description string `json:"description" example:"Made in CB-TB"`
+
+	// Label is for describing the object by keywords
+	Label map[string]string `json:"label"`
 }
 
 // TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
@@ -316,6 +379,11 @@ type ReviewMciDynamicReqInfo struct {
 	// MCI-level information
 	MciName      string `json:"mciName"`
 	TotalVmCount int    `json:"totalVmCount"`
+
+	// Failure policy analysis
+	PolicyOnPartialFailure string `json:"policyOnPartialFailure" example:"continue"`
+	PolicyDescription      string `json:"policyDescription" example:"If some VMs fail during creation, MCI will be created with successfully provisioned VMs only"`
+	PolicyRecommendation   string `json:"policyRecommendation,omitempty" example:"Consider 'refine' policy for automatic cleanup of failed VMs"`
 
 	// VM-level validation results
 	VmReviews []ReviewVmDynamicReqInfo `json:"vmReviews"`

@@ -1226,12 +1226,58 @@ paths:
     post:
       tags:
       - "[MC-Infra] MCI Provisioning and Management"
-      summary: Check available ConnectionConfig list for creating MCI Dynamically
-      description: Check available ConnectionConfig list before create MCI Dynamically
-        from common spec and image
+      summary: Check Resource Availability for Dynamic MCI Creation
+      description: |-
+        Validate resource availability and discover optimal connection configurations before creating MCI dynamically.
+        This endpoint provides comprehensive resource validation and connection discovery for MCI planning:
+
+        **Resource Validation Process:**
+        1. **Specification Analysis**: Validates that requested common specs exist and are accessible
+        2. **Provider Discovery**: Identifies available cloud providers and regions for each specification
+        3. **Connectivity Assessment**: Tests connection configurations and CSP API accessibility
+        4. **Quota Verification**: Checks available quotas and resource limits where possible
+        5. **Compatibility Matrix**: Generates matrix of viable spec-provider-region combinations
+
+        **Connection Configuration Discovery:**
+        - **Available Providers**: Lists all configured cloud providers (AWS, Azure, GCP, etc.)
+        - **Active Regions**: Shows available regions per provider with connectivity status
+        - **Specification Mapping**: Maps common specs to provider-specific instance types
+        - **Image Compatibility**: Validates image availability across different providers/regions
+        - **Network Capabilities**: Identifies supported network features and configurations
+
+        **Pre-Deployment Validation:**
+        - **Resource Existence**: Confirms all specified resources exist in system namespace
+        - **Permission Verification**: Validates CSP credentials and required permissions
+        - **API Connectivity**: Tests connection to CSP APIs and service endpoints
+        - **Dependency Resolution**: Identifies any missing dependencies or prerequisites
+
+        **Optimization Recommendations:**
+        - **Cost-Effective Regions**: Suggests regions with lower pricing for specified resources
+        - **Performance Optimization**: Recommends regions with better network performance
+        - **Availability Zone**: Identifies optimal AZ distribution for high availability
+        - **Resource Bundling**: Suggests efficient resource combinations and groupings
+
+        **Output Information:**
+        - **Connection Candidates**: List of viable connection configurations
+        - **Provider Capabilities**: Detailed capabilities matrix per provider
+        - **Resource Status**: Real-time availability status for each requested resource
+        - **Recommendation Summary**: Actionable recommendations for optimal deployment
+
+        **Use Cases:**
+        - Pre-validate MCI configuration before expensive deployment operations
+        - Discover optimal provider/region combinations for cost or performance
+        - Troubleshoot resource availability issues during MCI planning
+        - Generate connection configuration templates for standardized deployments
+        - Assess infrastructure capacity and planning constraints
+
+        **Integration Workflow:**
+        1. Use this endpoint to validate and discover connection options
+        2. Review recommendations and adjust specifications if needed
+        3. Use `/mciDynamicReview` for detailed cost estimation and final validation
+        4. Proceed with `/mciDynamic` using validated configuration
       operationId: PostMciDynamicCheckRequest
       requestBody:
-        description: Details for MCI dynamic request information
+        description: Resource check request containing common specifications to validate
         content:
           application/json:
             schema:
@@ -1239,19 +1285,26 @@ paths:
         required: true
       responses:
         "200":
-          description: OK
+          description: "Resource availability matrix with connection candidates, provider\
+            \ capabilities, and optimization recommendations"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.CheckMciDynamicReqInfo'
+        "400":
+          description: Invalid request format or malformed specification identifiers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "404":
-          description: Not Found
+          description: Specified common specifications not found in system namespace
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
-          description: Internal Server Error
+          description: CSP connectivity issues or internal validation service errors
           content:
             application/json:
               schema:
@@ -2873,19 +2926,50 @@ paths:
     post:
       tags:
       - "[MC-Infra] MCI Provisioning and Management"
-      summary: Create MCI
-      description: Create MCI
+      summary: Create MCI (Multi-Cloud Infrastructure)
+      description: |-
+        Create MCI with detailed VM specifications and resource configuration.
+        This endpoint creates a complete multi-cloud infrastructure by:
+        1. **VM Provisioning**: Creates VMs across multiple cloud providers using predefined specs and images
+        2. **Resource Management**: Automatically handles VPC/VNet, security groups, SSH keys, and network configuration
+        3. **Status Tracking**: Monitors VM creation progress and handles failures based on policy settings
+        4. **Post-Deployment**: Optionally installs monitoring agents and executes custom commands
+
+        **Key Features:**
+        - Multi-cloud VM deployment with heterogeneous configurations
+        - Automatic resource dependency management (VPC → Security Group → VM)
+        - Built-in failure handling with configurable policies (continue/rollback/refine)
+        - Optional CB-Dragonfly monitoring agent installation
+        - Post-deployment command execution support
+        - Real-time status updates and progress tracking
+
+        **VM Lifecycle:**
+        1. Creating → Running (successful deployment)
+        2. Creating → Failed (deployment error, handled by failure policy)
+        3. Running → Terminated (manual or policy-driven cleanup)
+
+        **Failure Policies:**
+        - `continue`: Keep successful VMs, mark failed ones for later refinement
+        - `rollback`: Delete entire MCI if any VM fails (all-or-nothing)
+        - `refine`: Automatically clean up failed VMs, keep successful ones
+
+        **Resource Requirements:**
+        - Valid VM specifications (must exist in system namespace)
+        - Valid images (must be available in target CSP regions)
+        - Sufficient CSP quotas and permissions
+        - Network connectivity between components
       operationId: PostMci
       parameters:
       - name: nsId
         in: path
-        description: Namespace ID
+        description: Namespace ID for resource isolation
         required: true
         schema:
           type: string
           default: default
       requestBody:
-        description: Details for an MCI object
+        description: "MCI creation request with VM specifications, networking, and\
+          \ deployment options"
         content:
           application/json:
             schema:
@@ -2893,19 +2977,33 @@ paths:
         required: true
       responses:
         "200":
-          description: OK
+          description: "Created MCI information with VM details, status, and resource\
+            \ mapping"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.TbMciInfo'
+        "400":
+          description: Invalid request parameters or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "404":
-          description: Not Found
+          description: Namespace not found or specified resources unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: MCI name already exists in namespace
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
-          description: Internal Server Error
+          description: Internal server error during MCI creation or CSP communication
+            failure
           content:
             application/json:
               schema:
@@ -3826,33 +3924,91 @@ paths:
     post:
       tags:
       - "[MC-Infra] MCI Provisioning and Management"
-      summary: ScaleOut subGroup in specified MCI
-      description: ScaleOut subGroup in specified MCI
+      summary: Scale Out Existing SubGroup in MCI
+      description: |-
+        Horizontally scale an existing VM subgroup by adding more identical instances for increased capacity.
+        This endpoint provides elastic scaling capabilities for running application tiers:
+
+        **Scale-Out Process:**
+        1. **SubGroup Validation**: Verifies target subgroup exists and is in scalable state
+        2. **Template Replication**: Uses existing VM configuration as template for new instances
+        3. **Resource Allocation**: Ensures sufficient CSP quotas and network resources
+        4. **Parallel Deployment**: Deploys multiple new VMs simultaneously for faster scaling
+        5. **Integration**: Seamlessly integrates new VMs into existing subgroup and MCI
+
+        **Configuration Inheritance:**
+        - **VM Specifications**: New VMs inherit exact specifications from existing subgroup members
+        - **Network Settings**: Automatically placed in same VNet, subnet, and security groups
+        - **SSH Keys**: Use same SSH key pairs for consistent access management
+        - **Monitoring**: Inherit monitoring agent configuration and policies
+        - **Labels and Metadata**: Propagate all labels and metadata from parent subgroup
+
+        **Scaling Scenarios:**
+        - **Traffic Spikes**: Quickly add capacity during high-demand periods
+        - **Seasonal Scaling**: Scale out for predictable demand increases
+        - **Performance Optimization**: Add instances to reduce per-VM resource utilization
+        - **Geographic Expansion**: Scale existing workloads to handle broader user base
+        - **Fault Tolerance**: Increase redundancy by adding more instances
+
+        **Intelligent Scaling:**
+        - **Sequential Naming**: New VMs follow established naming pattern (e.g., web-4, web-5, web-6)
+        - **Load Distribution**: New VMs are distributed optimally across availability zones
+        - **Resource Efficiency**: Reuses existing network and security infrastructure
+        - **Minimal Disruption**: Scaling occurs without affecting existing VM operations
+        - **Consistent Configuration**: Ensures all VMs in subgroup remain homogeneous
+
+        **Operational Benefits:**
+        - **Zero Downtime**: Existing VMs continue running during scale-out operation
+        - **Immediate Availability**: New VMs are ready for traffic as soon as deployment completes
+        - **Unified Management**: All VMs (old and new) managed through single subgroup
+        - **Policy Consistency**: All scaling and management policies apply uniformly
+        - **Monitoring Integration**: New VMs automatically included in existing monitoring dashboards
+
+        **Scale-Out Considerations:**
+        - **CSP Quotas**: Verifies sufficient instance, network, and storage quotas
+        - **Region Capacity**: Ensures target region has capacity for requested instance types
+        - **Network Limits**: Validates that VNet can accommodate additional VMs
+        - **Cost Impact**: Additional VMs incur proportional CSP billing costs
+        - **Application Readiness**: Applications should be designed to handle additional instances
+
+        **Post-Scale Operations:**
+        - New VMs immediately participate in subgroup operations
+        - Can be individually managed while maintaining subgroup membership
+        - Support for further scaling operations (scale-out or scale-in)
+        - Ready for application deployment and load balancer integration
+
+        **Best Practices:**
+        - Monitor application performance before and after scaling
+        - Ensure load balancers are configured to include new instances
+        - Verify application clustering and session management handle new instances
+        - Consider database connection limits and other resource constraints
       operationId: PostMciSubGroupScaleOut
       parameters:
       - name: nsId
         in: path
-        description: Namespace ID
+        description: Namespace ID containing the target MCI and subgroup
         required: true
         schema:
           type: string
           default: default
       - name: mciId
         in: path
-        description: MCI ID
+        description: MCI ID containing the subgroup to scale
         required: true
         schema:
           type: string
           default: mci01
       - name: subgroupId
         in: path
-        description: subGroup ID
+        description: SubGroup ID to scale out (must exist and contain at least one
+          VM)
         required: true
         schema:
           type: string
           default: g1
       requestBody:
-        description: subGroup scaleOut request
+        description: Scale-out request specifying the number of additional VMs to
+          create
         content:
           application/json:
             schema:
@@ -3860,19 +4016,35 @@ paths:
         required: true
       responses:
         "200":
-          description: OK
+          description: Updated MCI information with scaled subgroup showing all VMs
+            including newly added instances
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.TbMciInfo'
+        "400":
+          description: "Invalid scale-out request, insufficient quotas, or invalid\
+            \ VM count"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "404":
-          description: Not Found
+          description: "Target MCI or subgroup not found, or namespace inaccessible"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: SubGroup in incompatible state for scaling or resource conflicts
+            detected
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
-          description: Internal Server Error
+          description: "VM provisioning failed, network configuration error, or CSP\
+            \ capacity limitations"
           content:
             application/json:
               schema:
@@ -3882,28 +4054,76 @@ paths:
     post:
       tags:
       - "[MC-Infra] MCI Provisioning and Management"
-      summary: Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize
-        for multiple VMs)
-      description: Create and add homogeneous VMs(subGroup) to a specified MCI (Set
-        subGroupSize for multiple VMs)
+      summary: Add Homogeneous VM SubGroup to Existing MCI
+      description: |-
+        Create and add a group of identical virtual machines (subgroup) to an existing MCI using detailed specifications.
+        This endpoint provides precise control over VM configuration and placement within existing infrastructure:
+
+        **SubGroup Creation Process:**
+        1. **MCI Integration**: Validates target MCI exists and can accommodate new VMs
+        2. **Resource Validation**: Verifies all specified resources (specs, images, networks) exist and are accessible
+        3. **Homogeneous Deployment**: Creates multiple identical VMs with consistent configuration
+        4. **Network Integration**: Integrates new VMs with existing MCI networking and security policies
+        5. **Group Management**: Establishes subgroup for collective management and operations
+
+        **Detailed Configuration Control:**
+        - **Specific Resource References**: Uses exact resource IDs rather than common specifications
+        - **Network Placement**: Precise control over VNet, subnet, and security group assignment
+        - **Storage Configuration**: Detailed disk configuration including type, size, and performance tiers
+        - **Instance Customization**: Full control over VM specifications, images, and metadata
+        - **Security Settings**: Explicit security group and SSH key configuration
+
+        **SubGroup Benefits:**
+        - **Collective Operations**: Perform operations on entire subgroup simultaneously
+        - **Homogeneous Scaling**: All VMs in subgroup share identical configuration
+        - **Simplified Management**: Single configuration template for multiple VMs
+        - **Consistent Naming**: Automatic sequential naming (e.g., web-1, web-2, web-3)
+        - **Group Policies**: Apply scaling, monitoring, and lifecycle policies at subgroup level
+
+        **Use Cases:**
+        - **Application Tiers**: Deploy multiple instances of web servers, application servers, or databases
+        - **Load Distribution**: Create multiple identical VMs for load balancing scenarios
+        - **High Availability**: Deploy redundant instances across availability zones
+        - **Batch Processing**: Create worker nodes for distributed computing workloads
+        - **Development Environments**: Provision identical development or testing instances
+
+        **Configuration Requirements:**
+        - **Resource IDs**: Must specify exact resource identifiers (not common specs)
+        - **Network Configuration**: VNet, subnet, and security group must exist and be compatible
+        - **SSH Keys**: Must specify valid SSH key pairs for access management
+        - **Image Compatibility**: Specified image must be available in target region
+        - **Quota Validation**: Sufficient CSP quotas must be available for all requested VMs
+
+        **SubGroup Size Considerations:**
+        - **Small Groups (1-5 VMs)**: Fast deployment, minimal resource contention
+        - **Medium Groups (6-20 VMs)**: Optimized parallel deployment with resource batching
+        - **Large Groups (21+ VMs)**: Advanced deployment strategies to avoid CSP rate limits
+        - **Resource Limits**: Respects CSP quotas and CB-Tumblebug configuration limits
+
+        **Post-Deployment Integration:**
+        - SubGroup becomes integral part of parent MCI
+        - All VMs inherit MCI-level monitoring and management policies
+        - Can be scaled out further or individual VMs can be managed separately
+        - Supports all standard CB-Tumblebug VM lifecycle operations
       operationId: PostMciVm
       parameters:
       - name: nsId
         in: path
-        description: Namespace ID
+        description: Namespace ID containing the target MCI
         required: true
         schema:
           type: string
           default: default
       - name: mciId
         in: path
-        description: MCI ID
+        description: MCI ID to which the VM subgroup will be added
         required: true
         schema:
           type: string
           default: mci01
       requestBody:
-        description: Details for VMs(subGroup)
+        description: "Detailed VM subgroup specification including exact resource\
+          \ IDs, networking, and scaling parameters"
         content:
           application/json:
             schema:
@@ -3911,19 +4131,36 @@ paths:
         required: true
       responses:
         "200":
-          description: OK
+          description: Updated MCI information including newly created VM subgroup
+            with individual VM details and status
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.TbMciInfo'
+        "400":
+          description: "Invalid VM request, missing required resources, or configuration\
+            \ conflicts"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "404":
-          description: Not Found
+          description: "Target MCI not found, specified resources unavailable, or\
+            \ namespace inaccessible"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: "SubGroup name conflicts, resource allocation conflicts, or\
+            \ MCI state incompatible with expansion"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
-          description: Internal Server Error
+          description: "VM provisioning failed, network configuration error, or CSP\
+            \ API communication failure"
           content:
             application/json:
               schema:
@@ -4390,26 +4627,73 @@ paths:
     post:
       tags:
       - "[MC-Infra] MCI Provisioning and Management"
-      summary: Create VM Dynamically and add it to MCI
-      description: Create VM Dynamically and add it to MCI
+      summary: Add VM Dynamically to Existing MCI
+      description: |-
+        Dynamically add new virtual machines to an existing MCI using common specifications and automated resource management.
+        This endpoint provides elastic scaling capabilities for running MCIs:
+
+        **Dynamic VM Addition Process:**
+        1. **MCI Validation**: Verifies target MCI exists and is in a valid state for expansion
+        2. **Resource Discovery**: Resolves common spec and image to provider-specific resources
+        3. **Network Integration**: Automatically configures new VMs to use existing MCI network resources
+        4. **Subgroup Management**: Creates new subgroups or expands existing ones based on configuration
+        5. **Status Synchronization**: Updates MCI status and metadata to reflect new VM additions
+
+        **Integration with Existing Infrastructure:**
+        - **Network Reuse**: New VMs automatically join existing VNets and security groups
+        - **SSH Key Sharing**: Uses existing SSH keys for consistent access management
+        - **Monitoring Integration**: New VMs inherit monitoring configuration from parent MCI
+        - **Label Propagation**: Applies MCI-level labels and policies to new VMs
+        - **Resource Consistency**: Maintains naming conventions and resource organization
+
+        **Scaling Scenarios:**
+        - **Horizontal Scaling**: Add more instances to handle increased workload
+        - **Multi-Region Expansion**: Deploy VMs in new regions while maintaining MCI cohesion
+        - **Provider Diversification**: Add VMs from different cloud providers for redundancy
+        - **Workload Specialization**: Deploy VMs with different specifications for specific tasks
+
+        **Configuration Requirements:**
+        - `commonSpec`: Must specify valid VM specification from system namespace
+        - `commonImage`: Must specify valid image compatible with target provider/region
+        - `name`: Becomes subgroup name; VMs will be named with sequential suffixes
+        - `subGroupSize`: Number of identical VMs to create (default: 1)
+
+        **Network and Security:**
+        - New VMs automatically inherit security group rules from existing MCI
+        - Network connectivity to existing VMs is established automatically
+        - Firewall rules and access policies are applied consistently
+        - SSH access is configured using existing key pairs
+
+        **Example Use Cases:**
+        - Scale out web tier during traffic spikes
+        - Add GPU instances for machine learning workloads
+        - Deploy edge nodes in additional geographic regions
+        - Add specialized storage or database nodes to existing application stack
+
+        **Post-Addition Operations:**
+        - New VMs are immediately available for standard MCI operations
+        - Can be individually managed or grouped with existing subgroups
+        - Monitoring and logging are automatically configured
+        - Application deployment and configuration management can proceed immediately
       operationId: PostMciVmDynamic
       parameters:
       - name: nsId
         in: path
-        description: Namespace ID
+        description: Namespace ID containing the target MCI
         required: true
         schema:
           type: string
           default: default
       - name: mciId
         in: path
-        description: MCI ID
+        description: MCI ID to which new VMs will be added
         required: true
         schema:
           type: string
           default: mci01
       requestBody:
-        description: Details for Vm dynamic request
+        description: "VM dynamic request specifying commonSpec, commonImage, and scaling\
+          \ parameters"
         content:
           application/json:
             schema:
@@ -4417,19 +4701,32 @@ paths:
         required: true
       responses:
         "200":
-          description: OK
+          description: Updated MCI information including newly added VMs and current
+            status
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.TbMciInfo'
+        "400":
+          description: Invalid VM request or incompatible configuration parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "404":
-          description: Not Found
+          description: Target MCI not found or specified resources unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Subgroup name conflicts or MCI in incompatible state
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
-          description: Internal Server Error
+          description: VM creation failed or network integration error
           content:
             application/json:
               schema:
@@ -4730,32 +5027,104 @@ paths:
     post:
       tags:
       - "[MC-Infra] MCI Provisioning and Management"
-      summary: Create MCI Dynamically
-      description: Create MCI Dynamically from common spec and image
+      summary: Create MCI Dynamically with Intelligent Resource Selection
+      description: |-
+        Create multi-cloud infrastructure dynamically using common specifications and images with automatic resource discovery and optimization.
+        This is the **recommended approach** for MCI creation, providing simplified configuration with powerful automation:
+
+        **Dynamic Resource Creation:**
+        1. **Automatic Resource Discovery**: Validates and selects optimal VM specifications and images from common namespace
+        2. **Intelligent Network Setup**: Creates VNets, subnets, security groups, and SSH keys automatically per provider
+        3. **Cross-Cloud Orchestration**: Coordinates VM provisioning across multiple cloud providers simultaneously
+        4. **Dependency Management**: Handles resource creation order and inter-dependencies automatically
+        5. **Failure Recovery**: Implements configurable failure policies for robust deployment
+
+        **Key Advantages Over Static MCI:**
+        - **Simplified Configuration**: Use common spec/image IDs instead of provider-specific resources
+        - **Automatic Resource Management**: No need to pre-create VNets, security groups, or SSH keys
+        - **Multi-Cloud Optimization**: Intelligent placement and configuration across providers
+        - **Built-in Best Practices**: Security groups, network isolation, and access controls applied automatically
+        - **Scalable Architecture**: Supports large-scale deployments with optimized resource utilization
+
+        **Configuration Process:**
+        1. **Resource Discovery**: Use `/mciRecommendVm` to find suitable VM specifications
+        2. **Image Selection**: Use system namespace to discover compatible images
+        3. **Request Validation**: Use `/mciDynamicCheckRequest` to validate configuration before deployment
+        4. **Optional Preview**: Use `/mciDynamicReview` to estimate costs and review configuration
+        5. **Deployment**: Submit MCI dynamic request with failure policy and deployment options
+
+        **Failure Policies (PolicyOnPartialFailure):**
+        - **`continue`** (default): Create MCI with successful VMs, failed VMs remain for manual refinement
+        - **`rollback`**: Delete entire MCI if any VM fails (all-or-nothing deployment)
+        - **`refine`**: Automatically clean up failed VMs, keep successful ones (recommended for large deployments)
+
+        **Deployment Options:**
+        - **`hold`**: Create MCI object but hold VM provisioning for manual approval
+        - **Normal**: Proceed with immediate VM provisioning after resource creation
+
+        **Multi-Cloud Example Configuration:**
+        ```json
+        {
+        "name": "multi-cloud-web-tier",
+        "description": "Web application across AWS, Azure, and GCP",
+        "policyOnPartialFailure": "refine",
+        "vm": [
+        {
+        "name": "aws-web-servers",
+        "subGroupSize": "3",
+        "commonSpec": "aws+us-east-1+t3.medium",
+        "commonImage": "ami-0abcdef1234567890",
+        "rootDiskSize": "100",
+        "label": {"tier": "web", "provider": "aws"}
+        },
+        {
+        "name": "azure-api-servers",
+        "subGroupSize": "2",
+        "commonSpec": "azure+eastus+Standard_B2s",
+        "commonImage": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts",
+        "label": {"tier": "api", "provider": "azure"}
+        }
+        ]
+        }
+        ```
+
+        **Performance Considerations:**
+        - VM provisioning occurs in parallel across providers
+        - Network resources are created concurrently where possible
+        - Large deployments (>10 VMs) automatically use optimized batching
+        - Built-in rate limiting prevents CSP API throttling
+
+        **Monitoring and Post-Deployment:**
+        - Optional CB-Dragonfly monitoring agent installation
+        - Custom post-deployment command execution
+        - Real-time status tracking and progress updates
+        - Automatic resource labeling and metadata management
       operationId: PostMciDynamic
       parameters:
       - name: nsId
         in: path
-        description: Namespace ID
+        description: Namespace ID for resource organization and isolation
         required: true
         schema:
           type: string
           default: default
       - name: option
         in: query
-        description: Option for MCI creation
+        description: "Deployment option: 'hold' to create MCI without immediate VM\
+          \ provisioning"
         schema:
           type: string
           enum:
           - hold
       - name: x-request-id
         in: header
-        description: Custom request ID
+        description: Custom request ID for tracking and correlation across API calls
         schema:
           type: string
       requestBody:
-        description: "Request body to provision MCI dynamically. Must include commonSpec\
-          \ and commonImage info of each VM request. Example multi-cloud setup: {\\"
+        description: Dynamic MCI request with common specifications. Must include
+          commonSpec and commonImage for each VM group. See description for detailed
+          example.
         content:
           application/json:
             schema:
@@ -4763,19 +5132,35 @@ paths:
         required: true
       responses:
         "200":
-          description: OK
+          description: "Successfully created MCI with VM deployment status, resource\
+            \ mappings, and configuration details"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.TbMciInfo'
+        "400":
+          description: "Invalid request format, missing required fields, or unsupported\
+            \ configuration"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "404":
-          description: Not Found
+          description: "Namespace not found, specified specs/images unavailable, or\
+            \ CSP resources inaccessible"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: MCI name already exists or resource naming conflicts detected
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
-          description: Internal Server Error
+          description: "Internal deployment error, CSP API failures, or resource creation\
+            \ timeouts"
           content:
             application/json:
               schema:
@@ -5293,19 +5678,52 @@ paths:
     post:
       tags:
       - "[MC-Infra] MCI Provisioning and Management"
-      summary: Register existing VM in a CSP to Cloud-Barista MCI
-      description: Register existing VM in a CSP to Cloud-Barista MCI
+      summary: Register Existing CSP VMs into Cloud-Barista MCI
+      description: |-
+        Import and register pre-existing virtual machines from cloud service providers into CB-Tumblebug management.
+        This endpoint allows you to bring existing CSP resources under CB-Tumblebug control without recreating them:
+
+        **Registration Process:**
+        1. **Discovery**: Validates that the specified VM exists in the target CSP
+        2. **Metadata Import**: Retrieves VM configuration, network settings, and current status
+        3. **Resource Mapping**: Creates CB-Tumblebug resource objects that reference the existing CSP resources
+        4. **Status Synchronization**: Aligns CB-Tumblebug status with actual CSP VM state
+        5. **Management Integration**: Enables CB-Tumblebug operations on the registered VMs
+
+        **Supported VM States:**
+        - Running VMs (most common use case)
+        - Stopped VMs (will be registered with current state)
+        - VMs with attached storage and network interfaces
+
+        **Resource Compatibility:**
+        - VM must exist in a supported CSP (AWS, Azure, GCP, etc.)
+        - Network resources (VPC, subnets, security groups) will be discovered and mapped
+        - Storage volumes and attached disks will be registered automatically
+        - SSH keys and security configurations will be imported
+
+        **Post-Registration Capabilities:**
+        - Standard CB-Tumblebug VM lifecycle operations (start, stop, terminate)
+        - Monitoring agent installation (if CB-Dragonfly is configured)
+        - Command execution and automation
+        - Integration with other CB-Tumblebug MCIs
+
+        **Important Notes:**
+        - Registration does not modify the existing VM configuration
+        - Original CSP billing and resource management still applies
+        - CB-Tumblebug provides additional management layer and automation
+        - Ensure proper CSP credentials and permissions are configured
       operationId: PostRegisterCSPNativeVM
       parameters:
       - name: nsId
         in: path
-        description: Namespace ID
+        description: Namespace ID for organizing registered resources
         required: true
         schema:
           type: string
           default: default
       requestBody:
-        description: Details for an MCI object with existing CSP VM ID
+        description: MCI registration request containing existing CSP VM IDs and connection
+          details
         content:
           application/json:
             schema:
@@ -5313,19 +5731,33 @@ paths:
         required: true
       responses:
         "200":
-          description: OK
+          description: Registered MCI information with imported VM details and current
+            status
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.TbMciInfo'
+        "400":
+          description: Invalid request format or missing required CSP VM identifiers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "404":
-          description: Not Found
+          description: Specified VMs not found in target CSP or namespace doesn't
+            exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: VM already registered or MCI name conflicts
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
-          description: Internal Server Error
+          description: CSP communication error or registration process failure
           content:
             application/json:
               schema:
@@ -8683,36 +9115,91 @@ paths:
     post:
       tags:
       - "[MC-Infra] MCI Provisioning and Management"
-      summary: Create System MCI Dynamically for Special Purpose in NS:system
-      description: Create System MCI Dynamically for Special Purpose
+      summary: Create System MCI for CB-Tumblebug Internal Operations
+      description: |-
+        Create specialized MCI instances for CB-Tumblebug system operations and infrastructure probing.
+        This endpoint provisions system-level infrastructure that supports CB-Tumblebug's internal functions:
+
+        **System MCI Types:**
+        - `probe`: Creates lightweight VMs for network connectivity testing and CSP capability discovery
+        - `monitor`: Deploys monitoring infrastructure for system health and performance tracking
+        - `test`: Provisions test environments for validating CSP integrations and features
+
+        **Probe MCI Features:**
+        - **Connectivity Testing**: Validates network paths between different CSP regions
+        - **Latency Measurement**: Measures inter-region and inter-provider network performance
+        - **Feature Discovery**: Tests CSP-specific capabilities and service availability
+        - **Resource Validation**: Verifies that CB-Tumblebug can successfully provision resources
+
+        **System Namespace:**
+        - All system MCIs are created in the special `system` namespace
+        - Isolated from user workloads and regular MCI operations
+        - Managed automatically by CB-Tumblebug internal processes
+        - May be used for background maintenance and monitoring tasks
+
+        **Automatic Configuration:**
+        - Uses optimized VM specifications for system tasks (typically minimal resources)
+        - Automatically selects appropriate regions and providers based on probe requirements
+        - Configures necessary network access and security policies
+        - Deploys with minimal attack surface and security hardening
+
+        **Lifecycle Management:**
+        - System MCIs may be automatically created, updated, or destroyed by CB-Tumblebug
+        - Typically short-lived for specific system tasks
+        - Resource cleanup is handled automatically
+        - Status and results are logged for system administrators
+
+        **Use Cases:**
+        - Infrastructure health checks and validation
+        - Performance benchmarking across cloud providers
+        - Automated testing of new CSP integrations
+        - Network topology discovery and optimization
       operationId: PostSystemMci
       parameters:
       - name: option
         in: query
-        description: Option for the purpose of system MCI
+        description: "System MCI type: 'probe' for connectivity testing, 'monitor'\
+          \ for system monitoring"
         schema:
           type: string
           enum:
           - probe
+          - monitor
+          - test
+      requestBody:
+        description: "Optional MCI configuration. If not provided, system defaults\
+          \ will be used"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.TbMciDynamicReq'
+        required: false
       responses:
         "200":
-          description: OK
+          description: Created system MCI with specialized configuration and status
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.TbMciInfo'
-        "404":
-          description: Not Found
+        "400":
+          description: Invalid system option or malformed request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "403":
+          description: Insufficient permissions for system MCI creation
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
-          description: Internal Server Error
+          description: System MCI creation failed or CSP integration error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: mciReq
   /testStreamResponse:
     post:
       tags:
@@ -9874,6 +10361,34 @@ components:
           - gcp+us-west1+g1-small
           items:
             type: string
+    model.MciCreationErrors:
+      type: object
+      properties:
+        failedVmCount:
+          type: integer
+          description: FailedVmCount is the number of VMs that failed to be created
+        failureHandlingStrategy:
+          type: string
+          description: FailureHandlingStrategy indicates how failures were handled
+        successfulVmCount:
+          type: integer
+          description: SuccessfulVmCount is the number of VMs that were successfully
+            created
+        totalVmCount:
+          type: integer
+          description: TotalVmCount is the total number of VMs that were supposed
+            to be created
+        vmCreationErrors:
+          type: array
+          description: VmCreationErrors contains errors from actual VM creation phase
+          items:
+            $ref: '#/components/schemas/model.VmCreationError'
+        vmObjectCreationErrors:
+          type: array
+          description: VmObjectCreationErrors contains errors from VM object creation
+            phase
+          items:
+            $ref: '#/components/schemas/model.VmCreationError'
     model.MciPolicyInfo:
       type: object
       properties:
@@ -10568,6 +11083,17 @@ components:
           type: string
           description: Overall assessment of the MCI request
           example: Ready/Warning/Error
+        policyDescription:
+          type: string
+          example: "If some VMs fail during creation, MCI will be created with successfully\
+            \ provisioned VMs only"
+        policyOnPartialFailure:
+          type: string
+          description: Failure policy analysis
+          example: continue
+        policyRecommendation:
+          type: string
+          example: Consider 'refine' policy for automatic cleanup of failed VMs
         recommendations:
           type: array
           description: Recommendations for improvement
@@ -12318,6 +12844,19 @@ components:
         name:
           type: string
           example: mci01
+        policyOnPartialFailure:
+          type: string
+          description: |-
+            PolicyOnPartialFailure determines how to handle VM creation failures
+            - "continue": Continue with partial MCI creation (default)
+            - "rollback": Cleanup entire MCI when any VM fails
+            - "refine": Mark failed VMs for refinement
+          example: continue
+          default: continue
+          enum:
+          - continue
+          - rollback
+          - refine
         postCommand:
           type: object
           description: PostCommand is for the command to bootstrap the VMs
@@ -12373,6 +12912,12 @@ components:
           enum:
           - "yes"
           - "no"
+        creationErrors:
+          type: object
+          description: CreationErrors contains information about VM creation failures
+            (if any)
+          allOf:
+          - $ref: '#/components/schemas/model.MciCreationErrors'
         description:
           type: string
         id:
@@ -12473,6 +13018,19 @@ components:
           example: mci01
         placementAlgo:
           type: string
+        policyOnPartialFailure:
+          type: string
+          description: |-
+            PolicyOnPartialFailure determines how to handle VM creation failures
+            - "continue": Continue with partial MCI creation (default)
+            - "rollback": Cleanup entire MCI when any VM fails
+            - "refine": Mark failed VMs for refinement
+          example: continue
+          default: continue
+          enum:
+          - continue
+          - rollback
+          - refine
         postCommand:
           type: object
           description: PostCommand is for the command to bootstrap the VMs
@@ -13568,6 +14126,21 @@ components:
           type: string
         useFirstNZones:
           type: string
+    model.VmCreationError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error is the error message
+        phase:
+          type: string
+          description: Phase indicates when the error occurred
+        timestamp:
+          type: string
+          description: Timestamp when the error occurred
+        vmName:
+          type: string
+          description: VmName is the name of the VM that failed
     model.VpnIdList:
       type: object
       properties:

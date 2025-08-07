@@ -45,25 +45,27 @@ var cspSyncSkipConfig = CSPSyncConfig{
 	CSPGlobalSkip: map[string]bool{
 		// csp.NCP:       true,
 		csp.NHNCloud: true,
+		csp.GCP:      true, // GCP supports tags, but there are some restrictions on naming conventions
 	},
 	CSPSpecificSkipConfig: map[string]map[string]bool{
 		csp.Azure: {
-			model.StrVNet: true,
+			model.StrVNet:   true,
+			model.StrSubnet: true,
 		},
 		csp.Alibaba: {
 			model.StrVNet:       true,
 			model.StrSubnet:     true,
 			model.StrKubernetes: true,
 		},
-		csp.GCP: {
-			model.StrVNet:          true,
-			model.StrSubnet:        true,
-			model.StrSecurityGroup: true,
-			model.StrSSHKey:        true,
-			model.StrCustomImage:   true,
-			model.StrNLB:           true,
-			// and currently there is some restriction on tags for GCP resources because of naming conventions
-		},
+		// csp.GCP: {
+		// 	model.StrVNet:          true,
+		// 	model.StrSubnet:        true,
+		// 	model.StrSecurityGroup: true,
+		// 	model.StrSSHKey:        true,
+		// 	model.StrCustomImage:   true,
+		// 	model.StrNLB:           true,
+		// 	// currently there is some restriction on tags for GCP resources because of naming conventions
+		// },
 		csp.NCP: {
 			model.StrVNet:          true,
 			model.StrSubnet:        true,
@@ -558,7 +560,9 @@ func MergeCSPResourceLabel(labelType, uid string, resourceKey string) error {
 
 	// if kvstore key has LabelConnectionName, try UpdateCSPResourceLabel
 	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
-		UpdateCSPResourceLabel(labelType, uid, labelInfo.Labels, connectionName)
+		if isCSPSyncEnabled(labelType, connectionName) {
+			UpdateCSPResourceLabel(labelType, uid, labelInfo.Labels, connectionName)
+		}
 	}
 	return nil
 }

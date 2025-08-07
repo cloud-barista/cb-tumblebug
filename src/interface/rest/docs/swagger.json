@@ -1637,7 +1637,7 @@
         },
         "/mciDynamicCheckRequest": {
             "post": {
-                "description": "Check available ConnectionConfig list before create MCI Dynamically from common spec and image",
+                "description": "Validate resource availability and discover optimal connection configurations before creating MCI dynamically.\nThis endpoint provides comprehensive resource validation and connection discovery for MCI planning:\n\n**Resource Validation Process:**\n1. **Specification Analysis**: Validates that requested common specs exist and are accessible\n2. **Provider Discovery**: Identifies available cloud providers and regions for each specification\n3. **Connectivity Assessment**: Tests connection configurations and CSP API accessibility\n4. **Quota Verification**: Checks available quotas and resource limits where possible\n5. **Compatibility Matrix**: Generates matrix of viable spec-provider-region combinations\n\n**Connection Configuration Discovery:**\n- **Available Providers**: Lists all configured cloud providers (AWS, Azure, GCP, etc.)\n- **Active Regions**: Shows available regions per provider with connectivity status\n- **Specification Mapping**: Maps common specs to provider-specific instance types\n- **Image Compatibility**: Validates image availability across different providers/regions\n- **Network Capabilities**: Identifies supported network features and configurations\n\n**Pre-Deployment Validation:**\n- **Resource Existence**: Confirms all specified resources exist in system namespace\n- **Permission Verification**: Validates CSP credentials and required permissions\n- **API Connectivity**: Tests connection to CSP APIs and service endpoints\n- **Dependency Resolution**: Identifies any missing dependencies or prerequisites\n\n**Optimization Recommendations:**\n- **Cost-Effective Regions**: Suggests regions with lower pricing for specified resources\n- **Performance Optimization**: Recommends regions with better network performance\n- **Availability Zone**: Identifies optimal AZ distribution for high availability\n- **Resource Bundling**: Suggests efficient resource combinations and groupings\n\n**Output Information:**\n- **Connection Candidates**: List of viable connection configurations\n- **Provider Capabilities**: Detailed capabilities matrix per provider\n- **Resource Status**: Real-time availability status for each requested resource\n- **Recommendation Summary**: Actionable recommendations for optimal deployment\n\n**Use Cases:**\n- Pre-validate MCI configuration before expensive deployment operations\n- Discover optimal provider/region combinations for cost or performance\n- Troubleshoot resource availability issues during MCI planning\n- Generate connection configuration templates for standardized deployments\n- Assess infrastructure capacity and planning constraints\n\n**Integration Workflow:**\n1. Use this endpoint to validate and discover connection options\n2. Review recommendations and adjust specifications if needed\n3. Use `/mciDynamicReview` for detailed cost estimation and final validation\n4. Proceed with `/mciDynamic` using validated configuration",
                 "consumes": [
                     "application/json"
                 ],
@@ -1647,11 +1647,11 @@
                 "tags": [
                     "[MC-Infra] MCI Provisioning and Management"
                 ],
-                "summary": "Check available ConnectionConfig list for creating MCI Dynamically",
+                "summary": "Check Resource Availability for Dynamic MCI Creation",
                 "operationId": "PostMciDynamicCheckRequest",
                 "parameters": [
                     {
-                        "description": "Details for MCI dynamic request information",
+                        "description": "Resource check request containing common specifications to validate",
                         "name": "mciReq",
                         "in": "body",
                         "required": true,
@@ -1662,19 +1662,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Resource availability matrix with connection candidates, provider capabilities, and optimization recommendations",
                         "schema": {
                             "$ref": "#/definitions/model.CheckMciDynamicReqInfo"
                         }
                     },
+                    "400": {
+                        "description": "Invalid request format or malformed specification identifiers",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Specified common specifications not found in system namespace",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "CSP connectivity issues or internal validation service errors",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -3782,7 +3788,7 @@
                 }
             },
             "post": {
-                "description": "Create MCI",
+                "description": "Create MCI with detailed VM specifications and resource configuration.\nThis endpoint creates a complete multi-cloud infrastructure by:\n1. **VM Provisioning**: Creates VMs across multiple cloud providers using predefined specs and images\n2. **Resource Management**: Automatically handles VPC/VNet, security groups, SSH keys, and network configuration\n3. **Status Tracking**: Monitors VM creation progress and handles failures based on policy settings\n4. **Post-Deployment**: Optionally installs monitoring agents and executes custom commands\n\n**Key Features:**\n- Multi-cloud VM deployment with heterogeneous configurations\n- Automatic resource dependency management (VPC → Security Group → VM)\n- Built-in failure handling with configurable policies (continue/rollback/refine)\n- Optional CB-Dragonfly monitoring agent installation\n- Post-deployment command execution support\n- Real-time status updates and progress tracking\n\n**VM Lifecycle:**\n1. Creating → Running (successful deployment)\n2. Creating → Failed (deployment error, handled by failure policy)\n3. Running → Terminated (manual or policy-driven cleanup)\n\n**Failure Policies:**\n- `continue`: Keep successful VMs, mark failed ones for later refinement\n- `rollback`: Delete entire MCI if any VM fails (all-or-nothing)\n- `refine`: Automatically clean up failed VMs, keep successful ones\n\n**Resource Requirements:**\n- Valid VM specifications (must exist in system namespace)\n- Valid images (must be available in target CSP regions)\n- Sufficient CSP quotas and permissions\n- Network connectivity between components",
                 "consumes": [
                     "application/json"
                 ],
@@ -3792,19 +3798,19 @@
                 "tags": [
                     "[MC-Infra] MCI Provisioning and Management"
                 ],
-                "summary": "Create MCI",
+                "summary": "Create MCI (Multi-Cloud Infrastructure)",
                 "operationId": "PostMci",
                 "parameters": [
                     {
                         "type": "string",
                         "default": "default",
-                        "description": "Namespace ID",
+                        "description": "Namespace ID for resource isolation",
                         "name": "nsId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Details for an MCI object",
+                        "description": "MCI creation request with VM specifications, networking, and deployment options",
                         "name": "mciReq",
                         "in": "body",
                         "required": true,
@@ -3815,19 +3821,31 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Created MCI information with VM details, status, and resource mapping",
                         "schema": {
                             "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
+                    "400": {
+                        "description": "Invalid request parameters or missing required fields",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Namespace not found or specified resources unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "MCI name already exists in namespace",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error during MCI creation or CSP communication failure",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -4995,7 +5013,7 @@
                 }
             },
             "post": {
-                "description": "ScaleOut subGroup in specified MCI",
+                "description": "Horizontally scale an existing VM subgroup by adding more identical instances for increased capacity.\nThis endpoint provides elastic scaling capabilities for running application tiers:\n\n**Scale-Out Process:**\n1. **SubGroup Validation**: Verifies target subgroup exists and is in scalable state\n2. **Template Replication**: Uses existing VM configuration as template for new instances\n3. **Resource Allocation**: Ensures sufficient CSP quotas and network resources\n4. **Parallel Deployment**: Deploys multiple new VMs simultaneously for faster scaling\n5. **Integration**: Seamlessly integrates new VMs into existing subgroup and MCI\n\n**Configuration Inheritance:**\n- **VM Specifications**: New VMs inherit exact specifications from existing subgroup members\n- **Network Settings**: Automatically placed in same VNet, subnet, and security groups\n- **SSH Keys**: Use same SSH key pairs for consistent access management\n- **Monitoring**: Inherit monitoring agent configuration and policies\n- **Labels and Metadata**: Propagate all labels and metadata from parent subgroup\n\n**Scaling Scenarios:**\n- **Traffic Spikes**: Quickly add capacity during high-demand periods\n- **Seasonal Scaling**: Scale out for predictable demand increases\n- **Performance Optimization**: Add instances to reduce per-VM resource utilization\n- **Geographic Expansion**: Scale existing workloads to handle broader user base\n- **Fault Tolerance**: Increase redundancy by adding more instances\n\n**Intelligent Scaling:**\n- **Sequential Naming**: New VMs follow established naming pattern (e.g., web-4, web-5, web-6)\n- **Load Distribution**: New VMs are distributed optimally across availability zones\n- **Resource Efficiency**: Reuses existing network and security infrastructure\n- **Minimal Disruption**: Scaling occurs without affecting existing VM operations\n- **Consistent Configuration**: Ensures all VMs in subgroup remain homogeneous\n\n**Operational Benefits:**\n- **Zero Downtime**: Existing VMs continue running during scale-out operation\n- **Immediate Availability**: New VMs are ready for traffic as soon as deployment completes\n- **Unified Management**: All VMs (old and new) managed through single subgroup\n- **Policy Consistency**: All scaling and management policies apply uniformly\n- **Monitoring Integration**: New VMs automatically included in existing monitoring dashboards\n\n**Scale-Out Considerations:**\n- **CSP Quotas**: Verifies sufficient instance, network, and storage quotas\n- **Region Capacity**: Ensures target region has capacity for requested instance types\n- **Network Limits**: Validates that VNet can accommodate additional VMs\n- **Cost Impact**: Additional VMs incur proportional CSP billing costs\n- **Application Readiness**: Applications should be designed to handle additional instances\n\n**Post-Scale Operations:**\n- New VMs immediately participate in subgroup operations\n- Can be individually managed while maintaining subgroup membership\n- Support for further scaling operations (scale-out or scale-in)\n- Ready for application deployment and load balancer integration\n\n**Best Practices:**\n- Monitor application performance before and after scaling\n- Ensure load balancers are configured to include new instances\n- Verify application clustering and session management handle new instances\n- Consider database connection limits and other resource constraints",
                 "consumes": [
                     "application/json"
                 ],
@@ -5005,13 +5023,13 @@
                 "tags": [
                     "[MC-Infra] MCI Provisioning and Management"
                 ],
-                "summary": "ScaleOut subGroup in specified MCI",
+                "summary": "Scale Out Existing SubGroup in MCI",
                 "operationId": "PostMciSubGroupScaleOut",
                 "parameters": [
                     {
                         "type": "string",
                         "default": "default",
-                        "description": "Namespace ID",
+                        "description": "Namespace ID containing the target MCI and subgroup",
                         "name": "nsId",
                         "in": "path",
                         "required": true
@@ -5019,7 +5037,7 @@
                     {
                         "type": "string",
                         "default": "mci01",
-                        "description": "MCI ID",
+                        "description": "MCI ID containing the subgroup to scale",
                         "name": "mciId",
                         "in": "path",
                         "required": true
@@ -5027,13 +5045,13 @@
                     {
                         "type": "string",
                         "default": "g1",
-                        "description": "subGroup ID",
+                        "description": "SubGroup ID to scale out (must exist and contain at least one VM)",
                         "name": "subgroupId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "subGroup scaleOut request",
+                        "description": "Scale-out request specifying the number of additional VMs to create",
                         "name": "vmReq",
                         "in": "body",
                         "required": true,
@@ -5044,19 +5062,31 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Updated MCI information with scaled subgroup showing all VMs including newly added instances",
                         "schema": {
                             "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
+                    "400": {
+                        "description": "Invalid scale-out request, insufficient quotas, or invalid VM count",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Target MCI or subgroup not found, or namespace inaccessible",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "SubGroup in incompatible state for scaling or resource conflicts detected",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "VM provisioning failed, network configuration error, or CSP capacity limitations",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -5066,7 +5096,7 @@
         },
         "/ns/{nsId}/mci/{mciId}/vm": {
             "post": {
-                "description": "Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize for multiple VMs)",
+                "description": "Create and add a group of identical virtual machines (subgroup) to an existing MCI using detailed specifications.\nThis endpoint provides precise control over VM configuration and placement within existing infrastructure:\n\n**SubGroup Creation Process:**\n1. **MCI Integration**: Validates target MCI exists and can accommodate new VMs\n2. **Resource Validation**: Verifies all specified resources (specs, images, networks) exist and are accessible\n3. **Homogeneous Deployment**: Creates multiple identical VMs with consistent configuration\n4. **Network Integration**: Integrates new VMs with existing MCI networking and security policies\n5. **Group Management**: Establishes subgroup for collective management and operations\n\n**Detailed Configuration Control:**\n- **Specific Resource References**: Uses exact resource IDs rather than common specifications\n- **Network Placement**: Precise control over VNet, subnet, and security group assignment\n- **Storage Configuration**: Detailed disk configuration including type, size, and performance tiers\n- **Instance Customization**: Full control over VM specifications, images, and metadata\n- **Security Settings**: Explicit security group and SSH key configuration\n\n**SubGroup Benefits:**\n- **Collective Operations**: Perform operations on entire subgroup simultaneously\n- **Homogeneous Scaling**: All VMs in subgroup share identical configuration\n- **Simplified Management**: Single configuration template for multiple VMs\n- **Consistent Naming**: Automatic sequential naming (e.g., web-1, web-2, web-3)\n- **Group Policies**: Apply scaling, monitoring, and lifecycle policies at subgroup level\n\n**Use Cases:**\n- **Application Tiers**: Deploy multiple instances of web servers, application servers, or databases\n- **Load Distribution**: Create multiple identical VMs for load balancing scenarios\n- **High Availability**: Deploy redundant instances across availability zones\n- **Batch Processing**: Create worker nodes for distributed computing workloads\n- **Development Environments**: Provision identical development or testing instances\n\n**Configuration Requirements:**\n- **Resource IDs**: Must specify exact resource identifiers (not common specs)\n- **Network Configuration**: VNet, subnet, and security group must exist and be compatible\n- **SSH Keys**: Must specify valid SSH key pairs for access management\n- **Image Compatibility**: Specified image must be available in target region\n- **Quota Validation**: Sufficient CSP quotas must be available for all requested VMs\n\n**SubGroup Size Considerations:**\n- **Small Groups (1-5 VMs)**: Fast deployment, minimal resource contention\n- **Medium Groups (6-20 VMs)**: Optimized parallel deployment with resource batching\n- **Large Groups (21+ VMs)**: Advanced deployment strategies to avoid CSP rate limits\n- **Resource Limits**: Respects CSP quotas and CB-Tumblebug configuration limits\n\n**Post-Deployment Integration:**\n- SubGroup becomes integral part of parent MCI\n- All VMs inherit MCI-level monitoring and management policies\n- Can be scaled out further or individual VMs can be managed separately\n- Supports all standard CB-Tumblebug VM lifecycle operations",
                 "consumes": [
                     "application/json"
                 ],
@@ -5076,13 +5106,13 @@
                 "tags": [
                     "[MC-Infra] MCI Provisioning and Management"
                 ],
-                "summary": "Create and add homogeneous VMs(subGroup) to a specified MCI (Set subGroupSize for multiple VMs)",
+                "summary": "Add Homogeneous VM SubGroup to Existing MCI",
                 "operationId": "PostMciVm",
                 "parameters": [
                     {
                         "type": "string",
                         "default": "default",
-                        "description": "Namespace ID",
+                        "description": "Namespace ID containing the target MCI",
                         "name": "nsId",
                         "in": "path",
                         "required": true
@@ -5090,13 +5120,13 @@
                     {
                         "type": "string",
                         "default": "mci01",
-                        "description": "MCI ID",
+                        "description": "MCI ID to which the VM subgroup will be added",
                         "name": "mciId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Details for VMs(subGroup)",
+                        "description": "Detailed VM subgroup specification including exact resource IDs, networking, and scaling parameters",
                         "name": "vmReq",
                         "in": "body",
                         "required": true,
@@ -5107,19 +5137,31 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Updated MCI information including newly created VM subgroup with individual VM details and status",
                         "schema": {
                             "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
+                    "400": {
+                        "description": "Invalid VM request, missing required resources, or configuration conflicts",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Target MCI not found, specified resources unavailable, or namespace inaccessible",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "SubGroup name conflicts, resource allocation conflicts, or MCI state incompatible with expansion",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "VM provisioning failed, network configuration error, or CSP API communication failure",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -5725,7 +5767,7 @@
         },
         "/ns/{nsId}/mci/{mciId}/vmDynamic": {
             "post": {
-                "description": "Create VM Dynamically and add it to MCI",
+                "description": "Dynamically add new virtual machines to an existing MCI using common specifications and automated resource management.\nThis endpoint provides elastic scaling capabilities for running MCIs:\n\n**Dynamic VM Addition Process:**\n1. **MCI Validation**: Verifies target MCI exists and is in a valid state for expansion\n2. **Resource Discovery**: Resolves common spec and image to provider-specific resources\n3. **Network Integration**: Automatically configures new VMs to use existing MCI network resources\n4. **Subgroup Management**: Creates new subgroups or expands existing ones based on configuration\n5. **Status Synchronization**: Updates MCI status and metadata to reflect new VM additions\n\n**Integration with Existing Infrastructure:**\n- **Network Reuse**: New VMs automatically join existing VNets and security groups\n- **SSH Key Sharing**: Uses existing SSH keys for consistent access management\n- **Monitoring Integration**: New VMs inherit monitoring configuration from parent MCI\n- **Label Propagation**: Applies MCI-level labels and policies to new VMs\n- **Resource Consistency**: Maintains naming conventions and resource organization\n\n**Scaling Scenarios:**\n- **Horizontal Scaling**: Add more instances to handle increased workload\n- **Multi-Region Expansion**: Deploy VMs in new regions while maintaining MCI cohesion\n- **Provider Diversification**: Add VMs from different cloud providers for redundancy\n- **Workload Specialization**: Deploy VMs with different specifications for specific tasks\n\n**Configuration Requirements:**\n- `commonSpec`: Must specify valid VM specification from system namespace\n- `commonImage`: Must specify valid image compatible with target provider/region\n- `name`: Becomes subgroup name; VMs will be named with sequential suffixes\n- `subGroupSize`: Number of identical VMs to create (default: 1)\n\n**Network and Security:**\n- New VMs automatically inherit security group rules from existing MCI\n- Network connectivity to existing VMs is established automatically\n- Firewall rules and access policies are applied consistently\n- SSH access is configured using existing key pairs\n\n**Example Use Cases:**\n- Scale out web tier during traffic spikes\n- Add GPU instances for machine learning workloads\n- Deploy edge nodes in additional geographic regions\n- Add specialized storage or database nodes to existing application stack\n\n**Post-Addition Operations:**\n- New VMs are immediately available for standard MCI operations\n- Can be individually managed or grouped with existing subgroups\n- Monitoring and logging are automatically configured\n- Application deployment and configuration management can proceed immediately",
                 "consumes": [
                     "application/json"
                 ],
@@ -5735,13 +5777,13 @@
                 "tags": [
                     "[MC-Infra] MCI Provisioning and Management"
                 ],
-                "summary": "Create VM Dynamically and add it to MCI",
+                "summary": "Add VM Dynamically to Existing MCI",
                 "operationId": "PostMciVmDynamic",
                 "parameters": [
                     {
                         "type": "string",
                         "default": "default",
-                        "description": "Namespace ID",
+                        "description": "Namespace ID containing the target MCI",
                         "name": "nsId",
                         "in": "path",
                         "required": true
@@ -5749,13 +5791,13 @@
                     {
                         "type": "string",
                         "default": "mci01",
-                        "description": "MCI ID",
+                        "description": "MCI ID to which new VMs will be added",
                         "name": "mciId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Details for Vm dynamic request",
+                        "description": "VM dynamic request specifying commonSpec, commonImage, and scaling parameters",
                         "name": "vmReq",
                         "in": "body",
                         "required": true,
@@ -5766,19 +5808,31 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Updated MCI information including newly added VMs and current status",
                         "schema": {
                             "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
+                    "400": {
+                        "description": "Invalid VM request or incompatible configuration parameters",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Target MCI not found or specified resources unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "Subgroup name conflicts or MCI in incompatible state",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "VM creation failed or network integration error",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -6144,7 +6198,7 @@
         },
         "/ns/{nsId}/mciDynamic": {
             "post": {
-                "description": "Create MCI Dynamically from common spec and image",
+                "description": "Create multi-cloud infrastructure dynamically using common specifications and images with automatic resource discovery and optimization.\nThis is the **recommended approach** for MCI creation, providing simplified configuration with powerful automation:\n\n**Dynamic Resource Creation:**\n1. **Automatic Resource Discovery**: Validates and selects optimal VM specifications and images from common namespace\n2. **Intelligent Network Setup**: Creates VNets, subnets, security groups, and SSH keys automatically per provider\n3. **Cross-Cloud Orchestration**: Coordinates VM provisioning across multiple cloud providers simultaneously\n4. **Dependency Management**: Handles resource creation order and inter-dependencies automatically\n5. **Failure Recovery**: Implements configurable failure policies for robust deployment\n\n**Key Advantages Over Static MCI:**\n- **Simplified Configuration**: Use common spec/image IDs instead of provider-specific resources\n- **Automatic Resource Management**: No need to pre-create VNets, security groups, or SSH keys\n- **Multi-Cloud Optimization**: Intelligent placement and configuration across providers\n- **Built-in Best Practices**: Security groups, network isolation, and access controls applied automatically\n- **Scalable Architecture**: Supports large-scale deployments with optimized resource utilization\n\n**Configuration Process:**\n1. **Resource Discovery**: Use `/mciRecommendVm` to find suitable VM specifications\n2. **Image Selection**: Use system namespace to discover compatible images\n3. **Request Validation**: Use `/mciDynamicCheckRequest` to validate configuration before deployment\n4. **Optional Preview**: Use `/mciDynamicReview` to estimate costs and review configuration\n5. **Deployment**: Submit MCI dynamic request with failure policy and deployment options\n\n**Failure Policies (PolicyOnPartialFailure):**\n- **`continue`** (default): Create MCI with successful VMs, failed VMs remain for manual refinement\n- **`rollback`**: Delete entire MCI if any VM fails (all-or-nothing deployment)\n- **`refine`**: Automatically clean up failed VMs, keep successful ones (recommended for large deployments)\n\n**Deployment Options:**\n- **`hold`**: Create MCI object but hold VM provisioning for manual approval\n- **Normal**: Proceed with immediate VM provisioning after resource creation\n\n**Multi-Cloud Example Configuration:**\n```json\n{\n\"name\": \"multi-cloud-web-tier\",\n\"description\": \"Web application across AWS, Azure, and GCP\",\n\"policyOnPartialFailure\": \"refine\",\n\"vm\": [\n{\n\"name\": \"aws-web-servers\",\n\"subGroupSize\": \"3\",\n\"commonSpec\": \"aws+us-east-1+t3.medium\",\n\"commonImage\": \"ami-0abcdef1234567890\",\n\"rootDiskSize\": \"100\",\n\"label\": {\"tier\": \"web\", \"provider\": \"aws\"}\n},\n{\n\"name\": \"azure-api-servers\",\n\"subGroupSize\": \"2\",\n\"commonSpec\": \"azure+eastus+Standard_B2s\",\n\"commonImage\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts\",\n\"label\": {\"tier\": \"api\", \"provider\": \"azure\"}\n}\n]\n}\n```\n\n**Performance Considerations:**\n- VM provisioning occurs in parallel across providers\n- Network resources are created concurrently where possible\n- Large deployments (\u003e10 VMs) automatically use optimized batching\n- Built-in rate limiting prevents CSP API throttling\n\n**Monitoring and Post-Deployment:**\n- Optional CB-Dragonfly monitoring agent installation\n- Custom post-deployment command execution\n- Real-time status tracking and progress updates\n- Automatic resource labeling and metadata management",
                 "consumes": [
                     "application/json"
                 ],
@@ -6154,19 +6208,19 @@
                 "tags": [
                     "[MC-Infra] MCI Provisioning and Management"
                 ],
-                "summary": "Create MCI Dynamically",
+                "summary": "Create MCI Dynamically with Intelligent Resource Selection",
                 "operationId": "PostMciDynamic",
                 "parameters": [
                     {
                         "type": "string",
                         "default": "default",
-                        "description": "Namespace ID",
+                        "description": "Namespace ID for resource organization and isolation",
                         "name": "nsId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Request body to provision MCI dynamically. Must include commonSpec and commonImage info of each VM request. Example multi-cloud setup: {\\",
+                        "description": "Dynamic MCI request with common specifications. Must include commonSpec and commonImage for each VM group. See description for detailed example.",
                         "name": "mciReq",
                         "in": "body",
                         "required": true,
@@ -6179,32 +6233,44 @@
                             "hold"
                         ],
                         "type": "string",
-                        "description": "Option for MCI creation",
+                        "description": "Deployment option: 'hold' to create MCI without immediate VM provisioning",
                         "name": "option",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Custom request ID",
+                        "description": "Custom request ID for tracking and correlation across API calls",
                         "name": "x-request-id",
                         "in": "header"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Successfully created MCI with VM deployment status, resource mappings, and configuration details",
                         "schema": {
                             "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
+                    "400": {
+                        "description": "Invalid request format, missing required fields, or unsupported configuration",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Namespace not found, specified specs/images unavailable, or CSP resources inaccessible",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "MCI name already exists or resource naming conflicts detected",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal deployment error, CSP API failures, or resource creation timeouts",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -6838,7 +6904,7 @@
         },
         "/ns/{nsId}/registerCspVm": {
             "post": {
-                "description": "Register existing VM in a CSP to Cloud-Barista MCI",
+                "description": "Import and register pre-existing virtual machines from cloud service providers into CB-Tumblebug management.\nThis endpoint allows you to bring existing CSP resources under CB-Tumblebug control without recreating them:\n\n**Registration Process:**\n1. **Discovery**: Validates that the specified VM exists in the target CSP\n2. **Metadata Import**: Retrieves VM configuration, network settings, and current status\n3. **Resource Mapping**: Creates CB-Tumblebug resource objects that reference the existing CSP resources\n4. **Status Synchronization**: Aligns CB-Tumblebug status with actual CSP VM state\n5. **Management Integration**: Enables CB-Tumblebug operations on the registered VMs\n\n**Supported VM States:**\n- Running VMs (most common use case)\n- Stopped VMs (will be registered with current state)\n- VMs with attached storage and network interfaces\n\n**Resource Compatibility:**\n- VM must exist in a supported CSP (AWS, Azure, GCP, etc.)\n- Network resources (VPC, subnets, security groups) will be discovered and mapped\n- Storage volumes and attached disks will be registered automatically\n- SSH keys and security configurations will be imported\n\n**Post-Registration Capabilities:**\n- Standard CB-Tumblebug VM lifecycle operations (start, stop, terminate)\n- Monitoring agent installation (if CB-Dragonfly is configured)\n- Command execution and automation\n- Integration with other CB-Tumblebug MCIs\n\n**Important Notes:**\n- Registration does not modify the existing VM configuration\n- Original CSP billing and resource management still applies\n- CB-Tumblebug provides additional management layer and automation\n- Ensure proper CSP credentials and permissions are configured",
                 "consumes": [
                     "application/json"
                 ],
@@ -6848,19 +6914,19 @@
                 "tags": [
                     "[MC-Infra] MCI Provisioning and Management"
                 ],
-                "summary": "Register existing VM in a CSP to Cloud-Barista MCI",
+                "summary": "Register Existing CSP VMs into Cloud-Barista MCI",
                 "operationId": "PostRegisterCSPNativeVM",
                 "parameters": [
                     {
                         "type": "string",
                         "default": "default",
-                        "description": "Namespace ID",
+                        "description": "Namespace ID for organizing registered resources",
                         "name": "nsId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Details for an MCI object with existing CSP VM ID",
+                        "description": "MCI registration request containing existing CSP VM IDs and connection details",
                         "name": "mciReq",
                         "in": "body",
                         "required": true,
@@ -6871,19 +6937,31 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Registered MCI information with imported VM details and current status",
                         "schema": {
                             "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
+                    "400": {
+                        "description": "Invalid request format or missing required CSP VM identifiers",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Specified VMs not found in target CSP or namespace doesn't exist",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "VM already registered or MCI name conflicts",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "CSP communication error or registration process failure",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -11215,7 +11293,7 @@
         },
         "/systemMci": {
             "post": {
-                "description": "Create System MCI Dynamically for Special Purpose",
+                "description": "Create specialized MCI instances for CB-Tumblebug system operations and infrastructure probing.\nThis endpoint provisions system-level infrastructure that supports CB-Tumblebug's internal functions:\n\n**System MCI Types:**\n- `probe`: Creates lightweight VMs for network connectivity testing and CSP capability discovery\n- `monitor`: Deploys monitoring infrastructure for system health and performance tracking\n- `test`: Provisions test environments for validating CSP integrations and features\n\n**Probe MCI Features:**\n- **Connectivity Testing**: Validates network paths between different CSP regions\n- **Latency Measurement**: Measures inter-region and inter-provider network performance\n- **Feature Discovery**: Tests CSP-specific capabilities and service availability\n- **Resource Validation**: Verifies that CB-Tumblebug can successfully provision resources\n\n**System Namespace:**\n- All system MCIs are created in the special `system` namespace\n- Isolated from user workloads and regular MCI operations\n- Managed automatically by CB-Tumblebug internal processes\n- May be used for background maintenance and monitoring tasks\n\n**Automatic Configuration:**\n- Uses optimized VM specifications for system tasks (typically minimal resources)\n- Automatically selects appropriate regions and providers based on probe requirements\n- Configures necessary network access and security policies\n- Deploys with minimal attack surface and security hardening\n\n**Lifecycle Management:**\n- System MCIs may be automatically created, updated, or destroyed by CB-Tumblebug\n- Typically short-lived for specific system tasks\n- Resource cleanup is handled automatically\n- Status and results are logged for system administrators\n\n**Use Cases:**\n- Infrastructure health checks and validation\n- Performance benchmarking across cloud providers\n- Automated testing of new CSP integrations\n- Network topology discovery and optimization",
                 "consumes": [
                     "application/json"
                 ],
@@ -11225,34 +11303,50 @@
                 "tags": [
                     "[MC-Infra] MCI Provisioning and Management"
                 ],
-                "summary": "Create System MCI Dynamically for Special Purpose in NS:system",
+                "summary": "Create System MCI for CB-Tumblebug Internal Operations",
                 "operationId": "PostSystemMci",
                 "parameters": [
                     {
                         "enum": [
-                            "probe"
+                            "probe",
+                            "monitor",
+                            "test"
                         ],
                         "type": "string",
-                        "description": "Option for the purpose of system MCI",
+                        "description": "System MCI type: 'probe' for connectivity testing, 'monitor' for system monitoring",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "description": "Optional MCI configuration. If not provided, system defaults will be used",
+                        "name": "mciReq",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/model.TbMciDynamicReq"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Created system MCI with specialized configuration and status",
                         "schema": {
                             "$ref": "#/definitions/model.TbMciInfo"
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "400": {
+                        "description": "Invalid system option or malformed request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "403": {
+                        "description": "Insufficient permissions for system MCI creation",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "System MCI creation failed or CSP integration error",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -12940,6 +13034,41 @@
                 }
             }
         },
+        "model.MciCreationErrors": {
+            "type": "object",
+            "properties": {
+                "failedVmCount": {
+                    "description": "FailedVmCount is the number of VMs that failed to be created",
+                    "type": "integer"
+                },
+                "failureHandlingStrategy": {
+                    "description": "FailureHandlingStrategy indicates how failures were handled",
+                    "type": "string"
+                },
+                "successfulVmCount": {
+                    "description": "SuccessfulVmCount is the number of VMs that were successfully created",
+                    "type": "integer"
+                },
+                "totalVmCount": {
+                    "description": "TotalVmCount is the total number of VMs that were supposed to be created",
+                    "type": "integer"
+                },
+                "vmCreationErrors": {
+                    "description": "VmCreationErrors contains errors from actual VM creation phase",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.VmCreationError"
+                    }
+                },
+                "vmObjectCreationErrors": {
+                    "description": "VmObjectCreationErrors contains errors from VM object creation phase",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.VmCreationError"
+                    }
+                }
+            }
+        },
         "model.MciPolicyInfo": {
             "type": "object",
             "properties": {
@@ -13922,6 +14051,19 @@
                     "description": "Overall assessment of the MCI request",
                     "type": "string",
                     "example": "Ready/Warning/Error"
+                },
+                "policyDescription": {
+                    "type": "string",
+                    "example": "If some VMs fail during creation, MCI will be created with successfully provisioned VMs only"
+                },
+                "policyOnPartialFailure": {
+                    "description": "Failure policy analysis",
+                    "type": "string",
+                    "example": "continue"
+                },
+                "policyRecommendation": {
+                    "type": "string",
+                    "example": "Consider 'refine' policy for automatic cleanup of failed VMs"
                 },
                 "recommendations": {
                     "description": "Recommendations for improvement",
@@ -16223,6 +16365,17 @@
                     "type": "string",
                     "example": "mci01"
                 },
+                "policyOnPartialFailure": {
+                    "description": "PolicyOnPartialFailure determines how to handle VM creation failures\n- \"continue\": Continue with partial MCI creation (default)\n- \"rollback\": Cleanup entire MCI when any VM fails\n- \"refine\": Mark failed VMs for refinement",
+                    "type": "string",
+                    "default": "continue",
+                    "enum": [
+                        "continue",
+                        "rollback",
+                        "refine"
+                    ],
+                    "example": "continue"
+                },
                 "postCommand": {
                     "description": "PostCommand is for the command to bootstrap the VMs",
                     "allOf": [
@@ -16257,6 +16410,14 @@
                         "no"
                     ],
                     "example": "yes"
+                },
+                "creationErrors": {
+                    "description": "CreationErrors contains information about VM creation failures (if any)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MciCreationErrors"
+                        }
+                    ]
                 },
                 "description": {
                     "type": "string"
@@ -16387,6 +16548,17 @@
                 },
                 "placementAlgo": {
                     "type": "string"
+                },
+                "policyOnPartialFailure": {
+                    "description": "PolicyOnPartialFailure determines how to handle VM creation failures\n- \"continue\": Continue with partial MCI creation (default)\n- \"rollback\": Cleanup entire MCI when any VM fails\n- \"refine\": Mark failed VMs for refinement",
+                    "type": "string",
+                    "default": "continue",
+                    "enum": [
+                        "continue",
+                        "rollback",
+                        "refine"
+                    ],
+                    "example": "continue"
                 },
                 "postCommand": {
                     "description": "PostCommand is for the command to bootstrap the VMs",
@@ -17867,6 +18039,27 @@
                     "type": "string"
                 },
                 "useFirstNZones": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.VmCreationError": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "description": "Error is the error message",
+                    "type": "string"
+                },
+                "phase": {
+                    "description": "Phase indicates when the error occurred",
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "Timestamp when the error occurred",
+                    "type": "string"
+                },
+                "vmName": {
+                    "description": "VmName is the name of the VM that failed",
                     "type": "string"
                 }
             }
