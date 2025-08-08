@@ -13,6 +13,26 @@ The CB-Tumblebug MCP Server provides a standardized interface for AI assistants 
 
 **Disclaimer**: This is a proof-of-concept implementation. Use at your own risk and ensure proper security measures are in place before deploying in any environment with sensitive data or production workloads.
 
+## 🔄 Transport Protocol Information
+
+This MCP server uses **Streamable HTTP** transport, which is the current recommended protocol for MCP implementations. The previous SSE (Server-Sent Events) transport has been deprecated in the MCP specification.
+
+### Transport Architecture
+
+```
+TB-MCP Server (Streamable HTTP) ←→ AI Assistants
+                ↑
+        Direct connection (VS Code)
+                ↑
+        Proxy Bridge (Claude Desktop)
+```
+
+**Key Points:**
+- **Primary Transport**: Streamable HTTP (`http://127.0.0.1:8000/mcp`)
+- **VS Code**: Direct connection supported
+- **Claude Desktop**: Requires proxy bridge (`mcp-simple-proxy.py`) due to remote server limitations
+- **Protocol Standard**: MCP specification compliant
+
 ## 🏗️ Architecture
 
 For detailed system architecture and component interactions, see our comprehensive architecture diagrams:
@@ -126,11 +146,11 @@ docker compose ps
 # View MCP server logs
 docker compose logs -f cb-tumblebug-mcp-server
 
-# Test MCP server endpoint
-curl http://localhost:8000/sse
+# Test MCP server endpoint (Streamable HTTP)
+curl http://localhost:8000/mcp
 ```
 
-The MCP server should be accessible at `http://localhost:8000/sse`.
+The MCP server should be accessible at `http://localhost:8000/mcp` using Streamable HTTP transport.
 
 ## 🔧 Configuration
 
@@ -159,44 +179,114 @@ environment:
 
 ## 🧠 AI Assistant Integration
 
+### Integration Methods Overview
+
+The TB-MCP server supports two integration approaches depending on your AI assistant:
+
+1. **Direct Connection (VS Code)**: Native Streamable HTTP support
+2. **Proxy Bridge (Claude Desktop)**: stdio proxy for remote server limitations
+
 For detailed protocol flows and integration patterns, see:
-- **[MCP Protocol Flow (SSE Transport)](./architecture.md#mcp-protocol-flow-sse-transport)** - Claude Desktop integration workflow
-- **[VS Code Copilot Direct Integration](./architecture.md#vs-code-copilot-direct-integration)** - Direct SSE connection pattern
+- **[MCP Protocol Flow (Streamable HTTP)](./architecture.md#mcp-protocol-flow-sse-transport)** - VS Code direct integration workflow
+- **[Proxy Bridge Pattern](./PROXY_README.md)** - Claude Desktop proxy integration
 
-### Claude Desktop Configuration
+### 🔧 VS Code MCP Extension (Direct Connection)
 
-Add the following configuration to your Claude Desktop `claude_desktop_config.json`:
+VS Code supports Streamable HTTP transport directly, allowing seamless connection to the TB-MCP server.
 
+**Configuration in `.vscode/mcp.json`:**
+
+```json
+{
+  "servers": {
+    "tumblebug": {
+      "type": "http",
+      "url": "http://127.0.0.1:8000/mcp"
+    }
+  }
+}
+```
+
+**Features:**
+- ✅ Direct Streamable HTTP connection
+- ✅ No proxy required
+- ✅ Full MCP protocol support
+- ✅ Real-time communication
+
+### 🎭 Claude Desktop (Proxy Bridge)
+
+Claude Desktop has limitations with remote server connections, so we use a proxy bridge to enable seamless integration.
+
+**Step 1: Use the Proxy Bridge**
+
+The `mcp-simple-proxy.py` acts as a stdio bridge:
+
+```python
+# mcp-simple-proxy.py - Transport bridge for Claude Desktop
+from fastmcp import FastMCP
+from fastmcp.server.proxy import ProxyClient
+
+proxy = FastMCP.as_proxy(
+    ProxyClient("http://127.0.0.1:8000/mcp"),
+    name="TB-MCP Bridge"
+)
+
+if __name__ == "__main__":
+    proxy.run()  # stdio transport
+```
+
+**Step 2: Claude Desktop Configuration**
+
+Add to your `claude_desktop_config.json`:
+
+**For Linux/macOS:**
 ```json
 {
   "mcpServers": {
     "tumblebug": {
-      "command": "npx",
+      "command": "uv",
       "args": [
-        "mcp-remote",
-        "http://localhost:8000/sse"
+        "run",
+        "--with",
+        "fastmcp",
+        "/path/to/cb-tumblebug/src/interface/mcp/mcp-simple-proxy.py"
       ]
     }
   }
 }
 ```
 
-**Note**: This configuration requires [mcp-remote](https://www.npmjs.com/package/mcp-remote) as Claude Desktop doesn't fully support SSE transport yet.
-
-### VS Code MCP Extension
-
-For VS Code with MCP extension, use:
-
+**For WSL (Windows Subsystem for Linux):**
 ```json
 {
-  "servers": {
+  "mcpServers": {
     "tumblebug": {
-      "type": "sse",
-      "url": "http://localhost:8000/sse"
+      "command": "wsl.exe",
+      "args": [
+        "bash",
+        "-c",
+        "/home/username/.local/bin/uv run --with fastmcp /path/to/cb-tumblebug/src/interface/mcp/mcp-simple-proxy.py"
+      ]
     }
   }
 }
 ```
+
+**Features:**
+- ✅ Claude Desktop compatibility
+- ✅ Streamable HTTP to stdio bridge
+- ✅ Automatic dependency management via UV
+- ✅ Session isolation
+
+### 🔄 Integration Comparison
+
+| Feature | VS Code (Direct) | Claude Desktop (Proxy) |
+|---------|-----------------|------------------------|
+| Connection | Direct HTTP | stdio via proxy |
+| Setup Complexity | Simple | Moderate |
+| Performance | Optimal | Good |
+| Protocol | Streamable HTTP | Streamable HTTP → stdio |
+| Dependencies | MCP Extension | UV + FastMCP |
 
 ## 📚 Core Capabilities
 
@@ -237,14 +327,18 @@ For a visual overview of all available tools and their API mappings, see:
 
 ## 🔍 Testing and Debugging
 
-For network architecture and debugging reference, see:
-**[Docker Compose Network Architecture](./architecture.md#docker-compose-network-architecture)** - Container communication patterns and port mappings
+### MCP Inspector (Official Testing Tool)
 
-### Model Context Protocol Inspector
+For testing MCP functionality with Streamable HTTP, use the official MCP Inspector:
 
-For testing MCP functionality, use the official MCP Inspector:
 ```bash
-npx @modelcontextprotocol/inspector http://localhost:8000/sse
+# Test the TB-MCP server directly
+npx @modelcontextprotocol/inspector http://localhost:8000/mcp
+
+# Test the proxy bridge (in separate terminal)
+cd /path/to/cb-tumblebug
+uv run --with fastmcp ./src/interface/mcp/mcp-simple-proxy.py
+# Then connect MCP Inspector to stdio
 ```
 
 ### Container Logs and Debugging
@@ -261,7 +355,60 @@ docker compose exec cb-tumblebug-mcp-server fastmcp version
 
 # Test internal connectivity
 docker compose exec cb-tumblebug-mcp-server curl http://cb-tumblebug:1323/tumblebug/readyz
+
+# Test Streamable HTTP endpoint
+curl -i http://localhost:8000/mcp
 ```
+
+### Proxy Bridge Testing
+
+```bash
+# Test proxy bridge functionality
+cd /path/to/cb-tumblebug
+
+# Ensure TB-MCP server is running
+curl http://127.0.0.1:8000/mcp
+
+# Start proxy bridge
+uv run --with fastmcp ./src/interface/mcp/mcp-simple-proxy.py
+
+# In another terminal, test with MCP Inspector
+npx @modelcontextprotocol/inspector
+```
+
+### Troubleshooting Common Issues
+
+#### 1. **Connection Refused**
+```bash
+# Check if TB-MCP server is running
+docker compose ps cb-tumblebug-mcp-server
+docker compose logs cb-tumblebug-mcp-server
+
+# Verify port accessibility
+curl -v http://127.0.0.1:8000/mcp
+```
+
+#### 2. **Proxy Bridge Issues**
+```bash
+# Check UV installation
+which uv
+uv --version
+
+# Test FastMCP installation
+uv run --with fastmcp python -c "import fastmcp; print('FastMCP available')"
+
+# Check proxy bridge syntax
+uv run --with fastmcp python -m py_compile ./src/interface/mcp/mcp-simple-proxy.py
+```
+
+#### 3. **Claude Desktop Connection Issues**
+- Ensure proxy bridge starts successfully
+- Verify path in `claude_desktop_config.json` is correct
+- Check Claude Desktop logs for error messages
+- Test proxy independently with MCP Inspector
+
+For network architecture and debugging reference, see:
+**[Docker Compose Network Architecture](./architecture.md#docker-compose-network-architecture)** - Container communication patterns and port mappings
 
 ## 📦 Alternative Installation (Direct Python)
 
@@ -294,14 +441,81 @@ For development or testing purposes, you can run the MCP server directly:
 
 4. **Run the server:**
    ```bash
-   uv run --with fastmcp,requests fastmcp run --transport sse ./src/interface/mcp/tb-mcp.py:mcp
+   uv run --with fastmcp,requests ./src/interface/mcp/tb-mcp.py
    ```
+
+   This will start the TB-MCP server with Streamable HTTP transport on `http://127.0.0.1:8000/mcp`.
 
 ### Direct Python Configuration
 
 When running directly, ensure CB-Tumblebug is accessible at the configured endpoint. The default configuration assumes CB-Tumblebug is running on `localhost:1323`.
 
-## ⚠️ Security Considerations
+**TB-MCP Server Access:**
+- Direct: `http://127.0.0.1:8000/mcp` (Streamable HTTP)
+- For Claude Desktop: Use proxy bridge (`mcp-simple-proxy.py`)
+
+## 🔄 Proxy Bridge for Claude Desktop
+
+Due to Claude Desktop's limitations with remote server connections, a proxy bridge is required. See **[Proxy Documentation](./PROXY_README.md)** for detailed setup instructions.
+
+**Quick Setup:**
+
+1. **Ensure TB-MCP server is running** (via Docker or direct Python)
+2. **Test proxy bridge:**
+   ```bash
+   cd /path/to/cb-tumblebug
+   uv run --with fastmcp ./src/interface/mcp/mcp-simple-proxy.py
+   ```
+3. **Configure Claude Desktop** with proxy bridge path
+
+**Files provided:**
+- `mcp-simple-proxy.py` - Minimal proxy (recommended)
+- `mcp-advanced-proxy.py` - Enhanced proxy with logging
+- `claude_desktop_config.json` - Configuration examples
+- `PROXY_README.md` - Detailed proxy documentation
+
+## 📁 Project Structure
+
+```
+src/interface/mcp/
+├── tb-mcp.py                    # Main MCP server implementation
+├── mcp-simple-proxy.py          # Proxy bridge for Claude Desktop
+├── mcp-advanced-proxy.py        # Enhanced proxy with logging
+├── mcp-remote-proxy.py          # Alternative proxy implementation
+├── claude_desktop_config.json   # Claude Desktop configuration examples
+├── .vscode/mcp.json            # VS Code MCP configuration
+├── Dockerfile                   # Docker container configuration
+├── README.md                    # This documentation
+├── PROXY_README.md             # Detailed proxy documentation
+└── architecture.md             # System architecture diagrams
+```
+
+## 🚀 Quick Start Guide
+
+### Method 1: Docker Compose (Recommended)
+
+1. **Start TB-MCP server:**
+   ```bash
+   cd /path/to/cb-tumblebug
+   docker compose up cb-tumblebug-mcp-server
+   ```
+
+2. **For VS Code users:**
+   - Add configuration to `.vscode/mcp.json`
+   - Connect directly via Streamable HTTP
+
+3. **For Claude Desktop users:**
+   - Use proxy bridge: `uv run --with fastmcp ./src/interface/mcp/mcp-simple-proxy.py`
+   - Configure Claude Desktop with proxy path
+
+### Method 2: Direct Python
+
+1. **Start TB-MCP server:**
+   ```bash
+   uv run --with fastmcp,requests ./src/interface/mcp/tb-mcp.py
+   ```
+
+2. **Follow integration steps above based on your AI assistant**
 
 - **PoC Status**: This is a proof-of-concept implementation
 - **Code Review**: Thoroughly review all code before production use
@@ -327,9 +541,19 @@ This project is licensed under the Apache License 2.0 - see the `LICENSE` file f
 
 - [Cloud-Barista CB-Tumblebug](https://github.com/cloud-barista/cb-tumblebug)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
-- [FastMCP(modelcontextprotocol/python-sdk)](https://github.com/modelcontextprotocol/python-sdk)
-- [FastMCP(jlowin/fastmcp)](https://github.com/jlowin/fastmcp)
-- [MCP Remote](https://github.com/geelen/mcp-remote)
+- [FastMCP (jlowin/fastmcp)](https://github.com/jlowin/fastmcp) - Primary MCP implementation
+- [FastMCP (modelcontextprotocol/python-sdk)](https://github.com/modelcontextprotocol/python-sdk) - Official MCP SDK
+
+## 📋 Additional Resources
+
+- **[PROXY_README.md](./PROXY_README.md)** - Comprehensive proxy bridge documentation
+- **[architecture.md](./architecture.md)** - System architecture and protocol flows
+- **[FastMCP Documentation](https://gofastmcp.com)** - Official FastMCP guides
+- **[MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector)** - Protocol testing tool
 
 ---
+
+**Transport Protocol**: Streamable HTTP (MCP compliant)  
+**AI Assistant Support**: VS Code (direct), Claude Desktop (proxy bridge)  
+**License**: Apache License 2.0
 

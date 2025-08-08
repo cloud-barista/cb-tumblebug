@@ -1,30 +1,46 @@
 # Information: This file is part of the Tumblebug MCP server implementation.
 # Run with the following command:
-# uv run --with fastmcp,requests fastmcp run --transport sse ./src/interface/mcp/tb-mcp.py:mcp
+# uv run ./tb-mcp.py
 # this server will be exposed to the MCP interface at http://127.0.0.1:8000/sse by default.
 
 # Configuration example in Claude Desktop
-# Note that Claude Desktop does not fully support SSE transport yet. 
-# So, the example utilizes mcp-remote (https://www.npmjs.com/package/mcp-remote).
-# mcp-remote this not part of this project, you need to check https://github.com/geelen/mcp-remote for your security.
+# Note that Claude Desktop does not fully support streamable HTTP transport yet. (SSE transport was deprecated)
+# So, the example utilizes mcp-simple-proxy.py based on the (https://gofastmcp.com/integrations/claude-desktop#remote-servers).
+# cb-tumblebug/src/interface/mcp/mcp-simple-proxy.py
+# In case of you are using WSL, the configuration would look like this:
 # {
 #   "mcpServers": {
 #     "tumblebug": {
-#       "command": "npx",
+#       "command": "wsl.exe",
 #       "args": [
-#         "mcp-remote",
-#         "http://127.0.0.1:8000/sse"
+#         "bash",
+#         "-c",
+#         "/home/shson/.local/bin/uv run --with fastmcp /home/shson/go/src/github.com/cloud-barista/cb-tumblebug/src/interface/mcp/mcp-simple-proxy.py"
+#       ]
+#     }
+#   }
+# }
+# In case of the source code is in Windows, the configuration would look like this:
+# {
+#   "mcpServers": {
+#     "tumblebug": {
+#       "command": "uv",
+#       "args": [
+#         "run",
+#         "--with",
+#         "fastmcp",
+#         "{Path to the mcp-simple-proxy.py}"
 #       ]
 #     }
 #   }
 # }
 
 # Configuration example in VS Code.
-# Note that VS Code does support SSE transport directly.
+# Note that VS Code does support streamable HTTP transport directly.
 # "servers": {
 #   "tumblebug": {
-#     "type": "sse",
-#     "url": "http://127.0.0.1:8000/sse"
+#     "type": "http",
+#     "url": "http://127.0.0.1:8000/mcp"
 #   },
 # }
 
@@ -40,16 +56,50 @@ import logging
 import re
 from typing import Dict, List, Optional, Any, Union
 from datetime import datetime, timedelta
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
-# This server utilizes mcp.server.fastmcp (https://github.com/modelcontextprotocol/python-sdk)
+# This server utilizes fastmcp (https://github.com/jlowin/fastmcp)
 
-# Configure logging
+# Configure logging - Reduce noise from HTTP connections and MCP protocol details
+# Set logging level via environment variable (default: INFO)
+log_level = os.environ.get("MCP_LOG_LEVEL", "INFO").upper()
+log_level_value = getattr(logging, log_level, logging.INFO)
+
 logging.basicConfig(
-    level=logging.INFO,
+    level=log_level_value,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Reduce logging noise from external libraries (only if not in DEBUG mode)
+if log_level_value > logging.DEBUG:
+    # Completely suppress uvicorn access logs
+    logging.getLogger("uvicorn.access").setLevel(logging.CRITICAL)
+    logging.getLogger("uvicorn.access").disabled = True
+    
+    # Suppress other noisy loggers
+    logging.getLogger("mcp.server.streamable_http").setLevel(logging.CRITICAL)
+    logging.getLogger("mcp.server.streamable_http_manager").setLevel(logging.CRITICAL)
+    logging.getLogger("mcp.server.lowlevel.server").setLevel(logging.CRITICAL)
+    logging.getLogger("fastmcp").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("requests").setLevel(logging.WARNING)
+    
+    # Override uvicorn's default access logger
+    uvicorn_access = logging.getLogger("uvicorn.access")
+    uvicorn_access.handlers.clear()
+    uvicorn_access.propagate = False
+
+    # Only show important MCP events
+    class MCPRequestFilter(logging.Filter):
+        def filter(self, record):
+            return "Processing request of type CallToolRequest" in record.getMessage()
+    
+    mcp_logger = logging.getLogger("mcp.server.lowlevel.server")
+    mcp_logger.setLevel(logging.INFO)  # Allow INFO level for important events
+    mcp_logger.addFilter(MCPRequestFilter())
 
 # Tumblebug API basic settings
 TUMBLEBUG_API_BASE_URL = os.environ.get("TUMBLEBUG_API_BASE_URL", "http://localhost:1323/tumblebug")
@@ -62,9 +112,13 @@ port = int(os.environ.get("MCP_SERVER_PORT", "8000"))
 logger.info(f"Tumblebug API URL: {TUMBLEBUG_API_BASE_URL}")
 logger.info(f"Username: {TUMBLEBUG_USERNAME}")
 logger.info(f"Password configured: {'Yes' if TUMBLEBUG_PASSWORD else 'No'}")
+logger.info(f"Logging level: {log_level}")
+logger.info(f"MCP Server will start on {host}:{port}")
 
 # Initialize MCP server
-mcp = FastMCP(name="cb-tumblebug", host=host, port=port)
+mcp = FastMCP("cb-tumblebug")
+
+# mcp = FastMCP(name="cb-tumblebug", host=host, port=port)
 
 # Helper function: API request wrapper
 def api_request(method, endpoint, json_data=None, params=None, files=None, headers=None, timeout_override=None):
@@ -198,20 +252,39 @@ if os.environ.get("MCP_ENV") == "development":
 # Namespace Management
 #####################################
 
-# Tool: Get all namespaces
-@mcp.tool()
-def get_namespaces() -> Dict:
-    """Get list of namespaces"""
+# Helper function: Internal get namespaces (used by both get_namespaces tool and other functions)
+def _internal_get_namespaces() -> Dict:
+    """Internal helper function to get namespaces"""
     result = api_request("GET", "/ns")
     if "output" in result:
         return {"namespaces": result["output"]}
     return result
 
+# Tool: Get all namespaces
+@mcp.tool()
+def get_namespaces() -> Dict:
+    """Get list of namespaces"""
+    return _internal_get_namespaces()
+
+# Helper function: Internal get namespace (used by both get_namespace tool and other functions)
+def _internal_get_namespace(ns_id: str) -> Dict:
+    """Internal helper function to get specific namespace"""
+    return api_request("GET", f"/ns/{ns_id}")
+
 # Tool: Get specific namespace
 @mcp.tool()
 def get_namespace(ns_id: str) -> Dict:
     """Get specific namespace"""
-    return api_request("GET", f"/ns/{ns_id}")
+    return _internal_get_namespace(ns_id)
+
+# Helper function: Internal create namespace (used by both create_namespace tool and other functions)
+def _internal_create_namespace(name: str, description: Optional[str] = None) -> Dict:
+    """Internal helper function to create a new namespace"""
+    data = {
+        "name": name,
+        "description": description or f"Namespace {name}"
+    }
+    return api_request("POST", "/ns", json_data=data)
 
 # Tool: Create namespace
 @mcp.tool()
@@ -226,11 +299,7 @@ def create_namespace(name: str, description: Optional[str] = None) -> Dict:
     Returns:
         Created namespace information
     """
-    data = {
-        "name": name,
-        "description": description or f"Namespace {name}"
-    }
-    return api_request("POST", "/ns", json_data=data)
+    return _internal_create_namespace(name, description)
 
 # Tool: Update namespace
 @mcp.tool()
@@ -828,7 +897,7 @@ def check_and_prepare_namespace(preferred_ns_id: Optional[str] = None) -> Dict:
         - preferred_namespace: Information about preferred namespace if specified
     """
     # Get all existing namespaces
-    ns_result = get_namespaces()
+    ns_result = _internal_get_namespaces()
     
     if "error" in ns_result:
         return {
@@ -882,20 +951,11 @@ def check_and_prepare_namespace(preferred_ns_id: Optional[str] = None) -> Dict:
     
     return result
 
-# Helper function: Validate namespace exists
-@mcp.tool()
-def validate_namespace(ns_id: str) -> Dict:
-    """
-    Validate if a namespace exists and provide its details
-    
-    Args:
-        ns_id: Namespace ID to validate
-    
-    Returns:
-        Validation result with namespace details or error
-    """
+# Helper function: Internal validate namespace (used by both validate_namespace tool and other functions)
+def _internal_validate_namespace(ns_id: str) -> Dict:
+    """Internal helper function to validate if a namespace exists"""
     try:
-        ns_info = get_namespace(ns_id)
+        ns_info = _internal_get_namespace(ns_id)
         if "error" in ns_info:
             return {
                 "valid": False,
@@ -918,21 +978,25 @@ def validate_namespace(ns_id: str) -> Dict:
             "suggestion": "Check your connection and try again"
         }
 
-# Helper function: Create namespace with validation
+# Helper function: Validate namespace exists
 @mcp.tool()
-def create_namespace_with_validation(name: str, description: Optional[str] = None) -> Dict:
+def validate_namespace(ns_id: str) -> Dict:
     """
-    Create a new namespace with validation and confirmation
+    Validate if a namespace exists and provide its details
     
     Args:
-        name: Name of the namespace to create
-        description: Description of the namespace (optional)
+        ns_id: Namespace ID to validate
     
     Returns:
-        Creation result with validation status
+        Validation result with namespace details or error
     """
+    return _internal_validate_namespace(ns_id)
+
+# Helper function: Internal create namespace with validation (used by both create_namespace_with_validation tool and other functions)
+def _internal_create_namespace_with_validation(name: str, description: Optional[str] = None) -> Dict:
+    """Internal helper function to create namespace with validation"""
     # First check if namespace already exists
-    validation = validate_namespace(name)
+    validation = _internal_validate_namespace(name)
     if validation["valid"]:
         return {
             "created": False,
@@ -944,7 +1008,7 @@ def create_namespace_with_validation(name: str, description: Optional[str] = Non
     
     # Create the namespace
     try:
-        result = create_namespace(name, description)
+        result = _internal_create_namespace(name, description)
         if "error" in result:
             return {
                 "created": False,
@@ -954,7 +1018,7 @@ def create_namespace_with_validation(name: str, description: Optional[str] = Non
             }
         
         # Validate the created namespace
-        validation = validate_namespace(name)
+        validation = _internal_validate_namespace(name)
         
         # Store namespace creation in memory
         _store_interaction_memory(
@@ -980,6 +1044,21 @@ def create_namespace_with_validation(name: str, description: Optional[str] = Non
             "error": f"Failed to create namespace: {str(e)}",
             "suggestion": "Please check your input and connection"
         }
+
+# Helper function: Create namespace with validation
+@mcp.tool()
+def create_namespace_with_validation(name: str, description: Optional[str] = None) -> Dict:
+    """
+    Create a new namespace with validation and confirmation
+    
+    Args:
+        name: Name of the namespace to create
+        description: Description of the namespace (optional)
+    
+    Returns:
+        Creation result with validation status
+    """
+    return _internal_create_namespace_with_validation(name, description)
 
 
 #####################################
@@ -1555,6 +1634,59 @@ def recommend_vm_spec(
     # Summarize response to reduce token usage
     return _summarize_vm_specs(raw_response, include_details=include_full_details)
 
+# Helper function: Internal MCI dynamic validation (used by both review and create functions)
+def _internal_review_mci_dynamic(
+    ns_id: str,
+    name: str,
+    vm_configurations: List[Dict],
+    description: str = "MCI created dynamically via MCP",
+    system_label: str = "",
+    label: Optional[Dict[str, str]] = None,
+    post_command: Optional[Dict] = None,
+    hold: bool = False
+) -> Dict:
+    """Internal helper function to review MCI dynamic configuration"""
+    # Build request data according to model.TbMciDynamicReq spec
+    data = {
+        "name": name,
+        "description": description,
+        "vm": vm_configurations
+    }
+    
+    # Add optional parameters
+    if system_label:
+        data["systemLabel"] = system_label
+    if label:
+        data["label"] = label
+    if post_command:
+        data["postCommand"] = post_command
+    if hold:
+        data["hold"] = hold
+    
+    # Make API request to review endpoint
+    url = f"/ns/{ns_id}/mciDynamicReview"
+    result = api_request("POST", url, json_data=data)
+    
+    # Enhance result with additional guidance
+    if isinstance(result, dict):
+        # Add user-friendly summary if validation passed
+        if result.get("summary", {}).get("validationPassed", False):
+            result["_guidance"] = "✅ Validation passed! You can proceed with create_mci_dynamic() using the same parameters."
+            result["_next_step"] = f"create_mci_dynamic(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>)"
+        else:
+            result["_guidance"] = "❌ Validation failed. Please address the issues before proceeding with MCI creation."
+            result["_next_step"] = "Fix the reported issues and run review_mci_dynamic_request() again."
+        
+        # Add workflow recommendations
+        result["_workflow_tips"] = [
+            "Always run review_mci_dynamic_request() before create_mci_dynamic()",
+            "Address all critical issues (errors) before deployment",
+            "Consider optimization suggestions for better performance",
+            "Use hold=True in create_mci_dynamic() for manual review if needed"
+        ]
+    
+    return result
+
 # Tool: Review MCI Dynamic Request (Pre-validation)
 @mcp.tool()
 def review_mci_dynamic_request(
@@ -1666,46 +1798,16 @@ def review_mci_dynamic_request(
     - Address all critical issues before proceeding
     - Consider optimization suggestions for better performance/cost
     """
-    # Build request data according to model.TbMciDynamicReq spec
-    data = {
-        "name": name,
-        "description": description,
-        "vm": vm_configurations
-    }
-    
-    # Add optional parameters
-    if system_label:
-        data["systemLabel"] = system_label
-    if label:
-        data["label"] = label
-    if post_command:
-        data["postCommand"] = post_command
-    if hold:
-        data["hold"] = hold
-    
-    # Make API request to review endpoint
-    url = f"/ns/{ns_id}/mciDynamicReview"
-    result = api_request("POST", url, json_data=data)
-    
-    # Enhance result with additional guidance
-    if isinstance(result, dict):
-        # Add user-friendly summary if validation passed
-        if result.get("summary", {}).get("validationPassed", False):
-            result["_guidance"] = "✅ Validation passed! You can proceed with create_mci_dynamic() using the same parameters."
-            result["_next_step"] = f"create_mci_dynamic(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>)"
-        else:
-            result["_guidance"] = "❌ Validation failed. Please address the issues before proceeding with MCI creation."
-            result["_next_step"] = "Fix the reported issues and run review_mci_dynamic_request() again."
-        
-        # Add workflow recommendations
-        result["_workflow_tips"] = [
-            "Always run review_mci_dynamic_request() before create_mci_dynamic()",
-            "Address all critical issues (errors) before deployment",
-            "Consider optimization suggestions for better performance",
-            "Use hold=True in create_mci_dynamic() for manual review if needed"
-        ]
-    
-    return result
+    return _internal_review_mci_dynamic(
+        ns_id=ns_id,
+        name=name,
+        vm_configurations=vm_configurations,
+        description=description,
+        system_label=system_label,
+        label=label,
+        post_command=post_command,
+        hold=hold
+    )
 
 # # Tool: Create MCI (Traditional method)
 # @mcp.tool()
@@ -1884,8 +1986,25 @@ def create_mci_dynamic(
         ns_id: Namespace ID
         name: MCI name (required)
         vm_configurations: List of VM configuration dictionaries (required). Each VM config should include:
-            - commonSpec: VM specification ID from recommend_vm_spec() (required)
-            - commonImage: CSP-specific image identifier from search_images() (optional - auto-mapped if omitted)
+            
+            **CRITICAL REQUIREMENTS FOR MCI DYNAMIC:**
+            - commonSpec: EXACT spec ID from recommend_vm_spec() API response (required)
+                * Must use full spec ID like "aws+ap-northeast-2+t2.small"
+                * Do NOT modify or truncate the spec ID
+                * Each spec ID is tied to specific CSP provider and region
+            
+            - commonImage: EXACT cspImageName from search_images() API response (required for production)
+                * Must use exact "cspImageName" field value from image search results
+                * CSP-specific image identifier (e.g., "ami-0c02fb55956c7d316" for AWS)
+                * MUST match the same CSP provider and region as commonSpec
+                * Example workflow:
+                  1. Use recommend_vm_spec() to get spec ID "aws+ap-northeast-2+t2.small"
+                  2. Extract provider "aws" and region "ap-northeast-2" from spec ID
+                  3. Use search_images(provider="aws", region="ap-northeast-2") to get images
+                  4. Use exact "cspImageName" from search results (e.g., "ami-0c02fb55956c7d316")
+                  5. Set commonSpec="aws+ap-northeast-2+t2.small", commonImage="ami-0c02fb55956c7d316"
+            
+            **Other Configuration Options:**
             - name: VM name or subGroup name (optional)
             - description: VM description (optional)
             - subGroupSize: Number of VMs in subgroup, default "1" (optional)
@@ -1895,7 +2014,15 @@ def create_mci_dynamic(
             - vmUserPassword: VM user password (optional)
             - label: Key-value pairs for VM labeling (optional)
             - os_requirements: Dict with os_type, use_case for auto image selection (optional)
+        
         description: MCI description (optional)
+        
+    **MANDATORY VALIDATION WORKFLOW FOR MCI DYNAMIC:**
+    1. Always use recommend_vm_spec() first to get valid spec IDs
+    2. Extract CSP provider and region from each spec ID (format: "provider+region+instance_type")
+    3. Use search_images() with matching provider/region to get compatible images
+    4. Use EXACT spec ID in commonSpec and EXACT cspImageName in commonImage
+    5. Validate that spec and image are from same CSP provider and region
         system_label: System label for special purposes (optional)
         label: Key-value pairs for MCI labeling (optional)
         post_command: Post-deployment command configuration with format:
@@ -1954,10 +2081,10 @@ def create_mci_dynamic(
     
     # STEP 0: AUTOMATIC PRE-VALIDATION (always performed unless explicitly skipped)
     if not force_create:
-        print("🔍 Performing automatic pre-validation of MCI configuration...")
+        logger.info("🔍 Performing automatic pre-validation of MCI configuration...")
         
-        # Run comprehensive validation using review API
-        review_result = review_mci_dynamic_request(
+        # Run comprehensive validation using internal helper function
+        review_result = _internal_review_mci_dynamic(
             ns_id=ns_id,
             name=name,
             vm_configurations=vm_configurations,
@@ -1991,14 +2118,14 @@ def create_mci_dynamic(
                 ]
             }
         else:
-            print("✅ Pre-validation passed! Proceeding with MCI creation workflow...")
+            logger.info("✅ Pre-validation passed! Proceeding with MCI creation workflow...")
             
             # Add validation summary to any confirmation workflow
             if not skip_confirmation:
-                print("📊 Validation Summary:")
-                print(f"   • Total VMs validated: {len(vm_configurations)}")
-                print(f"   • Warnings: {review_result.get('summary', {}).get('totalWarnings', 0)}")
-                print(f"   • Info messages: {review_result.get('summary', {}).get('totalInfo', 0)}")
+                logger.debug("📊 Validation Summary:")
+                logger.debug(f"   • Total VMs validated: {len(vm_configurations)}")
+                logger.debug(f"   • Warnings: {review_result.get('summary', {}).get('totalWarnings', 0)}")
+                logger.debug(f"   • Info messages: {review_result.get('summary', {}).get('totalInfo', 0)}")
     
     # STEP 1: User confirmation workflow (unless explicitly skipped or forced)
     if not skip_confirmation and not force_create:
@@ -2046,7 +2173,7 @@ def create_mci_dynamic(
         return creation_summary
     
     # STEP 1: Validate namespace first
-    ns_validation = validate_namespace(ns_id)
+    ns_validation = _internal_validate_namespace(ns_id)
     if not ns_validation["valid"]:
         return {
             "error": f"Namespace '{ns_id}' validation failed",
@@ -2335,7 +2462,7 @@ def create_mci_with_proper_spec_mapping(
     }
     
     # Validate namespace
-    ns_validation = validate_namespace(ns_id)
+    ns_validation = _internal_validate_namespace(ns_id)
     if not ns_validation["valid"]:
         result["status"] = "failed"
         result["error"] = f"Invalid namespace: {ns_id}"
@@ -2703,13 +2830,13 @@ def create_mci_with_spec_first(
     
     # Step 1: Handle namespace management
     if preferred_ns_id:
-        ns_validation = validate_namespace(preferred_ns_id)
+        ns_validation = _internal_validate_namespace(preferred_ns_id)
         if ns_validation["valid"]:
             target_ns_id = preferred_ns_id
             result["namespace_management"]["action"] = "used_existing"
         else:
             if create_ns_if_missing:
-                creation_result = create_namespace_with_validation(
+                creation_result = _internal_create_namespace_with_validation(
                     preferred_ns_id,
                     ns_description or f"Namespace for MCI {name}"
                 )
@@ -2970,7 +3097,7 @@ def create_mci_with_namespace_management(
     # Step 2: Handle namespace selection/creation
     if preferred_ns_id:
         # User has a preference
-        ns_validation = validate_namespace(preferred_ns_id)
+        ns_validation = _internal_validate_namespace(preferred_ns_id)
         if ns_validation["valid"]:
             # Preferred namespace exists, use it
             target_ns_id = preferred_ns_id
@@ -2980,7 +3107,7 @@ def create_mci_with_namespace_management(
             # Preferred namespace doesn't exist
             if create_ns_if_missing:
                 # Create the preferred namespace
-                creation_result = create_namespace_with_validation(
+                creation_result = _internal_create_namespace_with_validation(
                     preferred_ns_id, 
                     ns_description or f"Namespace for MCI {name}"
                 )
@@ -4441,7 +4568,54 @@ def mci_management_prompt() -> str:
             "commonSpec": spec["id"],  # MUST use this exact ID - NEVER modify
             "name": f"vm-{spec['providerName']}-{len(vm_configs)+1}",
             "subGroupSize": "1"
+            # commonImage: Optional - if omitted, will be auto-mapped based on commonSpec
         })
+    
+    **🔑 CRITICAL MCI Dynamic Request Body Configuration:**
+    
+    **commonSpec (MANDATORY):**
+    - MUST be exact specId from recommend_vm_spec() results
+    - Format: "{provider}+{region}+{spec_name}" (e.g., "aws+ap-northeast-2+t3.medium")
+    - NEVER manually construct - always get from recommend_vm_spec()
+    
+    **commonImage (HIGHLY RECOMMENDED):**
+    - Should be exact cspImageName from search_images() results
+    - If provided: MUST match the CSP/region of commonSpec
+    - If omitted: System will auto-map compatible image (less control)
+    - Examples: 
+      * AWS: "ami-0c02fb55956c7d316" 
+      * Azure: "/subscriptions/.../resourceGroups/.../providers/Microsoft.Compute/images/ubuntu-20.04"
+      * GCP: "projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240307a"
+    
+    **RECOMMENDED WORKFLOW for Explicit Image Control:**
+    ```python
+    # 1. Get specifications
+    specs = recommend_vm_spec(...)
+    
+    # 2. For each spec, get compatible images
+    for spec in specs["recommended_specs"]:
+        # Extract provider and region from spec ID
+        provider, region, spec_name = spec["id"].split("+")
+        
+        # Search for compatible images
+        images = search_images(
+            ns_id="default",
+            options={
+                "cspImageName": "",  # All images
+                "connectionName": f"{provider}-{region}",
+                "os": "ubuntu"
+            }
+        )
+        
+        # Create VM config with explicit spec and image
+        vm_config = {
+            "commonSpec": spec["id"],  # Exact specId
+            "commonImage": images["images"][0]["cspImageName"],  # Exact cspImageName
+            "name": f"vm-{provider}-{len(vm_configs)+1}",
+            "subGroupSize": "1"
+        }
+        vm_configs.append(vm_config)
+    ```
     
     # STEP 4: Create MCI with validated specs
     mci_result = create_mci_dynamic(
@@ -4909,10 +5083,11 @@ def image_mci_workflow_prompt() -> str:
     vm_configs = []
     for i, spec in enumerate(specs[:2]):  # Use different specs for multi-CSP
         vm_configs.append({
-            "commonSpec": spec["id"],  # Only spec needed
+            "commonSpec": spec["id"],  # EXACT specId - never modify
             "name": f"vm-{i+1}",
             "description": f"Auto-mapped VM {i+1}",
             "os_requirements": {"os_type": "ubuntu", "use_case": "web-server"}
+            # commonImage omitted - will be auto-mapped to compatible image
         })
     
     # Create MCI with automatic spec-to-image mapping
@@ -4920,6 +5095,59 @@ def image_mci_workflow_prompt() -> str:
         ns_id="my-project",
         name="multi-csp-infrastructure", 
         vm_configurations=vm_configs  # Auto-mapping ensures correct images
+    )
+    ```
+    
+    **🔴 CRITICAL: MCI Dynamic Request Body Requirements**
+    
+    **FOR ALL MCI Creation (review_mci_dynamic_request + create_mci_dynamic):**
+    
+    **commonSpec (MANDATORY):**
+    - MUST be exact specId from recommend_vm_spec() results
+    - Format: "{csp}+{region}+{spec_name}" (e.g., "aws+us-east-1+t3.medium")
+    - ❌ NEVER manually construct or modify spec IDs
+    - ✅ ALWAYS use recommend_vm_spec() to get valid specs
+    
+    **commonImage (OPTIONAL but RECOMMENDED):**
+    - Should be exact cspImageName from search_images() results
+    - Format varies by CSP:
+      * AWS: "ami-xxxxxxxxxxxxxxxxx"
+      * Azure: "/subscriptions/.../images/image-name"  
+      * GCP: "projects/project-id/global/images/image-name"
+    - ⚠️ If provided: MUST be compatible with commonSpec's CSP/region
+    - ✅ If omitted: System auto-maps compatible image (easier but less control)
+    
+    **EXAMPLE - Manual Spec + Image Selection:**
+    ```python
+    # 1. Get valid specifications
+    specs = recommend_vm_spec(filter_policies={"vCPU": {"min": 2}})
+    
+    # 2. For precise control, get compatible images
+    spec = specs["recommended_specs"][0]  # Take first recommended spec
+    csp, region, spec_name = spec["id"].split("+")  # Parse spec ID
+    
+    # Search for Ubuntu images in same CSP/region
+    images = search_images(
+        ns_id="default",
+        options={
+            "connectionName": f"{csp}-{region}",  # Match CSP/region
+            "os": "ubuntu"
+        }
+    )
+    
+    # Create VM config with explicit spec and image
+    vm_config = {
+        "commonSpec": spec["id"],  # Exact specId: "aws+us-east-1+t3.medium"
+        "commonImage": images["images"][0]["cspImageName"],  # Exact cspImageName: "ami-12345"
+        "name": "web-server-vm",
+        "subGroupSize": "1"
+    }
+    
+    # Use in MCI creation
+    create_mci_dynamic(
+        ns_id="my-project",
+        name="web-infrastructure",
+        vm_configurations=[vm_config]
     )
     ```
     
@@ -5111,9 +5339,11 @@ def image_mci_workflow_prompt() -> str:
     What would you like to help you create today?
     """
 
-logger.info("MCP server initialization complete with interaction memory capabilities")
-logger.info("Available memory functions: store_interaction_memory, get_interaction_history, get_session_summary, search_interaction_memory, clear_interaction_memory")
-logger.info("Automatic memory storage enabled for: MCI creation, command execution, namespace management")
+logger.info("=" * 60)
+logger.info("🚀 CB-Tumblebug MCP Server initialization complete!")
+logger.info("=" * 60)
+logger.debug("Available memory functions: store_interaction_memory, get_interaction_history, get_session_summary, search_interaction_memory, clear_interaction_memory")
+logger.debug("Automatic memory storage enabled for: MCI creation, command execution, namespace management")
 
 #####################################
 # MCI Status Monitoring & Recovery Tools
@@ -5589,7 +5819,7 @@ def preview_mci_configuration(
     }
     
     # Step 1: Validate namespace
-    ns_validation = validate_namespace(ns_id)
+    ns_validation = _internal_validate_namespace(ns_id)
     preview_result["namespace_validation"] = ns_validation
     
     if not ns_validation["valid"]:
@@ -8944,7 +9174,7 @@ def execute_compute_task(
         workflow_result["status"] = "preparing_namespace"
         if is_temporary_namespace:
             # Create temporary namespace
-            namespace_result = create_namespace_with_validation(
+            namespace_result = _internal_create_namespace_with_validation(
                 name=target_namespace,
                 description=f"Temporary namespace for compute task: {task_description[:50]}..."
             )
@@ -8955,7 +9185,7 @@ def execute_compute_task(
                 return workflow_result
         else:
             # Validate existing namespace
-            namespace_validation = validate_namespace(target_namespace)
+            namespace_validation = _internal_validate_namespace(target_namespace)
             if not namespace_validation["valid"]:
                 workflow_result["status"] = "failed"
                 workflow_result["error"] = f"Namespace '{target_namespace}' is not valid or accessible"
@@ -11003,3 +11233,14 @@ This comprehensive validation system ensures reliable, cost-effective, and prope
 **🎯 Remember: Setting proper expectations prevents user frustration and ensures smooth deployment experiences.**
 """
 
+if __name__ == "__main__":
+    # Map our log level to FastMCP/uvicorn log level
+    fastmcp_log_level = "warning" if log_level_value > logging.DEBUG else "info"
+    
+    mcp.run(
+        transport="http",
+        host=host,
+        port=port,
+        path="/mcp",
+        log_level=fastmcp_log_level,
+    )
