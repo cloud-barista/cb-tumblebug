@@ -17,7 +17,6 @@ package infra
 import (
 	"encoding/json"
 	"fmt"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -70,13 +69,9 @@ func createVmObjectSafe(nsId, mciId string, vmInfoData *model.TbVmInfo) error {
 // createVmSafe creates VM without WaitGroup management
 func createVmSafe(nsId, mciId string, vmInfoData *model.TbVmInfo, option string) error {
 	var wg sync.WaitGroup
-	log.Debug().Msgf("⭐ createVmSafe START for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 	wg.Add(1)
-	log.Debug().Msgf("⭐ createVmSafe AFTER wg.Add(1) for VM: %s", vmInfoData.Name)
 	err := CreateVm(&wg, nsId, mciId, vmInfoData, option)
-	log.Debug().Msgf("⭐ createVmSafe BEFORE wg.Wait() for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 	wg.Wait()
-	log.Debug().Msgf("⭐ createVmSafe AFTER wg.Wait() for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 	return err
 }
 
@@ -778,14 +773,10 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbVmReq, newSu
 		// Avoid concurrent requests to CSP.
 		time.Sleep(time.Millisecond * 1000)
 
-		log.Debug().Msgf("⭐ BEFORE wg.Add(1) for VM: %s, current goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 		wg.Add(1)
-		log.Debug().Msgf("⭐ AFTER wg.Add(1) for VM: %s, current goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 		go CreateVm(&wg, nsId, mciId, &vmInfoData, option)
 	}
-	log.Debug().Msgf("⭐ BEFORE wg.Wait() in CreateMci, total goroutines: %d", runtime.NumGoroutine())
 	wg.Wait()
-	log.Debug().Msgf("⭐ AFTER wg.Wait() in CreateMci, total goroutines: %d", runtime.NumGoroutine())
 
 	//Update MCI status
 
@@ -1095,39 +1086,17 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 		}
 
 		wg.Add(1)
-		log.Debug().Msgf("⭐ MAIN wg.Add(1) for VM: %s, total goroutines: %d", config.vmInfo.Id, runtime.NumGoroutine())
 		go func(vmData model.TbVmInfo, vmName string) {
-			log.Debug().Msgf("⭐ MAIN goroutine START for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
-			defer func() {
-				log.Debug().Msgf("⭐ MAIN goroutine DEFER wg.Done() for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
-				wg.Done()
-				log.Debug().Msgf("⭐ MAIN goroutine DEFER AFTER wg.Done() for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
-			}()
-			log.Debug().Msgf("⭐ MAIN calling createVmSafe for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
+			defer wg.Done()
 			if err := createVmSafe(nsId, mciId, &vmData, option); err != nil {
-				log.Debug().Msgf("⭐ MAIN createVmSafe returned ERROR for VM: %s, error: %v, goroutines: %d", vmName, err, runtime.NumGoroutine())
-				log.Debug().Msgf("⭐ MAIN BEFORE errorMu.Lock() for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
 				errorMu.Lock()
-				log.Debug().Msgf("⭐ MAIN AFTER errorMu.Lock() for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
-				log.Debug().Msgf("⭐ MAIN BEFORE append createErrors for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
 				createErrors = append(createErrors, fmt.Errorf("VM creation failed for '%s': %w", vmName, err))
-				log.Debug().Msgf("⭐ MAIN AFTER append createErrors for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
-				log.Debug().Msgf("⭐ MAIN BEFORE addVmError() for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
 				addVmErrorUnsafe(&vmCreateErrors, vmName, err.Error(), "vm_creation")
-				log.Debug().Msgf("⭐ MAIN AFTER addVmError() for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
-				log.Debug().Msgf("⭐ MAIN BEFORE errorMu.Unlock() for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
 				errorMu.Unlock()
-				log.Debug().Msgf("⭐ MAIN AFTER errorMu.Unlock() for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
-				log.Debug().Msgf("⭐ MAIN after error handling for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
-			} else {
-				log.Debug().Msgf("⭐ MAIN createVmSafe returned SUCCESS for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
 			}
-			log.Debug().Msgf("⭐ MAIN goroutine END for VM: %s, goroutines: %d", vmName, runtime.NumGoroutine())
 		}(vmInfoData, config.vmInfo.Id)
 	}
-	log.Debug().Msgf("⭐ MAIN BEFORE wg.Wait(), total goroutines: %d", runtime.NumGoroutine())
 	wg.Wait()
-	log.Debug().Msgf("⭐ MAIN AFTER wg.Wait(), total goroutines: %d", runtime.NumGoroutine())
 
 	// Check for VM creation errors
 	if len(createErrors) > 0 {
@@ -1542,9 +1511,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 	if deployOption == "hold" {
 		option = "hold"
 	}
-	log.Debug().Msgf("⭐ CreateMciDynamic BEFORE calling CreateMci, goroutines: %d, mciReq VMs: %d", runtime.NumGoroutine(), len(mciReq.Vm))
 	result, err := CreateMci(nsId, &mciReq, option)
-	log.Debug().Msgf("⭐ CreateMciDynamic AFTER calling CreateMci, goroutines: %d, error: %v", runtime.NumGoroutine(), err)
 	return result, err
 }
 
@@ -2259,13 +2226,8 @@ func CreateVmObject(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *m
 // CreateVm is func to create VM (option = "register" for register existing VM)
 func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.TbVmInfo, option string) error {
 	log.Info().Msgf("Start to create VM: %s", vmInfoData.Name)
-	log.Debug().Msgf("⭐ CreateVm START for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 	//goroutin
-	defer func() {
-		log.Debug().Msgf("⭐ CreateVm DEFER for VM: %s, calling wg.Done(), goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
-		wg.Done()
-		log.Debug().Msgf("⭐ CreateVm DEFER AFTER wg.Done() for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
-	}()
+	defer wg.Done()
 
 	var err error = nil
 	switch {
@@ -2290,11 +2252,8 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 	if err != nil {
 		vmInfoData.Status = model.StatusFailed
 		vmInfoData.SystemMessage = err.Error()
-		log.Debug().Msgf("⭐ BEFORE UpdateVmInfo (VALIDATION ERROR case) for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 		UpdateVmInfo(nsId, mciId, *vmInfoData)
-		log.Debug().Msgf("⭐ AFTER UpdateVmInfo (VALIDATION ERROR case) for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 		log.Error().Err(err).Msg("")
-		log.Debug().Msgf("⭐ CreateVm RETURNING VALIDATION ERROR for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 		return err
 	}
 
@@ -2307,11 +2266,8 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 			err := fmt.Errorf("vmInfoData.CspResourceId is empty (required for register VM)")
 			vmInfoData.Status = model.StatusFailed
 			vmInfoData.SystemMessage = err.Error()
-			log.Debug().Msgf("⭐ BEFORE UpdateVmInfo (REGISTER ERROR case) for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 			UpdateVmInfo(nsId, mciId, *vmInfoData)
-			log.Debug().Msgf("⭐ AFTER UpdateVmInfo (REGISTER ERROR case) for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 			log.Error().Err(err).Msg("")
-			log.Debug().Msgf("⭐ CreateVm RETURNING REGISTER ERROR for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 			return err
 		}
 	}
@@ -2459,7 +2415,6 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 		url = model.SpiderRestUrl + "/regvm"
 	}
 
-	log.Debug().Msgf("⭐ BEFORE CB-Spider call for VM: %s, goroutines: %d, URL: %s", vmInfoData.Name, runtime.NumGoroutine(), url)
 	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -2470,19 +2425,14 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 		&callResult,
 		clientManager.MediumDuration,
 	)
-	log.Debug().Msgf("⭐ AFTER CB-Spider call for VM: %s, goroutines: %d, error: %v", vmInfoData.Name, runtime.NumGoroutine(), err)
 
 	if err != nil {
-		log.Error().Msgf("⭐ CB-Spider ERROR for VM: %s, error: %v", vmInfoData.Name, err)
 		err = fmt.Errorf("%v", err)
 		vmInfoData.Status = model.StatusFailed
 		vmInfoData.SystemMessage = err.Error()
-		log.Debug().Msgf("⭐ BEFORE UpdateVmInfo (ERROR case) for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 		UpdateVmInfo(nsId, mciId, *vmInfoData)
-		log.Debug().Msgf("⭐ AFTER UpdateVmInfo (ERROR case) for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 		msg := fmt.Sprintf("Failed to create VM %s request body to Spider: %v", vmInfoData.Name, requestBody)
 		log.Error().Err(err).Msg(msg)
-		log.Debug().Msgf("⭐ CreateVm RETURNING ERROR for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 		return err
 	}
 
@@ -2596,12 +2546,9 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 		err = fmt.Errorf("cannot Fetch Vm Status from CSP: %v", err)
 		vmInfoData.Status = model.StatusFailed
 		vmInfoData.SystemMessage = err.Error()
-		log.Debug().Msgf("⭐ BEFORE UpdateVmInfo (FETCH STATUS ERROR case) for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 		UpdateVmInfo(nsId, mciId, *vmInfoData)
-		log.Debug().Msgf("⭐ AFTER UpdateVmInfo (FETCH STATUS ERROR case) for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 
 		log.Error().Err(err).Msg("")
-		log.Debug().Msgf("⭐ CreateVm RETURNING FETCH STATUS ERROR for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 
 		return err
 	}
@@ -2617,9 +2564,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 	vmInfoData.CreatedTime = t.Format("2006-01-02 15:04:05")
 	log.Debug().Msg(vmInfoData.CreatedTime)
 
-	log.Debug().Msgf("⭐ BEFORE UpdateVmInfo (SUCCESS case) for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 	UpdateVmInfo(nsId, mciId, *vmInfoData)
-	log.Debug().Msgf("⭐ AFTER UpdateVmInfo (SUCCESS case) for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 
 	// Store label info using CreateOrUpdateLabel
 	labels := map[string]string{
@@ -2644,16 +2589,12 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 		err = fmt.Errorf("cannot create label object: %v", err)
 		vmInfoData.Status = model.StatusFailed
 		vmInfoData.SystemMessage = err.Error()
-		log.Debug().Msgf("⭐ BEFORE UpdateVmInfo (LABEL ERROR case) for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 		UpdateVmInfo(nsId, mciId, *vmInfoData)
-		log.Debug().Msgf("⭐ AFTER UpdateVmInfo (LABEL ERROR case) for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 
 		log.Error().Err(err).Msg("")
-		log.Debug().Msgf("⭐ CreateVm RETURNING LABEL ERROR for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 		return err
 	}
 
-	log.Debug().Msgf("⭐ CreateVm SUCCESS for VM: %s, goroutines: %d", vmInfoData.Name, runtime.NumGoroutine())
 	return nil
 }
 

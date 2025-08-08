@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"runtime"
 
 	"strconv"
 	"strings"
@@ -1417,14 +1416,9 @@ func UpdateMciInfo(nsId string, mciInfoData model.TbMciInfo) {
 
 // UpdateVmInfo is func to update VM Info
 func UpdateVmInfo(nsId string, mciId string, vmInfoData model.TbVmInfo) {
-	log.Debug().Msgf("⭐ UpdateVmInfo START for VM: %s, goroutines: %d", vmInfoData.Id, runtime.NumGoroutine())
-	log.Debug().Msgf("⭐ UpdateVmInfo BEFORE mciInfoMutex.Lock() for VM: %s", vmInfoData.Id)
 	mciInfoMutex.Lock()
-	log.Debug().Msgf("⭐ UpdateVmInfo AFTER mciInfoMutex.Lock() for VM: %s", vmInfoData.Id)
 	defer func() {
-		log.Debug().Msgf("⭐ UpdateVmInfo DEFER mciInfoMutex.Unlock() for VM: %s", vmInfoData.Id)
 		mciInfoMutex.Unlock()
-		log.Debug().Msgf("⭐ UpdateVmInfo DEFER AFTER mciInfoMutex.Unlock() for VM: %s, goroutines: %d", vmInfoData.Id, runtime.NumGoroutine())
 	}()
 
 	key := common.GenMciKey(nsId, mciId, vmInfoData.Id)
