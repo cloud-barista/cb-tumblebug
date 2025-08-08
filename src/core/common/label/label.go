@@ -184,7 +184,7 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 	if connectionName, exists := labelInfo.Labels[model.LabelConnectionName]; exists && connectionName != "" {
 		if isCSPSyncEnabled(labelType, connectionName) { // Note: In the case of VPN or specific CSP combinations, label synchronization with CSP is skipped.
 			lbs := ListCSPResourceLabel(labelType, uid, connectionName)
-			log.Info().Msgf("ListCSPResourceLabel: %v", lbs)
+			// log.Info().Msgf("ListCSPResourceLabel: %v", lbs)
 
 			// Merge CSP labels with existing labels (existing labels have priority)
 			for key, value := range lbs {
