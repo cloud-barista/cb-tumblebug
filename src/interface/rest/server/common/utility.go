@@ -442,12 +442,6 @@ func RestDeleteObjects(c echo.Context) error {
 	return SendMessage(c, http.StatusOK, "Objects have been deleted")
 }
 
-// Request struct for RestInspectResources
-type RestInspectResourcesRequest struct {
-	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"`
-	ResourceType   string `json:"resourceType" example:"vNet" enums:"vNet,securityGroup,sshKey,vm"`
-}
-
 // RestInspectResources godoc
 // @ID InspectResources
 // @Summary Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP
@@ -455,14 +449,14 @@ type RestInspectResourcesRequest struct {
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
-// @Param connectionName body RestInspectResourcesRequest true "Specify connectionName and resource type"
+// @Param connectionName body model.InspectResourcesRequest true "Specify connectionName and resource type"
 // @Success 200 {object} model.InspectResource
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /inspectResources [post]
 func RestInspectResources(c echo.Context) error {
 
-	u := &RestInspectResourcesRequest{}
+	u := &model.InspectResourcesRequest{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}

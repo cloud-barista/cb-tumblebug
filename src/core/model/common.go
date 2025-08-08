@@ -403,3 +403,53 @@ type RegisterationOverview struct {
 	NLB           int `json:"nlb"`
 	Failed        int `json:"failed"`
 }
+
+// InspectResourcesRequest struct for Inspect Resources Request
+type InspectResourcesRequest struct {
+	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"`
+	ResourceType   string `json:"resourceType" example:"vNet" enums:"vNet,subnet,securityGroup,sshKey,vm"`
+}
+
+// CspResourceStatusRequest is struct for requesting CSP resource status from CB-Spider
+type CspResourceStatusRequest struct {
+	ConnectionName string `json:"ConnectionName"`
+}
+
+// CspResourceStatusResponse is struct for CSP resource status response from CB-Spider
+type CspResourceStatusResponse struct {
+	ConnectionName string        `json:"connectionName"`
+	ResourceType   string        `json:"resourceType"`
+	AllList        SpiderAllList `json:"allList"`
+	SystemMessage  string        `json:"systemMessage,omitempty"`
+	Error          string        `json:"error,omitempty"`
+}
+
+// SpiderVpcInfo is struct for VPC information from CB-Spider
+type SpiderVpcInfo struct {
+	IId            IID                `json:"iId"`
+	IPv4_CIDR      string             `json:"ipv4_CIDR"`
+	SubnetInfoList []SpiderSubnetInfo `json:"subnetInfoList"`
+	KeyValueList   []KeyValue         `json:"keyValueList"`
+	TagList        []KeyValue         `json:"tagList"`
+}
+
+// SpiderSubnetInfo is struct for Subnet information from CB-Spider
+type SpiderSubnetInfo struct {
+	IId          IID        `json:"iId"`
+	IPv4_CIDR    string     `json:"ipv4_CIDR"`
+	KeyValueList []KeyValue `json:"keyValueList"`
+	TagList      []KeyValue `json:"tagList"`
+}
+
+// SpiderAllVpcInfoWrapper is struct for wrapping VPC info response from CB-Spider
+type SpiderAllVpcInfoWrapper struct {
+	ResourceType string               `json:"resourceType"`
+	AllListInfo  SpiderAllVpcListInfo `json:"allListInfo"`
+}
+
+// SpiderAllVpcListInfo is struct for VPC list info from CB-Spider
+type SpiderAllVpcListInfo struct {
+	MappedInfoList  []SpiderVpcInfo `json:"mappedInfoList"`
+	OnlySpiderList  []SpiderVpcInfo `json:"onlySpiderList"`
+	OnlyCSPInfoList []SpiderVpcInfo `json:"onlyCSPInfoList"`
+}
