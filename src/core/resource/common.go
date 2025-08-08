@@ -1723,3 +1723,377 @@ func GetCspResourceName(nsId string, resourceType string, resourceId string) (st
 		return "", fmt.Errorf("invalid resourceType")
 	}
 }
+
+// GetCspResourceId is func to retrieve CSP native resource ID (SystemId)
+func GetCspResourceId(nsId string, resourceType string, resourceId string) (string, error) {
+
+	if strings.EqualFold(resourceType, model.StrSpec) {
+		specInfo, err := GetSpec(nsId, resourceId)
+		if err != nil {
+			return "", err
+		}
+		return specInfo.CspSpecName, nil // For Spec, name and id are the same
+	}
+	if strings.EqualFold(resourceType, model.StrImage) {
+		imageInfo, err := GetImage(nsId, resourceId)
+		if err != nil {
+			return "", err
+		}
+		return imageInfo.CspImageName, nil // For Image, name and id are the same
+	}
+
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	if key == "/invalidKey" {
+		return "", fmt.Errorf("invalid nsId or resourceType or resourceId")
+	}
+	keyValue, err := kvstore.GetKv(key)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return "", err
+	}
+
+	if keyValue == (kvstore.KeyValue{}) {
+		//log.Error().Err(err).Msg("")
+		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
+		return "", fmt.Errorf("cannot find the key " + key)
+	}
+
+	// need to handle subnet in a different way
+
+	switch resourceType {
+	case model.StrCustomImage:
+		content := model.ResourceIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspResourceId, nil // Return CspResourceId instead of CspResourceName
+	case model.StrSSHKey:
+		content := model.ResourceIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspResourceId, nil
+	case model.StrVNet:
+		content := model.ResourceIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspResourceId, nil
+	case model.StrSecurityGroup:
+		content := model.ResourceIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspResourceId, nil
+	case model.StrDataDisk:
+		content := model.ResourceIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspResourceId, nil
+
+	default:
+		return "", fmt.Errorf("invalid resourceType")
+	}
+}
+
+// GetCspResourceStatus retrieves resource status from CB-Spider for a specific connection and resource type
+//
+// This function queries CB-Spider to get comprehensive resource information including:
+// - Resources managed by both Tumblebug and Spider (MappedList)
+// - Resources only managed by Spider (OnlySpiderList)
+// - Resources only existing in CSP (OnlyCSPList)
+//
+// Parameters:
+//   - connConfig: Connection configuration name for the target CSP
+//   - resourceType: Type of resource to query (e.g., model.StrVM, model.StrVNet, etc.)
+//
+// Returns:
+//   - model.CspResourceStatusResponse: Structured response containing resource lists and metadata
+//   - error: Error if the operation fails
+//
+// Example usage:
+//
+//	response, err := GetCspResourceStatus("aws-connection", model.StrVM)
+//	if err != nil {
+//	    log.Error().Err(err).Msg("Failed to get CSP resource status")
+//	    return err
+//	}
+//
+//	fmt.Printf("Found %d VMs mapped in Spider\n", len(response.AllList.MappedList))
+//	fmt.Printf("Found %d VMs only in CSP\n", len(response.AllList.OnlyCSPList))
+func GetCspResourceStatus(connConfig string, resourceType string) (model.CspResourceStatusResponse, error) {
+	var response model.CspResourceStatusResponse
+
+	// Initialize response with basic information
+	response.ConnectionName = connConfig
+	response.ResourceType = resourceType
+
+	// Create HTTP client with connection close for efficiency
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
+
+	// Create request body
+	requestBody := model.CspResourceStatusRequest{
+		ConnectionName: connConfig,
+	}
+
+	// Determine Spider API endpoint based on resource type
+	var spiderRequestURL string
+	var isSubnetResource bool = false
+
+	switch resourceType {
+	case model.StrNLB:
+		spiderRequestURL = model.SpiderRestUrl + "/allnlb"
+	case model.StrVM:
+		spiderRequestURL = model.SpiderRestUrl + "/allvm"
+	case model.StrVNet:
+		spiderRequestURL = model.SpiderRestUrl + "/allvpc"
+	case model.StrSubnet:
+		// Subnet requires special handling via VPC info
+		spiderRequestURL = model.SpiderRestUrl + "/allvpcinfo"
+		isSubnetResource = true
+	case model.StrSecurityGroup:
+		spiderRequestURL = model.SpiderRestUrl + "/allsecuritygroup"
+	case model.StrSSHKey:
+		spiderRequestURL = model.SpiderRestUrl + "/allkeypair"
+	case model.StrDataDisk:
+		spiderRequestURL = model.SpiderRestUrl + "/alldisk"
+	case model.StrCustomImage:
+		spiderRequestURL = model.SpiderRestUrl + "/allmyimage"
+	default:
+		err := fmt.Errorf("unsupported resource type: %s", resourceType)
+		response.Error = err.Error()
+		return response, err
+	}
+
+	// Make HTTP request to CB-Spider
+	var resp *resty.Response
+	var err error
+
+	if isSubnetResource {
+		// For Subnet, use different endpoint and query parameter
+		resp, err = client.R().
+			SetHeader("Content-Type", "application/json").
+			SetQueryParam("ConnectionName", connConfig).
+			SetResult(&model.SpiderAllVpcInfoWrapper{}).
+			Get(spiderRequestURL)
+	} else {
+		// For other resources, use standard body-based request
+		resp, err = client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(requestBody).
+			SetResult(&model.SpiderAllListWrapper{}).
+			Get(spiderRequestURL)
+	}
+
+	if err != nil {
+		log.Error().Err(err).Str("connection", connConfig).Str("resourceType", resourceType).
+			Msg("Failed to request CB-Spider for resource status")
+		response.Error = fmt.Sprintf("HTTP request failed: %v", err)
+		return response, fmt.Errorf("failed to request CB-Spider: %w", err)
+	}
+
+	// Check HTTP status code
+	if resp.StatusCode() >= 400 || resp.StatusCode() < 200 {
+		errorMsg := string(resp.Body())
+		log.Error().Int("statusCode", resp.StatusCode()).Str("connection", connConfig).
+			Str("resourceType", resourceType).Str("response", errorMsg).
+			Msg("CB-Spider returned error status")
+		response.Error = fmt.Sprintf("HTTP %d: %s", resp.StatusCode(), errorMsg)
+		return response, fmt.Errorf("CB-Spider error (HTTP %d): %s", resp.StatusCode(), errorMsg)
+	}
+
+	// Parse response from CB-Spider
+	if isSubnetResource {
+		// Special handling for Subnet resources
+		vpcInfoResponse, ok := resp.Result().(*model.SpiderAllVpcInfoWrapper)
+		if !ok {
+			err := fmt.Errorf("failed to parse VPC info response from CB-Spider")
+			response.Error = err.Error()
+			return response, err
+		}
+
+		// Extract all subnet SystemIds from all VPCs
+		var subnetList []model.SpiderNameIdSystemId
+		// Check all three lists: MappedInfoList, OnlySpiderList, and OnlyCSPInfoList
+		allVpcLists := [][]model.SpiderVpcInfo{
+			vpcInfoResponse.AllListInfo.MappedInfoList,
+			vpcInfoResponse.AllListInfo.OnlySpiderList,
+			vpcInfoResponse.AllListInfo.OnlyCSPInfoList,
+		}
+
+		for _, vpcList := range allVpcLists {
+			for _, vpc := range vpcList {
+				for _, subnet := range vpc.SubnetInfoList {
+					subnetList = append(subnetList, model.SpiderNameIdSystemId{
+						NameId:   subnet.IId.NameId,
+						SystemId: subnet.IId.SystemId,
+					})
+				}
+			}
+		}
+		log.Debug().Interface("subnetList", subnetList).Msg("Extracted subnet list from VPC info")
+
+		// For subnets, we only have OnlyCSPList since they're not managed directly by Spider
+		response.AllList = model.SpiderAllList{
+			MappedList:     []model.SpiderNameIdSystemId{},
+			OnlySpiderList: []model.SpiderNameIdSystemId{},
+			OnlyCSPList:    subnetList,
+		}
+	} else {
+		// Standard handling for other resources
+		spiderResponse, ok := resp.Result().(*model.SpiderAllListWrapper)
+		if !ok {
+			err := fmt.Errorf("failed to parse response from CB-Spider")
+			response.Error = err.Error()
+			return response, err
+		}
+
+		// Copy the AllList data to response
+		response.AllList = spiderResponse.AllList
+	}
+
+	// Add success message with resource counts
+	mappedCount := len(response.AllList.MappedList)
+	spiderOnlyCount := len(response.AllList.OnlySpiderList)
+	cspOnlyCount := len(response.AllList.OnlyCSPList)
+
+	response.SystemMessage = fmt.Sprintf("Successfully retrieved %s resources from %s: %d mapped, %d spider-only, %d csp-only",
+		resourceType, connConfig, mappedCount, spiderOnlyCount, cspOnlyCount)
+
+	log.Info().Str("connection", connConfig).Str("resourceType", resourceType).
+		Int("mapped", mappedCount).Int("spiderOnly", spiderOnlyCount).Int("cspOnly", cspOnlyCount).
+		Msg("Successfully retrieved CSP resource status")
+
+	return response, nil
+}
+
+// GetCspResourceStatusBatch retrieves resource status for multiple resource types in a single connection
+//
+// This is a convenience function that calls GetCspResourceStatus for multiple resource types
+// and returns a map of results. This is useful when you need to check multiple resource types
+// for the same connection configuration.
+//
+// Parameters:
+//   - connConfig: Connection configuration name for the target CSP
+//   - resourceTypes: List of resource types to query
+//
+// Returns:
+//   - map[string]model.CspResourceStatusResponse: Map of resource type to response
+//   - error: Error if any of the operations fail (returns first error encountered)
+//
+// Example usage:
+//
+//	resourceTypes := []string{model.StrVM, model.StrVNet, model.StrSecurityGroup}
+//	responses, err := GetCspResourceStatusBatch("aws-connection", resourceTypes)
+//	if err != nil {
+//	    log.Error().Err(err).Msg("Failed to get batch CSP resource status")
+//	    return err
+//	}
+//
+//	for resourceType, response := range responses {
+//	    fmt.Printf("%s: %s\n", resourceType, response.SystemMessage)
+//	}
+func GetCspResourceStatusBatch(connConfig string, resourceTypes []string) (map[string]model.CspResourceStatusResponse, error) {
+	results := make(map[string]model.CspResourceStatusResponse)
+
+	for _, resourceType := range resourceTypes {
+		response, err := GetCspResourceStatus(connConfig, resourceType)
+		if err != nil {
+			log.Error().Err(err).Str("connection", connConfig).Str("resourceType", resourceType).
+				Msg("Failed to get CSP resource status in batch operation")
+			return results, fmt.Errorf("failed to get status for %s in %s: %w", resourceType, connConfig, err)
+		}
+		results[resourceType] = response
+	}
+
+	log.Info().Str("connection", connConfig).Int("resourceTypes", len(resourceTypes)).
+		Msg("Successfully completed batch CSP resource status retrieval")
+
+	return results, nil
+}
+
+// CheckAssociatedCspResourceExistence checks if a CB-TB resource's associated CSP resource exists in Spider and CSP
+//
+// This function takes a CB-TB resource and checks if its corresponding CSP resource exists in:
+//   - CSP (Cloud Service Provider): Checks MappedList and OnlyCSPList
+//   - Spider (CB-Spider): Checks MappedList and OnlySpiderList
+//
+// Parameters:
+//   - nsId: Namespace ID of the CB-TB resource
+//   - resourceType: Type of the CB-TB resource (e.g., model.StrVM, model.StrVNet, etc.)
+//   - resourceId: ID of the CB-TB resource
+//   - connConfig: Connection configuration name for the target CSP
+//
+// Returns:
+//   - onCsp: true if the resource exists in CSP (either mapped or CSP-only)
+//   - onSpider: true if the resource exists in Spider (either mapped or Spider-only)
+//   - error: Error if the operation fails (connection errors, resource not found, etc.)
+//
+// Example usage:
+//
+//	onCsp, onSpider, err := CheckAssociatedCspResourceExistence("default", model.StrVM, "my-vm-01", "aws-connection")
+//	if err != nil {
+//	    log.Error().Err(err).Msg("Failed to check resource existence")
+//	    return err
+//	}
+//
+//	if onCsp && onSpider {
+//	    fmt.Println("Resource exists in both CSP and Spider (mapped)")
+//	} else if onCsp && !onSpider {
+//	    fmt.Println("Resource exists only in CSP")
+//	} else if !onCsp && onSpider {
+//	    fmt.Println("Resource exists only in Spider")
+//	} else {
+//	    fmt.Println("Resource does not exist in either CSP or Spider")
+//	}
+func CheckAssociatedCspResourceExistence(nsId string, resourceType string, resourceId string, connConfig string) (onCsp bool, onSpider bool, err error) {
+	// Initialize return values
+	onCsp = false
+	onSpider = false
+
+	// Get the CSP resource ID/name from CB-TB resource
+	cspResourceId, err := GetCspResourceId(nsId, resourceType, resourceId)
+	if err != nil {
+		log.Error().Err(err).Str("nsId", nsId).Str("resourceType", resourceType).
+			Str("resourceId", resourceId).Msg("Failed to get CSP resource ID from CB-TB resource")
+		return false, false, fmt.Errorf("failed to get CSP resource ID for %s/%s/%s: %w", nsId, resourceType, resourceId, err)
+	}
+
+	if cspResourceId == "" {
+		log.Warn().Str("nsId", nsId).Str("resourceType", resourceType).
+			Str("resourceId", resourceId).Msg("CSP resource ID is empty")
+		return false, false, fmt.Errorf("CSP resource ID is empty for %s/%s/%s", nsId, resourceType, resourceId)
+	}
+
+	// Get CSP resource status from Spider
+	response, err := GetCspResourceStatus(connConfig, resourceType)
+	if err != nil {
+		log.Error().Err(err).Str("connection", connConfig).Str("resourceType", resourceType).
+			Msg("Failed to get CSP resource status")
+		return false, false, fmt.Errorf("failed to get CSP resource status for %s/%s: %w", connConfig, resourceType, err)
+	}
+
+	// Check if the CSP resource exists in MappedList
+	for _, resource := range response.AllList.MappedList {
+		if resource.SystemId == cspResourceId {
+			log.Debug().Str("cspResourceId", cspResourceId).Str("systemId", resource.SystemId).
+				Msg("Found resource in MappedList")
+			return true, true, nil // Mapped resources exist in both CSP and Spider
+		}
+	}
+
+	// Check if the CSP resource exists in OnlyCSPList
+	for _, resource := range response.AllList.OnlyCSPList {
+		if resource.SystemId == cspResourceId {
+			log.Debug().Str("cspResourceId", cspResourceId).Str("systemId", resource.SystemId).
+				Msg("Found resource in OnlyCSPList")
+			return true, false, nil // Exists only in CSP
+		}
+	}
+
+	// Check if the CSP resource exists in OnlySpiderList
+	for _, resource := range response.AllList.OnlySpiderList {
+		if resource.SystemId == cspResourceId {
+			log.Debug().Str("cspResourceId", cspResourceId).Str("systemId", resource.SystemId).
+				Msg("Found resource in OnlySpiderList")
+			return false, true, nil // Exists only in Spider
+		}
+	}
+
+	// Resource not found in any list
+	log.Debug().Str("cspResourceId", cspResourceId).Str("connection", connConfig).
+		Str("resourceType", resourceType).Msg("Resource not found in any list")
+	return false, false, nil
+}

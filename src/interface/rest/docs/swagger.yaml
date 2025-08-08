@@ -726,7 +726,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/common.RestInspectResourcesRequest'
+              $ref: '#/components/schemas/model.InspectResourcesRequest'
         required: true
       responses:
         "200":
@@ -9453,20 +9453,6 @@ components:
           description: Name string     `json:"name"`
           items:
             $ref: '#/components/schemas/model.NsInfo'
-    common.RestInspectResourcesRequest:
-      type: object
-      properties:
-        connectionName:
-          type: string
-          example: aws-ap-southeast-1
-        resourceType:
-          type: string
-          example: vNet
-          enum:
-          - vNet
-          - securityGroup
-          - sshKey
-          - vm
     common.RestRegisterCspNativeResourcesRequest:
       type: object
       properties:
@@ -10075,6 +10061,21 @@ components:
           type: string
         tumblebugOverview:
           $ref: '#/components/schemas/model.inspectOverview'
+    model.InspectResourcesRequest:
+      type: object
+      properties:
+        connectionName:
+          type: string
+          example: aws-ap-southeast-1
+        resourceType:
+          type: string
+          example: vNet
+          enum:
+          - vNet
+          - subnet
+          - securityGroup
+          - sshKey
+          - vm
     model.K8sClusterConnectionConfigCandidatesReq:
       required:
       - commonSpec

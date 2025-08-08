@@ -26,8 +26,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
 
-	"github.com/go-resty/resty/v2"
-
 	"math"
 	"reflect"
 	"sync"
@@ -356,6 +354,33 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 					TbResourceList.Info = append(TbResourceList.Info, temp)
 				}
 			}
+		case model.StrSubnet:
+			// Subnet resources are managed as child resources of VNet
+			// We need to iterate through VNets and then their subnets
+			vnetListInNs, err := resource.ListResource(ns, model.StrVNet, "", "")
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				err := fmt.Errorf("an error occurred while getting VNet list for subnet inspection")
+				return nullObj, err
+			}
+			vnetsInNs := vnetListInNs.([]model.TbVNetInfo) // type assertion
+			if len(vnetsInNs) == 0 {
+				continue
+			}
+			for _, vnet := range vnetsInNs {
+				if vnet.ConnectionName == connConfig { // filtering by connection
+					// Get subnets for this VNet
+					for _, subnet := range vnet.SubnetInfoList {
+						temp := model.ResourceOnTumblebugInfo{}
+						temp.IdByTb = subnet.Id
+						temp.CspResourceId = subnet.CspResourceId
+						temp.NsId = ns
+						temp.ObjectKey = common.GenResourceKey(ns, model.StrVNet, vnet.Id) + "/" + model.StrSubnet + "/" + subnet.Id
+
+						TbResourceList.Info = append(TbResourceList.Info, temp)
+					}
+				}
+			}
 		case model.StrSecurityGroup:
 			resourceListInNs, err := resource.ListResource(ns, resourceType, "", "")
 			if err != nil {
@@ -450,60 +475,18 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 		}
 	}
 
-	client := resty.New().SetCloseConnection(true)
-	client.SetAllowGetMethodPayload(true)
-
-	// Create Req body
-	type JsonTemplate struct {
-		ConnectionName string
-	}
-	requestBody := JsonTemplate{}
-	requestBody.ConnectionName = connConfig
-
-	var spiderRequestURL string
-	switch resourceType {
-	case model.StrNLB:
-		spiderRequestURL = model.SpiderRestUrl + "/allnlb"
-	case model.StrVM:
-		spiderRequestURL = model.SpiderRestUrl + "/allvm"
-	case model.StrVNet:
-		spiderRequestURL = model.SpiderRestUrl + "/allvpc"
-	case model.StrSecurityGroup:
-		spiderRequestURL = model.SpiderRestUrl + "/allsecuritygroup"
-	case model.StrSSHKey:
-		spiderRequestURL = model.SpiderRestUrl + "/allkeypair"
-	case model.StrDataDisk:
-		spiderRequestURL = model.SpiderRestUrl + "/alldisk"
-	case model.StrCustomImage:
-		spiderRequestURL = model.SpiderRestUrl + "/allmyimage"
-	default:
-		err = fmt.Errorf("Invalid resourceType: " + resourceType)
-		return nullObj, err
-	}
-
-	resp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody).
-		SetResult(&model.SpiderAllListWrapper{}). // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-		Get(spiderRequestURL)
-
+	// Use helper function to get CSP resource status from CB-Spider
+	cspResourceStatus, err := resource.GetCspResourceStatus(connConfig, resourceType)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return nullObj, err
+		log.Error().Err(err).Str("connection", connConfig).Str("resourceType", resourceType).
+			Msg("Failed to get CSP resource status")
+		result := model.InspectResource{}
+		result.ConnectionName = connConfig
+		result.ResourceType = resourceType
+		result.SystemMessage = fmt.Sprintf("Failed to get CSP resource status: %v", err)
+		result.Resources.OnTumblebug = TbResourceList
+		return result, err
 	}
-
-	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		return nullObj, err
-	default:
-	}
-
-	temp, _ := resp.Result().(*model.SpiderAllListWrapper) // type assertion
 
 	result := model.InspectResource{}
 
@@ -518,12 +501,12 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 	// Implementation style 2
 	result.ConnectionName = connConfig
 	result.ResourceType = resourceType
+	result.SystemMessage = cspResourceStatus.SystemMessage
 
 	result.Resources.OnTumblebug = TbResourceList
 	//result.ResourcesOnTumblebug.Info = append(result.ResourcesOnTumblebug.Info, TbResourceList...)
 
-	// result.ResourcesOnCsp = append((*temp).AllList.MappedList, (*temp).AllList.OnlyCSPList...)
-	// result.ResourcesOnSpider = append((*temp).AllList.MappedList, (*temp).AllList.OnlySpiderList...)
+	// Use data from helper function instead of direct Spider call
 	result.Resources.OnSpider = model.ResourceOnSpider{}
 	result.Resources.OnCspTotal = model.ResourceOnCsp{}
 	result.Resources.OnCspOnly = model.ResourceOnCsp{}
@@ -531,7 +514,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 	tmpResourceOnSpider := model.ResourceOnSpiderInfo{}
 	tmpResourceOnCsp := model.ResourceOnCspInfo{}
 
-	for _, v := range (*temp).AllList.MappedList {
+	for _, v := range cspResourceStatus.AllList.MappedList {
 		tmpResourceOnSpider.IdBySp = v.NameId
 		tmpResourceOnSpider.CspResourceId = v.SystemId
 		result.Resources.OnSpider.Info = append(result.Resources.OnSpider.Info, tmpResourceOnSpider)
@@ -541,13 +524,13 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 		result.Resources.OnCspTotal.Info = append(result.Resources.OnCspTotal.Info, tmpResourceOnCsp)
 	}
 
-	for _, v := range (*temp).AllList.OnlySpiderList {
+	for _, v := range cspResourceStatus.AllList.OnlySpiderList {
 		tmpResourceOnSpider.IdBySp = v.NameId
 		tmpResourceOnSpider.CspResourceId = v.SystemId
 		result.Resources.OnSpider.Info = append(result.Resources.OnSpider.Info, tmpResourceOnSpider)
 	}
 
-	for _, v := range (*temp).AllList.OnlyCSPList {
+	for _, v := range cspResourceStatus.AllList.OnlyCSPList {
 		tmpResourceOnCsp.CspResourceId = v.SystemId
 		tmpResourceOnCsp.RefNameOrId = v.NameId
 

@@ -2616,132 +2616,7 @@ def create_mci_with_proper_spec_mapping(
     
     return result
 
-# Tool: Create MCI Dynamic (Simplified)
-@mcp.tool()
-def create_simple_mci(
-    ns_id: str,
-    name: str,
-    common_spec: str,
-    common_image: Optional[str] = None,
-    vm_count: int = 1,
-    description: str = "MCI created via simplified MCP interface",
-    hold: bool = False,
-    skip_confirmation: bool = False,
-    force_create: bool = False
-) -> Dict:
-    """
-    Simplified MCI creation for common use cases. 
-    This is a wrapper around create_mci_dynamic() for easier usage when all VMs use the same configuration.
-    
-    **WORKFLOW:**
-    1. Use recommend_vm_spec() to find appropriate VM specifications (determines CSP and region)
-    2. From spec results, extract CSP and region information  
-    3. Use search_images() to find your desired image in the selected CSP/region
-    4. Use this function with the found spec and image
-    
-    **AUTOMATIC IMAGE MAPPING:**
-    This function now supports automatic image selection when common_image is not provided.
-    Simply pass the spec and let the function find the best matching image automatically.
-    
-    **Example with auto-mapping:**
-    ```
-    # Find VM specs (determines CSP and region)
-    specs = recommend_vm_spec(
-        filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}}
-    )
-    spec_id = specs[0]["id"]  # e.g., "aws+ap-northeast-2+t2.small"
-    
-    # Create MCI with automatic image selection (no need to manually find image)
-    mci = create_simple_mci(
-        ns_id="default",
-        name="my-simple-mci",
-        common_spec=spec_id,      # Only spec needed - image auto-selected
-        vm_count=3
-    )
-    ```
-    
-    **Example with manual image:**
-    ```
-    # Find VM specs first (determines CSP and region)
-    specs = recommend_vm_spec(
-        filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}}
-    )
-    spec_id = specs[0]["id"]  # e.g., "aws+ap-northeast-2+t2.small"
-    
-    # Extract CSP and region from spec
-    provider = spec_id.split('+')[0]  # "aws"
-    region = spec_id.split('+')[1]    # "ap-northeast-2"
-    
-    # Find the best image in the selected CSP/region
-    images = search_images(
-        provider_name=provider, 
-        region_name=region, 
-        os_type="ubuntu"
-    )
-    
-    # Automatically select the best image (intelligent analysis with detailed reasoning)
-    best_image = select_best_image(images.get("imageList", []))
-    image_name = best_image["cspImageName"]  # e.g., "ami-0e06732ba3ca8c6cc"
-    
-    # Optional: Check selection reasoning
-    # selection_reason = best_image.get("_selection_reason", "")
-    # analysis_details = best_image.get("_analysis_details", [])
-    
-    # Create MCI with 3 identical VMs
-    mci = create_simple_mci(
-        ns_id="default",
-        name="my-simple-mci",
-        common_image=image_name,
-        common_spec=spec_id,
-        vm_count=3
-    )
-    ```
-    
-    Args:
-        ns_id: Namespace ID
-        name: MCI name
-        common_spec: VM specification ID from recommend_vm_spec() results
-        common_image: CSP-specific image identifier from search_images() results (optional - auto-selected if omitted)
-        vm_count: Number of identical VMs to create (default: 1)
-        description: MCI description
-        hold: Whether to hold provisioning for review
-        skip_confirmation: Skip user confirmation step (for automated workflows, default: False)
-        force_create: Bypass confirmation and create MCI immediately (default: False)
-    
-    Returns:
-        **CONFIRMATION WORKFLOW (default behavior):**
-        When force_create=False and skip_confirmation=False:
-        - Returns comprehensive creation summary with cost analysis and confirmation prompt
-        
-        **IMMEDIATE CREATION:**
-        When force_create=True or skip_confirmation=True:
-        - Created MCI information (same as create_mci_dynamic)
-    """
-    # Create VM configurations for identical VMs
-    vm_configurations = []
-    for i in range(vm_count):
-        vm_config = {
-            "commonSpec": common_spec,
-            "name": f"vm-{i+1}",
-            "description": f"VM {i+1} of {vm_count}",
-            "subGroupSize": "1"
-        }
-        
-        # Only add commonImage if provided (auto-mapping will handle if omitted)
-        if common_image:
-            vm_config["commonImage"] = common_image
-        
-        vm_configurations.append(vm_config)
-
-    return create_mci_dynamic(
-        ns_id=ns_id,
-        name=name,
-        vm_configurations=vm_configurations,
-        description=description,
-        hold=hold,
-        skip_confirmation=skip_confirmation,
-        force_create=force_create  # Pass through force_create setting
-    )# Tool: Smart MCI Creation with Spec-First Workflow
+# Tool: Smart MCI Creation with Spec-First Workflow
 @mcp.tool()
 def create_mci_with_spec_first(
     name: str,
@@ -6836,57 +6711,6 @@ def create_mci_with_confirmation(
             skip_confirmation=True  # Skip internal confirmation since user already confirmed
         )
 
-# Tool: Quick MCI Creation with Confirmation
-@mcp.tool()
-def create_simple_mci_with_confirmation(
-    ns_id: str,
-    name: str,
-    common_image: str,
-    common_spec: str,
-    vm_count: int = 1,
-    description: str = "Simple MCI created with confirmation",
-    hold: bool = False,
-    force_create: bool = False
-) -> Dict:
-    """
-    Simple MCI creation with mandatory user confirmation.
-    Simplified interface for multiple VMs with identical configuration.
-    
-    Args:
-        ns_id: Namespace ID
-        name: MCI name
-        common_image: Image to use for all VMs
-        common_spec: Spec to use for all VMs
-        vm_count: Number of identical VMs to create
-        description: MCI description
-        hold: Whether to hold provisioning
-        force_create: Set to True for actual creation after review
-    
-    Returns:
-        First call: Configuration summary and confirmation prompt
-        Second call (force_create=True): MCI creation result
-    """
-    # Generate VM configuration array
-    vm_configurations = []
-    for i in range(vm_count):
-        vm_configurations.append({
-            "commonImage": common_image,
-            "commonSpec": common_spec,
-            "name": f"vm-{i+1}",
-            "description": f"VM {i+1} of {vm_count}",
-            "subGroupSize": "1"
-        })
-    
-    # Delegate to confirmation workflow
-    return create_mci_with_confirmation(
-        ns_id=ns_id,
-        name=name,
-        vm_configurations=vm_configurations,
-        description=description,
-        hold=hold,
-        force_create=force_create
-    )
-
 #####################################
 # Application Deployment & UseCase Management System
 #####################################
@@ -10707,7 +10531,7 @@ delete_namespace("test") - Clean up test environment
 ```
 # Creation Methods
 create_mci_dynamic() - Full control with VM configurations
-create_simple_mci() - Quick deployment with identical VMs
+create_mci_dynamic() - Flexible MCI creation with custom VM configurations
 recommend_vm_spec() - Find optimal VM specifications
 search_images() - Find suitable OS images
 
@@ -10793,11 +10617,11 @@ for region in regions:
 ```
 # Development
 create_namespace("dev")
-create_simple_mci("dev", "test-app", image, "t2.micro")
+create_mci_dynamic("dev", "test-app", [{"commonImage": image, "commonSpec": "t2.micro", "name": "test-vm"}])
 
 # Staging  
 create_namespace("staging")
-create_simple_mci("staging", "staging-app", image, "t2.small")
+create_mci_dynamic("staging", "staging-app", [{"commonImage": image, "commonSpec": "t2.small", "name": "staging-vm"}])
 
 # Production
 create_namespace("production") 
@@ -10875,8 +10699,8 @@ Solution:
 User: "Deploy Nginx web servers in AWS Seoul and Azure Korea Central"
 
 Solution:
-1. create_simple_mci("web-app", "nginx-aws", aws_image, "t3.medium")
-2. create_simple_mci("web-app", "nginx-azure", azure_image, "Standard_B2s") 
+1. create_mci_dynamic("web-app", "nginx-aws", [{"commonImage": aws_image, "commonSpec": "t3.medium", "name": "nginx-aws-vm"}])
+2. create_mci_dynamic("web-app", "nginx-azure", [{"commonImage": azure_image, "commonSpec": "Standard_B2s", "name": "nginx-azure-vm"}]) 
 3. execute_remote_commands_enhanced(script_name="nginx_install")
 4. Configure DNS load balancing
 ```
@@ -10916,7 +10740,7 @@ User: "Set up development infrastructure with Docker and monitoring"
 
 Workflow:
 1. create_namespace("dev-team")
-2. create_simple_mci("dev-team", "dev-servers", ubuntu_image, "t3.large", vm_count=5)
+2. create_mci_dynamic("dev-team", "dev-servers", [{"commonImage": ubuntu_image, "commonSpec": "t3.large", "name": f"dev-vm-{i}", "subGroupSize": "1"} for i in range(1, 6)])
 3. execute_remote_commands_enhanced(script_name="docker_install")
 4. execute_remote_commands_enhanced(script_name="monitoring_setup") 
 5. execute_remote_commands_enhanced(script_name="security_hardening")
@@ -11026,7 +10850,7 @@ Solution:
 ```
 
 ## Best Practices Summary
-1. **Start Small**: Use create_simple_mci() for testing
+1. **Start Small**: Use create_mci_dynamic() for testing
 2. **Scale Gradually**: Use deploy_application() for production
 3. **Monitor Resources**: Regular health checks and cost monitoring  
 4. **Security First**: Apply security hardening from day one

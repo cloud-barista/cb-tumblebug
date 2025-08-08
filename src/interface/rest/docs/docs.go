@@ -985,7 +985,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/common.RestInspectResourcesRequest"
+                            "$ref": "#/definitions/model.InspectResourcesRequest"
                         }
                     }
                 ],
@@ -11707,25 +11707,6 @@ const docTemplate = `{
                 }
             }
         },
-        "common.RestInspectResourcesRequest": {
-            "type": "object",
-            "properties": {
-                "connectionName": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1"
-                },
-                "resourceType": {
-                    "type": "string",
-                    "enum": [
-                        "vNet",
-                        "securityGroup",
-                        "sshKey",
-                        "vm"
-                    ],
-                    "example": "vNet"
-                }
-            }
-        },
         "common.RestRegisterCspNativeResourcesRequest": {
             "type": "object",
             "properties": {
@@ -12604,6 +12585,26 @@ const docTemplate = `{
                 },
                 "tumblebugOverview": {
                     "$ref": "#/definitions/model.inspectOverview"
+                }
+            }
+        },
+        "model.InspectResourcesRequest": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "resourceType": {
+                    "type": "string",
+                    "enum": [
+                        "vNet",
+                        "subnet",
+                        "securityGroup",
+                        "sshKey",
+                        "vm"
+                    ],
+                    "example": "vNet"
                 }
             }
         },
