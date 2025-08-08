@@ -1,0 +1,12 @@
+{
+   "mcpServers": {
+     "tumblebug": {
+       "command": "wsl.exe",
+       "args": [
+         "bash",
+         "-c",
+         "/home/shson/.local/bin/uv run --with fastmcp /home/shson/go/src/github.com/cloud-barista/cb-tumblebug/src/interface/mcp/mcp-simple-proxy.py"
+       ]
+     }
+   }
+}

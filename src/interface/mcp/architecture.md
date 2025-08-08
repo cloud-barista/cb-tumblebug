@@ -13,15 +13,15 @@ graph TB
     
     subgraph "MCP Protocol Layer"
         direction LR
-        MCPRemote[mcp-remote<br/>STDIO → SSE Bridge]
-        PostgresMCP[PostgreSQL MCP<br/>Direct DB Access]
+        ProxyBridge[mcp-simple-proxy.py<br/>stdio → Streamable HTTP Bridge]
+        DirectHTTP[Direct Streamable HTTP<br/>Connection]
     end
     
     subgraph "Docker Environment"
         direction TB
         
         subgraph "TB-MCP Container"
-            TBMCPCode[TB-MCP Server<br/>FastMCP + SSE :8000]
+            TBMCPCode[TB-MCP Server<br/>FastMCP + Streamable HTTP :8000]
         end
         
         subgraph "Core Services"
@@ -46,17 +46,13 @@ graph TB
     end
     
     %% Main AI Assistant Flows
-    Claude -->|MCP STDIO| MCPRemote
-    VSCode -->|MCP SSE| TBMCPCode
-    MCPInspector -->|MCP SSE| TBMCPCode
+    Claude -->|MCP stdio| ProxyBridge
+    VSCode -->|MCP Streamable HTTP| DirectHTTP
+    MCPInspector -->|MCP Streamable HTTP| DirectHTTP
     
-    %% PostgreSQL Direct Access
-    Claude -.->|MCP STDIO| PostgresMCP
-    VSCode -.->|MCP STDIO| PostgresMCP
-    PostgresMCP -.->|SQL :5432| Postgres
-    
-    %% MCP Bridge Flow
-    MCPRemote -->|MCP SSE| TBMCPCode
+    %% Proxy Bridge Flow
+    ProxyBridge -->|Streamable HTTP :8000/mcp| TBMCPCode
+    DirectHTTP -->|Streamable HTTP :8000/mcp| TBMCPCode
     
     %% Internal Service Flow
     TBMCPCode -->|REST API| TBCore
@@ -76,43 +72,43 @@ graph TB
     classDef dockerLayer fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
     classDef cloudLayer fill:#fff3e0,stroke:#f57c00,stroke-width:2px
     classDef primaryFlow stroke:#d32f2f,stroke-width:3px
-    classDef secondaryFlow stroke:#666,stroke-width:2px,stroke-dasharray: 5 5
+    classDef proxyFlow stroke:#ff6f00,stroke-width:3px
     
     class Claude,VSCode,MCPInspector aiLayer
-    class MCPRemote,PostgresMCP mcpLayer
+    class ProxyBridge,DirectHTTP mcpLayer
     class TBMCPCode,TBCore,Spider,ETCD,Postgres dockerLayer
     class AWS,Azure,GCP,Others cloudLayer
 ```
 
-## MCP Protocol Flow (SSE Transport)
+## MCP Protocol Flow (Streamable HTTP Transport)
 
 ```mermaid
 sequenceDiagram
     participant C as Claude Desktop
-    participant MR as mcp-remote
-    participant TB as TB-MCP.py (with FastMCP)
+    participant P as mcp-simple-proxy.py
+    participant TB as TB-MCP.py (FastMCP)
     participant API as CB-TB API
     participant CSP as Cloud Providers
     
-    Note over C,MR: Claude Desktop Setup
-    C->>MR: Initialize MCP connection
-    MR->>TB: Connect via SSE to :8000/sse
+    Note over C,P: Claude Desktop Setup
+    C->>P: Initialize stdio MCP connection
+    P->>TB: Connect via Streamable HTTP to :8000/mcp
     
     Note over TB,API: MCP Server Initialization
     TB->>TB: Load MCP tools & prompts
     TB->>API: Test API connectivity
     
     Note over C,CSP: User Request Flow
-    C->>MR: User request: "Create AWS VM"
-    MR->>TB: MCP JSON-RPC over SSE
+    C->>P: User request: "Create AWS VM"
+    P->>TB: MCP JSON-RPC over Streamable HTTP
     TB->>TB: Execute tool: create_mci_dynamic()
     
     TB->>API: POST /ns/{ns}/mciDynamic
     API->>CSP: Provision VM resources
     CSP-->>API: Resource creation response
     API-->>TB: MCI creation result
-    TB-->>MR: MCP response over SSE
-    MR-->>C: Display result to user
+    TB-->>P: MCP response over Streamable HTTP
+    P-->>C: Display result to user via stdio
     
     Note over C,CSP: Error Handling & Retry
     alt API Error
@@ -128,11 +124,11 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant VS as VS Code Copilot
-    participant TB as TB-MCP.py (with FastMCP)
+    participant TB as TB-MCP.py (FastMCP)
     participant API as CB-TB API
     
-    Note over VS,TB: SSE Connection
-    VS->>TB: SSE connection to :8000/sse
+    Note over VS,TB: Streamable HTTP Connection
+    VS->>TB: Streamable HTTP connection to :8000/mcp
     TB->>TB: Initialize MCP tools
     
     Note over VS,API: Tool Execution
@@ -140,7 +136,7 @@ sequenceDiagram
     TB->>TB: Execute Python function
     TB->>API: REST API call
     API-->>TB: API response
-    TB-->>VS: MCP response via SSE
+    TB-->>VS: MCP response via Streamable HTTP
 ```
 
 ## PostgreSQL MCP Server Direct Database Access
@@ -179,7 +175,7 @@ sequenceDiagram
 graph TB
     subgraph "External Network (bridge)"
         direction LR
-        ExtPort8000[":8000<br/>MCP SSE"]
+        ExtPort8000[":8000<br/>MCP Streamable HTTP"]
         ExtPort1323[":1323<br/>TB API"]
         ExtPort1024[":1024<br/>Spider API"]
         ExtPort5432[":5432<br/>PostgreSQL<br/>External Access"]
@@ -189,7 +185,7 @@ graph TB
         direction TB
         
         subgraph "MCP Container"
-            MCPApp[TB-MCP.py<br/>+ FastMCP Server<br/>SSE Transport :8000/sse]
+            MCPApp[TB-MCP.py<br/>+ FastMCP Server<br/>Streamable HTTP :8000/mcp]
             MCPEnv[Environment:<br/>CB-TB_API_BASE_URL=<br/>http://cb-tumblebug:1323/tumblebug]
         end
         
@@ -209,16 +205,16 @@ graph TB
     end
     
     subgraph "External Clients"
-        Client1[Claude Desktop<br/>+ mcp-remote]
-        Client2[VS Code Copilot]
-        Client3[MCP Inspector]
+        Client1[Claude Desktop<br/>+ mcp-simple-proxy.py]
+        Client2[VS Code Copilot<br/>Direct HTTP]
+        Client3[MCP Inspector<br/>Direct HTTP]
         Client4[PostgreSQL MCP Server<br/>modelcontextprotocol/server-postgres<br/>npx auto-execution]
     end
     
     %% External connections
-    Client1 -->|stdio → SSE| ExtPort8000
-    Client2 -->|SSE Transport| ExtPort8000
-    Client3 -->|SSE Transport| ExtPort8000
+    Client1 -->|stdio → HTTP proxy| ExtPort8000
+    Client2 -->|Streamable HTTP| ExtPort8000
+    Client3 -->|Streamable HTTP| ExtPort8000
     Client4 -->|SQL Queries<br/>Direct DB Access| ExtPort5432
     
     %% Port mapping
@@ -290,18 +286,18 @@ flowchart TD
     C --> D[Initialize TB-MCP with FastMCP]
     D --> E[Load MCP Tools & Prompts]
     E --> F[Test CB-TB Connectivity]
-    F --> G[Start SSE Server on port 8000]
+    F --> G[Start Streamable HTTP Server on port 8000]
     
     G --> H{Client Connection Type}
-    H -->|Claude Desktop| I[Uses stdio with mcp-remote broker]
-    H -->|VS Code Copilot| J[Direct SSE connection port 8000]
-    H -->|MCP Inspector| K[Direct SSE connection port 8000]
+    H -->|Claude Desktop| I[Uses stdio with mcp-simple-proxy.py]
+    H -->|VS Code Copilot| J[Direct Streamable HTTP to port 8000/mcp]
+    H -->|MCP Inspector| K[Direct Streamable HTTP to port 8000/mcp]
     
-    I --> L[mcp-remote bridges stdio to SSE]
-    J --> M[Native SSE support]
+    I --> L[mcp-simple-proxy.py bridges stdio to HTTP]
+    J --> M[Native Streamable HTTP support]
     K --> M
     
-    L --> N[MCP JSON-RPC over SSE]
+    L --> N[MCP JSON-RPC over Streamable HTTP]
     M --> N
     N --> O[Tool Execution in TB-MCP]
     O --> P[REST API calls to CB-TB]

@@ -23,4 +23,4 @@ ENV MCP_SERVER_PORT=8000
 
 # Run the MCP server python by fastmcp
 # SSE transport is used
-CMD ["sh", "-c", "fastmcp version && fastmcp run --transport sse ./tb-mcp.py:mcp"]
+CMD ["uv", "run", "./tb-mcp.py"]
