@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
@@ -557,7 +558,7 @@ func GetSubnet(nsId string, vNetId string, subnetId string) (model.TbSubnetInfo,
 	log.Debug().Msgf("[Response from Spider] Getting Subnet (response body: %+v)", spResp)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Warn().Err(err).Msg("")
 		return emptyRet, err
 	}
 
@@ -770,6 +771,28 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 		err := fmt.Errorf("failed to delete the subnet (%s)", subnetInfo.Id)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
+	}
+
+	// Verify deletion by checking subnet status after deletion request
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		log.Debug().Msgf("Waiting 3 seconds (attempt %d/%d) before checking subnet deletion status via GetSubnet", i+1, maxRetries)
+		time.Sleep(3 * time.Second)
+
+		// Use GetSubnet to check if subnet still exists
+		log.Debug().Msgf("Checking if subnet (%s) still exists", subnetInfo.Id)
+		_, checkErr := GetSubnet(nsId, vNetId, subnetId)
+
+		// If we get an error (subnet not found), it means deletion was successful
+		if checkErr != nil {
+			log.Info().Msgf("Confirmed subnet (%s) deletion", subnetInfo.Id)
+			break
+		}
+
+		// If this was the last attempt and subnet still exists, log warning but continue
+		if i == maxRetries-1 {
+			log.Warn().Msgf("Subnet (%s) may still exist in CSP after %d attempts, but proceeding with local cleanup", subnetInfo.Id, maxRetries)
+		}
 	}
 
 	// Delete the saved the subnet info
