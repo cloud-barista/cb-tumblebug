@@ -1988,26 +1988,60 @@ func checkCommonResAvailableForVmDynamicReq(req *model.TbVmDynamicReq, nsId stri
 	log.Debug().Msgf("Checking common resources for VM Dynamic Request: %+v", req)
 	log.Debug().Msgf("Namespace ID: %s", nsId)
 
+	// Get spec info first (required for both spec and image validation)
 	specInfo, err := resource.GetSpec(model.SystemCommonNs, req.CommonSpec)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-	// check if the spec is available in the CSP
-	_, err = resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get the Spec from the CSP")
-		return err
+		log.Error().Err(err).Msg("Failed to get spec info")
+		return fmt.Errorf("failed to get VM specification '%s': %w", req.CommonSpec, err)
 	}
 
-	// check if the image is available in the CSP
-	_, err = resource.LookupImage(specInfo.ConnectionName, req.CommonImage)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get the Image from the CSP")
-		return err
+	// Channel to collect errors from parallel goroutines
+	errorChan := make(chan error, 2)
+
+	// Check spec availability in parallel
+	go func() {
+		_, err := resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
+		if err != nil {
+			log.Error().Err(err).Msgf("Spec validation failed for %s", specInfo.CspSpecName)
+			errorChan <- fmt.Errorf("spec '%s' is not available in connection '%s': %w",
+				specInfo.CspSpecName, specInfo.ConnectionName, err)
+		} else {
+			log.Debug().Msgf("Spec validation successful: %s", specInfo.CspSpecName)
+			errorChan <- nil
+		}
+	}()
+
+	// Check image availability in parallel
+	go func() {
+		_, err := resource.LookupImage(specInfo.ConnectionName, req.CommonImage)
+		if err != nil {
+			log.Error().Err(err).Msgf("Image validation failed for %s", req.CommonImage)
+			errorChan <- fmt.Errorf("image '%s' is not available in connection '%s': %w",
+				req.CommonImage, specInfo.ConnectionName, err)
+		} else {
+			log.Debug().Msgf("Image validation successful: %s", req.CommonImage)
+			errorChan <- nil
+		}
+	}()
+
+	// Collect errors from both goroutines
+	var errorMessages []string
+	for i := 0; i < 2; i++ {
+		if err := <-errorChan; err != nil {
+			errorMessages = append(errorMessages, err.Error())
+		}
 	}
 
-	return err
+	// Return combined error if any validation failed
+	if len(errorMessages) > 0 {
+		combinedError := fmt.Errorf("validation failed for VM '%s': %s",
+			req.Name, strings.Join(errorMessages, "; "))
+		log.Error().Err(combinedError).Msg("Resource validation failures")
+		return combinedError
+	}
+
+	log.Debug().Msgf("All resource validations passed for VM: %s", req.Name)
+	return nil
 }
 
 // getVmReqFromDynamicReq is func to getVmReqFromDynamicReq with created resource tracking
