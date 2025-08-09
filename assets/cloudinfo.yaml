@@ -1809,6 +1809,7 @@ cloud:
         - jp-pub-a
         - jp-pub-b
       US1:
+        id: US1      
         desc: US West (California)
         location:
           display: California, USA
