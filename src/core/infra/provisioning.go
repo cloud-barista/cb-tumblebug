@@ -17,6 +17,7 @@ package infra
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -1201,6 +1202,11 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 		log.Info().Msgf("MCI '%s' has been successfully created with all %d VMs", mciId, totalVmCount)
 	}
 
+	// Record provisioning events to history if there were any failures or if specs have previous failure history
+	if err := RecordProvisioningEventsFromMci(nsId, mciResult); err != nil {
+		log.Error().Err(err).Msgf("Failed to record provisioning events for MCI '%s', but continuing", mciId)
+	}
+
 	return mciResult, nil
 }
 
@@ -1720,6 +1726,34 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 			}
 			if vmRequest.RootDiskSize != "" && vmRequest.RootDiskSize != "default" {
 				vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk size configured: %s GB, be sure it meets minimum requirements", vmRequest.RootDiskSize))
+			}
+
+			// Check provisioning history and risk analysis
+			if specInfoPtr != nil {
+				riskLevel, riskMessage, err := AnalyzeProvisioningRisk(vmRequest.CommonSpec, vmRequest.CommonImage)
+				if err != nil {
+					log.Warn().Err(err).Msgf("Failed to analyze provisioning risk for VM: %s", vmRequest.Name)
+					vmReview.Warnings = append(vmReview.Warnings, "Failed to analyze provisioning history")
+				} else {
+					switch riskLevel {
+					case "high":
+						vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("High provisioning failure risk: %s", riskMessage))
+						vmReview.CanCreate = false
+						viable = false
+						log.Debug().Msgf("High risk detected for spec %s with image %s: %s", vmRequest.CommonSpec, vmRequest.CommonImage, riskMessage)
+					case "medium":
+						vmReview.Warnings = append(vmReview.Warnings, fmt.Sprintf("Moderate provisioning failure risk: %s", riskMessage))
+						hasVmWarning = true
+						log.Debug().Msgf("Medium risk detected for spec %s with image %s: %s", vmRequest.CommonSpec, vmRequest.CommonImage, riskMessage)
+					case "low":
+						if riskMessage != "No previous provisioning history available" && riskMessage != "No provisioning attempts recorded" {
+							vmReview.Info = append(vmReview.Info, fmt.Sprintf("Provisioning history: %s", riskMessage))
+						}
+						log.Debug().Msgf("Low risk for spec %s with image %s: %s", vmRequest.CommonSpec, vmRequest.CommonImage, riskMessage)
+					default:
+						log.Debug().Msgf("Unknown risk level for spec %s: %s", vmRequest.CommonSpec, riskLevel)
+					}
+				}
 			}
 
 			// Set VM review status
@@ -3170,4 +3204,443 @@ func CreateK8sNodeGroupDynamic(reqID string, nsId string, k8sClusterId string, d
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Start provisioning", Time: time.Now()})
 
 	return resource.AddK8sNodeGroup(nsId, k8sClusterId, k8sNgReq)
+}
+
+// Provisioning History Management Functions
+
+// generateProvisioningLogKey generates kvstore key for provisioning log
+// It URL-encodes the specId to handle special characters like "+" safely
+func generateProvisioningLogKey(specId string) string {
+	// URL encode the specId to handle special characters like "+" in "gcp+europe-north1+f1-micro"
+	encodedSpecId := url.QueryEscape(specId)
+	return fmt.Sprintf("/log/provision/%s", encodedSpecId)
+}
+
+// GetProvisioningLog retrieves provisioning log for a specific spec ID
+func GetProvisioningLog(specId string) (*model.ProvisioningLog, error) {
+	log.Debug().Msgf("Getting provisioning log for spec: %s", specId)
+
+	key := generateProvisioningLogKey(specId)
+	keyValue, err := kvstore.GetKv(key)
+	if err != nil {
+		if err.Error() == "key not found" {
+			log.Debug().Msgf("No provisioning log found for spec: %s", specId)
+			return nil, nil // No log exists yet
+		}
+		log.Error().Err(err).Msgf("Failed to get provisioning log for spec: %s", specId)
+		return nil, fmt.Errorf("failed to get provisioning log: %w", err)
+	}
+
+	// Check if the value is empty or invalid
+	if keyValue.Value == "" {
+		log.Debug().Msgf("Empty value found for provisioning log spec: %s, treating as no log exists", specId)
+		return nil, nil
+	}
+
+	// Check if the value is valid JSON by trying to parse it
+	var rawJson json.RawMessage
+	if err := json.Unmarshal([]byte(keyValue.Value), &rawJson); err != nil {
+		log.Warn().Err(err).Msgf("Invalid JSON found for provisioning log spec: %s, deleting corrupted entry", specId)
+		// Delete the corrupted entry
+		if deleteErr := kvstore.Delete(key); deleteErr != nil {
+			log.Error().Err(deleteErr).Msgf("Failed to delete corrupted provisioning log for spec: %s", specId)
+		}
+		return nil, nil // Treat as no log exists
+	}
+
+	var provisioningLog model.ProvisioningLog
+	err = json.Unmarshal([]byte(keyValue.Value), &provisioningLog)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to unmarshal provisioning log for spec: %s", specId)
+		// Delete the corrupted entry as a fallback
+		if deleteErr := kvstore.Delete(key); deleteErr != nil {
+			log.Error().Err(deleteErr).Msgf("Failed to delete corrupted provisioning log for spec: %s", specId)
+		}
+		return nil, nil // Treat as no log exists instead of returning error
+	}
+
+	log.Debug().Msgf("Successfully retrieved provisioning log for spec: %s (failures: %d, successes: %d)",
+		specId, provisioningLog.FailureCount, provisioningLog.SuccessCount)
+	return &provisioningLog, nil
+}
+
+// SaveProvisioningLog saves or updates provisioning log for a specific spec ID
+func SaveProvisioningLog(provisioningLog *model.ProvisioningLog) error {
+	log.Debug().Msgf("Saving provisioning log for spec: %s", provisioningLog.SpecId)
+
+	provisioningLog.LastUpdated = time.Now()
+
+	key := generateProvisioningLogKey(provisioningLog.SpecId)
+	value, err := json.Marshal(provisioningLog)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to marshal provisioning log for spec: %s", provisioningLog.SpecId)
+		return fmt.Errorf("failed to marshal provisioning log: %w", err)
+	}
+
+	err = kvstore.Put(key, string(value))
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to save provisioning log for spec: %s", provisioningLog.SpecId)
+		return fmt.Errorf("failed to save provisioning log: %w", err)
+	}
+
+	log.Debug().Msgf("Successfully saved provisioning log for spec: %s", provisioningLog.SpecId)
+	return nil
+}
+
+// DeleteProvisioningLog deletes provisioning log for a specific spec ID
+func DeleteProvisioningLog(specId string) error {
+	log.Debug().Msgf("Deleting provisioning log for spec: %s", specId)
+
+	key := generateProvisioningLogKey(specId)
+	err := kvstore.Delete(key)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to delete provisioning log for spec: %s", specId)
+		return fmt.Errorf("failed to delete provisioning log: %w", err)
+	}
+
+	log.Debug().Msgf("Successfully deleted provisioning log for spec: %s", specId)
+	return nil
+}
+
+// RecordProvisioningEvent records a provisioning event (success or failure) to the log
+func RecordProvisioningEvent(event *model.ProvisioningEvent) error {
+	log.Debug().Msgf("Recording provisioning event for spec: %s, success: %t", event.SpecId, event.IsSuccess)
+
+	// Get existing log or create new one
+	existingLog, err := GetProvisioningLog(event.SpecId)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to get existing provisioning log for spec: %s", event.SpecId)
+		return fmt.Errorf("failed to get existing provisioning log: %w", err)
+	}
+
+	var provisioningLog *model.ProvisioningLog
+	if existingLog == nil {
+		// Create new log if it doesn't exist
+		log.Debug().Msgf("Creating new provisioning log for spec: %s", event.SpecId)
+
+		// Get spec info to populate connection details
+		specInfo, err := resource.GetSpec(model.SystemCommonNs, event.SpecId)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to get spec info for: %s", event.SpecId)
+			return fmt.Errorf("failed to get spec info: %w", err)
+		}
+
+		provisioningLog = &model.ProvisioningLog{
+			SpecId:            event.SpecId,
+			ConnectionName:    specInfo.ConnectionName,
+			ProviderName:      specInfo.ProviderName,
+			RegionName:        specInfo.RegionName,
+			FailureCount:      0,
+			SuccessCount:      0,
+			FailureTimestamps: make([]time.Time, 0),
+			SuccessTimestamps: make([]time.Time, 0),
+			FailureMessages:   make([]string, 0),
+			FailureImages:     make([]string, 0),
+			SuccessImages:     make([]string, 0),
+			AdditionalInfo:    make(map[string]string),
+		}
+	} else {
+		provisioningLog = existingLog
+	}
+
+	// Record the event
+	if event.IsSuccess {
+		// Only record success if there were previous failures
+		if provisioningLog.FailureCount > 0 {
+			log.Debug().Msgf("Recording success event for spec: %s (previous failures exist)", event.SpecId)
+			provisioningLog.SuccessCount++
+			provisioningLog.SuccessTimestamps = append(provisioningLog.SuccessTimestamps, event.Timestamp)
+			if event.CspImageName != "" && !contains(provisioningLog.SuccessImages, event.CspImageName) {
+				provisioningLog.SuccessImages = append(provisioningLog.SuccessImages, event.CspImageName)
+			}
+		} else {
+			log.Debug().Msgf("Skipping success event recording for spec: %s (no previous failures)", event.SpecId)
+			return nil // Don't record success if no previous failures
+		}
+	} else {
+		// Always record failures
+		log.Debug().Msgf("Recording failure event for spec: %s", event.SpecId)
+		provisioningLog.FailureCount++
+		provisioningLog.FailureTimestamps = append(provisioningLog.FailureTimestamps, event.Timestamp)
+		if event.ErrorMessage != "" {
+			provisioningLog.FailureMessages = append(provisioningLog.FailureMessages, event.ErrorMessage)
+		}
+		if event.CspImageName != "" && !contains(provisioningLog.FailureImages, event.CspImageName) {
+			provisioningLog.FailureImages = append(provisioningLog.FailureImages, event.CspImageName)
+		}
+	}
+
+	// Add additional context information
+	if event.MciId != "" {
+		if provisioningLog.AdditionalInfo == nil {
+			provisioningLog.AdditionalInfo = make(map[string]string)
+		}
+		provisioningLog.AdditionalInfo["lastMciId"] = event.MciId
+	}
+
+	// Save the updated log
+	err = SaveProvisioningLog(provisioningLog)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to save provisioning log for spec: %s", event.SpecId)
+		return fmt.Errorf("failed to save provisioning log: %w", err)
+	}
+
+	log.Debug().Msgf("Successfully recorded provisioning event for spec: %s (total failures: %d, successes: %d)",
+		event.SpecId, provisioningLog.FailureCount, provisioningLog.SuccessCount)
+	return nil
+}
+
+// RecordProvisioningEventsFromMci analyzes MCI creation result and records provisioning events
+func RecordProvisioningEventsFromMci(nsId string, mciInfo *model.TbMciInfo) error {
+	log.Debug().Msgf("Recording provisioning events from MCI: %s", mciInfo.Id)
+
+	if mciInfo.CreationErrors == nil {
+		log.Debug().Msgf("No creation errors found in MCI: %s, checking for individual VM failures", mciInfo.Id)
+	}
+
+	eventCount := 0
+
+	// Process VMs to record events
+	for _, vm := range mciInfo.Vm {
+		log.Debug().Msgf("Processing VM: %s, status: %s", vm.Id, vm.Status)
+
+		// Determine if this VM failed or succeeded based on status
+		isSuccess := vm.Status == model.StatusRunning
+		errorMessage := ""
+
+		if !isSuccess {
+			// Look for specific error message in creation errors
+			if mciInfo.CreationErrors != nil {
+				for _, vmError := range mciInfo.CreationErrors.VmCreationErrors {
+					if vmError.VmName == vm.Id || strings.Contains(vmError.VmName, vm.Id) {
+						errorMessage = vmError.Error
+						break
+					}
+				}
+				// Also check VM object creation errors
+				for _, vmError := range mciInfo.CreationErrors.VmObjectCreationErrors {
+					if vmError.VmName == vm.Id || strings.Contains(vmError.VmName, vm.Id) {
+						errorMessage = vmError.Error
+						break
+					}
+				}
+			}
+			// If no specific error message found, use a generic one
+			if errorMessage == "" {
+				errorMessage = fmt.Sprintf("VM creation failed with status: %s", vm.Status)
+			}
+		}
+
+		// Create provisioning event
+		event := &model.ProvisioningEvent{
+			SpecId:       vm.SpecId,
+			CspImageName: vm.CspImageName,
+			IsSuccess:    isSuccess,
+			ErrorMessage: errorMessage,
+			Timestamp:    time.Now(),
+			VmName:       vm.Id,
+			MciId:        mciInfo.Id,
+		}
+
+		// Record the event
+		err := RecordProvisioningEvent(event)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to record provisioning event for VM: %s", vm.Id)
+			continue
+		}
+
+		eventCount++
+		log.Debug().Msgf("Recorded provisioning event for VM: %s, spec: %s, success: %t",
+			vm.Id, vm.SpecId, isSuccess)
+	}
+
+	log.Debug().Msgf("Successfully recorded %d provisioning events from MCI: %s", eventCount, mciInfo.Id)
+	return nil
+}
+
+// AnalyzeProvisioningRisk analyzes the risk of provisioning failure based on historical data
+func AnalyzeProvisioningRisk(specId string, cspImageName string) (riskLevel string, riskMessage string, err error) {
+	log.Debug().Msgf("Analyzing provisioning risk for spec: %s, image: %s", specId, cspImageName)
+
+	// Get provisioning log - now handles corrupted data gracefully
+	provisioningLog, err := GetProvisioningLog(specId)
+	if err != nil {
+		log.Warn().Err(err).Msgf("Failed to get provisioning log for spec: %s, treating as no history", specId)
+		// Don't return error, treat as no history available
+		return "low", "Unable to analyze provisioning history, assuming low risk", nil
+	}
+
+	// If no log exists, assume low risk
+	if provisioningLog == nil {
+		log.Debug().Msgf("No provisioning history found for spec: %s", specId)
+		return "low", "No previous provisioning history available", nil
+	}
+
+	totalAttempts := provisioningLog.FailureCount + provisioningLog.SuccessCount
+	if totalAttempts == 0 {
+		log.Debug().Msgf("No provisioning attempts recorded for spec: %s", specId)
+		return "low", "No provisioning attempts recorded", nil
+	}
+
+	failureRate := float64(provisioningLog.FailureCount) / float64(totalAttempts)
+
+	// Check if this specific image has failed before
+	imageHasFailed := contains(provisioningLog.FailureImages, cspImageName)
+	imageHasSucceeded := contains(provisioningLog.SuccessImages, cspImageName)
+
+	// Count the number of different images that have failed with this spec
+	failedImageCount := len(provisioningLog.FailureImages)
+	succeededImageCount := len(provisioningLog.SuccessImages)
+
+	log.Debug().Msgf("Provisioning analysis for spec %s: failures=%d, successes=%d, rate=%.2f, image_failed=%t, image_succeeded=%t, failed_images=%d, succeeded_images=%d",
+		specId, provisioningLog.FailureCount, provisioningLog.SuccessCount, failureRate, imageHasFailed, imageHasSucceeded, failedImageCount, succeededImageCount)
+
+	// Enhanced risk analysis considering spec-level vs image-level issues
+
+	// Case 1: This specific image has failed before and never succeeded with this spec
+	if imageHasFailed && !imageHasSucceeded {
+		return "high", fmt.Sprintf("This image (%s) has previously failed with this spec and never succeeded. Total failures: %d",
+			cspImageName, provisioningLog.FailureCount), nil
+	}
+
+	// Case 2: Spec-level issues - multiple different images have failed
+	if failedImageCount >= 10 {
+		// Very likely spec-level issue: 10+ different images failed
+		return "high", fmt.Sprintf("Spec-level issue detected: %d different images have failed with this spec (%.1f%% failure rate). This suggests the spec itself may be problematic",
+			failedImageCount, failureRate*100), nil
+	} else if failedImageCount >= 5 {
+		// Likely spec-level issue: 5+ different images failed
+		return "medium", fmt.Sprintf("Possible spec-level issue: %d different images have failed with this spec (%.1f%% failure rate). Consider checking spec compatibility",
+			failedImageCount, failureRate*100), nil
+	} else if failedImageCount >= 3 && succeededImageCount == 0 {
+		// Potential spec-level issue: 3+ different images failed with no successes
+		return "medium", fmt.Sprintf("Potential spec-level issue: %d different images have failed with this spec and none have succeeded (%.1f%% failure rate)",
+			failedImageCount, failureRate*100), nil
+	}
+
+	// Case 3: High overall failure rate regardless of image diversity
+	if failureRate >= 0.8 {
+		return "high", fmt.Sprintf("Very high failure rate (%.1f%%) for this spec. Recent failures: %d, successes: %d",
+			failureRate*100, provisioningLog.FailureCount, provisioningLog.SuccessCount), nil
+	}
+
+	// Case 4: Moderate failure rate with additional context
+	if failureRate >= 0.5 {
+		if imageHasFailed && failureRate >= 0.3 {
+			return "medium", fmt.Sprintf("Moderate failure rate (%.1f%%) and this image has failed before with this spec. Failures: %d, successes: %d",
+				failureRate*100, provisioningLog.FailureCount, provisioningLog.SuccessCount), nil
+		} else {
+			return "medium", fmt.Sprintf("Moderate failure rate (%.1f%%) for this spec. Failures: %d, successes: %d",
+				failureRate*100, provisioningLog.FailureCount, provisioningLog.SuccessCount), nil
+		}
+	}
+
+	// Case 5: Low failure rate but some context
+	if failureRate > 0 {
+		if failedImageCount >= 3 {
+			return "low", fmt.Sprintf("Low failure rate (%.1f%%) but %d different images have failed. Monitor for potential spec issues. Failures: %d, successes: %d",
+				failureRate*100, failedImageCount, provisioningLog.FailureCount, provisioningLog.SuccessCount), nil
+		} else {
+			return "low", fmt.Sprintf("Low failure rate (%.1f%%) for this spec. Some previous issues reported: %d failures, %d successes",
+				failureRate*100, provisioningLog.FailureCount, provisioningLog.SuccessCount), nil
+		}
+	}
+
+	// Case 6: No failures recorded
+	return "low", "No previous failures recorded for this spec", nil
+}
+
+// CleanupCorruptedProvisioningLogs removes all corrupted provisioning log entries from kvstore
+func CleanupCorruptedProvisioningLogs() error {
+	log.Debug().Msg("Starting cleanup of corrupted provisioning logs")
+
+	// Get all keys with provisioning log prefix
+	keyPattern := "/log/provision/"
+	keys, err := kvstore.GetKvList(keyPattern)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list provisioning log keys")
+		return fmt.Errorf("failed to list provisioning log keys: %w", err)
+	}
+
+	cleanupCount := 0
+	for _, key := range keys {
+		keyValue, err := kvstore.GetKv(key.Key)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to get value for key: %s", key.Key)
+			continue
+		}
+
+		// Check if the value is empty or invalid JSON
+		if keyValue.Value == "" {
+			log.Debug().Msgf("Deleting empty provisioning log: %s", key.Key)
+			if deleteErr := kvstore.Delete(key.Key); deleteErr != nil {
+				log.Error().Err(deleteErr).Msgf("Failed to delete empty log: %s", key.Key)
+			} else {
+				cleanupCount++
+			}
+			continue
+		}
+
+		// Test JSON validity
+		var testLog model.ProvisioningLog
+		if err := json.Unmarshal([]byte(keyValue.Value), &testLog); err != nil {
+			log.Debug().Msgf("Deleting corrupted provisioning log: %s", key.Key)
+			if deleteErr := kvstore.Delete(key.Key); deleteErr != nil {
+				log.Error().Err(deleteErr).Msgf("Failed to delete corrupted log: %s", key.Key)
+			} else {
+				cleanupCount++
+			}
+		}
+	}
+
+	log.Debug().Msgf("Cleanup completed. Removed %d corrupted provisioning logs", cleanupCount)
+	return nil
+}
+
+// ValidateProvisioningLogIntegrity checks and repairs provisioning log data integrity
+func ValidateProvisioningLogIntegrity(specId string) error {
+	log.Debug().Msgf("Validating provisioning log integrity for spec: %s", specId)
+
+	key := generateProvisioningLogKey(specId)
+	keyValue, err := kvstore.GetKv(key)
+	if err != nil {
+		if err.Error() == "key not found" {
+			log.Debug().Msgf("No provisioning log found for spec: %s", specId)
+			return nil // No log exists, nothing to validate
+		}
+		return fmt.Errorf("failed to get provisioning log: %w", err)
+	}
+
+	// Check if the value is empty
+	if keyValue.Value == "" {
+		log.Warn().Msgf("Empty provisioning log found for spec: %s, deleting", specId)
+		return kvstore.Delete(key)
+	}
+
+	// Test JSON validity
+	var testLog model.ProvisioningLog
+	if err := json.Unmarshal([]byte(keyValue.Value), &testLog); err != nil {
+		log.Warn().Msgf("Corrupted provisioning log found for spec: %s, deleting", specId)
+		return kvstore.Delete(key)
+	}
+
+	// Validate data consistency
+	totalAttempts := testLog.FailureCount + testLog.SuccessCount
+	if totalAttempts != len(testLog.FailureTimestamps)+len(testLog.SuccessTimestamps) {
+		log.Warn().Msgf("Inconsistent timestamp count for spec: %s, repairing", specId)
+
+		// Repair by truncating arrays to match counts
+		if len(testLog.FailureTimestamps) > testLog.FailureCount {
+			testLog.FailureTimestamps = testLog.FailureTimestamps[:testLog.FailureCount]
+		}
+		if len(testLog.SuccessTimestamps) > testLog.SuccessCount {
+			testLog.SuccessTimestamps = testLog.SuccessTimestamps[:testLog.SuccessCount]
+		}
+
+		// Save repaired log
+		return SaveProvisioningLog(&testLog)
+	}
+
+	log.Debug().Msgf("Provisioning log integrity validated for spec: %s", specId)
+	return nil
 }
