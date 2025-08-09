@@ -16,6 +16,7 @@ package infra
 
 import (
 	"net/http"
+	"time"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
@@ -675,4 +676,292 @@ func RestPostMciSubGroupScaleOut(c echo.Context) error {
 
 	result, err := infra.ScaleOutMciSubGroup(nsId, mciId, subgroupId, scaleOutReq.NumVMsToAdd)
 	return clientManager.EndRequestWithLog(c, err, result)
+}
+
+// RestGetProvisioningLog godoc
+// @ID GetProvisioningLog
+// @Summary Get Provisioning History Log for VM Specification
+// @Description Retrieve detailed provisioning history for a specific VM specification including success/failure patterns and risk analysis.
+// @Description This endpoint provides comprehensive insights into provisioning reliability:
+// @Description
+// @Description **Historical Data Includes:**
+// @Description - Success and failure counts with timestamps
+// @Description - CSP-specific error messages and failure patterns
+// @Description - Image compatibility tracking across different attempts
+// @Description - Failure rate analysis and risk assessment
+// @Description - Regional and provider-specific reliability metrics
+// @Description
+// @Description **Use Cases:**
+// @Description - **Pre-deployment Risk Assessment**: Check if a spec has historical failures before creating MCI
+// @Description - **Troubleshooting**: Analyze failure patterns to identify root causes
+// @Description - **Capacity Planning**: Understand reliability patterns for different specs and regions
+// @Description - **Cost Optimization**: Avoid specs with high failure rates that waste resources
+// @Description
+// @Description **Response Details:**
+// @Description - `failureCount`: Total number of provisioning failures
+// @Description - `successCount`: Number of successes (only tracked after failures occur)
+// @Description - `failureImages`: List of CSP images that failed with this spec
+// @Description - `successImages`: List of CSP images that succeeded with this spec
+// @Description - `failureMessages`: Detailed error messages from CSP
+// @Description - `lastUpdated`: Timestamp of most recent provisioning attempt
+// @Tags [MC-Infra] Provisioning History and Analytics
+// @Accept  json
+// @Produce  json
+// @Param specId path string true "VM Specification ID (format: provider+region+spec_name, e.g., aws+ap-northeast-2+t2.micro)"
+// @Success 200 {object} model.ProvisioningLog "Provisioning history log with success/failure statistics and detailed analytics"
+// @Success 204 "No provisioning history found for the specified VM specification"
+// @Failure 400 {object} model.SimpleMsg "Invalid specification ID format or missing required parameters"
+// @Failure 500 {object} model.SimpleMsg "Internal server error while retrieving provisioning history"
+// @Router /provisioning/log/{specId} [get]
+func RestGetProvisioningLog(c echo.Context) error {
+	specId := c.Param("specId")
+
+	if specId == "" {
+		return clientManager.EndRequestWithLog(c,
+			echo.NewHTTPError(http.StatusBadRequest, "specId parameter is required"), nil)
+	}
+
+	result, err := infra.GetProvisioningLog(specId)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	if result == nil {
+		// No provisioning history found - return 204 No Content
+		return c.NoContent(http.StatusNoContent)
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestDeleteProvisioningLog godoc
+// @ID DeleteProvisioningLog
+// @Summary Delete Provisioning History Log
+// @Description Remove all provisioning history data for a specific VM specification.
+// @Description This operation permanently deletes historical failure and success records:
+// @Description
+// @Description **Warning**: This action is irreversible and will remove:
+// @Description - All failure and success statistics
+// @Description - Historical error messages and troubleshooting data
+// @Description - Risk analysis baseline for future deployments
+// @Description - Failure pattern analysis data
+// @Description
+// @Description **When to Use:**
+// @Description - **Data Cleanup**: Remove outdated or irrelevant provisioning history
+// @Description - **Fresh Start**: Clear history after infrastructure changes that resolve previous issues
+// @Description - **Privacy Compliance**: Remove logs containing sensitive error information
+// @Description - **Storage Management**: Clean up logs to manage kvstore space
+// @Description
+// @Description **Impact on System:**
+// @Description - Future risk analysis for this spec will have no historical baseline
+// @Description - MCI review process will not show historical warnings for this spec
+// @Description - Provisioning reliability metrics will be reset to zero
+// @Tags [MC-Infra] Provisioning History and Analytics
+// @Accept  json
+// @Produce  json
+// @Param specId path string true "VM Specification ID to delete history for (format: provider+region+spec_name)"
+// @Success 200 {object} model.SimpleMsg "Provisioning history successfully deleted"
+// @Success 204 "No provisioning history found to delete"
+// @Failure 400 {object} model.SimpleMsg "Invalid specification ID format"
+// @Failure 500 {object} model.SimpleMsg "Internal server error while deleting provisioning history"
+// @Router /provisioning/log/{specId} [delete]
+func RestDeleteProvisioningLog(c echo.Context) error {
+	specId := c.Param("specId")
+
+	if specId == "" {
+		return clientManager.EndRequestWithLog(c,
+			echo.NewHTTPError(http.StatusBadRequest, "specId parameter is required"), nil)
+	}
+
+	// Check if log exists first
+	existingLog, err := infra.GetProvisioningLog(specId)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	if existingLog == nil {
+		// No log exists - return 204 No Content
+		return c.NoContent(http.StatusNoContent)
+	}
+
+	// Delete the log
+	err = infra.DeleteProvisioningLog(specId)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result := model.SimpleMsg{
+		Message: "Provisioning history successfully deleted for spec: " + specId,
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestAnalyzeProvisioningRisk godoc
+// @ID AnalyzeProvisioningRisk
+// @Summary Analyze Provisioning Risk for Spec and Image Combination
+// @Description Evaluate the likelihood of provisioning failure based on historical data for a specific VM specification and image combination.
+// @Description This endpoint provides intelligent risk assessment to help prevent deployment failures:
+// @Description
+// @Description **Risk Analysis Factors:**
+// @Description - Historical failure rate for the VM specification
+// @Description - Image-specific compatibility with the spec
+// @Description - Recent failure patterns and trends
+// @Description - Cross-reference of spec+image combination success rates
+// @Description
+// @Description **Risk Levels:**
+// @Description - `high`: Very likely to fail (>80% failure rate or image-specific failures)
+// @Description - `medium`: Moderate risk (50-80% failure rate or mixed results)
+// @Description - `low`: Low risk (<50% failure rate or no previous failures)
+// @Description - `unknown`: Insufficient data for analysis
+// @Description
+// @Description **Recommended Actions by Risk Level:**
+// @Description - **High Risk**: Consider alternative specs or images, verify CSP quotas and permissions
+// @Description - **Medium Risk**: Proceed with caution, have backup plans ready
+// @Description - **Low Risk**: Safe to proceed with normal deployment
+// @Description
+// @Description **Integration Points:**
+// @Description - Automatically called during MCI review process
+// @Description - Can be used in CI/CD pipelines for deployment validation
+// @Description - Helpful for capacity planning and resource selection
+// @Tags [MC-Infra] Provisioning History and Analytics
+// @Accept  json
+// @Produce  json
+// @Param specId path string true "VM Specification ID (format: provider+region+spec_name)"
+// @Param cspImageName query string true "CSP-specific image name/ID to analyze compatibility"
+// @Success 200 {object} object{riskLevel=string,riskMessage=string,analysis=object} "Risk analysis result with level, message, and detailed analysis"
+// @Failure 400 {object} model.SimpleMsg "Invalid parameters or missing required query parameters"
+// @Failure 500 {object} model.SimpleMsg "Internal server error during risk analysis"
+// @Router /provisioning/risk/{specId} [get]
+func RestAnalyzeProvisioningRisk(c echo.Context) error {
+	specId := c.Param("specId")
+	cspImageName := c.QueryParam("cspImageName")
+
+	if specId == "" {
+		return clientManager.EndRequestWithLog(c,
+			echo.NewHTTPError(http.StatusBadRequest, "specId parameter is required"), nil)
+	}
+
+	if cspImageName == "" {
+		return clientManager.EndRequestWithLog(c,
+			echo.NewHTTPError(http.StatusBadRequest, "cspImageName query parameter is required"), nil)
+	}
+
+	riskLevel, riskMessage, err := infra.AnalyzeProvisioningRisk(specId, cspImageName)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Get additional analysis data
+	provisioningLog, _ := infra.GetProvisioningLog(specId)
+
+	result := map[string]interface{}{
+		"riskLevel":   riskLevel,
+		"riskMessage": riskMessage,
+		"analysis": map[string]interface{}{
+			"specId":       specId,
+			"cspImageName": cspImageName,
+			"hasHistory":   provisioningLog != nil,
+		},
+	}
+
+	if provisioningLog != nil {
+		totalAttempts := provisioningLog.FailureCount + provisioningLog.SuccessCount
+		failureRate := float64(0)
+		if totalAttempts > 0 {
+			failureRate = float64(provisioningLog.FailureCount) / float64(totalAttempts)
+		}
+
+		result["analysis"].(map[string]interface{})["failureCount"] = provisioningLog.FailureCount
+		result["analysis"].(map[string]interface{})["successCount"] = provisioningLog.SuccessCount
+		result["analysis"].(map[string]interface{})["totalAttempts"] = totalAttempts
+		result["analysis"].(map[string]interface{})["failureRate"] = failureRate
+		result["analysis"].(map[string]interface{})["lastUpdated"] = provisioningLog.LastUpdated
+		result["analysis"].(map[string]interface{})["imageInFailureList"] = false
+		result["analysis"].(map[string]interface{})["imageInSuccessList"] = false
+
+		// Check if this specific image has history
+		for _, img := range provisioningLog.FailureImages {
+			if img == cspImageName {
+				result["analysis"].(map[string]interface{})["imageInFailureList"] = true
+				break
+			}
+		}
+
+		for _, img := range provisioningLog.SuccessImages {
+			if img == cspImageName {
+				result["analysis"].(map[string]interface{})["imageInSuccessList"] = true
+				break
+			}
+		}
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestRecordProvisioningEvent godoc
+// @ID RecordProvisioningEvent
+// @Summary Record Manual Provisioning Event
+// @Description Manually record a provisioning success or failure event for historical tracking and analysis.
+// @Description This endpoint allows external systems or manual processes to contribute to provisioning history:
+// @Description
+// @Description **Use Cases:**
+// @Description - **External Provisioning Tools**: Record events from non-CB-Tumblebug provisioning systems
+// @Description - **Manual Testing**: Log results from manual deployment tests
+// @Description - **Migration**: Import historical data from other systems
+// @Description - **Integration**: Connect with CI/CD pipelines for comprehensive tracking
+// @Description
+// @Description **Event Types:**
+// @Description - **Success Events**: Only recorded if previous failures exist for the spec
+// @Description - **Failure Events**: Always recorded to build failure pattern database
+// @Description
+// @Description **Data Quality:**
+// @Description - Provide accurate timestamps for proper chronological analysis
+// @Description - Include detailed error messages for failure events
+// @Description - Use consistent spec ID and image name formats
+// @Description
+// @Description **Impact on System:**
+// @Description - Contributes to risk analysis algorithms
+// @Description - Affects future MCI review recommendations
+// @Description - Builds historical baseline for reliability metrics
+// @Tags [MC-Infra] Provisioning History and Analytics
+// @Accept  json
+// @Produce  json
+// @Param provisioningEvent body model.ProvisioningEvent true "Provisioning event details with success/failure information"
+// @Success 200 {object} model.SimpleMsg "Provisioning event successfully recorded"
+// @Failure 400 {object} model.SimpleMsg "Invalid event data or missing required fields"
+// @Failure 500 {object} model.SimpleMsg "Internal server error while recording event"
+// @Router /provisioning/event [post]
+func RestRecordProvisioningEvent(c echo.Context) error {
+	req := &model.ProvisioningEvent{}
+	if err := c.Bind(req); err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Validate required fields
+	if req.SpecId == "" {
+		return clientManager.EndRequestWithLog(c,
+			echo.NewHTTPError(http.StatusBadRequest, "specId is required"), nil)
+	}
+
+	if req.CspImageName == "" {
+		return clientManager.EndRequestWithLog(c,
+			echo.NewHTTPError(http.StatusBadRequest, "cspImageName is required"), nil)
+	}
+
+	// Set timestamp if not provided
+	if req.Timestamp.IsZero() {
+		req.Timestamp = time.Now()
+	}
+
+	err := infra.RecordProvisioningEvent(req)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result := model.SimpleMsg{
+		Message: "Provisioning event successfully recorded",
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, result)
 }

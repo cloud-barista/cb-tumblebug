@@ -1031,3 +1031,69 @@ type AgentInstallContent struct {
 	VmIp   string `json:"vmIp"`
 	Result string `json:"result"`
 }
+
+// ProvisioningLog represents provisioning history for a specific VM spec
+type ProvisioningLog struct {
+	// SpecId is the VM specification ID
+	SpecId string `json:"specId"`
+
+	// ConnectionName is the connection configuration name
+	ConnectionName string `json:"connectionName"`
+
+	// ProviderName is the cloud service provider name
+	ProviderName string `json:"providerName"`
+
+	// RegionName is the region name
+	RegionName string `json:"regionName"`
+
+	// FailureCount is the total number of provisioning failures
+	FailureCount int `json:"failureCount"`
+
+	// SuccessCount is the total number of provisioning successes (only recorded if there were previous failures)
+	SuccessCount int `json:"successCount"`
+
+	// FailureTimestamps contains list of failure timestamps
+	FailureTimestamps []time.Time `json:"failureTimestamps"`
+
+	// SuccessTimestamps contains list of success timestamps (only recorded if there were previous failures)
+	SuccessTimestamps []time.Time `json:"successTimestamps"`
+
+	// FailureMessages contains list of failure error messages
+	FailureMessages []string `json:"failureMessages"`
+
+	// FailureImages contains list of CSP image names that failed with this spec
+	FailureImages []string `json:"failureImages"`
+
+	// SuccessImages contains list of CSP image names that succeeded with this spec (only recorded if there were previous failures)
+	SuccessImages []string `json:"successImages"`
+
+	// LastUpdated is the timestamp of the last log update
+	LastUpdated time.Time `json:"lastUpdated"`
+
+	// AdditionalInfo contains any additional information about the provisioning attempts
+	AdditionalInfo map[string]string `json:"additionalInfo"`
+}
+
+// ProvisioningEvent represents a single provisioning event for logging
+type ProvisioningEvent struct {
+	// SpecId is the VM specification ID
+	SpecId string `json:"specId"`
+
+	// CspImageName is the CSP-specific image name used in this provisioning attempt
+	CspImageName string `json:"cspImageName"`
+
+	// IsSuccess indicates if the provisioning was successful
+	IsSuccess bool `json:"isSuccess"`
+
+	// ErrorMessage contains the error message if provisioning failed
+	ErrorMessage string `json:"errorMessage"`
+
+	// Timestamp is when this provisioning event occurred
+	Timestamp time.Time `json:"timestamp"`
+
+	// VmName is the name of the VM that was being provisioned
+	VmName string `json:"vmName"`
+
+	// MciId is the MCI ID that this VM belongs to
+	MciId string `json:"mciId"`
+}

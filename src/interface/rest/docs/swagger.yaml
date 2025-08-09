@@ -8741,6 +8741,248 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /provisioning/event:
+    post:
+      tags:
+      - "[MC-Infra] Provisioning History and Analytics"
+      summary: Record Manual Provisioning Event
+      description: |-
+        Manually record a provisioning success or failure event for historical tracking and analysis.
+        This endpoint allows external systems or manual processes to contribute to provisioning history:
+
+        **Use Cases:**
+        - **External Provisioning Tools**: Record events from non-CB-Tumblebug provisioning systems
+        - **Manual Testing**: Log results from manual deployment tests
+        - **Migration**: Import historical data from other systems
+        - **Integration**: Connect with CI/CD pipelines for comprehensive tracking
+
+        **Event Types:**
+        - **Success Events**: Only recorded if previous failures exist for the spec
+        - **Failure Events**: Always recorded to build failure pattern database
+
+        **Data Quality:**
+        - Provide accurate timestamps for proper chronological analysis
+        - Include detailed error messages for failure events
+        - Use consistent spec ID and image name formats
+
+        **Impact on System:**
+        - Contributes to risk analysis algorithms
+        - Affects future MCI review recommendations
+        - Builds historical baseline for reliability metrics
+      operationId: RecordProvisioningEvent
+      requestBody:
+        description: Provisioning event details with success/failure information
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.ProvisioningEvent'
+        required: true
+      responses:
+        "200":
+          description: Provisioning event successfully recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Invalid event data or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal server error while recording event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: provisioningEvent
+  /provisioning/log/{specId}:
+    get:
+      tags:
+      - "[MC-Infra] Provisioning History and Analytics"
+      summary: Get Provisioning History Log for VM Specification
+      description: |-
+        Retrieve detailed provisioning history for a specific VM specification including success/failure patterns and risk analysis.
+        This endpoint provides comprehensive insights into provisioning reliability:
+
+        **Historical Data Includes:**
+        - Success and failure counts with timestamps
+        - CSP-specific error messages and failure patterns
+        - Image compatibility tracking across different attempts
+        - Failure rate analysis and risk assessment
+        - Regional and provider-specific reliability metrics
+
+        **Use Cases:**
+        - **Pre-deployment Risk Assessment**: Check if a spec has historical failures before creating MCI
+        - **Troubleshooting**: Analyze failure patterns to identify root causes
+        - **Capacity Planning**: Understand reliability patterns for different specs and regions
+        - **Cost Optimization**: Avoid specs with high failure rates that waste resources
+
+        **Response Details:**
+        - `failureCount`: Total number of provisioning failures
+        - `successCount`: Number of successes (only tracked after failures occur)
+        - `failureImages`: List of CSP images that failed with this spec
+        - `successImages`: List of CSP images that succeeded with this spec
+        - `failureMessages`: Detailed error messages from CSP
+        - `lastUpdated`: Timestamp of most recent provisioning attempt
+      operationId: GetProvisioningLog
+      parameters:
+      - name: specId
+        in: path
+        description: "VM Specification ID (format: provider+region+spec_name, e.g.,\
+          \ aws+ap-northeast-2+t2.micro)"
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Provisioning history log with success/failure statistics and
+            detailed analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ProvisioningLog'
+        "204":
+          description: No provisioning history found for the specified VM specification
+          content: {}
+        "400":
+          description: Invalid specification ID format or missing required parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal server error while retrieving provisioning history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    delete:
+      tags:
+      - "[MC-Infra] Provisioning History and Analytics"
+      summary: Delete Provisioning History Log
+      description: |-
+        Remove all provisioning history data for a specific VM specification.
+        This operation permanently deletes historical failure and success records:
+
+        **Warning**: This action is irreversible and will remove:
+        - All failure and success statistics
+        - Historical error messages and troubleshooting data
+        - Risk analysis baseline for future deployments
+        - Failure pattern analysis data
+
+        **When to Use:**
+        - **Data Cleanup**: Remove outdated or irrelevant provisioning history
+        - **Fresh Start**: Clear history after infrastructure changes that resolve previous issues
+        - **Privacy Compliance**: Remove logs containing sensitive error information
+        - **Storage Management**: Clean up logs to manage kvstore space
+
+        **Impact on System:**
+        - Future risk analysis for this spec will have no historical baseline
+        - MCI review process will not show historical warnings for this spec
+        - Provisioning reliability metrics will be reset to zero
+      operationId: DeleteProvisioningLog
+      parameters:
+      - name: specId
+        in: path
+        description: "VM Specification ID to delete history for (format: provider+region+spec_name)"
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Provisioning history successfully deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "204":
+          description: No provisioning history found to delete
+          content: {}
+        "400":
+          description: Invalid specification ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal server error while deleting provisioning history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /provisioning/risk/{specId}:
+    get:
+      tags:
+      - "[MC-Infra] Provisioning History and Analytics"
+      summary: Analyze Provisioning Risk for Spec and Image Combination
+      description: |-
+        Evaluate the likelihood of provisioning failure based on historical data for a specific VM specification and image combination.
+        This endpoint provides intelligent risk assessment to help prevent deployment failures:
+
+        **Risk Analysis Factors:**
+        - Historical failure rate for the VM specification
+        - Image-specific compatibility with the spec
+        - Recent failure patterns and trends
+        - Cross-reference of spec+image combination success rates
+
+        **Risk Levels:**
+        - `high`: Very likely to fail (>80% failure rate or image-specific failures)
+        - `medium`: Moderate risk (50-80% failure rate or mixed results)
+        - `low`: Low risk (<50% failure rate or no previous failures)
+        - `unknown`: Insufficient data for analysis
+
+        **Recommended Actions by Risk Level:**
+        - **High Risk**: Consider alternative specs or images, verify CSP quotas and permissions
+        - **Medium Risk**: Proceed with caution, have backup plans ready
+        - **Low Risk**: Safe to proceed with normal deployment
+
+        **Integration Points:**
+        - Automatically called during MCI review process
+        - Can be used in CI/CD pipelines for deployment validation
+        - Helpful for capacity planning and resource selection
+      operationId: AnalyzeProvisioningRisk
+      parameters:
+      - name: specId
+        in: path
+        description: "VM Specification ID (format: provider+region+spec_name)"
+        required: true
+        schema:
+          type: string
+      - name: cspImageName
+        in: query
+        description: CSP-specific image name/ID to analyze compatibility
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: "Risk analysis result with level, message, and detailed analysis"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analysis:
+                    type: object
+                    properties: {}
+                  riskLevel:
+                    type: string
+                  riskMessage:
+                    type: string
+        "400":
+          description: Invalid parameters or missing required query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal server error during risk analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /readyz:
     get:
       tags:
@@ -10711,6 +10953,90 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.PriorityCondition'
+    model.ProvisioningEvent:
+      type: object
+      properties:
+        cspImageName:
+          type: string
+          description: CspImageName is the CSP-specific image name used in this provisioning
+            attempt
+        errorMessage:
+          type: string
+          description: ErrorMessage contains the error message if provisioning failed
+        isSuccess:
+          type: boolean
+          description: IsSuccess indicates if the provisioning was successful
+        mciId:
+          type: string
+          description: MciId is the MCI ID that this VM belongs to
+        specId:
+          type: string
+          description: SpecId is the VM specification ID
+        timestamp:
+          type: string
+          description: Timestamp is when this provisioning event occurred
+        vmName:
+          type: string
+          description: VmName is the name of the VM that was being provisioned
+    model.ProvisioningLog:
+      type: object
+      properties:
+        additionalInfo:
+          type: object
+          additionalProperties:
+            type: string
+          description: AdditionalInfo contains any additional information about the
+            provisioning attempts
+        connectionName:
+          type: string
+          description: ConnectionName is the connection configuration name
+        failureCount:
+          type: integer
+          description: FailureCount is the total number of provisioning failures
+        failureImages:
+          type: array
+          description: FailureImages contains list of CSP image names that failed
+            with this spec
+          items:
+            type: string
+        failureMessages:
+          type: array
+          description: FailureMessages contains list of failure error messages
+          items:
+            type: string
+        failureTimestamps:
+          type: array
+          description: FailureTimestamps contains list of failure timestamps
+          items:
+            type: string
+        lastUpdated:
+          type: string
+          description: LastUpdated is the timestamp of the last log update
+        providerName:
+          type: string
+          description: ProviderName is the cloud service provider name
+        regionName:
+          type: string
+          description: RegionName is the region name
+        specId:
+          type: string
+          description: SpecId is the VM specification ID
+        successCount:
+          type: integer
+          description: SuccessCount is the total number of provisioning successes
+            (only recorded if there were previous failures)
+        successImages:
+          type: array
+          description: SuccessImages contains list of CSP image names that succeeded
+            with this spec (only recorded if there were previous failures)
+          items:
+            type: string
+        successTimestamps:
+          type: array
+          description: SuccessTimestamps contains list of success timestamps (only
+            recorded if there were previous failures)
+          items:
+            type: string
     model.PublicKeyResponse:
       type: object
       properties:
