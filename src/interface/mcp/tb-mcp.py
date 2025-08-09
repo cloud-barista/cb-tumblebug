@@ -1670,19 +1670,30 @@ def _internal_review_mci_dynamic(
     # Enhance result with additional guidance
     if isinstance(result, dict):
         # Add user-friendly summary if validation passed
-        if result.get("summary", {}).get("validationPassed", False):
+        if result.get("creationViable", False):
             result["_guidance"] = "✅ Validation passed! You can proceed with create_mci_dynamic() using the same parameters."
             result["_next_step"] = f"create_mci_dynamic(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>)"
         else:
             result["_guidance"] = "❌ Validation failed. Please address the issues before proceeding with MCI creation."
             result["_next_step"] = "Fix the reported issues and run review_mci_dynamic_request() again."
         
+        # Add enhanced summary with corrected VM count and cost information
+        if "totalVmCount" in result and "estimatedCost" in result:
+            vm_count = result["totalVmCount"]
+            estimated_cost = result.get("estimatedCost", "Cost estimation unavailable")
+            result["_deployment_summary"] = {
+                "total_vms_to_deploy": vm_count,
+                "estimated_hourly_cost": estimated_cost,
+                "note": "VM count includes all VMs in SubGroups (subGroupSize considered)"
+            }
+        
         # Add workflow recommendations
         result["_workflow_tips"] = [
             "Always run review_mci_dynamic_request() before create_mci_dynamic()",
             "Address all critical issues (errors) before deployment",
             "Consider optimization suggestions for better performance",
-            "Use hold=True in create_mci_dynamic() for manual review if needed"
+            "Use hold=True in create_mci_dynamic() for manual review if needed",
+            "SubGroup sizes are automatically calculated for accurate VM counts and costs"
         ]
     
     return result
@@ -1735,7 +1746,13 @@ def review_mci_dynamic_request(
     - ✅ Network configuration validation
     - ✅ Security group and SSH key requirements
     - ✅ Cross-CSP compatibility issues
-    - ✅ Cost estimation and optimization suggestions
+    - ✅ Cost estimation and optimization suggestions (SubGroup-aware)
+    - ✅ Accurate VM count calculation (includes all VMs in SubGroups)
+    
+    **COST & VM COUNT CALCULATION:**
+    - Total VM count considers SubGroup sizes (e.g., subGroupSize="3" = 3 VMs)
+    - Cost estimation multiplied by actual VM count per SubGroup
+    - Example: SubGroup with 3 VMs @ $0.10/hour = $0.30/hour total
     
     Args:
         ns_id: Namespace ID for MCI deployment
@@ -1745,7 +1762,7 @@ def review_mci_dynamic_request(
             - commonImage: CSP-specific image identifier (optional - auto-mapped if omitted)
             - name: VM or subGroup name (optional)
             - description: VM description (optional)
-            - subGroupSize: Number of VMs in subgroup (default "1")
+            - subGroupSize: Number of VMs in subgroup (default "1") - affects total VM count and cost
             - connectionName: Specific connection name (optional)
             - rootDiskSize: Root disk size in GB (optional)
             - rootDiskType: Root disk type (optional)

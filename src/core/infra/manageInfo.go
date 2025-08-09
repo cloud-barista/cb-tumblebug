@@ -1417,7 +1417,9 @@ func UpdateMciInfo(nsId string, mciInfoData model.TbMciInfo) {
 // UpdateVmInfo is func to update VM Info
 func UpdateVmInfo(nsId string, mciId string, vmInfoData model.TbVmInfo) {
 	mciInfoMutex.Lock()
-	defer mciInfoMutex.Unlock()
+	defer func() {
+		mciInfoMutex.Unlock()
+	}()
 
 	key := common.GenMciKey(nsId, mciId, vmInfoData.Id)
 

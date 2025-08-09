@@ -70,7 +70,9 @@ func createVmObjectSafe(nsId, mciId string, vmInfoData *model.TbVmInfo) error {
 func createVmSafe(nsId, mciId string, vmInfoData *model.TbVmInfo, option string) error {
 	var wg sync.WaitGroup
 	wg.Add(1)
-	return CreateVm(&wg, nsId, mciId, vmInfoData, option)
+	err := CreateVm(&wg, nsId, mciId, vmInfoData, option)
+	wg.Wait()
+	return err
 }
 
 // Helper functions for CreateMci
@@ -871,7 +873,17 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 		}
 	}
 
-	// Helper function to add VM creation error
+	// Helper function to add VM creation error (mutex-free version for when already locked)
+	addVmErrorUnsafe := func(errors *[]model.VmCreationError, vmName, errorMsg, phase string) {
+		*errors = append(*errors, model.VmCreationError{
+			VmName:    vmName,
+			Error:     errorMsg,
+			Phase:     phase,
+			Timestamp: time.Now().Format(time.RFC3339),
+		})
+	}
+
+	// Helper function to add VM creation error (with mutex for standalone use)
 	addVmError := func(errors *[]model.VmCreationError, vmName, errorMsg, phase string) {
 		errorMu.Lock()
 		defer errorMu.Unlock()
@@ -1079,7 +1091,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 			if err := createVmSafe(nsId, mciId, &vmData, option); err != nil {
 				errorMu.Lock()
 				createErrors = append(createErrors, fmt.Errorf("VM creation failed for '%s': %w", vmName, err))
-				addVmError(&vmCreateErrors, vmName, err.Error(), "vm_creation")
+				addVmErrorUnsafe(&vmCreateErrors, vmName, err.Error(), "vm_creation")
 				errorMu.Unlock()
 			}
 		}(vmInfoData, config.vmInfo.Id)
@@ -1499,7 +1511,8 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 	if deployOption == "hold" {
 		option = "hold"
 	}
-	return CreateMci(nsId, &mciReq, option)
+	result, err := CreateMci(nsId, &mciReq, option)
+	return result, err
 }
 
 // ValidateMciDynamicReq is func to validate MCI dynamic request before actual provisioning
@@ -2579,6 +2592,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 		UpdateVmInfo(nsId, mciId, *vmInfoData)
 
 		log.Error().Err(err).Msg("")
+		return err
 	}
 
 	return nil
