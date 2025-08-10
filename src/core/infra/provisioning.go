@@ -3462,95 +3462,321 @@ func RecordProvisioningEventsFromMci(nsId string, mciInfo *model.TbMciInfo) erro
 func AnalyzeProvisioningRisk(specId string, cspImageName string) (riskLevel string, riskMessage string, err error) {
 	log.Debug().Msgf("Analyzing provisioning risk for spec: %s, image: %s", specId, cspImageName)
 
+	// Get detailed risk analysis
+	riskAnalysis, err := AnalyzeProvisioningRiskDetailed(specId, cspImageName)
+	if err != nil {
+		return "low", "Unable to analyze provisioning risk", err
+	}
+
+	// Return overall risk for backward compatibility
+	return riskAnalysis.OverallRisk.Level, riskAnalysis.OverallRisk.Message, nil
+}
+
+// AnalyzeProvisioningRiskDetailed provides comprehensive risk analysis with separate spec and image risk assessment
+func AnalyzeProvisioningRiskDetailed(specId string, cspImageName string) (*model.RiskAnalysis, error) {
+	log.Debug().Msgf("Analyzing detailed provisioning risk for spec: %s, image: %s", specId, cspImageName)
+
 	// Get provisioning log - now handles corrupted data gracefully
 	provisioningLog, err := GetProvisioningLog(specId)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Failed to get provisioning log for spec: %s, treating as no history", specId)
-		// Don't return error, treat as no history available
-		return "low", "Unable to analyze provisioning history, assuming low risk", nil
+		// Return default low risk analysis
+		return &model.RiskAnalysis{
+			SpecRisk: model.SpecRiskInfo{
+				Level:   "low",
+				Message: "Unable to analyze spec history, assuming low risk",
+			},
+			ImageRisk: model.ImageRiskInfo{
+				Level:            "low",
+				Message:          "Unable to analyze image history, assuming low risk",
+				IsNewCombination: true,
+			},
+			OverallRisk: model.OverallRiskInfo{
+				Level:             "low",
+				Message:           "Unable to analyze provisioning history, assuming low risk",
+				PrimaryRiskFactor: "none",
+			},
+			Recommendations: []string{"Monitor this deployment for any issues"},
+		}, nil
 	}
 
 	// If no log exists, assume low risk
 	if provisioningLog == nil {
 		log.Debug().Msgf("No provisioning history found for spec: %s", specId)
-		return "low", "No previous provisioning history available", nil
+		return &model.RiskAnalysis{
+			SpecRisk: model.SpecRiskInfo{
+				Level:   "low",
+				Message: "No previous provisioning history available for this spec",
+			},
+			ImageRisk: model.ImageRiskInfo{
+				Level:            "low",
+				Message:          "No previous history for this image with this spec",
+				IsNewCombination: true,
+			},
+			OverallRisk: model.OverallRiskInfo{
+				Level:             "low",
+				Message:           "No previous provisioning history available",
+				PrimaryRiskFactor: "none",
+			},
+			Recommendations: []string{"This is a new spec, monitor deployment closely"},
+		}, nil
 	}
 
 	totalAttempts := provisioningLog.FailureCount + provisioningLog.SuccessCount
 	if totalAttempts == 0 {
 		log.Debug().Msgf("No provisioning attempts recorded for spec: %s", specId)
-		return "low", "No provisioning attempts recorded", nil
+		return &model.RiskAnalysis{
+			SpecRisk: model.SpecRiskInfo{
+				Level:   "low",
+				Message: "No provisioning attempts recorded for this spec",
+			},
+			ImageRisk: model.ImageRiskInfo{
+				Level:            "low",
+				Message:          "No attempts with this image on this spec",
+				IsNewCombination: true,
+			},
+			OverallRisk: model.OverallRiskInfo{
+				Level:             "low",
+				Message:           "No provisioning attempts recorded",
+				PrimaryRiskFactor: "none",
+			},
+			Recommendations: []string{"First deployment with this configuration, proceed with monitoring"},
+		}, nil
 	}
 
 	failureRate := float64(provisioningLog.FailureCount) / float64(totalAttempts)
 
-	// Check if this specific image has failed before
+	// Check image-specific history
 	imageHasFailed := contains(provisioningLog.FailureImages, cspImageName)
 	imageHasSucceeded := contains(provisioningLog.SuccessImages, cspImageName)
+	isNewCombination := !imageHasFailed && !imageHasSucceeded
 
-	// Count the number of different images that have failed with this spec
+	// Count the number of different images that have failed/succeeded with this spec
 	failedImageCount := len(provisioningLog.FailureImages)
 	succeededImageCount := len(provisioningLog.SuccessImages)
 
 	log.Debug().Msgf("Provisioning analysis for spec %s: failures=%d, successes=%d, rate=%.2f, image_failed=%t, image_succeeded=%t, failed_images=%d, succeeded_images=%d",
 		specId, provisioningLog.FailureCount, provisioningLog.SuccessCount, failureRate, imageHasFailed, imageHasSucceeded, failedImageCount, succeededImageCount)
 
-	// Enhanced risk analysis considering spec-level vs image-level issues
+	// Analyze spec-specific risk
+	specRisk := analyzeSpecRisk(failedImageCount, succeededImageCount, provisioningLog.FailureCount, provisioningLog.SuccessCount, failureRate)
 
-	// Case 1: This specific image has failed before and never succeeded with this spec
-	if imageHasFailed && !imageHasSucceeded {
-		return "high", fmt.Sprintf("This image (%s) has previously failed with this spec and never succeeded. Total failures: %d",
-			cspImageName, provisioningLog.FailureCount), nil
-	}
+	// Analyze image-specific risk
+	imageRisk := analyzeImageRisk(imageHasFailed, imageHasSucceeded, isNewCombination, cspImageName)
 
-	// Case 2: Spec-level issues - multiple different images have failed
-	if failedImageCount >= 10 {
-		// Very likely spec-level issue: 10+ different images failed
-		return "high", fmt.Sprintf("Spec-level issue detected: %d different images have failed with this spec (%.1f%% failure rate). This suggests the spec itself may be problematic",
-			failedImageCount, failureRate*100), nil
-	} else if failedImageCount >= 5 {
-		// Likely spec-level issue: 5+ different images failed
-		return "medium", fmt.Sprintf("Possible spec-level issue: %d different images have failed with this spec (%.1f%% failure rate). Consider checking spec compatibility",
-			failedImageCount, failureRate*100), nil
-	} else if failedImageCount >= 3 && succeededImageCount == 0 {
-		// Potential spec-level issue: 3+ different images failed with no successes
-		return "medium", fmt.Sprintf("Potential spec-level issue: %d different images have failed with this spec and none have succeeded (%.1f%% failure rate)",
-			failedImageCount, failureRate*100), nil
-	}
+	// Determine overall risk and primary factor
+	overallRisk := determineOverallRisk(specRisk, imageRisk)
 
-	// Case 3: High overall failure rate regardless of image diversity
-	if failureRate >= 0.8 {
-		return "high", fmt.Sprintf("Very high failure rate (%.1f%%) for this spec. Recent failures: %d, successes: %d",
-			failureRate*100, provisioningLog.FailureCount, provisioningLog.SuccessCount), nil
-	}
+	// Generate recommendations
+	recommendations := generateRecommendations(specRisk, imageRisk, overallRisk)
 
-	// Case 4: Moderate failure rate with additional context
-	if failureRate >= 0.5 {
-		if imageHasFailed && failureRate >= 0.3 {
-			return "medium", fmt.Sprintf("Moderate failure rate (%.1f%%) and this image has failed before with this spec. Failures: %d, successes: %d",
-				failureRate*100, provisioningLog.FailureCount, provisioningLog.SuccessCount), nil
-		} else {
-			return "medium", fmt.Sprintf("Moderate failure rate (%.1f%%) for this spec. Failures: %d, successes: %d",
-				failureRate*100, provisioningLog.FailureCount, provisioningLog.SuccessCount), nil
-		}
-	}
-
-	// Case 5: Low failure rate but some context
-	if failureRate > 0 {
-		if failedImageCount >= 3 {
-			return "low", fmt.Sprintf("Low failure rate (%.1f%%) but %d different images have failed. Monitor for potential spec issues. Failures: %d, successes: %d",
-				failureRate*100, failedImageCount, provisioningLog.FailureCount, provisioningLog.SuccessCount), nil
-		} else {
-			return "low", fmt.Sprintf("Low failure rate (%.1f%%) for this spec. Some previous issues reported: %d failures, %d successes",
-				failureRate*100, provisioningLog.FailureCount, provisioningLog.SuccessCount), nil
-		}
-	}
-
-	// Case 6: No failures recorded
-	return "low", "No previous failures recorded for this spec", nil
+	return &model.RiskAnalysis{
+		SpecRisk:        specRisk,
+		ImageRisk:       imageRisk,
+		OverallRisk:     overallRisk,
+		Recommendations: recommendations,
+	}, nil
 }
 
-// CleanupCorruptedProvisioningLogs removes all corrupted provisioning log entries from kvstore
+// analyzeSpecRisk analyzes risk factors specific to the VM specification
+func analyzeSpecRisk(failedImageCount, succeededImageCount, totalFailures, totalSuccesses int, failureRate float64) model.SpecRiskInfo {
+	var level, message string
+
+	if failedImageCount >= 10 {
+		// Very likely spec-level issue: 10+ different images failed
+		level = "high"
+		message = fmt.Sprintf("Spec-level issue detected: %d different images have failed with this spec (%.1f%% failure rate). This suggests the spec itself may be problematic",
+			failedImageCount, failureRate*100)
+	} else if failedImageCount >= 5 {
+		// Likely spec-level issue: 5+ different images failed
+		level = "medium"
+		message = fmt.Sprintf("Possible spec-level issue: %d different images have failed with this spec (%.1f%% failure rate). Consider checking spec compatibility",
+			failedImageCount, failureRate*100)
+	} else if failedImageCount >= 3 && succeededImageCount == 0 {
+		// Potential spec-level issue: 3+ different images failed with no successes
+		level = "medium"
+		message = fmt.Sprintf("Potential spec-level issue: %d different images have failed with this spec and none have succeeded (%.1f%% failure rate)",
+			failedImageCount, failureRate*100)
+	} else if failureRate >= 0.8 {
+		level = "high"
+		message = fmt.Sprintf("Very high failure rate (%.1f%%) for this spec, even with some successful images",
+			failureRate*100)
+	} else if failureRate >= 0.5 {
+		level = "medium"
+		message = fmt.Sprintf("Moderate failure rate (%.1f%%) for this spec across different images",
+			failureRate*100)
+	} else if failureRate > 0 {
+		level = "low"
+		message = fmt.Sprintf("Low failure rate (%.1f%%) for this spec, mostly successful with various images",
+			failureRate*100)
+	} else {
+		level = "low"
+		message = "No failures recorded for this spec, appears stable"
+	}
+
+	return model.SpecRiskInfo{
+		Level:               level,
+		Message:             message,
+		FailedImageCount:    failedImageCount,
+		SucceededImageCount: succeededImageCount,
+		TotalFailures:       totalFailures,
+		TotalSuccesses:      totalSuccesses,
+		FailureRate:         failureRate,
+	}
+}
+
+// analyzeImageRisk analyzes risk factors specific to the image
+func analyzeImageRisk(imageHasFailed, imageHasSucceeded, isNewCombination bool, cspImageName string) model.ImageRiskInfo {
+	var level, message string
+
+	if imageHasFailed {
+		// CRITICAL: Any previous failure with this exact spec+image combination means high risk
+		if !imageHasSucceeded {
+			// This specific image has failed before and never succeeded with this spec
+			level = "high"
+			message = fmt.Sprintf("CRITICAL: This exact spec+image combination (%s) has failed before and never succeeded", cspImageName)
+		} else {
+			// This image has both failed and succeeded with this spec - still high risk due to failure history
+			level = "high"
+			message = fmt.Sprintf("HIGH RISK: This exact spec+image combination (%s) has failed at least once before, despite some successes", cspImageName)
+		}
+	} else if imageHasSucceeded && !imageHasFailed {
+		// This image has only succeeded with this spec - safest option
+		level = "low"
+		message = fmt.Sprintf("SAFE: This exact spec+image combination (%s) has previously succeeded and never failed", cspImageName)
+	} else if isNewCombination {
+		// This is a new combination - unknown risk
+		level = "low"
+		message = fmt.Sprintf("NEW: This exact spec+image combination (%s) has never been tried before", cspImageName)
+	} else {
+		// Fallback case
+		level = "low"
+		message = "No specific image risk identified"
+	}
+
+	return model.ImageRiskInfo{
+		Level:                level,
+		Message:              message,
+		HasFailedWithSpec:    imageHasFailed,
+		HasSucceededWithSpec: imageHasSucceeded,
+		IsNewCombination:     isNewCombination,
+	}
+}
+
+// determineOverallRisk determines the overall risk based on spec and image risks
+func determineOverallRisk(specRisk model.SpecRiskInfo, imageRisk model.ImageRiskInfo) model.OverallRiskInfo {
+	var level, message, primaryRiskFactor string
+
+	// Determine the highest risk level
+	specRiskValue := getRiskValue(specRisk.Level)
+	imageRiskValue := getRiskValue(imageRisk.Level)
+
+	if specRiskValue >= imageRiskValue {
+		level = specRisk.Level
+		primaryRiskFactor = "spec"
+		if specRiskValue > imageRiskValue {
+			message = fmt.Sprintf("Primary risk is spec-related: %s", specRisk.Message)
+		} else {
+			message = fmt.Sprintf("Both spec and image have similar risk levels. Spec: %s", specRisk.Message)
+		}
+	} else {
+		level = imageRisk.Level
+		primaryRiskFactor = "image"
+		message = fmt.Sprintf("Primary risk is image-related: %s", imageRisk.Message)
+	}
+
+	// Special case handling
+	if specRisk.Level == "low" && imageRisk.Level == "low" {
+		primaryRiskFactor = "none"
+		message = "Both spec and image appear safe based on historical data"
+	} else if imageRisk.IsNewCombination && specRisk.Level != "low" {
+		primaryRiskFactor = "combination"
+		message = fmt.Sprintf("New image combination with a spec that has shown issues: %s", specRisk.Message)
+	}
+
+	return model.OverallRiskInfo{
+		Level:             level,
+		Message:           message,
+		PrimaryRiskFactor: primaryRiskFactor,
+	}
+}
+
+// generateRecommendations provides actionable guidance based on risk analysis
+func generateRecommendations(specRisk model.SpecRiskInfo, imageRisk model.ImageRiskInfo, overallRisk model.OverallRiskInfo) []string {
+	var recommendations []string
+
+	switch overallRisk.PrimaryRiskFactor {
+	case "spec":
+		if specRisk.Level == "high" {
+			recommendations = append(recommendations, "Consider changing to a different VM specification")
+			recommendations = append(recommendations, "Check if this spec is available and properly configured in the target region")
+			if specRisk.FailedImageCount >= 5 {
+				recommendations = append(recommendations, "Multiple images have failed with this spec - likely a spec-level compatibility issue")
+			}
+		} else if specRisk.Level == "medium" {
+			recommendations = append(recommendations, "Monitor deployment closely - this spec has shown some issues")
+			recommendations = append(recommendations, "Consider having a backup spec ready")
+		}
+
+	case "image":
+		if imageRisk.Level == "high" {
+			if imageRisk.HasFailedWithSpec && !imageRisk.HasSucceededWithSpec {
+				recommendations = append(recommendations, "CRITICAL: This exact spec+image combination has failed before and NEVER succeeded")
+				recommendations = append(recommendations, "STRONGLY RECOMMEND: Use a different image immediately")
+				recommendations = append(recommendations, "Find alternative images with same OS/application requirements")
+			} else if imageRisk.HasFailedWithSpec && imageRisk.HasSucceededWithSpec {
+				recommendations = append(recommendations, "HIGH RISK: This exact combination has failed at least once before")
+				recommendations = append(recommendations, "CAUTION: Even though it succeeded sometimes, failure history indicates instability")
+				recommendations = append(recommendations, "Consider using a more reliable image or test extensively before production")
+			}
+		} else if imageRisk.Level == "medium" {
+			recommendations = append(recommendations, "This image has mixed results with this spec - proceed with caution")
+		}
+
+	case "combination":
+		recommendations = append(recommendations, "This is a new spec+image combination")
+		recommendations = append(recommendations, "Monitor closely as there's no historical data for this combination")
+		if specRisk.Level != "low" {
+			recommendations = append(recommendations, "Consider that this spec has shown issues with other images")
+		}
+
+	case "none":
+		recommendations = append(recommendations, "Both spec and image appear safe based on historical data")
+		recommendations = append(recommendations, "Continue with standard monitoring")
+
+	default:
+		recommendations = append(recommendations, "Monitor deployment and record results for future analysis")
+	}
+
+	// Add critical warnings for any failure history
+	if imageRisk.HasFailedWithSpec {
+		recommendations = append(recommendations, "IMPORTANT: This exact spec+image combination has failure history - high caution advised")
+	}
+
+	// Add general recommendations based on risk levels
+	if overallRisk.Level == "high" {
+		recommendations = append(recommendations, "HIGH RISK DEPLOYMENT - Consider testing in development environment first")
+		recommendations = append(recommendations, "Ensure robust rollback plans and monitoring are in place")
+	} else if overallRisk.Level == "medium" {
+		recommendations = append(recommendations, "Medium risk - ensure proper monitoring and rollback plans are in place")
+	}
+
+	return recommendations
+}
+
+// getRiskValue converts risk level to numeric value for comparison
+func getRiskValue(riskLevel string) int {
+	switch riskLevel {
+	case "high":
+		return 3
+	case "medium":
+		return 2
+	case "low":
+		return 1
+	default:
+		return 0
+	}
+} // CleanupCorruptedProvisioningLogs removes all corrupted provisioning log entries from kvstore
 func CleanupCorruptedProvisioningLogs() error {
 	log.Debug().Msg("Starting cleanup of corrupted provisioning logs")
 

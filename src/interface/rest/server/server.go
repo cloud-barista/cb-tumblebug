@@ -381,6 +381,7 @@ func RunServer() {
 	e.GET("/tumblebug/provisioning/log/:specId", rest_infra.RestGetProvisioningLog)
 	e.DELETE("/tumblebug/provisioning/log/:specId", rest_infra.RestDeleteProvisioningLog)
 	e.GET("/tumblebug/provisioning/risk/:specId", rest_infra.RestAnalyzeProvisioningRisk)
+	e.GET("/tumblebug/provisioning/risk/detailed", rest_infra.RestAnalyzeProvisioningRiskDetailed)
 	e.POST("/tumblebug/provisioning/event", rest_infra.RestRecordProvisioningEvent)
 
 	g.GET("/:nsId/mci/:mciId/associatedResources", rest_infra.RestGetMciAssociatedResources)
