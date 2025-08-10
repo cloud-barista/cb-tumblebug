@@ -15,6 +15,7 @@ limitations under the License.
 package infra
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -897,6 +898,71 @@ func RestAnalyzeProvisioningRisk(c echo.Context) error {
 	}
 
 	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestAnalyzeProvisioningRiskDetailed godoc
+// @ID AnalyzeProvisioningRiskDetailed
+// @Summary Analyze Detailed Provisioning Risk with Spec and Image Breakdown
+// @Description Provides comprehensive risk analysis with separate assessments for VM specification and image risks, plus actionable recommendations.
+// @Description This endpoint offers enhanced risk analysis by separating spec-level and image-level risk factors:
+// @Description
+// @Description **Risk Analysis Breakdown:**
+// @Description - **Spec Risk**: Analyzes whether the VM specification itself has compatibility or resource issues
+// @Description - **Image Risk**: Evaluates the track record of the specific image with this spec
+// @Description - **Overall Risk**: Combines both factors to determine the primary risk source
+// @Description - **Recommendations**: Provides actionable guidance based on risk analysis
+// @Description
+// @Description **Spec Risk Factors:**
+// @Description - Number of different images that failed with this spec (indicates spec-level issues)
+// @Description - Overall failure rate across all images
+// @Description - Success/failure ratio with various images
+// @Description
+// @Description **Image Risk Factors:**
+// @Description - Previous success/failure history of this specific image with this spec
+// @Description - Whether this is a new, untested combination
+// @Description
+// @Description **Recommendation Types:**
+// @Description - Change VM specification (when spec is the primary risk factor)
+// @Description - Try different image (when image is the primary risk factor)
+// @Description - Monitor deployment closely (for new combinations or medium risk)
+// @Description - Proceed with confidence (for low-risk combinations)
+// @Tags [MCI] Provisioning History
+// @Accept json
+// @Produce json
+// @Param specId query string true "VM specification ID (e.g., 'gcp+europe-north1+f1-micro')"
+// @Param cspImageName query string true "CSP-specific image name (e.g., 'ami-0c02fb55956c7d316' for AWS)"
+// @Success 200 {object} model.RiskAnalysis "Detailed risk analysis with spec, image, and overall risk assessments plus recommendations"
+// @Failure 400 {object} model.SimpleMsg "Bad Request - Missing or invalid parameters"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /tumblebug/provisioning/risk/detailed [get]
+func RestAnalyzeProvisioningRiskDetailed(c echo.Context) error {
+	// Get query parameters
+	specId := c.QueryParam("specId")
+	cspImageName := c.QueryParam("cspImageName")
+
+	// Validate required parameters
+	if specId == "" {
+		err := fmt.Errorf("specId parameter is required")
+		log.Error().Err(err).Msg("Missing required parameter")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	if cspImageName == "" {
+		err := fmt.Errorf("cspImageName parameter is required")
+		log.Error().Err(err).Msg("Missing required parameter")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	log.Debug().Msgf("REST API - Analyzing detailed provisioning risk for spec: %s, image: %s", specId, cspImageName)
+
+	// Analyze detailed provisioning risk
+	riskAnalysis, err := infra.AnalyzeProvisioningRiskDetailed(specId, cspImageName)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to analyze detailed provisioning risk for spec: %s", specId)
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, riskAnalysis)
 }
 
 // RestRecordProvisioningEvent godoc

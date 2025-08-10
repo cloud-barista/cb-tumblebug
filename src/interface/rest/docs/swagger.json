@@ -11614,6 +11614,58 @@
                 }
             }
         },
+        "/tumblebug/provisioning/risk/detailed": {
+            "get": {
+                "description": "Provides comprehensive risk analysis with separate assessments for VM specification and image risks, plus actionable recommendations.\nThis endpoint offers enhanced risk analysis by separating spec-level and image-level risk factors:\n\n**Risk Analysis Breakdown:**\n- **Spec Risk**: Analyzes whether the VM specification itself has compatibility or resource issues\n- **Image Risk**: Evaluates the track record of the specific image with this spec\n- **Overall Risk**: Combines both factors to determine the primary risk source\n- **Recommendations**: Provides actionable guidance based on risk analysis\n\n**Spec Risk Factors:**\n- Number of different images that failed with this spec (indicates spec-level issues)\n- Overall failure rate across all images\n- Success/failure ratio with various images\n\n**Image Risk Factors:**\n- Previous success/failure history of this specific image with this spec\n- Whether this is a new, untested combination\n\n**Recommendation Types:**\n- Change VM specification (when spec is the primary risk factor)\n- Try different image (when image is the primary risk factor)\n- Monitor deployment closely (for new combinations or medium risk)\n- Proceed with confidence (for low-risk combinations)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MCI] Provisioning History"
+                ],
+                "summary": "Analyze Detailed Provisioning Risk with Spec and Image Breakdown",
+                "operationId": "AnalyzeProvisioningRiskDetailed",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VM specification ID (e.g., 'gcp+europe-north1+f1-micro')",
+                        "name": "specId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "CSP-specific image name (e.g., 'ami-0c02fb55956c7d316' for AWS)",
+                        "name": "cspImageName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detailed risk analysis with spec, image, and overall risk assessments plus recommendations",
+                        "schema": {
+                            "$ref": "#/definitions/model.RiskAnalysis"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Missing or invalid parameters",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/updateImagesFromAsset": {
             "post": {
                 "description": "Update image information based on the cloudimage.csv asset file",
@@ -12704,6 +12756,31 @@
                 }
             }
         },
+        "model.ImageRiskInfo": {
+            "type": "object",
+            "properties": {
+                "hasFailedWithSpec": {
+                    "description": "HasFailedWithSpec indicates if this image has failed with this spec before",
+                    "type": "boolean"
+                },
+                "hasSucceededWithSpec": {
+                    "description": "HasSucceededWithSpec indicates if this image has succeeded with this spec before",
+                    "type": "boolean"
+                },
+                "isNewCombination": {
+                    "description": "IsNewCombination indicates if this spec+image combination has never been tried",
+                    "type": "boolean"
+                },
+                "level": {
+                    "description": "Level is the risk level: \"low\", \"medium\", \"high\"",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "Message explains the image-specific risk reasoning",
+                    "type": "string"
+                }
+            }
+        },
         "model.ImageStatus": {
             "type": "string",
             "enum": [
@@ -13634,6 +13711,23 @@
                 }
             }
         },
+        "model.OverallRiskInfo": {
+            "type": "object",
+            "properties": {
+                "level": {
+                    "description": "Level is the overall risk level: \"low\", \"medium\", \"high\"",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "Message explains the overall risk reasoning",
+                    "type": "string"
+                },
+                "primaryRiskFactor": {
+                    "description": "PrimaryRiskFactor indicates what the main risk factor is: \"spec\", \"image\", \"combination\", \"none\"",
+                    "type": "string"
+                }
+            }
+        },
         "model.ParameterKeyVal": {
             "type": "object",
             "properties": {
@@ -14554,6 +14648,42 @@
                 }
             }
         },
+        "model.RiskAnalysis": {
+            "type": "object",
+            "properties": {
+                "imageRisk": {
+                    "description": "ImageRisk contains image-specific risk analysis",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ImageRiskInfo"
+                        }
+                    ]
+                },
+                "overallRisk": {
+                    "description": "OverallRisk contains overall combined risk assessment",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.OverallRiskInfo"
+                        }
+                    ]
+                },
+                "recommendations": {
+                    "description": "Recommendations provides actionable guidance for users",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "specRisk": {
+                    "description": "SpecRisk contains spec-specific risk analysis",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.SpecRiskInfo"
+                        }
+                    ]
+                }
+            }
+        },
         "model.SearchImageRequest": {
             "type": "object",
             "properties": {
@@ -14814,6 +14944,39 @@
                         "gcp",
                         "tencent"
                     ]
+                }
+            }
+        },
+        "model.SpecRiskInfo": {
+            "type": "object",
+            "properties": {
+                "failedImageCount": {
+                    "description": "FailedImageCount is the number of different images that failed with this spec",
+                    "type": "integer"
+                },
+                "failureRate": {
+                    "description": "FailureRate is the overall failure rate for this spec (0.0 to 1.0)",
+                    "type": "number"
+                },
+                "level": {
+                    "description": "Level is the risk level: \"low\", \"medium\", \"high\"",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "Message explains the spec-specific risk reasoning",
+                    "type": "string"
+                },
+                "succeededImageCount": {
+                    "description": "SucceededImageCount is the number of different images that succeeded with this spec",
+                    "type": "integer"
+                },
+                "totalFailures": {
+                    "description": "TotalFailures is the total number of failures for this spec",
+                    "type": "integer"
+                },
+                "totalSuccesses": {
+                    "description": "TotalSuccesses is the total number of successes for this spec",
+                    "type": "integer"
                 }
             }
         },

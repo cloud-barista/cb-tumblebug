@@ -1097,3 +1097,72 @@ type ProvisioningEvent struct {
 	// MciId is the MCI ID that this VM belongs to
 	MciId string `json:"mciId"`
 }
+
+// RiskAnalysis represents detailed risk analysis for provisioning
+type RiskAnalysis struct {
+	// SpecRisk contains spec-specific risk analysis
+	SpecRisk SpecRiskInfo `json:"specRisk"`
+
+	// ImageRisk contains image-specific risk analysis
+	ImageRisk ImageRiskInfo `json:"imageRisk"`
+
+	// OverallRisk contains overall combined risk assessment
+	OverallRisk OverallRiskInfo `json:"overallRisk"`
+
+	// Recommendations provides actionable guidance for users
+	Recommendations []string `json:"recommendations"`
+}
+
+// SpecRiskInfo represents risk analysis specific to the VM specification
+type SpecRiskInfo struct {
+	// Level is the risk level: "low", "medium", "high"
+	Level string `json:"level"`
+
+	// Message explains the spec-specific risk reasoning
+	Message string `json:"message"`
+
+	// FailedImageCount is the number of different images that failed with this spec
+	FailedImageCount int `json:"failedImageCount"`
+
+	// SucceededImageCount is the number of different images that succeeded with this spec
+	SucceededImageCount int `json:"succeededImageCount"`
+
+	// TotalFailures is the total number of failures for this spec
+	TotalFailures int `json:"totalFailures"`
+
+	// TotalSuccesses is the total number of successes for this spec
+	TotalSuccesses int `json:"totalSuccesses"`
+
+	// FailureRate is the overall failure rate for this spec (0.0 to 1.0)
+	FailureRate float64 `json:"failureRate"`
+}
+
+// ImageRiskInfo represents risk analysis specific to the image
+type ImageRiskInfo struct {
+	// Level is the risk level: "low", "medium", "high"
+	Level string `json:"level"`
+
+	// Message explains the image-specific risk reasoning
+	Message string `json:"message"`
+
+	// HasFailedWithSpec indicates if this image has failed with this spec before
+	HasFailedWithSpec bool `json:"hasFailedWithSpec"`
+
+	// HasSucceededWithSpec indicates if this image has succeeded with this spec before
+	HasSucceededWithSpec bool `json:"hasSucceededWithSpec"`
+
+	// IsNewCombination indicates if this spec+image combination has never been tried
+	IsNewCombination bool `json:"isNewCombination"`
+}
+
+// OverallRiskInfo represents the combined risk assessment
+type OverallRiskInfo struct {
+	// Level is the overall risk level: "low", "medium", "high"
+	Level string `json:"level"`
+
+	// Message explains the overall risk reasoning
+	Message string `json:"message"`
+
+	// PrimaryRiskFactor indicates what the main risk factor is: "spec", "image", "combination", "none"
+	PrimaryRiskFactor string `json:"primaryRiskFactor"`
+}

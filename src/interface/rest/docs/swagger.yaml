@@ -9483,6 +9483,69 @@ paths:
                 additionalProperties:
                   type: string
       x-codegen-request-body-name: number
+  /tumblebug/provisioning/risk/detailed:
+    get:
+      tags:
+      - "[MCI] Provisioning History"
+      summary: Analyze Detailed Provisioning Risk with Spec and Image Breakdown
+      description: |-
+        Provides comprehensive risk analysis with separate assessments for VM specification and image risks, plus actionable recommendations.
+        This endpoint offers enhanced risk analysis by separating spec-level and image-level risk factors:
+
+        **Risk Analysis Breakdown:**
+        - **Spec Risk**: Analyzes whether the VM specification itself has compatibility or resource issues
+        - **Image Risk**: Evaluates the track record of the specific image with this spec
+        - **Overall Risk**: Combines both factors to determine the primary risk source
+        - **Recommendations**: Provides actionable guidance based on risk analysis
+
+        **Spec Risk Factors:**
+        - Number of different images that failed with this spec (indicates spec-level issues)
+        - Overall failure rate across all images
+        - Success/failure ratio with various images
+
+        **Image Risk Factors:**
+        - Previous success/failure history of this specific image with this spec
+        - Whether this is a new, untested combination
+
+        **Recommendation Types:**
+        - Change VM specification (when spec is the primary risk factor)
+        - Try different image (when image is the primary risk factor)
+        - Monitor deployment closely (for new combinations or medium risk)
+        - Proceed with confidence (for low-risk combinations)
+      operationId: AnalyzeProvisioningRiskDetailed
+      parameters:
+      - name: specId
+        in: query
+        description: "VM specification ID (e.g., 'gcp+europe-north1+f1-micro')"
+        required: true
+        schema:
+          type: string
+      - name: cspImageName
+        in: query
+        description: "CSP-specific image name (e.g., 'ami-0c02fb55956c7d316' for AWS)"
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: "Detailed risk analysis with spec, image, and overall risk\
+            \ assessments plus recommendations"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.RiskAnalysis'
+        "400":
+          description: Bad Request - Missing or invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /updateImagesFromAsset:
     post:
       tags:
@@ -10248,6 +10311,27 @@ components:
           - tencent
           items:
             type: string
+    model.ImageRiskInfo:
+      type: object
+      properties:
+        hasFailedWithSpec:
+          type: boolean
+          description: HasFailedWithSpec indicates if this image has failed with this
+            spec before
+        hasSucceededWithSpec:
+          type: boolean
+          description: HasSucceededWithSpec indicates if this image has succeeded
+            with this spec before
+        isNewCombination:
+          type: boolean
+          description: IsNewCombination indicates if this spec+image combination has
+            never been tried
+        level:
+          type: string
+          description: "Level is the risk level: \"low\", \"medium\", \"high\""
+        message:
+          type: string
+          description: Message explains the image-specific risk reasoning
     model.ImageStatus:
       type: string
       enum:
@@ -10896,6 +10980,19 @@ components:
           - '>='
           - <=
           - ==
+    model.OverallRiskInfo:
+      type: object
+      properties:
+        level:
+          type: string
+          description: "Level is the overall risk level: \"low\", \"medium\", \"high\""
+        message:
+          type: string
+          description: Message explains the overall risk reasoning
+        primaryRiskFactor:
+          type: string
+          description: "PrimaryRiskFactor indicates what the main risk factor is:\
+            \ \"spec\", \"image\", \"combination\", \"none\""
     model.ParameterKeyVal:
       type: object
       properties:
@@ -11540,6 +11637,29 @@ components:
           description: Warnings and errors
           items:
             type: string
+    model.RiskAnalysis:
+      type: object
+      properties:
+        imageRisk:
+          type: object
+          description: ImageRisk contains image-specific risk analysis
+          allOf:
+          - $ref: '#/components/schemas/model.ImageRiskInfo'
+        overallRisk:
+          type: object
+          description: OverallRisk contains overall combined risk assessment
+          allOf:
+          - $ref: '#/components/schemas/model.OverallRiskInfo'
+        recommendations:
+          type: array
+          description: Recommendations provides actionable guidance for users
+          items:
+            type: string
+        specRisk:
+          type: object
+          description: SpecRisk contains spec-specific risk analysis
+          allOf:
+          - $ref: '#/components/schemas/model.SpecRiskInfo'
     model.SearchImageRequest:
       type: object
       properties:
@@ -11778,6 +11898,33 @@ components:
           - tencent
           items:
             type: string
+    model.SpecRiskInfo:
+      type: object
+      properties:
+        failedImageCount:
+          type: integer
+          description: FailedImageCount is the number of different images that failed
+            with this spec
+        failureRate:
+          type: number
+          description: FailureRate is the overall failure rate for this spec (0.0
+            to 1.0)
+        level:
+          type: string
+          description: "Level is the risk level: \"low\", \"medium\", \"high\""
+        message:
+          type: string
+          description: Message explains the spec-specific risk reasoning
+        succeededImageCount:
+          type: integer
+          description: SucceededImageCount is the number of different images that
+            succeeded with this spec
+        totalFailures:
+          type: integer
+          description: TotalFailures is the total number of failures for this spec
+        totalSuccesses:
+          type: integer
+          description: TotalSuccesses is the total number of successes for this spec
     model.SpiderAccessInfo:
       type: object
       properties:

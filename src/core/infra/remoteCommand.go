@@ -332,6 +332,7 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId s
 	if err != nil {
 		sshResultTmp.Err = err
 		*returnResult = append(*returnResult, sshResultTmp)
+		return
 	}
 
 	// RunRemoteCommand
@@ -342,16 +343,17 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId s
 		sshResultTmp.Stderr = stderrResults
 		sshResultTmp.Err = err
 		*returnResult = append(*returnResult, sshResultTmp)
-	} else {
-		log.Debug().Msg("[Begin] SSH Output")
-		fmt.Println(stdoutResults)
-		log.Debug().Msg("[End] SSH Output")
-
-		sshResultTmp.Stdout = stdoutResults
-		sshResultTmp.Stderr = stderrResults
-		sshResultTmp.Err = nil
-		*returnResult = append(*returnResult, sshResultTmp)
+		return
 	}
+
+	log.Debug().Msg("[Begin] SSH Output")
+	fmt.Println(stdoutResults)
+	log.Debug().Msg("[End] SSH Output")
+
+	sshResultTmp.Stdout = stdoutResults
+	sshResultTmp.Stderr = stderrResults
+	sshResultTmp.Err = nil
+	*returnResult = append(*returnResult, sshResultTmp)
 }
 
 // VerifySshUserName is func to verify SSH username
@@ -621,7 +623,7 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string) 
 
 	log.Info().Msgf("Attempting to connect to target host %s:%s via bastion", targetHost, targetPort)
 
-	retryCount := 5
+	retryCount := 3
 	initialTimeout := 20 * time.Second
 	maxTimeout := 60 * time.Second
 	var bastionClient *ssh.Client
@@ -685,14 +687,14 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string) 
 		case err := <-errCh:
 			cancel()
 			lastErr = err
-			waitTime := time.Duration(5*(i+1)) * time.Second
+			waitTime := time.Duration(3) * time.Second
 			log.Warn().Err(err).Msgf("Failed to connect to target host. Attempt %d/%d. Retrying in %v...",
 				i+1, retryCount, waitTime)
 			time.Sleep(waitTime)
 		case <-ctx.Done():
 			cancel()
 			lastErr = ctx.Err()
-			waitTime := time.Duration(5*(i+1)) * time.Second
+			waitTime := time.Duration(3) * time.Second
 			log.Warn().Err(lastErr).Msgf("Connection timeout. Attempt %d/%d. Retrying in %v...",
 				i+1, retryCount, waitTime)
 			time.Sleep(waitTime)
