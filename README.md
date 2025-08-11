@@ -77,7 +77,7 @@ the titles of Issues, Pull Requests, and Commits, while accommodating local lang
 
 ---
 
-## Table of Contents �
+## Table of Contents
 
 1. [⚡ Quick Start](#quick-start-)
 2. [🔧 Prerequisites](#prerequisites-)
