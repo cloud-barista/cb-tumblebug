@@ -1195,20 +1195,105 @@ def get_ssh_keys(ns_id: str) -> Dict:
 
 # Tool: Release resources
 @mcp.tool()
-def release_resources(ns_id: str) -> Dict:
+def release_resources(ns_id: str, force_release: bool = False) -> Dict:
     """
-    Release all shared resources for a specific namespace
+    Release all shared resources for a specific namespace.
     This includes VNet, SecurityGroup, and SSHKey resources.
     This operation is irreversible and should be used with caution.
-    In general, it is recommended to release resources after all related MCIs have been deleted.
+    
+    ⚠️  IMPORTANT: Only use this when no MCIs exist in the namespace or you're sure the resources are not needed.
+    
+    **When to use:**
+    - After deleting the last MCI in a namespace
+    - When completely cleaning up a namespace
+    - When you're certain no future MCIs will reuse these resources
+    
+    **When NOT to use:**
+    - Other MCIs exist in the same namespace
+    - You plan to create new MCIs that could reuse network configurations
+    - You're unsure about resource dependencies
     
     Args:
         ns_id: Namespace ID
+        force_release: Safety flag to prevent accidental deletion (must be True to proceed)
     
     Returns:
-        Resource release result
+        Resource release result with safety checks and guidance
     """
-    return api_request("DELETE", f"/ns/{ns_id}/sharedResources")
+    # Safety check: require explicit confirmation
+    if not force_release:
+        return {
+            "error": "Force release flag required for safety",
+            "requirement": "Set force_release=True to proceed with shared resources deletion",
+            "warning": "⚠️  This will permanently delete ALL shared resources (VNet, SecurityGroup, SSHKey) in the namespace",
+            "safety_checklist": [
+                "✓ Confirm no MCIs exist in this namespace",
+                "✓ Confirm no other infrastructure depends on these resources", 
+                "✓ Confirm you won't need these network configurations for future MCIs",
+                "✓ Have backups of any important configurations"
+            ],
+            "check_command": f"get_mci_list('{ns_id}') # Verify no MCIs exist before proceeding"
+        }
+    
+    # Pre-deletion checks
+    try:
+        # Check for existing MCIs
+        mci_list = get_mci_list(ns_id)
+        if isinstance(mci_list, dict) and "mci" in mci_list and len(mci_list["mci"]) > 0:
+            active_mcis = [mci.get("id", "unknown") for mci in mci_list["mci"]]
+            return {
+                "error": "Cannot release resources while MCIs exist",
+                "active_mcis": active_mcis,
+                "recommendation": "Delete all MCIs first using delete_mci()",
+                "safety_note": "Shared resources are being used by active MCIs"
+            }
+        
+        # Get current resources for reporting
+        try:
+            vnets = get_vnets(ns_id).get("vNet", [])
+            security_groups = get_security_groups(ns_id).get("securityGroup", [])
+            ssh_keys = get_ssh_keys(ns_id).get("sshKey", [])
+            
+            resources_to_delete = {
+                "vNets": [vnet.get("id", "unknown") for vnet in vnets] if vnets else [],
+                "securityGroups": [sg.get("id", "unknown") for sg in security_groups] if security_groups else [],
+                "sshKeys": [key.get("id", "unknown") for key in ssh_keys] if ssh_keys else []
+            }
+        except:
+            resources_to_delete = {"note": "Could not enumerate resources before deletion"}
+        
+    except Exception as e:
+        return {
+            "error": f"Pre-deletion checks failed: {str(e)}",
+            "recommendation": "Check namespace status and try again"
+        }
+    
+    # Proceed with deletion
+    result = api_request("DELETE", f"/ns/{ns_id}/sharedResources")
+    
+    # Enhance result with context information
+    if isinstance(result, dict) and "error" not in result:
+        # Store deletion in memory
+        _store_interaction_memory(
+            user_request=f"Release shared resources in namespace '{ns_id}'",
+            llm_response=f"Successfully released shared resources in namespace '{ns_id}'",
+            operation_type="resource_management",
+            context_data={
+                "namespace_id": ns_id, 
+                "operation": "release_shared_resources",
+                "resources_deleted": resources_to_delete
+            },
+            status="completed"
+        )
+        
+        result["deletion_summary"] = {
+            "namespace": ns_id,
+            "resources_deleted": resources_to_delete,
+            "status": "All shared resources have been permanently deleted",
+            "note": "This namespace is now clean and ready for new MCI deployments with fresh resources"
+        }
+    
+    return result
 
 # Tool: Resource overview
 @mcp.tool()
@@ -2502,9 +2587,61 @@ def delete_mci(ns_id: str, mci_id: str) -> Dict:
         mci_id: MCI ID
     
     Returns:
-        Deletion result
+        Deletion result with guidance about optional shared resources cleanup
     """
-    return api_request("DELETE", f"/ns/{ns_id}/mci/{mci_id}?option=terminate")
+    # Get MCI associated resources before deletion for guidance
+    try:
+        associated_resources = get_mci_associated_resources(ns_id, mci_id)
+    except:
+        associated_resources = None
+    
+    # Delete the MCI
+    result = api_request("DELETE", f"/ns/{ns_id}/mci/{mci_id}?option=terminate")
+    
+    # Add shared resources cleanup guidance to the result
+    if isinstance(result, dict) and "error" not in result:
+        # Store deletion in memory
+        _store_interaction_memory(
+            user_request=f"Delete MCI '{mci_id}' in namespace '{ns_id}'",
+            llm_response=f"Successfully deleted MCI '{mci_id}'",
+            operation_type="mci_management",
+            context_data={"namespace_id": ns_id, "mci_id": mci_id, "operation": "delete"},
+            status="completed"
+        )
+        
+        # Add shared resources cleanup guidance
+        result["next_steps_guidance"] = {
+            "mci_deletion": "✅ MCI deletion completed successfully",
+            "optional_cleanup": {
+                "title": "🔧 Optional: Clean up shared resources",
+                "description": "Your MCI used shared resources (VNet, SecurityGroup, SSHKey) that remain in the namespace. These can be reused by future MCIs or cleaned up if no longer needed.",
+                "when_to_cleanup": [
+                    "This was the last MCI in the namespace",
+                    "You won't create new MCIs that could reuse these network configurations",
+                    "You want to completely clean up the namespace"
+                ],
+                "when_to_keep": [
+                    "Other MCIs exist in the same namespace",
+                    "You plan to create new MCIs soon",
+                    "You want to keep network configurations for future use"
+                ],
+                "cleanup_command": f"release_resources('{ns_id}', force_release=True)",
+                "check_command": f"get_mci_list('{ns_id}') # Check if other MCIs exist",
+                "warning": "⚠️  Shared resources cleanup is IRREVERSIBLE and affects the entire namespace"
+            }
+        }
+        
+        # Add associated resources information if available
+        if associated_resources and isinstance(associated_resources, dict) and "error" not in associated_resources:
+            result["next_steps_guidance"]["associated_resources"] = {
+                "description": "The deleted MCI was using these shared resources:",
+                "vNets": associated_resources.get("vNetIds", []),
+                "securityGroups": associated_resources.get("securityGroupIds", []),
+                "sshKeys": associated_resources.get("sshKeyIds", []),
+                "note": "These resources remain available for future MCIs unless explicitly released"
+            }
+    
+    return result
 
 # Tool: Control MCI
 @mcp.tool()
@@ -4592,26 +4729,178 @@ def mci_management_prompt() -> str:
     )
     ```
     
-    **PATTERN 6: VALIDATION WORKFLOW**
+    **PATTERN 6: COMPREHENSIVE REVIEW WORKFLOW (MANDATORY)**
     ```python
-    # Validate configuration before creation
+    # Step 1: Pre-creation validation
     validation = review_mci_dynamic_request(
         ns_id="my-project",
-        name="validated-mci",
+        name="web-application",
         vm_configurations=vm_configs
     )
     
-    # Check validation results
-    if validation["validation_passed"]:
-        mci = create_mci_dynamic(
-            ns_id="my-project",
-            name="validated-mci",
-            vm_configurations=vm_configs
-        )
+    # Step 2: CRITICAL - Comprehensive review result analysis
+    # YOU MUST analyze ALL aspects of the review result before proceeding
+    
+    # 2A. Overall Validation Status
+    creation_viable = validation.get("creationViable", False)
+    validation_passed = validation.get("validation_passed", False)
+    
+    # 2B. VM-Level Analysis
+    vm_reviews = validation.get("vmReviews", [])
+    for i, vm_review in enumerate(vm_reviews):
+        vm_name = vm_configs[i].get("name", f"VM-{i+1}")
+        print(f"\\n🔍 VM Review: {vm_name}")
+        
+        # Check individual VM status
+        vm_viable = vm_review.get("viable", False)
+        vm_issues = vm_review.get("issues", [])
+        
+        if not vm_viable:
+            print(f"❌ VM {vm_name} has issues:")
+            for issue in vm_issues:
+                print(f"   • {issue}")
+        else:
+            print(f"✅ VM {vm_name} configuration is valid")
+        
+        # Analyze spec-image compatibility
+        spec_image_compat = vm_review.get("specImageCompatibility", {})
+        if spec_image_compat:
+            compat_score = spec_image_compat.get("compatibility_score", 0)
+            compat_issues = spec_image_compat.get("issues", [])
+            
+            if compat_score < 80:
+                print(f"⚠️  VM {vm_name} spec-image compatibility: {compat_score}%")
+                for issue in compat_issues:
+                    print(f"   • Compatibility issue: {issue}")
+    
+    # 2C. Risk Assessment Analysis  
+    risk_assessment = validation.get("overall_risk_assessment", {})
+    if risk_assessment:
+        risk_level = risk_assessment.get("overall_risk", "unknown")
+        high_risk_vms = risk_assessment.get("high_risk_vms", [])
+        risk_factors = risk_assessment.get("risk_factors", [])
+        
+        print(f"\\n🎯 Risk Assessment: {risk_level.upper()}")
+        
+        if high_risk_vms:
+            print("⚠️  High-risk VMs detected:")
+            for high_risk_vm in high_risk_vms:
+                vm_name = high_risk_vm.get("vm_name", "Unknown")
+                risk_reasons = high_risk_vm.get("risk_reasons", [])
+                print(f"   • {vm_name}: {', '.join(risk_reasons)}")
+        
+        if risk_factors:
+            print("📊 Overall risk factors:")
+            for factor in risk_factors:
+                print(f"   • {factor}")
+    
+    # 2D. Cost and Resource Analysis
+    estimated_cost = validation.get("estimatedCost", {})
+    if estimated_cost:
+        total_cost = estimated_cost.get("totalCostPerHour", 0)
+        cost_breakdown = estimated_cost.get("vmCosts", [])
+        
+        print(f"\\n💰 Cost Analysis: ${total_cost:.3f}/hour")
+        for cost_item in cost_breakdown:
+            vm_name = cost_item.get("vmName", "Unknown")
+            vm_cost = cost_item.get("costPerHour", 0)
+            print(f"   • {vm_name}: ${vm_cost:.3f}/hour")
+    
+    # 2E. Network and Security Analysis
+    network_analysis = validation.get("networkAnalysis", {})
+    if network_analysis:
+        network_complexity = network_analysis.get("complexity", "unknown")
+        security_groups = network_analysis.get("securityGroups", [])
+        
+        print(f"\\n🔒 Network Complexity: {network_complexity}")
+        if security_groups:
+            print("Security groups to be created:")
+            for sg in security_groups:
+                print(f"   • {sg}")
+    
+    # Step 3: Decision making based on comprehensive analysis
+    print("\\n📋 REVIEW SUMMARY:")
+    print(f"Creation Viable: {'✅ YES' if creation_viable else '❌ NO'}")
+    print(f"Validation Passed: {'✅ YES' if validation_passed else '❌ NO'}")
+    
+    # Step 4: Handle different review outcomes
+    if not creation_viable:
+        print("\\n🚨 CRITICAL ISSUES DETECTED - Creation not recommended")
+        print("Required actions before proceeding:")
+        
+        issues = validation.get("issues", [])
+        for issue in issues:
+            print(f"   • Fix: {issue}")
+        
+        # Don't proceed with creation - user must fix issues first
+        return validation
+        
+    elif not validation_passed:
+        print("\\n⚠️  VALIDATION WARNINGS - Proceed with caution")
+        
+        # Ask user for confirmation before proceeding
+        user_wants_to_proceed = input("Do you want to proceed despite warnings? (yes/no): ")
+        if user_wants_to_proceed.lower() != 'yes':
+            return validation
+    
     else:
-        # Address validation issues first
-        print("Validation errors:", validation["issues"])
+        print("\\n✅ ALL VALIDATIONS PASSED - Safe to proceed")
+    
+    # Step 5: Only proceed with creation after thorough review
+    print("\\n🚀 Proceeding with MCI creation...")
+    mci = create_mci_dynamic(
+        ns_id="my-project",
+        name="web-application",
+        vm_configurations=vm_configs
+    )
+    
+    # Step 6: Post-creation status monitoring
+    print("\\n📊 Monitoring deployment progress...")
+    status = check_mci_status_and_handle_failures(
+        ns_id="my-project",
+        mci_id=mci["id"],
+        detailed_analysis=True
+    )
     ```
+    
+    **🔍 MANDATORY REVIEW RESULT ANALYSIS CHECKLIST:**
+    
+    Before proceeding with any MCI creation, you MUST analyze and report:
+    
+    ✅ **Overall Status:**
+    - [ ] creationViable (true/false)
+    - [ ] validation_passed (true/false) 
+    - [ ] Total estimated cost per hour
+    
+    ✅ **Per-VM Analysis:**
+    - [ ] Each VM's viable status
+    - [ ] Individual VM issues and warnings
+    - [ ] Spec-image compatibility scores
+    - [ ] Resource allocation validation
+    
+    ✅ **Risk Assessment:**
+    - [ ] Overall risk level (low/medium/high)
+    - [ ] Identification of high-risk VMs
+    - [ ] Specific risk factors and mitigation suggestions
+    - [ ] Historical failure analysis results
+    
+    ✅ **Resource Planning:**
+    - [ ] Network complexity analysis
+    - [ ] Security group requirements
+    - [ ] Resource dependencies and conflicts
+    - [ ] Multi-region deployment considerations
+    
+    ✅ **User Communication:**
+    - [ ] Clear explanation of any issues found
+    - [ ] Specific steps to resolve problems
+    - [ ] Cost implications and resource usage
+    - [ ] Risk trade-offs and recommendations
+    
+    **❌ NEVER proceed with create_mci_dynamic() until:**
+    - All critical issues are resolved
+    - User understands and accepts any risks
+    - Cost implications are clearly communicated
+    - Alternative configurations are considered if needed
     
     **🔑 CRITICAL VM CONFIGURATION REQUIREMENTS:**
     
