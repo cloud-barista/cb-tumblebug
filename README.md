@@ -65,7 +65,8 @@ the titles of Issues, Pull Requests, and Commits, while accommodating local lang
 
 **🤖 NEW: AI-Powered Multi-Cloud Management**
 - Control CB-Tumblebug through AI assistants like Claude and VS Code
-- Natural language interface for infrastructure provisioning and management
+- Natural language interface for infrastructure provisioning and management using MCP (Model Context Protocol)
+- Streamable HTTP transport for modern MCP compatibility
 - [📖 MCP Server Guide](src/interface/mcp/README.md) | [🚀 Quick Start](src/interface/mcp/README.md#-quick-start-with-docker-compose-recommended)
 
 **🎮 GPU-Powered Multi-Cloud LLM Deployment**
@@ -108,7 +109,7 @@ make compose
 # 4. Access services
 # - API: http://localhost:1323/tumblebug/api
 # - MapUI: http://localhost:1324
-# - MCP Server: http://localhost:8000/sse (if enabled)
+# - MCP Server: http://localhost:8000/mcp (if enabled)
 ```
 
 > 💡 **New to CB-Tumblebug?** Follow the [detailed setup guide](#installation--setup-) below for comprehensive instructions.
@@ -221,14 +222,87 @@ curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scri
   - CB-Spider: a Cloud API controller
   - CB-MapUI: a simple Map-based GUI web server
   - CB-Tumblebug: the system with API server
+  - CB-Tumblebug MCP Server: AI assistant interface (if enabled)
+  - PostgreSQL: Specs and Images storage
+  - Traefik: Reverse proxy for secure access
+
+  **Container Architecture Overview:**
+  ```mermaid
+  graph TB
+      subgraph "External Access"
+          User[👤 User]
+          AI[🤖 AI Assistant<br/>Claude/VS Code]
+      end
+      
+      subgraph "Docker Compose Environment"
+          subgraph "Frontend & API"
+              TB[CB-Tumblebug<br/>:1323]
+              UI[CB-MapUI<br/>:1324]
+              MCP[TB-MCP Server<br/>:8000]
+              Proxy[Traefik Proxy<br/>:80/:443]
+          end
+          
+          subgraph "Backend Services"
+              Spider[CB-Spider<br/>:1024]
+          end
+          
+          subgraph "Data Storage"
+              ETCD[ETCD<br/>:2379<br/>Metadata]
+              PG[PostgreSQL<br/>:5432<br/>Specs/Images]
+          end
+      end
+      
+      subgraph "Cloud Providers"
+          AWS[AWS]
+          Azure[Azure] 
+          GCP[GCP]
+          Others[Others...]
+      end
+      
+      %% User connections
+      User -->|HTTP/HTTPS| Proxy
+      User -->|HTTP| UI
+      User -->|HTTP| TB
+      AI -->|MCP HTTP| MCP
+      
+      %% Proxy routing
+      Proxy -->|Route| UI
+      
+      %% Internal service connections
+      UI -.->|API calls| TB
+      MCP -->|REST API| TB
+      TB -->|REST API| Spider
+      TB -->|gRPC| ETCD
+      TB -->|SQL| PG
+      
+      %% Cloud connections
+      Spider -->|Cloud APIs| AWS
+      Spider -->|Cloud APIs| Azure
+      Spider -->|Cloud APIs| GCP
+      Spider -->|Cloud APIs| Others
+      
+      %% Styling
+      classDef frontend fill:#e3f2fd,stroke:#1976d2
+      classDef backend fill:#f3e5f5,stroke:#7b1fa2
+      classDef storage fill:#e8f5e8,stroke:#388e3c
+      classDef cloud fill:#fff3e0,stroke:#f57c00
+      
+      class TB,UI,MCP,Proxy frontend
+      class Spider backend
+      class ETCD,PG storage
+      class AWS,Azure,GCP,Others cloud
+  ```
 
   ![image](https://github.com/user-attachments/assets/4466b6ff-6566-4ee0-ae60-d57e3d152821)
   
   After running the command, you should see output similar to the following:
   ![image](https://github.com/user-attachments/assets/1861edfd-411f-4c43-ab62-fa3658b8a1e9)
 
-  Now, the CB-Tumblebug API server is accessible at: http://localhost:1323/tumblebug/api
-  Additionally, CB-MapUI is accessible at: http://localhost:1324
+  **Service Endpoints:**
+  - **CB-Tumblebug API**: http://localhost:1323/tumblebug/api
+  - **CB-MapUI**: http://localhost:1324 (direct) or https://cb-mapui.localhost (via Traefik with SSL)
+  - **MCP Server**: http://localhost:8000/mcp (if enabled)
+  - **Traefik Dashboard**: http://localhost:8080 (reverse proxy monitoring)
 
   **Note**: Before using CB-Tumblebug, you need to initialize it.
 
@@ -379,7 +453,8 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 The Model Context Protocol (MCP) Server enables natural language interaction with CB-Tumblebug through AI assistants:
 
 - **🧠 AI-Powered Infrastructure Management**: Deploy and manage multi-cloud resources using natural language commands
-- **🔗 Seamless Integration**: Works with Claude Desktop, VS Code, and other MCP-compatible clients  
+- **🔗 Seamless Integration**: Works with Claude Desktop (via proxy), VS Code (direct), and other MCP-compatible clients  
+- **📡 Modern Protocol**: Uses Streamable HTTP transport (current MCP standard)
 - **⚡ Quick Start**: Enable with `make compose` and uncomment MCP service in `docker-compose.yaml`
 
 ```bash
@@ -388,7 +463,7 @@ The Model Context Protocol (MCP) Server enables natural language interaction wit
 # 2. Launch with Docker Compose
 make compose
 
-# Access MCP server at http://localhost:8000/sse
+# Access MCP server at http://localhost:8000/mcp
 ```
 
 **📖 [Complete MCP Server Guide →](src/interface/mcp/README.md)**
