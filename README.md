@@ -1,4 +1,5 @@
-# CB-Tumblebug (Multi-Cloud Infra Management) 👋
+# Cloud-Barista 👋
+# CB-Tumblebug (Multi-Cloud Infra Management)
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/cloud-barista/cb-tumblebug)](https://goreportcard.com/report/github.com/cloud-barista/cb-tumblebug)
 [![Top Language](https://img.shields.io/github/languages/top/cloud-barista/cb-tumblebug)](https://github.com/cloud-barista/cb-tumblebug/search?l=go)
