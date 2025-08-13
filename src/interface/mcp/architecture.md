@@ -249,7 +249,7 @@ mindmap
       search_images
       recommend_vm_spec
       API_resources_searchImage
-      API_mciRecommendVm
+      API_recommendSpec
     
     MCI Management
       create_mci_dynamic

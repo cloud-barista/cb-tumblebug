@@ -1733,7 +1733,7 @@ def recommend_vm_spec(
         
         priority_policies.append(priority_config)
     
-    # Build the request data according to model.DeploymentPlan
+    # Build the request data according to model.RecommendSpecReq
     data = {
         "filter": {
             "policy": policies
@@ -1745,7 +1745,7 @@ def recommend_vm_spec(
     }
     
     # Make API request
-    raw_response = api_request("POST", "/mciRecommendVm", json_data=data)
+    raw_response = api_request("POST", "/recommendSpec", json_data=data)
     
     # Summarize response to reduce token usage
     return _summarize_vm_specs(raw_response, include_details=include_full_details)
@@ -1766,7 +1766,7 @@ def _internal_review_mci_dynamic(
     data = {
         "name": name,
         "description": description,
-        "vm": vm_configurations
+        "subGroups": vm_configurations
     }
     
     # Add optional parameters
@@ -2036,7 +2036,7 @@ def review_mci_dynamic_request(
 #     data = {
 #         "name": name,
 #         "description": description,
-#         "vm": vm_config
+#         "subGroups": vm_config
 #     }
     
 #     if post_command:
@@ -2240,7 +2240,7 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
         When force_create=True or skip_confirmation=True:
         - Created MCI information including:
           • id: MCI ID for future operations
-          • vm: List of created VMs with their details
+          • vm: List of created VMs with their details (in response)
           • status: Current MCI status
           • deployment summary
         
@@ -2503,7 +2503,7 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
     # Build request data according to model.TbMciDynamicReq spec
     data = {
         "name": name,
-        "vm": processed_vm_configs  # Use processed configs with auto-mapped images
+        "subGroups": processed_vm_configs  # Use processed configs with auto-mapped images
     }
     
     # Add optional fields

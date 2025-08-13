@@ -55,7 +55,7 @@ func init() {
 	// internally dereferences during it's type checks.
 
 	validate.RegisterStructValidation(TbMciReqStructLevelValidation, model.TbMciReq{})
-	validate.RegisterStructValidation(TbVmReqStructLevelValidation, model.TbVmReq{})
+	validate.RegisterStructValidation(TbCreateSubGroupReqStructLevelValidation, model.TbCreateSubGroupReq{})
 	validate.RegisterStructValidation(TbMciCmdReqStructLevelValidation, model.MciCmdReq{})
 	// validate.RegisterStructValidation(TbMciRecommendReqStructLevelValidation, MciRecommendReq{})
 	// validate.RegisterStructValidation(TbVmRecommendReqStructLevelValidation, TbVmRecommendReq{})
@@ -950,29 +950,29 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 			req.Name = mciId
 			req.Name = common.ChangeIdString(req.Name)
 
-			vm := model.TbVmReq{}
-			vm.ConnectionName = connConfig
-			vm.CspResourceId = r.CspResourceId
-			vm.Description = "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)"
-			vm.Name = vm.ConnectionName + "-" + r.RefNameOrId + "-" + vm.CspResourceId
-			vm.Name = common.ChangeIdString(vm.Name)
+			subGroupReq := model.TbCreateSubGroupReq{}
+			subGroupReq.ConnectionName = connConfig
+			subGroupReq.CspResourceId = r.CspResourceId
+			subGroupReq.Description = "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)"
+			subGroupReq.Name = subGroupReq.ConnectionName + "-" + r.RefNameOrId + "-" + subGroupReq.CspResourceId
+			subGroupReq.Name = common.ChangeIdString(subGroupReq.Name)
 			if mciFlag == "n" {
 				// (if mciFlag == "n") create a mci for each vm
-				req.Name = vm.Name
+				req.Name = subGroupReq.Name
 			}
 			labels := map[string]string{
 				model.LabelRegistered: "true",
 			}
-			vm.Label = labels
+			subGroupReq.Label = labels
 
-			vm.ImageId = "cannot retrieve"
-			vm.SpecId = "cannot retrieve"
-			vm.SshKeyId = "cannot retrieve"
-			vm.SubnetId = "cannot retrieve"
-			vm.VNetId = "cannot retrieve"
-			vm.SecurityGroupIds = append(vm.SecurityGroupIds, "cannot retrieve")
+			subGroupReq.ImageId = "cannot retrieve"
+			subGroupReq.SpecId = "cannot retrieve"
+			subGroupReq.SshKeyId = "cannot retrieve"
+			subGroupReq.SubnetId = "cannot retrieve"
+			subGroupReq.VNetId = "cannot retrieve"
+			subGroupReq.SecurityGroupIds = append(subGroupReq.SecurityGroupIds, "cannot retrieve")
 
-			req.Vm = append(req.Vm, vm)
+			req.SubGroups = append(req.SubGroups, subGroupReq)
 
 			_, err = CreateMci(nsId, &req, optionFlag)
 
@@ -983,7 +983,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 				result.RegisterationOverview.Vm--
 				result.RegisterationOverview.Failed++
 			}
-			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrVM+": "+vm.Name+registeredStatus)
+			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrVM+": "+subGroupReq.Name+registeredStatus)
 			result.RegisterationOverview.Vm++
 		}
 	}

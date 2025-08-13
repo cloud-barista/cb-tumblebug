@@ -255,10 +255,10 @@ func OrchestrationController() {
 							autoAction.VmDynamicReq.CommonImage = "ubuntu18.04"                // temporal default value. will be changed
 							autoAction.VmDynamicReq.CommonSpec = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
 
-							deploymentPlan := model.DeploymentPlan{}
+							recommendSpecReq := model.RecommendSpecReq{}
 
-							deploymentPlan.Priority.Policy = append(deploymentPlan.Priority.Policy, model.PriorityCondition{Metric: "random"})
-							specList, err := RecommendVm(model.SystemCommonNs, deploymentPlan)
+							recommendSpecReq.Priority.Policy = append(recommendSpecReq.Priority.Policy, model.PriorityCondition{Metric: "random"})
+							specList, err := RecommendSpec(model.SystemCommonNs, recommendSpecReq)
 							if err != nil {
 								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 								UpdateMciPolicyInfo(nsId, mciPolicyTmp)

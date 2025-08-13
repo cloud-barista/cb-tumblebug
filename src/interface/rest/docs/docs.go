@@ -1147,10 +1147,10 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "description": "Recommend K8sCluster's Node plan (filter and priority)",
-                        "name": "deploymentPlan",
+                        "name": "recommendSpecReq",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/model.DeploymentPlan"
+                            "$ref": "#/definitions/model.RecommendSpecReq"
                         }
                     }
                 ],
@@ -1688,55 +1688,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "CSP connectivity issues or internal validation service errors",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/mciRecommendVm": {
-            "post": {
-                "description": "Recommend MCI plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] MCI Provisioning and Management"
-                ],
-                "summary": "Recommend MCI plan (filter and priority)",
-                "operationId": "RecommendVm",
-                "parameters": [
-                    {
-                        "description": "Recommend MCI plan (filter and priority)",
-                        "name": "deploymentPlan",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/model.DeploymentPlan"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.TbSpecInfo"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -5138,7 +5089,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.TbVmReq"
+                            "$ref": "#/definitions/model.TbCreateSubGroupReq"
                         }
                     }
                 ],
@@ -5804,12 +5755,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "VM dynamic request specifying commonSpec, commonImage, and scaling parameters",
+                        "description": "SubGroup dynamic request specifying commonSpec, commonImage, and scaling parameters",
                         "name": "vmReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.TbVmDynamicReq"
+                            "$ref": "#/definitions/model.TbCreateSubGroupDynamicReq"
                         }
                     }
                 ],
@@ -6205,7 +6156,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/mciDynamic": {
             "post": {
-                "description": "Create multi-cloud infrastructure dynamically using common specifications and images with automatic resource discovery and optimization.\nThis is the **recommended approach** for MCI creation, providing simplified configuration with powerful automation:\n\n**Dynamic Resource Creation:**\n1. **Automatic Resource Discovery**: Validates and selects optimal VM specifications and images from common namespace\n2. **Intelligent Network Setup**: Creates VNets, subnets, security groups, and SSH keys automatically per provider\n3. **Cross-Cloud Orchestration**: Coordinates VM provisioning across multiple cloud providers simultaneously\n4. **Dependency Management**: Handles resource creation order and inter-dependencies automatically\n5. **Failure Recovery**: Implements configurable failure policies for robust deployment\n\n**Key Advantages Over Static MCI:**\n- **Simplified Configuration**: Use common spec/image IDs instead of provider-specific resources\n- **Automatic Resource Management**: No need to pre-create VNets, security groups, or SSH keys\n- **Multi-Cloud Optimization**: Intelligent placement and configuration across providers\n- **Built-in Best Practices**: Security groups, network isolation, and access controls applied automatically\n- **Scalable Architecture**: Supports large-scale deployments with optimized resource utilization\n\n**Configuration Process:**\n1. **Resource Discovery**: Use ` + "`" + `/mciRecommendVm` + "`" + ` to find suitable VM specifications\n2. **Image Selection**: Use system namespace to discover compatible images\n3. **Request Validation**: Use ` + "`" + `/mciDynamicCheckRequest` + "`" + ` to validate configuration before deployment\n4. **Optional Preview**: Use ` + "`" + `/mciDynamicReview` + "`" + ` to estimate costs and review configuration\n5. **Deployment**: Submit MCI dynamic request with failure policy and deployment options\n\n**Failure Policies (PolicyOnPartialFailure):**\n- **` + "`" + `continue` + "`" + `** (default): Create MCI with successful VMs, failed VMs remain for manual refinement\n- **` + "`" + `rollback` + "`" + `**: Delete entire MCI if any VM fails (all-or-nothing deployment)\n- **` + "`" + `refine` + "`" + `**: Automatically clean up failed VMs, keep successful ones (recommended for large deployments)\n\n**Deployment Options:**\n- **` + "`" + `hold` + "`" + `**: Create MCI object but hold VM provisioning for manual approval\n- **Normal**: Proceed with immediate VM provisioning after resource creation\n\n**Multi-Cloud Example Configuration:**\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"name\": \"multi-cloud-web-tier\",\n\"description\": \"Web application across AWS, Azure, and GCP\",\n\"policyOnPartialFailure\": \"refine\",\n\"vm\": [\n{\n\"name\": \"aws-web-servers\",\n\"subGroupSize\": \"3\",\n\"commonSpec\": \"aws+us-east-1+t3.medium\",\n\"commonImage\": \"ami-0abcdef1234567890\",\n\"rootDiskSize\": \"100\",\n\"label\": {\"tier\": \"web\", \"provider\": \"aws\"}\n},\n{\n\"name\": \"azure-api-servers\",\n\"subGroupSize\": \"2\",\n\"commonSpec\": \"azure+eastus+Standard_B2s\",\n\"commonImage\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts\",\n\"label\": {\"tier\": \"api\", \"provider\": \"azure\"}\n}\n]\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n**Performance Considerations:**\n- VM provisioning occurs in parallel across providers\n- Network resources are created concurrently where possible\n- Large deployments (\u003e10 VMs) automatically use optimized batching\n- Built-in rate limiting prevents CSP API throttling\n\n**Monitoring and Post-Deployment:**\n- Optional CB-Dragonfly monitoring agent installation\n- Custom post-deployment command execution\n- Real-time status tracking and progress updates\n- Automatic resource labeling and metadata management",
+                "description": "Create multi-cloud infrastructure dynamically using common specifications and images with automatic resource discovery and optimization.\nThis is the **recommended approach** for MCI creation, providing simplified configuration with powerful automation:\n\n**Dynamic Resource Creation:**\n1. **Automatic Resource Discovery**: Validates and selects optimal VM specifications and images from common namespace\n2. **Intelligent Network Setup**: Creates VNets, subnets, security groups, and SSH keys automatically per provider\n3. **Cross-Cloud Orchestration**: Coordinates VM provisioning across multiple cloud providers simultaneously\n4. **Dependency Management**: Handles resource creation order and inter-dependencies automatically\n5. **Failure Recovery**: Implements configurable failure policies for robust deployment\n\n**Key Advantages Over Static MCI:**\n- **Simplified Configuration**: Use common spec/image IDs instead of provider-specific resources\n- **Automatic Resource Management**: No need to pre-create VNets, security groups, or SSH keys\n- **Multi-Cloud Optimization**: Intelligent placement and configuration across providers\n- **Built-in Best Practices**: Security groups, network isolation, and access controls applied automatically\n- **Scalable Architecture**: Supports large-scale deployments with optimized resource utilization\n\n**Configuration Process:**\n1. **Resource Discovery**: Use ` + "`" + `/recommendSpec` + "`" + ` to find suitable VM specifications\n2. **Image Selection**: Use system namespace to discover compatible images\n3. **Request Validation**: Use ` + "`" + `/mciDynamicCheckRequest` + "`" + ` to validate configuration before deployment\n4. **Optional Preview**: Use ` + "`" + `/mciDynamicReview` + "`" + ` to estimate costs and review configuration\n5. **Deployment**: Submit MCI dynamic request with failure policy and deployment options\n\n**Failure Policies (PolicyOnPartialFailure):**\n- **` + "`" + `continue` + "`" + `** (default): Create MCI with successful VMs, failed VMs remain for manual refinement\n- **` + "`" + `rollback` + "`" + `**: Delete entire MCI if any VM fails (all-or-nothing deployment)\n- **` + "`" + `refine` + "`" + `**: Automatically clean up failed VMs, keep successful ones (recommended for large deployments)\n\n**Deployment Options:**\n- **` + "`" + `hold` + "`" + `**: Create MCI object but hold VM provisioning for manual approval\n- **Normal**: Proceed with immediate VM provisioning after resource creation\n\n**Multi-Cloud Example Configuration:**\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"name\": \"multi-cloud-web-tier\",\n\"description\": \"Web application across AWS, Azure, and GCP\",\n\"policyOnPartialFailure\": \"refine\",\n\"vm\": [\n{\n\"name\": \"aws-web-servers\",\n\"subGroupSize\": \"3\",\n\"commonSpec\": \"aws+us-east-1+t3.medium\",\n\"commonImage\": \"ami-0abcdef1234567890\",\n\"rootDiskSize\": \"100\",\n\"label\": {\"tier\": \"web\", \"provider\": \"aws\"}\n},\n{\n\"name\": \"azure-api-servers\",\n\"subGroupSize\": \"2\",\n\"commonSpec\": \"azure+eastus+Standard_B2s\",\n\"commonImage\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts\",\n\"label\": {\"tier\": \"api\", \"provider\": \"azure\"}\n}\n]\n}\n` + "`" + `` + "`" + `` + "`" + `\n\n**Performance Considerations:**\n- VM provisioning occurs in parallel across providers\n- Network resources are created concurrently where possible\n- Large deployments (\u003e10 VMs) automatically use optimized batching\n- Built-in rate limiting prevents CSP API throttling\n\n**Monitoring and Post-Deployment:**\n- Optional CB-Dragonfly monitoring agent installation\n- Custom post-deployment command execution\n- Real-time status tracking and progress updates\n- Automatic resource labeling and metadata management",
                 "consumes": [
                     "application/json"
                 ],
@@ -8294,7 +8245,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra Resource] Image Management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "summary": "Search image",
                 "operationId": "SearchImage",
@@ -8349,7 +8300,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra Resource] Image Management"
+                    "[MC-Infra] MCI Provisioning and Management"
                 ],
                 "operationId": "SearchImageOptions",
                 "parameters": [
@@ -11040,6 +10991,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/recommendSpec": {
+            "post": {
+                "description": "Recommend specs for configuring an infrastructure (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Provisioning and Management"
+                ],
+                "summary": "Recommend specs for configuring an infrastructure (filter and priority)",
+                "operationId": "RecommendSpec",
+                "parameters": [
+                    {
+                        "description": "Conditions for recommending specs (filter and priority)",
+                        "name": "recommendSpecReq",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/model.RecommendSpecReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.TbSpecInfo"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/regionFromCsp": {
             "get": {
                 "description": "RetrieveR all region lists from CSPs",
@@ -12135,7 +12135,7 @@ const docTemplate = `{
                     ]
                 },
                 "vmDynamicReq": {
-                    "$ref": "#/definitions/model.TbVmDynamicReq"
+                    "$ref": "#/definitions/model.TbCreateSubGroupDynamicReq"
                 }
             }
         },
@@ -12532,26 +12532,6 @@ const docTemplate = `{
                 "MyImageAvailable",
                 "MyImageUnavailable"
             ]
-        },
-        "model.DeploymentPlan": {
-            "type": "object",
-            "properties": {
-                "filter": {
-                    "$ref": "#/definitions/model.FilterInfo"
-                },
-                "limit": {
-                    "type": "string",
-                    "enum": [
-                        "1",
-                        "2",
-                        "30"
-                    ],
-                    "example": "5"
-                },
-                "priority": {
-                    "$ref": "#/definitions/model.PriorityInfo"
-                }
-            }
         },
         "model.DiskStatus": {
             "type": "string",
@@ -13943,6 +13923,26 @@ const docTemplate = `{
                 },
                 "min": {
                     "type": "number"
+                }
+            }
+        },
+        "model.RecommendSpecReq": {
+            "type": "object",
+            "properties": {
+                "filter": {
+                    "$ref": "#/definitions/model.FilterInfo"
+                },
+                "limit": {
+                    "type": "string",
+                    "enum": [
+                        "1",
+                        "2",
+                        "30"
+                    ],
+                    "example": "5"
+                },
+                "priority": {
+                    "$ref": "#/definitions/model.PriorityInfo"
                 }
             }
         },
@@ -15673,6 +15673,161 @@ const docTemplate = `{
                 }
             }
         },
+        "model.TbCreateSubGroupDynamicReq": {
+            "type": "object",
+            "required": [
+                "commonImage",
+                "commonSpec"
+            ],
+            "properties": {
+                "commonImage": {
+                    "description": "CommonImage is field for id of a image in common namespace",
+                    "type": "string",
+                    "example": "ami-01f71f215b23ba262"
+                },
+                "commonSpec": {
+                    "description": "CommonSpec is field for id of a spec in common namespace",
+                    "type": "string",
+                    "example": "aws+ap-northeast-2+t3.nano"
+                },
+                "connectionName": {
+                    "description": "if ConnectionName is given, the VM tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Created via CB-Tumblebug"
+                },
+                "label": {
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        "\"env\"": "\"test\"}",
+                        "{\"role\"": "\"worker\""
+                    }
+                },
+                "name": {
+                    "description": "SubGroup name, actual VM name will be generated with -N postfix.",
+                    "type": "string",
+                    "example": "g1"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
+                    "type": "string",
+                    "default": "default",
+                    "example": "50"
+                },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
+                    "type": "string",
+                    "default": "default",
+                    "example": "gp3"
+                },
+                "subGroupSize": {
+                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be generated. VMs will be created accordingly.",
+                    "type": "string",
+                    "default": "1",
+                    "example": "3"
+                },
+                "vmUserPassword": {
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "model.TbCreateSubGroupReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "imageId",
+                "name",
+                "securityGroupIds",
+                "specId",
+                "sshKeyId",
+                "subnetId",
+                "vNetId"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string",
+                    "example": "testcloud01-seoul"
+                },
+                "cspResourceId": {
+                    "description": "CspResourceId is resource identifier managed by CSP (required for option=register)",
+                    "type": "string",
+                    "example": "i-014fa6ede6ada0b2c"
+                },
+                "dataDiskIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Description"
+                },
+                "imageId": {
+                    "description": "ImageType        string   ` + "`" + `json:\"imageType\"` + "`" + `",
+                    "type": "string"
+                },
+                "label": {
+                    "description": "Label is for describing the object by keywords",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "description": "SubGroup name of VMs. Actual VM name will be generated with -N postfix.",
+                    "type": "string",
+                    "example": "g1-1"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
+                    "type": "string",
+                    "example": "default, 30, 42, ..."
+                },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
+                    "type": "string",
+                    "example": "default, TYPE1, ..."
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "sshKeyId": {
+                    "type": "string"
+                },
+                "subGroupSize": {
+                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be generated. VMs will be created accordingly.",
+                    "type": "string",
+                    "example": "3"
+                },
+                "subnetId": {
+                    "type": "string"
+                },
+                "vNetId": {
+                    "type": "string"
+                },
+                "vmUserName": {
+                    "type": "string"
+                },
+                "vmUserPassword": {
+                    "type": "string"
+                }
+            }
+        },
         "model.TbCustomImageInfo": {
             "type": "object",
             "properties": {
@@ -16820,7 +16975,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "name",
-                "vm"
+                "subGroups"
             ],
             "properties": {
                 "description": {
@@ -16867,17 +17022,17 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "subGroups": {
+                    "description": "SubGroups is array of VM requests for multi-cloud infrastructure\nExample: Multiple VM groups across different CSPs\n[\n  {\n    \"name\": \"aws-group\",\n    \"subGroupSize\": \"3\",\n    \"commonSpec\": \"aws+ap-northeast-2+t3.nano\",\n    \"commonImage\": \"ami-01f71f215b23ba262\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"worker\", \"csp\": \"aws\"}\n  },\n  {\n    \"name\": \"azure-group\",\n    \"subGroupSize\": \"2\",\n    \"commonSpec\": \"azure+koreasouth+standard_b1s\",\n    \"commonImage\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"head\", \"csp\": \"azure\"}\n  },\n  {\n    \"name\": \"gcp-group\",\n    \"subGroupSize\": \"1\",\n    \"commonSpec\": \"gcp+asia-northeast3+g1-small\",\n    \"commonImage\": \"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"test\", \"csp\": \"gcp\"}\n  }\n]",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbCreateSubGroupDynamicReq"
+                    }
+                },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": ""
-                },
-                "vm": {
-                    "description": "Vm is array of VM requests for multi-cloud infrastructure\nExample: Multiple VM groups across different CSPs\n[\n  {\n    \"name\": \"aws-group\",\n    \"subGroupSize\": \"3\",\n    \"commonSpec\": \"aws+ap-northeast-2+t3.nano\",\n    \"commonImage\": \"ami-01f71f215b23ba262\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"worker\", \"csp\": \"aws\"}\n  },\n  {\n    \"name\": \"azure-group\",\n    \"subGroupSize\": \"2\",\n    \"commonSpec\": \"azure+koreasouth+standard_b1s\",\n    \"commonImage\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"head\", \"csp\": \"azure\"}\n  },\n  {\n    \"name\": \"gcp-group\",\n    \"subGroupSize\": \"1\",\n    \"commonSpec\": \"gcp+asia-northeast3+g1-small\",\n    \"commonImage\": \"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"test\", \"csp\": \"gcp\"}\n  }\n]",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.TbVmDynamicReq"
-                    }
                 }
             }
         },
@@ -17001,7 +17156,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "name",
-                "vm"
+                "subGroups"
             ],
             "properties": {
                 "description": {
@@ -17051,16 +17206,16 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "subGroups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.TbCreateSubGroupReq"
+                    }
+                },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": ""
-                },
-                "vm": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.TbVmReq"
-                    }
                 }
             }
         },
@@ -18104,72 +18259,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.TbVmDynamicReq": {
-            "type": "object",
-            "required": [
-                "commonImage",
-                "commonSpec"
-            ],
-            "properties": {
-                "commonImage": {
-                    "description": "CommonImage is field for id of a image in common namespace",
-                    "type": "string",
-                    "example": "ami-01f71f215b23ba262"
-                },
-                "commonSpec": {
-                    "description": "CommonSpec is field for id of a spec in common namespace",
-                    "type": "string",
-                    "example": "aws+ap-northeast-2+t3.nano"
-                },
-                "connectionName": {
-                    "description": "if ConnectionName is given, the VM tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
-                    "type": "string",
-                    "example": "aws-ap-northeast-2"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "Created via CB-Tumblebug"
-                },
-                "label": {
-                    "description": "Label is for describing the object by keywords",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    },
-                    "example": {
-                        "\"env\"": "\"test\"}",
-                        "{\"role\"": "\"worker\""
-                    }
-                },
-                "name": {
-                    "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
-                    "type": "string",
-                    "example": "g1"
-                },
-                "rootDiskSize": {
-                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
-                    "type": "string",
-                    "default": "default",
-                    "example": "50"
-                },
-                "rootDiskType": {
-                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
-                    "type": "string",
-                    "default": "default",
-                    "example": "gp3"
-                },
-                "subGroupSize": {
-                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be generated. VMs will be created accordingly.",
-                    "type": "string",
-                    "default": "1",
-                    "example": "3"
-                },
-                "vmUserPassword": {
-                    "type": "string",
-                    "example": ""
-                }
-            }
-        },
         "model.TbVmInfo": {
             "type": "object",
             "properties": {
@@ -18333,95 +18422,6 @@ const docTemplate = `{
                     "description": "Uid is universally unique identifier for the object, used for labelSelector",
                     "type": "string",
                     "example": "wef12awefadf1221edcf"
-                },
-                "vNetId": {
-                    "type": "string"
-                },
-                "vmUserName": {
-                    "type": "string"
-                },
-                "vmUserPassword": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.TbVmReq": {
-            "type": "object",
-            "required": [
-                "connectionName",
-                "imageId",
-                "name",
-                "securityGroupIds",
-                "specId",
-                "sshKeyId",
-                "subnetId",
-                "vNetId"
-            ],
-            "properties": {
-                "connectionName": {
-                    "type": "string",
-                    "example": "testcloud01-seoul"
-                },
-                "cspResourceId": {
-                    "description": "CspResourceId is resource identifier managed by CSP (required for option=register)",
-                    "type": "string",
-                    "example": "i-014fa6ede6ada0b2c"
-                },
-                "dataDiskIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "description": {
-                    "type": "string",
-                    "example": "Description"
-                },
-                "imageId": {
-                    "description": "ImageType        string   ` + "`" + `json:\"imageType\"` + "`" + `",
-                    "type": "string"
-                },
-                "label": {
-                    "description": "Label is for describing the object by keywords",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
-                    "type": "string",
-                    "example": "g1-1"
-                },
-                "rootDiskSize": {
-                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
-                    "type": "string",
-                    "example": "default, 30, 42, ..."
-                },
-                "rootDiskType": {
-                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
-                    "type": "string",
-                    "example": "default, TYPE1, ..."
-                },
-                "securityGroupIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "specId": {
-                    "type": "string"
-                },
-                "sshKeyId": {
-                    "type": "string"
-                },
-                "subGroupSize": {
-                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be generated. VMs will be created accordingly.",
-                    "type": "string",
-                    "example": "3"
-                },
-                "subnetId": {
-                    "type": "string"
                 },
                 "vNetId": {
                     "type": "string"

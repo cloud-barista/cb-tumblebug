@@ -73,7 +73,7 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.TbNLBReq, option string
 	mciDynamicReq := model.TbMciDynamicReq{Name: nlbMciId, InstallMonAgent: "no", Label: labels}
 
 	// get vm requst from cloud_conf.yaml
-	vmGroupName := "nlb"
+	subGroupName := "nlb"
 	// default commonSpec
 	commonSpec := common.RuntimeConf.Nlbsw.NlbMciCommonSpec
 	commonImage := common.RuntimeConf.Nlbsw.NlbMciCommonImage
@@ -81,9 +81,9 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.TbNLBReq, option string
 
 	// Option can be applied
 	// get recommended location and spec for the NLB host based on existing MCI
-	deploymentPlan := model.DeploymentPlan{}
-	deploymentPlan.Priority.Policy = append(deploymentPlan.Priority.Policy, model.PriorityCondition{Metric: "latency"})
-	deploymentPlan.Priority.Policy[0].Parameter = append(deploymentPlan.Priority.Policy[0].Parameter, model.ParameterKeyVal{Key: "latencyMinimal"})
+	recommendSpecReq := model.RecommendSpecReq{}
+	recommendSpecReq.Priority.Policy = append(recommendSpecReq.Priority.Policy, model.PriorityCondition{Metric: "latency"})
+	recommendSpecReq.Priority.Policy[0].Parameter = append(recommendSpecReq.Priority.Policy[0].Parameter, model.ParameterKeyVal{Key: "latencyMinimal"})
 
 	mci, err := GetMciObject(nsId, mciId)
 	if err != nil {
@@ -92,10 +92,10 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.TbNLBReq, option string
 	}
 	for _, vm := range mci.Vm {
 		regionOfVm := vm.ConnectionConfig.RegionZoneInfoName
-		deploymentPlan.Priority.Policy[0].Parameter[0].Val = append(deploymentPlan.Priority.Policy[0].Parameter[0].Val, regionOfVm)
+		recommendSpecReq.Priority.Policy[0].Parameter[0].Val = append(recommendSpecReq.Priority.Policy[0].Parameter[0].Val, regionOfVm)
 	}
 
-	specList, err := RecommendVm(model.SystemCommonNs, deploymentPlan)
+	specList, err := RecommendSpec(model.SystemCommonNs, recommendSpecReq)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
@@ -105,8 +105,8 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.TbNLBReq, option string
 		commonSpec = recommendedSpec
 	}
 
-	vmDynamicReq := model.TbVmDynamicReq{Name: vmGroupName, CommonSpec: commonSpec, CommonImage: commonImage, SubGroupSize: subGroupSize}
-	mciDynamicReq.Vm = append(mciDynamicReq.Vm, vmDynamicReq)
+	subGroupDynamicReq := model.TbCreateSubGroupDynamicReq{Name: subGroupName, CommonSpec: commonSpec, CommonImage: commonImage, SubGroupSize: subGroupSize}
+	mciDynamicReq.SubGroups = append(mciDynamicReq.SubGroups, subGroupDynamicReq)
 
 	mciInfo, err := CreateMciDynamic("", nsId, &mciDynamicReq, "")
 	if err != nil {

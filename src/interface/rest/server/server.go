@@ -369,7 +369,7 @@ func RunServer() {
 	g.POST("/:nsId/mci", rest_infra.RestPostMci)
 	g.POST("/:nsId/registerCspVm", rest_infra.RestPostRegisterCSPNativeVM)
 
-	e.POST("/tumblebug/mciRecommendVm", rest_infra.RestRecommendVm)
+	e.POST("/tumblebug/recommendSpec", rest_infra.RestRecommendSpec)
 	e.POST("/tumblebug/mciDynamicCheckRequest", rest_infra.RestPostMciDynamicCheckRequest)
 	e.POST("/tumblebug/systemMci", rest_infra.RestPostSystemMci)
 
