@@ -850,7 +850,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.DeploymentPlan'
+              $ref: '#/components/schemas/model.RecommendSpecReq'
         required: false
       responses:
         "200":
@@ -873,7 +873,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: deploymentPlan
+      x-codegen-request-body-name: recommendSpecReq
   /label/{labelType}/{uid}:
     get:
       tags:
@@ -1310,42 +1310,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: mciReq
-  /mciRecommendVm:
-    post:
-      tags:
-      - "[MC-Infra] MCI Provisioning and Management"
-      summary: Recommend MCI plan (filter and priority)
-      description: Recommend MCI plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
-      operationId: RecommendVm
-      requestBody:
-        description: Recommend MCI plan (filter and priority)
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.DeploymentPlan'
-        required: false
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/model.TbSpecInfo'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: deploymentPlan
   /mergeCSPLabel/{labelType}/{uid}:
     put:
       tags:
@@ -4127,7 +4091,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbVmReq'
+              $ref: '#/components/schemas/model.TbCreateSubGroupReq'
         required: true
       responses:
         "200":
@@ -4692,12 +4656,12 @@ paths:
           type: string
           default: mci01
       requestBody:
-        description: "VM dynamic request specifying commonSpec, commonImage, and scaling\
-          \ parameters"
+        description: "SubGroup dynamic request specifying commonSpec, commonImage,\
+          \ and scaling parameters"
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbVmDynamicReq'
+              $ref: '#/components/schemas/model.TbCreateSubGroupDynamicReq'
         required: true
       responses:
         "200":
@@ -5047,7 +5011,7 @@ paths:
         - **Scalable Architecture**: Supports large-scale deployments with optimized resource utilization
 
         **Configuration Process:**
-        1. **Resource Discovery**: Use `/mciRecommendVm` to find suitable VM specifications
+        1. **Resource Discovery**: Use `/recommendSpec` to find suitable VM specifications
         2. **Image Selection**: Use system namespace to discover compatible images
         3. **Request Validation**: Use `/mciDynamicCheckRequest` to validate configuration before deployment
         4. **Optional Preview**: Use `/mciDynamicReview` to estimate costs and review configuration
@@ -6758,7 +6722,7 @@ paths:
   /ns/{nsId}/resources/searchImage:
     post:
       tags:
-      - "[Infra Resource] Image Management"
+      - "[MC-Infra] MCI Provisioning and Management"
       summary: Search image
       description: Search image
       operationId: SearchImage
@@ -6800,7 +6764,7 @@ paths:
   /ns/{nsId}/resources/searchImageOptions:
     get:
       tags:
-      - "[Infra Resource] Image Management"
+      - "[MC-Infra] MCI Provisioning and Management"
       description: Get all available options for image search fields
       operationId: SearchImageOptions
       parameters:
@@ -9003,6 +8967,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /recommendSpec:
+    post:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: Recommend specs for configuring an infrastructure (filter and priority)
+      description: Recommend specs for configuring an infrastructure (filter and priority)
+        Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
+      operationId: RecommendSpec
+      requestBody:
+        description: Conditions for recommending specs (filter and priority)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.RecommendSpecReq'
+        required: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/model.TbSpecInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: recommendSpecReq
   /regionFromCsp:
     get:
       tags:
@@ -9876,7 +9877,7 @@ components:
           allOf:
           - $ref: '#/components/schemas/model.MciCmdReq'
         vmDynamicReq:
-          $ref: '#/components/schemas/model.TbVmDynamicReq'
+          $ref: '#/components/schemas/model.TbCreateSubGroupDynamicReq'
     model.AutoCondition:
       type: object
       properties:
@@ -10152,20 +10153,6 @@ components:
       x-enum-varnames:
       - MyImageAvailable
       - MyImageUnavailable
-    model.DeploymentPlan:
-      type: object
-      properties:
-        filter:
-          $ref: '#/components/schemas/model.FilterInfo'
-        limit:
-          type: string
-          example: "5"
-          enum:
-          - "1"
-          - "2"
-          - "30"
-        priority:
-          $ref: '#/components/schemas/model.PriorityInfo'
     model.DiskStatus:
       type: string
       enum:
@@ -11148,6 +11135,20 @@ components:
           type: number
         min:
           type: number
+    model.RecommendSpecReq:
+      type: object
+      properties:
+        filter:
+          $ref: '#/components/schemas/model.FilterInfo'
+        limit:
+          type: string
+          example: "5"
+          enum:
+          - "1"
+          - "2"
+          - "30"
+        priority:
+          $ref: '#/components/schemas/model.PriorityInfo'
     model.RegionDetail:
       type: object
       properties:
@@ -12415,6 +12416,137 @@ components:
           example: Active
           allOf:
           - $ref: '#/components/schemas/model.TbK8sNodeGroupStatus'
+    model.TbCreateSubGroupDynamicReq:
+      required:
+      - commonImage
+      - commonSpec
+      type: object
+      properties:
+        commonImage:
+          type: string
+          description: CommonImage is field for id of a image in common namespace
+          example: ami-01f71f215b23ba262
+        commonSpec:
+          type: string
+          description: CommonSpec is field for id of a spec in common namespace
+          example: aws+ap-northeast-2+t3.nano
+        connectionName:
+          type: string
+          description: |-
+            if ConnectionName is given, the VM tries to use associtated credential.
+            if not, it will use predefined ConnectionName in Spec objects
+          example: aws-ap-northeast-2
+        description:
+          type: string
+          example: Created via CB-Tumblebug
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+          example:
+            '"env"': "\"test\"}"
+            '{"role"': '"worker"'
+        name:
+          type: string
+          description: "SubGroup name, actual VM name will be generated with -N postfix."
+          example: g1
+        rootDiskSize:
+          type: string
+          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
+          example: "50"
+          default: default
+        rootDiskType:
+          type: string
+          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
+            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
+            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
+            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT:\
+            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
+          example: gp3
+          default: default
+        subGroupSize:
+          type: string
+          description: "if subGroupSize is (not empty) && (> 0), subGroup will be\
+            \ generated. VMs will be created accordingly."
+          example: "3"
+          default: "1"
+        vmUserPassword:
+          type: string
+          example: ""
+    model.TbCreateSubGroupReq:
+      required:
+      - connectionName
+      - imageId
+      - name
+      - securityGroupIds
+      - specId
+      - sshKeyId
+      - subnetId
+      - vNetId
+      type: object
+      properties:
+        connectionName:
+          type: string
+          example: testcloud01-seoul
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP (required
+            for option=register)
+          example: i-014fa6ede6ada0b2c
+        dataDiskIds:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+          example: Description
+        imageId:
+          type: string
+          description: ImageType        string   `json:"imageType"`
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+        name:
+          type: string
+          description: SubGroup name of VMs. Actual VM name will be generated with
+            -N postfix.
+          example: g1-1
+        rootDiskSize:
+          type: string
+          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
+          example: "default, 30, 42, ..."
+        rootDiskType:
+          type: string
+          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
+            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
+            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
+            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT:\
+            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
+          example: "default, TYPE1, ..."
+        securityGroupIds:
+          type: array
+          items:
+            type: string
+        specId:
+          type: string
+        sshKeyId:
+          type: string
+        subGroupSize:
+          type: string
+          description: "if subGroupSize is (not empty) && (> 0), subGroup will be\
+            \ generated. VMs will be created accordingly."
+          example: "3"
+        subnetId:
+          type: string
+        vNetId:
+          type: string
+        vmUserName:
+          type: string
+        vmUserPassword:
+          type: string
     model.TbCustomImageInfo:
       type: object
       properties:
@@ -13295,7 +13427,7 @@ components:
     model.TbMciDynamicReq:
       required:
       - name
-      - vm
+      - subGroups
       type: object
       properties:
         description:
@@ -13336,15 +13468,10 @@ components:
           description: PostCommand is for the command to bootstrap the VMs
           allOf:
           - $ref: '#/components/schemas/model.MciCmdReq'
-        systemLabel:
-          type: string
-          description: SystemLabel is for describing the mci in a keyword (any string
-            can be used) for special System purpose
-          example: ""
-        vm:
+        subGroups:
           type: array
           description: |-
-            Vm is array of VM requests for multi-cloud infrastructure
+            SubGroups is array of VM requests for multi-cloud infrastructure
             Example: Multiple VM groups across different CSPs
             [
               {
@@ -13373,7 +13500,12 @@ components:
               }
             ]
           items:
-            $ref: '#/components/schemas/model.TbVmDynamicReq'
+            $ref: '#/components/schemas/model.TbCreateSubGroupDynamicReq'
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the mci in a keyword (any string
+            can be used) for special System purpose
+          example: ""
     model.TbMciInfo:
       type: object
       properties:
@@ -13467,7 +13599,7 @@ components:
     model.TbMciReq:
       required:
       - name
-      - vm
+      - subGroups
       type: object
       properties:
         description:
@@ -13510,15 +13642,15 @@ components:
           description: PostCommand is for the command to bootstrap the VMs
           allOf:
           - $ref: '#/components/schemas/model.MciCmdReq'
+        subGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.TbCreateSubGroupReq'
         systemLabel:
           type: string
           description: SystemLabel is for describing the mci in a keyword (any string
             can be used) for special System purpose
           example: ""
-        vm:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.TbVmReq'
     model.TbNLBAddRemoveVMReq:
       type: object
       properties:
@@ -14275,65 +14407,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.TbSubnetReq'
-    model.TbVmDynamicReq:
-      required:
-      - commonImage
-      - commonSpec
-      type: object
-      properties:
-        commonImage:
-          type: string
-          description: CommonImage is field for id of a image in common namespace
-          example: ami-01f71f215b23ba262
-        commonSpec:
-          type: string
-          description: CommonSpec is field for id of a spec in common namespace
-          example: aws+ap-northeast-2+t3.nano
-        connectionName:
-          type: string
-          description: |-
-            if ConnectionName is given, the VM tries to use associtated credential.
-            if not, it will use predefined ConnectionName in Spec objects
-          example: aws-ap-northeast-2
-        description:
-          type: string
-          example: Created via CB-Tumblebug
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
-          example:
-            '"env"': "\"test\"}"
-            '{"role"': '"worker"'
-        name:
-          type: string
-          description: "VM name or subGroup name if is (not empty) && (> 0). If it\
-            \ is a group, actual VM name will be generated with -N postfix."
-          example: g1
-        rootDiskSize:
-          type: string
-          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
-          example: "50"
-          default: default
-        rootDiskType:
-          type: string
-          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
-            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
-            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
-            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT:\
-            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
-          example: gp3
-          default: default
-        subGroupSize:
-          type: string
-          description: "if subGroupSize is (not empty) && (> 0), subGroup will be\
-            \ generated. VMs will be created accordingly."
-          example: "3"
-          default: "1"
-        vmUserPassword:
-          type: string
-          example: ""
     model.TbVmInfo:
       type: object
       properties:
@@ -14453,79 +14526,6 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
-        vNetId:
-          type: string
-        vmUserName:
-          type: string
-        vmUserPassword:
-          type: string
-    model.TbVmReq:
-      required:
-      - connectionName
-      - imageId
-      - name
-      - securityGroupIds
-      - specId
-      - sshKeyId
-      - subnetId
-      - vNetId
-      type: object
-      properties:
-        connectionName:
-          type: string
-          example: testcloud01-seoul
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP (required
-            for option=register)
-          example: i-014fa6ede6ada0b2c
-        dataDiskIds:
-          type: array
-          items:
-            type: string
-        description:
-          type: string
-          example: Description
-        imageId:
-          type: string
-          description: ImageType        string   `json:"imageType"`
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
-        name:
-          type: string
-          description: "VM name or subGroup name if is (not empty) && (> 0). If it\
-            \ is a group, actual VM name will be generated with -N postfix."
-          example: g1-1
-        rootDiskSize:
-          type: string
-          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
-          example: "default, 30, 42, ..."
-        rootDiskType:
-          type: string
-          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
-            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
-            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
-            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT:\
-            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
-          example: "default, TYPE1, ..."
-        securityGroupIds:
-          type: array
-          items:
-            type: string
-        specId:
-          type: string
-        sshKeyId:
-          type: string
-        subGroupSize:
-          type: string
-          description: "if subGroupSize is (not empty) && (> 0), subGroup will be\
-            \ generated. VMs will be created accordingly."
-          example: "3"
-        subnetId:
-          type: string
         vNetId:
           type: string
         vmUserName:

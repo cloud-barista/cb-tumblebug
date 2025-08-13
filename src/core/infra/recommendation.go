@@ -43,7 +43,7 @@ func toUpperFirst(s string) string {
 }
 
 // applyFilterPolicies dynamically sets filters on the request based on the policies.
-func applyFilterPolicies(request *model.FilterSpecsByRangeRequest, plan *model.DeploymentPlan) error {
+func applyFilterPolicies(request *model.FilterSpecsByRangeRequest, plan *model.RecommendSpecReq) error {
 	val := reflect.ValueOf(request).Elem()
 
 	for _, policy := range plan.Filter.Policy {
@@ -94,8 +94,8 @@ func applyRange(field reflect.Value, operator string, operand float32) error {
 	return nil
 }
 
-// RecommendVm is func to recommend a VM
-func RecommendVm(nsId string, plan model.DeploymentPlan) ([]model.TbSpecInfo, error) {
+// RecommendSpec is func to recommend a VM
+func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecInfo, error) {
 	// Filtering first
 
 	u := &model.FilterSpecsByRangeRequest{}
@@ -658,13 +658,13 @@ func RecommendVmPerformance(nsId string, specList *[]model.TbSpecInfo) ([]model.
 }
 
 // RecommendK8sNode is func to recommend a node for K8sCluster
-func RecommendK8sNode(nsId string, plan model.DeploymentPlan) ([]model.TbSpecInfo, error) {
+func RecommendK8sNode(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecInfo, error) {
 	emptyObjList := []model.TbSpecInfo{}
 
 	limitOrig := plan.Limit
 	plan.Limit = strconv.Itoa(math.MaxInt)
 
-	tbSpecInfoListForVm, err := RecommendVm(nsId, plan)
+	tbSpecInfoListForVm, err := RecommendSpec(nsId, plan)
 	if err != nil {
 		return emptyObjList, err
 	}

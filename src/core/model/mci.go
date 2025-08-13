@@ -114,7 +114,7 @@ type TbMciReq struct {
 	PlacementAlgo string `json:"placementAlgo,omitempty"`
 	Description   string `json:"description" example:"Made in CB-TB"`
 
-	Vm []TbVmReq `json:"vm" validate:"required"`
+	SubGroups []TbCreateSubGroupReq `json:"subGroups" validate:"required"`
 
 	// PostCommand is for the command to bootstrap the VMs
 	PostCommand MciCmdReq `json:"postCommand" validate:"omitempty"`
@@ -219,9 +219,9 @@ type VmCreationError struct {
 	Timestamp string `json:"timestamp"`
 }
 
-// TbVmReq is struct to get requirements to create a new server instance
-type TbVmReq struct {
-	// VM name or subGroup name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
+// TbCreateSubGroupReq is struct to get requirements to create a new server instance
+type TbCreateSubGroupReq struct {
+	// SubGroup name of VMs. Actual VM name will be generated with -N postfix.
 	Name string `json:"name" validate:"required" example:"g1-1"`
 
 	// CspResourceId is resource identifier managed by CSP (required for option=register)
@@ -250,7 +250,7 @@ type TbVmReq struct {
 	DataDiskIds      []string `json:"dataDiskIds"`
 }
 
-// TbVmReq is struct to get requirements to create a new server instance
+// TbCreateSubGroupReq is struct to get requirements to create a new server instance
 type TbScaleOutSubGroupReq struct {
 	// Define addtional VMs to scaleOut
 	NumVMsToAdd string `json:"numVMsToAdd" validate:"required" example:"2"`
@@ -271,7 +271,7 @@ type TbMciDynamicReq struct {
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:no)
 	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
 
-	// Vm is array of VM requests for multi-cloud infrastructure
+	// SubGroups is array of VM requests for multi-cloud infrastructure
 	// Example: Multiple VM groups across different CSPs
 	// [
 	//   {
@@ -299,7 +299,7 @@ type TbMciDynamicReq struct {
 	//     "label": {"role": "test", "csp": "gcp"}
 	//   }
 	// ]
-	Vm []TbVmDynamicReq `json:"vm" validate:"required"`
+	SubGroups []TbCreateSubGroupDynamicReq `json:"subGroups" validate:"required"`
 
 	// PostCommand is for the command to bootstrap the VMs
 	PostCommand MciCmdReq `json:"postCommand"`
@@ -313,9 +313,9 @@ type TbMciDynamicReq struct {
 	Label map[string]string `json:"label"`
 }
 
-// TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
-type TbVmDynamicReq struct {
-	// VM name or subGroup name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
+// TbCreateSubGroupDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
+type TbCreateSubGroupDynamicReq struct {
+	// SubGroup name, actual VM name will be generated with -N postfix.
 	Name string `json:"name" example:"g1"`
 
 	// if subGroupSize is (not empty) && (> 0), subGroup will be generated. VMs will be created accordingly.
@@ -864,8 +864,8 @@ type AutoCondition struct {
 
 // AutoAction is struct for MCI auto-control action.
 type AutoAction struct {
-	ActionType   string         `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
-	VmDynamicReq TbVmDynamicReq `json:"vmDynamicReq"`
+	ActionType   string                     `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
+	VmDynamicReq TbCreateSubGroupDynamicReq `json:"vmDynamicReq"`
 
 	// PostCommand is field for providing command to VMs after its creation. example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
 	PostCommand   MciCmdReq `json:"postCommand"`
@@ -932,8 +932,8 @@ type BastionInfo struct {
 	VmId []string `json:"vmId"`
 }
 
-// DeploymentPlan is struct for .
-type DeploymentPlan struct {
+// RecommendSpecReq is struct for .
+type RecommendSpecReq struct {
 	Filter   FilterInfo   `json:"filter"`
 	Priority PriorityInfo `json:"priority"`
 	Limit    string       `json:"limit" example:"5" enums:"1,2,30"`

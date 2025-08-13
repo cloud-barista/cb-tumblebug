@@ -685,7 +685,7 @@ func RestGetControlK8sCluster(c echo.Context) error {
 // @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
-// @Param deploymentPlan body model.DeploymentPlan false "Recommend K8sCluster's Node plan (filter and priority)"
+// @Param recommendSpecReq body model.RecommendSpecReq false "Recommend K8sCluster's Node plan (filter and priority)"
 // @Success 200 {object} []model.TbSpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -694,7 +694,7 @@ func RestRecommendK8sNode(c echo.Context) error {
 
 	nsId := model.SystemCommonNs
 
-	u := &model.DeploymentPlan{}
+	u := &model.RecommendSpecReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}

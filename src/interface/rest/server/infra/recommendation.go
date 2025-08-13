@@ -21,28 +21,28 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// RestRecommendVm godoc
-// @ID RecommendVm
-// @Summary Recommend MCI plan (filter and priority)
-// @Description Recommend MCI plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
+// RestRecommendSpec godoc
+// @ID RecommendSpec
+// @Summary Recommend specs for configuring an infrastructure (filter and priority)
+// @Description Recommend specs for configuring an infrastructure (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
 // @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
-// @Param deploymentPlan body model.DeploymentPlan false "Recommend MCI plan (filter and priority)"
+// @Param recommendSpecReq body model.RecommendSpecReq false "Conditions for recommending specs (filter and priority)"
 // @Success 200 {object} []model.TbSpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /mciRecommendVm [post]
-func RestRecommendVm(c echo.Context) error {
+// @Router /recommendSpec [post]
+func RestRecommendSpec(c echo.Context) error {
 
 	nsId := model.SystemCommonNs
 
-	u := &model.DeploymentPlan{}
+	u := &model.RecommendSpecReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := infra.RecommendVm(nsId, *u)
+	content, err := infra.RecommendSpec(nsId, *u)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
