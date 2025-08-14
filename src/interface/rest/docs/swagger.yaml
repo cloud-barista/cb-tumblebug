@@ -11709,6 +11709,13 @@ components:
           description: Whether the image is registered by CB-Tumblebug asset file
             or not.
           example: false
+        matchedSpecId:
+          type: string
+          description: |-
+            MatchedSpecId is the ID of the matched spec.
+            If specified, only the images that match this spec will be returned.
+            This is useful when the user wants to search images that match a specific spec.
+          example: aws+ap-northeast-2+t2.small
         maxResults:
           type: integer
           description: |-
@@ -11783,6 +11790,16 @@ components:
             or not.
           items:
             type: boolean
+        matchedSpecId:
+          type: array
+          description: |-
+            MatchedSpecId is the ID of the matched spec.
+            If specified, only the images that match this spec will be returned.
+            This is useful when the user wants to search images that match a specific spec.
+          example:
+          - aws+ap-northeast-2+t2.small
+          items:
+            type: string
         maxResults:
           type: array
           description: |-
@@ -14091,7 +14108,7 @@ components:
         id:
           type: string
           description: Id is unique identifier for the object
-          example: aws-ap-southeast-1
+          example: aws+ap-southeast+csp-06eb41e14121c550a
         infraType:
           type: string
           description: "InfraType can be one of vm|k8s|kubernetes|container, etc."

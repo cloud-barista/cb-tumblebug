@@ -118,7 +118,7 @@ type TbSpecReq struct {
 // TbSpecInfo is a struct that represents TB spec object.
 type TbSpecInfo struct { // Tumblebug
 	// Id is unique identifier for the object
-	Id string `json:"id" example:"aws-ap-southeast-1" gorm:"primaryKey"`
+	Id string `json:"id" example:"aws+ap-southeast+csp-06eb41e14121c550a" gorm:"primaryKey"`
 	// Uid is universally unique identifier for the object, used for labelSelector
 	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
 

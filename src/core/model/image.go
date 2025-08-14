@@ -126,6 +126,11 @@ type ImageFetchOption struct {
 // SearchImageRequest is struct for Search Image Request
 type SearchImageRequest struct {
 
+	// MatchedSpecId is the ID of the matched spec.
+	// If specified, only the images that match this spec will be returned.
+	// This is useful when the user wants to search images that match a specific spec.
+	MatchedSpecId string `json:"matchedSpecId,omitempty" example:"aws+ap-northeast-2+t2.small" description:"The ID of the matched spec. If specified, only the images that match this spec will be returned."`
+
 	// Cloud Service Provider (ex: "aws", "azure", "gcp", etc.). Use GET /provider to get the list of available providers.
 	ProviderName string `json:"providerName" example:"aws"`
 
@@ -175,6 +180,11 @@ type SearchImageRequest struct {
 
 // SearchImageRequestOptions is struct for Search Image Request
 type SearchImageRequestOptions struct {
+
+	// MatchedSpecId is the ID of the matched spec.
+	// If specified, only the images that match this spec will be returned.
+	// This is useful when the user wants to search images that match a specific spec.
+	MatchedSpecId []string `json:"matchedSpecId" example:"aws+ap-northeast-2+t2.small" description:"The ID of the matched spec. If specified, only the images that match this spec will be returned."`
 
 	// Cloud Service Provider (ex: "aws", "azure", "gcp", etc.). Use GET /provider to get the list of available providers.
 	ProviderName []string `json:"providerName"`
