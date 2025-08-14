@@ -27,6 +27,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/go-resty/resty/v2"
@@ -436,6 +437,12 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 
 			client := resty.New()
 			client.SetTimeout(10 * time.Minute)
+
+			// Set longer timeout for NCP (VPC)
+			if strings.Contains(strings.ToLower(temp.ConnectionConfig.ProviderName), csp.NCP) {
+				log.Debug().Msgf("Setting longer API request timeout (15m) for %s", csp.NCP)
+				client.SetTimeout(15 * time.Minute)
+			}
 
 			requestBody := model.SpiderConnectionName{}
 			requestBody.ConnectionName = temp.ConnectionName
