@@ -46,6 +46,7 @@ var cspSyncSkipConfig = CSPSyncConfig{
 		// csp.NCP:       true,
 		csp.NHNCloud: true,
 		csp.GCP:      true, // GCP supports tags, but there are some restrictions on naming conventions
+		csp.NCP:      true, // Not supported by CB-Spider
 	},
 	CSPSpecificSkipConfig: map[string]map[string]bool{
 		csp.Azure: {
@@ -66,16 +67,16 @@ var cspSyncSkipConfig = CSPSyncConfig{
 		// 	model.StrNLB:           true,
 		// 	// currently there is some restriction on tags for GCP resources because of naming conventions
 		// },
-		csp.NCP: {
-			model.StrVNet:          true,
-			model.StrSubnet:        true,
-			model.StrSecurityGroup: true,
-			model.StrSSHKey:        true,
-			model.StrDataDisk:      true,
-			model.StrCustomImage:   true,
-			model.StrNLB:           true,
-			model.StrKubernetes:    true,
-		},
+		// csp.NCP: {
+		// 	model.StrVNet:          true,
+		// 	model.StrSubnet:        true,
+		// 	model.StrSecurityGroup: true,
+		// 	model.StrSSHKey:        true,
+		// 	model.StrDataDisk:      true,
+		// 	model.StrCustomImage:   true,
+		// 	model.StrNLB:           true,
+		// 	model.StrKubernetes:    true,
+		// },
 		csp.KTCloud: {
 			model.StrVNet:          true,
 			model.StrSubnet:        true,
