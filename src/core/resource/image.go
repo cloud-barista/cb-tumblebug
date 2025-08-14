@@ -1216,6 +1216,34 @@ func SearchImage(nsId string, req model.SearchImageRequest) ([]model.TbImageInfo
 		return nil, cnt, err
 	}
 
+	var specInfo *model.TbSpecInfo
+	// If MatchedSpecId is provided, fetch spec information and apply to search criteria
+	if req.MatchedSpecId != "" {
+		spec, err := GetSpec(nsId, req.MatchedSpecId)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to get spec information for MatchedSpecId: %s", req.MatchedSpecId)
+			return nil, cnt, err
+		}
+		specInfo = &spec
+
+		// Apply spec information to search criteria if not already specified
+		if specInfo.ProviderName != "" {
+			req.ProviderName = specInfo.ProviderName
+			log.Debug().Msgf("Applied ProviderName from spec: %s", req.ProviderName)
+		}
+		if specInfo.RegionName != "" {
+			req.RegionName = specInfo.RegionName
+			log.Debug().Msgf("Applied RegionName from spec: %s", req.RegionName)
+		}
+		if specInfo.Architecture != "" && specInfo.Architecture != string(model.ArchitectureNA) {
+			req.OSArchitecture = model.OSArchitecture(specInfo.Architecture)
+			log.Debug().Msgf("Applied OSArchitecture from spec: %s", req.OSArchitecture)
+		}
+
+		log.Info().Msgf("SearchImage with MatchedSpecId %s: providerName=%s, regionName=%s, osArchitecture=%s",
+			req.MatchedSpecId, req.ProviderName, req.RegionName, req.OSArchitecture)
+	}
+
 	var images []model.TbImageInfo
 	sqlQuery := model.ORM.Where("namespace = ?", nsId)
 
@@ -1284,8 +1312,8 @@ func SearchImage(nsId string, req model.SearchImageRequest) ([]model.TbImageInfo
 		}
 	}
 
-	log.Info().Msgf("SearchImage: providerName=%s, regionName=%s, osType=%s, isGPUImage=%v, isKubernetesImage=%v, isRegisteredByAsset=%v, includeDeprecatedImage=%v",
-		req.ProviderName, req.RegionName, req.OSType, req.IsGPUImage, req.IsKubernetesImage, req.IsRegisteredByAsset, req.IncludeDeprecatedImage)
+	log.Info().Msgf("SearchImage: matchedSpecId=%s, providerName=%s, regionName=%s, osType=%s, osArchitecture=%s, isGPUImage=%v, isKubernetesImage=%v, isRegisteredByAsset=%v, includeDeprecatedImage=%v",
+		req.MatchedSpecId, req.ProviderName, req.RegionName, req.OSType, req.OSArchitecture, req.IsGPUImage, req.IsKubernetesImage, req.IsRegisteredByAsset, req.IncludeDeprecatedImage)
 
 	result := sqlQuery.Find(&images)
 	log.Info().Msgf("SearchImage: Found %d images for namespace %s", len(images), nsId)
@@ -1319,6 +1347,17 @@ func SearchImage(nsId string, req model.SearchImageRequest) ([]model.TbImageInfo
 			len(images)-len(finalImages), len(finalImages))
 		images = finalImages
 		cnt = len(images)
+	}
+
+	// Apply CSP-specific image filtering based on spec compatibility
+	if specInfo != nil && len(images) > 0 {
+		filteredImages := applyCspSpecificImageFiltering(images, *specInfo)
+		if len(filteredImages) != len(images) {
+			log.Info().Msgf("SearchImage: CSP-specific filtering removed %d images, %d images remaining for provider %s",
+				len(images)-len(filteredImages), len(filteredImages), specInfo.ProviderName)
+			images = filteredImages
+			cnt = len(images)
+		}
 	}
 
 	return images, cnt, nil
@@ -1528,6 +1567,64 @@ func extractLatestDateFromDistribution(distribution string) time.Time {
 // SearchImageOptions returns the available options for searching images
 func SearchImageOptions() (model.SearchImageRequestOptions, error) {
 	var options model.SearchImageRequestOptions
+
+	// Get sample MatchedSpecId options (diverse CSP examples for better representation)
+	var sampleSpecs []string
+
+	// Get specs grouped by provider to ensure diversity
+	var specsByProvider []struct {
+		ProviderName string `json:"provider_name"`
+		Id           string `json:"id"`
+	}
+
+	if err := model.ORM.Model(&model.TbSpecInfo{}).
+		Select("provider_name, id").
+		Where("namespace = ?", model.SystemCommonNs).
+		Order("provider_name, id").
+		Find(&specsByProvider).Error; err != nil {
+		log.Warn().Err(err).Msg("Failed to get spec IDs by provider, using default examples")
+		// Fallback to default examples if query fails
+		options.MatchedSpecId = []string{
+			"aws+ap-northeast-2+t2.small",
+			"azure+koreacentral+Standard_B1s",
+			"gcp+asia-northeast3+e2-micro",
+			"ncpvpc+kr+m8-g3a",
+		}
+	} else {
+		// Group specs by provider and take 1-2 examples from each
+		providerSpecs := make(map[string][]string)
+		for _, spec := range specsByProvider {
+			providerSpecs[spec.ProviderName] = append(providerSpecs[spec.ProviderName], spec.Id)
+		}
+
+		// Collect diverse examples (max 2 per provider, total max 20)
+		maxPerProvider := 2
+		totalLimit := 20
+		for _, specs := range providerSpecs {
+			taken := 0
+			for _, specId := range specs {
+				if taken < maxPerProvider && len(sampleSpecs) < totalLimit {
+					sampleSpecs = append(sampleSpecs, specId)
+					taken++
+				}
+			}
+			if len(sampleSpecs) >= totalLimit {
+				break
+			}
+		}
+
+		// If no specs found in DB, use fallback examples
+		if len(sampleSpecs) == 0 {
+			sampleSpecs = []string{
+				"aws+ap-northeast-2+t2.small",
+				"azure+koreacentral+Standard_B1s",
+				"gcp+asia-northeast3+e2-micro",
+				"ncpvpc+kr+m8-g3a",
+			}
+		}
+
+		options.MatchedSpecId = sampleSpecs
+	}
 
 	// Get distinct provider names
 	if err := model.ORM.Model(&model.TbImageInfo{}).
@@ -1808,4 +1905,67 @@ func GetImagesByRegion(nsId string, provider string, region string) ([]model.TbI
 	}
 
 	return images, nil
+}
+
+// applyCspSpecificImageFiltering applies CSP-specific filtering rules based on spec information
+func applyCspSpecificImageFiltering(images []model.TbImageInfo, specInfo model.TbSpecInfo) []model.TbImageInfo {
+	switch strings.ToLower(specInfo.ProviderName) {
+	case csp.NCP:
+		return filterImagesByCorrespondingIds(images, specInfo)
+	// Add more CSP-specific filtering logic here as needed
+	// case "aws":
+	//     return filterImagesByHypervisor(images, specInfo)
+	// case "azure":
+	//     return filterImagesByGeneration(images, specInfo)
+	default:
+		// No specific filtering for other CSPs
+		return images
+	}
+}
+
+// filterImagesByCorrespondingIds filters images based on CorrespondingImageIds from spec details
+func filterImagesByCorrespondingIds(images []model.TbImageInfo, specInfo model.TbSpecInfo) []model.TbImageInfo {
+	// Find CorrespondingImageIds from spec details
+	correspondingIds := extractCorrespondingImageIds(specInfo.Details)
+	if len(correspondingIds) == 0 {
+		log.Warn().Msgf("No CorrespondingImageIds found in spec %s for provider %s", specInfo.Id, specInfo.ProviderName)
+		return images
+	}
+
+	// Convert to map for efficient lookup
+	validImageIds := make(map[string]bool)
+	for _, id := range correspondingIds {
+		validImageIds[strings.TrimSpace(id)] = true
+	}
+
+	// Filter images based on cspImageName matching
+	var filteredImages []model.TbImageInfo
+	for _, image := range images {
+		if validImageIds[image.CspImageName] {
+			filteredImages = append(filteredImages, image)
+		}
+	}
+
+	log.Info().Msgf("CorrespondingIds filtering: %d corresponding image IDs found, filtered from %d to %d images for provider %s",
+		len(correspondingIds), len(images), len(filteredImages), specInfo.ProviderName)
+
+	return filteredImages
+}
+
+// extractCorrespondingImageIds extracts and parses CorrespondingImageIds from spec details
+func extractCorrespondingImageIds(details []model.KeyValue) []string {
+	for _, detail := range details {
+		if detail.Key == "CorrespondingImageIds" {
+			// Split comma-separated values and trim whitespace
+			ids := strings.Split(detail.Value, ",")
+			var cleanIds []string
+			for _, id := range ids {
+				if trimmed := strings.TrimSpace(id); trimmed != "" {
+					cleanIds = append(cleanIds, trimmed)
+				}
+			}
+			return cleanIds
+		}
+	}
+	return nil
 }

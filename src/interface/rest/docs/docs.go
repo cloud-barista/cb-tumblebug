@@ -14730,6 +14730,11 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": false
                 },
+                "matchedSpecId": {
+                    "description": "MatchedSpecId is the ID of the matched spec.\nIf specified, only the images that match this spec will be returned.\nThis is useful when the user wants to search images that match a specific spec.",
+                    "type": "string",
+                    "example": "aws+ap-northeast-2+t2.small"
+                },
                 "maxResults": {
                     "description": "MaxResults is the maximum number of images to be returned in the search results.\nIf not specified, all images will be returned.\nIf specified, the number of images returned will be limited to the specified value.",
                     "type": "integer",
@@ -14801,6 +14806,16 @@ const docTemplate = `{
                     "items": {
                         "type": "boolean"
                     }
+                },
+                "matchedSpecId": {
+                    "description": "MatchedSpecId is the ID of the matched spec.\nIf specified, only the images that match this spec will be returned.\nThis is useful when the user wants to search images that match a specific spec.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "aws+ap-northeast-2+t2.small"
+                    ]
                 },
                 "maxResults": {
                     "description": "MaxResults is the maximum number of images to be returned in the search results.\nIf not specified, all images will be returned.\nIf specified, the number of images returned will be limited to the specified value.",
@@ -17830,7 +17845,7 @@ const docTemplate = `{
                 "id": {
                     "description": "Id is unique identifier for the object",
                     "type": "string",
-                    "example": "aws-ap-southeast-1"
+                    "example": "aws+ap-southeast+csp-06eb41e14121c550a"
                 },
                 "infraType": {
                     "description": "InfraType can be one of vm|k8s|kubernetes|container, etc.",
