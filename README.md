@@ -235,20 +235,17 @@ curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scri
       end
       
       subgraph "Docker Compose Environment"
-          subgraph "Frontend & API"
-              TB[CB-Tumblebug<br/>:1323]
+          subgraph "Frontend & Interfaces"
               UI[CB-MapUI<br/>:1324]
               MCP[TB-MCP Server<br/>:8000]
               Proxy[Traefik Proxy<br/>:80/:443]
           end
           
           subgraph "Backend Services"
-              Spider[CB-Spider<br/>:1024]
-          end
-          
-          subgraph "Data Storage"
-              ETCD[ETCD<br/>:2379<br/>Metadata]
-              PG[PostgreSQL<br/>:5432<br/>Specs/Images]
+              TB[CB-Tumblebug<br/>:1323<br/>Multi-Cloud Management]
+              Spider[CB-Spider<br/>:1024<br/>Cloud API Abstraction]
+              ETCD[ETCD<br/>:2379<br/>Metadata Store]
+              PG[PostgreSQL<br/>:5432<br/>Specs/Images DB]
           end
       end
       
@@ -287,9 +284,8 @@ curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scri
       classDef storage fill:#e8f5e8,stroke:#388e3c
       classDef cloud fill:#fff3e0,stroke:#f57c00
       
-      class TB,UI,MCP,Proxy frontend
-      class Spider backend
-      class ETCD,PG storage
+      class UI,MCP,Proxy frontend
+      class TB,Spider,ETCD,PG backend
       class AWS,Azure,GCP,Others cloud
   ```
 
