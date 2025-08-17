@@ -62,7 +62,7 @@ from fastmcp import FastMCP
 
 # Configure logging - Reduce noise from HTTP connections and MCP protocol details
 # Set logging level via environment variable (default: INFO)
-log_level = os.environ.get("MCP_LOG_LEVEL", "INFO").upper()
+log_level = os.environ.get("MCP_LOG_LEVEL", "DEBUG").upper()
 log_level_value = getattr(logging, log_level, logging.INFO)
 
 logging.basicConfig(
@@ -95,7 +95,26 @@ if log_level_value > logging.DEBUG:
     # Only show important MCP events
     class MCPRequestFilter(logging.Filter):
         def filter(self, record):
-            return "Processing request of type CallToolRequest" in record.getMessage()
+            message = record.getMessage()
+            if "Processing request of type CallToolRequest" in message:
+                # Extract tool name from the message if available
+                try:
+                    # Look for tool name patterns in the message
+                    if "name" in message:
+                        import re
+                        tool_match = re.search(r"'name':\s*'([^']+)'", message)
+                        if tool_match:
+                            tool_name = tool_match.group(1)
+                            record.msg = f"🔧 Calling tool: {tool_name}"
+                            record.args = ()  # Clear args to prevent formatting mismatch
+                            return True
+                except:
+                    pass
+                # Fallback to original message
+                record.msg = "🔧 Processing MCP tool request"
+                record.args = ()  # Clear args to prevent formatting mismatch
+                return True
+            return False
     
     mcp_logger = logging.getLogger("mcp.server.lowlevel.server")
     mcp_logger.setLevel(logging.INFO)  # Allow INFO level for important events
@@ -1238,9 +1257,9 @@ def release_resources(ns_id: str, force_release: bool = False) -> Dict:
     # Pre-deletion checks
     try:
         # Check for existing MCIs
-        mci_list = get_mci_list(ns_id)
-        if isinstance(mci_list, dict) and "mci" in mci_list and len(mci_list["mci"]) > 0:
-            active_mcis = [mci.get("id", "unknown") for mci in mci_list["mci"]]
+        mci_list_result = api_request("GET", f"/ns/{ns_id}/mci")
+        if isinstance(mci_list_result, dict) and "mci" in mci_list_result and len(mci_list_result["mci"]) > 0:
+            active_mcis = [mci.get("id", "unknown") for mci in mci_list_result["mci"]]
             return {
                 "error": "Cannot release resources while MCIs exist",
                 "active_mcis": active_mcis,
@@ -1250,17 +1269,21 @@ def release_resources(ns_id: str, force_release: bool = False) -> Dict:
         
         # Get current resources for reporting
         try:
-            vnets = get_vnets(ns_id).get("vNet", [])
-            security_groups = get_security_groups(ns_id).get("securityGroup", [])
-            ssh_keys = get_ssh_keys(ns_id).get("sshKey", [])
+            vnets_result = api_request("GET", f"/ns/{ns_id}/resources/vNet")
+            security_groups_result = api_request("GET", f"/ns/{ns_id}/resources/securityGroup")
+            ssh_keys_result = api_request("GET", f"/ns/{ns_id}/resources/sshKey")
+            
+            vnets = vnets_result.get("vNet", []) if isinstance(vnets_result, dict) else []
+            security_groups = security_groups_result.get("securityGroup", []) if isinstance(security_groups_result, dict) else []
+            ssh_keys = ssh_keys_result.get("sshKey", []) if isinstance(ssh_keys_result, dict) else []
             
             resources_to_delete = {
                 "vNets": [vnet.get("id", "unknown") for vnet in vnets] if vnets else [],
                 "securityGroups": [sg.get("id", "unknown") for sg in security_groups] if security_groups else [],
                 "sshKeys": [key.get("id", "unknown") for key in ssh_keys] if ssh_keys else []
             }
-        except:
-            resources_to_delete = {"note": "Could not enumerate resources before deletion"}
+        except Exception as e:
+            resources_to_delete = {"note": f"Could not enumerate resources before deletion: {str(e)}"}
         
     except Exception as e:
         return {
@@ -1294,20 +1317,6 @@ def release_resources(ns_id: str, force_release: bool = False) -> Dict:
         }
     
     return result
-
-# Tool: Resource overview
-@mcp.tool()
-def resource_overview() -> Dict:
-    """
-    Get overview of all resources from CSPs (Cloud Service Providers).
-    This includes VNet, SecurityGroup, SSHKey, and other resources.
-    This operation provides a summary of resources across all namespaces.
-    This is not used in general operations. Will be used to check resources managed by CSPs's management console.
-    
-    Returns:
-        Resource overview information
-    """
-    return api_request("GET", "/inspectResourcesOverview")
 
 # Tool: Check resource exists
 @mcp.tool()
@@ -1504,18 +1513,24 @@ def get_image_search_options(ns_id: str = "system") -> Dict:
     Get all available options for image search fields.
     This provides example values for various search parameters that can be used in search_images().
     
-    Use this function first to understand what search criteria are available,
-    then use search_images() to find specific images based on your requirements.
+    **CRITICAL for osType discovery:** Use this function to see all available OS types and versions
+    that can be used in the search_images() osType parameter.
+    
+    **Workflow:**
+    1. Call this function to discover available osType values
+    2. Use search_images() with either:
+       - Simple OS name from osType list (e.g., "ubuntu", "centos")
+       - Full OS + version combination (e.g., "ubuntu 22.04", "centos 7")
     
     Args:
         ns_id: Namespace ID (typically "system" for system images)
     
     Returns:
         Available search options including:
-        - osArchitecture: Available OS architectures (e.g., "x86_64", "arm64")
-        - osType: Available OS types (e.g., "ubuntu 22.04", "centos 7", "windows server 2019")
-        - providerName: Available cloud providers (e.g., "aws", "azure", "gcp")
-        - regionName: Available regions (e.g., "ap-northeast-2", "us-east-1")
+        - osType: Available OS types and versions (e.g., ["ubuntu", "ubuntu 22.04", "centos", "centos 7", "windows server 2019"])
+        - osArchitecture: Available OS architectures (e.g., ["x86_64", "arm64"])
+        - providerName: Available cloud providers (e.g., ["aws", "azure", "gcp", "ncp"])
+        - regionName: Available regions (e.g., ["ap-northeast-2", "us-east-1", "koreacentral"])
     """
     return api_request("GET", f"/ns/{ns_id}/resources/searchImageOptions")
 
@@ -1523,38 +1538,80 @@ def get_image_search_options(ns_id: str = "system") -> Dict:
 @mcp.tool()
 def search_images(
     ns_id: str = "system",
-    os_architecture: Optional[str] = None,
+    matched_spec_id: Optional[str] = None,
     os_type: Optional[str] = None,
+    os_architecture: Optional[str] = None,
     provider_name: Optional[str] = None,
     region_name: Optional[str] = None,
-    guest_os: Optional[str] = None
+    is_gpu_image: Optional[bool] = None,
+    is_kubernetes_image: Optional[bool] = None,
+    include_basic_image_only: Optional[bool] = None,
+    detail_search_keys: Optional[List[str]] = None,
+    max_results: Optional[int] = None
 ) -> Dict:
     """
     Search for available images based on specific criteria.
     
-    This is a critical function for MCI creation workflow:
+    **SIMPLIFIED WORKFLOW with MatchedSpecId:**
+    When you have a specific VM spec, simply use:
+    1. search_images(matched_spec_id="aws+ap-northeast-2+t2.small", os_type="ubuntu")
+    2. The system automatically applies provider, region, architecture from the spec
+    3. Get compatible images filtered for that specific spec
+    
+    **TRADITIONAL WORKFLOW:**
     1. First call get_image_search_options() to see available search parameters
     2. Use this function to search for images matching your requirements
     3. From the results, identify the 'cspImageName' of your desired image
     4. Use the 'cspImageName' as 'commonImage' parameter in create_mci_dynamic()
     
-    Example workflow:
-    1. search_images(provider_name="aws", region_name="ap-northeast-2", os_type="ubuntu 22.04")
-    2. From results, find an image and note its 'cspImageName' (e.g., "ami-0e06732ba3ca8c6cc")
-    3. create_mci_dynamic(commonImage="ami-0e06732ba3ca8c6cc", ...)
+    Example workflows:
+    A) **RECOMMENDED - With MatchedSpecId (simple OS type):**
+       search_images(matched_spec_id="aws+ap-northeast-2+t2.small", os_type="ubuntu")
+       
+    B) **RECOMMENDED - With MatchedSpecId (OS + version):**
+       search_images(matched_spec_id="aws+ap-northeast-2+t2.small", os_type="ubuntu 22.04")
+       
+    C) **Advanced - With detail search keys:**
+       search_images(matched_spec_id="aws+ap-northeast-2+t2.small", detail_search_keys=["tensorflow", "2.17"])
+       
+    D) **Traditional approach (simple OS type):**
+       search_images(provider_name="aws", region_name="ap-northeast-2", os_type="centos")
+       
+    E) **Traditional approach (OS + version):**
+       search_images(provider_name="aws", region_name="ap-northeast-2", os_type="ubuntu 22.04")
+       
+    F) **Basic images only:**
+       search_images(provider_name="aws", region_name="ap-northeast-2", include_basic_image_only=True)
     
     Args:
         ns_id: Namespace ID (typically "system" for system images)
-        os_architecture: OS architecture filter (e.g., "x86_64", "arm64"). Defaults to "x86_64" if not specified.
-        os_type: OS type filter (e.g., "ubuntu 22.04", "centos 7", "windows server 2019")
-        provider_name: Cloud provider filter (e.g., "aws", "azure", "gcp")
-        region_name: Region filter (e.g., "ap-northeast-2", "us-east-1", "koreacentral")
-        guest_os: Guest OS filter (alternative to os_type)
+        matched_spec_id: VM spec ID for automatic provider/region/architecture mapping (RECOMMENDED)
+        os_type: OS type filter with flexible options:
+                - Simple OS name: "ubuntu", "centos", "windows", "debian", "rhel"
+                - Full OS + version: "ubuntu 22.04", "centos 7", "windows server 2019"
+                - Use get_image_search_options() to see all available osType values
+        os_architecture: OS architecture filter (auto-applied when using matched_spec_id)
+        provider_name: Cloud provider filter (auto-applied when using matched_spec_id)
+        region_name: Region filter (auto-applied when using matched_spec_id)
+        is_gpu_image: Filter for GPU-optimized images (images ready for GPU usage)
+        is_kubernetes_image: Filter for Kubernetes-specialized images
+        include_basic_image_only: Return only basic OS distributions without additional applications
+        detail_search_keys: Keywords for detailed search (space-separated for AND condition)
+        max_results: Maximum number of images to return
     
     Returns:
-        Search results containing:
-        - imageList: List of matching images
-        - Each image includes:
+        Enhanced search results with LLM guidance for empty results:
+        - imageList: List of matching images compatible with the spec (if matched_spec_id used)
+        - imageCount: Total number of images found
+        - search_status: Status indicator ("success" or "no_results") 
+        - llm_guidance: Structured guidance for LLM agents when no images are found, including:
+          - status: Detailed status description
+          - message: Human-readable description of the result
+          - search_criteria_used: List of criteria that were applied
+          - alternative_suggestions: Specific alternative search strategies
+          - next_steps: Recommended actions (especially recommend_vm_spec() for different specs)
+          - common_solutions: General troubleshooting approaches
+        - Each image (when found) includes:
           - cspImageName: CSP-specific image identifier (CRITICAL for MCI creation)
           - description: Image description
           - guestOS: Guest operating system
@@ -1563,34 +1620,211 @@ def search_images(
           - isBasicImage: Boolean indicating if this is a basic OS image (PRIORITY indicator)
           
     Important: 
+    - **NEW**: Use matched_spec_id for automatic spec-compatible filtering
+    - **CSP-specific filtering**: NCP specs automatically filter by CorrespondingImageIds
+    - **Detail search**: Use detail_search_keys for advanced keyword-based searching
+    - **Basic images**: Use include_basic_image_only=True for clean OS installations only
     - The 'cspImageName' from search results becomes the 'commonImage' parameter when creating MCIs
-    - For optimal image selection, use select_best_image() helper function which intelligently prioritizes:
-      1. Images with isBasicImage: true (highest priority)
-      2. General OS images through intelligent analysis of image metadata
-      3. Fallback to first available image with detailed reasoning
-    - **CRITICAL**: Each VM spec requires its own image search in the spec's CSP/region
-    - **RECOMMENDED**: Use create_mci_dynamic() auto-mapping by omitting commonImage in VM configurations
-    - **VALIDATION**: Use validate_vm_spec_image_compatibility() to check configurations before deployment
+    - For optimal image selection, use select_best_image() helper function
+    - **CRITICAL**: Each VM spec requires its own image search for proper compatibility
+    - **LLM GUIDANCE**: Empty results include structured guidance to prevent "Canceled" responses
+    - **SPEC ALTERNATIVES**: When matched_spec_id yields no results, guides to use recommend_vm_spec()
     """
+    # Build request data according to model.SearchImageRequest spec
     data = {}
     
-    # Add default x86_64 architecture if not specified by user
-    if os_architecture:
-        data["osArchitecture"] = os_architecture
-    else:
-        data["osArchitecture"] = "x86_64"  # Default to x86_64
+    # Add MatchedSpecId for automatic spec-based filtering
+    if matched_spec_id:
+        data["matchedSpecId"] = matched_spec_id
     
-    # Build search criteria
+    # Add other search criteria
     if os_type:
         data["osType"] = os_type
+    
+    # Add default x86_64 architecture if not specified by user and no matched_spec_id
+    if os_architecture:
+        data["osArchitecture"] = os_architecture
+    elif not matched_spec_id:  # Only set default if not using matched_spec_id
+        data["osArchitecture"] = "x86_64"
+    
     if provider_name:
         data["providerName"] = provider_name
+    
     if region_name:
         data["regionName"] = region_name
-    if guest_os:
-        data["guestOS"] = guest_os
     
-    return api_request("POST", f"/ns/{ns_id}/resources/searchImage", json_data=data)
+    if is_gpu_image is not None:
+        data["isGPUImage"] = is_gpu_image
+    
+    if is_kubernetes_image is not None:
+        data["isKubernetesImage"] = is_kubernetes_image
+    
+    if include_basic_image_only is not None:
+        data["includeBasicImageOnly"] = include_basic_image_only
+    
+    if detail_search_keys:
+        data["detailSearchKeys"] = detail_search_keys
+    
+    if max_results is not None:
+        data["maxResults"] = max_results
+    
+    # Debug log the request data
+    logger.debug(f"🔍 SearchImage request data: {json.dumps(data, indent=2)}")
+    
+    # Make API request
+    try:
+        response = api_request("POST", f"/ns/{ns_id}/resources/searchImage", json_data=data)
+        
+        # Debug log the response
+        logger.debug(f"🔍 SearchImage API response type: {type(response)}")
+        if isinstance(response, dict):
+            logger.debug(f"🔍 SearchImage response keys: {list(response.keys())}")
+            if "imageList" in response:
+                logger.debug(f"🔍 SearchImage found {len(response['imageList'])} images")
+        
+        # Validate response structure
+        if not isinstance(response, dict):
+            logger.error(f"Invalid response format: expected dict, got {type(response)}")
+            return {
+                "error": "Invalid response format from API",
+                "imageList": [],
+                "imageCount": 0
+            }
+        
+        # Handle API error responses
+        if "error" in response:
+            logger.error(f"API error in search_images: {response.get('error', 'Unknown error')}")
+            return response
+        
+        # Ensure imageList exists in response
+        if "imageList" not in response:
+            response["imageList"] = []
+        
+        # Ensure imageCount exists in response
+        if "imageCount" not in response:
+            response["imageCount"] = len(response.get("imageList", []))
+            
+    except Exception as e:
+        logger.error(f"Exception in search_images: {str(e)}")
+        return {
+            "error": f"Failed to search images: {str(e)}",
+            "imageList": [],
+            "imageCount": 0
+        }
+    
+    # Add helper information for optimal image selection
+    if "imageList" in response and response["imageList"]:
+        # Add context about matched spec filtering
+        if matched_spec_id:
+            logger.info(f"🎯 Found {len(response['imageList'])} images compatible with spec: {matched_spec_id}")
+        
+        # Add basic image prioritization hint
+        basic_images = [img for img in response["imageList"] if img.get("isBasicImage", False)]
+        if basic_images:
+            logger.info(f"💡 Found {len(basic_images)} basic images (highest priority) out of {len(response['imageList'])} total images")
+        
+        # Add first few images preview for LLM context
+        preview_count = min(3, len(response["imageList"]))
+        logger.info(f"📋 First {preview_count} images preview:")
+        for i, img in enumerate(response["imageList"][:preview_count]):
+            basic_marker = " 🌟" if img.get("isBasicImage", False) else ""
+            logger.info(f"  {i+1}. {img.get('cspImageName', 'N/A')}: {img.get('description', 'No description')[:80]}...{basic_marker}")
+    else:
+        # Enhanced handling for empty results with structured LLM guidance
+        search_criteria = []
+        if matched_spec_id:
+            search_criteria.append(f"matched_spec_id={matched_spec_id}")
+        if os_type:
+            search_criteria.append(f"os_type={os_type}")
+        if provider_name:
+            search_criteria.append(f"provider={provider_name}")
+        if region_name:
+            search_criteria.append(f"region={region_name}")
+        
+        criteria_str = ", ".join(search_criteria) if search_criteria else "specified criteria"
+        
+        # Log when no images are found
+        if matched_spec_id:
+            logger.warning(f"⚠️ No images found for spec: {matched_spec_id}")
+        else:
+            logger.warning(f"⚠️ No images found for {criteria_str}")
+        
+        # Add structured guidance for LLM agents to prevent "Canceled: Canceled" responses
+        response["search_status"] = "no_results"
+        response["imageList"] = []
+        response["imageCount"] = 0
+        
+        # Generate specific guidance based on search context
+        guidance = {
+            "status": "no_images_found",
+            "message": f"No images found matching criteria: {criteria_str}",
+            "search_criteria_used": search_criteria
+        }
+        
+        # Provide specific suggestions based on matched_spec_id usage
+        if matched_spec_id:
+            # Extract provider and region from spec_id for targeted suggestions
+            spec_parts = matched_spec_id.split('+') if '+' in matched_spec_id else []
+            
+            guidance["alternative_suggestions"] = [
+                "Try using recommend_vm_spec() to get alternative VM specifications",
+                "Use a different spec_id from your previous recommend_vm_spec() results",
+                f"Try searching without matched_spec_id using traditional parameters",
+                "Try setting include_basic_image_only=True for basic OS images only"
+            ]
+            
+            if len(spec_parts) >= 2:
+                spec_provider = spec_parts[0]
+                spec_region = spec_parts[1]
+                guidance["alternative_suggestions"].extend([
+                    f"Try provider_name='{spec_provider}' and region_name='{spec_region}' instead of matched_spec_id",
+                    f"Search for images in different regions for provider '{spec_provider}'"
+                ])
+            
+            guidance["next_steps"] = [
+                "Call recommend_vm_spec() to get different VM specifications",
+                "Select alternative spec_id from recommend_vm_spec() results",
+                "Try broader search criteria without version-specific OS requirements",
+                "Consider using get_image_search_options() to see available parameters"
+            ]
+        else:
+            # Traditional search suggestions
+            guidance["alternative_suggestions"] = [
+                "Try broadening search criteria (remove version numbers from os_type)",
+                "Try searching in different regions or providers", 
+                "Try setting include_basic_image_only=True",
+                "Use get_image_search_options() to see available search parameters"
+            ]
+            
+            guidance["next_steps"] = [
+                "Broaden your search criteria or try different OS types",
+                "Check available providers/regions with get_image_search_options()",
+                "Consider using matched_spec_id with recommend_vm_spec() for better results"
+            ]
+        
+        # Add OS-specific suggestions
+        if os_type and "22.04" in str(os_type):
+            guidance["alternative_suggestions"].insert(0, "Try searching with 'ubuntu 20.04' or just 'ubuntu' for broader results")
+        elif os_type and "ubuntu" in str(os_type).lower():
+            guidance["alternative_suggestions"].insert(0, "Try searching with 'centos', 'debian', or 'rhel' as alternative OS types")
+        
+        guidance["common_solutions"] = [
+            "Use recommend_vm_spec() first to get valid specifications",
+            "Try include_basic_image_only=True parameter",
+            "Search without version numbers in os_type (e.g., 'ubuntu' instead of 'ubuntu 22.04')",
+            "Verify provider/region availability with get_image_search_options()"
+        ]
+        
+        response["llm_guidance"] = guidance
+        
+        # Log helpful guidance for debugging
+        logger.info(f"💡 LLM Guidance: {guidance['message']}")
+        if matched_spec_id:
+            logger.info(f"🔧 Suggestion: Try recommend_vm_spec() for alternative specifications")
+        else:
+            logger.info(f"🔧 Suggestion: {guidance['alternative_suggestions'][0] if guidance['alternative_suggestions'] else 'Broaden search criteria'}")
+    
+    return response
 
 # Tool: Recommend VM spec
 @mcp.tool()
@@ -1846,15 +2080,97 @@ def _internal_review_mci_dynamic(
             result["recommendations"].append("Consider using alternative specs with lower failure rates")
             result["recommendations"].append("Use get_detailed_provisioning_risk() for specific guidance on high-risk VMs")
     
-    # Enhance result with additional guidance
+    # Enhance result with additional guidance based on review results
     if isinstance(result, dict):
-        # Add user-friendly summary if validation passed
-        if result.get("creationViable", False):
+        # 🚀 ENHANCED: Analyze vmReviews for specific guidance and reconfiguration needs
+        vm_reviews = result.get("vmReviews", [])
+        failed_vms = []
+        provisioning_issues = []
+        reconfiguration_needed = False
+        
+        # Analyze each VM review for specific issues
+        for i, vm_review in enumerate(vm_reviews):
+            vm_config = vm_configurations[i] if i < len(vm_configurations) else {}
+            can_create = vm_review.get("canCreate", True)
+            errors = vm_review.get("errors", [])
+            warnings = vm_review.get("warnings", [])
+            provider_name = vm_review.get("providerName", "")
+            
+            if not can_create:
+                failed_vms.append({
+                    "vm_index": i,
+                    "vm_name": vm_config.get("name", f"vm-{i}"),
+                    "provider": provider_name,
+                    "errors": errors,
+                    "warnings": warnings,
+                    "spec_id": vm_config.get("commonSpec", "")
+                })
+                
+                # Check for specific provisioning issues that need reconfiguration
+                for error in errors:
+                    if any(keyword in error.lower() for keyword in ["not available", "cannot be provisioned", "not supported"]):
+                        provisioning_issues.append({
+                            "vm_index": i,
+                            "provider": provider_name,
+                            "issue": error,
+                            "spec_id": vm_config.get("commonSpec", "")
+                        })
+                        reconfiguration_needed = True
+        
+        # Add enhanced analysis results
+        if failed_vms or provisioning_issues:
+            result["_analysis"] = {
+                "failed_vms": failed_vms,
+                "provisioning_issues": provisioning_issues,
+                "reconfiguration_needed": reconfiguration_needed,
+                "total_failed": len(failed_vms)
+            }
+        
+        # Provide specific guidance based on validation results
+        creation_viable = result.get("creationViable", False)
+        if creation_viable:
             result["_guidance"] = "✅ Validation passed! You can proceed with create_mci_dynamic() using the same parameters."
             result["_next_step"] = f"create_mci_dynamic(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>)"
+            
+            # Add warnings for hold mode or other special cases
+            if hold:
+                result["_guidance"] += "\n⚠️ Note: VMs requiring manual deployment will need completion after hold mode."
         else:
             result["_guidance"] = "❌ Validation failed. Please address the issues before proceeding with MCI creation."
+            
+            # Provide specific guidance for failed VMs
+            if failed_vms:
+                result["_guidance"] += f"\n🚫 {len(failed_vms)} VM(s) cannot be created due to configuration or provider issues:"
+                
+                for failed_vm in failed_vms:
+                    vm_errors = '; '.join(failed_vm['errors'])
+                    result["_guidance"] += f"\n  • VM {failed_vm['vm_index']} ({failed_vm['provider']}): {vm_errors}"
+            
+            # Provide reconfiguration guidance
+            if reconfiguration_needed:
+                result["_guidance"] += "\n\n💡 RECONFIGURATION NEEDED:"
+                result["_guidance"] += "\n  1. Use recommend_vm_spec() to find alternative specifications from different providers"
+                result["_guidance"] += "\n  2. Update vm_configurations with working specs and run review again"
+                result["_guidance"] += "\n  3. Consider using hold=True for providers requiring manual deployment"
+                
+                # Add specific provider guidance from review results
+                for issue in provisioning_issues:
+                    if "hold" in issue["issue"].lower():
+                        result["_guidance"] += f"\n  • For {issue['provider']}: Set hold=True in create_mci_dynamic()"
+                    elif "not available" in issue["issue"].lower():
+                        result["_guidance"] += f"\n  • For {issue['provider']}: Replace with alternative provider (AWS, Azure, GCP, etc.)"
+            
             result["_next_step"] = "Fix the reported issues and run review_mci_dynamic_request() again."
+        
+        # Add summary of vmReviews for LLM reference
+        if vm_reviews:
+            result["_vm_summary"] = {
+                "total_vms": len(vm_reviews),
+                "successful_vms": len([vm for vm in vm_reviews if vm.get("canCreate", True)]),
+                "failed_vms": len([vm for vm in vm_reviews if not vm.get("canCreate", True)]),
+                "providers_used": list(set([vm.get("providerName", "") for vm in vm_reviews if vm.get("providerName")])),
+                "review_details": "Check vmReviews field for detailed per-VM validation results"
+            }
         
         # Add enhanced summary with corrected VM count and cost information
         if "totalVmCount" in result and "estimatedCost" in result:
@@ -2139,33 +2455,30 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
     )
     ```
     
-    # 2. Process each spec individually  
+    # 2. **SIMPLIFIED IMAGE SELECTION with MatchedSpecId**
     vm_configs = []
     for i, spec in enumerate(specs[:2]):  # Take first 2 different specs
         spec_id = spec["id"]  # e.g., "aws+ap-northeast-2+t2.small"
-        provider = spec_id.split('+')[0]  # Extract "aws"
-        region = spec_id.split('+')[1]    # Extract "ap-northeast-2"
         
-        # 3. Search for images in THIS specific CSP/region
+        # 3. SIMPLIFIED: Search for compatible images using MatchedSpecId
         images = search_images(
-            provider_name=provider,
-            region_name=region,
-            os_type="ubuntu 22.04"
+            matched_spec_id=spec_id,     # 🆕 Auto-applies provider/region/arch
+            os_type="ubuntu"             # Just specify OS preference
         )
         
         # 4. Select best image for THIS specific spec
         best_image = select_best_image_for_spec(
             images["imageList"], 
             spec, 
-            {"os_type": "ubuntu 22.04"}
+            {"os_type": "ubuntu"}
         )
         
         # 5. Add VM config with spec-matched image
         vm_configs.append({
             "commonImage": best_image["cspImageName"],  # CSP-specific image
             "commonSpec": spec_id,                      # CSP-specific spec
-            "name": f"vm-{provider}-{i+1}",
-            "description": f"VM on {provider} in {region}",
+            "name": f"vm-{spec['providerName']}-{i+1}",
+            "description": f"VM on {spec['providerName']} in {spec['regionName']}",
             "subGroupSize": "1"
         })
     
@@ -10953,8 +11266,6 @@ delete_mci("test", "temp-servers") - Remove specific MCI
 release_resources("test") - Remove shared resources (VNet, etc.)
 delete_namespace("test") - Complete cleanup
 
-# Overview
-resource_overview() - Check all CSP resources
 ```
 
 ## Advanced Patterns
@@ -11009,8 +11320,7 @@ vm_config = {
 1. Use get_mci_list_with_options() for status monitoring
 2. Check get_mci() for detailed VM information  
 3. Review execute_command_mci() outputs for issues
-4. Monitor resource usage with resource_overview()
-5. Use get_mci_access_info() for connectivity verification
+4. Use get_mci_access_info() for connectivity verification
 
 ## Security Best Practices
 1. Use separate namespaces for different environments
@@ -11201,7 +11511,6 @@ Solution:
 1. get_mci_list() - Monitor infrastructure
 2. execute_command_mci() - Health checks
 3. control_mci() - Scaling operations
-4. resource_overview() - Cost monitoring
 ```
 
 ### 4. Cleanup and Optimization
