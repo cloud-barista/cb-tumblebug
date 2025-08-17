@@ -27,6 +27,7 @@ import (
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
@@ -1756,6 +1757,33 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 				}
 			}
 
+			// Check for provider-specific limitations
+			if specInfoPtr != nil {
+				providerName := specInfoPtr.ProviderName
+
+				// Check KT Cloud limitations
+				if providerName == csp.KTCloud {
+					vmReview.Errors = append(vmReview.Errors, "KT Cloud provisioning is currently not available")
+					vmReview.CanCreate = false
+					viable = false
+					log.Debug().Msgf("KT Cloud provisioning blocked for VM: %s", subGroupDynamicReq.Name)
+				}
+
+				// Check NHN Cloud limitations
+				if providerName == csp.NHNCloud {
+					if deployOption != "hold" {
+						vmReview.Errors = append(vmReview.Errors, "NHN Cloud can only be provisioned with deployOption 'hold' (manual deployment required)")
+						vmReview.CanCreate = false
+						viable = false
+						log.Debug().Msgf("NHN Cloud requires 'hold' deployOption for VM: %s", subGroupDynamicReq.Name)
+					} else {
+						vmReview.Warnings = append(vmReview.Warnings, "NHN Cloud requires manual deployment completion after 'hold' - automatic provisioning is not fully supported")
+						hasVmWarning = true
+						log.Debug().Msgf("NHN Cloud 'hold' mode warning for VM: %s", subGroupDynamicReq.Name)
+					}
+				}
+			}
+
 			// Set VM review status
 			if len(vmReview.Errors) > 0 {
 				vmReview.Status = "Error"
@@ -1980,6 +2008,23 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 	if deployOption == "hold" {
 		reviewResult.Recommendations = append(reviewResult.Recommendations,
 			fmt.Sprintf("DEPLOYMENT HOLD: MCI creation will be held for review. Failure policy '%s' will apply when deployment is resumed with control continue.", policy))
+	}
+
+	// Add provider-specific global recommendations
+	for _, providerName := range reviewResult.ResourceSummary.ProviderNames {
+		switch providerName {
+		case csp.KTCloud:
+			reviewResult.Recommendations = append(reviewResult.Recommendations,
+				"CRITICAL: KT Cloud provisioning is currently unavailable - all KT Cloud VMs will fail to deploy")
+		case csp.NHNCloud:
+			if deployOption != "hold" {
+				reviewResult.Recommendations = append(reviewResult.Recommendations,
+					"CRITICAL: NHN Cloud requires deployOption 'hold' for manual deployment - automatic provisioning will fail")
+			} else {
+				reviewResult.Recommendations = append(reviewResult.Recommendations,
+					"INFO: NHN Cloud deployment will be held for manual completion - automatic provisioning is not fully supported")
+			}
+		}
 	}
 
 	log.Debug().Msgf("MCI review completed: %s - %s (Policy: %s)", reviewResult.OverallStatus, reviewResult.OverallMessage, policy)
