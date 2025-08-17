@@ -239,22 +239,6 @@ if __name__ == "__main__":
 
 Add to your `claude_desktop_config.json`:
 
-**For Linux/macOS:**
-```json
-{
-  "mcpServers": {
-    "tumblebug": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--with",
-        "fastmcp",
-        "/path/to/cb-tumblebug/src/interface/mcp/mcp-simple-proxy.py"
-      ]
-    }
-  }
-}
-```
 
 **For WSL (Windows Subsystem for Linux):**
 ```json
@@ -266,6 +250,44 @@ Add to your `claude_desktop_config.json`:
         "bash",
         "-c",
         "/home/username/.local/bin/uv run --with fastmcp /path/to/cb-tumblebug/src/interface/mcp/mcp-simple-proxy.py"
+      ]
+    }
+  }
+}
+```
+
+**For Windows native:** Install `uv` first and use the following example.
+```json
+{
+  "mcpServers": {
+    "tumblebug": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "fastmcp",
+        "C:\\Users\\admin\\Documents\\mcp-simple-proxy.py"
+      ],
+      "env": {
+        "PYTHONPATH": ".",
+        "PYTHONIOENCODING": "utf-8"
+      }
+    }
+  }
+}
+```
+
+**For Linux/macOS:**
+```json
+{
+  "mcpServers": {
+    "tumblebug": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "fastmcp",
+        "/path/to/cb-tumblebug/src/interface/mcp/mcp-simple-proxy.py"
       ]
     }
   }
