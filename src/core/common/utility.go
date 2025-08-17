@@ -45,6 +45,8 @@ import (
 	"fmt"
 
 	"github.com/go-resty/resty/v2"
+
+	"os"
 )
 
 // MCI utilities
@@ -1325,6 +1327,45 @@ func GetAvailableK8sVersion(providerName string, regionName string) (*[]model.K8
 
 	providerName = strings.ToLower(providerName)
 	regionName = strings.ToLower(regionName)
+
+	// Debug: Check file system directly
+	possiblePaths := []string{
+		"/app/assets/k8sclusterinfo.yaml",
+		"./assets/k8sclusterinfo.yaml",
+		"../assets/k8sclusterinfo.yaml",
+		"assets/k8sclusterinfo.yaml",
+	}
+
+	for _, path := range possiblePaths {
+		if fileInfo, err := os.Stat(path); err == nil {
+			log.Debug().
+				Str("filePath", path).
+				Time("modTime", fileInfo.ModTime()).
+				Int64("fileSize", fileInfo.Size()).
+				Msg("Found k8sclusterinfo.yaml")
+
+			// Search for ncpvpc in file content
+			if content, err := os.ReadFile(path); err == nil {
+				hasNcpvpcInFile := strings.Contains(string(content), "ncpvpc:")
+				log.Debug().
+					Str("filePath", path).
+					Bool("hasNcpvpcInFile", hasNcpvpcInFile).
+					Int("contentLength", len(content)).
+					Msg("File content analysis")
+			}
+			break
+		}
+	}
+
+	// Debug: Check file path and content
+	log.Debug().Interface("RuntimeK8sClusterInfo", RuntimeK8sClusterInfo).Msg("Current RuntimeK8sClusterInfo content")
+
+	// Debug: Log currently loaded provider list
+	provs := make([]string, 0, len(RuntimeK8sClusterInfo.CSPs))
+	for k := range RuntimeK8sClusterInfo.CSPs {
+		provs = append(provs, strings.ToLower(k))
+	}
+	log.Debug().Str("provider", providerName).Str("region", regionName).Strs("providersInYaml", provs).Msg("GetAvailableK8sVersion called")
 
 	// Get model.K8sClusterDetail for providerName
 	k8sClusterDetail := getK8sClusterDetail(providerName)

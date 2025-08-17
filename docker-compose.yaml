@@ -78,7 +78,7 @@ services:
       # - TB_LOGFILE_MAXBACKUPS=3
       # - TB_LOGFILE_MAXAGE=30
       # - TB_LOGFILE_COMPRESS=false
-      # - TB_LOGLEVEL=debug
+      - TB_LOGLEVEL=debug
       # - TB_LOGWRITER=both
       # - TB_NODE_ENV=development
     healthcheck: # for CB-Tumblebug
@@ -164,9 +164,9 @@ services:
   cb-spider:
     image: cloudbaristaorg/cb-spider:0.11.3
     container_name: cb-spider
-    # build:
-    #   context: ../cb-spider
-    #   dockerfile: Dockerfile
+    build:
+      context: ../cb-spider
+      dockerfile: Dockerfile
     networks:
       - internal_network
       - external_network # for outbound access (not ideal for security)

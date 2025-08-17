@@ -171,3 +171,25 @@ k8scluster:
         size:
           min: 10
           max: 40
+  ncpvpc:
+    nodeGroupsOnCreation: true
+    nodeImageDesignation: false
+    requiredSubnetCount: 1
+    nodeGroupNamingRule: '^[a-z][a-z0-9-]{1,18}[a-z0-9]$'
+    version:
+      - region: [kr]
+        available:
+          - name: "1.32"
+            id: "1.32.6"
+          - name: "1.31"
+            id: "1.31.7"
+          - name: "1.30"
+            id: "1.30.8"
+    rootDisk:
+      - region: [kr]
+        type:
+          - name: default
+            id: default
+        size:
+          min: 10
+          max: 40
