@@ -931,15 +931,15 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 	} else {
 		mciStatus.Status = statusFlagStr[9] + proportionStr
 	}
-	// for representing Failed status in front.
+	// // for representing Failed status in front.
 
-	proportionStr = ":" + strconv.Itoa(statusFlag[0]) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numVm) + ")"
-	if statusFlag[0] > 0 {
-		mciStatus.Status = "Partial-" + statusFlagStr[0] + proportionStr
-		if statusFlag[0] == numVm {
-			mciStatus.Status = statusFlagStr[0] + proportionStr
-		}
-	}
+	// proportionStr = ":" + strconv.Itoa(statusFlag[0]) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numVm) + ")"
+	// if statusFlag[0] > 0 {
+	// 	mciStatus.Status = "Partial-" + statusFlagStr[0] + proportionStr
+	// 	if statusFlag[0] == numVm {
+	// 		mciStatus.Status = statusFlagStr[0] + proportionStr
+	// 	}
+	// }
 
 	// proportionStr = "-(" + strconv.Itoa(statusFlag[9]) + "/" + strconv.Itoa(numVm) + ")"
 	// if statusFlag[9] > 0 {

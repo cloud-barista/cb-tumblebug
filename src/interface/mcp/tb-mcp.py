@@ -961,7 +961,7 @@ def check_and_prepare_namespace(preferred_ns_id: Optional[str] = None) -> Dict:
         if preferred_ns_id == "default":
             # Automatically create "default" namespace if it doesn't exist
             try:
-                create_result = create_namespace_with_validation(
+                create_result = _internal_create_namespace_with_validation(
                     name="default",
                     description="Default namespace for MCI operations"
                 )
