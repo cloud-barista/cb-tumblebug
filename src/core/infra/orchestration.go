@@ -252,8 +252,8 @@ func OrchestrationController() {
 							// 	UpdateMciPolicyInfo(nsId, mciPolicyTmp)
 							// }
 
-							autoAction.VmDynamicReq.CommonImage = "ubuntu18.04"                // temporal default value. will be changed
-							autoAction.VmDynamicReq.CommonSpec = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
+							autoAction.VmDynamicReq.ImageId = "ubuntu18.04"                // temporal default value. will be changed
+							autoAction.VmDynamicReq.SpecId = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
 
 							recommendSpecReq := model.RecommendSpecReq{}
 
@@ -265,7 +265,7 @@ func OrchestrationController() {
 							}
 							if len(specList) != 0 {
 								recommendedSpec := specList[0].Id
-								autoAction.VmDynamicReq.CommonSpec = recommendedSpec
+								autoAction.VmDynamicReq.SpecId = recommendedSpec
 							}
 
 							// autoAction.VmDynamicReq.Name = autoAction.VmDynamicReq.Name + "-random"

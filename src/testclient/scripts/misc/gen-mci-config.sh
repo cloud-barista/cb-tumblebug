@@ -31,8 +31,8 @@ for row in $(echo "${VAR1}" | jq -r '.spec[] | @base64'); do
   rootDiskType=$(_jq '.rootDiskType')
   rootDiskSize=$(_jq '.rootDiskSize')
   echo "  {" >>./mciconfig.json
-  echo "    \"commonImage\": \"ubuntu18.04\"," >>./mciconfig.json
-	echo "    \"commonSpec\": \"$id\","  >>./mciconfig.json
+  echo "    \"imageId\": \"ubuntu18.04\"," >>./mciconfig.json
+	echo "    \"specId\": \"$id\","  >>./mciconfig.json
   echo "    \"rootDiskType\": \"$rootDiskType\","  >>./mciconfig.json
   echo "    \"rootDiskSize\": \"$rootDiskSize\""  >>./mciconfig.json
   echo "  },"  >>./mciconfig.json

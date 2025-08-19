@@ -2697,10 +2697,9 @@ paths:
           type: string
       requestBody:
         description: "Request body to provision K8sNodeGroup dynamically. <br> Must\
-          \ include commonSpec and commonImage info. <br> (ex: {name: k8sng01, commonImage:\
-          \ azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]})\
-          \ <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest\
-          \ to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
+          \ include specId and imageId info. <br> (ex: {name: k8sng01, imageId: azure+koreacentral+ubuntu22.04,\
+          \ specId: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode\
+          \ and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
         content:
           application/json:
             schema:
@@ -2804,8 +2803,8 @@ paths:
           type: string
       requestBody:
         description: "Request body to provision K8sCluster dynamically. <br> Must\
-          \ include commonSpec and commonImage info. <br> (ex: {name: k8scluster01,\
-          \ commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]})\
+          \ include specId and imageId info. <br> (ex: {name: k8scluster01, imageId:\
+          \ azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]})\
           \ <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest\
           \ to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
         content:
@@ -4617,8 +4616,8 @@ paths:
         - **Workload Specialization**: Deploy VMs with different specifications for specific tasks
 
         **Configuration Requirements:**
-        - `commonSpec`: Must specify valid VM specification from system namespace
-        - `commonImage`: Must specify valid image compatible with target provider/region
+        - `specId`: Must specify valid VM specification from system namespace
+        - `imageId`: Must specify valid image compatible with target provider/region
         - `name`: Becomes subgroup name; VMs will be named with sequential suffixes
         - `subGroupSize`: Number of identical VMs to create (default: 1)
 
@@ -4656,8 +4655,8 @@ paths:
           type: string
           default: mci01
       requestBody:
-        description: "SubGroup dynamic request specifying commonSpec, commonImage,\
-          \ and scaling parameters"
+        description: "SubGroup dynamic request specifying specId, imageId, and scaling\
+          \ parameters"
         content:
           application/json:
             schema:
@@ -5036,16 +5035,16 @@ paths:
         {
         "name": "aws-web-servers",
         "subGroupSize": "3",
-        "commonSpec": "aws+us-east-1+t3.medium",
-        "commonImage": "ami-0abcdef1234567890",
+        "specId": "aws+us-east-1+t3.medium",
+        "imageId": "ami-0abcdef1234567890",
         "rootDiskSize": "100",
         "label": {"tier": "web", "provider": "aws"}
         },
         {
         "name": "azure-api-servers",
         "subGroupSize": "2",
-        "commonSpec": "azure+eastus+Standard_B2s",
-        "commonImage": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts",
+        "specId": "azure+eastus+Standard_B2s",
+        "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts",
         "label": {"tier": "api", "provider": "azure"}
         }
         ]
@@ -5087,8 +5086,7 @@ paths:
           type: string
       requestBody:
         description: Dynamic MCI request with common specifications. Must include
-          commonSpec and commonImage for each VM group. See description for detailed
-          example.
+          specId and imageId for each VM group. See description for detailed example.
         content:
           application/json:
             schema:
@@ -5181,9 +5179,9 @@ paths:
           type: string
       requestBody:
         description: "Request body to review MCI dynamic provisioning. Must include\
-          \ commonSpec and commonImage info of each VM request. Same format as /mciDynamic\
-          \ endpoint. (ex: {name: mci01, vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04,\
-          \ commonSpec: aws+ap-northeast-2+t2.small}]})"
+          \ specId and imageId info of each VM request. Same format as /mciDynamic\
+          \ endpoint. (ex: {name: mci01, vm: [{imageId: aws+ap-northeast-2+ubuntu22.04,\
+          \ specId: aws+ap-northeast-2+t2.small}]})"
         content:
           application/json:
             schema:
@@ -10391,12 +10389,12 @@ components:
           - vm
     model.K8sClusterConnectionConfigCandidatesReq:
       required:
-      - commonSpec
+      - specId
       type: object
       properties:
-        commonSpec:
+        specId:
           type: array
-          description: CommonSpec is field for id of a spec in common namespace
+          description: SpecId is field for id of a spec in common namespace
           example:
           - tencent+ap-seoul+S2.MEDIUM4
           items:
@@ -10664,12 +10662,12 @@ components:
           example: cb-user
     model.MciConnectionConfigCandidatesReq:
       required:
-      - commonSpec
+      - specId
       type: object
       properties:
-        commonSpec:
+        specId:
           type: array
-          description: CommonSpec is field for id of a spec in common namespace
+          description: SpecId is field for id of a spec in common namespace
           example:
           - aws+ap-northeast-2+t2.small
           - gcp+us-west1+g1-small
@@ -12435,18 +12433,10 @@ components:
           - $ref: '#/components/schemas/model.TbK8sNodeGroupStatus'
     model.TbCreateSubGroupDynamicReq:
       required:
-      - commonImage
-      - commonSpec
+      - imageId
+      - specId
       type: object
       properties:
-        commonImage:
-          type: string
-          description: CommonImage is field for id of a image in common namespace
-          example: ami-01f71f215b23ba262
-        commonSpec:
-          type: string
-          description: CommonSpec is field for id of a spec in common namespace
-          example: aws+ap-northeast-2+t3.nano
         connectionName:
           type: string
           description: |-
@@ -12456,6 +12446,10 @@ components:
         description:
           type: string
           example: Created via CB-Tumblebug
+        imageId:
+          type: string
+          description: ImageId is field for id of a image in common namespace
+          example: ami-01f71f215b23ba262
         label:
           type: object
           additionalProperties:
@@ -12482,6 +12476,10 @@ components:
             \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
           example: gp3
           default: default
+        specId:
+          type: string
+          description: SpecId is field for id of a spec in common namespace
+          example: aws+ap-northeast-2+t3.nano
         subGroupSize:
           type: string
           description: "if subGroupSize is (not empty) && (> 0), subGroup will be\
@@ -13003,19 +13001,11 @@ components:
             $ref: '#/components/schemas/model.TbK8sClusterContainerCmdResult'
     model.TbK8sClusterDynamicReq:
       required:
-      - commonImage
-      - commonSpec
+      - imageId
       - name
+      - specId
       type: object
       properties:
-        commonImage:
-          type: string
-          description: CommonImage is field for id of a image in common namespace
-          example: "default, tencent+ap-seoul+ubuntu20.04"
-        commonSpec:
-          type: string
-          description: CommonSpec is field for id of a spec in common namespace
-          example: tencent+ap-seoul+S2.MEDIUM4
         connectionName:
           type: string
           description: |-
@@ -13029,6 +13019,10 @@ components:
           type: string
           example: "1"
           default: "1"
+        imageId:
+          type: string
+          description: ImageId is field for id of a image in common namespace
+          example: "default, tencent+ap-seoul+ubuntu20.04"
         label:
           type: object
           additionalProperties:
@@ -13068,6 +13062,10 @@ components:
             \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
           example: "default, TYPE1, ..."
           default: default
+        specId:
+          type: string
+          description: SpecId is field for id of a spec in common namespace
+          example: tencent+ap-seoul+S2.MEDIUM4
         version:
           type: string
           description: K8s Clsuter version
@@ -13258,19 +13256,11 @@ components:
       - TbK8sClusterDeleting
     model.TbK8sNodeGroupDynamicReq:
       required:
-      - commonImage
-      - commonSpec
+      - imageId
       - name
+      - specId
       type: object
       properties:
-        commonImage:
-          type: string
-          description: CommonImage is field for id of a image in common namespace
-          example: "default, tencent+ap-seoul+ubuntu20.04"
-        commonSpec:
-          type: string
-          description: CommonSpec is field for id of a spec in common namespace
-          example: tencent+ap-seoul+S2.MEDIUM4
         description:
           type: string
           example: Description
@@ -13278,6 +13268,10 @@ components:
           type: string
           example: "1"
           default: "1"
+        imageId:
+          type: string
+          description: ImageId is field for id of a image in common namespace
+          example: "default, tencent+ap-seoul+ubuntu20.04"
         label:
           type: object
           additionalProperties:
@@ -13313,6 +13307,10 @@ components:
             \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
           example: "default, TYPE1, ..."
           default: default
+        specId:
+          type: string
+          description: SpecId is field for id of a spec in common namespace
+          example: tencent+ap-seoul+S2.MEDIUM4
     model.TbK8sNodeGroupInfo:
       type: object
       properties:
@@ -13494,24 +13492,24 @@ components:
               {
                 "name": "aws-group",
                 "subGroupSize": "3",
-                "commonSpec": "aws+ap-northeast-2+t3.nano",
-                "commonImage": "ami-01f71f215b23ba262",
+                "specId": "aws+ap-northeast-2+t3.nano",
+                "imageId": "ami-01f71f215b23ba262",
                 "rootDiskSize": "50",
                 "label": {"role": "worker", "csp": "aws"}
               },
               {
                 "name": "azure-group",
                 "subGroupSize": "2",
-                "commonSpec": "azure+koreasouth+standard_b1s",
-                "commonImage": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210",
+                "specId": "azure+koreasouth+standard_b1s",
+                "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210",
                 "rootDiskSize": "50",
                 "label": {"role": "head", "csp": "azure"}
               },
               {
                 "name": "gcp-group",
                 "subGroupSize": "1",
-                "commonSpec": "gcp+asia-northeast3+g1-small",
-                "commonImage": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712",
+                "specId": "gcp+asia-northeast3+g1-small",
+                "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712",
                 "rootDiskSize": "50",
                 "label": {"role": "test", "csp": "gcp"}
               }

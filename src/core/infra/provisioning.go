@@ -1224,7 +1224,7 @@ func CheckMciDynamicReq(req *model.MciConnectionConfigCandidatesReq) (*model.Che
 	}
 
 	// Find detail info and ConnectionConfigCandidates
-	for _, k := range req.CommonSpecs {
+	for _, k := range req.SpecIds {
 		errMessage := ""
 
 		vmReqInfo := model.CheckVmDynamicReqInfo{}
@@ -1285,8 +1285,8 @@ func CreateSystemMciDynamic(option string) (*model.TbMciInfo, error) {
 		for _, v := range connections.Connectionconfig {
 
 			subGroupDynamicReq := &model.TbCreateSubGroupDynamicReq{}
-			subGroupDynamicReq.CommonImage = "ubuntu22.04"                // temporal default value. will be changed
-			subGroupDynamicReq.CommonSpec = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
+			subGroupDynamicReq.ImageId = "ubuntu22.04"                // temporal default value. will be changed
+			subGroupDynamicReq.SpecId = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
 
 			recommendSpecReq := model.RecommendSpecReq{}
 			condition := []model.Operation{}
@@ -1305,10 +1305,10 @@ func CreateSystemMciDynamic(option string) (*model.TbMciInfo, error) {
 			}
 			if len(specList) != 0 {
 				recommendedSpec := specList[0].Id
-				subGroupDynamicReq.CommonSpec = recommendedSpec
+				subGroupDynamicReq.SpecId = recommendedSpec
 
 				subGroupDynamicReq.Label = labels
-				subGroupDynamicReq.Name = subGroupDynamicReq.CommonSpec
+				subGroupDynamicReq.Name = subGroupDynamicReq.SpecId
 
 				subGroupDynamicReq.RootDiskType = specList[0].RootDiskType
 				subGroupDynamicReq.RootDiskSize = specList[0].RootDiskSize
@@ -1634,12 +1634,12 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 				hasVmWarning = true
 			}
 
-			// Validate CommonSpec
-			specInfo, err := resource.GetSpec(model.SystemCommonNs, subGroupDynamicReq.CommonSpec)
+			// Validate SpecId
+			specInfo, err := resource.GetSpec(model.SystemCommonNs, subGroupDynamicReq.SpecId)
 			if err != nil {
-				vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Failed to get spec '%s': %v", subGroupDynamicReq.CommonSpec, err))
+				vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Failed to get spec '%s': %v", subGroupDynamicReq.SpecId, err))
 				vmReview.SpecValidation = model.ReviewResourceValidation{
-					ResourceId:  subGroupDynamicReq.CommonSpec,
+					ResourceId:  subGroupDynamicReq.SpecId,
 					IsAvailable: false,
 					Status:      "Unavailable",
 					Message:     err.Error(),
@@ -1655,9 +1655,9 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 				// Check if spec is available in CSP
 				cspSpec, err := resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
 				if err != nil {
-					vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %v", subGroupDynamicReq.CommonSpec, err))
+					vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %v", subGroupDynamicReq.SpecId, err))
 					vmReview.SpecValidation = model.ReviewResourceValidation{
-						ResourceId:    subGroupDynamicReq.CommonSpec,
+						ResourceId:    subGroupDynamicReq.SpecId,
 						ResourceName:  specInfo.CspSpecName,
 						IsAvailable:   false,
 						Status:        "Unavailable",
@@ -1668,7 +1668,7 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 					viable = false
 				} else {
 					vmReview.SpecValidation = model.ReviewResourceValidation{
-						ResourceId:    subGroupDynamicReq.CommonSpec,
+						ResourceId:    subGroupDynamicReq.SpecId,
 						ResourceName:  specInfo.CspSpecName,
 						IsAvailable:   true,
 						Status:        "Available",
@@ -1685,23 +1685,23 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 				}
 			}
 
-			// Validate CommonImage
+			// Validate ImageId
 			if specInfoPtr != nil {
-				cspImage, err := resource.LookupImage(specInfoPtr.ConnectionName, subGroupDynamicReq.CommonImage)
+				cspImage, err := resource.LookupImage(specInfoPtr.ConnectionName, subGroupDynamicReq.ImageId)
 				if err != nil {
-					vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Image '%s' not available in CSP: %v", subGroupDynamicReq.CommonImage, err))
+					vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Image '%s' not available in CSP: %v", subGroupDynamicReq.ImageId, err))
 					vmReview.ImageValidation = model.ReviewResourceValidation{
-						ResourceId:    subGroupDynamicReq.CommonImage,
+						ResourceId:    subGroupDynamicReq.ImageId,
 						IsAvailable:   false,
 						Status:        "Unavailable",
 						Message:       err.Error(),
-						CspResourceId: subGroupDynamicReq.CommonImage,
+						CspResourceId: subGroupDynamicReq.ImageId,
 					}
 					vmReview.CanCreate = false
 					viable = false
 				} else {
 					vmReview.ImageValidation = model.ReviewResourceValidation{
-						ResourceId:    subGroupDynamicReq.CommonImage,
+						ResourceId:    subGroupDynamicReq.ImageId,
 						ResourceName:  cspImage.Name,
 						IsAvailable:   true,
 						Status:        "Available",
@@ -1731,7 +1731,7 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 
 			// Check provisioning history and risk analysis
 			if specInfoPtr != nil {
-				riskLevel, riskMessage, err := AnalyzeProvisioningRisk(subGroupDynamicReq.CommonSpec, subGroupDynamicReq.CommonImage)
+				riskLevel, riskMessage, err := AnalyzeProvisioningRisk(subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId)
 				if err != nil {
 					log.Warn().Err(err).Msgf("Failed to analyze provisioning risk for VM: %s", subGroupDynamicReq.Name)
 					vmReview.Warnings = append(vmReview.Warnings, "Failed to analyze provisioning history")
@@ -1741,18 +1741,18 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 						vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("High provisioning failure risk: %s", riskMessage))
 						vmReview.CanCreate = false
 						viable = false
-						log.Debug().Msgf("High risk detected for spec %s with image %s: %s", subGroupDynamicReq.CommonSpec, subGroupDynamicReq.CommonImage, riskMessage)
+						log.Debug().Msgf("High risk detected for spec %s with image %s: %s", subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId, riskMessage)
 					case "medium":
 						vmReview.Warnings = append(vmReview.Warnings, fmt.Sprintf("Moderate provisioning failure risk: %s", riskMessage))
 						hasVmWarning = true
-						log.Debug().Msgf("Medium risk detected for spec %s with image %s: %s", subGroupDynamicReq.CommonSpec, subGroupDynamicReq.CommonImage, riskMessage)
+						log.Debug().Msgf("Medium risk detected for spec %s with image %s: %s", subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId, riskMessage)
 					case "low":
 						if riskMessage != "No previous provisioning history available" && riskMessage != "No provisioning attempts recorded" {
 							vmReview.Info = append(vmReview.Info, fmt.Sprintf("Provisioning history: %s", riskMessage))
 						}
-						log.Debug().Msgf("Low risk for spec %s with image %s: %s", subGroupDynamicReq.CommonSpec, subGroupDynamicReq.CommonImage, riskMessage)
+						log.Debug().Msgf("Low risk for spec %s with image %s: %s", subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId, riskMessage)
 					default:
-						log.Debug().Msgf("Unknown risk level for spec %s: %s", subGroupDynamicReq.CommonSpec, riskLevel)
+						log.Debug().Msgf("Unknown risk level for spec %s: %s", subGroupDynamicReq.SpecId, riskLevel)
 					}
 				}
 			}
@@ -1852,14 +1852,14 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 
 		// Update resource summary maps (thread-safe since we're processing sequentially here)
 		if result.specInfo != nil {
-			specMap[req.SubGroups[result.index].CommonSpec] = true
+			specMap[req.SubGroups[result.index].SpecId] = true
 			connectionMap[result.specInfo.ConnectionName] = true
 			providerMap[result.specInfo.ProviderName] = true
 			regionMap[result.specInfo.RegionName] = true
 		}
 
-		if req.SubGroups[result.index].CommonImage != "" {
-			imageMap[req.SubGroups[result.index].CommonImage] = true
+		if req.SubGroups[result.index].ImageId != "" {
+			imageMap[req.SubGroups[result.index].ImageId] = true
 		}
 	}
 
@@ -2068,10 +2068,10 @@ func checkCommonResAvailableForSubGroupDynamicReq(req *model.TbCreateSubGroupDyn
 	log.Debug().Msgf("Namespace ID: %s", nsId)
 
 	// Get spec info first (required for both spec and image validation)
-	specInfo, err := resource.GetSpec(model.SystemCommonNs, req.CommonSpec)
+	specInfo, err := resource.GetSpec(model.SystemCommonNs, req.SpecId)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get spec info")
-		return fmt.Errorf("failed to get VM specification '%s': %w", req.CommonSpec, err)
+		return fmt.Errorf("failed to get VM specification '%s': %w", req.SpecId, err)
 	}
 
 	// Channel to collect errors from parallel goroutines
@@ -2092,13 +2092,13 @@ func checkCommonResAvailableForSubGroupDynamicReq(req *model.TbCreateSubGroupDyn
 
 	// Check image availability in parallel
 	go func() {
-		_, err := resource.LookupImage(specInfo.ConnectionName, req.CommonImage)
+		_, err := resource.LookupImage(specInfo.ConnectionName, req.ImageId)
 		if err != nil {
-			log.Error().Err(err).Msgf("Image validation failed for %s", req.CommonImage)
+			log.Error().Err(err).Msgf("Image validation failed for %s", req.ImageId)
 			errorChan <- fmt.Errorf("image '%s' is not available in connection '%s': %w",
-				req.CommonImage, specInfo.ConnectionName, err)
+				req.ImageId, specInfo.ConnectionName, err)
 		} else {
-			log.Debug().Msgf("Image validation successful: %s", req.CommonImage)
+			log.Debug().Msgf("Image validation successful: %s", req.ImageId)
 			errorChan <- nil
 		}
 	}()
@@ -2135,10 +2135,10 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbCreateSubGro
 
 	vmReq := &model.TbCreateSubGroupReq{}
 
-	specInfo, err := resource.GetSpec(model.SystemCommonNs, req.CommonSpec)
+	specInfo, err := resource.GetSpec(model.SystemCommonNs, req.SpecId)
 	if err != nil {
-		detailedErr := fmt.Errorf("failed to find VM specification '%s': %w. Please verify the spec exists and is properly configured", req.CommonSpec, err)
-		log.Error().Err(err).Msgf("Spec lookup failed for VM '%s' with CommonSpec '%s'", req.Name, req.CommonSpec)
+		detailedErr := fmt.Errorf("failed to find VM specification '%s': %w. Please verify the spec exists and is properly configured", req.SpecId, err)
+		log.Error().Err(err).Msgf("Spec lookup failed for VM '%s' with SpecId '%s'", req.Name, req.SpecId)
 		return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name}, CreatedResources: createdResources}, detailedErr
 	}
 
@@ -2154,8 +2154,8 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbCreateSubGro
 	connection, err := common.GetConnConfig(vmReq.ConnectionName)
 	if err != nil {
 		detailedErr := fmt.Errorf("failed to get connection configuration '%s' for VM '%s' with spec '%s': %w. Please verify the connection exists and is properly configured",
-			vmReq.ConnectionName, req.Name, k.CommonSpec, err)
-		log.Error().Err(err).Msgf("Connection config lookup failed for VM '%s', ConnectionName '%s', Spec '%s'", req.Name, vmReq.ConnectionName, k.CommonSpec)
+			vmReq.ConnectionName, req.Name, k.SpecId, err)
+		log.Error().Err(err).Msgf("Connection config lookup failed for VM '%s', ConnectionName '%s', Spec '%s'", req.Name, vmReq.ConnectionName, k.SpecId)
 		return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: vmReq.ConnectionName}, CreatedResources: createdResources}, detailedErr
 	}
 
@@ -2163,7 +2163,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbCreateSubGro
 	resourceName := nsId + model.StrSharedResourceName + vmReq.ConnectionName
 
 	vmReq.SpecId = specInfo.Id
-	vmReq.ImageId = k.CommonImage
+	vmReq.ImageId = k.ImageId
 
 	// check if the image is available in the CSP
 	_, err = resource.LookupImage(connection.ConfigName, vmReq.ImageId)
@@ -2751,14 +2751,14 @@ func filterCheckMciDynamicReqInfoToCheckK8sClusterDynamicReqInfo(mciDReqInfo *mo
 
 // CheckK8sClusterDynamicReq is func to check request info to create K8sCluster obeject and deploy requested Nodes in a dynamic way
 func CheckK8sClusterDynamicReq(req *model.K8sClusterConnectionConfigCandidatesReq) (*model.CheckK8sClusterDynamicReqInfo, error) {
-	if len(req.CommonSpecs) != 1 {
-		err := fmt.Errorf("Only one CommonSpec should be defined.")
+	if len(req.SpecIds) != 1 {
+		err := fmt.Errorf("Only one SpecId should be defined.")
 		log.Error().Err(err).Msg("")
 		return &model.CheckK8sClusterDynamicReqInfo{}, err
 	}
 
 	mciCCCReq := model.MciConnectionConfigCandidatesReq{
-		CommonSpecs: req.CommonSpecs,
+		SpecIds: req.SpecIds,
 	}
 	mciDReqInfo, err := CheckMciDynamicReq(&mciCCCReq)
 
@@ -2814,7 +2814,7 @@ func getK8sRecommendVersion(providerName, regionName, reqVersion string) (string
 
 // checkCommonResAvailableForK8sClusterDynamicReq is func to check common resources availability for K8sClusterDynamicReq
 func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.TbK8sClusterDynamicReq) error {
-	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.CommonSpec)
+	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.SpecId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -2829,7 +2829,7 @@ func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.TbK8sClusterDyna
 	// validate the GetConnConfig for spec
 	connConfig, err := common.GetConnConfig(connName)
 	if err != nil {
-		err := fmt.Errorf("Failed to get ConnectionName (" + connName + ") for Spec (" + dReq.CommonSpec + ") is not found.")
+		err := fmt.Errorf("Failed to get ConnectionName (" + connName + ") for Spec (" + dReq.SpecId + ") is not found.")
 		log.Error().Err(err).Msg("")
 		return err
 	}
@@ -2840,22 +2840,22 @@ func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.TbK8sClusterDyna
 	}
 
 	if niDesignation == false {
-		// if node image designation is not supported by CSP, CommonImage should be "default" or ""(blank)
-		if !(strings.EqualFold(dReq.CommonImage, "default") || strings.EqualFold(dReq.CommonImage, "")) {
-			err := fmt.Errorf("The NodeImageDesignation is not supported by CSP(%s). CommonImage's value should be \"default\" or \"\"", connConfig.ProviderName)
+		// if node image designation is not supported by CSP, ImageId should be "default" or ""(blank)
+		if !(strings.EqualFold(dReq.ImageId, "default") || strings.EqualFold(dReq.ImageId, "")) {
+			err := fmt.Errorf("The NodeImageDesignation is not supported by CSP(%s). ImageId's value should be \"default\" or \"\"", connConfig.ProviderName)
 			log.Error().Err(err).Msg("")
 			return err
 		}
 	}
 
-	// In K8sCluster, allows dReq.CommonImage to be set to "default" or ""
-	if strings.EqualFold(dReq.CommonImage, "default") ||
-		strings.EqualFold(dReq.CommonImage, "") {
+	// In K8sCluster, allows dReq.ImageId to be set to "default" or ""
+	if strings.EqualFold(dReq.ImageId, "default") ||
+		strings.EqualFold(dReq.ImageId, "") {
 		// do nothing
 	} else {
 
 		// check if the image is available in the CSP
-		_, err = resource.LookupImage(dReq.ConnectionName, dReq.CommonImage)
+		_, err = resource.LookupImage(dReq.ConnectionName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return err
@@ -2869,8 +2869,8 @@ func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.TbK8sClusterDyna
 // checkCommonResAvailableForK8sNodeGroupDynamicReq is func to check common resources availability for K8sNodeGroupDynamicReq
 func checkCommonResAvailableForK8sNodeGroupDynamicReq(connName string, dReq *model.TbK8sNodeGroupDynamicReq) error {
 	k8sClusterDReq := &model.TbK8sClusterDynamicReq{
-		CommonSpec:     dReq.CommonSpec,
-		CommonImage:    dReq.CommonImage,
+		SpecId:         dReq.SpecId,
+		ImageId:        dReq.ImageId,
 		ConnectionName: connName,
 	}
 
@@ -2890,7 +2890,7 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8s
 	k8sReq := &model.TbK8sClusterReq{}
 	k8sngReq := &model.TbK8sNodeGroupReq{}
 
-	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.CommonSpec)
+	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.SpecId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return emptyK8sReq, err
@@ -2912,7 +2912,7 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8s
 	// validate the GetConnConfig for spec
 	connection, err := common.GetConnConfig(k8sReq.ConnectionName)
 	if err != nil {
-		err := fmt.Errorf("Failed to Get ConnectionName (" + k8sReq.ConnectionName + ") for Spec (" + dReq.CommonSpec + ") is not found.")
+		err := fmt.Errorf("Failed to Get ConnectionName (" + k8sReq.ConnectionName + ") for Spec (" + dReq.SpecId + ") is not found.")
 		log.Err(err).Msg("")
 		return emptyK8sReq, err
 	}
@@ -2923,14 +2923,14 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8s
 		return emptyK8sReq, err
 	}
 
-	// In K8sCluster, allows dReq.CommonImage to be set to "default" or ""
-	if strings.EqualFold(dReq.CommonImage, "default") ||
-		strings.EqualFold(dReq.CommonImage, "") {
+	// In K8sCluster, allows dReq.ImageId to be set to "default" or ""
+	if strings.EqualFold(dReq.ImageId, "default") ||
+		strings.EqualFold(dReq.ImageId, "") {
 		// do nothing
 	} else {
 
 		// check if the image is available in the CSP
-		_, err = resource.LookupImage(dReq.ConnectionName, dReq.CommonImage)
+		_, err = resource.LookupImage(dReq.ConnectionName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return emptyK8sReq, err
@@ -3124,7 +3124,7 @@ func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo 
 	emptyK8sNgReq := &model.TbK8sNodeGroupReq{}
 	k8sNgReq := &model.TbK8sNodeGroupReq{}
 
-	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.CommonSpec)
+	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.SpecId)
 	if err != nil {
 		log.Err(err).Msg("")
 		return emptyK8sNgReq, err
@@ -3138,13 +3138,13 @@ func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo 
 		return emptyK8sNgReq, err
 	}
 
-	// In K8sNodeGroup, allows dReq.CommonImage to be set to "default" or ""
-	if strings.EqualFold(dReq.CommonImage, "default") ||
-		strings.EqualFold(dReq.CommonImage, "") {
+	// In K8sNodeGroup, allows dReq.ImageId to be set to "default" or ""
+	if strings.EqualFold(dReq.ImageId, "default") ||
+		strings.EqualFold(dReq.ImageId, "") {
 		// do nothing
 	} else {
 		// check if the image is available in the CSP
-		_, err = resource.LookupImage(k8sClusterInfo.ConnectionName, dReq.CommonImage)
+		_, err = resource.LookupImage(k8sClusterInfo.ConnectionName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return emptyK8sNgReq, err
