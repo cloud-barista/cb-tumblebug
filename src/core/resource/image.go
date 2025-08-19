@@ -86,12 +86,14 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	// Create new image instance
 	tumblebugImage := model.TbImageInfo{}
 
-	// Generate ID for backward compatibility
-	tumblebugImageId := GetProviderRegionZoneResourceKey(providerName, "", "", cspImageName)
+	// // Generate ID for backward compatibility
+	// tumblebugImageId := GetProviderRegionZoneResourceKey(providerName, "", "", cspImageName)
+	tumblebugImageId := cspImageName
 
 	// Set basic fields
 	tumblebugImage.Id = tumblebugImageId
 	tumblebugImage.Name = tumblebugImageId
+	tumblebugImage.Uid = common.GenUid()
 	tumblebugImage.Namespace = nsId
 	tumblebugImage.ConnectionName = connConfig
 	tumblebugImage.ProviderName = providerName

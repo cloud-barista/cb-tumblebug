@@ -578,7 +578,7 @@ func RestPostK8sClusterDynamicCheckRequest(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param k8sClusterDyanmicReq body model.TbK8sClusterDynamicReq true "Request body to provision K8sCluster dynamically. <br> Must include commonSpec and commonImage info. <br> (ex: {name: k8scluster01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
+// @Param k8sClusterDyanmicReq body model.TbK8sClusterDynamicReq true "Request body to provision K8sCluster dynamically. <br> Must include specId and imageId info. <br> (ex: {name: k8scluster01, imageId: azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
 // @Param option query string false "Option for K8sCluster creation" Enums(hold)
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} model.TbK8sClusterInfo
@@ -614,7 +614,7 @@ func RestPostK8sClusterDynamic(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param k8sNodeGroupDynamicReq body model.TbK8sNodeGroupDynamicReq true "Request body to provision K8sNodeGroup dynamically. <br> Must include commonSpec and commonImage info. <br> (ex: {name: k8sng01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
+// @Param k8sNodeGroupDynamicReq body model.TbK8sNodeGroupDynamicReq true "Request body to provision K8sNodeGroup dynamically. <br> Must include specId and imageId info. <br> (ex: {name: k8sng01, imageId: azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} model.TbK8sNodeGroupInfo
 // @Failure 404 {object} model.SimpleMsg

@@ -254,8 +254,8 @@ type Nlbsw struct {
 	CommandNlbDeploy        string `yaml:"commandNlbDeploy"`
 	CommandNlbAddTargetNode string `yaml:"commandNlbAddTargetNode"`
 	CommandNlbApplyConfig   string `yaml:"commandNlbApplyConfig"`
-	NlbMciCommonSpec        string `yaml:"nlbMciCommonSpec"`
-	NlbMciCommonImage       string `yaml:"nlbMciCommonImage"`
+	NlbMciSpecId            string `yaml:"nlbMciSpecId"`
+	NlbMciImageId           string `yaml:"nlbMciImageId"`
 	NlbMciSubGroupSize      string `yaml:"nlbMciSubGroupSize"`
 }
 

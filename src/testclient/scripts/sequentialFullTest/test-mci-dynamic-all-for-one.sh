@@ -61,7 +61,7 @@ done
 
 echo "Number of specs: $(echo "$specArray" | jq length)"
 
-commonImage="ubuntu22.04"
+imageId="ubuntu22.04"
 
 MainMciName="allforone"
 mciName=$MainMciName
@@ -79,7 +79,7 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
             rootDiskSize=$(_jq '.rootDiskSize')
 
             if [ "${option}" == "create" ]; then
-                echo "[$i] connection: $connectionName / specId: $specId / image: $commonImage / replica: $subGroupSizeInput "
+                echo "[$i] connection: $connectionName / specId: $specId / image: $imageId / replica: $subGroupSizeInput "
             elif [ "${option}" == "delete" ]; then
                 echo "[$i] mciName: $mciName (connection: $connectionName specId: $specId) "
             fi
@@ -130,7 +130,7 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
         echo "specId: $specId"
 
         # Properly append to the JSON array
-        vmArray=$(echo "$vmArray" | jq --arg commonImage "$commonImage" --arg specId "$specId" --arg subGroupSizeInput "$subGroupSizeInput"  '. + [{"commonImage": $commonImage, "commonSpec": $specId, "subGroupSize": $subGroupSizeInput}]')
+        vmArray=$(echo "$vmArray" | jq --arg imageId "$imageId" --arg specId "$specId" --arg subGroupSizeInput "$subGroupSizeInput"  '. + [{"imageId": $imageId, "specIdspecId, "subGroupSize": $subGroupSizeInput}]')
         ((i++))
 
         # Break the loop when max iterations are reached
