@@ -1362,6 +1362,20 @@ func SearchImage(nsId string, req model.SearchImageRequest) ([]model.TbImageInfo
 		}
 	}
 
+	// Move basic images to the front using partition approach (O(n) instead of O(n log n))
+	if len(images) > 0 {
+		basicIndex := 0
+		for i := 0; i < len(images); i++ {
+			if images[i].IsBasicImage {
+				if i != basicIndex {
+					// Swap basic image to the front
+					images[basicIndex], images[i] = images[i], images[basicIndex]
+				}
+				basicIndex++
+			}
+		}
+	}
+
 	return images, cnt, nil
 }
 
