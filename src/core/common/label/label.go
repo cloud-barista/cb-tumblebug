@@ -296,7 +296,7 @@ func GetLabels(labelType, uid string) (label model.LabelInfo, err error) {
 		return labelInfo, err
 	}
 	if len(labelData) == 0 {
-		log.Debug().Msg("labelData is empty")
+		//log.Debug().Msg("labelData is empty")
 		return labelInfo, nil
 	}
 

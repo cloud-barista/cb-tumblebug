@@ -259,7 +259,7 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 					log.Debug().Msgf("Starting deletion of %s:%s (connection: %s)", resourceType, resourceId, connName)
 
 					// Minimal random sleep to avoid thundering herd (reduced significantly)
-					common.RandomSleep(0, 100)
+					common.RandomSleep(0, 1)
 
 					// Attempt to delete the resource
 					deleteStatus := "[Done] "

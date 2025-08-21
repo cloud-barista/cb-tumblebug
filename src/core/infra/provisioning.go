@@ -2123,6 +2123,63 @@ func checkCommonResAvailableForSubGroupDynamicReq(req *model.TbCreateSubGroupDyn
 	return nil
 }
 
+// waitForVNetReady waits for VNet to be in a ready state with timeout and retry mechanism
+func waitForVNetReady(nsId string, vNetId string, reqID string) error {
+	const (
+		maxRetries             = 200
+		retryInterval          = 5 * time.Second
+		progressUpdateInterval = 10 // Update progress every 10 attempts (50 seconds)
+	)
+	// 1000 Secs
+
+	log.Debug().Msgf("Waiting for VNet '%s' to be ready", vNetId)
+
+	// Initial progress update
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{
+		Title: fmt.Sprintf("Waiting for VNet ready: %s", vNetId),
+		Time:  time.Now(),
+	})
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		// Update progress less frequently (only on first attempt and every progressUpdateInterval attempts)
+		if attempt == 1 || attempt%progressUpdateInterval == 0 {
+			clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{
+				Title: fmt.Sprintf("Waiting for VNet ready: %s (attempt %d/%d)", vNetId, attempt, maxRetries),
+				Time:  time.Now(),
+			})
+		}
+
+		// Get VNet info using the dedicated function
+		vNetInfo, err := resource.GetVNet(nsId, vNetId)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to get VNet '%s' on attempt %d", vNetId, attempt)
+			time.Sleep(retryInterval)
+			continue
+		}
+
+		// Check if VNet is ready
+		if vNetInfo.Status == string(resource.NetworkAvailable) || vNetInfo.Status == string(resource.NetworkInUse) {
+			log.Info().Msgf("VNet '%s' is ready with status: %s", vNetId, vNetInfo.Status)
+			// Final success progress update
+			clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{
+				Title: fmt.Sprintf("VNet ready: %s (status: %s)", vNetId, vNetInfo.Status),
+				Time:  time.Now(),
+			})
+			return nil
+		}
+
+		// Check for error states
+		if strings.Contains(strings.ToLower(vNetInfo.Status), "error") {
+			return fmt.Errorf("VNet '%s' is in error state: %s", vNetId, vNetInfo.Status)
+		}
+
+		log.Debug().Msgf("VNet '%s' not ready yet, status: %s (attempt %d/%d)", vNetId, vNetInfo.Status, attempt, maxRetries)
+		time.Sleep(retryInterval)
+	}
+
+	return fmt.Errorf("timeout waiting for VNet '%s' to be ready after %d minutes", vNetId, (maxRetries*int(retryInterval.Seconds()))/60)
+}
+
 // getSubGroupReqFromDynamicReq is func to getSubGroupReqFromDynamicReq with created resource tracking
 func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreateSubGroupDynamicReq) (*VmReqWithCreatedResources, error) {
 
@@ -2208,8 +2265,34 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 				createdResources = append(createdResources, CreatedResource{Type: model.StrVNet, Id: subGroupReq.VNetId})
 			}
 		}
+		// Wait for the VNet to be ready after creation
+		err = waitForVNetReady(nsId, subGroupReq.VNetId, reqID)
+		if err != nil {
+			detailedErr := fmt.Errorf("VNet '%s' is not ready for use after creation: %w", subGroupReq.VNetId, err)
+			log.Error().Err(err).Msgf("VNet ready check failed for VM '%s', VNetId '%s'", req.Name, subGroupReq.VNetId)
+			return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+		}
 	} else {
 		log.Info().Msg("Found and utilize default vNet: " + subGroupReq.VNetId)
+
+		// Even if VNet exists, ensure it's ready for use
+		vNetInfo, err := resource.GetVNet(nsId, subGroupReq.VNetId)
+		if err != nil {
+			detailedErr := fmt.Errorf("failed to get VNet info for '%s': %w", subGroupReq.VNetId, err)
+			log.Error().Err(err).Msg(detailedErr.Error())
+			return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+		}
+
+		// Check if VNet is ready, if not wait for it
+		if vNetInfo.Status != string(resource.NetworkAvailable) && vNetInfo.Status != string(resource.NetworkInUse) {
+			log.Info().Msgf("VNet '%s' exists but not ready (status: %s), waiting for ready state", subGroupReq.VNetId, vNetInfo.Status)
+			err = waitForVNetReady(nsId, subGroupReq.VNetId, reqID)
+			if err != nil {
+				detailedErr := fmt.Errorf("existing VNet '%s' is not ready for use: %w", subGroupReq.VNetId, err)
+				log.Error().Err(err).Msgf("VNet ready check failed for VM '%s', VNetId '%s'", req.Name, subGroupReq.VNetId)
+				return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+			}
+		}
 	}
 	subGroupReq.SubnetId = resourceName
 
