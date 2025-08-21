@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
@@ -43,8 +44,31 @@ func RestDelAllResources(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 	subString := c.QueryParam("match")
 
+	log.Info().Msgf("Starting DelAllResources for nsId: %s, resourceType: %s", nsId, resourceType)
+
 	content, err := resource.DelAllResources(nsId, resourceType, subString, forceFlag)
-	return clientManager.EndRequestWithLog(c, err, content)
+
+	log.Info().Msgf("DelAllResources completed for nsId: %s, resourceType: %s, results: %+v", nsId, resourceType, content)
+	log.Info().Msgf("Content.IdList length: %d, content: %+v", len(content.IdList), content.IdList)
+
+	if err != nil {
+		log.Error().Err(err).Msgf("DelAllResources failed for nsId: %s, resourceType: %s", nsId, resourceType)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Avoid JSON serialization issues with sync.Mutex in IdList struct
+	// Create a clean response structure without mutex
+	type DeleteResponse struct {
+		Output []string `json:"output"`
+	}
+
+	response := DeleteResponse{
+		Output: content.IdList, // Extract the actual string slice from IdList struct
+	}
+
+	log.Info().Msgf("Returning response with %d items: %+v", len(content.IdList), response)
+
+	return clientManager.EndRequestWithLog(c, nil, response)
 }
 
 // RestDelResource is a common function to handle 'DelResource' REST API requests.
