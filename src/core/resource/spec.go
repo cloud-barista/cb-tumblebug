@@ -259,13 +259,13 @@ func extractArchitecture(providerName string, details []model.KeyValue, cspSpecN
 		}
 		return string(model.X86_64)
 
-	case csp.KTCloud:
+	case csp.KT:
 		return string(model.X86_64)
 
 	case csp.NCP:
 		return string(model.X86_64)
 
-	case csp.NHNCloud:
+	case csp.NHN:
 		return string(model.X86_64)
 
 	default:

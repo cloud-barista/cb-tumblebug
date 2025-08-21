@@ -143,7 +143,7 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	// KT Cloud and IBM Cloud have specific architecture mappings
 	if spiderImage.OSArchitecture == model.ArchitectureNA {
 		// For KT Cloud, we set X86_64 if the architecture is not specified
-		if providerName == csp.KTCloud {
+		if providerName == csp.KT {
 			tumblebugImage.OSArchitecture = model.X86_64
 		}
 		// For IBM Cloud, we set S390X if the architecture is not specified
@@ -153,7 +153,7 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	}
 	tumblebugImage.OSPlatform = spiderImage.OSPlatform
 	tumblebugImage.OSDistribution = spiderImage.OSDistribution
-	if providerName == csp.NHNCloud {
+	if providerName == csp.NHN {
 		// For NHN Cloud, we need to extract the OS distribution from KeyValueList
 		tumblebugImage.OSDistribution = common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
 	}
@@ -1604,7 +1604,7 @@ func SearchImageOptions() (model.SearchImageRequestOptions, error) {
 			"aws+ap-northeast-2+t2.small",
 			"azure+koreacentral+Standard_B1s",
 			"gcp+asia-northeast3+e2-micro",
-			"ncpvpc+kr+m8-g3a",
+			"ncp+kr+m8-g3a",
 		}
 	} else {
 		// Group specs by provider and take 1-2 examples from each
@@ -1635,7 +1635,7 @@ func SearchImageOptions() (model.SearchImageRequestOptions, error) {
 				"aws+ap-northeast-2+t2.small",
 				"azure+koreacentral+Standard_B1s",
 				"gcp+asia-northeast3+e2-micro",
-				"ncpvpc+kr+m8-g3a",
+				"ncp+kr+m8-g3a",
 			}
 		}
 

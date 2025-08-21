@@ -14,12 +14,12 @@ function test_sequence() {
 	../2.configureTumblebug/create-ns.sh -n $POSTFIX -f $TestSetFile
 	
 	# Create vNet
-	if [ "${CSP}" == "ncpvpc" ]; then
-	../3.vNet/create-vNet-ncpvpc.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-	elif [ "${CSP}" == "nhncloud" ]; then
+	if [ "${CSP}" == "ncp" ]; then
+	../3.vNet/create-vNet-ncp.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	elif [ "${CSP}" == "nhn" ]; then
 	../3.vNet/create-vNet-nhn.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	# dozing 120
-	elif [ "${CSP}" == "ktcloudvpc" ]; then
+	elif [ "${CSP}" == "kt" ]; then
 	../3.vNet/create-vNet-ktvpc.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	else
 	../3.vNet/create-vNet.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
@@ -34,7 +34,7 @@ function test_sequence() {
 	# Create S/G
 	if [ "${CSP}" == "ncp" ]; then
 	../4.securityGroup/create-securityGroup-ncp.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-	elif [ "${CSP}" == "ktcloudvpc" ]; then
+	elif [ "${CSP}" == "kt" ]; then
 	../4.securityGroup/create-securityGroup-ktvpc.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	else
 	../4.securityGroup/create-securityGroup.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
@@ -76,12 +76,12 @@ function test_sequence_allcsp_resource() {
 	../2.configureTumblebug/create-ns.sh -n $POSTFIX -f $TestSetFile
 
 	# Create vNet
-	if [ "${CSP}" == "ncpvpc" ]; then
-	../3.vNet/create-vNet-ncpvpc.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-	elif [ "${CSP}" == "nhncloud" ]; then
+	if [ "${CSP}" == "ncp" ]; then
+	../3.vNet/create-vNet-ncp.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	elif [ "${CSP}" == "nhn" ]; then
 	../3.vNet/create-vNet-nhn.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	# dozing 120
-	elif [ "${CSP}" == "ktcloudvpc" ]; then
+	elif [ "${CSP}" == "kt" ]; then
 	../3.vNet/create-vNet-ktvpc.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	else
 	../3.vNet/create-vNet.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
@@ -96,7 +96,7 @@ function test_sequence_allcsp_resource() {
 	# Create S/G
 	if [ "${CSP}" == "ncp" ]; then
 	../4.securityGroup/create-securityGroup-ncp.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-	elif [ "${CSP}" == "ktcloudvpc" ]; then
+	elif [ "${CSP}" == "kt" ]; then
 	../4.securityGroup/create-securityGroup-ktvpc.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	else
 	../4.securityGroup/create-securityGroup.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile

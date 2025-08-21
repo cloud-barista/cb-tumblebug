@@ -9092,7 +9092,7 @@
                 }
             },
             "post": {
-                "description": "Create a SQL Databases\n\nSupported CSPs: AWS, Azure, GCP, NCP\n- Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncpvpc-kr\n\n- Note - Please check the `requiredCSPResource` property which includes CSP specific values.\n\n- Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/110\n",
+                "description": "Create a SQL Databases\n\nSupported CSPs: AWS, Azure, GCP, NCP\n- Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncp-kr\n\n- Note - Please check the `requiredCSPResource` property which includes CSP specific values.\n\n- Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/110\n",
                 "consumes": [
                     "application/json"
                 ],

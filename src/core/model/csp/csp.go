@@ -7,8 +7,8 @@ const (
 	GCP       = "gcp"
 	IBM       = "ibm"
 	Tencent   = "tencent"
-	NCP       = "ncpvpc"
-	NHNCloud  = "nhncloud"
-	KTCloud   = "ktcloudvpc"
+	NCP       = "ncp"
+	NHN       = "nhn"
+	KT        = "kt"
 	OpenStack = "openstack"
 )

@@ -99,6 +99,7 @@ var (
 		{"/tumblebug/readyz"},
 		{"/tumblebug/httpVersion"},
 		{"/mci", "option=status"},
+		{"/mci"},
 		{"/k8sCluster"},
 		{"/resources/vNet"},
 		{"/resources/securityGroup"},
