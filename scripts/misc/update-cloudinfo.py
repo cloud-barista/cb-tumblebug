@@ -73,9 +73,9 @@ csp_connection_names = {
     'ibm': 'ibm-us-east',
     'alibaba': 'alibaba-us-east-1',
     'tencent': 'tencent-ap-singapore',
-    'ncpvpc': 'ncpvpc-kr',
-    'ktcloudvpc': 'ktcloudvpc-kr1',
-    'nhncloud': 'nhncloud-kr1'
+    'ncp': 'ncp-kr',
+    'kt': 'kt-kr1',
+    'nhn': 'nhn-kr1'
     # Add more CSPs here
 }
 

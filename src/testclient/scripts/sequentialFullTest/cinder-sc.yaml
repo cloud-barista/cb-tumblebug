@@ -1,4 +1,4 @@
-# https://docs.nhncloud.com/ko/Container/NKS/ko/user-guide/, 동적프로비저닝
+# https://docs.nhn.com/ko/Container/NKS/ko/user-guide/, 동적프로비저닝
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:

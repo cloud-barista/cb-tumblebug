@@ -62,7 +62,7 @@ cloud:
       threshold: "3"
     k8scluster:
       enable: "n"
-  nhncloud:
+  nhn:
     enable: "y"
     k8scluster:
       enable: "y"

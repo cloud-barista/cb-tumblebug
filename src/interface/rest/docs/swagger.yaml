@@ -7424,7 +7424,7 @@ paths:
         Create a SQL Databases
 
         Supported CSPs: AWS, Azure, GCP, NCP
-        - Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncpvpc-kr
+        - Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncp-kr
 
         - Note - Please check the `requiredCSPResource` property which includes CSP specific values.
 

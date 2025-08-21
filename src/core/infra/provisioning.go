@@ -1420,7 +1420,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 			wg.Add(1)
 			go func(subGroupDynamicReq model.TbCreateSubGroupDynamicReq) {
 				defer wg.Done()
-				result, err := getVmReqFromDynamicReq(reqID, nsId, &subGroupDynamicReq)
+				result, err := getSubGroupReqFromDynamicReq(reqID, nsId, &subGroupDynamicReq)
 				resultChan <- vmResult{result: result, err: err}
 			}(k)
 		}
@@ -1762,7 +1762,7 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 				providerName := specInfoPtr.ProviderName
 
 				// Check KT Cloud limitations
-				if providerName == csp.KTCloud {
+				if providerName == csp.KT {
 					vmReview.Errors = append(vmReview.Errors, "KT Cloud provisioning is currently not available")
 					vmReview.CanCreate = false
 					viable = false
@@ -1770,7 +1770,7 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 				}
 
 				// Check NHN Cloud limitations
-				if providerName == csp.NHNCloud {
+				if providerName == csp.NHN {
 					if deployOption != "hold" {
 						vmReview.Errors = append(vmReview.Errors, "NHN Cloud can only be provisioned with deployOption 'hold' (manual deployment required)")
 						vmReview.CanCreate = false
@@ -2013,10 +2013,10 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 	// Add provider-specific global recommendations
 	for _, providerName := range reviewResult.ResourceSummary.ProviderNames {
 		switch providerName {
-		case csp.KTCloud:
+		case csp.KT:
 			reviewResult.Recommendations = append(reviewResult.Recommendations,
 				"CRITICAL: KT Cloud provisioning is currently unavailable - all KT Cloud VMs will fail to deploy")
-		case csp.NHNCloud:
+		case csp.NHN:
 			if deployOption != "hold" {
 				reviewResult.Recommendations = append(reviewResult.Recommendations,
 					"CRITICAL: NHN Cloud requires deployOption 'hold' for manual deployment - automatic provisioning will fail")
@@ -2052,7 +2052,7 @@ func CreateMciVmDynamic(nsId string, mciId string, req *model.TbCreateSubGroupDy
 		return emptyMci, err
 	}
 
-	vmReqResult, err := getVmReqFromDynamicReq("", nsId, req)
+	vmReqResult, err := getSubGroupReqFromDynamicReq("", nsId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyMci, err
@@ -2123,8 +2123,8 @@ func checkCommonResAvailableForSubGroupDynamicReq(req *model.TbCreateSubGroupDyn
 	return nil
 }
 
-// getVmReqFromDynamicReq is func to getVmReqFromDynamicReq with created resource tracking
-func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbCreateSubGroupDynamicReq) (*VmReqWithCreatedResources, error) {
+// getSubGroupReqFromDynamicReq is func to getSubGroupReqFromDynamicReq with created resource tracking
+func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreateSubGroupDynamicReq) (*VmReqWithCreatedResources, error) {
 
 	onDemand := true
 	var createdResources []CreatedResource
@@ -2133,7 +2133,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbCreateSubGro
 	// Check whether VM names meet requirement.
 	k := vmRequest
 
-	vmReq := &model.TbCreateSubGroupReq{}
+	subGroupReq := &model.TbCreateSubGroupReq{}
 
 	specInfo, err := resource.GetSpec(model.SystemCommonNs, req.SpecId)
 	if err != nil {
@@ -2143,137 +2143,137 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbCreateSubGro
 	}
 
 	// remake vmReqest from given input and check resource availability
-	vmReq.ConnectionName = specInfo.ConnectionName
+	subGroupReq.ConnectionName = specInfo.ConnectionName
 
 	// If ConnectionName is specified by the request, Use ConnectionName from the request
 	if k.ConnectionName != "" {
-		vmReq.ConnectionName = k.ConnectionName
+		subGroupReq.ConnectionName = k.ConnectionName
 	}
 
 	// validate the GetConnConfig for spec
-	connection, err := common.GetConnConfig(vmReq.ConnectionName)
+	connection, err := common.GetConnConfig(subGroupReq.ConnectionName)
 	if err != nil {
 		detailedErr := fmt.Errorf("failed to get connection configuration '%s' for VM '%s' with spec '%s': %w. Please verify the connection exists and is properly configured",
-			vmReq.ConnectionName, req.Name, k.SpecId, err)
-		log.Error().Err(err).Msgf("Connection config lookup failed for VM '%s', ConnectionName '%s', Spec '%s'", req.Name, vmReq.ConnectionName, k.SpecId)
-		return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: vmReq.ConnectionName}, CreatedResources: createdResources}, detailedErr
+			subGroupReq.ConnectionName, req.Name, k.SpecId, err)
+		log.Error().Err(err).Msgf("Connection config lookup failed for VM '%s', ConnectionName '%s', Spec '%s'", req.Name, subGroupReq.ConnectionName, k.SpecId)
+		return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName}, CreatedResources: createdResources}, detailedErr
 	}
 
 	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
-	resourceName := nsId + model.StrSharedResourceName + vmReq.ConnectionName
+	resourceName := nsId + model.StrSharedResourceName + subGroupReq.ConnectionName
 
-	vmReq.SpecId = specInfo.Id
-	vmReq.ImageId = k.ImageId
+	subGroupReq.SpecId = specInfo.Id
+	subGroupReq.ImageId = k.ImageId
 
 	// check if the image is available in the CSP
-	_, err = resource.LookupImage(connection.ConfigName, vmReq.ImageId)
+	_, err = resource.LookupImage(connection.ConfigName, subGroupReq.ImageId)
 	if err != nil {
 		detailedErr := fmt.Errorf("failed to find image '%s' for VM '%s' in CSP '%s' (connection: %s): %w. Please verify the image exists and is accessible in the target region",
-			vmReq.ImageId, req.Name, connection.ProviderName, connection.ConfigName, err)
+			subGroupReq.ImageId, req.Name, connection.ProviderName, connection.ConfigName, err)
 		log.Error().Err(err).Msgf("Image lookup failed for VM '%s', ImageId '%s', Provider '%s', Connection '%s'",
-			req.Name, vmReq.ImageId, connection.ProviderName, connection.ConfigName)
-		return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, ImageId: vmReq.ImageId}, CreatedResources: createdResources}, detailedErr
+			req.Name, subGroupReq.ImageId, connection.ProviderName, connection.ConfigName)
+		return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, ImageId: subGroupReq.ImageId}, CreatedResources: createdResources}, detailedErr
 	}
 	// Need enhancement to handle custom image request
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
 
-	vmReq.VNetId = resourceName
-	_, err = resource.GetResource(nsId, model.StrVNet, vmReq.VNetId)
+	subGroupReq.VNetId = resourceName
+	_, err = resource.GetResource(nsId, model.StrVNet, subGroupReq.VNetId)
 	if err != nil {
 		if !onDemand {
 			detailedErr := fmt.Errorf("failed to get required VNet '%s' for VM '%s' from connection '%s': %w. VNet must exist when onDemand is disabled",
-				vmReq.VNetId, req.Name, vmReq.ConnectionName, err)
+				subGroupReq.VNetId, req.Name, subGroupReq.ConnectionName, err)
 			log.Error().Err(err).Msgf("VNet lookup failed for VM '%s', VNetId '%s', Connection '%s' (onDemand disabled)",
-				req.Name, vmReq.VNetId, vmReq.ConnectionName)
-			return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, VNetId: vmReq.VNetId}, CreatedResources: createdResources}, detailedErr
+				req.Name, subGroupReq.VNetId, subGroupReq.ConnectionName)
+			return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
 
 		// Check if the default vNet exists
-		_, err := resource.GetResource(nsId, model.StrVNet, vmReq.ConnectionName)
+		_, err := resource.GetResource(nsId, model.StrVNet, subGroupReq.ConnectionName)
 		log.Debug().Msg("checked if the default vNet does NOT exist")
 		// Create a new default vNet if it does not exist
 		if err != nil && strings.Contains(err.Error(), "does not exist") {
-			err2 := resource.CreateSharedResource(nsId, model.StrVNet, vmReq.ConnectionName)
+			err2 := resource.CreateSharedResource(nsId, model.StrVNet, subGroupReq.ConnectionName)
 			if err2 != nil {
 				detailedErr := fmt.Errorf("failed to create default VNet for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or network configuration issues",
-					req.Name, nsId, vmReq.ConnectionName, err2)
+					req.Name, nsId, subGroupReq.ConnectionName, err2)
 				log.Error().Err(err2).Msgf("VNet creation failed for VM '%s', VNetId '%s', Namespace '%s', Connection '%s'",
-					req.Name, vmReq.VNetId, nsId, vmReq.ConnectionName)
-				return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, VNetId: vmReq.VNetId}, CreatedResources: createdResources}, detailedErr
+					req.Name, subGroupReq.VNetId, nsId, subGroupReq.ConnectionName)
+				return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
 			} else {
-				log.Info().Msg("Created new default vNet: " + vmReq.VNetId)
+				log.Info().Msg("Created new default vNet: " + subGroupReq.VNetId)
 				// Track the newly created VNet
-				createdResources = append(createdResources, CreatedResource{Type: model.StrVNet, Id: vmReq.VNetId})
+				createdResources = append(createdResources, CreatedResource{Type: model.StrVNet, Id: subGroupReq.VNetId})
 			}
 		}
 	} else {
-		log.Info().Msg("Found and utilize default vNet: " + vmReq.VNetId)
+		log.Info().Msg("Found and utilize default vNet: " + subGroupReq.VNetId)
 	}
-	vmReq.SubnetId = resourceName
+	subGroupReq.SubnetId = resourceName
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
-	vmReq.SshKeyId = resourceName
-	_, err = resource.GetResource(nsId, model.StrSSHKey, vmReq.SshKeyId)
+	subGroupReq.SshKeyId = resourceName
+	_, err = resource.GetResource(nsId, model.StrSSHKey, subGroupReq.SshKeyId)
 	if err != nil {
 		if !onDemand {
 			detailedErr := fmt.Errorf("failed to get required SSHKey '%s' for VM '%s' from connection '%s': %w. SSHKey must exist when onDemand is disabled",
-				vmReq.SshKeyId, req.Name, vmReq.ConnectionName, err)
+				subGroupReq.SshKeyId, req.Name, subGroupReq.ConnectionName, err)
 			log.Error().Err(err).Msgf("SSHKey lookup failed for VM '%s', SshKeyId '%s', Connection '%s' (onDemand disabled)",
-				req.Name, vmReq.SshKeyId, vmReq.ConnectionName)
-			return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, SshKeyId: vmReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
+				req.Name, subGroupReq.SshKeyId, subGroupReq.ConnectionName)
+			return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, SshKeyId: subGroupReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
 
 		// Check if the default SSHKey exists
-		_, err := resource.GetResource(nsId, model.StrSSHKey, vmReq.ConnectionName)
+		_, err := resource.GetResource(nsId, model.StrSSHKey, subGroupReq.ConnectionName)
 		log.Debug().Msg("checked if the default SSHKey does NOT exist")
 		// Create a new default SSHKey if it does not exist
 		if err != nil && strings.Contains(err.Error(), "does not exist") {
-			err2 := resource.CreateSharedResource(nsId, model.StrSSHKey, vmReq.ConnectionName)
+			err2 := resource.CreateSharedResource(nsId, model.StrSSHKey, subGroupReq.ConnectionName)
 			if err2 != nil {
 				detailedErr := fmt.Errorf("failed to create default SSHKey for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or key generation issues",
-					req.Name, nsId, vmReq.ConnectionName, err2)
+					req.Name, nsId, subGroupReq.ConnectionName, err2)
 				log.Error().Err(err2).Msgf("SSHKey creation failed for VM '%s', SshKeyId '%s', Namespace '%s', Connection '%s'",
-					req.Name, vmReq.SshKeyId, nsId, vmReq.ConnectionName)
-				return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, SshKeyId: vmReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
+					req.Name, subGroupReq.SshKeyId, nsId, subGroupReq.ConnectionName)
+				return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, SshKeyId: subGroupReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
 			} else {
-				log.Info().Msg("Created new default SSHKey: " + vmReq.SshKeyId)
+				log.Info().Msg("Created new default SSHKey: " + subGroupReq.SshKeyId)
 				// Track the newly created SSHKey
-				createdResources = append(createdResources, CreatedResource{Type: model.StrSSHKey, Id: vmReq.SshKeyId})
+				createdResources = append(createdResources, CreatedResource{Type: model.StrSSHKey, Id: subGroupReq.SshKeyId})
 			}
 		}
 	} else {
-		log.Info().Msg("Found and utilize default SSHKey: " + vmReq.SshKeyId)
+		log.Info().Msg("Found and utilize default SSHKey: " + subGroupReq.SshKeyId)
 	}
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
 	securityGroup := resourceName
-	vmReq.SecurityGroupIds = append(vmReq.SecurityGroupIds, securityGroup)
+	subGroupReq.SecurityGroupIds = append(subGroupReq.SecurityGroupIds, securityGroup)
 	_, err = resource.GetResource(nsId, model.StrSecurityGroup, securityGroup)
 	if err != nil {
 		if !onDemand {
 			detailedErr := fmt.Errorf("failed to get required SecurityGroup '%s' for VM '%s' from connection '%s': %w. SecurityGroup must exist when onDemand is disabled",
-				securityGroup, req.Name, vmReq.ConnectionName, err)
+				securityGroup, req.Name, subGroupReq.ConnectionName, err)
 			log.Error().Err(err).Msgf("SecurityGroup lookup failed for VM '%s', SecurityGroup '%s', Connection '%s' (onDemand disabled)",
-				req.Name, securityGroup, vmReq.ConnectionName)
-			return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
+				req.Name, securityGroup, subGroupReq.ConnectionName)
+			return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
 
 		// Check if the default security group exists
-		_, err := resource.GetResource(nsId, model.StrSecurityGroup, vmReq.ConnectionName)
+		_, err := resource.GetResource(nsId, model.StrSecurityGroup, subGroupReq.ConnectionName)
 		// Create a new default security group if it does not exist
 		log.Debug().Msg("checked if the default security group does NOT exist")
 		if err != nil && strings.Contains(err.Error(), "does not exist") {
-			err2 := resource.CreateSharedResource(nsId, model.StrSecurityGroup, vmReq.ConnectionName)
+			err2 := resource.CreateSharedResource(nsId, model.StrSecurityGroup, subGroupReq.ConnectionName)
 			if err2 != nil {
 				detailedErr := fmt.Errorf("failed to create default SecurityGroup for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or firewall rule configuration issues",
-					req.Name, nsId, vmReq.ConnectionName, err2)
+					req.Name, nsId, subGroupReq.ConnectionName, err2)
 				log.Error().Err(err2).Msgf("SecurityGroup creation failed for VM '%s', SecurityGroup '%s', Namespace '%s', Connection '%s'",
-					req.Name, securityGroup, nsId, vmReq.ConnectionName)
-				return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: vmReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
+					req.Name, securityGroup, nsId, subGroupReq.ConnectionName)
+				return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
 			} else {
 				log.Info().Msg("Created new default securityGroup: " + securityGroup)
 				// Track the newly created SecurityGroup
@@ -2284,21 +2284,21 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *model.TbCreateSubGro
 		log.Info().Msg("Found and utilize default securityGroup: " + securityGroup)
 	}
 
-	vmReq.Name = k.Name
-	if vmReq.Name == "" {
-		vmReq.Name = common.GenUid()
+	subGroupReq.Name = k.Name
+	if subGroupReq.Name == "" {
+		subGroupReq.Name = common.GenUid()
 	}
-	vmReq.Label = k.Label
-	vmReq.SubGroupSize = k.SubGroupSize
-	vmReq.Description = k.Description
-	vmReq.RootDiskType = k.RootDiskType
-	vmReq.RootDiskSize = k.RootDiskSize
-	vmReq.VmUserPassword = k.VmUserPassword
+	subGroupReq.Label = k.Label
+	subGroupReq.SubGroupSize = k.SubGroupSize
+	subGroupReq.Description = k.Description
+	subGroupReq.RootDiskType = k.RootDiskType
+	subGroupReq.RootDiskSize = k.RootDiskSize
+	subGroupReq.VmUserPassword = k.VmUserPassword
 
-	common.PrintJsonPretty(vmReq)
-	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared resources for VM:" + vmReq.Name, Info: vmReq, Time: time.Now()})
+	common.PrintJsonPretty(subGroupReq)
+	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Prepared resources for VM:" + subGroupReq.Name, Info: subGroupReq, Time: time.Now()})
 
-	return &VmReqWithCreatedResources{VmReq: vmReq, CreatedResources: createdResources}, nil
+	return &VmReqWithCreatedResources{VmReq: subGroupReq, CreatedResources: createdResources}, nil
 }
 
 // CreateVmObject is func to add VM to MCI

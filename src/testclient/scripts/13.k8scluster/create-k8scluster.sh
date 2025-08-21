@@ -21,7 +21,7 @@ fi
 K8SNODEGROUPNAME="ng${INDEX}${REGION}"
 
 echo "CSP=${CSP}"
-if [ "${CSP}" == "azure" ] || [ "${CSP}" == "nhncloud" ]; then
+if [ "${CSP}" == "azure" ] || [ "${CSP}" == "nhn" ]; then
     	NODEIMAGEID="" # In azure, image designation is not supported
 	echo "NODEIMAGEID=${NODEIMAGEID}"
 else

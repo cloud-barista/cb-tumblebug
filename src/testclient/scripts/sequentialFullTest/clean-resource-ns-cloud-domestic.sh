@@ -69,7 +69,7 @@ function clean_sequence() {
 
 	fi
 
-	if ! [ "${CSP}" == "nhncloud" ]; then
+	if ! [ "${CSP}" == "nhn" ]; then
 		echo '## 3. vNet: Delete'
 		OUTPUT=$(../3.vNet/delete-vNet.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 		echo "${OUTPUT}"
