@@ -286,7 +286,7 @@ func RestGetAllSqlDB(c echo.Context) error {
 // @Description Create a SQL Databases
 // @Description
 // @Description Supported CSPs: AWS, Azure, GCP, NCP
-// @Description - Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncpvpc-kr
+// @Description - Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncp-kr
 // @Description
 // @Description - Note - Please check the `requiredCSPResource` property which includes CSP specific values.
 // @Description

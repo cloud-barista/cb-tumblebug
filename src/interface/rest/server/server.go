@@ -99,6 +99,7 @@ var (
 		{"/tumblebug/readyz"},
 		{"/tumblebug/httpVersion"},
 		{"/mci", "option=status"},
+		{"/mci"},
 		{"/k8sCluster"},
 		{"/resources/vNet"},
 		{"/resources/securityGroup"},
@@ -553,7 +554,7 @@ func RunServer() {
 
 	e.POST("/tumblebug/fetchImages", rest_resource.RestFetchImages)
 	e.POST("/tumblebug/fetchImagesAsync", rest_resource.RestFetchImagesAsync)
-	e.POST("/tumblebug/fetchImagesResult", rest_resource.RestGetFetchImagesAsyncResult)
+	e.GET("/tumblebug/fetchImagesResult", rest_resource.RestGetFetchImagesAsyncResult)
 	e.POST("/tumblebug/updateImagesFromAsset", rest_resource.RestUpdateImagesFromAsset)
 	g.POST("/:nsId/resources/searchImage", rest_resource.RestSearchImage)
 	g.GET("/:nsId/resources/searchImageOptions", rest_resource.RestSearchImageOptions)

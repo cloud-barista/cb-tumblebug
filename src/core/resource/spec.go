@@ -63,8 +63,18 @@ func ConvertSpiderSpecToTumblebugSpec(providerName string, spiderSpec model.Spid
 
 	tumblebugSpec.Name = spiderSpec.Name
 	tumblebugSpec.CspSpecName = spiderSpec.Name
+	tumblebugSpec.Uid = common.GenUid()
 	tumblebugSpec.RegionName = spiderSpec.Region
 	tumblebugSpec.ProviderName = providerName
+
+	// For Azure, filter out Gen1-only VM families
+	if providerName == string(csp.Azure) {
+		if isAzureGen1OnlySpec(tumblebugSpec.CspSpecName) {
+			err := fmt.Errorf("skipping Azure Gen1-only VM family spec: %s", tumblebugSpec.CspSpecName)
+			emptyTumblebugSpec := model.TbSpecInfo{}
+			return emptyTumblebugSpec, err
+		}
+	}
 
 	tempUint64, _ := strconv.ParseUint(spiderSpec.VCpu.Count, 10, 16)
 	tumblebugSpec.VCPU = uint16(tempUint64)
@@ -249,13 +259,13 @@ func extractArchitecture(providerName string, details []model.KeyValue, cspSpecN
 		}
 		return string(model.X86_64)
 
-	case csp.KTCloud:
+	case csp.KT:
 		return string(model.X86_64)
 
 	case csp.NCP:
 		return string(model.X86_64)
 
-	case csp.NHNCloud:
+	case csp.NHN:
 		return string(model.X86_64)
 
 	default:
@@ -379,7 +389,7 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 
 		tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(connConfig.ProviderName, spiderSpec)
 		if errConvert != nil {
-			log.Error().Err(errConvert).Msgf("Cannot ConvertSpiderSpecToTumblebugSpec for %s", spiderSpec.Name)
+			log.Debug().Err(errConvert).Msgf("Skip ConvertSpiderSpecToTumblebugSpec for %s", spiderSpec.Name)
 			// Clear the processed item immediately
 			specsInConnection.Vmspec[i] = model.SpiderSpecInfo{}
 			continue
@@ -1738,4 +1748,74 @@ func BulkUpdateSpec(nsId string, updates map[string]float32) (int, error) {
 	}
 
 	return int(result.RowsAffected), nil
+}
+
+// isAzureGen1OnlySpec checks if the given Azure VM spec belongs to a Gen1-only family
+// Based on Microsoft documentation: https://learn.microsoft.com/en-us/azure/virtual-machines/generation-2
+// Gen2 supported families: B, D, E, F, L, M, NC, ND, NV, HB, HC, HX series
+// Gen1-only families: A-series (classic), and some older generations
+func isAzureGen1OnlySpec(specName string) bool {
+	if specName == "" {
+		return false
+	}
+
+	// Convert to lowercase for consistent comparison
+	lowerSpecName := strings.ToLower(specName)
+
+	// Extract VM family prefix (e.g., "Standard_A1" -> "a", "Standard_D2s_v3" -> "d")
+	var family string
+
+	// Handle "Standard_" prefix
+	if strings.HasPrefix(lowerSpecName, "standard_") {
+		remaining := lowerSpecName[9:] // Remove "standard_" prefix
+		if len(remaining) > 0 {
+			// Extract the first letter as family
+			family = string(remaining[0])
+		}
+	} else if strings.HasPrefix(lowerSpecName, "basic_") {
+		remaining := lowerSpecName[6:] // Remove "basic_" prefix
+		if len(remaining) > 0 {
+			// Extract the first letter as family
+			family = string(remaining[0])
+		}
+	} else {
+		// For specs without "Standard_" or "Basic_" prefix, take first character
+		if len(lowerSpecName) > 0 {
+			family = string(lowerSpecName[0])
+		}
+	}
+
+	// Check if it's a Gen1-only family
+	switch family {
+	case "a":
+		// A-series: Only original A-series (without version) are Gen1-only
+		// Gen1-only: Standard_A1, Standard_A2, Basic_A1, etc.
+		// Gen2 supported: Standard_A1_v2, Standard_A2_v2, etc.
+		if strings.Contains(lowerSpecName, "_v2") {
+			return false // A-series v2 supports Gen2
+		}
+		return true // Original A-series are Gen1-only
+	case "d":
+		// Most D-series support Gen2, but check for very old D-series v1
+		// Examples that are Gen1-only: Standard_D1, Standard_D2, Standard_D3, Standard_D4
+		// Gen2 supported: Standard_D2s_v3, Standard_D4s_v4, etc.
+		if strings.Contains(lowerSpecName, "_v2") || strings.Contains(lowerSpecName, "_v3") ||
+			strings.Contains(lowerSpecName, "_v4") || strings.Contains(lowerSpecName, "_v5") ||
+			strings.Contains(lowerSpecName, "s_") {
+			return false // Gen2 supported
+		}
+		// Check for original D-series (D1-D14) which are Gen1-only
+		// Pattern: standard_d[1-4] without version suffix
+		if (strings.HasPrefix(lowerSpecName, "standard_d1") && !strings.Contains(lowerSpecName, "v")) ||
+			(strings.HasPrefix(lowerSpecName, "standard_d2") && !strings.Contains(lowerSpecName, "v")) ||
+			(strings.HasPrefix(lowerSpecName, "standard_d3") && !strings.Contains(lowerSpecName, "v")) ||
+			(strings.HasPrefix(lowerSpecName, "standard_d4") && !strings.Contains(lowerSpecName, "v")) {
+			return true
+		}
+		return false
+	}
+
+	// All other families support Gen2 by default based on Microsoft documentation
+	// Gen2 supported families: B, E, F, L, M, NC, ND, NV, HB, HC, HX
+	return false
 }

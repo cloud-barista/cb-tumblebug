@@ -62,7 +62,7 @@ cloud:
       threshold: "3"
     k8scluster:
       enable: "n"
-  nhncloud:
+  nhn:
     enable: "y"
     k8scluster:
       enable: "y"
@@ -91,6 +91,6 @@ nlbsw:
   commandNlbDeploy: "sudo ~/deployNlb.sh"
   commandNlbAddTargetNode: "sudo ~/addTargetNode.sh"
   commandNlbApplyConfig: "sudo ~/applyConfig.sh"
-  nlbMcisCommonSpec: "aws-ap-northeast-2-t2-small"
-  nlbMcisCommonImage: "ubuntu18.04"
+  nlbMcisSpecId: "aws-ap-northeast-2-t2-small"
+  nlbMcisImageId: "ubuntu18.04"
   nlbMcisSubGroupSize: "2"

@@ -253,16 +253,16 @@ func RestPostSystemMci(c echo.Context) error {
 // @Description     {
 // @Description       "name": "aws-web-servers",
 // @Description       "subGroupSize": "3",
-// @Description       "commonSpec": "aws+us-east-1+t3.medium",
-// @Description       "commonImage": "ami-0abcdef1234567890",
+// @Description       "specId": "aws+us-east-1+t3.medium",
+// @Description       "imageId": "ami-0abcdef1234567890",
 // @Description       "rootDiskSize": "100",
 // @Description       "label": {"tier": "web", "provider": "aws"}
 // @Description     },
 // @Description     {
 // @Description       "name": "azure-api-servers",
 // @Description       "subGroupSize": "2",
-// @Description       "commonSpec": "azure+eastus+Standard_B2s",
-// @Description       "commonImage": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts",
+// @Description       "specId": "azure+eastus+Standard_B2s",
+// @Description       "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts",
 // @Description       "label": {"tier": "api", "provider": "azure"}
 // @Description     }
 // @Description   ]
@@ -284,7 +284,7 @@ func RestPostSystemMci(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID for resource organization and isolation" default(default)
-// @Param mciReq body model.TbMciDynamicReq true "Dynamic MCI request with common specifications. Must include commonSpec and commonImage for each VM group. See description for detailed example."
+// @Param mciReq body model.TbMciDynamicReq true "Dynamic MCI request with common specifications. Must include specId and imageId for each VM group. See description for detailed example."
 // @Param option query string false "Deployment option: 'hold' to create MCI without immediate VM provisioning" Enums(hold)
 // @Param x-request-id header string false "Custom request ID for tracking and correlation across API calls"
 // @Success 200 {object} model.TbMciInfo "Successfully created MCI with VM deployment status, resource mappings, and configuration details"
@@ -342,7 +342,7 @@ func RestPostMciDynamic(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciReq body model.TbMciDynamicReq true "Request body to review MCI dynamic provisioning. Must include commonSpec and commonImage info of each VM request. Same format as /mciDynamic endpoint. (ex: {name: mci01, vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04, commonSpec: aws+ap-northeast-2+t2.small}]})"
+// @Param mciReq body model.TbMciDynamicReq true "Request body to review MCI dynamic provisioning. Must include specId and imageId info of each VM request. Same format as /mciDynamic endpoint. (ex: {name: mci01, vm: [{imageId: aws+ap-northeast-2+ubuntu22.04, specId: aws+ap-northeast-2+t2.small}]})"
 // @Param option query string false "Option for MCI creation review (same as actual creation)" Enums(hold)
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Success 200 {object} model.ReviewMciDynamicReqInfo "Comprehensive review result with validation status, cost estimation, and recommendations"
@@ -397,8 +397,8 @@ func RestPostMciDynamicReview(c echo.Context) error {
 // @Description - **Workload Specialization**: Deploy VMs with different specifications for specific tasks
 // @Description
 // @Description **Configuration Requirements:**
-// @Description - `commonSpec`: Must specify valid VM specification from system namespace
-// @Description - `commonImage`: Must specify valid image compatible with target provider/region
+// @Description - `specId`: Must specify valid VM specification from system namespace
+// @Description - `imageId`: Must specify valid image compatible with target provider/region
 // @Description - `name`: Becomes subgroup name; VMs will be named with sequential suffixes
 // @Description - `subGroupSize`: Number of identical VMs to create (default: 1)
 // @Description
@@ -424,7 +424,7 @@ func RestPostMciDynamicReview(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID containing the target MCI" default(default)
 // @Param mciId path string true "MCI ID to which new VMs will be added" default(mci01)
-// @Param vmReq body model.TbCreateSubGroupDynamicReq true "SubGroup dynamic request specifying commonSpec, commonImage, and scaling parameters"
+// @Param vmReq body model.TbCreateSubGroupDynamicReq true "SubGroup dynamic request specifying specId, imageId, and scaling parameters"
 // @Success 200 {object} model.TbMciInfo "Updated MCI information including newly added VMs and current status"
 // @Failure 400 {object} model.SimpleMsg "Invalid VM request or incompatible configuration parameters"
 // @Failure 404 {object} model.SimpleMsg "Target MCI not found or specified resources unavailable"

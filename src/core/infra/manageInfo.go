@@ -542,14 +542,6 @@ func ListMciInfo(nsId string, option string) ([]model.TbMciInfo, error) {
 		return nil, err
 	}
 
-	/*
-		var content struct {
-			//Name string     `json:"name"`
-			Mci []infra.model.TbMciInfo `json:"mci"`
-		}
-	*/
-	// content := RestGetAllMciResponse{}
-
 	Mci := []model.TbMciInfo{}
 
 	mciList, err := ListMciId(nsId)
@@ -560,81 +552,13 @@ func ListMciInfo(nsId string, option string) ([]model.TbMciInfo, error) {
 
 	for _, v := range mciList {
 
-		key := common.GenMciKey(nsId, v, "")
-		keyValue, err := kvstore.GetKv(key)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			err = fmt.Errorf("In CoreGetAllMci(); kvstore.GetKv() returned an error.")
-			log.Error().Err(err).Msg("")
-			// return nil, err
-		}
-
-		if keyValue == (kvstore.KeyValue{}) {
-			return nil, fmt.Errorf("in CoreGetAllMci() mci loop; Cannot find " + key)
-		}
-		mciTmp := model.TbMciInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &mciTmp)
-		mciId := v
-		mciTmp.Id = mciId
-
-		if option == "status" || option == "simple" {
-			//get current mci status
-			mciStatus, err := GetMciStatus(nsId, mciId)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return nil, err
-			}
-			mciTmp.Status = mciStatus.Status
-		} else {
-			//Set current mci status with NullStr
-			mciTmp.Status = ""
-		}
-
-		// The cases with id, status, or others. except simple
-
-		vmList, err := ListVmId(nsId, mciId)
+		mciTmp, err := GetMciInfo(nsId, v)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
 		}
 
-		for _, v1 := range vmList {
-			vmKey := common.GenMciKey(nsId, mciId, v1)
-			vmKeyValue, err := kvstore.GetKv(key)
-			if err != nil {
-				err = fmt.Errorf("In CoreGetAllMci(); kvstore.GetKv() returned an error")
-				log.Error().Err(err).Msg("")
-				// return nil, err
-			}
-
-			if vmKeyValue == (kvstore.KeyValue{}) {
-				return nil, fmt.Errorf("in CoreGetAllMci() vm loop; Cannot find " + vmKey)
-			}
-			vmTmp := model.TbVmInfo{}
-			json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
-			vmTmp.Id = v1
-
-			if option == "status" {
-				//get current vm status
-				vmStatusInfoTmp, err := FetchVmStatus(nsId, mciId, v1)
-				if err != nil {
-					log.Error().Err(err).Msg("")
-				}
-				vmTmp.Status = vmStatusInfoTmp.Status
-			} else if option == "simple" {
-				vmSimpleTmp := model.TbVmInfo{}
-				vmSimpleTmp.Id = vmTmp.Id
-				vmSimpleTmp.Location = vmTmp.Location
-				vmTmp = vmSimpleTmp
-			} else {
-				//Set current vm status with NullStr
-				vmTmp.Status = ""
-			}
-
-			mciTmp.Vm = append(mciTmp.Vm, vmTmp)
-		}
-
-		Mci = append(Mci, mciTmp)
+		Mci = append(Mci, *mciTmp)
 	}
 
 	return Mci, nil
@@ -931,15 +855,15 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 	} else {
 		mciStatus.Status = statusFlagStr[9] + proportionStr
 	}
-	// for representing Failed status in front.
+	// // for representing Failed status in front.
 
-	proportionStr = ":" + strconv.Itoa(statusFlag[0]) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numVm) + ")"
-	if statusFlag[0] > 0 {
-		mciStatus.Status = "Partial-" + statusFlagStr[0] + proportionStr
-		if statusFlag[0] == numVm {
-			mciStatus.Status = statusFlagStr[0] + proportionStr
-		}
-	}
+	// proportionStr = ":" + strconv.Itoa(statusFlag[0]) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numVm) + ")"
+	// if statusFlag[0] > 0 {
+	// 	mciStatus.Status = "Partial-" + statusFlagStr[0] + proportionStr
+	// 	if statusFlag[0] == numVm {
+	// 		mciStatus.Status = statusFlagStr[0] + proportionStr
+	// 	}
+	// }
 
 	// proportionStr = "-(" + strconv.Itoa(statusFlag[9]) + "/" + strconv.Itoa(numVm) + ")"
 	// if statusFlag[9] > 0 {

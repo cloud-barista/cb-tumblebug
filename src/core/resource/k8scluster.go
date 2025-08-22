@@ -399,7 +399,7 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 					log.Err(createErr).Msgf("Not found the Image %s both from ns %s and SystemCommonNs", v.ImageId, nsId)
 					return emptyObj, createErr
 				} else {
-					log.Info().Msgf("Use the CommonImage %s in SystemCommonNs", spImgName)
+					log.Info().Msgf("Use the ImageId %s in SystemCommonNs", spImgName)
 				}
 			} else {
 				log.Info().Msgf("Use the Image %s in ns %s", spImgName, nsId)
@@ -419,7 +419,7 @@ func CreateK8sCluster(nsId string, req *model.TbK8sClusterReq, option string) (*
 				log.Err(createErr).Msgf("Not found the Spec %s both from ns %s and SystemCommonNs", v.SpecId, nsId)
 				return emptyObj, createErr
 			} else {
-				log.Info().Msgf("Use the CommonSpec %s in SystemCommonNs", spSpecName)
+				log.Info().Msgf("Use the SpecId %s in SystemCommonNs", spSpecName)
 			}
 		} else {
 			log.Info().Msgf("Use the Spec %s in ns %s", spSpecName, nsId)
@@ -624,7 +624,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 				log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
 				return emptyObj, err
 			} else {
-				log.Info().Msgf("Use the CommonImage %s in SystemCommonNs", spImgName)
+				log.Info().Msgf("Use the ImageId %s in SystemCommonNs", spImgName)
 			}
 		} else {
 			log.Info().Msgf("Use the Image %s in ns %s", spImgName, nsId)
@@ -645,7 +645,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.TbK8sNodeGroupRe
 			log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
 			return emptyObj, err
 		} else {
-			log.Info().Msgf("Use the CommonSpec %s in SystemCommonNs", spSpecName)
+			log.Info().Msgf("Use the SpecId %s in SystemCommonNs", spSpecName)
 		}
 	} else {
 		log.Info().Msgf("Use the Spec %s in ns %s", spSpecName, nsId)

@@ -117,8 +117,8 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
                     "label": "${label}",
                     "systemLabel": "Managed-by-Tumblebug",
                     "vm": [ {
-                            "commonImage": "${image}",
-                            "commonSpec": "${specId}",
+                            "imageId": "${image}",
+                            "specId": "${specId}",
                             "rootDiskType": "${rootDiskType}",
                             "rootDiskSize": "${rootDiskSize}",
                             "subGroupSize": "${subGroupSize}"

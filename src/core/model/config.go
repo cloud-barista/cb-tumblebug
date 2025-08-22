@@ -226,7 +226,7 @@ type Cloud struct {
 	Alibaba   CloudSetting `yaml:"alibaba"`
 	Tencent   CloudSetting `yaml:"tencent"`
 	Ibm       CloudSetting `yaml:"ibm"`
-	Nhncloud  CloudSetting `yaml:"nhncloud"`
+	NHN       CloudSetting `yaml:"nhn"`
 	Openstack CloudSetting `yaml:"openstack"`
 	Cloudit   CloudSetting `yaml:"cloudit"`
 }
@@ -254,8 +254,8 @@ type Nlbsw struct {
 	CommandNlbDeploy        string `yaml:"commandNlbDeploy"`
 	CommandNlbAddTargetNode string `yaml:"commandNlbAddTargetNode"`
 	CommandNlbApplyConfig   string `yaml:"commandNlbApplyConfig"`
-	NlbMciCommonSpec        string `yaml:"nlbMciCommonSpec"`
-	NlbMciCommonImage       string `yaml:"nlbMciCommonImage"`
+	NlbMciSpecId            string `yaml:"nlbMciSpecId"`
+	NlbMciImageId           string `yaml:"nlbMciImageId"`
 	NlbMciSubGroupSize      string `yaml:"nlbMciSubGroupSize"`
 }
 

@@ -961,7 +961,7 @@ def check_and_prepare_namespace(preferred_ns_id: Optional[str] = None) -> Dict:
         if preferred_ns_id == "default":
             # Automatically create "default" namespace if it doesn't exist
             try:
-                create_result = create_namespace_with_validation(
+                create_result = _internal_create_namespace_with_validation(
                     name="default",
                     description="Default namespace for MCI operations"
                 )
@@ -1547,7 +1547,7 @@ def search_images(
     is_kubernetes_image: Optional[bool] = None,
     include_basic_image_only: Optional[bool] = None,
     detail_search_keys: Optional[List[str]] = None,
-    max_results: Optional[int] = None
+    max_results: Optional[Union[int, str]] = None
 ) -> Dict:
     """
     Search for available images based on specific criteria.
@@ -1562,7 +1562,7 @@ def search_images(
     1. First call get_image_search_options() to see available search parameters
     2. Use this function to search for images matching your requirements
     3. From the results, identify the 'cspImageName' of your desired image
-    4. Use the 'cspImageName' as 'commonImage' parameter in create_mci_dynamic()
+    4. Use the 'cspImageName' as 'imageId' parameter in create_mci_dynamic()
     
     Example workflows:
     A) **RECOMMENDED - With MatchedSpecId (simple OS type):**
@@ -1624,12 +1624,21 @@ def search_images(
     - **CSP-specific filtering**: NCP specs automatically filter by CorrespondingImageIds
     - **Detail search**: Use detail_search_keys for advanced keyword-based searching
     - **Basic images**: Use include_basic_image_only=True for clean OS installations only
-    - The 'cspImageName' from search results becomes the 'commonImage' parameter when creating MCIs
+    - The 'cspImageName' from search results becomes the 'imageId' parameter when creating MCIs
     - For optimal image selection, use select_best_image() helper function
     - **CRITICAL**: Each VM spec requires its own image search for proper compatibility
     - **LLM GUIDANCE**: Empty results include structured guidance to prevent "Canceled" responses
     - **SPEC ALTERNATIVES**: When matched_spec_id yields no results, guides to use recommend_vm_spec()
     """
+    # Handle type conversion for max_results (MCP client may send string)
+    if max_results is not None:
+        if isinstance(max_results, str):
+            try:
+                max_results = int(max_results)
+            except ValueError:
+                logger.warning(f"Invalid max_results value: {max_results}, using default")
+                max_results = None
+    
     # Build request data according to model.SearchImageRequest spec
     data = {}
     
@@ -1830,7 +1839,7 @@ def search_images(
 @mcp.tool()
 def recommend_vm_spec(
     filter_policies: Dict[str, Any] = None,
-    limit: str = "50",
+    limit: Union[str, int] = "50",
     priority_policy: str = "location",
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
@@ -1859,8 +1868,8 @@ def recommend_vm_spec(
     1. Use this function to find specs with location priority → get specification IDs
     2. Use search_images() to find suitable images for the specs' CSPs/regions
     3. Use both values in create_mci_dynamic():
-       - commonSpec: specification ID from this function (NEVER modify)
-       - commonImage: cspImageName from search_images()
+       - specId: specification ID from this function (NEVER modify)
+       - imageId: cspImageName from search_images()
     
     **Example for Location-Based Request:**
     ```python
@@ -1902,7 +1911,7 @@ def recommend_vm_spec(
     Returns:
         🚨 CRITICAL: Use the returned spec IDs exactly as provided
         Recommended VM specifications including:
-        - id: Specification ID (use as 'commonSpec' in create_mci_dynamic() WITHOUT modification)
+        - id: Specification ID (use as 'specId' in create_mci_dynamic() WITHOUT modification)
         - vCPU: Number of virtual CPUs
         - memoryGiB: Memory in GB
         - costPerHour: Estimated hourly cost (if -1, pricing information is unavailable)
@@ -1917,9 +1926,15 @@ def recommend_vm_spec(
     ❌ NEVER guess spec formats based on patterns
     
     **CRITICAL for MCI Creation:**
-    The 'id' field from results becomes the 'commonSpec' parameter in create_mci_dynamic().
+    The 'id' field from results becomes the 'specId' parameter in create_mci_dynamic().
     Format is typically: {provider}+{region}+{spec_name} but MUST be from API response.
     """
+    # Handle type conversion for limit (API expects string but MCP client may send int)
+    if isinstance(limit, int):
+        limit = str(limit)
+    elif limit is None:
+        limit = "50"  # Default value
+    
     # Configure filter policies according to API spec
     if filter_policies is None:
         filter_policies = {}
@@ -1984,6 +1999,46 @@ def recommend_vm_spec(
     # Summarize response to reduce token usage
     return _summarize_vm_specs(raw_response, include_details=include_full_details)
 
+# Helper functions for formatting user-friendly review results
+def _format_vm_summary_for_user(vm_reviews: List[Dict]) -> str:
+    """Format VM review summary for user display"""
+    if not vm_reviews:
+        return "No VM configurations provided"
+    
+    summary_lines = []
+    for i, vm_review in enumerate(vm_reviews, 1):
+        provider = vm_review.get("providerName", "Unknown")
+        region = vm_review.get("regionName", "Unknown")
+        status = vm_review.get("status", "Unknown")
+        can_create = vm_review.get("canCreate", False)
+        
+        status_icon = "✅" if can_create else "❌"
+        summary_lines.append(f"  {i}. {provider} ({region}) - {status} {status_icon}")
+    
+    return "\n".join(summary_lines)
+
+def _format_warnings_for_user(vm_reviews: List[Dict]) -> str:
+    """Format VM warnings for user display"""
+    warning_lines = []
+    for i, vm_review in enumerate(vm_reviews, 1):
+        if vm_review.get("status") == "Warning":
+            provider = vm_review.get("providerName", "Unknown")
+            message = vm_review.get("message", "No details available")
+            warning_lines.append(f"  {i}. {provider}: {message}")
+    
+    return "\n".join(warning_lines) if warning_lines else "No warnings found"
+
+def _format_errors_for_user(vm_reviews: List[Dict]) -> str:
+    """Format VM errors for user display"""
+    error_lines = []
+    for i, vm_review in enumerate(vm_reviews, 1):
+        if vm_review.get("status") == "Error" or not vm_review.get("canCreate", True):
+            provider = vm_review.get("providerName", "Unknown")
+            message = vm_review.get("message", "No details available")
+            error_lines.append(f"  {i}. {provider}: {message}")
+    
+    return "\n".join(error_lines) if error_lines else "No errors found"
+
 # Helper function: Internal MCI dynamic validation (used by both review and create functions)
 def _internal_review_mci_dynamic(
     ns_id: str,
@@ -2023,8 +2078,8 @@ def _internal_review_mci_dynamic(
         
         for i, vm_review in enumerate(result["vmReviews"]):
             vm_config = vm_configurations[i] if i < len(vm_configurations) else {}
-            spec_id = vm_config.get("commonSpec")
-            image_name = vm_config.get("commonImage")
+            spec_id = vm_config.get("specId")
+            image_name = vm_config.get("imageId")
             
             # Get historical risk analysis for this spec
             risk_analysis = {}
@@ -2103,7 +2158,7 @@ def _internal_review_mci_dynamic(
                     "provider": provider_name,
                     "errors": errors,
                     "warnings": warnings,
-                    "spec_id": vm_config.get("commonSpec", "")
+                    "spec_id": vm_config.get("specId", "")
                 })
                 
                 # Check for specific provisioning issues that need reconfiguration
@@ -2113,7 +2168,7 @@ def _internal_review_mci_dynamic(
                             "vm_index": i,
                             "provider": provider_name,
                             "issue": error,
-                            "spec_id": vm_config.get("commonSpec", "")
+                            "spec_id": vm_config.get("specId", "")
                         })
                         reconfiguration_needed = True
         
@@ -2179,7 +2234,104 @@ def _internal_review_mci_dynamic(
             result["_deployment_summary"] = {
                 "total_vms_to_deploy": vm_count,
                 "estimated_hourly_cost": estimated_cost,
+                "estimated_monthly_cost": f"~${float(estimated_cost.replace('$', '').replace('/hour', '')) * 24 * 30:.2f}/month" if "$" in estimated_cost and "/hour" in estimated_cost else "Estimate unavailable",
                 "note": "VM count includes all VMs in SubGroups (subGroupSize considered)"
+            }
+        
+        # 🎯 ENHANCED: Add LLM-friendly user interaction guidance
+        creation_viable = result.get("creationViable", False)
+        overall_status = result.get("overallStatus", "Unknown")
+        
+        if creation_viable and overall_status == "Ready":
+            result["_llm_guidance"] = {
+                "status": "READY_TO_CREATE",
+                "message": "✅ Configuration validated successfully! All VMs can be created.",
+                "next_action": "ASK_USER_CONFIRMATION",
+                "user_prompt": f"""
+🎯 **MCI Creation Plan Validated Successfully!**
+
+📊 **Deployment Summary:**
+• Total VMs: {result.get('totalVmCount', 'N/A')}
+• Estimated Cost: {result.get('estimatedCost', 'N/A')}
+• Status: All configurations validated ✅
+
+💰 **Cost Information:**
+• Hourly: {result.get('estimatedCost', 'N/A')}
+• Monthly (estimated): {result.get('_deployment_summary', {}).get('estimated_monthly_cost', 'N/A')}
+
+🔧 **Specifications:**
+{_format_vm_summary_for_user(vm_reviews)}
+
+**Would you like to proceed with creating this MCI infrastructure?**
+- ✅ **Yes** - I'll create the MCI with these specifications
+- ❌ **No** - I want to modify the configuration first
+- 📋 **Details** - Show me more detailed validation results
+
+*Reply with your choice to continue.*
+""",
+                "confirmation_required": True,
+                "proceed_command": "create_mci_dynamic(..., force_create=True)"
+            }
+        elif creation_viable and overall_status == "Warning":
+            result["_llm_guidance"] = {
+                "status": "READY_WITH_WARNINGS",
+                "message": "⚠️ Configuration has warnings but can proceed.",
+                "next_action": "SHOW_WARNINGS_AND_ASK_CONFIRMATION",
+                "user_prompt": f"""
+⚠️ **MCI Creation Plan - Warnings Detected**
+
+📊 **Deployment Summary:**
+• Total VMs: {result.get('totalVmCount', 'N/A')}
+• Estimated Cost: {result.get('estimatedCost', 'N/A')}
+• Status: Can create with warnings ⚠️
+
+⚠️ **Warnings Found:**
+{_format_warnings_for_user(vm_reviews)}
+
+💰 **Cost Information:**
+• Hourly: {result.get('estimatedCost', 'N/A')}
+• Monthly (estimated): {result.get('_deployment_summary', {}).get('estimated_monthly_cost', 'N/A')}
+
+**Despite the warnings, would you like to proceed with creating this MCI?**
+- ✅ **Yes** - Proceed anyway (warnings are acceptable)
+- ❌ **No** - I want to fix the warnings first
+- 📋 **Details** - Show me detailed warning information
+
+*Please review the warnings and let me know your decision.*
+""",
+                "confirmation_required": True,
+                "proceed_command": "create_mci_dynamic(..., force_create=True)"
+            }
+        else:
+            result["_llm_guidance"] = {
+                "status": "CANNOT_CREATE",
+                "message": "❌ Configuration has errors that must be fixed before creation.",
+                "next_action": "SHOW_ERRORS_AND_GUIDE_FIXES",
+                "user_prompt": f"""
+❌ **MCI Creation Plan - Errors Must Be Fixed**
+
+📊 **Review Results:**
+• Total VMs: {result.get('totalVmCount', 'N/A')}
+• Status: Cannot create due to errors ❌
+
+🚫 **Errors Found:**
+{_format_errors_for_user(vm_reviews)}
+
+🔧 **Recommended Actions:**
+1. Use `recommend_vm_spec()` to get alternative VM specifications
+2. Check `search_images()` for compatible images in different regions
+3. Verify CSP provider availability and quotas
+4. Update vm_configurations and run review again
+
+**I'll help you fix these issues. Would you like me to:**
+- 🔄 **Find alternatives** - Search for different VM specs/images
+- 📋 **Show details** - Display detailed error information
+- 🛠️ **Guide fixes** - Step-by-step troubleshooting
+
+*Let me know how you'd like to proceed with fixing these issues.*
+""",
+                "confirmation_required": False,
+                "proceed_command": "Fix errors first, then re-run review"
             }
         
         # Add workflow recommendations
@@ -2206,43 +2358,45 @@ def review_mci_dynamic_request(
     hold: bool = False
 ) -> Dict:
     """
-    🔍 CRITICAL PRE-VALIDATION: Review and validate MCI Dynamic Request before actual creation.
+    🔍 MANDATORY FIRST STEP: Review and validate MCI Dynamic Request before creation.
     
-    **MANDATORY USAGE BEFORE MCI CREATION:**
-    This tool performs comprehensive validation of your MCI creation request to:
-    - Validate VM specifications and configurations
-    - Check resource availability and compatibility
-    - Identify potential issues before deployment
-    - Provide optimization recommendations
-    - Estimate costs and deployment time
+    **🚨 CRITICAL: ALWAYS CALL THIS BEFORE create_mci_dynamic():**
+    This tool performs comprehensive validation and MUST be used as the first step in MCI creation:
     
-    **RECOMMENDED WORKFLOW:**
+    **✅ REQUIRED WORKFLOW:**
     ```python
-    # STEP 1: ALWAYS review before creating MCI
+    # STEP 1: 🔍 MANDATORY - Review configuration first
     review_result = review_mci_dynamic_request(
         ns_id="my-project",
-        name="web-app-cluster",
+        name="web-app-cluster", 
         vm_configurations=vm_configs  # From recommend_vm_spec()
     )
     
-    # STEP 2: Check validation results
-    if review_result.get("validation_passed", False):
-        # Safe to proceed with MCI creation
-        mci = create_mci_dynamic(...)
+    # STEP 2: 📋 Check validation results
+    if review_result.get("overallStatus") == "Ready":
+        # ✅ Safe to proceed with MCI creation
+        mci = create_mci_dynamic(
+            ns_id="my-project",
+            name="web-app-cluster",
+            vm_configurations=vm_configs,
+            force_create=True  # Required after review
+        )
     else:
-        # Address validation issues first
-        print("Validation failed:", review_result.get("issues", []))
+        # ❌ Fix validation issues first
+        print("Validation issues:", review_result.get("vmReviews", []))
+        # Modify vm_configurations and re-run review
     ```
     
-    **VALIDATION CHECKS PERFORMED:**
-    - ✅ VM specification validity (commonSpec format and existence)
-    - ✅ Image compatibility with specifications  
-    - ✅ Resource quotas and availability
+    **🔬 COMPREHENSIVE VALIDATION CHECKS:**
+    - ✅ VM specification validity and availability
+    - ✅ Image compatibility with specifications
+    - ✅ Resource quotas and regional availability  
     - ✅ Network configuration validation
-    - ✅ Security group and SSH key requirements
-    - ✅ Cross-CSP compatibility issues
-    - ✅ Cost estimation and optimization suggestions (SubGroup-aware)
-    - ✅ Accurate VM count calculation (includes all VMs in SubGroups)
+    - ✅ Security and access requirements
+    - ✅ Cross-CSP compatibility analysis
+    - ✅ Accurate cost estimation (SubGroup-aware)
+    - ✅ Total VM count calculation (includes SubGroup multipliers)
+    - ✅ Risk assessment and optimization recommendations
     
     **COST & VM COUNT CALCULATION:**
     - Total VM count considers SubGroup sizes (e.g., subGroupSize="3" = 3 VMs)
@@ -2253,8 +2407,8 @@ def review_mci_dynamic_request(
         ns_id: Namespace ID for MCI deployment
         name: MCI name (must be unique within namespace)
         vm_configurations: List of VM configuration dictionaries. Each VM config should include:
-            - commonSpec: VM specification ID from recommend_vm_spec() (REQUIRED)
-            - commonImage: CSP-specific image identifier (optional - auto-mapped if omitted)
+            - specId: VM specification ID from recommend_vm_spec() (REQUIRED)
+            - imageId: CSP-specific image identifier (optional - auto-mapped if omitted)
             - name: VM or subGroup name (optional)
             - description: VM description (optional)
             - subGroupSize: Number of VMs in subgroup (default "1") - affects total VM count and cost
@@ -2271,44 +2425,80 @@ def review_mci_dynamic_request(
         hold: Whether to hold provisioning for review
     
     Returns:
-        Comprehensive validation results including:
-        - validation_passed: Boolean indicating if validation passed
-        - summary: High-level validation summary
-        - vm_validations: Detailed validation for each VM configuration
-        - issues: List of critical issues that must be addressed
-        - warnings: List of warnings and recommendations
-        - info: General information and suggestions
-        - estimated_cost: Cost estimation if available
-        - deployment_time_estimate: Expected deployment duration
-        - optimization_suggestions: Recommendations for improvement
+        **🎯 COMPREHENSIVE VALIDATION RESULTS:**
         
-    **EXAMPLE RESPONSE:**
-    ```json
-    {
-        "validation_passed": true,
-        "summary": "All VM configurations are valid",
-        "vm_validations": [
-            {
-                "vm_index": 0,
-                "status": "valid",
-                "spec_info": {...},
-                "image_info": {...},
-                "issues": [],
-                "warnings": [],
-                "info": ["Custom root disk type configured: gp3"]
+        **📊 MAIN STATUS FIELDS:**
+        - overallStatus: "Ready" | "Warning" | "Error" - Overall validation status
+        - overallMessage: Summary of validation results  
+        - creationViable: Boolean - Whether MCI can be created
+        - estimatedCost: String - Cost estimate (e.g., "$0.0837/hour")
+        - totalVmCount: Number - Total VMs to be created (includes SubGroup sizes)
+        - vmReviews: Array - Detailed validation for each VM configuration
+        
+        **🎯 LLM GUIDANCE FIELDS:**
+        - _llm_guidance: Object with user interaction instructions including:
+          • status: "READY_TO_CREATE" | "READY_WITH_WARNINGS" | "CANNOT_CREATE"
+          • message: Human-readable status description
+          • user_prompt: Ready-to-display message for user confirmation
+          • confirmation_required: Boolean indicating if user input needed
+          • proceed_command: Next function call to execute
+        
+        **📊 DETAILED VM VALIDATION:**
+        Each vmReview includes:
+        - status: "Ready" | "Warning" | "Error"
+        - message: Validation result description
+        - canCreate: Boolean - Whether this VM can be created
+        - specValidation: Spec availability and details
+        - imageValidation: Image compatibility and details
+        - estimatedCost: Per-VM cost estimation
+        
+        **✅ READY TO CREATE EXAMPLE:**
+        ```json
+        {
+            "overallStatus": "Ready",
+            "overallMessage": "All VMs can be created successfully",
+            "creationViable": true,
+            "estimatedCost": "$0.0837/hour",
+            "totalVmCount": 2,
+            "_llm_guidance": {
+                "status": "READY_TO_CREATE",
+                "user_prompt": "Configuration validated! Would you like to proceed?",
+                "confirmation_required": true
             }
-        ],
-        "estimated_cost": "~$0.15/hour",
-        "deployment_time_estimate": "3-5 minutes",
-        "optimization_suggestions": [...]
-    }
-    ```
-    
-    **⚠️ IMPORTANT NOTES:**
-    - This tool does NOT create actual infrastructure
-    - Use create_mci_dynamic() only after successful validation
-    - Address all critical issues before proceeding
-    - Consider optimization suggestions for better performance/cost
+        }
+        ```
+        
+        **⚠️ WARNINGS DETECTED EXAMPLE:**
+        ```json
+        {
+            "overallStatus": "Warning", 
+            "creationViable": true,
+            "_llm_guidance": {
+                "status": "READY_WITH_WARNINGS",
+                "user_prompt": "Warnings found but can proceed. Continue anyway?",
+                "confirmation_required": true
+            }
+        }
+        ```
+        
+        **❌ ERRORS FOUND EXAMPLE:**
+        **❌ ERRORS FOUND EXAMPLE:**
+        ```json
+        {
+            "overallStatus": "Error",
+            "creationViable": false, 
+            "_llm_guidance": {
+                "status": "CANNOT_CREATE",
+                "user_prompt": "Errors must be fixed before proceeding. Would you like help?",
+                "confirmation_required": false
+            }
+        }
+        ```
+        
+        **🔄 NEXT STEPS:**
+        1. **If Ready**: Display user_prompt from _llm_guidance, get confirmation, then call create_mci_dynamic(force_create=True)
+        2. **If Warnings**: Show warnings in user_prompt, get user decision, then proceed if approved
+        3. **If Errors**: Display errors, offer to help fix issues, do NOT proceed to creation
     """
     return _internal_review_mci_dynamic(
         ns_id=ns_id,
@@ -2379,36 +2569,69 @@ def create_mci_dynamic(
     force_create: bool = False
 ) -> Dict:
     """
-    🚨 CRITICAL: VM specifications MUST come from recommend_vm_spec() - NEVER create spec IDs manually.
+    🚨 CRITICAL: MANDATORY TWO-STEP WORKFLOW - Review THEN Create
     
-    Create Multi-Cloud Infrastructure dynamically using the official API specification.
-    This is the RECOMMENDED method for MCI creation with MANDATORY spec validation.
+    Create Multi-Cloud Infrastructure dynamically with REQUIRED pre-validation step.
     
     **🔥 ABSOLUTELY REQUIRED WORKFLOW:**
     ```python
-    # STEP 1: MANDATORY - Get valid spec IDs from recommend_vm_spec()
-    # For location-based requests: Use user's location coordinates
+    # STEP 1: Get VM specifications from recommend_vm_spec()
     specs = recommend_vm_spec(
         filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
-        priority_policy="location",  # When user mentions location
-        latitude=37.4419,            # User's desired location
-        longitude=-122.1430          # (e.g., Silicon Valley)
+        priority_policy="location",
+        latitude=37.4419,
+        longitude=-122.1430
     )
     
-    # STEP 2: REQUIRED - Use ONLY the returned spec IDs
+    # STEP 2: Search and select images for each spec
     vm_configurations = []
-for i, spec in enumerate(specs["recommended_specs"][:2]):
-    vm_configurations.append({
-        "commonSpec": spec["id"],  # 🚨 MUST use exact ID from API response
-        "name": f"vm-{spec['providerName']}-{i+1}",
-        "subGroupSize": "1",
-        # NOTE: commonImage will be auto-mapped to spec's CSP/region
-        # For manual image selection, use search_images() and select_best_image_for_spec()
-    })    # STEP 3: Create MCI with validated specifications
-    create_mci_dynamic(
+    for i, spec in enumerate(specs["recommended_specs"][:2]):
+        spec_id = spec["id"]  # e.g., "aws+ap-northeast-2+t2.small"
+        
+        # 2.1: Search for compatible images using matched_spec_id
+        images = search_images(
+            matched_spec_id=spec_id,     # Auto-applies provider/region/arch
+            os_type="ubuntu",            # or "centos", "windows", etc.
+            include_basic_image_only=True  # Prefer clean OS installations
+        )
+        
+        # 2.2: Select best image for this specific spec
+        if images.get("imageList"):
+            best_image = select_best_image_for_spec(
+                images["imageList"], 
+                spec, 
+                {"os_type": "ubuntu", "prefer_basic": True}
+            )
+            selected_image_id = best_image["cspImageName"]
+        else:
+            raise Exception(f"No compatible images found for spec {spec_id}")
+        
+        # 2.3: Create VM configuration with REQUIRED imageId
+        vm_configurations.append({
+            "specId": spec_id,                    # 🚨 REQUIRED
+            "imageId": selected_image_id,         # 🚨 REQUIRED - CSP-specific image ID
+            "name": f"vm-{spec['providerName']}-{i+1}",
+            "subGroupSize": "1"
+        })
+    
+    # STEP 3: 🔍 MANDATORY REVIEW STEP - Always review first!
+    review_result = review_mci_dynamic_request(
         ns_id="default",
-        name="location-based-mci",
+        name="my-mci",
         vm_configurations=vm_configurations
+    )
+    
+    # STEP 4: Check review results and fix any issues
+    if review_result.get("overallStatus") != "Ready":
+        # Fix configuration issues based on review feedback
+        # Re-run review until status is "Ready"
+    
+    # STEP 5: 🚀 Create MCI only after successful review
+    mci = create_mci_dynamic(
+        ns_id="default",
+        name="my-mci",
+        vm_configurations=vm_configurations,
+        force_create=True  # Required to bypass review enforcement
     )
     ```
     
@@ -2442,7 +2665,7 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
     vm_configs = []
     for spec in specs["recommended_specs"]:
         vm_configs.append({
-            "commonSpec": spec["id"],  # e.g., "aws+us-west-1+t3.medium"
+            "specId": spec["id"],  # e.g., "aws+us-west-1+t3.medium"
             "name": f"vm-{spec['regionName']}-{len(vm_configs)+1}",
             "description": f"VM in {spec['regionName']} near Silicon Valley"
         })
@@ -2475,8 +2698,8 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
         
         # 5. Add VM config with spec-matched image
         vm_configs.append({
-            "commonImage": best_image["cspImageName"],  # CSP-specific image
-            "commonSpec": spec_id,                      # CSP-specific spec
+            "imageId": best_image["cspImageName"],  # CSP-specific image
+            "specId": spec_id,                      # CSP-specific spec
             "name": f"vm-{spec['providerName']}-{i+1}",
             "description": f"VM on {spec['providerName']} in {spec['regionName']}",
             "subGroupSize": "1"
@@ -2496,21 +2719,22 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
         vm_configurations: List of VM configuration dictionaries (required). Each VM config should include:
             
             **CRITICAL REQUIREMENTS FOR MCI DYNAMIC:**
-            - commonSpec: EXACT spec ID from recommend_vm_spec() API response (required)
+            - specId: EXACT spec ID from recommend_vm_spec() API response (REQUIRED)
                 * Must use full spec ID like "aws+ap-northeast-2+t2.small"
                 * Do NOT modify or truncate the spec ID
                 * Each spec ID is tied to specific CSP provider and region
             
-            - commonImage: EXACT cspImageName from search_images() API response (required for production)
+            - imageId: EXACT cspImageName from search_images() API response (REQUIRED)
                 * Must use exact "cspImageName" field value from image search results
                 * CSP-specific image identifier (e.g., "ami-0c02fb55956c7d316" for AWS)
-                * MUST match the same CSP provider and region as commonSpec
+                * MUST match the same CSP provider and region as specId
+                * CANNOT be omitted - imageId is mandatory for all VM configurations
                 * Example workflow:
                   1. Use recommend_vm_spec() to get spec ID "aws+ap-northeast-2+t2.small"
                   2. Extract provider "aws" and region "ap-northeast-2" from spec ID
-                  3. Use search_images(provider="aws", region="ap-northeast-2") to get images
+                  3. Use search_images(matched_spec_id=spec_id, os_type="ubuntu") to get compatible images
                   4. Use exact "cspImageName" from search results (e.g., "ami-0c02fb55956c7d316")
-                  5. Set commonSpec="aws+ap-northeast-2+t2.small", commonImage="ami-0c02fb55956c7d316"
+                  5. Set specId="aws+ap-northeast-2+t2.small", imageId="ami-0c02fb55956c7d316"
             
             **Other Configuration Options:**
             - name: VM name or subGroup name (optional)
@@ -2529,7 +2753,7 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
     1. Always use recommend_vm_spec() first to get valid spec IDs
     2. Extract CSP provider and region from each spec ID (format: "provider+region+instance_type")
     3. Use search_images() with matching provider/region to get compatible images
-    4. Use EXACT spec ID in commonSpec and EXACT cspImageName in commonImage
+    4. Use EXACT spec ID in specId and EXACT cspImageName in imageId
     5. Validate that spec and image are from same CSP provider and region
         system_label: System label for special purposes (optional)
         label: Key-value pairs for MCI labeling (optional)
@@ -2540,22 +2764,24 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
         force_create: Bypass confirmation and create MCI immediately (default: False)
     
     Returns:
-        **CONFIRMATION WORKFLOW (default behavior):**
-        When force_create=False and skip_confirmation=False:
-        - Returns comprehensive creation summary with:
-          • Detailed cost analysis (hourly/monthly estimates)
-          • CSP and region distribution
-          • VM specifications and deployment strategy
-          • Risk assessment and recommendations
-          • User confirmation prompt with next steps
+        **REVIEW ENFORCEMENT (default behavior):**
+        When force_create=False (default):
+        - Returns error requiring review_mci_dynamic_request() to be called first
+        - Provides guidance on proper workflow steps
+        - Includes next step instructions
         
-        **IMMEDIATE CREATION:**
-        When force_create=True or skip_confirmation=True:
+        **MCI CREATION (after review):**
+        When force_create=True (after successful review):
         - Created MCI information including:
           • id: MCI ID for future operations
-          • vm: List of created VMs with their details (in response)
+          • vm: List of created VMs with their details  
           • status: Current MCI status
           • deployment summary
+        
+        **WORKFLOW ENFORCEMENT:**
+        This function enforces the two-step process:
+        1. review_mci_dynamic_request() - Validates configuration and estimates costs
+        2. create_mci_dynamic(force_create=True) - Actually creates the infrastructure
         
     **USER CONFIRMATION WORKFLOW:**
     ```python
@@ -2577,63 +2803,60 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
     ```
         
     **Important Notes:**
-    - commonSpec is required for all VM configurations
-    - commonImage is optional - if omitted, will be auto-mapped based on commonSpec's CSP/region
-    - Auto-mapping ensures each VM gets the correct CSP-specific image (AWS AMI, Azure Image ID, etc.)
-    - Manual commonImage is validated against commonSpec for compatibility
-    - The format for commonSpec is typically: {provider}+{region}+{spec_name}
-    - Each VM configuration automatically gets the appropriate image for its specification
+    - specId is REQUIRED for all VM configurations - cannot be omitted
+    - imageId is REQUIRED for all VM configurations - cannot be omitted
+    - Both specId and imageId must be from compatible CSP provider and region
+    - specId format: {provider}+{region}+{spec_name} (e.g., "aws+ap-northeast-2+t2.small")
+    - imageId format: CSP-specific image identifier (e.g., "ami-0c02fb55956c7d316" for AWS)
+    - Use matched_spec_id in search_images() for automatic compatibility filtering
     - Use subGroupSize > 1 to create multiple VMs with same configuration
-    - For multi-CSP deployments, each VM will automatically get its provider-specific image
+    - For multi-CSP deployments, each VM needs its own provider-specific image
     """
     
-    # STEP 0: AUTOMATIC PRE-VALIDATION (always performed unless explicitly skipped)
-    if not force_create:
-        logger.info("🔍 Performing automatic pre-validation of MCI configuration...")
-        
-        # Run comprehensive validation using internal helper function
-        review_result = _internal_review_mci_dynamic(
-            ns_id=ns_id,
-            name=name,
-            vm_configurations=vm_configurations,
-            description=description,
-            system_label=system_label,
-            label=label,
-            post_command=post_command,
-            hold=hold
-        )
-        
-        # Check validation results
-        validation_passed = review_result.get("summary", {}).get("validationPassed", False)
-        
-        if not validation_passed:
-            # Critical validation failure - cannot proceed
-            return {
-                "error": "❌ MCI configuration validation failed",
-                "validation_result": review_result,
-                "critical_issues": review_result.get("summary", {}).get("totalErrors", 0),
-                "warnings": review_result.get("summary", {}).get("totalWarnings", 0),
-                "guidance": [
-                    "Fix all critical issues before proceeding with MCI creation",
-                    "Check vm_validations array for specific VM configuration problems",
-                    "Use review_mci_dynamic_request() for detailed validation analysis",
-                    "Ensure all commonSpec values come from recommend_vm_spec() results"
-                ],
-                "next_steps": [
-                    "1. Address all errors reported in validation_result",
-                    "2. Re-run review_mci_dynamic_request() to verify fixes",
-                    "3. Use create_mci_dynamic() again after validation passes"
-                ]
-            }
-        else:
-            logger.info("✅ Pre-validation passed! Proceeding with MCI creation workflow...")
-            
-            # Add validation summary to any confirmation workflow
-            if not skip_confirmation:
-                logger.debug("📊 Validation Summary:")
-                logger.debug(f"   • Total VMs validated: {len(vm_configurations)}")
-                logger.debug(f"   • Warnings: {review_result.get('summary', {}).get('totalWarnings', 0)}")
-                logger.debug(f"   • Info messages: {review_result.get('summary', {}).get('totalInfo', 0)}")
+    # CRITICAL: Enforce explicit review step before MCI creation
+    if not force_create and not skip_confirmation:
+        return {
+            "error": "❌ MCI creation requires prior validation - MANDATORY WORKFLOW",
+            "message": "🚨 STOP: You MUST run review_mci_dynamic_request() first before creating MCI!",
+            "workflow_violation": "REVIEW_STEP_SKIPPED",
+            "required_workflow": [
+                "1. 🔍 MANDATORY: Call review_mci_dynamic_request() with the same parameters",
+                "2. 📋 EXAMINE: Review validation results, cost estimates, and any warnings/errors", 
+                "3. 🔧 FIX: Address any validation issues if needed",
+                "4. ✅ CREATE: Call create_mci_dynamic() with force_create=True to proceed"
+            ],
+            "why_review_required": [
+                "🛡️ Prevents expensive deployment failures",
+                "💰 Provides accurate cost estimation before spending money",
+                "🔍 Validates VM specifications and image compatibility",
+                "⚠️ Identifies potential issues before infrastructure creation",
+                "📊 Shows detailed deployment plan for informed decisions"
+            ],
+            "llm_instructions": {
+                "immediate_action": "CALL_REVIEW_FUNCTION",
+                "message_to_user": "I need to validate this MCI configuration first to ensure it will work and show you the cost estimates. Let me run the review step.",
+                "next_function_call": f"review_mci_dynamic_request(ns_id='{ns_id}', name='{name}', vm_configurations=<same_configurations>)",
+                "after_review": "After review completes, I'll show you the results and ask for confirmation before creating the infrastructure."
+            },
+            "example_code": f'''
+# STEP 1: Review first (MANDATORY)
+review_result = review_mci_dynamic_request(
+    ns_id="{ns_id}",
+    name="{name}",
+    vm_configurations=vm_configurations
+)
+
+# STEP 2: Check results and create if valid
+if review_result.get("overallStatus") == "Ready":
+    mci = create_mci_dynamic(
+        ns_id="{ns_id}",
+        name="{name}",
+        vm_configurations=vm_configurations,
+        force_create=True
+    )
+''',
+            "critical_note": "🚨 This error is intentional to enforce proper workflow. Do NOT bypass this step."
+        }
     
     # STEP 1: User confirmation workflow (unless explicitly skipped or forced)
     if not skip_confirmation and not force_create:
@@ -2693,16 +2916,16 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
     # Validate required VM configuration fields and auto-map images if needed
     processed_vm_configs = []
     for i, vm_config in enumerate(vm_configurations):
-        # Check if commonSpec is provided
-        if "commonSpec" not in vm_config:
+        # Check if specId is provided
+        if "specId" not in vm_config:
             return {
                 "error": f"VM configuration {i} validation failed",
-                "details": "VM configuration must include 'commonSpec'",
-                "suggestion": "Use recommend_vm_spec() to get 'commonSpec'"
+                "details": "VM configuration must include 'specId'",
+                "suggestion": "Use recommend_vm_spec() to get 'specId'"
             }
         
-        common_spec = vm_config["commonSpec"]
-        common_image = vm_config.get("commonImage")
+        common_spec = vm_config["specId"]
+        common_image = vm_config.get("imageId")
         
         # Auto-map image if not provided or validate existing mapping
         if not common_image:
@@ -2762,7 +2985,7 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
                         }
                 
                 # Use the auto-selected image
-                vm_config["commonImage"] = chosen_image["cspImageName"]
+                vm_config["imageId"] = chosen_image["cspImageName"]
                 vm_config["_auto_mapped_image"] = True
                 vm_config["_image_selection_info"] = {
                     "provider": provider,
@@ -2775,7 +2998,7 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
                 return {
                     "error": f"Auto image mapping failed for VM {i}",
                     "details": str(e),
-                    "suggestion": "Manually specify 'commonImage' or check spec format"
+                    "suggestion": "Manually specify 'imageId' or check spec format"
                 }
                 
         else:
@@ -2804,7 +3027,7 @@ for i, spec in enumerate(specs["recommended_specs"][:2]):
                             return {
                                 "error": f"Invalid image-spec mapping for VM {i}",
                                 "details": validation_warning,
-                                "suggestion": "Use auto-mapping by omitting 'commonImage' or provide correct CSP-specific image"
+                                "suggestion": "Use auto-mapping by omitting 'imageId' or provide correct CSP-specific image"
                             }
                 
             except Exception as e:
@@ -3500,8 +3723,8 @@ def execute_command_mci(
     vm_id: Optional[str] = None,
     label_selector: Optional[str] = None,
     summarize_output: bool = True,
-    max_output_lines: int = 5,
-    max_output_chars: int = 1000
+    max_output_lines: Union[int, str] = 5,
+    max_output_chars: Union[int, str] = 1000
 ) -> Dict:
     """
     Execute remote commands based on SSH on VMs of an MCI.
@@ -3554,6 +3777,19 @@ def execute_command_mci(
         - When summarized: stdout/stderr include summary info and truncation indicators
         - output_summary: Metadata about output summarization
     """
+    # Handle type conversion for numeric parameters (MCP client may send strings)
+    if isinstance(max_output_lines, str):
+        try:
+            max_output_lines = int(max_output_lines)
+        except ValueError:
+            max_output_lines = 5  # Default value
+    
+    if isinstance(max_output_chars, str):
+        try:
+            max_output_chars = int(max_output_chars)
+        except ValueError:
+            max_output_chars = 1000  # Default value
+    
     # 🚨 CRITICAL: Validate commands before execution
     if not commands or len(commands) == 0:
         return {
@@ -4317,8 +4553,8 @@ def get_mci_risk_mitigation_guidance(
         
         # Analyze each VM configuration
         for i, vm_config in enumerate(vm_configurations):
-            spec_id = vm_config.get("commonSpec")
-            image_name = vm_config.get("commonImage")
+            spec_id = vm_config.get("specId")
+            image_name = vm_config.get("imageId")
             
             vm_guidance = {
                 "vm_index": i,
@@ -4432,7 +4668,7 @@ def get_mci_risk_mitigation_guidance(
         for vm_guidance in guidance["vm_specific_guidance"]:
             if vm_guidance["risk_level"] == "high":
                 original_config = vm_configurations[vm_guidance["vm_index"]]
-                spec_id = original_config.get("commonSpec", "")
+                spec_id = original_config.get("specId", "")
                 
                 if spec_id:
                     spec_parts = spec_id.split("+")
@@ -4528,8 +4764,8 @@ def store_interaction_memory(
 @mcp.tool()
 def get_interaction_history(
     operation_type: Optional[str] = None,
-    days_back: int = 7,
-    max_results: int = 10
+    days_back: Union[int, str] = 7,
+    max_results: Union[int, str] = 10
 ) -> Dict:
     """
     Retrieve recent interaction history from memory.
@@ -4543,6 +4779,19 @@ def get_interaction_history(
     Returns:
         Dictionary with interaction history and analysis
     """
+    # Handle type conversion for numeric parameters (MCP client may send strings)
+    if isinstance(days_back, str):
+        try:
+            days_back = int(days_back)
+        except ValueError:
+            days_back = 7  # Default value
+    
+    if isinstance(max_results, str):
+        try:
+            max_results = int(max_results)
+        except ValueError:
+            max_results = 10  # Default value
+    
     return _get_interaction_history(operation_type, days_back, max_results)
 
 # Tool: Get session summary
@@ -4561,7 +4810,7 @@ def get_session_summary() -> Dict:
 @mcp.tool()
 def search_interaction_memory(
     search_term: str,
-    max_results: int = 5
+    max_results: Union[int, str] = 5
 ) -> Dict:
     """
     Search through stored interactions for specific terms or contexts.
@@ -4574,6 +4823,13 @@ def search_interaction_memory(
     Returns:
         Dictionary with matching interactions and relevance scores
     """
+    # Handle type conversion for max_results (MCP client may send string)
+    if isinstance(max_results, str):
+        try:
+            max_results = int(max_results)
+        except ValueError:
+            max_results = 5  # Default value
+    
     try:
         results = []
         
@@ -4826,8 +5082,8 @@ def mci_management_prompt() -> str:
         
         # Step 5: Create VM config with spec-matched image
         vm_configs.append({
-            "commonSpec": spec_id,                          # Exact spec ID from API
-            "commonImage": best_image["cspImageName"],      # Intelligently selected image
+            "specId": spec_id,                          # Exact spec ID from API
+            "imageId": best_image["cspImageName"],      # Intelligently selected image
             "name": f"vm-{provider}-{len(vm_configs)+1}",
             "description": f"VM on {provider} in {region}",
             "subGroupSize": "1"
@@ -4851,10 +5107,10 @@ def mci_management_prompt() -> str:
     vm_configs = []
     for spec in specs["recommended_specs"][:2]:
         vm_configs.append({
-            "commonSpec": spec["id"],  # REQUIRED: Exact spec ID
+            "specId": spec["id"],  # REQUIRED: Exact spec ID
             "name": f"vm-{spec['providerName']}-{len(vm_configs)+1}",
             "os_requirements": {"os_type": "ubuntu", "use_case": "web-server"}
-            # commonImage omitted - will be auto-mapped to compatible image
+            # imageId omitted - will be auto-mapped to compatible image
         })
     
     mci = create_mci_dynamic(
@@ -4884,7 +5140,7 @@ def mci_management_prompt() -> str:
         ns_id="production",
         name="silicon-valley-mci",
         vm_configurations=[
-            {"commonSpec": spec["id"], "name": f"vm-{spec['regionName']}-{i+1}"}
+            {"specId": spec["id"], "name": f"vm-{spec['regionName']}-{i+1}"}
             for i, spec in enumerate(specs["recommended_specs"][:3])
         ]
     )
@@ -4896,8 +5152,8 @@ def mci_management_prompt() -> str:
     
     # Step 1: Prepare initial VM configurations
     vm_configs = [
-        {"commonSpec": "aws+us-east-1+t2.small", "name": "web-server"},
-        {"commonSpec": "azure+eastus+Standard_B2s", "name": "api-server"}
+        {"specId": "aws+us-east-1+t2.small", "name": "web-server"},
+        {"specId": "azure+eastus+Standard_B2s", "name": "api-server"}
     ]
     
     # Step 2: Review configurations with risk analysis
@@ -4928,7 +5184,7 @@ def mci_management_prompt() -> str:
             
             # Replace high-risk spec with safer alternative
             if safer_specs["recommended_specs"]:
-                vm_configs[vm_index]["commonSpec"] = safer_specs["recommended_specs"][0]["id"]
+                vm_configs[vm_index]["specId"] = safer_specs["recommended_specs"][0]["id"]
         
         # Step 5: Re-review with updated configurations
         final_review = review_mci_dynamic_request(
@@ -4972,13 +5228,13 @@ def mci_management_prompt() -> str:
     # Step 3: Research and deploy high-risk VMs with alternatives
     for high_risk_config in high_risk_configs:
         risk_analysis = analyze_provisioning_risk(
-            high_risk_config["commonSpec"]
+            high_risk_config["specId"]
         )
         
         if risk_analysis.get("riskLevel") == "high":
             # Get detailed analysis and alternatives
             detailed_risk = get_detailed_provisioning_risk(
-                high_risk_config["commonSpec"]
+                high_risk_config["specId"]
             )
             # Apply recommendations from detailed analysis
         
@@ -4994,7 +5250,7 @@ def mci_management_prompt() -> str:
     vm_configs = []
     for spec in specs["recommended_specs"][:2]:
         vm_configs.append({
-            "commonSpec": spec["id"],
+            "specId": spec["id"],
             "name": f"vm-{spec['regionName']}-{len(vm_configs)+1}",
             "description": f"VM near Silicon Valley in {spec['regionName']}"
         })
@@ -5217,15 +5473,15 @@ def mci_management_prompt() -> str:
     
     **🔑 CRITICAL VM CONFIGURATION REQUIREMENTS:**
     
-    **commonSpec (ALWAYS REQUIRED):**
+    **specId (ALWAYS REQUIRED):**
     - MUST be exact spec ID from recommend_vm_spec() results
     - Format: "{provider}+{region}+{instance_type}" (e.g., "aws+us-east-1+t3.medium")
     - ❌ NEVER manually create spec IDs
     - ✅ ALWAYS get from recommend_vm_spec() API
     
-    **commonImage (RECOMMENDED):**
+    **imageId (RECOMMENDED):**
     - Should be exact cspImageName from search_images() results
-    - Must be compatible with commonSpec's CSP/region
+    - Must be compatible with specId's CSP/region
     - If omitted: Auto-mapped by create_mci_dynamic
     - Provider-specific formats:
       * AWS: "ami-0123456789abcdef0"
@@ -5267,8 +5523,8 @@ def mci_management_prompt() -> str:
         
         # D. Create VM config
         vm_config = {
-            "commonSpec": spec_id,  # Required: exact spec ID
-            "commonImage": images["imageList"][0]["cspImageName"],  # Optional
+            "specId": spec_id,  # Required: exact spec ID
+            "imageId": images["imageList"][0]["cspImageName"],  # Optional
             "name": f"vm-{provider}-{vm_index}",
             "description": f"VM on {provider} in {region}",
             "subGroupSize": "1"
@@ -5327,12 +5583,12 @@ def mci_management_prompt() -> str:
     # ✅ CORRECT: Each VM gets spec-matched image
     vm_configs = [
         {
-            "commonSpec": "aws+us-east-1+t3.medium",
-            "commonImage": "ami-0123456789abcdef0"  # AWS AMI in us-east-1
+            "specId": "aws+us-east-1+t3.medium",
+            "imageId": "ami-0123456789abcdef0"  # AWS AMI in us-east-1
         },
         {
-            "commonSpec": "azure+eastus+Standard_B2s", 
-            "commonImage": "/subscriptions/.../images/ubuntu-20.04"  # Azure Image in eastus
+            "specId": "azure+eastus+Standard_B2s", 
+            "imageId": "/subscriptions/.../images/ubuntu-20.04"  # Azure Image in eastus
         }
     ]
     ```
@@ -5342,12 +5598,12 @@ def mci_management_prompt() -> str:
     # ❌ WRONG: Using same image for different CSPs
     vm_configs = [
         {
-            "commonSpec": "aws+us-east-1+t3.medium",
-            "commonImage": "ami-0123456789abcdef0"
+            "specId": "aws+us-east-1+t3.medium",
+            "imageId": "ami-0123456789abcdef0"
         },
         {
-            "commonSpec": "azure+eastus+Standard_B2s",
-            "commonImage": "ami-0123456789abcdef0"  # ERROR: AWS AMI for Azure spec
+            "specId": "azure+eastus+Standard_B2s",
+            "imageId": "ami-0123456789abcdef0"  # ERROR: AWS AMI for Azure spec
         }
     ]
     ```
@@ -5694,11 +5950,11 @@ def image_mci_workflow_prompt() -> str:
     vm_configs = []
     for i, spec in enumerate(specs[:2]):  # Use different specs for multi-CSP
         vm_configs.append({
-            "commonSpec": spec["id"],  # EXACT specId - never modify
+            "specId": spec["id"],  # EXACT specId - never modify
             "name": f"vm-{i+1}",
             "description": f"Auto-mapped VM {i+1}",
             "os_requirements": {"os_type": "ubuntu", "use_case": "web-server"}
-            # commonImage omitted - will be auto-mapped to compatible image
+            # imageId omitted - will be auto-mapped to compatible image
         })
     
     # Create MCI with automatic spec-to-image mapping
@@ -5713,19 +5969,19 @@ def image_mci_workflow_prompt() -> str:
     
     **FOR ALL MCI Creation (review_mci_dynamic_request + create_mci_dynamic):**
     
-    **commonSpec (MANDATORY):**
+    **specId (MANDATORY):**
     - MUST be exact specId from recommend_vm_spec() results
     - Format: "{csp}+{region}+{spec_name}" (e.g., "aws+us-east-1+t3.medium")
     - ❌ NEVER manually construct or modify spec IDs
     - ✅ ALWAYS use recommend_vm_spec() to get valid specs
     
-    **commonImage (OPTIONAL but RECOMMENDED):**
+    **imageId (OPTIONAL but RECOMMENDED):**
     - Should be exact cspImageName from search_images() results
     - Format varies by CSP:
       * AWS: "ami-xxxxxxxxxxxxxxxxx"
       * Azure: "/subscriptions/.../images/image-name"  
       * GCP: "projects/project-id/global/images/image-name"
-    - ⚠️ If provided: MUST be compatible with commonSpec's CSP/region
+    - ⚠️ If provided: MUST be compatible with specId's CSP/region
     - ✅ If omitted: System auto-maps compatible image (easier but less control)
     
     **EXAMPLE - Manual Spec + Image Selection:**
@@ -5748,8 +6004,8 @@ def image_mci_workflow_prompt() -> str:
     
     # Create VM config with explicit spec and image
     vm_config = {
-        "commonSpec": spec["id"],  # Exact specId: "aws+us-east-1+t3.medium"
-        "commonImage": images["images"][0]["cspImageName"],  # Exact cspImageName: "ami-12345"
+        "specId": spec["id"],  # Exact specId: "aws+us-east-1+t3.medium"
+        "imageId": images["images"][0]["cspImageName"],  # Exact cspImageName: "ami-12345"
         "name": "web-server-vm",
         "subGroupSize": "1"
     }
@@ -5838,8 +6094,8 @@ def image_mci_workflow_prompt() -> str:
         
         # Step 5: Add VM Config with Spec-Matched Image
         vm_configs.append({
-            "commonImage": best_image["cspImageName"],  # CSP-specific
-            "commonSpec": spec_id,                      # CSP-specific
+            "imageId": best_image["cspImageName"],  # CSP-specific
+            "specId": spec_id,                      # CSP-specific
             "name": f"vm-{provider}",
             "description": f"VM on {provider} in {region}"
         })
@@ -5909,8 +6165,8 @@ def image_mci_workflow_prompt() -> str:
     **KEY RELATIONSHIPS:**
     - check_and_prepare_namespace() → namespace guidance
     - validate_namespace() → namespace verification
-    - recommend_vm_spec() → spec ID (determines CSP/region) → commonSpec parameter
-    - search_images() → cspImageName (in spec's CSP/region) → commonImage parameter
+    - recommend_vm_spec() → spec ID (determines CSP/region) → specId parameter
+    - search_images() → cspImageName (in spec's CSP/region) → imageId parameter
     - create_mci_dynamic() → MCI creation → check_mci_status_and_handle_failures() → failure recovery
     - **CRITICAL**: Each VM spec requires its own image search in the spec's specific CSP/region
     - **AUTOMATIC**: create_mci_dynamic() handles spec-to-image mapping automatically
@@ -5939,7 +6195,7 @@ def image_mci_workflow_prompt() -> str:
     - **USER CONFIRMATION**: Always ask before cleanup actions (unless auto_cleanup=True)
     - **RECOVERY PRIORITY**: For Partial-Failed, recommend 'refine' to keep successful VMs
     - The cspImageName is provider-specific (AMI ID for AWS, Image ID for Azure, etc.)
-    - commonSpec format: {provider}+{region}+{spec_name}
+    - specId format: {provider}+{region}+{spec_name}
     - **VALIDATION**: Use validate_vm_spec_image_compatibility() before deployment
     - **EXAMPLES**: Use get_spec_image_mapping_examples() to see correct/incorrect patterns
     - **MONITORING**: Use check_mci_status_and_handle_failures() after deployment
@@ -6461,8 +6717,8 @@ def preview_mci_configuration(
             "estimated_resources": {}
         }
         
-        # Analyze commonSpec
-        common_spec = vm_config.get("commonSpec")
+        # Analyze specId
+        common_spec = vm_config.get("specId")
         if common_spec:
             try:
                 spec_parts = common_spec.split("+")
@@ -6501,12 +6757,12 @@ def preview_mci_configuration(
                 vm_analysis["configuration_status"] = "invalid"
                 validation_issues += 1
         else:
-            vm_analysis["spec_analysis"] = {"error": "Missing commonSpec"}
+            vm_analysis["spec_analysis"] = {"error": "Missing specId"}
             vm_analysis["configuration_status"] = "invalid"
             validation_issues += 1
         
-        # Analyze commonImage
-        common_image = vm_config.get("commonImage")
+        # Analyze imageId
+        common_image = vm_config.get("imageId")
         if common_image:
             vm_analysis["image_analysis"] = {
                 "image_identifier": common_image,
@@ -6836,8 +7092,8 @@ def generate_mci_creation_summary(
     
     for i, vm_config in enumerate(vm_configurations):
         vm_name = vm_config.get("name", f"vm-{i+1}")
-        common_spec = vm_config.get("commonSpec", "")
-        common_image = vm_config.get("commonImage", "AUTO-MAPPED")
+        common_spec = vm_config.get("specId", "")
+        common_image = vm_config.get("imageId", "AUTO-MAPPED")
         subgroup_size = int(vm_config.get("subGroupSize", 1))
         
         # Extract provider and region from spec
@@ -7162,11 +7418,11 @@ def validate_vm_spec_image_compatibility(vm_configurations: List[Dict]) -> Dict:
             "image_analysis": {}
         }
         
-        # Validate commonSpec
-        common_spec = vm_config.get("commonSpec")
+        # Validate specId
+        common_spec = vm_config.get("specId")
         if not common_spec:
             config_validation["status"] = "invalid"
-            config_validation["issues"].append("Missing commonSpec")
+            config_validation["issues"].append("Missing specId")
         else:
             try:
                 spec_parts = common_spec.split("+")
@@ -7185,10 +7441,10 @@ def validate_vm_spec_image_compatibility(vm_configurations: List[Dict]) -> Dict:
                         "format": "valid"
                     }
                     
-                    # Validate commonImage compatibility
-                    common_image = vm_config.get("commonImage")
+                    # Validate imageId compatibility
+                    common_image = vm_config.get("imageId")
                     if not common_image:
-                        config_validation["warnings"].append("commonImage not specified - will be auto-mapped")
+                        config_validation["warnings"].append("imageId not specified - will be auto-mapped")
                     else:
                         image_lower = common_image.lower()
                         image_valid = False
@@ -7249,9 +7505,9 @@ def validate_vm_spec_image_compatibility(vm_configurations: List[Dict]) -> Dict:
     # Generate recommendations
     if validation_result["overall_status"] != "all_valid":
         validation_result["recommendations"] = [
-            "Use auto-mapping by omitting commonImage in VM configurations",
+            "Use auto-mapping by omitting imageId in VM configurations",
             "Use create_mci_dynamic() which automatically handles spec-to-image mapping",
-            "For manual mapping, ensure image identifiers match the CSP in commonSpec",
+            "For manual mapping, ensure image identifiers match the CSP in specId",
             "AWS: use AMI IDs (ami-xxxxxx), Azure: use Microsoft images or subscription paths, GCP: use project paths"
         ]
     
@@ -7270,48 +7526,48 @@ def get_spec_image_mapping_examples() -> Dict:
     return {
         "correct_examples": {
             "aws_example": {
-                "commonSpec": "aws+ap-northeast-2+t2.small",
-                "commonImage": "ami-0e06732ba3ca8c6cc",
+                "specId": "aws+ap-northeast-2+t2.small",
+                "imageId": "ami-0e06732ba3ca8c6cc",
                 "explanation": "AWS spec with AWS AMI ID - CORRECT",
                 "why_correct": "AMI ID (ami-*) is AWS-specific image format"
             },
             "azure_example": {
-                "commonSpec": "azure+koreacentral+Standard_B2s",
-                "commonImage": "/subscriptions/xxx/resourceGroups/xxx/providers/Microsoft.Compute/images/ubuntu-20.04",
+                "specId": "azure+koreacentral+Standard_B2s",
+                "imageId": "/subscriptions/xxx/resourceGroups/xxx/providers/Microsoft.Compute/images/ubuntu-20.04",
                 "explanation": "Azure spec with Azure image path - CORRECT",
                 "why_correct": "Subscription-based path is Azure-specific format"
             },
             "gcp_example": {
-                "commonSpec": "gcp+asia-northeast3+e2-medium",
-                "commonImage": "projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240830",
+                "specId": "gcp+asia-northeast3+e2-medium",
+                "imageId": "projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240830",
                 "explanation": "GCP spec with GCP image path - CORRECT", 
                 "why_correct": "Project-based path is GCP-specific format"
             },
             "auto_mapping_example": {
-                "commonSpec": "aws+us-east-1+t3.medium",
-                "commonImage": "AUTO-MAPPED",
+                "specId": "aws+us-east-1+t3.medium",
+                "imageId": "AUTO-MAPPED",
                 "explanation": "Spec without image - will be auto-mapped - RECOMMENDED",
                 "why_recommended": "Automatic mapping ensures correct CSP-specific image selection"
             }
         },
         "incorrect_examples": {
             "cross_csp_error": {
-                "commonSpec": "aws+us-east-1+t2.small",
-                "commonImage": "/subscriptions/xxx/resourceGroups/xxx/providers/Microsoft.Compute/images/ubuntu",
+                "specId": "aws+us-east-1+t2.small",
+                "imageId": "/subscriptions/xxx/resourceGroups/xxx/providers/Microsoft.Compute/images/ubuntu",
                 "explanation": "AWS spec with Azure image - WRONG",
                 "why_wrong": "Cannot use Azure image path with AWS specifications",
                 "fix": "Use AMI ID for AWS or let system auto-map"
             },
             "format_mismatch": {
-                "commonSpec": "azure+eastus+Standard_B1s", 
-                "commonImage": "ami-0123456789abcdef0",
+                "specId": "azure+eastus+Standard_B1s", 
+                "imageId": "ami-0123456789abcdef0",
                 "explanation": "Azure spec with AWS AMI - WRONG",
                 "why_wrong": "AMI IDs only work with AWS, not Azure",
                 "fix": "Use Azure image identifier or enable auto-mapping"
             },
             "region_mismatch": {
-                "commonSpec": "aws+us-west-2+t2.nano",
-                "commonImage": "ami-0a1b2c3d4e5f6789a",  # Hypothetical wrong region AMI
+                "specId": "aws+us-west-2+t2.nano",
+                "imageId": "ami-0a1b2c3d4e5f6789a",  # Hypothetical wrong region AMI
                 "explanation": "Potentially wrong region AMI - RISKY",
                 "why_risky": "AMI IDs are region-specific, using wrong region AMI will fail",
                 "fix": "Search for images in the spec's region (us-west-2)"
@@ -7320,8 +7576,8 @@ def get_spec_image_mapping_examples() -> Dict:
         "best_practices": {
             "recommendation_1": {
                 "title": "Use Auto-Mapping",
-                "description": "Omit commonImage to let create_mci_dynamic() automatically select correct images",
-                "example": {"commonSpec": "aws+ap-northeast-2+t2.small"}
+                "description": "Omit imageId to let create_mci_dynamic() automatically select correct images",
+                "example": {"specId": "aws+ap-northeast-2+t2.small"}
             },
             "recommendation_2": {
                 "title": "Spec-First Workflow",
@@ -8305,7 +8561,7 @@ def deploy_ollama_pull_with_models(
             vm_configurations = []
             for i in range(vm_count):
                 vm_configurations.append({
-                    "commonSpec": specs["recommended_specs"][i % len(specs["recommended_specs"])]["id"],
+                    "specId": specs["recommended_specs"][i % len(specs["recommended_specs"])]["id"],
                     "name": f"ollama-vm-{i+1}",
                     "description": f"Ollama VM {i+1} for LLM models",
                     "subGroupSize": "1"
@@ -9179,8 +9435,8 @@ def _provision_application_infrastructure(
             # Create VM configuration with enhanced disk settings
             vm_config = {
                 "name": f"app-vm-{region}-{i+1}",
-                "commonImage": selected_image["csp_image_name"],
-                "commonSpec": selected_spec["id"],
+                "imageId": selected_image["csp_image_name"],
+                "specId": selected_spec["id"],
                 "description": f"Application VM in {region}",
                 "subGroupSize": str(instances_per_region),
                 "rootDiskSize": disk_size,  # Set disk size (minimum 50GB)
@@ -9893,8 +10149,8 @@ def _provision_compute_infrastructure(namespace: str, task_analysis: Dict, workf
                 try:
                     # Create MCI configuration
                     vm_configurations = [{
-                        "commonSpec": spec_id,
-                        "commonImage": image.get("cspImageName"),
+                        "specId": spec_id,
+                        "imageId": image.get("cspImageName"),
                         "name": f"compute-vm-{workflow_id}",
                         "description": f"Compute VM for task execution - {workflow_id}",
                         "subGroupSize": "1"
@@ -10318,6 +10574,432 @@ def quick_compute(
 # Based on MapUI patterns for comprehensive cloud infrastructure management
 
 @mcp.prompt()
+def mci_creation_workflow():
+    """
+    Complete MCI Creation Workflow Guide with LLM Interaction Patterns
+    
+    This comprehensive prompt enforces the correct workflow for creating Multi-Cloud Infrastructure (MCI)
+    and provides detailed LLM behavior guidelines for proper user interaction.
+    ALL MCI creation MUST follow this workflow to prevent deployment failures.
+    VM configurations MUST include both specId and imageId - no exceptions.
+    """
+    return """# 🚨 COMPLETE MCI Creation Workflow & LLM Interaction Guide
+
+## ⚠️ CRITICAL: ALWAYS Follow This Exact Workflow
+
+This comprehensive guide covers both the technical workflow and LLM behavior patterns
+for creating Multi-Cloud Infrastructure (MCI) with proper user interaction.
+
+### 🔄 STEP-BY-STEP PROCESS (NO SHORTCUTS ALLOWED):
+
+⚠️ **IMPORTANT**: VM configurations MUST include both `specId` AND `imageId` - no exceptions!
+
+📋 **OS TYPE SPECIFICATION OPTIONS:**
+- Simple OS name: `"ubuntu"`, `"centos"`, `"windows"`, `"debian"`, `"rhel"`
+- OS with specific version: `"ubuntu 22.04"`, `"centos 7"`, `"windows server 2019"`, `"debian 11"`
+- Use `get_image_search_options()` to see all available osType values
+
+#### STEP 1: 🔍 MANDATORY REVIEW PHASE
+```python
+# 1.1: Get VM specifications
+specs = recommend_vm_spec(
+    filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
+    priority_policy="location",  # or "cost" or "performance"
+    latitude=37.4419,           # if location-based
+    longitude=-122.1430         # if location-based
+)
+
+# 1.2: Search and select images for each spec
+vm_configurations = []
+for i, spec in enumerate(specs["recommended_specs"][:2]):
+    spec_id = spec["id"]  # e.g., "aws+ap-northeast-2+t2.small"
+    
+    # 1.2.1: Search for compatible images using matched_spec_id
+    images = search_images(
+        matched_spec_id=spec_id,     # Auto-applies provider/region/arch
+        os_type="ubuntu 22.04",      # Can be simple OS ("ubuntu") or OS+version ("ubuntu 22.04", "centos 7", "windows server 2019")
+        include_basic_image_only=True  # Prefer clean OS installations
+    )
+    
+    # 1.2.2: Select best image for this specific spec
+    if images.get("imageList"):
+        best_image = select_best_image_for_spec(
+            images["imageList"], 
+            spec, 
+            {"os_type": "ubuntu 22.04", "prefer_basic": True}  # Can specify exact OS version
+        )
+        selected_image_id = best_image["cspImageName"]
+    else:
+        # Fallback: try without basic_image_only filter
+        images = search_images(matched_spec_id=spec_id, os_type="ubuntu 22.04")
+        if images.get("imageList"):
+            selected_image_id = images["imageList"][0]["cspImageName"]
+        else:
+            raise Exception(f"No compatible images found for spec {spec_id}")
+    
+    # 1.2.3: Create VM configuration with required imageId
+    vm_configurations.append({
+        "specId": spec_id,                    # MUST use exact ID from API
+        "imageId": selected_image_id,         # 🚨 REQUIRED - CSP-specific image ID
+        "name": f"vm-{spec['providerName']}-{i+1}",
+        "subGroupSize": "1"
+    })
+
+# 1.3: 🔍 MANDATORY REVIEW - Always do this first!
+review_result = review_mci_dynamic_request(
+    ns_id="default",
+    name="my-infrastructure",
+    vm_configurations=vm_configurations
+)
+```
+
+#### STEP 2: 📋 ANALYZE REVIEW RESULTS
+```python
+# 2.1: Check overall status
+if review_result.get("overallStatus") == "Ready":
+    print("✅ Configuration validated - Safe to proceed")
+    creation_viable = True
+elif review_result.get("overallStatus") == "Warning":
+    print("⚠️ Warnings detected - Review before proceeding")
+    # Check vmReviews for specific warnings
+    creation_viable = True  # Can proceed with caution
+elif review_result.get("overallStatus") == "Error":
+    print("❌ Errors detected - Must fix before proceeding") 
+    creation_viable = False
+    # Fix issues in vm_configurations and re-run review
+
+# 2.2: Review cost estimates
+print(f"💰 Estimated cost: {review_result.get('estimatedCost')}")
+print(f"🖥️ Total VMs: {review_result.get('totalVmCount')}")
+```
+
+#### STEP 3: 🚀 MCI CREATION (Only After Successful Review)
+```python
+# 3.1: Create MCI only if review passed
+if creation_viable:
+    mci_result = create_mci_dynamic(
+        ns_id="default",
+        name="my-infrastructure",
+        vm_configurations=vm_configurations,  # Already includes specId + imageId
+        force_create=True  # 🚨 REQUIRED after review
+    )
+    print(f"✅ MCI created: {mci_result.get('id')}")
+else:
+    print("❌ Cannot create MCI - fix validation issues first")
+```
+
+## 🚫 FORBIDDEN PATTERNS:
+
+### ❌ NEVER Do This:
+```python
+# DON'T: Skip review step
+create_mci_dynamic(ns_id="default", name="test", vm_configurations=[...])
+# This will return an error requiring review first
+
+# DON'T: Create spec IDs manually
+vm_config = {"specId": "aws+us-east-1+t2.small"}  # Manual creation
+# Always use recommend_vm_spec() results
+
+# DON'T: Skip image selection step
+vm_config = {
+    "specId": spec["id"],
+    # Missing imageId - THIS WILL FAIL
+    "name": "my-vm"
+}
+
+# DON'T: Use imageId from different CSP/region than specId
+vm_config = {
+    "specId": "aws+us-east-1+t2.small",
+    "imageId": "ami-azure-image-id"  # Mismatched CSP - WILL FAIL
+}
+
+# DON'T: Use vague OS specifications when specific versions are needed
+vm_config = {
+    "specId": spec["id"],
+    "imageId": "generic-ubuntu-image"  # Be specific about OS version
+}
+# DO: Use specific OS versions like "ubuntu 22.04" for better image matching
+
+# DON'T: Ignore review results
+review = review_mci_dynamic_request(...)
+create_mci_dynamic(..., force_create=True)  # Without checking review
+```
+
+### ✅ ALWAYS Do This:
+```python
+# DO: Follow the complete three-step process
+specs = recommend_vm_spec(...)
+vm_configs = []
+for spec in specs["recommended_specs"]:
+    # REQUIRED: Search for compatible images with specific OS version
+    images = search_images(matched_spec_id=spec["id"], os_type="ubuntu 22.04")  # Specify exact OS+version
+    selected_image = images["imageList"][0]["cspImageName"]
+    
+    vm_configs.append({
+        "specId": spec["id"],
+        "imageId": selected_image,  # 🚨 REQUIRED
+        "name": f"vm-{spec['providerName']}-1"
+    })
+
+review = review_mci_dynamic_request(ns_id="default", name="test", vm_configurations=vm_configs)
+if review["overallStatus"] == "Ready":
+    create_mci_dynamic(ns_id="default", name="test", vm_configurations=vm_configs, force_create=True)
+
+# DO: Always include imageId in VM configurations
+vm_config = {
+    "specId": spec["id"],      # From recommend_vm_spec()
+    "imageId": image["cspImageName"],  # From search_images() - REQUIRED
+    "name": "my-vm"
+}
+```
+
+## 📊 UNDERSTANDING REVIEW RESULTS:
+
+### Key Fields to Check:
+- `overallStatus`: "Ready" | "Warning" | "Error"
+- `creationViable`: Boolean - can create MCI?
+- `estimatedCost`: Cost per hour (e.g., "$0.0837/hour")
+- `totalVmCount`: Total VMs including SubGroup sizes
+- `vmReviews`: Per-VM validation details
+
+### Decision Matrix:
+- **"Ready" + creationViable: true** → ✅ Proceed with creation
+- **"Warning" + creationViable: true** → ⚠️ Review warnings, then proceed
+- **"Error" + creationViable: false** → ❌ Fix errors, re-run review
+
+## 🎯 LLM IMPLEMENTATION GUIDELINES:
+
+1. **NEVER skip the review step** - Always call review_mci_dynamic_request() first
+2. **NEVER omit imageId** - VM configurations MUST include both specId and imageId
+3. **ALWAYS use matched_spec_id** in search_images() for compatibility
+4. **SPECIFY OS version when needed** - Use os_type with versions like "ubuntu 22.04", "centos 7", "windows server 2019"
+5. **ALWAYS check overallStatus** before proceeding to creation
+6. **ALWAYS use force_create=True** in create_mci_dynamic() after review
+7. **EXPLAIN the complete process** to users when they request MCI creation
+8. **SHOW cost estimates** from review results before creation
+9. **FIX validation issues** if overallStatus is "Error" before creating
+
+## 🤖 CRITICAL LLM USER INTERACTION RULES:
+
+### ✅ REQUIRED USER INTERACTION PATTERN:
+```
+User: "Create an MCI with 2 VMs"
+
+LLM Response:
+"I'll help you create an MCI with 2 VMs. Let me first validate the configuration and show you the cost estimates before proceeding.
+
+[Calls review_mci_dynamic_request()]
+
+✅ Configuration validated! Here's your deployment plan:
+💰 Cost: $0.16/hour (~$115.20/month)
+🖥️ VMs: 2 virtual machines (AWS us-east-1, GCP us-central1)
+
+Would you like me to proceed with creating this infrastructure?
+- Reply 'Yes' to create the MCI
+- Reply 'No' to cancel
+- Reply 'Details' for more information"
+
+[Waits for user confirmation]
+
+User: "Yes"
+
+LLM: [Calls create_mci_dynamic(force_create=True)]
+"✅ MCI 'user-mci-12345' created successfully!"
+```
+
+### ❌ FORBIDDEN USER INTERACTION PATTERNS:
+```
+User: "Create an MCI"
+
+❌ WRONG LLM Response:
+"Creating MCI now..."
+[Calls create_mci_dynamic() directly]  // Will fail with error!
+
+❌ WRONG LLM Response:
+"MCI created successfully!"
+[No review, no cost disclosure, no user confirmation]
+```
+
+### 📊 MANDATORY USER INFORMATION DISCLOSURE:
+**Before ANY MCI creation, LLM MUST show user:**
+1. 💰 **Cost estimates** (hourly and monthly)
+2. 🖥️ **VM specifications** (count, providers, regions)  
+3. ⚠️ **Any warnings** or potential issues
+4. ✅ **Explicit confirmation request**
+
+**Never create infrastructure without user seeing costs first!**
+
+## 📋 REQUIRED VM CONFIGURATION FORMAT:
+
+```python
+vm_configuration = {
+    "specId": "aws+ap-northeast-2+t2.small",      # From recommend_vm_spec() - REQUIRED
+    "imageId": "ami-0c02fb55956c7d316",           # From search_images() - REQUIRED
+    "name": "my-vm-1",                            # VM name - REQUIRED
+    "subGroupSize": "1"                           # Number of VMs - REQUIRED
+}
+```
+
+This workflow prevents expensive deployment failures and ensures reliable infrastructure creation.
+
+## 🤖 DETAILED LLM BEHAVIOR GUIDE FOR MCI CREATION
+
+### 🎯 MANDATORY LLM BEHAVIOR WHEN USER REQUESTS MCI CREATION:
+
+#### STEP 1: 🚨 ALWAYS START WITH REVIEW (NEVER SKIP)
+```python
+# ✅ CORRECT: Always call review first
+review_result = review_mci_dynamic_request(
+    ns_id="default",
+    name="user-requested-mci",
+    vm_configurations=vm_configurations
+)
+
+# ❌ WRONG: Never call create_mci_dynamic directly
+# create_mci_dynamic(...)  # This will return an error!
+```
+
+#### STEP 2: 📊 ANALYZE REVIEW RESULTS AND INFORM USER
+Based on `review_result._llm_guidance.status`:
+
+**🟢 "READY_TO_CREATE":**
+```python
+# Display the user_prompt from _llm_guidance directly to user
+user_message = review_result["_llm_guidance"]["user_prompt"]
+print(user_message)  # Shows cost, specs, asks for confirmation
+
+# Wait for user response: "Yes", "No", or "Details"
+user_response = get_user_input()
+
+if user_response.lower() in ["yes", "y", "proceed", "create"]:
+    # User approved - proceed with creation
+    mci = create_mci_dynamic(..., force_create=True)
+    print(f"✅ MCI '{mci['id']}' created successfully!")
+elif user_response.lower() in ["no", "n", "cancel"]:
+    print("❌ MCI creation cancelled by user.")
+else:
+    # Show detailed information
+    print("📋 Detailed validation results:", review_result["vmReviews"])
+```
+
+**🟡 "READY_WITH_WARNINGS":**
+```python
+# Show warnings and ask user to decide
+warnings_message = review_result["_llm_guidance"]["user_prompt"]
+print(warnings_message)  # Displays warnings and asks for decision
+
+user_response = get_user_input()
+if user_response.lower() in ["yes", "proceed"]:
+    mci = create_mci_dynamic(..., force_create=True)
+    print("⚠️ MCI created with warnings noted.")
+else:
+    print("Configuration needs adjustment. Let me help fix the warnings.")
+    # Guide user through fixing warnings
+```
+
+**🔴 "CANNOT_CREATE":**
+```python
+# Show errors and offer help
+error_message = review_result["_llm_guidance"]["user_prompt"]
+print(error_message)  # Explains errors and offers help options
+
+# DO NOT proceed to create_mci_dynamic
+# Instead, help user fix the issues:
+
+print("Let me help you fix these issues:")
+print("1. Finding alternative VM specifications...")
+alternative_specs = recommend_vm_spec(different_filter_policies)
+print("2. Checking image availability in other regions...")
+# Guide user through problem resolution
+```
+
+### 🎯 REQUIRED LLM RESPONSES TO USERS:
+
+#### ✅ When Review Shows "Ready":
+```
+"Great! I've validated your MCI configuration and everything looks good:
+
+💰 Cost: $X.XX/hour (approximately $Y.YY/month)  
+🖥️ VMs: N virtual machines across M providers
+✅ Status: All configurations validated
+
+The infrastructure will be created with these specifications:
+[Display VM summary from review]
+
+Would you like me to proceed with creating this MCI infrastructure?
+- Reply 'Yes' to create the infrastructure
+- Reply 'No' to cancel  
+- Reply 'Details' for more information"
+```
+
+#### ⚠️ When Review Shows Warnings:
+```
+"I've reviewed your MCI configuration. It can be created but there are some warnings:
+
+⚠️ Warnings Found:
+[Display warnings from review]
+
+💰 Cost: $X.XX/hour  
+🖥️ VMs: N virtual machines
+
+Despite these warnings, the infrastructure can still be created. 
+Would you like to proceed anyway, or should I help you address the warnings first?
+- Reply 'Proceed' to create with warnings
+- Reply 'Fix' to address warnings first  
+- Reply 'Details' for more information"
+```
+
+#### ❌ When Review Shows Errors:
+```
+"I've reviewed your MCI configuration and found issues that must be fixed:
+
+❌ Errors Found:
+[Display errors from review]
+
+I cannot create the infrastructure with these errors. Let me help you fix them:
+
+Would you like me to:
+1. Find alternative VM specifications  
+2. Search for images in different regions
+3. Check different cloud providers
+4. Show detailed error information
+
+Which option would you prefer? (Reply with the number or description)"
+```
+
+### 🚨 CRITICAL LLM RULES:
+
+1. **NEVER** call `create_mci_dynamic()` without calling `review_mci_dynamic_request()` first
+2. **ALWAYS** show the user the cost estimates and configuration details before creating
+3. **ALWAYS** wait for explicit user confirmation before proceeding to creation
+4. **NEVER** assume user consent - always ask for confirmation
+5. **ALWAYS** use the `_llm_guidance.user_prompt` field for user messages
+6. **NEVER** proceed with creation if `creationViable: false`
+7. **ALWAYS** help users fix errors instead of just reporting them
+
+### 📊 LLM RESPONSE TEMPLATES:
+
+**User Request:** "Create an MCI with 2 VMs in AWS"
+
+**LLM Response Pattern:**
+```
+"I'll help you create an MCI with 2 VMs in AWS. Let me first validate the configuration and check costs.
+
+[Calls review_mci_dynamic_request()]
+
+[Based on review results, uses appropriate response template above]
+```
+
+**NEVER:**
+```
+"I'll create an MCI for you."
+[Calls create_mci_dynamic() directly]  // ❌ WRONG!
+```
+
+This ensures users are always informed about costs and configuration before infrastructure is created.
+"""
+
+@mcp.prompt()
 def tumblebug_application_deployment():
     """
     Application Deployment Strategy and Workflow Guide
@@ -10528,7 +11210,7 @@ specs = recommend_vm_spec(
 #### Step 4: 🔧 Build VM Configurations
 ```python
 vm_configurations = [{
-    "commonSpec": spec["id"],
+    "specId": spec["id"],
     "name": f"vm-{app_name}-1",
     "description": f"VM for {app_name}",
     "subGroupSize": "1"
@@ -10728,7 +11410,7 @@ Error: "rollback completed successfully after errors in resource preparation"
    ```python
    # Reduce VM count or specs
    vm_configurations = [{
-       "commonSpec": "smaller_spec_id",  # Use smaller instance
+       "specId": "smaller_spec_id",  # Use smaller instance
        "subGroupSize": "1"               # Start with single VM
    }]
    ```
@@ -10765,7 +11447,7 @@ Error: "Request timeout - operation took longer than 10 minutes"
    ```python
    # Start with single region/provider
    vm_configurations = [{
-       "commonSpec": single_region_spec,
+       "specId": single_region_spec,
        "subGroupSize": "1"
    }]
    ```
@@ -10881,11 +11563,11 @@ specs = recommend_vm_spec(
 vm_configurations = []
 for i, spec in enumerate(specs["recommended_specs"][:2]):
     vm_configurations.append({
-        "commonSpec": spec["id"],  # Use exact spec ID from API
+        "specId": spec["id"],  # Use exact spec ID from API
         "name": f"app-vm-{i+1}",
         "description": f"VM for {application_name} in {spec['regionName']}",
         "subGroupSize": "1"
-        # commonImage: Auto-mapped based on spec
+        # imageId: Auto-mapped based on spec
     })
 ```
 
@@ -11036,7 +11718,7 @@ specs = recommend_vm_spec(
 
 # 4. Build VM config
 vm_configs = [{
-    "commonSpec": specs["recommended_specs"][0]["id"],
+    "specId": specs["recommended_specs"][0]["id"],
     "name": "nginx-vm-1",
     "description": "Nginx web server VM"
 }]
@@ -11279,8 +11961,8 @@ for region in regions:
         ns_id="global-app",
         name=f"app-{region.split('+')[0]}",
         vm_configurations=[{
-            "commonImage": selected_image,
-            "commonSpec": f"{region}+standard-instance",
+            "imageId": selected_image,
+            "specId": f"{region}+standard-instance",
             "subGroupSize": "3"
         }]
     )
@@ -11290,11 +11972,11 @@ for region in regions:
 ```
 # Development
 create_namespace("dev")
-create_mci_dynamic("dev", "test-app", [{"commonImage": image, "commonSpec": "t2.micro", "name": "test-vm"}])
+create_mci_dynamic("dev", "test-app", [{"imageId": image, "specId": "t2.micro", "name": "test-vm"}])
 
 # Staging  
 create_namespace("staging")
-create_mci_dynamic("staging", "staging-app", [{"commonImage": image, "commonSpec": "t2.small", "name": "staging-vm"}])
+create_mci_dynamic("staging", "staging-app", [{"imageId": image, "specId": "t2.small", "name": "staging-vm"}])
 
 # Production
 create_namespace("production") 
@@ -11311,7 +11993,7 @@ specs = recommend_vm_spec(
 
 # Use spot instances or burstable types
 vm_config = {
-    "commonSpec": "aws+ap-northeast-2+t3.micro",
+    "specId": "aws+ap-northeast-2+t3.micro",
     "subGroupSize": "5"
 }
 ```
@@ -11371,8 +12053,8 @@ Solution:
 User: "Deploy Nginx web servers in AWS Seoul and Azure Korea Central"
 
 Solution:
-1. create_mci_dynamic("web-app", "nginx-aws", [{"commonImage": aws_image, "commonSpec": "t3.medium", "name": "nginx-aws-vm"}])
-2. create_mci_dynamic("web-app", "nginx-azure", [{"commonImage": azure_image, "commonSpec": "Standard_B2s", "name": "nginx-azure-vm"}]) 
+1. create_mci_dynamic("web-app", "nginx-aws", [{"imageId": aws_image, "specId": "t3.medium", "name": "nginx-aws-vm"}])
+2. create_mci_dynamic("web-app", "nginx-azure", [{"imageId": azure_image, "specId": "Standard_B2s", "name": "nginx-azure-vm"}]) 
 3. execute_remote_commands_enhanced(script_name="nginx_install")
 4. Configure DNS load balancing
 ```
@@ -11412,7 +12094,7 @@ User: "Set up development infrastructure with Docker and monitoring"
 
 Workflow:
 1. create_namespace("dev-team")
-2. create_mci_dynamic("dev-team", "dev-servers", [{"commonImage": ubuntu_image, "commonSpec": "t3.large", "name": f"dev-vm-{i}", "subGroupSize": "1"} for i in range(1, 6)])
+2. create_mci_dynamic("dev-team", "dev-servers", [{"imageId": ubuntu_image, "specId": "t3.large", "name": f"dev-vm-{i}", "subGroupSize": "1"} for i in range(1, 6)])
 3. execute_remote_commands_enhanced(script_name="docker_install")
 4. execute_remote_commands_enhanced(script_name="monitoring_setup") 
 5. execute_remote_commands_enhanced(script_name="security_hardening")
@@ -11545,11 +12227,11 @@ specs = recommend_vm_spec(
 vm_configurations = []
 for i, spec in enumerate(specs["recommended_specs"][:2]):
     vm_configurations.append({
-        "commonSpec": spec["id"],  # 🚨 CRITICAL: Use exact ID from API
+        "specId": spec["id"],  # 🚨 CRITICAL: Use exact ID from API
         "name": f"vm-{spec['providerName']}-{i+1}",
         "description": f"VM in {spec['regionName']}",
         "subGroupSize": "1"
-        # commonImage: Optional - auto-mapped if omitted
+        # imageId: Optional - auto-mapped if omitted
     })
 
 # STEP 3: MANDATORY - Review configuration before creation
@@ -11596,7 +12278,7 @@ else:
 **🚨 CRITICAL VALIDATIONS PERFORMED:**
 
 ✅ **VM Specification Validation**
-- Ensures commonSpec IDs are valid and available
+- Ensures specId IDs are valid and available
 - Verifies specifications exist in target CSP/region
 - Validates resource quotas and limits
 

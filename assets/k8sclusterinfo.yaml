@@ -125,7 +125,7 @@ k8scluster:
         size:
           min: 10
           max: 40
-  nhncloud:
+  nhn:
     nodeGroupsOnCreation: true
     nodeImageDesignation: true
     requiredSubnetCount: 1

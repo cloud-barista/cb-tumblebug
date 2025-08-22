@@ -277,24 +277,24 @@ type TbMciDynamicReq struct {
 	//   {
 	//     "name": "aws-group",
 	//     "subGroupSize": "3",
-	//     "commonSpec": "aws+ap-northeast-2+t3.nano",
-	//     "commonImage": "ami-01f71f215b23ba262",
+	//     "specId": "aws+ap-northeast-2+t3.nano",
+	//     "imageId": "ami-01f71f215b23ba262",
 	//     "rootDiskSize": "50",
 	//     "label": {"role": "worker", "csp": "aws"}
 	//   },
 	//   {
 	//     "name": "azure-group",
 	//     "subGroupSize": "2",
-	//     "commonSpec": "azure+koreasouth+standard_b1s",
-	//     "commonImage": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210",
+	//     "specId": "azure+koreasouth+standard_b1s",
+	//     "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210",
 	//     "rootDiskSize": "50",
 	//     "label": {"role": "head", "csp": "azure"}
 	//   },
 	//   {
 	//     "name": "gcp-group",
 	//     "subGroupSize": "1",
-	//     "commonSpec": "gcp+asia-northeast3+g1-small",
-	//     "commonImage": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712",
+	//     "specId": "gcp+asia-northeast3+g1-small",
+	//     "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712",
 	//     "rootDiskSize": "50",
 	//     "label": {"role": "test", "csp": "gcp"}
 	//   }
@@ -326,10 +326,10 @@ type TbCreateSubGroupDynamicReq struct {
 
 	Description string `json:"description" example:"Created via CB-Tumblebug"`
 
-	// CommonSpec is field for id of a spec in common namespace
-	CommonSpec string `json:"commonSpec" validate:"required" example:"aws+ap-northeast-2+t3.nano"`
-	// CommonImage is field for id of a image in common namespace
-	CommonImage string `json:"commonImage" validate:"required" example:"ami-01f71f215b23ba262"`
+	// SpecId is field for id of a spec in common namespace
+	SpecId string `json:"specId" validate:"required" example:"aws+ap-northeast-2+t3.nano"`
+	// ImageId is field for id of a image in common namespace
+	ImageId string `json:"imageId" validate:"required" example:"ami-01f71f215b23ba262"`
 
 	RootDiskType string `json:"rootDiskType,omitempty" example:"gp3" default:"default"` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
 	RootDiskSize string `json:"rootDiskSize,omitempty" example:"50" default:"default"`  // "default", Integer (GB): ["50", ..., "1000"]
@@ -342,8 +342,8 @@ type TbCreateSubGroupDynamicReq struct {
 
 // MciConnectionConfigCandidatesReq is struct for a request to check requirements to create a new MCI instance dynamically (with default resource option)
 type MciConnectionConfigCandidatesReq struct {
-	// CommonSpec is field for id of a spec in common namespace
-	CommonSpecs []string `json:"commonSpec" validate:"required" example:"aws+ap-northeast-2+t2.small,gcp+us-west1+g1-small"`
+	// SpecId is field for id of a spec in common namespace
+	SpecIds []string `json:"specId" validate:"required" example:"aws+ap-northeast-2+t2.small,gcp+us-west1+g1-small"`
 }
 
 // CheckMciDynamicReqInfo is struct to check requirements to create a new MCI instance dynamically (with default resource option)

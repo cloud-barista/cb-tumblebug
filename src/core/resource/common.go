@@ -19,9 +19,11 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -45,6 +47,106 @@ import (
 
 // use a single instance of Validate, it caches struct info
 var validate *validator.Validate
+
+// getResourceConnectionName extracts the connection name for a given resource.
+// This function is used to group resources by their CSP connection for semaphore-based processing.
+func getResourceConnectionName(nsId, resourceType, resourceId string) (string, error) {
+	// For performance, try to extract connection name from resourceId pattern first
+	// Many resources follow the pattern: {connectionName}-{resourceName}
+	parts := strings.Split(resourceId, "-")
+	if len(parts) >= 2 {
+		// Quick validation: check if the first part looks like a connection name
+		potentialConnName := parts[0]
+		if len(potentialConnName) > 0 && potentialConnName != "shared" {
+			return potentialConnName, nil
+		}
+	}
+
+	// Fall back to KV store lookup if pattern extraction fails
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	keyValue, err := kvstore.GetKv(key)
+	if err != nil {
+		// If KV lookup fails, use pattern-based fallback
+		if len(parts) >= 2 {
+			return parts[0], nil
+		}
+		return "unknown", err
+	}
+
+	// Parse the JSON value to extract connection name
+	switch resourceType {
+	case model.StrSpec:
+		var resource model.TbSpecInfo
+		err = json.Unmarshal([]byte(keyValue.Value), &resource)
+		if err != nil {
+			return "unknown", err
+		}
+		return resource.ConnectionName, nil
+
+	case model.StrImage:
+		var resource model.TbImageInfo
+		err = json.Unmarshal([]byte(keyValue.Value), &resource)
+		if err != nil {
+			return "unknown", err
+		}
+		return resource.ConnectionName, nil
+
+	case model.StrCustomImage:
+		var resource model.TbCustomImageInfo
+		err = json.Unmarshal([]byte(keyValue.Value), &resource)
+		if err != nil {
+			return "unknown", err
+		}
+		return resource.ConnectionName, nil
+
+	case model.StrSSHKey:
+		var resource model.TbSshKeyInfo
+		err = json.Unmarshal([]byte(keyValue.Value), &resource)
+		if err != nil {
+			return "unknown", err
+		}
+		return resource.ConnectionName, nil
+
+	case model.StrSecurityGroup:
+		var resource model.TbSecurityGroupInfo
+		err = json.Unmarshal([]byte(keyValue.Value), &resource)
+		if err != nil {
+			return "unknown", err
+		}
+		return resource.ConnectionName, nil
+
+	case model.StrVNet:
+		var resource model.TbVNetInfo
+		err = json.Unmarshal([]byte(keyValue.Value), &resource)
+		if err != nil {
+			return "unknown", err
+		}
+		return resource.ConnectionName, nil
+
+	case model.StrSubnet:
+		var resource model.TbSubnetInfo
+		err = json.Unmarshal([]byte(keyValue.Value), &resource)
+		if err != nil {
+			return "unknown", err
+		}
+		return resource.ConnectionName, nil
+
+	case model.StrDataDisk:
+		var resource model.TbDataDiskInfo
+		err = json.Unmarshal([]byte(keyValue.Value), &resource)
+		if err != nil {
+			return "unknown", err
+		}
+		return resource.ConnectionName, nil
+
+	default:
+		// For unsupported resource types, use pattern-based extraction
+		if len(parts) >= 2 {
+			return parts[0], nil
+		}
+		return "unknown", fmt.Errorf("unsupported resource type: %s", resourceType)
+	}
+}
 
 func init() {
 
@@ -73,67 +175,136 @@ func init() {
 
 // DelAllResources deletes all TB Resource objects of the given resourceType.
 func DelAllResources(nsId string, resourceType string, subString string, forceFlag string) (model.IdList, error) {
-	deletedResources := model.IdList{}
+	var resultList []string
 	var mutex sync.Mutex  // Protect shared slice access
 	var wg sync.WaitGroup // Synchronize all goroutines
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return deletedResources, err
+		return model.IdList{IdList: resultList}, err
 	}
 
 	resourceIdList, err := ListResourceId(nsId, resourceType)
 	if err != nil {
-		return deletedResources, err
+		return model.IdList{IdList: resultList}, err
 	}
 
 	if len(resourceIdList) == 0 {
 		errString := fmt.Sprintf("There is no %s resource in %s", resourceType, nsId)
 		err := fmt.Errorf(errString)
 		log.Error().Err(err).Msg("")
-		return deletedResources, err
+		return model.IdList{IdList: resultList}, err
 	}
 
 	// Channel to capture errors
 	errChan := make(chan error, len(resourceIdList))
+	var errChanClosed int32 // atomic flag to track if channel is closed
 
-	// Process each resourceId concurrently
-	for _, v := range resourceIdList {
-		// Increment WaitGroup counter
-		wg.Add(1)
+	// Group resources by CSP connection to apply per-CSP semaphore
+	connectionGroups := make(map[string][]string)
 
-		// Launch a goroutine for each resource deletion
-		go func(resourceId string) {
-			defer wg.Done()
-			common.RandomSleep(0, len(resourceIdList)/10)
+	// Group resources by their connection configuration
+	for _, resourceId := range resourceIdList {
+		// Check if the resourceId matches the subString criteria
+		if subString != "" && !strings.Contains(resourceId, subString) {
+			continue
+		}
 
-			// Check if the resourceId matches the subString criteria
-			if subString != "" && !strings.Contains(resourceId, subString) {
-				return
+		// Get connection name for this resource (optimized to reduce KV calls)
+		connectionName, err := getResourceConnectionName(nsId, resourceType, resourceId)
+		if err != nil {
+			log.Warn().Err(err).Str("resourceId", resourceId).Msg("Failed to get connection name, using default group")
+			connectionName = "unknown"
+		}
+
+		connectionGroups[connectionName] = append(connectionGroups[connectionName], resourceId)
+	}
+
+	// Create semaphores for each connection (limit concurrent operations per CSP)
+	const maxConcurrentPerCSP = 20
+	connectionSemaphores := make(map[string]chan struct{})
+	totalResources := 0
+	for connectionName := range connectionGroups {
+		connectionSemaphores[connectionName] = make(chan struct{}, maxConcurrentPerCSP)
+		totalResources += len(connectionGroups[connectionName])
+		log.Info().Msgf("Connection %s: %d resources", connectionName, len(connectionGroups[connectionName]))
+	}
+
+	log.Info().Msgf("Starting deletion of %d resources across %d connections", totalResources, len(connectionGroups))
+
+	// Process ALL connection groups in parallel (not sequentially!)
+	for connectionName, resourceIds := range connectionGroups {
+		// Pre-increment WaitGroup counter for all resources in this connection group
+		for range resourceIds {
+			wg.Add(1)
+		}
+
+		// Launch a goroutine for each connection group to process in parallel
+		go func(connName string, resourceList []string, semaphore chan struct{}) {
+			log.Info().Msgf("Starting parallel deletion for connection %s with %d resources (max concurrent: %d)",
+				connName, len(resourceList), maxConcurrentPerCSP)
+
+			// Process each resource in this connection group
+			for _, resourceId := range resourceList {
+				// Launch a goroutine for each resource deletion
+				go func(resourceId string) {
+					defer wg.Done()
+
+					// Acquire semaphore (limit concurrent operations for this CSP)
+					semaphore <- struct{}{}
+					defer func() { <-semaphore }() // Release semaphore when done
+
+					startTime := time.Now()
+					log.Debug().Msgf("Starting deletion of %s:%s (connection: %s)", resourceType, resourceId, connName)
+
+					// Minimal random sleep to avoid thundering herd (reduced significantly)
+					common.RandomSleep(0, 1)
+
+					// Attempt to delete the resource
+					deleteStatus := "[Done] "
+					errString := ""
+
+					err := DelResource(nsId, resourceType, resourceId, forceFlag)
+					if err != nil {
+						deleteStatus = "[Failed] "
+						errString = " (" + err.Error() + ")"
+
+						// Safe error channel send - check if channel is still open
+						if atomic.LoadInt32(&errChanClosed) == 0 {
+							select {
+							case errChan <- err:
+								// Successfully sent error to channel
+							case <-time.After(10 * time.Millisecond):
+								// Channel is likely blocked, skip sending
+							default:
+								// Channel is full, skip sending
+							}
+						}
+					}
+
+					// Safely append the result to resultList using mutex
+					mutex.Lock()
+					resultList = append(resultList, deleteStatus+resourceType+": "+resourceId+errString)
+					mutex.Unlock()
+
+					elapsedTime := time.Since(startTime)
+					log.Debug().Str("connectionName", connName).Str("resourceId", resourceId).
+						Str("status", deleteStatus).Dur("elapsed", elapsedTime).Msg("Resource deletion completed")
+				}(resourceId)
 			}
-
-			// Attempt to delete the resource
-			deleteStatus := "[Done] "
-			errString := ""
-
-			err := DelResource(nsId, resourceType, resourceId, forceFlag)
-			if err != nil {
-				deleteStatus = "[Failed] "
-				errString = " (" + err.Error() + ")"
-				errChan <- err // Send error to the error channel
-			}
-
-			// Safely append the result to deletedResources.IdList using mutex
-			mutex.Lock()
-			deletedResources.IdList = append(deletedResources.IdList, deleteStatus+resourceType+": "+resourceId+errString)
-			mutex.Unlock()
-		}(v) // Pass loop variable as an argument to avoid race conditions
+		}(connectionName, resourceIds, connectionSemaphores[connectionName])
 	}
 
 	// Wait for all goroutines to complete
+	log.Info().Msgf("Waiting for %d resource deletion tasks to complete", totalResources)
 	wg.Wait()
-	close(errChan) // Close the error channel
+	log.Info().Msgf("All %d resource deletion tasks completed", totalResources)
+
+	// Safely close the error channel with atomic flag
+	if atomic.CompareAndSwapInt32(&errChanClosed, 0, 1) {
+		close(errChan)
+	}
 
 	// Collect any errors from the error channel
 	for err := range errChan {
@@ -142,7 +313,20 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 		}
 	}
 
-	return deletedResources, nil
+	log.Info().Msgf("DelAllResources completed. Total results: %d", len(resultList))
+	for i, result := range resultList {
+		log.Debug().Msgf("Result %d: %s", i, result)
+	}
+
+	// Sort the results for consistent output ordering
+	sort.Strings(resultList)
+
+	// Create a simple response without mutex to avoid JSON serialization issues
+	response := model.IdList{
+		IdList: resultList,
+	}
+
+	return response, nil
 }
 
 // DelResource deletes the TB Resource object
@@ -349,6 +533,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	method := "DELETE"
 	//client.SetTimeout(60 * time.Second)
 
+	log.Debug().Msg("Sending DELETE request to " + url)
+
 	err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
@@ -364,6 +550,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		log.Error().Err(err).Msg("")
 		return err
 	}
+	log.Debug().Msg("Deleting request finished from " + url)
 
 	if strings.EqualFold(resourceType, model.StrVNet) {
 		// var subnetKeys []string

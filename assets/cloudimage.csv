@@ -1,25 +1,21 @@
 providerName,regionName,cspImageName,osType,description,supportedInstance,infraType
-AWS,ap-northeast-2,ami-00379ec40a3e30f87,Ubuntu 18.04,,,vm
-AWS,ap-northeast-2,ami-08b2c3a9f2695e351,Ubuntu 20.04,Ubuntu Server 20.04 LTS (HVM) with SQL Server 2022 Standard,,vm
-AWS,ap-northeast-2,ami-058165de3b7202099,Ubuntu 22.04,,,vm
-AZURE,all,Canonical:0001-com-ubuntu-server-focal:20_04-lts:20.04.202505200,Ubuntu 20.04,,,vm
-AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210,Ubuntu 22.04,,,vm
-AZURE,all,Debian:debian-11:11:0.20250528.2126,Debian 10,,,vm
-AZURE,all,Debian:debian-10:10:0.20240430.1733,Debian 11,,,vm
-AZURE,all,MicrosoftWindowsServer:WindowsServer:2019-Datacenter:17763.7322.250524,Windows 2019,,,vm
-GCP,all,https://www.googleapis.com/compute/v1/projects/deeplearning-platform-release/global/images/tf-2-15-cu121-v20240417-debian-11,Debian 11,"Google, Deep Learning VM for TensorFlow 2.15 with CUDA 12.1, M120, Debian 11, Python 3.10, with TensorFlow 2.15 for CUDA 12.1 with Intel MKL-DNN preinstalled",,vm
-ALIBABA,all,aliyun_3_x64_20G_alibase_20250117.vhd,Alibaba Cloud Linux 3.2104,,,vm|k8s
-TENCENT,all,img-pi0ii46r,Ubuntu 18.04,,,vm|k8s
-TENCENT,all,img-22trbn9x,Ubuntu 20.04,,,vm|k8s
-NHNCLOUD,KR1,b7bd50d9-bdc2-460d-8b6a-358436ae3897,Ubuntu 20.04,Ubuntu Server 20.04.6 LTS (2024.05.21),,vm
-NHNCLOUD,KR1,280399f1-af96-41b7-b13b-2fae3752e97f,Ubuntu 22.04,Ubuntu Server 22.04.4 LTS (2024.05.21),,vm
-NHNCLOUD,KR1,62202a6a-5de2-4e13-8461-351f4a93a664,Ubuntu 20.04 Container,Ubuntu Server 20.04.6 LTS - Container (2025.02.25),,k8s
-NHNCLOUD,KR1,efe7f58f-5a32-4905-aa3b-e7839bd191d7,Ubuntu 22.04 Container,Ubuntu Server 22.04.5 LTS - Container (2025.02.25),,k8s
-NHNCLOUD,KR2,b850cadf-7015-49c1-8e01-1c709289a8b8,Ubuntu 20.04,Ubuntu Server 20.04.6 LTS (2024.05.21),,vm
-NHNCLOUD,KR2,84f1a13e-462e-49dd-9598-023fb2ca5d86,Ubuntu 22.04,Ubuntu Server 22.04.4 LTS (2024.05.21),,vm
-NHNCLOUD,KR2,61945852-0924-45ef-8431-58700fd2c98d,Ubuntu 20.04 Container,Ubuntu Server 20.04.6 LTS - Container (2024.11.19),,k8s
-NHNCLOUD,KR2,c2891660-07b9-4959-bc99-b8e9c2cefa76,Ubuntu 22.04 Container,Ubuntu Server 22.04.5 LTS - Container (2024.11.19),,k8s
-NHNCLOUD,JP1,d4923746-1cd2-4d4d-9974-ccaa5c120933,Ubuntu 20.04,,,vm
-NHNCLOUD,JP1,b82b6275-68f8-4ff5-8857-66c1735a22cc,Ubuntu 22.04,,,vm
-KTCLOUDVPC,KR1,eeeedf84-c661-49eb-9758-5df1495a1e2e,Ubuntu 22.04,,,vm
-KTCLOUDVPC,KR1,9c630edc-4c77-40e6-91b7-72273ad1a5df,Ubuntu 24.04,,,vm
+AZURE,all,Canonical:0001-com-ubuntu-pro-advanced-sla-airdig:18_04-gen2:18.04.202507300,Ubuntu 18.04,,,vm
+AZURE,all,Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:20.04.202505200,Ubuntu 20.04,,,vm
+AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202507300,Ubuntu 22.04,,,vm
+AZURE,all,Canonical:0001-com-ubuntu-pro-advanced-sla-airdig:24_04-gen2:24.04.202507310,Ubuntu 24.04,,,vm
+AZURE,all,Debian:debian-10:10-gen2:0.20240430.1733,Debian 10,,,vm
+AZURE,all,Debian:debian-11:11-gen2:0.20250801.2191,Debian 11,,,vm
+AZURE,all,Debian:debian-12:12-gen2:0.20250814.2204,Debian 12,,,vm
+AZURE,all,OpenLogic:CentOS:7_9-gen2:7.9.2023030701,CentOS 7,,,vm
+AZURE,all,OpenLogic:CentOS-LVM:8-lvm-gen2:8.5.2022101401,CentOS 8,,,vm
+AZURE,all,RedHat:RHEL:74-gen2:7.4.2021051702,Red Hat Enterprise Linux 7,,,vm
+AZURE,all,RedHat:RHEL-HA:8_10-gen2:8.10.2025011519,Red Hat Enterprise Linux 8,,,vm
+AZURE,all,RedHat:RHEL:9-lvm-gen2:9.6.2025073003,Red Hat Enterprise Linux 9,,,vm
+AZURE,all,MicrosoftWindowsServer:windowsserver-gen2preview:2012-r2-datacenter-gen2:9600.19431.1908092124,Windows 2012 R2,,,vm
+AZURE,all,MicrosoftWindowsServer:windowsserver-gen2preview:2016-datacenter-gen2:2016.127.20190620,Windows 2016,,,vm
+AZURE,all,MicrosoftWindowsServer:windowsserver-gen2preview:2019-datacenter-gen2:2019.0.20190620,Windows 2019,,,vm
+AZURE,all,RedHat:rhel-arm64:8_8-arm64-gen2:8.8.2023080216,Red Hat Enterprise Linux 8 (ARM64),,,vm
+AZURE,all,Oracle:Oracle-Linux:ol93-arm64-lvm-gen2:9.3.3,Oracle Linux 9 (ARM64),,,vm
+AZURE,all,almalinux:almalinux-arm:10-arm64-64k-gen2:10.0.202505290,AlmaLinux 10 (ARM64),,,vm
+AZURE,all,SUSE:opensuse-leap-15-6-arm64:gen2:2025.07.28,SUSE Linux Enterprise Server 15 (ARM64),,,vm
+AZURE,all,MicrosoftCBLMariner:azure-linux-3:azure-linux-3-arm64-gen2-fips:3.20250729.01,Azure Linux 3 (ARM64),,,vm

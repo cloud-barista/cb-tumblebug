@@ -74,9 +74,9 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.TbNLBReq, option string
 
 	// get vm requst from cloud_conf.yaml
 	subGroupName := "nlb"
-	// default commonSpec
-	commonSpec := common.RuntimeConf.Nlbsw.NlbMciCommonSpec
-	commonImage := common.RuntimeConf.Nlbsw.NlbMciCommonImage
+	// default specId
+	specId := common.RuntimeConf.Nlbsw.NlbMciSpecId
+	imageId := common.RuntimeConf.Nlbsw.NlbMciImageId
 	subGroupSize := common.RuntimeConf.Nlbsw.NlbMciSubGroupSize
 
 	// Option can be applied
@@ -102,10 +102,10 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.TbNLBReq, option string
 	}
 	if len(specList) != 0 {
 		recommendedSpec := specList[0].Id
-		commonSpec = recommendedSpec
+		specId = recommendedSpec
 	}
 
-	subGroupDynamicReq := model.TbCreateSubGroupDynamicReq{Name: subGroupName, CommonSpec: commonSpec, CommonImage: commonImage, SubGroupSize: subGroupSize}
+	subGroupDynamicReq := model.TbCreateSubGroupDynamicReq{Name: subGroupName, SpecId: specId, ImageId: imageId, SubGroupSize: subGroupSize}
 	mciDynamicReq.SubGroups = append(mciDynamicReq.SubGroups, subGroupDynamicReq)
 
 	mciInfo, err := CreateMciDynamic("", nsId, &mciDynamicReq, "")

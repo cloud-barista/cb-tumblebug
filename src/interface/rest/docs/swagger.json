@@ -3491,7 +3491,7 @@
                         "required": true
                     },
                     {
-                        "description": "Request body to provision K8sNodeGroup dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8sng01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
+                        "description": "Request body to provision K8sNodeGroup dynamically. \u003cbr\u003e Must include specId and imageId info. \u003cbr\u003e (ex: {name: k8sng01, imageId: azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
                         "name": "k8sNodeGroupDynamicReq",
                         "in": "body",
                         "required": true,
@@ -3615,7 +3615,7 @@
                         "required": true
                     },
                     {
-                        "description": "Request body to provision K8sCluster dynamically. \u003cbr\u003e Must include commonSpec and commonImage info. \u003cbr\u003e (ex: {name: k8scluster01, commonImage: azure+koreacentral+ubuntu22.04, commonSpec: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
+                        "description": "Request body to provision K8sCluster dynamically. \u003cbr\u003e Must include specId and imageId info. \u003cbr\u003e (ex: {name: k8scluster01, imageId: azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]}) \u003cbr\u003e You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
                         "name": "k8sClusterDyanmicReq",
                         "in": "body",
                         "required": true,
@@ -5718,7 +5718,7 @@
         },
         "/ns/{nsId}/mci/{mciId}/vmDynamic": {
             "post": {
-                "description": "Dynamically add new virtual machines to an existing MCI using common specifications and automated resource management.\nThis endpoint provides elastic scaling capabilities for running MCIs:\n\n**Dynamic VM Addition Process:**\n1. **MCI Validation**: Verifies target MCI exists and is in a valid state for expansion\n2. **Resource Discovery**: Resolves common spec and image to provider-specific resources\n3. **Network Integration**: Automatically configures new VMs to use existing MCI network resources\n4. **Subgroup Management**: Creates new subgroups or expands existing ones based on configuration\n5. **Status Synchronization**: Updates MCI status and metadata to reflect new VM additions\n\n**Integration with Existing Infrastructure:**\n- **Network Reuse**: New VMs automatically join existing VNets and security groups\n- **SSH Key Sharing**: Uses existing SSH keys for consistent access management\n- **Monitoring Integration**: New VMs inherit monitoring configuration from parent MCI\n- **Label Propagation**: Applies MCI-level labels and policies to new VMs\n- **Resource Consistency**: Maintains naming conventions and resource organization\n\n**Scaling Scenarios:**\n- **Horizontal Scaling**: Add more instances to handle increased workload\n- **Multi-Region Expansion**: Deploy VMs in new regions while maintaining MCI cohesion\n- **Provider Diversification**: Add VMs from different cloud providers for redundancy\n- **Workload Specialization**: Deploy VMs with different specifications for specific tasks\n\n**Configuration Requirements:**\n- `commonSpec`: Must specify valid VM specification from system namespace\n- `commonImage`: Must specify valid image compatible with target provider/region\n- `name`: Becomes subgroup name; VMs will be named with sequential suffixes\n- `subGroupSize`: Number of identical VMs to create (default: 1)\n\n**Network and Security:**\n- New VMs automatically inherit security group rules from existing MCI\n- Network connectivity to existing VMs is established automatically\n- Firewall rules and access policies are applied consistently\n- SSH access is configured using existing key pairs\n\n**Example Use Cases:**\n- Scale out web tier during traffic spikes\n- Add GPU instances for machine learning workloads\n- Deploy edge nodes in additional geographic regions\n- Add specialized storage or database nodes to existing application stack\n\n**Post-Addition Operations:**\n- New VMs are immediately available for standard MCI operations\n- Can be individually managed or grouped with existing subgroups\n- Monitoring and logging are automatically configured\n- Application deployment and configuration management can proceed immediately",
+                "description": "Dynamically add new virtual machines to an existing MCI using common specifications and automated resource management.\nThis endpoint provides elastic scaling capabilities for running MCIs:\n\n**Dynamic VM Addition Process:**\n1. **MCI Validation**: Verifies target MCI exists and is in a valid state for expansion\n2. **Resource Discovery**: Resolves common spec and image to provider-specific resources\n3. **Network Integration**: Automatically configures new VMs to use existing MCI network resources\n4. **Subgroup Management**: Creates new subgroups or expands existing ones based on configuration\n5. **Status Synchronization**: Updates MCI status and metadata to reflect new VM additions\n\n**Integration with Existing Infrastructure:**\n- **Network Reuse**: New VMs automatically join existing VNets and security groups\n- **SSH Key Sharing**: Uses existing SSH keys for consistent access management\n- **Monitoring Integration**: New VMs inherit monitoring configuration from parent MCI\n- **Label Propagation**: Applies MCI-level labels and policies to new VMs\n- **Resource Consistency**: Maintains naming conventions and resource organization\n\n**Scaling Scenarios:**\n- **Horizontal Scaling**: Add more instances to handle increased workload\n- **Multi-Region Expansion**: Deploy VMs in new regions while maintaining MCI cohesion\n- **Provider Diversification**: Add VMs from different cloud providers for redundancy\n- **Workload Specialization**: Deploy VMs with different specifications for specific tasks\n\n**Configuration Requirements:**\n- `specId`: Must specify valid VM specification from system namespace\n- `imageId`: Must specify valid image compatible with target provider/region\n- `name`: Becomes subgroup name; VMs will be named with sequential suffixes\n- `subGroupSize`: Number of identical VMs to create (default: 1)\n\n**Network and Security:**\n- New VMs automatically inherit security group rules from existing MCI\n- Network connectivity to existing VMs is established automatically\n- Firewall rules and access policies are applied consistently\n- SSH access is configured using existing key pairs\n\n**Example Use Cases:**\n- Scale out web tier during traffic spikes\n- Add GPU instances for machine learning workloads\n- Deploy edge nodes in additional geographic regions\n- Add specialized storage or database nodes to existing application stack\n\n**Post-Addition Operations:**\n- New VMs are immediately available for standard MCI operations\n- Can be individually managed or grouped with existing subgroups\n- Monitoring and logging are automatically configured\n- Application deployment and configuration management can proceed immediately",
                 "consumes": [
                     "application/json"
                 ],
@@ -5748,7 +5748,7 @@
                         "required": true
                     },
                     {
-                        "description": "SubGroup dynamic request specifying commonSpec, commonImage, and scaling parameters",
+                        "description": "SubGroup dynamic request specifying specId, imageId, and scaling parameters",
                         "name": "vmReq",
                         "in": "body",
                         "required": true,
@@ -6149,7 +6149,7 @@
         },
         "/ns/{nsId}/mciDynamic": {
             "post": {
-                "description": "Create multi-cloud infrastructure dynamically using common specifications and images with automatic resource discovery and optimization.\nThis is the **recommended approach** for MCI creation, providing simplified configuration with powerful automation:\n\n**Dynamic Resource Creation:**\n1. **Automatic Resource Discovery**: Validates and selects optimal VM specifications and images from common namespace\n2. **Intelligent Network Setup**: Creates VNets, subnets, security groups, and SSH keys automatically per provider\n3. **Cross-Cloud Orchestration**: Coordinates VM provisioning across multiple cloud providers simultaneously\n4. **Dependency Management**: Handles resource creation order and inter-dependencies automatically\n5. **Failure Recovery**: Implements configurable failure policies for robust deployment\n\n**Key Advantages Over Static MCI:**\n- **Simplified Configuration**: Use common spec/image IDs instead of provider-specific resources\n- **Automatic Resource Management**: No need to pre-create VNets, security groups, or SSH keys\n- **Multi-Cloud Optimization**: Intelligent placement and configuration across providers\n- **Built-in Best Practices**: Security groups, network isolation, and access controls applied automatically\n- **Scalable Architecture**: Supports large-scale deployments with optimized resource utilization\n\n**Configuration Process:**\n1. **Resource Discovery**: Use `/recommendSpec` to find suitable VM specifications\n2. **Image Selection**: Use system namespace to discover compatible images\n3. **Request Validation**: Use `/mciDynamicCheckRequest` to validate configuration before deployment\n4. **Optional Preview**: Use `/mciDynamicReview` to estimate costs and review configuration\n5. **Deployment**: Submit MCI dynamic request with failure policy and deployment options\n\n**Failure Policies (PolicyOnPartialFailure):**\n- **`continue`** (default): Create MCI with successful VMs, failed VMs remain for manual refinement\n- **`rollback`**: Delete entire MCI if any VM fails (all-or-nothing deployment)\n- **`refine`**: Automatically clean up failed VMs, keep successful ones (recommended for large deployments)\n\n**Deployment Options:**\n- **`hold`**: Create MCI object but hold VM provisioning for manual approval\n- **Normal**: Proceed with immediate VM provisioning after resource creation\n\n**Multi-Cloud Example Configuration:**\n```json\n{\n\"name\": \"multi-cloud-web-tier\",\n\"description\": \"Web application across AWS, Azure, and GCP\",\n\"policyOnPartialFailure\": \"refine\",\n\"vm\": [\n{\n\"name\": \"aws-web-servers\",\n\"subGroupSize\": \"3\",\n\"commonSpec\": \"aws+us-east-1+t3.medium\",\n\"commonImage\": \"ami-0abcdef1234567890\",\n\"rootDiskSize\": \"100\",\n\"label\": {\"tier\": \"web\", \"provider\": \"aws\"}\n},\n{\n\"name\": \"azure-api-servers\",\n\"subGroupSize\": \"2\",\n\"commonSpec\": \"azure+eastus+Standard_B2s\",\n\"commonImage\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts\",\n\"label\": {\"tier\": \"api\", \"provider\": \"azure\"}\n}\n]\n}\n```\n\n**Performance Considerations:**\n- VM provisioning occurs in parallel across providers\n- Network resources are created concurrently where possible\n- Large deployments (\u003e10 VMs) automatically use optimized batching\n- Built-in rate limiting prevents CSP API throttling\n\n**Monitoring and Post-Deployment:**\n- Optional CB-Dragonfly monitoring agent installation\n- Custom post-deployment command execution\n- Real-time status tracking and progress updates\n- Automatic resource labeling and metadata management",
+                "description": "Create multi-cloud infrastructure dynamically using common specifications and images with automatic resource discovery and optimization.\nThis is the **recommended approach** for MCI creation, providing simplified configuration with powerful automation:\n\n**Dynamic Resource Creation:**\n1. **Automatic Resource Discovery**: Validates and selects optimal VM specifications and images from common namespace\n2. **Intelligent Network Setup**: Creates VNets, subnets, security groups, and SSH keys automatically per provider\n3. **Cross-Cloud Orchestration**: Coordinates VM provisioning across multiple cloud providers simultaneously\n4. **Dependency Management**: Handles resource creation order and inter-dependencies automatically\n5. **Failure Recovery**: Implements configurable failure policies for robust deployment\n\n**Key Advantages Over Static MCI:**\n- **Simplified Configuration**: Use common spec/image IDs instead of provider-specific resources\n- **Automatic Resource Management**: No need to pre-create VNets, security groups, or SSH keys\n- **Multi-Cloud Optimization**: Intelligent placement and configuration across providers\n- **Built-in Best Practices**: Security groups, network isolation, and access controls applied automatically\n- **Scalable Architecture**: Supports large-scale deployments with optimized resource utilization\n\n**Configuration Process:**\n1. **Resource Discovery**: Use `/recommendSpec` to find suitable VM specifications\n2. **Image Selection**: Use system namespace to discover compatible images\n3. **Request Validation**: Use `/mciDynamicCheckRequest` to validate configuration before deployment\n4. **Optional Preview**: Use `/mciDynamicReview` to estimate costs and review configuration\n5. **Deployment**: Submit MCI dynamic request with failure policy and deployment options\n\n**Failure Policies (PolicyOnPartialFailure):**\n- **`continue`** (default): Create MCI with successful VMs, failed VMs remain for manual refinement\n- **`rollback`**: Delete entire MCI if any VM fails (all-or-nothing deployment)\n- **`refine`**: Automatically clean up failed VMs, keep successful ones (recommended for large deployments)\n\n**Deployment Options:**\n- **`hold`**: Create MCI object but hold VM provisioning for manual approval\n- **Normal**: Proceed with immediate VM provisioning after resource creation\n\n**Multi-Cloud Example Configuration:**\n```json\n{\n\"name\": \"multi-cloud-web-tier\",\n\"description\": \"Web application across AWS, Azure, and GCP\",\n\"policyOnPartialFailure\": \"refine\",\n\"vm\": [\n{\n\"name\": \"aws-web-servers\",\n\"subGroupSize\": \"3\",\n\"specId\": \"aws+us-east-1+t3.medium\",\n\"imageId\": \"ami-0abcdef1234567890\",\n\"rootDiskSize\": \"100\",\n\"label\": {\"tier\": \"web\", \"provider\": \"aws\"}\n},\n{\n\"name\": \"azure-api-servers\",\n\"subGroupSize\": \"2\",\n\"specId\": \"azure+eastus+Standard_B2s\",\n\"imageId\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts\",\n\"label\": {\"tier\": \"api\", \"provider\": \"azure\"}\n}\n]\n}\n```\n\n**Performance Considerations:**\n- VM provisioning occurs in parallel across providers\n- Network resources are created concurrently where possible\n- Large deployments (\u003e10 VMs) automatically use optimized batching\n- Built-in rate limiting prevents CSP API throttling\n\n**Monitoring and Post-Deployment:**\n- Optional CB-Dragonfly monitoring agent installation\n- Custom post-deployment command execution\n- Real-time status tracking and progress updates\n- Automatic resource labeling and metadata management",
                 "consumes": [
                     "application/json"
                 ],
@@ -6171,7 +6171,7 @@
                         "required": true
                     },
                     {
-                        "description": "Dynamic MCI request with common specifications. Must include commonSpec and commonImage for each VM group. See description for detailed example.",
+                        "description": "Dynamic MCI request with common specifications. Must include specId and imageId for each VM group. See description for detailed example.",
                         "name": "mciReq",
                         "in": "body",
                         "required": true,
@@ -6253,7 +6253,7 @@
                         "required": true
                     },
                     {
-                        "description": "Request body to review MCI dynamic provisioning. Must include commonSpec and commonImage info of each VM request. Same format as /mciDynamic endpoint. (ex: {name: mci01, vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04, commonSpec: aws+ap-northeast-2+t2.small}]})",
+                        "description": "Request body to review MCI dynamic provisioning. Must include specId and imageId info of each VM request. Same format as /mciDynamic endpoint. (ex: {name: mci01, vm: [{imageId: aws+ap-northeast-2+ubuntu22.04, specId: aws+ap-northeast-2+t2.small}]})",
                         "name": "mciReq",
                         "in": "body",
                         "required": true,
@@ -9092,7 +9092,7 @@
                 }
             },
             "post": {
-                "description": "Create a SQL Databases\n\nSupported CSPs: AWS, Azure, GCP, NCP\n- Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncpvpc-kr\n\n- Note - Please check the `requiredCSPResource` property which includes CSP specific values.\n\n- Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/110\n",
+                "description": "Create a SQL Databases\n\nSupported CSPs: AWS, Azure, GCP, NCP\n- Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral, gcp-asia-northeast3, ncp-kr\n\n- Note - Please check the `requiredCSPResource` property which includes CSP specific values.\n\n- Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/110\n",
                 "consumes": [
                     "application/json"
                 ],
@@ -12865,11 +12865,11 @@
         "model.K8sClusterConnectionConfigCandidatesReq": {
             "type": "object",
             "required": [
-                "commonSpec"
+                "specId"
             ],
             "properties": {
-                "commonSpec": {
-                    "description": "CommonSpec is field for id of a spec in common namespace",
+                "specId": {
+                    "description": "SpecId is field for id of a spec in common namespace",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -13280,11 +13280,11 @@
         "model.MciConnectionConfigCandidatesReq": {
             "type": "object",
             "required": [
-                "commonSpec"
+                "specId"
             ],
             "properties": {
-                "commonSpec": {
-                    "description": "CommonSpec is field for id of a spec in common namespace",
+                "specId": {
+                    "description": "SpecId is field for id of a spec in common namespace",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -15684,20 +15684,10 @@
         "model.TbCreateSubGroupDynamicReq": {
             "type": "object",
             "required": [
-                "commonImage",
-                "commonSpec"
+                "imageId",
+                "specId"
             ],
             "properties": {
-                "commonImage": {
-                    "description": "CommonImage is field for id of a image in common namespace",
-                    "type": "string",
-                    "example": "ami-01f71f215b23ba262"
-                },
-                "commonSpec": {
-                    "description": "CommonSpec is field for id of a spec in common namespace",
-                    "type": "string",
-                    "example": "aws+ap-northeast-2+t3.nano"
-                },
                 "connectionName": {
                     "description": "if ConnectionName is given, the VM tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
                     "type": "string",
@@ -15706,6 +15696,11 @@
                 "description": {
                     "type": "string",
                     "example": "Created via CB-Tumblebug"
+                },
+                "imageId": {
+                    "description": "ImageId is field for id of a image in common namespace",
+                    "type": "string",
+                    "example": "ami-01f71f215b23ba262"
                 },
                 "label": {
                     "description": "Label is for describing the object by keywords",
@@ -15734,6 +15729,11 @@
                     "type": "string",
                     "default": "default",
                     "example": "gp3"
+                },
+                "specId": {
+                    "description": "SpecId is field for id of a spec in common namespace",
+                    "type": "string",
+                    "example": "aws+ap-northeast-2+t3.nano"
                 },
                 "subGroupSize": {
                     "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be generated. VMs will be created accordingly.",
@@ -16422,21 +16422,11 @@
         "model.TbK8sClusterDynamicReq": {
             "type": "object",
             "required": [
-                "commonImage",
-                "commonSpec",
-                "name"
+                "imageId",
+                "name",
+                "specId"
             ],
             "properties": {
-                "commonImage": {
-                    "description": "CommonImage is field for id of a image in common namespace",
-                    "type": "string",
-                    "example": "default, tencent+ap-seoul+ubuntu20.04"
-                },
-                "commonSpec": {
-                    "description": "CommonSpec is field for id of a spec in common namespace",
-                    "type": "string",
-                    "example": "tencent+ap-seoul+S2.MEDIUM4"
-                },
                 "connectionName": {
                     "description": "if ConnectionName is given, the VM tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
                     "type": "string",
@@ -16450,6 +16440,11 @@
                     "type": "string",
                     "default": "1",
                     "example": "1"
+                },
+                "imageId": {
+                    "description": "ImageId is field for id of a image in common namespace",
+                    "type": "string",
+                    "example": "default, tencent+ap-seoul+ubuntu20.04"
                 },
                 "label": {
                     "description": "Label is for describing the object by keywords",
@@ -16494,6 +16489,11 @@
                     "type": "string",
                     "default": "default",
                     "example": "default, TYPE1, ..."
+                },
+                "specId": {
+                    "description": "SpecId is field for id of a spec in common namespace",
+                    "type": "string",
+                    "example": "tencent+ap-seoul+S2.MEDIUM4"
                 },
                 "version": {
                     "description": "K8s Clsuter version",
@@ -16747,21 +16747,11 @@
         "model.TbK8sNodeGroupDynamicReq": {
             "type": "object",
             "required": [
-                "commonImage",
-                "commonSpec",
-                "name"
+                "imageId",
+                "name",
+                "specId"
             ],
             "properties": {
-                "commonImage": {
-                    "description": "CommonImage is field for id of a image in common namespace",
-                    "type": "string",
-                    "example": "default, tencent+ap-seoul+ubuntu20.04"
-                },
-                "commonSpec": {
-                    "description": "CommonSpec is field for id of a spec in common namespace",
-                    "type": "string",
-                    "example": "tencent+ap-seoul+S2.MEDIUM4"
-                },
                 "description": {
                     "type": "string",
                     "example": "Description"
@@ -16770,6 +16760,11 @@
                     "type": "string",
                     "default": "1",
                     "example": "1"
+                },
+                "imageId": {
+                    "description": "ImageId is field for id of a image in common namespace",
+                    "type": "string",
+                    "example": "default, tencent+ap-seoul+ubuntu20.04"
                 },
                 "label": {
                     "description": "Label is for describing the object by keywords",
@@ -16809,6 +16804,11 @@
                     "type": "string",
                     "default": "default",
                     "example": "default, TYPE1, ..."
+                },
+                "specId": {
+                    "description": "SpecId is field for id of a spec in common namespace",
+                    "type": "string",
+                    "example": "tencent+ap-seoul+S2.MEDIUM4"
                 }
             }
         },
@@ -17031,7 +17031,7 @@
                     ]
                 },
                 "subGroups": {
-                    "description": "SubGroups is array of VM requests for multi-cloud infrastructure\nExample: Multiple VM groups across different CSPs\n[\n  {\n    \"name\": \"aws-group\",\n    \"subGroupSize\": \"3\",\n    \"commonSpec\": \"aws+ap-northeast-2+t3.nano\",\n    \"commonImage\": \"ami-01f71f215b23ba262\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"worker\", \"csp\": \"aws\"}\n  },\n  {\n    \"name\": \"azure-group\",\n    \"subGroupSize\": \"2\",\n    \"commonSpec\": \"azure+koreasouth+standard_b1s\",\n    \"commonImage\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"head\", \"csp\": \"azure\"}\n  },\n  {\n    \"name\": \"gcp-group\",\n    \"subGroupSize\": \"1\",\n    \"commonSpec\": \"gcp+asia-northeast3+g1-small\",\n    \"commonImage\": \"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"test\", \"csp\": \"gcp\"}\n  }\n]",
+                    "description": "SubGroups is array of VM requests for multi-cloud infrastructure\nExample: Multiple VM groups across different CSPs\n[\n  {\n    \"name\": \"aws-group\",\n    \"subGroupSize\": \"3\",\n    \"specId\": \"aws+ap-northeast-2+t3.nano\",\n    \"imageId\": \"ami-01f71f215b23ba262\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"worker\", \"csp\": \"aws\"}\n  },\n  {\n    \"name\": \"azure-group\",\n    \"subGroupSize\": \"2\",\n    \"specId\": \"azure+koreasouth+standard_b1s\",\n    \"imageId\": \"Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"head\", \"csp\": \"azure\"}\n  },\n  {\n    \"name\": \"gcp-group\",\n    \"subGroupSize\": \"1\",\n    \"specId\": \"gcp+asia-northeast3+g1-small\",\n    \"imageId\": \"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712\",\n    \"rootDiskSize\": \"50\",\n    \"label\": {\"role\": \"test\", \"csp\": \"gcp\"}\n  }\n]",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.TbCreateSubGroupDynamicReq"

@@ -1727,9 +1727,9 @@ cloud:
         - ca-mon-1
         - ca-mon-2
         - ca-mon-3
-  ktcloudvpc:
+  kt:
     description: KT Cloud (VPC)
-    driver: ktcloudvpc-driver-v1.0.so
+    driver: kt-driver-v1.0.so
     region:
       KR1:
         id: KR1
@@ -1740,9 +1740,9 @@ cloud:
           longitude: 126.874278
         zone:
         - DX-M1
-  ncpvpc:
+  ncp:
     description: Naver Cloud Platform (VPC)
-    driver: ncpvpc-driver-v1.0.so
+    driver: ncp-driver-v1.0.so
     region:
       KR:
         id: KR
@@ -1774,9 +1774,9 @@ cloud:
         zone:
         - JPN-4
         - JPN-5
-  nhncloud:
+  nhn:
     description: NHN Cloud
-    driver: nhncloud-driver-v1.0.so
+    driver: nhn-driver-v1.0.so
     region:
       KR1:
         id: KR1

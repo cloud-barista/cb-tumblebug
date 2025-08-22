@@ -203,7 +203,7 @@ network:
       reserved-ips:
         value: 5
         description: Number of reserved IPs for Network Address, Gateway Address, Addresses reserved by IBM, and Broadcast Address
-  ktcloudvpc:
+  kt:
     description: KT Cloud (VPC)
     # TBD
     # link:
@@ -231,11 +231,8 @@ network:
     #   reserved-ips:
     #     count: 5
     #     description: Number of reserved IPs for ....
-  ncp:
-    description: Naver Cloud Platform (Classic without VPC)
-    # No planned yet
 
-  ncpvpc:
+  ncp:
     description: Naver Cloud Platform (VPC)
     link:
       - https://guide.ncloud-docs.com/docs/en/vpc-procedure-vpc
@@ -263,11 +260,11 @@ network:
       reserved-ips:
         count: 5
         description: Number of reserved IPs for network IP, broadcast IP, and internal management
-  nhncloud:
+  nhn:
     description: NHN Cloud
     link:
-      - https://docs.nhncloud.com/en/Network/VPC/en/console-guide/
-      - https://docs.nhncloud.com/en/nhncloud/en/resource-policy/
+      - https://docs.nhn.com/en/Network/VPC/en/console-guide/
+      - https://docs.nhn.com/en/nhn/en/resource-policy/
     available-cidr-blocks:
       - cidr-block: 10.0.0.0/8
         description: "RFC 1918 private IP address range"

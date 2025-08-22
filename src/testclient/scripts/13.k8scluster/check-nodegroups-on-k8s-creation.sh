@@ -14,7 +14,7 @@ echo "NSID: "${NSID}
 echo "K8SCLUSTERID=${K8SCLUSTERID}"
 
 PROVIDERNAME="alibaba"
-PROVIDERNAME="nhncloud"
+PROVIDERNAME="nhn"
 
 resp=$(
 	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/checkNodeGroupsOnK8sCreation?providerName=${PROVIDERNAME}

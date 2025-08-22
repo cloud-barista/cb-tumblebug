@@ -6,16 +6,16 @@
     "systemLabel": "",
     "vm": [
         {
-            "commonImage": "ubuntu22.04",
-            "commonSpec": "aws+ap-northeast-2+t3.small"
+            "imageId": "ubuntu22.04",
+            "specId": "aws+ap-northeast-2+t3.small"
         },
         {
-            "commonImage": "ubuntu22.04",
-            "commonSpec": "azure+koreacentral+standard_b1s"
+            "imageId": "ubuntu22.04",
+            "specId": "azure+koreacentral+standard_b1s"
         },
         {
-            "commonImage": "ubuntu22.04",
-            "commonSpec": "gcp+asia-northeast3+g1-small"
+            "imageId": "ubuntu22.04",
+            "specId": "gcp+asia-northeast3+g1-small"
         }
     ]
 }
