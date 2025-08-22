@@ -30,6 +30,9 @@
 + POST /recommendSpec  ← 변경된 엔드포인트 (v0.11.4부터)
 ```
 
+<img width="655" height="434" alt="image" src="https://github.com/user-attachments/assets/1cd9c01e-f979-4ac0-88d9-1c7c6aac2869" />
+
+
 ### 🔄 **MCI Dynamic Request Body 구조 변경** (Breaking Change)
 ```diff
 # v0.11.1 구조
@@ -64,13 +67,37 @@
 }
 ```
 
-### ✅ **새로 추가된 핵심 API**
+
+### 🔄 **CSP Provider 명칭 변경** (Breaking Change)
 ```diff
-+ POST /ns/{nsId}/mciDynamicReview     ← MCI 생성 전 검증 (강력 권장)
-+ GET  /ns/{nsId}/mci/{mciId}/associatedResources  ← MCI 관련 리소스 통합 조회
-+ PUT  /ns/{nsId}/mci/{mciId}/associatedSecurityGroups  ← MCI 통합 방화벽 룰 관리
-+ GET  /ns/{nsId}/resources/searchImageOptions  ← 이미지 검색 옵션 사전 확인 (권장)
+# CSP Provider 명칭 간소화
+- ncpvpc    ← 이전 NCP 명칭
++ ncp       ← 변경된 NCP 명칭
+
+- ktcloudvpc ← 이전 KT Cloud 명칭  
++ kt         ← 변경된 KT Cloud 명칭
+
+- nhncloud   ← 이전 NHN Cloud 명칭
++ nhn        ← 변경된 NHN Cloud 명칭
 ```
+
+### 🆕 **새로 추가된 핵심 API**
+
+- POST /ns/{nsId}/mciDynamicReview     ← MCI 생성 전 검증 (적용 권장)
+
+<img width="454" height="705" alt="image" src="https://github.com/user-attachments/assets/edc262ed-0f2a-40d4-b72c-fd2c7f8343d5" />
+
+<img width="461" height="536" alt="image" src="https://github.com/user-attachments/assets/b7604ab1-9446-4819-b97d-a29854b1803c" />
+
+
+- PUT  /ns/{nsId}/mci/{mciId}/associatedSecurityGroups  ← MCI 통합 방화벽 룰 관리
+
+<img width="544" height="384" alt="image" src="https://github.com/user-attachments/assets/945e0809-c525-4e47-85a2-3fafadbb5fd9" />
+
+- GET  /ns/{nsId}/resources/searchImageOptions  ← 이미지 검색 옵션 사전 확인 (적용 권장)
+
+- GET  /ns/{nsId}/mci/{mciId}/associatedResources  ← MCI 관련 리소스 통합 조회
+
 
 ### 🆕 **Image Search 스마트 매칭 기능** (Major Enhancement)
 ```diff
@@ -102,18 +129,9 @@ POST /ns/default/resources/searchImage
 #          응답의 각 이미지에서 "isBasicImage": true/false 값을 확인하여 기본 이미지 여부 판단
 ```
 
-### 🔄 **CSP Provider 명칭 변경** (Breaking Change)
-```diff
-# CSP Provider 명칭 간소화
-- ncpvpc    ← 이전 NCP 명칭
-+ ncp       ← 변경된 NCP 명칭
+<img width="545" height="365" alt="image" src="https://github.com/user-attachments/assets/ed29398e-5823-454b-b627-0d79c64254d1" />
 
-- ktcloudvpc ← 이전 KT Cloud 명칭  
-+ kt         ← 변경된 KT Cloud 명칭
 
-- nhncloud   ← 이전 NHN Cloud 명칭
-+ nhn        ← 변경된 NHN Cloud 명칭
-```
 
 ## 🔧 **호환성 매트릭스**
 
@@ -385,6 +403,7 @@ def create_mci_with_validation(mci_request):
     # 2. 실제 생성
     return requests.post(f"{API_BASE}/ns/default/mciDynamic", json=mci_request)
 ```
+
 
 ## 🔧 **API 구조 변화**
 
@@ -1241,8 +1260,6 @@ def manage_mci_unified_firewall_rules(ns_id, mci_id):
 ##  지원 및 문의
 
 - **GitHub Issues**: [CB-Tumblebug Issues](https://github.com/cloud-barista/cb-tumblebug/issues)
-- **Documentation**: [CB-Tumblebug Docs](https://github.com/cloud-barista/cb-tumblebug/tree/main/docs)
-- **API Reference**: [Swagger UI](https://cloud-barista.github.io/cb-tumblebug-api-web/)
 
 ---
 
