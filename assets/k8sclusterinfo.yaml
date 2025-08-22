@@ -23,16 +23,19 @@ k8scluster:
     version:
       - region: [common]
         available:
+          - name: "1.33"
+            id: "1.33"
           - name: "1.32"
             id: "1.32"
           - name: "1.31"
             id: "1.31"
-          - name: "1.30"
-            id: "1.30"
-          - name: "1.29"
-            id: "1.29"
-          - name: "1.28"
-            id: "1.28"
+          # Deprecated versions (not available in AWS console as of 2025-08)  
+          # - name: "1.30"
+          #   id: "1.30"
+          # - name: "1.29"
+          #   id: "1.29"
+          # - name: "1.28"
+          #   id: "1.28"
     rootDisk:
       - region: [common]
         type:
