@@ -777,7 +777,7 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 		return &model.MciStatusInfo{}, err
 	}
 	if len(vmList) == 0 {
-		return &model.MciStatusInfo{}, nil
+		return &mciStatus, nil
 	}
 
 	//goroutin sync wg
@@ -1792,7 +1792,7 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 	}
 
 	// Check MCI status is Terminated (not Partial)
-	if mciStatus.Id != "" && !(!strings.Contains(mciStatus.Status, "Partial-") && (strings.Contains(mciStatus.Status, model.StatusTerminated) || strings.Contains(mciStatus.Status, model.StatusUndefined) || strings.Contains(mciStatus.Status, model.StatusFailed))) {
+	if mciStatus.Id != "" && !(!strings.Contains(mciStatus.Status, "Partial-") && (strings.Contains(mciStatus.Status, model.StatusTerminated) || strings.Contains(mciStatus.Status, model.StatusUndefined) || strings.Contains(mciStatus.Status, model.StatusFailed) || strings.Contains(mciStatus.Status, model.StatusPreparing) || strings.Contains(mciStatus.Status, model.StatusPrepared))) {
 		err := fmt.Errorf("MCI " + mciId + " is " + mciStatus.Status + " and not " + model.StatusTerminated + "/" + model.StatusUndefined + "/" + model.StatusFailed + ", Deletion is not allowed (use option=force for force deletion)")
 		log.Error().Err(err).Msg("")
 		if option != "force" {
