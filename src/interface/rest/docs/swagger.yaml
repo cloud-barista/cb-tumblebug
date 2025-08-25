@@ -8970,8 +8970,10 @@ paths:
       tags:
       - "[MC-Infra] MCI Provisioning and Management"
       summary: Recommend specs for configuring an infrastructure (filter and priority)
-      description: Recommend specs for configuring an infrastructure (filter and priority)
+      description: |-
+        Recommend specs for configuring an infrastructure (filter and priority)
         Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
+        Get available options by /recommendSpecOptions for filtering and prioritizing specs in RecommendSpec API
       operationId: RecommendSpec
       requestBody:
         description: Conditions for recommending specs (filter and priority)
@@ -9002,6 +9004,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: recommendSpecReq
+  /recommendSpecOptions:
+    get:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: Get options for RecommendSpec API
+      description: Get available options for filtering and prioritizing specs in RecommendSpec
+        API
+      operationId: RecommendSpecOptions
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.RecommendSpecRequestOptions'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /regionFromCsp:
     get:
       tags:
@@ -10165,6 +10194,66 @@ components:
       - DiskAttached
       - DiskDeleting
       - DiskError
+    model.FilterAvailableValues:
+      type: object
+      properties:
+        acceleratorModel:
+          type: array
+          description: Accelerator information
+          items:
+            type: string
+        acceleratorType:
+          type: array
+          items:
+            type: string
+        architecture:
+          type: array
+          items:
+            type: string
+        connectionName:
+          type: array
+          items:
+            type: string
+        cspSpecName:
+          type: array
+          items:
+            type: string
+        description:
+          type: array
+          description: Additional fields
+          items:
+            type: string
+        evaluationStatus:
+          type: array
+          items:
+            type: string
+        id:
+          type: array
+          description: Basic identification fields
+          items:
+            type: string
+        infraType:
+          type: array
+          description: Infrastructure specifications
+          items:
+            type: string
+        name:
+          type: array
+          items:
+            type: string
+        osType:
+          type: array
+          items:
+            type: string
+        providerName:
+          type: array
+          description: Provider and region information
+          items:
+            type: string
+        regionName:
+          type: array
+          items:
+            type: string
     model.FilterCondition:
       type: object
       properties:
@@ -10179,6 +10268,19 @@ components:
           - vCPU
           - memoryGiB
           - costPerHour
+    model.FilterConditionExample:
+      type: object
+      properties:
+        condition:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.OperationExample'
+        description:
+          type: string
+          example: Filter specs with 2-8 vCPUs
+        metric:
+          type: string
+          example: vCPU
     model.FilterInfo:
       type: object
       properties:
@@ -10186,6 +10288,31 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.FilterCondition'
+    model.FilterOptionsInfo:
+      type: object
+      properties:
+        availableMetrics:
+          type: array
+          description: Available metrics for filtering
+          example:
+          - vCPU
+          - memoryGiB
+          - costPerHour
+          - providerName
+          - regionName
+          - architecture
+          items:
+            type: string
+        availableValues:
+          type: object
+          description: Available values for each metric (for select fields)
+          allOf:
+          - $ref: '#/components/schemas/model.FilterAvailableValues'
+        examplePolicies:
+          type: array
+          description: Example filter policies
+          items:
+            $ref: '#/components/schemas/model.FilterConditionExample'
     model.FilterSpecsByRangeRequest:
       type: object
       properties:
@@ -10965,6 +11092,15 @@ components:
           - '>='
           - <=
           - ==
+    model.OperationExample:
+      type: object
+      properties:
+        operand:
+          type: string
+          example: "2"
+        operator:
+          type: string
+          example: '>='
     model.OverallRiskInfo:
       type: object
       properties:
@@ -10996,6 +11132,51 @@ components:
           - 44.146838/-116.411403
           items:
             type: string
+    model.ParameterKeyValExample:
+      type: object
+      properties:
+        description:
+          type: string
+          example: Find specs closest to given coordinate
+        key:
+          type: string
+          example: coordinateClose
+        val:
+          type: array
+          example:
+          - 37.5665/126.9780
+          items:
+            type: string
+    model.ParameterOptionDetail:
+      type: object
+      properties:
+        description:
+          type: string
+          example: Find specs closest to given coordinate (latitude/longitude)
+        example:
+          type: array
+          example:
+          - 37.5665/126.9780
+          - 35.6762/139.6503
+          items:
+            type: string
+        format:
+          type: string
+          example: latitude/longitude
+        key:
+          type: string
+          example: coordinateClose
+    model.ParameterOptionsInfo:
+      type: object
+      properties:
+        latencyParameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.ParameterOptionDetail'
+        locationParameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.ParameterOptionDetail'
     model.Policy:
       type: object
       properties:
@@ -11028,6 +11209,22 @@ components:
           - "0.1"
           - "0.2"
           - '...'
+    model.PriorityConditionExample:
+      type: object
+      properties:
+        description:
+          type: string
+          example: Prioritize by lowest cost
+        metric:
+          type: string
+          example: cost
+        parameter:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.ParameterKeyValExample'
+        weight:
+          type: string
+          example: "1.0"
     model.PriorityInfo:
       type: object
       properties:
@@ -11035,6 +11232,30 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.PriorityCondition'
+    model.PriorityOptionsInfo:
+      type: object
+      properties:
+        availableMetrics:
+          type: array
+          description: Available metrics for prioritization
+          example:
+          - cost
+          - performance
+          - location
+          - latency
+          - random
+          items:
+            type: string
+        examplePolicies:
+          type: array
+          description: Example priority policies
+          items:
+            $ref: '#/components/schemas/model.PriorityConditionExample'
+        parameterOptions:
+          type: object
+          description: Parameter options for location and latency metrics
+          allOf:
+          - $ref: '#/components/schemas/model.ParameterOptionsInfo'
     model.ProvisioningEvent:
       type: object
       properties:
@@ -11147,6 +11368,30 @@ components:
           - "30"
         priority:
           $ref: '#/components/schemas/model.PriorityInfo'
+    model.RecommendSpecRequestOptions:
+      type: object
+      properties:
+        filter:
+          type: object
+          description: Filter options - available filtering fields and their example
+            values
+          allOf:
+          - $ref: '#/components/schemas/model.FilterOptionsInfo'
+        limit:
+          type: array
+          description: Limit options - example limit values
+          example:
+          - "5"
+          - "10"
+          - "20"
+          - "50"
+          items:
+            type: string
+        priority:
+          type: object
+          description: Priority options - available prioritization metrics and parameters
+          allOf:
+          - $ref: '#/components/schemas/model.PriorityOptionsInfo'
     model.RegionDetail:
       type: object
       properties:
