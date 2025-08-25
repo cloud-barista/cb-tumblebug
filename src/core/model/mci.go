@@ -19,6 +19,7 @@ import (
 )
 
 const (
+
 	// ActionCreate is const for Create
 	ActionCreate string = "Create"
 
@@ -41,6 +42,13 @@ const (
 	ActionComplete string = "None"
 )
 const (
+
+	// StatusPreparing is const for Preparing
+	StatusPreparing string = "Preparing"
+
+	// StatusPrepared is const for Prepared
+	StatusPrepared string = "Prepared"
+
 	// StatusRunning is const for Running
 	StatusRunning string = "Running"
 
