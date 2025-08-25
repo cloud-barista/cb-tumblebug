@@ -222,3 +222,107 @@ type SpecFetchOption struct {
 	// providers that are not region-specific (ex: ["gcp"])
 	RegionAgnosticProviders []string `json:"regionAgnosticProviders,omitempty" example:"gcp,tencent" description:"Providers that are not region-specific."`
 }
+
+// RecommendSpecRequestOptions is struct for RecommendSpec Request Options
+type RecommendSpecRequestOptions struct {
+	// Filter options - available filtering fields and their example values
+	Filter FilterOptionsInfo `json:"filter" description:"Available filtering options for specs"`
+
+	// Priority options - available prioritization metrics and parameters
+	Priority PriorityOptionsInfo `json:"priority" description:"Available prioritization options for specs"`
+
+	// Limit options - example limit values
+	Limit []string `json:"limit" example:"5,10,20,50" description:"Example limit values for result count"`
+}
+
+// FilterOptionsInfo provides available filter metrics and their example values
+type FilterOptionsInfo struct {
+	// Available metrics for filtering
+	AvailableMetrics []string `json:"availableMetrics" example:"vCPU,memoryGiB,costPerHour,providerName,regionName,architecture" description:"Available metrics for filtering specs"`
+
+	// Example filter policies
+	ExamplePolicies []FilterConditionExample `json:"examplePolicies" description:"Example filter policies"`
+
+	// Available values for each metric (for select fields)
+	AvailableValues FilterAvailableValues `json:"availableValues" description:"Available values for select-type filter fields"`
+}
+
+// FilterConditionExample provides example filter conditions
+type FilterConditionExample struct {
+	Metric      string             `json:"metric" example:"vCPU"`
+	Description string             `json:"description" example:"Filter specs with 2-8 vCPUs"`
+	Condition   []OperationExample `json:"condition"`
+}
+
+// OperationExample provides example operations
+type OperationExample struct {
+	Operator string `json:"operator" example:">="`
+	Operand  string `json:"operand" example:"2"`
+}
+
+// FilterAvailableValues provides available values for filter fields
+type FilterAvailableValues struct {
+	// Basic identification fields
+	Id             []string `json:"id,omitempty" description:"Available spec IDs"`
+	Name           []string `json:"name,omitempty" description:"Available spec names"`
+	ConnectionName []string `json:"connectionName,omitempty" description:"Available connection names"`
+
+	// Provider and region information
+	ProviderName []string `json:"providerName" description:"Available CSP provider names"`
+	RegionName   []string `json:"regionName" description:"Available region names"`
+	CspSpecName  []string `json:"cspSpecName,omitempty" description:"Available CSP spec names"`
+
+	// Infrastructure specifications
+	InfraType    []string `json:"infraType" description:"Available infrastructure types"`
+	Architecture []string `json:"architecture" description:"Available architectures"`
+	OsType       []string `json:"osType,omitempty" description:"Available OS types"`
+
+	// Accelerator information
+	AcceleratorModel []string `json:"acceleratorModel,omitempty" description:"Available accelerator models"`
+	AcceleratorType  []string `json:"acceleratorType,omitempty" description:"Available accelerator types"`
+
+	// Additional fields
+	Description      []string `json:"description,omitempty" description:"Available descriptions"`
+	EvaluationStatus []string `json:"evaluationStatus,omitempty" description:"Available evaluation statuses"`
+}
+
+// PriorityOptionsInfo provides available priority metrics and their parameters
+type PriorityOptionsInfo struct {
+	// Available metrics for prioritization
+	AvailableMetrics []string `json:"availableMetrics" example:"cost,performance,location,latency,random" description:"Available metrics for prioritizing specs"`
+
+	// Example priority policies
+	ExamplePolicies []PriorityConditionExample `json:"examplePolicies" description:"Example priority policies"`
+
+	// Parameter options for location and latency metrics
+	ParameterOptions ParameterOptionsInfo `json:"parameterOptions" description:"Available parameter options for location and latency metrics"`
+}
+
+// PriorityConditionExample provides example priority conditions
+type PriorityConditionExample struct {
+	Metric      string                   `json:"metric" example:"cost"`
+	Description string                   `json:"description" example:"Prioritize by lowest cost"`
+	Weight      string                   `json:"weight" example:"1.0"`
+	Parameter   []ParameterKeyValExample `json:"parameter,omitempty"`
+}
+
+// ParameterKeyValExample provides example parameter key-value pairs
+type ParameterKeyValExample struct {
+	Key         string   `json:"key" example:"coordinateClose"`
+	Description string   `json:"description" example:"Find specs closest to given coordinate"`
+	Val         []string `json:"val" example:"37.5665/126.9780"`
+}
+
+// ParameterOptionsInfo provides parameter options for location and latency metrics
+type ParameterOptionsInfo struct {
+	LocationParameters []ParameterOptionDetail `json:"locationParameters" description:"Available parameter options for location-based prioritization"`
+	LatencyParameters  []ParameterOptionDetail `json:"latencyParameters" description:"Available parameter options for latency-based prioritization"`
+}
+
+// ParameterOptionDetail provides details for parameter options
+type ParameterOptionDetail struct {
+	Key         string   `json:"key" example:"coordinateClose"`
+	Description string   `json:"description" example:"Find specs closest to given coordinate (latitude/longitude)"`
+	Format      string   `json:"format" example:"latitude/longitude"`
+	Example     []string `json:"example" example:"37.5665/126.9780,35.6762/139.6503"`
+}

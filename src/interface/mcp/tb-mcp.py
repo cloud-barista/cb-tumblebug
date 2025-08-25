@@ -1335,33 +1335,6 @@ def check_resource_exists(ns_id: str, resource_type: str, resource_id: str) -> D
     """
     return api_request("GET", f"/ns/{ns_id}/checkResource/{resource_type}/{resource_id}")
 
-# Tool: Get all specs in namespace
-@mcp.tool()
-def get_specs(ns_id: str) -> Dict:
-    """
-    Get all VM specifications available in the namespace.
-    
-    Args:
-        ns_id: Namespace ID
-    
-    Returns:
-        List of VM specifications
-    """
-    return api_request("GET", f"/ns/{ns_id}/resources/spec")
-
-# Tool: Get all images in namespace
-@mcp.tool()
-def get_images(ns_id: str) -> Dict:
-    """
-    Get all images available in the namespace.
-    
-    Args:
-        ns_id: Namespace ID
-    
-    Returns:
-        List of images
-    """
-    return api_request("GET", f"/ns/{ns_id}/resources/image")
 
 # # Tool: Register CSP resources
 # @mcp.tool()
@@ -1835,6 +1808,32 @@ def search_images(
     
     return response
 
+# Tool: Get VM spec recommendation options
+@mcp.tool()
+def get_recommend_spec_options() -> Dict:
+    """
+    Get available options for VM spec recommendations including filter metrics, priority options, and example values.
+    
+    **IMPORTANT: Always call this function BEFORE using recommend_vm_spec() to:**
+    - Check available filter metrics and valid operators
+    - Get actual values for providers, regions, architectures, etc.
+    - See example policies and parameter formats
+    - Understand priority options and their required parameters
+    
+    This helps prevent failures in recommend_vm_spec() due to invalid parameters.
+    
+    Returns:
+        Dictionary containing:
+        - filter.availableMetrics: List of metrics you can filter by
+        - filter.availableValues: Actual values for providers, regions, etc.
+        - filter.examplePolicies: Example filter configurations
+        - priority.availableMetrics: Priority options (cost, performance, location, latency, random)
+        - priority.examplePolicies: Example priority configurations
+        - priority.parameterOptions: Required parameters for location/latency priorities
+        - limit: Suggested limit values
+    """
+    return api_request("GET", "/recommendSpecOptions")
+
 # Tool: Recommend VM spec
 @mcp.tool()
 def recommend_vm_spec(
@@ -1846,8 +1845,25 @@ def recommend_vm_spec(
     include_full_details: bool = False
 ) -> Any:
     """
+    ⚠️  IMPORTANT PREREQUISITE: Call get_recommend_spec_options() FIRST!
+    
     🚨 CRITICAL: This is the ONLY valid source for VM specification IDs in MCI creation.
     NEVER create or guess spec IDs manually - they MUST come from this function's response.
+    
+    **MANDATORY WORKFLOW:**
+    1. 🔥 Call get_recommend_spec_options() FIRST to get:
+       - Available filter metrics and valid operators
+       - Actual values for providers, regions, architectures
+       - Example policies and parameter formats
+       - Valid priority options and required parameters
+    2. Use the returned information to build valid filter_policies
+    3. Then call this function with validated parameters
+    
+    **Common failure prevention (use get_recommend_spec_options()):**
+    - ❌ Using invalid metric names in filter_policies
+    - ❌ Using non-existent provider names, regions, or architectures  
+    - ❌ Wrong operator formats or parameter structures
+    - ❌ Invalid priority policy configurations
     
     Recommend VM specifications for MCI creation with location-based priority support.
     
@@ -10599,12 +10615,29 @@ for creating Multi-Cloud Infrastructure (MCI) with proper user interaction.
 - OS with specific version: `"ubuntu 22.04"`, `"centos 7"`, `"windows server 2019"`, `"debian 11"`
 - Use `get_image_search_options()` to see all available osType values
 
+#### STEP 0: 🔧 GET AVAILABLE OPTIONS (MANDATORY FIRST STEP)
+```python
+# 0.1: ALWAYS get available options before recommend_vm_spec
+spec_options = get_recommend_spec_options()
+# This returns:
+# - Available filter metrics (vCPU, memoryGiB, providerName, regionName, etc.)
+# - Valid values for providers, regions, architectures
+# - Example policies and parameter formats
+# - Priority options and their required parameters
+
+# 0.2: Use the returned information to build valid filter_policies
+# ✅ Check availableMetrics for valid metric names
+# ✅ Check availableValues for valid provider/region names
+# ✅ Use examplePolicies as templates
+# ✅ Verify priority options and parameter formats
+```
+
 #### STEP 1: 🔍 MANDATORY REVIEW PHASE
 ```python
-# 1.1: Get VM specifications
+# 1.1: Get VM specifications (using validated parameters from step 0)
 specs = recommend_vm_spec(
-    filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},
-    priority_policy="location",  # or "cost" or "performance"
+    filter_policies={"vCPU": {"min": 2}, "memoryGiB": {"min": 4}},  # Use validated metric names
+    priority_policy="location",  # or "cost" or "performance" (check spec_options for available)
     latitude=37.4419,           # if location-based
     longitude=-122.1430         # if location-based
 )
@@ -12408,6 +12441,264 @@ This comprehensive validation system ensures reliable, cost-effective, and prope
 - **Progress indicators** in command responses
 
 **🎯 Remember: Setting proper expectations prevents user frustration and ensures smooth deployment experiences.**
+"""
+
+@mcp.prompt()
+def vm_spec_recommendation_guide():
+    """
+    VM Specification Recommendation Best Practices Guide
+    
+    This prompt ensures LLMs always use get_recommend_spec_options() before recommend_vm_spec()
+    to prevent failures from invalid parameters and guide proper usage of the recommendation system.
+    """
+    return """# 🔧 VM Specification Recommendation Guide
+
+## 🚨 MANDATORY WORKFLOW: Options First, Then Recommendation
+
+### ⚠️ CRITICAL: ALWAYS Call get_recommend_spec_options() FIRST
+
+**NEVER call recommend_vm_spec() without first calling get_recommend_spec_options()!**
+
+This prevents common failures from:
+- ❌ Invalid metric names in filter policies
+- ❌ Non-existent provider names, regions, architectures
+- ❌ Wrong operator formats or parameter structures
+- ❌ Invalid priority policy configurations
+
+### 🔄 STEP-BY-STEP WORKFLOW:
+
+#### STEP 1: Get Available Options
+```python
+# ALWAYS start with this call
+spec_options = get_recommend_spec_options(ns_id="system")
+
+# This returns comprehensive information:
+# - filter.availableMetrics: All metrics you can filter by
+# - filter.availableValues: Actual values for providers, regions, etc.
+# - filter.examplePolicies: Pre-built example filter configurations
+# - priority.availableMetrics: Available priority options
+# - priority.examplePolicies: Example priority configurations
+# - priority.parameterOptions: Required parameters for location/latency
+# - limit: Suggested limit values
+```
+
+#### STEP 2: Analyze Available Options
+```python
+# Extract key information for building requests
+available_metrics = spec_options["filter"]["availableMetrics"]
+# Example: ["id", "providerName", "regionName", "cspSpecName", "architecture", 
+#           "vCPU", "memoryGiB", "costPerHour", "acceleratorType", ...]
+
+available_providers = spec_options["filter"]["availableValues"]["providerName"]
+# Example: ["alibaba", "aws", "azure", "gcp", "ibm", "kt", "ncp", "nhn", "tencent"]
+
+available_regions = spec_options["filter"]["availableValues"]["regionName"]
+# Example: ["us-east-1", "ap-northeast-2", "eu-west-1", ...]
+
+priority_options = spec_options["priority"]["availableMetrics"]
+# Example: ["cost", "performance", "location", "latency", "random"]
+```
+
+#### STEP 3: Build Valid Filter Policies
+```python
+# ✅ Use ONLY metrics from availableMetrics
+# ✅ Use ONLY providers from availableValues.providerName
+# ✅ Use ONLY regions from availableValues.regionName
+
+# Example 1: Basic resource filtering
+filter_policies = {
+    "policy": [
+        {
+            "metric": "vCPU",  # ✅ From availableMetrics
+            "condition": [
+                {"operator": ">=", "operand": "2"},
+                {"operator": "<=", "operand": "8"}
+            ]
+        },
+        {
+            "metric": "memoryGiB",  # ✅ From availableMetrics
+            "condition": [
+                {"operator": ">=", "operand": "4"}
+            ]
+        },
+        {
+            "metric": "providerName",  # ✅ From availableMetrics
+            "condition": [
+                {"operator": "=", "operand": "aws"}  # ✅ From availableValues
+            ]
+        }
+    ]
+}
+
+# Example 2: Using example policies as templates
+example_policy = spec_options["filter"]["examplePolicies"][0]
+# Modify the example as needed for your requirements
+```
+
+#### STEP 4: Configure Priority with Valid Options
+```python
+# ✅ Use ONLY priority metrics from availableMetrics
+priority_policy = {
+    "policy": [
+        {
+            "metric": "cost",  # ✅ From priority.availableMetrics
+            "weight": "1.0"
+        }
+    ]
+}
+
+# OR for location-based priority:
+priority_policy = {
+    "policy": [
+        {
+            "metric": "location",  # ✅ From priority.availableMetrics
+            "parameter": [
+                {
+                    "key": "coordinateClose",  # ✅ From parameterOptions
+                    "val": ["37.5665/126.9780"]  # Seoul coordinates
+                }
+            ],
+            "weight": "1.0"
+        }
+    ]
+}
+```
+
+#### STEP 5: Call recommend_vm_spec with Validated Parameters
+```python
+# Now safely call recommend_vm_spec with validated parameters
+specs = recommend_vm_spec(
+    filter_policies=filter_policies,
+    priority_policy=priority_policy,
+    limit="10"  # ✅ From suggested limit values
+)
+```
+
+### 🎯 COMMON USE CASES WITH EXAMPLES:
+
+#### 💰 Cost-Optimized Specs
+```python
+# 1. Get options
+spec_options = get_recommend_spec_options()
+
+# 2. Build cost-focused filter
+filter_policies = {
+    "policy": [
+        {
+            "metric": "costPerHour",
+            "condition": [{"operator": "<=", "operand": "0.50"}]
+        },
+        {
+            "metric": "vCPU", 
+            "condition": [{"operator": ">=", "operand": "2"}]
+        }
+    ]
+}
+
+# 3. Set cost priority
+priority_policy = {"policy": [{"metric": "cost", "weight": "1.0"}]}
+
+# 4. Get recommendations
+specs = recommend_vm_spec(
+    filter_policies=filter_policies,
+    priority_policy=priority_policy,
+    limit="5"
+)
+```
+
+#### 🌍 Location-Based Specs
+```python
+# 1. Get options
+spec_options = get_recommend_spec_options()
+
+# 2. Build location-focused filter
+filter_policies = {
+    "policy": [
+        {
+            "metric": "vCPU",
+            "condition": [
+                {"operator": ">=", "operand": "4"},
+                {"operator": "<=", "operand": "16"}
+            ]
+        }
+    ]
+}
+
+# 3. Set location priority with coordinates
+priority_policy = {
+    "policy": [
+        {
+            "metric": "location",
+            "parameter": [
+                {
+                    "key": "coordinateClose", 
+                    "val": ["35.6762/139.6503"]  # Tokyo coordinates
+                }
+            ],
+            "weight": "1.0"
+        }
+    ]
+}
+
+# 4. Get recommendations
+specs = recommend_vm_spec(
+    filter_policies=filter_policies,
+    priority_policy=priority_policy,
+    limit="10"
+)
+```
+
+#### 🎮 GPU-Enabled Specs
+```python
+# 1. Get options
+spec_options = get_recommend_spec_options()
+
+# 2. Build GPU-focused filter
+filter_policies = {
+    "policy": [
+        {
+            "metric": "acceleratorType",
+            "condition": [{"operator": "=", "operand": "gpu"}]
+        },
+        {
+            "metric": "memoryGiB",
+            "condition": [{"operator": ">=", "operand": "16"}]
+        }
+    ]
+}
+
+# 3. Set performance priority
+priority_policy = {"policy": [{"metric": "performance", "weight": "1.0"}]}
+
+# 4. Get recommendations
+specs = recommend_vm_spec(
+    filter_policies=filter_policies,
+    priority_policy=priority_policy,
+    limit="5"
+)
+```
+
+### 🚨 ERROR PREVENTION CHECKLIST:
+
+Before calling recommend_vm_spec(), verify:
+- ✅ All metric names exist in availableMetrics
+- ✅ All provider names exist in availableValues.providerName  
+- ✅ All region names exist in availableValues.regionName
+- ✅ All architecture values exist in availableValues.architecture
+- ✅ Priority metric exists in priority.availableMetrics
+- ✅ Required parameters are provided for location/latency priorities
+- ✅ Limit value is within suggested range
+
+### 💡 LLM BEST PRACTICES:
+
+1. **Always explain the two-step process** to users
+2. **Show the available options** before asking for preferences
+3. **Validate user inputs** against available values
+4. **Use example policies** as starting points
+5. **Explain coordinate requirements** for location-based priorities
+6. **Handle errors gracefully** by re-checking options
+
+This workflow ensures reliable VM specification recommendations and prevents API failures.
 """
 
 if __name__ == "__main__":

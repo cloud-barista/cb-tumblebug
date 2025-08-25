@@ -10993,7 +10993,7 @@ const docTemplate = `{
         },
         "/recommendSpec": {
             "post": {
-                "description": "Recommend specs for configuring an infrastructure (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234",
+                "description": "Recommend specs for configuring an infrastructure (filter and priority)\nFind details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234\nGet available options by /recommendSpecOptions for filtering and prioritizing specs in RecommendSpec API",
                 "consumes": [
                     "application/json"
                 ],
@@ -11023,6 +11023,42 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/model.TbSpecInfo"
                             }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/recommendSpecOptions": {
+            "get": {
+                "description": "Get available options for filtering and prioritizing specs in RecommendSpec API",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Provisioning and Management"
+                ],
+                "summary": "Get options for RecommendSpec API",
+                "operationId": "RecommendSpecOptions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RecommendSpecRequestOptions"
                         }
                     },
                     "404": {
@@ -12550,6 +12586,94 @@ const docTemplate = `{
                 "DiskError"
             ]
         },
+        "model.FilterAvailableValues": {
+            "type": "object",
+            "properties": {
+                "acceleratorModel": {
+                    "description": "Accelerator information",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "acceleratorType": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "architecture": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connectionName": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cspSpecName": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "description": "Additional fields",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "evaluationStatus": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "description": "Basic identification fields",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "infraType": {
+                    "description": "Infrastructure specifications",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "osType": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "providerName": {
+                    "description": "Provider and region information",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "regionName": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "model.FilterCondition": {
             "type": "object",
             "properties": {
@@ -12570,6 +12694,25 @@ const docTemplate = `{
                 }
             }
         },
+        "model.FilterConditionExample": {
+            "type": "object",
+            "properties": {
+                "condition": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.OperationExample"
+                    }
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Filter specs with 2-8 vCPUs"
+                },
+                "metric": {
+                    "type": "string",
+                    "example": "vCPU"
+                }
+            }
+        },
         "model.FilterInfo": {
             "type": "object",
             "properties": {
@@ -12577,6 +12720,41 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.FilterCondition"
+                    }
+                }
+            }
+        },
+        "model.FilterOptionsInfo": {
+            "type": "object",
+            "properties": {
+                "availableMetrics": {
+                    "description": "Available metrics for filtering",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "vCPU",
+                        "memoryGiB",
+                        "costPerHour",
+                        "providerName",
+                        "regionName",
+                        "architecture"
+                    ]
+                },
+                "availableValues": {
+                    "description": "Available values for each metric (for select fields)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.FilterAvailableValues"
+                        }
+                    ]
+                },
+                "examplePolicies": {
+                    "description": "Example filter policies",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.FilterConditionExample"
                     }
                 }
             }
@@ -13698,6 +13876,19 @@ const docTemplate = `{
                 }
             }
         },
+        "model.OperationExample": {
+            "type": "object",
+            "properties": {
+                "operand": {
+                    "type": "string",
+                    "example": "2"
+                },
+                "operator": {
+                    "type": "string",
+                    "example": "\u003e="
+                }
+            }
+        },
         "model.OverallRiskInfo": {
             "type": "object",
             "properties": {
@@ -13737,6 +13928,72 @@ const docTemplate = `{
                     "example": [
                         "44.146838/-116.411403"
                     ]
+                }
+            }
+        },
+        "model.ParameterKeyValExample": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Find specs closest to given coordinate"
+                },
+                "key": {
+                    "type": "string",
+                    "example": "coordinateClose"
+                },
+                "val": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "37.5665/126.9780"
+                    ]
+                }
+            }
+        },
+        "model.ParameterOptionDetail": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Find specs closest to given coordinate (latitude/longitude)"
+                },
+                "example": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "37.5665/126.9780",
+                        "35.6762/139.6503"
+                    ]
+                },
+                "format": {
+                    "type": "string",
+                    "example": "latitude/longitude"
+                },
+                "key": {
+                    "type": "string",
+                    "example": "coordinateClose"
+                }
+            }
+        },
+        "model.ParameterOptionsInfo": {
+            "type": "object",
+            "properties": {
+                "latencyParameters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ParameterOptionDetail"
+                    }
+                },
+                "locationParameters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ParameterOptionDetail"
+                    }
                 }
             }
         },
@@ -13785,6 +14042,29 @@ const docTemplate = `{
                 }
             }
         },
+        "model.PriorityConditionExample": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Prioritize by lowest cost"
+                },
+                "metric": {
+                    "type": "string",
+                    "example": "cost"
+                },
+                "parameter": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ParameterKeyValExample"
+                    }
+                },
+                "weight": {
+                    "type": "string",
+                    "example": "1.0"
+                }
+            }
+        },
         "model.PriorityInfo": {
             "type": "object",
             "properties": {
@@ -13793,6 +14073,40 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.PriorityCondition"
                     }
+                }
+            }
+        },
+        "model.PriorityOptionsInfo": {
+            "type": "object",
+            "properties": {
+                "availableMetrics": {
+                    "description": "Available metrics for prioritization",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "cost",
+                        "performance",
+                        "location",
+                        "latency",
+                        "random"
+                    ]
+                },
+                "examplePolicies": {
+                    "description": "Example priority policies",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.PriorityConditionExample"
+                    }
+                },
+                "parameterOptions": {
+                    "description": "Parameter options for location and latency metrics",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ParameterOptionsInfo"
+                        }
+                    ]
                 }
             }
         },
@@ -13943,6 +14257,40 @@ const docTemplate = `{
                 },
                 "priority": {
                     "$ref": "#/definitions/model.PriorityInfo"
+                }
+            }
+        },
+        "model.RecommendSpecRequestOptions": {
+            "type": "object",
+            "properties": {
+                "filter": {
+                    "description": "Filter options - available filtering fields and their example values",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.FilterOptionsInfo"
+                        }
+                    ]
+                },
+                "limit": {
+                    "description": "Limit options - example limit values",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "5",
+                        "10",
+                        "20",
+                        "50"
+                    ]
+                },
+                "priority": {
+                    "description": "Priority options - available prioritization metrics and parameters",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.PriorityOptionsInfo"
+                        }
+                    ]
                 }
             }
         },
