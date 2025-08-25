@@ -1769,19 +1769,19 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 					log.Debug().Msgf("KT Cloud provisioning blocked for VM: %s", subGroupDynamicReq.Name)
 				}
 
-				// Check NHN Cloud limitations
-				if providerName == csp.NHN {
-					if deployOption != "hold" {
-						vmReview.Errors = append(vmReview.Errors, "NHN Cloud can only be provisioned with deployOption 'hold' (manual deployment required)")
-						vmReview.CanCreate = false
-						viable = false
-						log.Debug().Msgf("NHN Cloud requires 'hold' deployOption for VM: %s", subGroupDynamicReq.Name)
-					} else {
-						vmReview.Warnings = append(vmReview.Warnings, "NHN Cloud requires manual deployment completion after 'hold' - automatic provisioning is not fully supported")
-						hasVmWarning = true
-						log.Debug().Msgf("NHN Cloud 'hold' mode warning for VM: %s", subGroupDynamicReq.Name)
-					}
-				}
+				// // Check NHN Cloud limitations
+				// if providerName == csp.NHN {
+				// 	if deployOption != "hold" {
+				// 		vmReview.Errors = append(vmReview.Errors, "NHN Cloud can only be provisioned with deployOption 'hold' (manual deployment required)")
+				// 		vmReview.CanCreate = false
+				// 		viable = false
+				// 		log.Debug().Msgf("NHN Cloud requires 'hold' deployOption for VM: %s", subGroupDynamicReq.Name)
+				// 	} else {
+				// 		vmReview.Warnings = append(vmReview.Warnings, "NHN Cloud requires manual deployment completion after 'hold' - automatic provisioning is not fully supported")
+				// 		hasVmWarning = true
+				// 		log.Debug().Msgf("NHN Cloud 'hold' mode warning for VM: %s", subGroupDynamicReq.Name)
+				// 	}
+				// }
 			}
 
 			// Set VM review status
