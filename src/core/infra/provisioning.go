@@ -531,27 +531,31 @@ func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToA
 		return temp, err
 	}
 	vmObj, err := GetVmObject(nsId, mciId, vmIdList[0])
+	if err != nil {
+		temp := &model.TbMciInfo{}
+		return temp, err
+	}
 
-	vmTemplate := &model.TbCreateSubGroupReq{}
+	vmSubGroupReqTemplate := &model.TbCreateSubGroupReq{}
 
 	// only take template required to create VM
-	vmTemplate.Name = vmObj.SubGroupId
-	vmTemplate.ConnectionName = vmObj.ConnectionName
-	vmTemplate.ImageId = vmObj.ImageId
-	vmTemplate.SpecId = vmObj.SpecId
-	vmTemplate.VNetId = vmObj.VNetId
-	vmTemplate.SubnetId = vmObj.SubnetId
-	vmTemplate.SecurityGroupIds = vmObj.SecurityGroupIds
-	vmTemplate.SshKeyId = vmObj.SshKeyId
-	vmTemplate.VmUserName = vmObj.VmUserName
-	vmTemplate.VmUserPassword = vmObj.VmUserPassword
-	vmTemplate.RootDiskType = vmObj.RootDiskType
-	vmTemplate.RootDiskSize = vmObj.RootDiskSize
-	vmTemplate.Description = vmObj.Description
+	vmSubGroupReqTemplate.Name = vmObj.SubGroupId
+	vmSubGroupReqTemplate.ConnectionName = vmObj.ConnectionName
+	vmSubGroupReqTemplate.ImageId = vmObj.ImageId
+	vmSubGroupReqTemplate.SpecId = vmObj.SpecId
+	vmSubGroupReqTemplate.VNetId = vmObj.VNetId
+	vmSubGroupReqTemplate.SubnetId = vmObj.SubnetId
+	vmSubGroupReqTemplate.SecurityGroupIds = vmObj.SecurityGroupIds
+	vmSubGroupReqTemplate.SshKeyId = vmObj.SshKeyId
+	vmSubGroupReqTemplate.VmUserName = vmObj.VmUserName
+	vmSubGroupReqTemplate.VmUserPassword = vmObj.VmUserPassword
+	vmSubGroupReqTemplate.RootDiskType = vmObj.RootDiskType
+	vmSubGroupReqTemplate.RootDiskSize = vmObj.RootDiskSize
+	vmSubGroupReqTemplate.Description = vmObj.Description
 
-	vmTemplate.SubGroupSize = numVMsToAdd
+	vmSubGroupReqTemplate.SubGroupSize = numVMsToAdd
 
-	result, err := CreateMciGroupVm(nsId, mciId, vmTemplate, true)
+	result, err := CreateMciGroupVm(nsId, mciId, vmSubGroupReqTemplate, true)
 	if err != nil {
 		temp := &model.TbMciInfo{}
 		return temp, err
