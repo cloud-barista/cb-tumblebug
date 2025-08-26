@@ -132,6 +132,7 @@ func init() {
 		&model.TbSpecInfo{},
 		&model.TbImageInfo{},
 		&model.TbCustomImageInfo{},
+		&model.TbLatencyInfo{},
 	)
 
 	if err != nil {
@@ -384,34 +385,106 @@ func setConfig() {
 	// const mrttArrayYMax = 300
 	// common.RuntimeLatancyMap = make([][]string, mrttArrayXMax)
 
-	// cloudlatencymap.csv
-	file, fileErr := os.Open("../assets/cloudlatencymap.csv")
-	defer file.Close()
-	if fileErr != nil {
-		log.Error().Err(fileErr).Msg("")
-		panic(fileErr)
-	}
-	rdr := csv.NewReader(bufio.NewReader(file))
-	common.RuntimeLatancyMap, _ = rdr.ReadAll()
+	// const mrttArrayYMax = 300
+	// common.RuntimeLatancyMap = make([][]string, mrttArrayXMax)
 
-	for i, v := range common.RuntimeLatancyMap {
-		if i == 0 {
-			continue
+	// Migrate latency data from CSV to database if database is empty
+	if err := migrateLatencyDataFromCSV(); err != nil {
+		log.Error().Err(err).Msg("Failed to migrate latency data from CSV to database")
+	}
+}
+
+// migrateLatencyDataFromCSV migrates latency data from CSV file to database
+func migrateLatencyDataFromCSV() error {
+	// Check if latency data already exists in database
+	var count int64
+	if err := model.ORM.Model(&model.TbLatencyInfo{}).Count(&count).Error; err != nil {
+		return err
+	}
+
+	// If data already exists, skip migration
+	if count > 0 {
+		log.Info().Msg("Latency data already exists in database, skipping CSV migration")
+		return nil
+	}
+
+	log.Info().Msg("Starting latency data migration from CSV to database")
+
+	// Read CSV file
+	file, err := os.Open("../assets/cloudlatencymap.csv")
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to open cloudlatencymap.csv file")
+		return err
+	}
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			log.Warn().Err(closeErr).Msg("Failed to close CSV file")
 		}
-		if v[0] == "" {
+	}()
+
+	rdr := csv.NewReader(bufio.NewReader(file))
+	records, err := rdr.ReadAll()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to read CSV data")
+		return err
+	}
+
+	if len(records) < 2 {
+		return fmt.Errorf("CSV file has insufficient data")
+	}
+
+	// Extract header (target regions)
+	header := records[0]
+	var latencyData []model.TbLatencyInfo
+
+	// Process each row (source region)
+	for _, row := range records[1:] {
+		if len(row) == 0 || row[0] == "" {
 			break
 		}
-		common.RuntimeLatancyMapIndex[v[0]] = i
+
+		sourceRegion := row[0]
+
+		// Process each column (target region)
+		for j, latencyStr := range row[1:] {
+			if j >= len(header)-1 || latencyStr == "" {
+				continue
+			}
+
+			targetRegion := header[j+1]
+			if targetRegion == "" {
+				continue
+			}
+
+			// Parse latency value
+			latencyValue, err := strconv.ParseFloat(latencyStr, 64)
+			if err != nil {
+				log.Debug().Err(err).Msgf("Skipping invalid latency value '%s' for %s->%s", latencyStr, sourceRegion, targetRegion)
+				continue // Skip invalid values
+			}
+
+			latencyData = append(latencyData, model.TbLatencyInfo{
+				SourceRegion: sourceRegion,
+				TargetRegion: targetRegion,
+				LatencyMs:    latencyValue,
+			})
+		}
 	}
 
-	//fmt.Printf("RuntimeLatancyMap: %v\n\n", common.RuntimeLatancyMap)
-	//fmt.Printf("[RuntimeLatancyMapIndex]\n %v\n", common.RuntimeLatancyMapIndex)
+	// Batch store to database
+	if len(latencyData) > 0 {
+		if err := model.BatchStoreLatencyInfo(latencyData); err != nil {
+			return err
+		}
+		log.Info().Msgf("Successfully migrated %d latency records to database", len(latencyData))
+	}
 
+	return nil
 }
 
 // addIndexes adds indexes to the tables for faster search
 func addIndexes() error {
-
+	// Existing single column indexes
 	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_namespace ON tb_spec_infos (namespace)").Error; err != nil {
 		return err
 	}
@@ -432,6 +505,48 @@ func addIndexes() error {
 		return err
 	}
 
+	// Most important: Composite index optimized for the common query pattern
+	// This index covers the most frequent query: namespace + architecture + v_cpu + memory_gi_b
+	if err := model.ORM.Exec(`
+        CREATE INDEX IF NOT EXISTS idx_spec_main_filter 
+        ON tb_spec_infos(namespace, architecture, v_cpu, memory_gi_b, cost_per_hour)
+    `).Error; err != nil {
+		log.Warn().Err(err).Msg("Failed to create main filter composite index")
+	}
+
+	// Partial index for x86_64 architecture (most common case)
+	if err := model.ORM.Exec(`
+        CREATE INDEX IF NOT EXISTS idx_spec_x86_64 
+        ON tb_spec_infos(namespace, v_cpu, memory_gi_b, cost_per_hour) 
+        WHERE architecture = 'x86_64'
+    `).Error; err != nil {
+		log.Warn().Err(err).Msg("Failed to create x86_64 partial index")
+	}
+
+	// Partial index for arm64 architecture
+	if err := model.ORM.Exec(`
+        CREATE INDEX IF NOT EXISTS idx_spec_arm64 
+        ON tb_spec_infos(namespace, v_cpu, memory_gi_b, cost_per_hour) 
+        WHERE architecture = 'arm64'
+    `).Error; err != nil {
+		log.Warn().Err(err).Msg("Failed to create arm64 partial index")
+	}
+
+	// Latency table indexes for fast lookups
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_latency_source ON tb_latency_infos (source_region)").Error; err != nil {
+		log.Warn().Err(err).Msg("Failed to create latency source region index")
+	}
+
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_latency_target ON tb_latency_infos (target_region)").Error; err != nil {
+		log.Warn().Err(err).Msg("Failed to create latency target region index")
+	}
+
+	// Composite index for latency queries (source + target)
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_latency_regions ON tb_latency_infos (source_region, target_region)").Error; err != nil {
+		log.Warn().Err(err).Msg("Failed to create latency composite index")
+	}
+
+	log.Info().Msg("All indexes created successfully")
 	return nil
 }
 
