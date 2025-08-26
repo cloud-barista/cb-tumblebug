@@ -897,15 +897,6 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 		})
 	}
 
-	// Check MCI existence (skip for register option)
-	if option != "register" {
-		if exists, _ := CheckMci(nsId, req.Name); exists {
-			return nil, fmt.Errorf("MCI '%s' already exists in namespace '%s'", req.Name, nsId)
-		}
-	} else {
-		req.SystemLabel = "Registered from CSP resource"
-	}
-
 	// Early validation of VM requests
 	if len(req.SubGroups) == 0 {
 		return nil, fmt.Errorf("no VM requests provided")
@@ -926,6 +917,40 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 	// Initialize MCI
 	uid := common.GenUid()
 	mciId := req.Name
+
+	// Get mci object
+	mciTmp, err := GetMciObject(nsId, mciId)
+	if err != nil {
+		log.Debug().Msgf("MCI '%s' does not exist, creating new one", mciId)
+		// Create MCI object first
+		if err := createMciObject(nsId, mciId, req, uid); err != nil {
+			return nil, fmt.Errorf("failed to create MCI object: %w", err)
+		}
+	} else {
+		// MCI object exists
+		log.Debug().Msgf("MCI '%s' already exists, reusing it only if MCI is in prepared status", mciId)
+		mciStatusTmp, err := GetMciStatus(nsId, mciId)
+		if err != nil {
+			log.Debug().Msgf("Failed to get MCI status for '%s': %v", mciId, err)
+			return nil, fmt.Errorf("failed to get MCI status: %w", err)
+		}
+		if mciStatusTmp.Status == model.StatusPrepared {
+			// starting status for subgroups
+			mciTmp.Status = model.StatusCreating
+			mciTmp.TargetAction = model.ActionCreate
+			mciTmp.TargetStatus = model.StatusRunning
+			UpdateMciInfo(nsId, mciTmp)
+
+		} else {
+			log.Debug().Msgf("MCI '%s' is not in prepared status", mciId)
+			// Check MCI existence (skip for register option)
+			if option != "register" {
+				return nil, fmt.Errorf("MCI '%s' already exists in namespace '%s'", mciId, nsId)
+			} else {
+				req.SystemLabel = "Registered from CSP resource"
+			}
+		}
+	}
 
 	// Pre-calculate VM configurations to avoid duplication
 	type vmConfig struct {
@@ -1011,11 +1036,6 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 				vmIndex:      i,
 			})
 		}
-	}
-
-	// Create MCI object first
-	if err := createMciObject(nsId, mciId, req, uid); err != nil {
-		return nil, fmt.Errorf("failed to create MCI object: %w", err)
 	}
 
 	// Handle hold option
@@ -1126,7 +1146,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 	}
 
 	// Update MCI status
-	mciTmp, err := GetMciObject(nsId, mciId)
+	mciTmp, err = GetMciObject(nsId, mciId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get MCI object after VM creation: %w", err)
 	}
@@ -1358,6 +1378,22 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 		return emptyMci, err
 	}
 
+	// Initialize MCI
+	uid := common.GenUid()
+	mciId := req.Name
+
+	if err := createMciObject(nsId, mciId, &mciReq, uid); err != nil {
+		return emptyMci, err
+	}
+	// Get MCI object
+	mciTmp, err := GetMciObject(nsId, mciId)
+	if err != nil {
+		return emptyMci, err
+	}
+	// start mci provisioning with StatusPreparing
+	mciTmp.Status = model.StatusPreparing
+	UpdateMciInfo(nsId, mciTmp)
+
 	subGroupReqs := req.SubGroups
 	// Check whether VM names meet requirement.
 	// Use semaphore for parallel processing with concurrency limit
@@ -1396,12 +1432,6 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 		err = fmt.Errorf(errStr)
 		return emptyMci, err
 	}
-
-	/*
-	 * [NOTE]
-	 * 1. Generate default resources first
-	 * 2. And then, parallel processing of VM requests
-	 */
 
 	// Check if vmRequest has elements
 	if len(subGroupReqs) > 0 {
@@ -1502,6 +1532,10 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 			}
 		}
 	}
+
+	// marking the mci is in StatusPrepared
+	mciTmp.Status = model.StatusPrepared
+	UpdateMciInfo(nsId, mciTmp)
 
 	// Log the prepared MCI request and update the progress
 	common.PrintJsonPretty(mciReq)
@@ -1769,19 +1803,19 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 					log.Debug().Msgf("KT Cloud provisioning blocked for VM: %s", subGroupDynamicReq.Name)
 				}
 
-				// Check NHN Cloud limitations
-				if providerName == csp.NHN {
-					if deployOption != "hold" {
-						vmReview.Errors = append(vmReview.Errors, "NHN Cloud can only be provisioned with deployOption 'hold' (manual deployment required)")
-						vmReview.CanCreate = false
-						viable = false
-						log.Debug().Msgf("NHN Cloud requires 'hold' deployOption for VM: %s", subGroupDynamicReq.Name)
-					} else {
-						vmReview.Warnings = append(vmReview.Warnings, "NHN Cloud requires manual deployment completion after 'hold' - automatic provisioning is not fully supported")
-						hasVmWarning = true
-						log.Debug().Msgf("NHN Cloud 'hold' mode warning for VM: %s", subGroupDynamicReq.Name)
-					}
-				}
+				// // Check NHN Cloud limitations
+				// if providerName == csp.NHN {
+				// 	if deployOption != "hold" {
+				// 		vmReview.Errors = append(vmReview.Errors, "NHN Cloud can only be provisioned with deployOption 'hold' (manual deployment required)")
+				// 		vmReview.CanCreate = false
+				// 		viable = false
+				// 		log.Debug().Msgf("NHN Cloud requires 'hold' deployOption for VM: %s", subGroupDynamicReq.Name)
+				// 	} else {
+				// 		vmReview.Warnings = append(vmReview.Warnings, "NHN Cloud requires manual deployment completion after 'hold' - automatic provisioning is not fully supported")
+				// 		hasVmWarning = true
+				// 		log.Debug().Msgf("NHN Cloud 'hold' mode warning for VM: %s", subGroupDynamicReq.Name)
+				// 	}
+				// }
 			}
 
 			// Set VM review status

@@ -24,7 +24,9 @@ import (
 // RestRecommendSpec godoc
 // @ID RecommendSpec
 // @Summary Recommend specs for configuring an infrastructure (filter and priority)
-// @Description Recommend specs for configuring an infrastructure (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
+// @Description Recommend specs for configuring an infrastructure (filter and priority)
+// @Description Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
+// @Description Get available options by /recommendSpecOptions for filtering and prioritizing specs in RecommendSpec API
 // @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
@@ -43,6 +45,30 @@ func RestRecommendSpec(c echo.Context) error {
 	}
 
 	content, err := infra.RecommendSpec(nsId, *u)
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestRecommendSpecOptions godoc
+// @ID RecommendSpecOptions
+// @Summary Get options for RecommendSpec API
+// @Description Get available options for filtering and prioritizing specs in RecommendSpec API
+// @Tags [MC-Infra] MCI Provisioning and Management
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} model.RecommendSpecRequestOptions
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /recommendSpecOptions [get]
+func RestRecommendSpecOptions(c echo.Context) error {
+
+	nsId := model.SystemCommonNs
+
+	u := &model.RecommendSpecReq{}
+	if err := c.Bind(u); err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	content, err := infra.RecommendSpecOptions(nsId)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
