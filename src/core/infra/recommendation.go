@@ -127,7 +127,7 @@ func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecInfo
 		log.Error().Err(err).Msg("Failed to build ORDER BY clause")
 		return nil, err
 	}
-	
+
 	log.Info().Msgf("Using ORDER BY: %s", orderBy)
 
 	// Filtering and sorting in one DB query
@@ -157,20 +157,20 @@ func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecInfo
 // buildOrderByClause builds the ORDER BY clause based on priority policies
 func buildOrderByClause(policies []model.PriorityCondition) (string, error) {
 	if len(policies) == 0 {
-		// Default to cost ordering (ascending - cheaper first)
-		return "CASE WHEN cost_per_hour >= 0 THEN cost_per_hour ELSE 999999 END ASC", nil
+		// Default to cost ordering (ascending - cheaper first), -1 means unknown cost (lowest priority)
+		return "CASE WHEN cost_per_hour > 0 THEN cost_per_hour ELSE 999999 END ASC", nil
 	}
 
 	orderParts := []string{}
-	
+
 	for _, policy := range policies {
 		switch policy.Metric {
 		case "cost":
-			// Cost: ascending (cheaper first), handle nulls/negative values
-			orderParts = append(orderParts, "CASE WHEN cost_per_hour >= 0 THEN cost_per_hour ELSE 999999 END ASC")
+			// Cost: ascending (cheaper first), -1 means unknown cost (lowest priority)
+			orderParts = append(orderParts, "CASE WHEN cost_per_hour > 0 THEN cost_per_hour ELSE 999999 END ASC")
 		case "performance":
-			// Performance: descending (higher performance first)
-			orderParts = append(orderParts, "evaluation_score_01 DESC NULLS LAST")
+			// Performance: descending (higher performance first), -1 means unknown performance (lowest priority)
+			orderParts = append(orderParts, "CASE WHEN evaluation_score01 > 0 THEN evaluation_score01 ELSE -999999 END DESC")
 		case "random":
 			// Random: use RANDOM() function
 			orderParts = append(orderParts, "RANDOM()")
@@ -179,25 +179,29 @@ func buildOrderByClause(policies []model.PriorityCondition) (string, error) {
 			locationOrderBy, err := BuildLocationOrderByClause(&policy.Parameter)
 			if err != nil {
 				log.Warn().Err(err).Msg("Failed to build location ORDER BY, falling back to cost")
-				orderParts = append(orderParts, "CASE WHEN cost_per_hour >= 0 THEN cost_per_hour ELSE 999999 END ASC")
+				orderParts = append(orderParts, "CASE WHEN cost_per_hour > 0 THEN cost_per_hour ELSE 999999 END ASC")
 			} else {
 				orderParts = append(orderParts, locationOrderBy)
 			}
 		case "latency":
-			// Latency: for now, default to cost ordering as latency requires complex subquery
-			// TODO: Implement latency-based SQL ordering in future enhancement
-			log.Info().Msg("Latency ordering not yet implemented in SQL, using cost ordering")
-			orderParts = append(orderParts, "CASE WHEN cost_per_hour >= 0 THEN cost_per_hour ELSE 999999 END ASC")
+			// Latency: build latency-based ORDER BY using TbLatencyInfo table
+			latencyOrderBy, err := BuildLatencyOrderByClause(&policy.Parameter)
+			if err != nil {
+				log.Warn().Err(err).Msg("Failed to build latency ORDER BY, falling back to cost")
+				orderParts = append(orderParts, "CASE WHEN cost_per_hour > 0 THEN cost_per_hour ELSE 999999 END ASC")
+			} else {
+				orderParts = append(orderParts, latencyOrderBy)
+			}
 		default:
 			// Default to cost ordering
-			orderParts = append(orderParts, "CASE WHEN cost_per_hour >= 0 THEN cost_per_hour ELSE 999999 END ASC")
+			orderParts = append(orderParts, "CASE WHEN cost_per_hour > 0 THEN cost_per_hour ELSE 999999 END ASC")
 		}
 	}
-	
+
 	if len(orderParts) == 0 {
-		return "CASE WHEN cost_per_hour >= 0 THEN cost_per_hour ELSE 999999 END ASC", nil
+		return "CASE WHEN cost_per_hour > 0 THEN cost_per_hour ELSE 999999 END ASC", nil
 	}
-	
+
 	return strings.Join(orderParts, ", "), nil
 }
 
@@ -320,13 +324,13 @@ func BuildLocationOrderByClause(param *[]model.ParameterKeyVal) (string, error) 
 			if len(v.Val) == 0 {
 				return "", fmt.Errorf("coordinateClose requires coordinate value")
 			}
-			
+
 			coordinateStr := v.Val[0]
 			slice := strings.Split(coordinateStr, "/")
 			if len(slice) != 2 {
 				return "", fmt.Errorf("invalid coordinate format, expected 'latitude/longitude'")
 			}
-			
+
 			latitude, err := strconv.ParseFloat(strings.ReplaceAll(slice[0], " ", ""), 64)
 			if err != nil {
 				return "", fmt.Errorf("invalid latitude: %v", err)
@@ -336,23 +340,40 @@ func BuildLocationOrderByClause(param *[]model.ParameterKeyVal) (string, error) 
 				return "", fmt.Errorf("invalid longitude: %v", err)
 			}
 
-			// Generate Haversine distance calculation in SQL
-			// Uses PostgreSQL-compatible syntax for distance calculation
-			orderBy := fmt.Sprintf(`(
-				6371 * acos(
-					cos(radians(%f)) * cos(radians(region_latitude)) * 
-					cos(radians(region_longitude) - radians(%f)) + 
-					sin(radians(%f)) * sin(radians(region_latitude))
-				)
-			) ASC`, latitude, longitude, latitude)
-			
+			// Generate distance-based priority with cost as secondary sort
+			// Use distance bands: 0-100km, 100-500km, 500-1000km, 1000km+
+			// Within each band, sort by cost (cheaper first)
+			orderBy := fmt.Sprintf(`
+				CASE 
+					WHEN (6371 * acos(
+						cos(radians(%f)) * cos(radians(region_latitude)) * 
+						cos(radians(region_longitude) - radians(%f)) + 
+						sin(radians(%f)) * sin(radians(region_latitude))
+					)) <= 100 THEN 1
+					WHEN (6371 * acos(
+						cos(radians(%f)) * cos(radians(region_latitude)) * 
+						cos(radians(region_longitude) - radians(%f)) + 
+						sin(radians(%f)) * sin(radians(region_latitude))
+					)) <= 500 THEN 2
+					WHEN (6371 * acos(
+						cos(radians(%f)) * cos(radians(region_latitude)) * 
+						cos(radians(region_longitude) - radians(%f)) + 
+						sin(radians(%f)) * sin(radians(region_latitude))
+					)) <= 1000 THEN 3
+					ELSE 4
+				END ASC,
+				CASE WHEN cost_per_hour > 0 THEN cost_per_hour ELSE 999999 END ASC`,
+				latitude, longitude, latitude,
+				latitude, longitude, latitude,
+				latitude, longitude, latitude)
+
 			return orderBy, nil
 
 		case "coordinateFair":
 			if len(v.Val) == 0 {
 				return "", fmt.Errorf("coordinateFair requires coordinate values")
 			}
-			
+
 			// Calculate centroid of coordinate clusters
 			latitudeSum := 0.0
 			longitudeSum := 0.0
@@ -361,7 +382,7 @@ func BuildLocationOrderByClause(param *[]model.ParameterKeyVal) (string, error) 
 				if len(slice) != 2 {
 					return "", fmt.Errorf("invalid coordinate format, expected 'latitude/longitude'")
 				}
-				
+
 				latitudeEach, err := strconv.ParseFloat(strings.ReplaceAll(slice[0], " ", ""), 64)
 				if err != nil {
 					return "", fmt.Errorf("invalid latitude: %v", err)
@@ -373,7 +394,7 @@ func BuildLocationOrderByClause(param *[]model.ParameterKeyVal) (string, error) 
 				latitudeSum += latitudeEach
 				longitudeSum += longitudeEach
 			}
-			
+
 			latitude := latitudeSum / float64(len(v.Val))
 			longitude := longitudeSum / float64(len(v.Val))
 
@@ -385,7 +406,7 @@ func BuildLocationOrderByClause(param *[]model.ParameterKeyVal) (string, error) 
 					sin(radians(%f)) * sin(radians(region_latitude))
 				)
 			) ASC`, latitude, longitude, latitude)
-			
+
 			return orderBy, nil
 
 		case "coordinateWithin":
@@ -394,13 +415,13 @@ func BuildLocationOrderByClause(param *[]model.ParameterKeyVal) (string, error) 
 			if len(v.Val) == 0 {
 				return "", fmt.Errorf("coordinateWithin requires coordinate value")
 			}
-			
+
 			coordinateStr := v.Val[0]
 			parts := strings.Split(coordinateStr, "/")
 			if len(parts) < 2 {
 				return "", fmt.Errorf("invalid coordinate format for coordinateWithin")
 			}
-			
+
 			latitude, err := strconv.ParseFloat(strings.ReplaceAll(parts[0], " ", ""), 64)
 			if err != nil {
 				return "", fmt.Errorf("invalid latitude: %v", err)
@@ -417,12 +438,59 @@ func BuildLocationOrderByClause(param *[]model.ParameterKeyVal) (string, error) 
 					sin(radians(%f)) * sin(radians(region_latitude))
 				)
 			) ASC`, latitude, longitude, latitude)
-			
+
 			return orderBy, nil
 		}
 	}
-	
+
 	return "", fmt.Errorf("unsupported location parameter")
+}
+
+// BuildLatencyOrderByClause generates ORDER BY clause for latency-based sorting
+func BuildLatencyOrderByClause(param *[]model.ParameterKeyVal) (string, error) {
+	if param == nil || len(*param) == 0 {
+		return "", fmt.Errorf("no latency parameters provided")
+	}
+
+	for _, v := range *param {
+		switch v.Key {
+		case "latencyMinimal":
+			if len(v.Val) == 0 {
+				return "", fmt.Errorf("latencyMinimal requires target region values")
+			}
+
+			// Build subquery to calculate sum of latencies for each spec
+			// We'll use COALESCE to handle missing latency data with a high penalty value
+			latencyParts := []string{}
+
+			for _, targetRegion := range v.Val {
+				// Create a subquery that joins with TbLatencyInfo table
+				// The source region is constructed as "provider_name+region_name"
+				latencySubquery := fmt.Sprintf(`
+					COALESCE((
+						SELECT latency_ms 
+						FROM tb_latency_infos 
+						WHERE source_region = '%s' 
+						AND target_region = tb_spec_infos.provider_name || '+' || tb_spec_infos.region_name
+						LIMIT 1
+					), 999999)`, targetRegion)
+
+				latencyParts = append(latencyParts, latencySubquery)
+			}
+
+			// Sum all latencies for multi-target latency minimization
+			if len(latencyParts) == 1 {
+				orderBy := fmt.Sprintf("(%s) ASC", latencyParts[0])
+				return orderBy, nil
+			} else {
+				// Sum multiple latencies
+				orderBy := fmt.Sprintf("(%s) ASC", strings.Join(latencyParts, " + "))
+				return orderBy, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("unsupported latency parameter")
 }
 
 // RecommendVmLocation func prioritize specs based on given location
