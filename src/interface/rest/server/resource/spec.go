@@ -224,12 +224,12 @@ type RestFilterSpecsResponse struct {
 // RestFilterSpecsByRange godoc
 // @ID FilterSpecsByRange
 // @Summary Filter specs by range
-// @Description Filter specs by range
+// @Description Filter specs by range. Use limit field to control the maximum number of results. If limit is 0 or not specified, returns all matching results.
 // @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param specRangeFilter body model.FilterSpecsByRangeRequest false "Filter for range-filtering specs"
+// @Param specRangeFilter body model.FilterSpecsByRangeRequest false "Filter for range-filtering specs (limit: 0 for all results, >0 for limited results)"
 // @Success 200 {object} RestFilterSpecsResponse
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -244,7 +244,7 @@ func RestFilterSpecsByRange(c echo.Context) error {
 	}
 
 	log.Debug().Msg("[Filter specs]")
-	content, err := resource.FilterSpecsByRange(nsId, *u)
+	content, err := resource.FilterSpecsByRange(nsId, *u, "")
 	result := RestFilterSpecsResponse{}
 	result.Spec = content
 	return clientManager.EndRequestWithLog(c, err, result)

@@ -7564,7 +7564,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/resources/filterSpecsByRange": {
             "post": {
-                "description": "Filter specs by range",
+                "description": "Filter specs by range. Use limit field to control the maximum number of results. If limit is 0 or not specified, returns all matching results.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7586,7 +7586,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Filter for range-filtering specs",
+                        "description": "Filter for range-filtering specs (limit: 0 for all results, \u003e0 for limited results)",
                         "name": "specRangeFilter",
                         "in": "body",
                         "schema": {
@@ -12756,6 +12756,20 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.FilterConditionExample"
                     }
+                },
+                "limitExamples": {
+                    "description": "Example limit values for performance optimization",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "0",
+                        "50",
+                        "100",
+                        "200",
+                        "500"
+                    ]
                 }
             }
         },
@@ -12831,6 +12845,10 @@ const docTemplate = `{
                 "infraType": {
                     "type": "string"
                 },
+                "limit": {
+                    "type": "integer",
+                    "example": 0
+                },
                 "maxTotalStorageTiB": {
                     "$ref": "#/definitions/model.Range"
                 },
@@ -12848,6 +12866,12 @@ const docTemplate = `{
                 },
                 "providerName": {
                     "type": "string"
+                },
+                "regionLatitude": {
+                    "type": "number"
+                },
+                "regionLongitude": {
+                    "type": "number"
                 },
                 "regionName": {
                     "type": "string"
@@ -18228,6 +18252,12 @@ const docTemplate = `{
                 },
                 "providerName": {
                     "type": "string"
+                },
+                "regionLatitude": {
+                    "type": "number"
+                },
+                "regionLongitude": {
+                    "type": "number"
                 },
                 "regionName": {
                     "type": "string"

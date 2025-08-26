@@ -6200,7 +6200,9 @@ paths:
       tags:
       - "[Infra Resource] Spec Management"
       summary: Filter specs by range
-      description: Filter specs by range
+      description: "Filter specs by range. Use limit field to control the maximum\
+        \ number of results. If limit is 0 or not specified, returns all matching\
+        \ results."
       operationId: FilterSpecsByRange
       parameters:
       - name: nsId
@@ -6211,7 +6213,8 @@ paths:
           type: string
           default: system
       requestBody:
-        description: Filter for range-filtering specs
+        description: "Filter for range-filtering specs (limit: 0 for all results,\
+          \ >0 for limited results)"
         content:
           application/json:
             schema:
@@ -10313,6 +10316,17 @@ components:
           description: Example filter policies
           items:
             $ref: '#/components/schemas/model.FilterConditionExample'
+        limitExamples:
+          type: array
+          description: Example limit values for performance optimization
+          example:
+          - "0"
+          - "50"
+          - "100"
+          - "200"
+          - "500"
+          items:
+            type: string
     model.FilterSpecsByRangeRequest:
       type: object
       properties:
@@ -10362,6 +10376,9 @@ components:
           type: string
         infraType:
           type: string
+        limit:
+          type: integer
+          example: 0
         maxTotalStorageTiB:
           $ref: '#/components/schemas/model.Range'
         memoryGiB:
@@ -10374,6 +10391,10 @@ components:
           type: string
         providerName:
           type: string
+        regionLatitude:
+          type: number
+        regionLongitude:
+          type: number
         regionName:
           type: string
         vCPU:
@@ -14376,6 +14397,10 @@ components:
           type: string
         providerName:
           type: string
+        regionLatitude:
+          type: number
+        regionLongitude:
+          type: number
         regionName:
           type: string
         rootDiskSize:

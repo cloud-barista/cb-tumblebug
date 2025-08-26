@@ -14,6 +14,13 @@ limitations under the License.
 // Package model is to handle object of CB-Tumblebug
 package model
 
+import (
+	"fmt"
+	"time"
+
+	"gorm.io/gorm"
+)
+
 // SpiderSpecInfo is a struct to create JSON body of 'Get spec request'
 type SpiderSpecInfo struct {
 	// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMSpecHandler.go
@@ -126,11 +133,13 @@ type TbSpecInfo struct { // Tumblebug
 	CspSpecName string `json:"cspSpecName,omitempty" example:"csp-06eb41e14121c550a"`
 
 	// Name is human-readable string to represent the object
-	Name           string `json:"name" example:"aws-ap-southeast-1"`
-	Namespace      string `json:"namespace,omitempty" example:"default" gorm:"primaryKey"`
-	ConnectionName string `json:"connectionName,omitempty"`
-	ProviderName   string `json:"providerName,omitempty"`
-	RegionName     string `json:"regionName,omitempty"`
+	Name            string  `json:"name" example:"aws-ap-southeast-1"`
+	Namespace       string  `json:"namespace,omitempty" example:"default" gorm:"primaryKey"`
+	ConnectionName  string  `json:"connectionName,omitempty"`
+	ProviderName    string  `json:"providerName,omitempty"`
+	RegionName      string  `json:"regionName,omitempty"`
+	RegionLatitude  float64 `json:"regionLatitude"`
+	RegionLongitude float64 `json:"regionLongitude"`
 	// InfraType can be one of vm|k8s|kubernetes|container, etc.
 	InfraType             string   `json:"infraType,omitempty"`
 	Architecture          string   `json:"architecture,omitempty" example:"x86_64"`
@@ -168,39 +177,56 @@ type TbSpecInfo struct { // Tumblebug
 	Details     []KeyValue `json:"details" gorm:"type:text;serializer:json"`
 }
 
+// TbLatencyInfo is a struct that represents TB latency map object.
+type TbLatencyInfo struct {
+	// SourceRegion is the source region for latency measurement
+	SourceRegion string `json:"sourceRegion" gorm:"primaryKey" example:"aws+us-east-1"`
+	// TargetRegion is the target region for latency measurement
+	TargetRegion string `json:"targetRegion" gorm:"primaryKey" example:"aws+us-west-2"`
+	// LatencyMs is the latency in milliseconds between source and target regions
+	LatencyMs float64 `json:"latencyMs" example:"70.5"`
+	// MeasuredAt is the timestamp when the latency was measured
+	MeasuredAt time.Time `json:"measuredAt"`
+	// UpdatedAt is the timestamp when the record was last updated
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
 // FilterSpecsByRangeRequest is for 'FilterSpecsByRange'
 type FilterSpecsByRangeRequest struct {
-	Id                  string `json:"id"`
-	Name                string `json:"name"`
-	ConnectionName      string `json:"connectionName"`
-	ProviderName        string `json:"providerName"`
-	RegionName          string `json:"regionName"`
-	CspSpecName         string `json:"cspSpecName"`
-	InfraType           string `json:"infraType"`
-	Architecture        string `json:"architecture"`
-	OsType              string `json:"osType"`
-	VCPU                Range  `json:"vCPU"`
-	MemoryGiB           Range  `json:"memoryGiB"`
-	DiskSizeGB          Range  `json:"diskSizeGB"`
-	MaxTotalStorageTiB  Range  `json:"maxTotalStorageTiB"`
-	NetBwGbps           Range  `json:"netBwGbps"`
-	AcceleratorModel    string `json:"acceleratorModel"`
-	AcceleratorCount    Range  `json:"acceleratorCount"`
-	AcceleratorMemoryGB Range  `json:"acceleratorMemoryGB"`
-	AcceleratorType     string `json:"acceleratorType"`
-	CostPerHour         Range  `json:"costPerHour"`
-	Description         string `json:"description"`
-	EvaluationStatus    string `json:"evaluationStatus"`
-	EvaluationScore01   Range  `json:"evaluationScore01"`
-	EvaluationScore02   Range  `json:"evaluationScore02"`
-	EvaluationScore03   Range  `json:"evaluationScore03"`
-	EvaluationScore04   Range  `json:"evaluationScore04"`
-	EvaluationScore05   Range  `json:"evaluationScore05"`
-	EvaluationScore06   Range  `json:"evaluationScore06"`
-	EvaluationScore07   Range  `json:"evaluationScore07"`
-	EvaluationScore08   Range  `json:"evaluationScore08"`
-	EvaluationScore09   Range  `json:"evaluationScore09"`
-	EvaluationScore10   Range  `json:"evaluationScore10"`
+	Id                  string  `json:"id"`
+	Name                string  `json:"name"`
+	ConnectionName      string  `json:"connectionName"`
+	ProviderName        string  `json:"providerName"`
+	RegionName          string  `json:"regionName"`
+	RegionLatitude      float64 `json:"regionLatitude"`
+	RegionLongitude     float64 `json:"regionLongitude"`
+	CspSpecName         string  `json:"cspSpecName"`
+	InfraType           string  `json:"infraType"`
+	Architecture        string  `json:"architecture"`
+	OsType              string  `json:"osType"`
+	VCPU                Range   `json:"vCPU"`
+	MemoryGiB           Range   `json:"memoryGiB"`
+	DiskSizeGB          Range   `json:"diskSizeGB"`
+	MaxTotalStorageTiB  Range   `json:"maxTotalStorageTiB"`
+	NetBwGbps           Range   `json:"netBwGbps"`
+	AcceleratorModel    string  `json:"acceleratorModel"`
+	AcceleratorCount    Range   `json:"acceleratorCount"`
+	AcceleratorMemoryGB Range   `json:"acceleratorMemoryGB"`
+	AcceleratorType     string  `json:"acceleratorType"`
+	CostPerHour         Range   `json:"costPerHour"`
+	Description         string  `json:"description"`
+	EvaluationStatus    string  `json:"evaluationStatus"`
+	EvaluationScore01   Range   `json:"evaluationScore01"`
+	EvaluationScore02   Range   `json:"evaluationScore02"`
+	EvaluationScore03   Range   `json:"evaluationScore03"`
+	EvaluationScore04   Range   `json:"evaluationScore04"`
+	EvaluationScore05   Range   `json:"evaluationScore05"`
+	EvaluationScore06   Range   `json:"evaluationScore06"`
+	EvaluationScore07   Range   `json:"evaluationScore07"`
+	EvaluationScore08   Range   `json:"evaluationScore08"`
+	EvaluationScore09   Range   `json:"evaluationScore09"`
+	EvaluationScore10   Range   `json:"evaluationScore10"`
+	Limit               int     `json:"limit" example:"0" description:"Maximum number of results to return (0 for no limit - returns all results)"`
 }
 
 // SpiderSpecList is a struct to handle spec list from the CB-Spider's REST API response
@@ -245,6 +271,9 @@ type FilterOptionsInfo struct {
 
 	// Available values for each metric (for select fields)
 	AvailableValues FilterAvailableValues `json:"availableValues" description:"Available values for select-type filter fields"`
+
+	// Example limit values for performance optimization
+	LimitExamples []string `json:"limitExamples" example:"0,50,100,200,500" description:"Example limit values for performance optimization"`
 }
 
 // FilterConditionExample provides example filter conditions
@@ -325,4 +354,73 @@ type ParameterOptionDetail struct {
 	Description string   `json:"description" example:"Find specs closest to given coordinate (latitude/longitude)"`
 	Format      string   `json:"format" example:"latitude/longitude"`
 	Example     []string `json:"example" example:"37.5665/126.9780,35.6762/139.6503"`
+}
+
+// StoreLatencyInfo stores latency information to database
+func StoreLatencyInfo(sourceRegion, targetRegion string, latencyMs float64) error {
+	if sourceRegion == "" || targetRegion == "" {
+		return fmt.Errorf("source region and target region cannot be empty")
+	}
+	if latencyMs < 0 {
+		return fmt.Errorf("latency cannot be negative: %f", latencyMs)
+	}
+
+	latencyInfo := TbLatencyInfo{
+		SourceRegion: sourceRegion,
+		TargetRegion: targetRegion,
+		LatencyMs:    latencyMs,
+		MeasuredAt:   time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+
+	result := ORM.Save(&latencyInfo)
+	return result.Error
+}
+
+// GetLatencyInfo retrieves latency information from database
+func GetLatencyInfo(sourceRegion, targetRegion string) (*TbLatencyInfo, error) {
+	if sourceRegion == "" || targetRegion == "" {
+		return nil, fmt.Errorf("source region and target region cannot be empty")
+	}
+
+	var latencyInfo TbLatencyInfo
+	result := ORM.Where("source_region = ? AND target_region = ?", sourceRegion, targetRegion).First(&latencyInfo)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &latencyInfo, nil
+}
+
+// GetLatencyValue retrieves latency value between two regions (compatibility function)
+func GetLatencyValue(sourceRegion, targetRegion string) (float64, error) {
+	latencyInfo, err := GetLatencyInfo(sourceRegion, targetRegion)
+	if err != nil {
+		return 0, err
+	}
+	return latencyInfo.LatencyMs, nil
+}
+
+// BatchStoreLatencyInfo stores multiple latency records in a single transaction
+func BatchStoreLatencyInfo(latencyData []TbLatencyInfo) error {
+	if len(latencyData) == 0 {
+		return nil
+	}
+
+	return ORM.Transaction(func(tx *gorm.DB) error {
+		for _, data := range latencyData {
+			data.MeasuredAt = time.Now()
+			data.UpdatedAt = time.Now()
+			if err := tx.Save(&data).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// GetAllLatencyInfo retrieves all latency information from database
+func GetAllLatencyInfo() ([]TbLatencyInfo, error) {
+	var latencyInfos []TbLatencyInfo
+	result := ORM.Find(&latencyInfos)
+	return latencyInfos, result.Error
 }

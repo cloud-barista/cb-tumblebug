@@ -97,7 +97,7 @@ func applyRange(field reflect.Value, operator string, operand float32) error {
 
 // RecommendSpec is func to recommend a VM
 func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecInfo, error) {
-	// Filtering first
+	// Filtering and sorting with DB query
 
 	u := &model.FilterSpecsByRangeRequest{}
 	// Apply filter policies dynamically.
@@ -106,14 +106,35 @@ func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecInfo
 		return nil, err
 	}
 
-	// veryLargeValue := float32(math.MaxFloat32)
-	// verySmallValue := float32(0)
+	// Set final limit
+	finalLimitNum, err := strconv.Atoi(plan.Limit)
+	if err != nil {
+		finalLimitNum = 0 // Default to no limit if parsing fails
+	}
 
-	// Filtering
-	log.Debug().Msg("[Filtering specs]")
+	// Apply final limit to the filter request
+	if finalLimitNum > 0 {
+		u.Limit = finalLimitNum
+		log.Info().Msgf("Setting limit to %d", finalLimitNum)
+	} else {
+		u.Limit = 0 // No limit
+		log.Info().Msg("No limit applied - returning all filtered results")
+	}
+
+	// Build ORDER BY clause based on priority policy
+	orderBy, err := buildOrderByClause(plan.Priority.Policy)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to build ORDER BY clause")
+		return nil, err
+	}
+	
+	log.Info().Msgf("Using ORDER BY: %s", orderBy)
+
+	// Filtering and sorting in one DB query
+	log.Debug().Msg("[Filtering and sorting specs with DB query]")
 
 	startTime := time.Now()
-	filteredSpecs, err := resource.FilterSpecsByRange(nsId, *u)
+	filteredSpecs, err := resource.FilterSpecsByRange(nsId, *u, orderBy)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -121,71 +142,63 @@ func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecInfo
 	}
 	elapsedTime := time.Since(startTime)
 	log.Info().
-		Int("filteredItemCount", len(filteredSpecs)).
+		Int("resultCount", len(filteredSpecs)).
 		Dur("elapsedTime", elapsedTime).
-		Msg("Filtering complete")
+		Msg("Filtering and sorting complete")
 
 	if len(filteredSpecs) == 0 {
 		return []model.TbSpecInfo{}, nil
 	}
 
-	// // sorting based on VCPU and MemoryGiB
-	// sort.Slice(filteredSpecs, func(i, j int) bool {
-	// 	// sort based on VCPU first
-	// 	if filteredSpecs[i].VCPU != filteredSpecs[j].VCPU {
-	// 		return float32(filteredSpecs[i].VCPU) < float32(filteredSpecs[j].VCPU)
-	// 	}
-	// 	// if VCPU is same, sort based on MemoryGiB
-	// 	return float32(filteredSpecs[i].MemoryGiB) < float32(filteredSpecs[j].MemoryGiB)
-	// })
+	return filteredSpecs, nil
 
-	// Prioritizing
-	prioritySpecs := []model.TbSpecInfo{}
+}
 
-	startTime = time.Now()
-	for _, v := range plan.Priority.Policy {
-		metric := v.Metric
+// buildOrderByClause builds the ORDER BY clause based on priority policies
+func buildOrderByClause(policies []model.PriorityCondition) (string, error) {
+	if len(policies) == 0 {
+		// Default to cost ordering (ascending - cheaper first)
+		return "CASE WHEN cost_per_hour >= 0 THEN cost_per_hour ELSE 999999 END ASC", nil
+	}
 
-		switch metric {
-		case "location":
-			prioritySpecs, err = RecommendVmLocation(nsId, &filteredSpecs, &v.Parameter)
-		case "performance":
-			prioritySpecs, err = RecommendVmPerformance(nsId, &filteredSpecs)
+	orderParts := []string{}
+	
+	for _, policy := range policies {
+		switch policy.Metric {
 		case "cost":
-			prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
+			// Cost: ascending (cheaper first), handle nulls/negative values
+			orderParts = append(orderParts, "CASE WHEN cost_per_hour >= 0 THEN cost_per_hour ELSE 999999 END ASC")
+		case "performance":
+			// Performance: descending (higher performance first)
+			orderParts = append(orderParts, "evaluation_score_01 DESC NULLS LAST")
 		case "random":
-			prioritySpecs, err = RecommendVmRandom(nsId, &filteredSpecs)
+			// Random: use RANDOM() function
+			orderParts = append(orderParts, "RANDOM()")
+		case "location":
+			// Location: build distance-based ORDER BY
+			locationOrderBy, err := BuildLocationOrderByClause(&policy.Parameter)
+			if err != nil {
+				log.Warn().Err(err).Msg("Failed to build location ORDER BY, falling back to cost")
+				orderParts = append(orderParts, "CASE WHEN cost_per_hour >= 0 THEN cost_per_hour ELSE 999999 END ASC")
+			} else {
+				orderParts = append(orderParts, locationOrderBy)
+			}
 		case "latency":
-			prioritySpecs, err = RecommendVmLatency(nsId, &filteredSpecs, &v.Parameter)
+			// Latency: for now, default to cost ordering as latency requires complex subquery
+			// TODO: Implement latency-based SQL ordering in future enhancement
+			log.Info().Msg("Latency ordering not yet implemented in SQL, using cost ordering")
+			orderParts = append(orderParts, "CASE WHEN cost_per_hour >= 0 THEN cost_per_hour ELSE 999999 END ASC")
 		default:
-			prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
-		}
-
-	}
-	if plan.Priority.Policy == nil {
-		prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
-	}
-
-	elapsedTime = time.Since(startTime)
-	log.Info().
-		Dur("elapsedTime", elapsedTime).
-		Msg("Sorting complete")
-
-	// limit the number of items in result list
-	result := []model.TbSpecInfo{}
-	limitNum, err := strconv.Atoi(plan.Limit)
-	if err != nil {
-		limitNum = math.MaxInt
-	}
-	for i, v := range prioritySpecs {
-		result = append(result, v)
-		if i == (limitNum - 1) {
-			break
+			// Default to cost ordering
+			orderParts = append(orderParts, "CASE WHEN cost_per_hour >= 0 THEN cost_per_hour ELSE 999999 END ASC")
 		}
 	}
-
-	return result, nil
-
+	
+	if len(orderParts) == 0 {
+		return "CASE WHEN cost_per_hour >= 0 THEN cost_per_hour ELSE 999999 END ASC", nil
+	}
+	
+	return strings.Join(orderParts, ", "), nil
 }
 
 // RecommendVmLatency func prioritize specs by latency based on given MCI (fair)
@@ -293,6 +306,123 @@ func RecommendVmLatency(nsId string, specList *[]model.TbSpecInfo, param *[]mode
 	// updatedSpec, err := resource.UpdateSpec(nsId, *result)
 	// content, err = resource.SortSpecs(*specList, "memoryGiB", "descending")
 	return result, nil
+}
+
+// BuildLocationOrderByClause generates ORDER BY clause for location-based sorting
+func BuildLocationOrderByClause(param *[]model.ParameterKeyVal) (string, error) {
+	if param == nil || len(*param) == 0 {
+		return "", fmt.Errorf("no location parameters provided")
+	}
+
+	for _, v := range *param {
+		switch v.Key {
+		case "coordinateClose":
+			if len(v.Val) == 0 {
+				return "", fmt.Errorf("coordinateClose requires coordinate value")
+			}
+			
+			coordinateStr := v.Val[0]
+			slice := strings.Split(coordinateStr, "/")
+			if len(slice) != 2 {
+				return "", fmt.Errorf("invalid coordinate format, expected 'latitude/longitude'")
+			}
+			
+			latitude, err := strconv.ParseFloat(strings.ReplaceAll(slice[0], " ", ""), 64)
+			if err != nil {
+				return "", fmt.Errorf("invalid latitude: %v", err)
+			}
+			longitude, err := strconv.ParseFloat(strings.ReplaceAll(slice[1], " ", ""), 64)
+			if err != nil {
+				return "", fmt.Errorf("invalid longitude: %v", err)
+			}
+
+			// Generate Haversine distance calculation in SQL
+			// Uses PostgreSQL-compatible syntax for distance calculation
+			orderBy := fmt.Sprintf(`(
+				6371 * acos(
+					cos(radians(%f)) * cos(radians(region_latitude)) * 
+					cos(radians(region_longitude) - radians(%f)) + 
+					sin(radians(%f)) * sin(radians(region_latitude))
+				)
+			) ASC`, latitude, longitude, latitude)
+			
+			return orderBy, nil
+
+		case "coordinateFair":
+			if len(v.Val) == 0 {
+				return "", fmt.Errorf("coordinateFair requires coordinate values")
+			}
+			
+			// Calculate centroid of coordinate clusters
+			latitudeSum := 0.0
+			longitudeSum := 0.0
+			for _, coordinateStr := range v.Val {
+				slice := strings.Split(coordinateStr, "/")
+				if len(slice) != 2 {
+					return "", fmt.Errorf("invalid coordinate format, expected 'latitude/longitude'")
+				}
+				
+				latitudeEach, err := strconv.ParseFloat(strings.ReplaceAll(slice[0], " ", ""), 64)
+				if err != nil {
+					return "", fmt.Errorf("invalid latitude: %v", err)
+				}
+				longitudeEach, err := strconv.ParseFloat(strings.ReplaceAll(slice[1], " ", ""), 64)
+				if err != nil {
+					return "", fmt.Errorf("invalid longitude: %v", err)
+				}
+				latitudeSum += latitudeEach
+				longitudeSum += longitudeEach
+			}
+			
+			latitude := latitudeSum / float64(len(v.Val))
+			longitude := longitudeSum / float64(len(v.Val))
+
+			// Generate Haversine distance calculation for centroid
+			orderBy := fmt.Sprintf(`(
+				6371 * acos(
+					cos(radians(%f)) * cos(radians(region_latitude)) * 
+					cos(radians(region_longitude) - radians(%f)) + 
+					sin(radians(%f)) * sin(radians(region_latitude))
+				)
+			) ASC`, latitude, longitude, latitude)
+			
+			return orderBy, nil
+
+		case "coordinateWithin":
+			// For coordinateWithin, we can use the same distance calculation as coordinateClose
+			// The filtering by radius would be handled in WHERE clause, not ORDER BY
+			if len(v.Val) == 0 {
+				return "", fmt.Errorf("coordinateWithin requires coordinate value")
+			}
+			
+			coordinateStr := v.Val[0]
+			parts := strings.Split(coordinateStr, "/")
+			if len(parts) < 2 {
+				return "", fmt.Errorf("invalid coordinate format for coordinateWithin")
+			}
+			
+			latitude, err := strconv.ParseFloat(strings.ReplaceAll(parts[0], " ", ""), 64)
+			if err != nil {
+				return "", fmt.Errorf("invalid latitude: %v", err)
+			}
+			longitude, err := strconv.ParseFloat(strings.ReplaceAll(parts[1], " ", ""), 64)
+			if err != nil {
+				return "", fmt.Errorf("invalid longitude: %v", err)
+			}
+
+			orderBy := fmt.Sprintf(`(
+				6371 * acos(
+					cos(radians(%f)) * cos(radians(region_latitude)) * 
+					cos(radians(region_longitude) - radians(%f)) + 
+					sin(radians(%f)) * sin(radians(region_latitude))
+				)
+			) ASC`, latitude, longitude, latitude)
+			
+			return orderBy, nil
+		}
+	}
+	
+	return "", fmt.Errorf("unsupported location parameter")
 }
 
 // RecommendVmLocation func prioritize specs based on given location
@@ -949,11 +1079,9 @@ func getDistance(latitude float64, longitude float64, providerName string, regio
 
 // GetLatency func get latency between given two regions
 func GetLatency(src string, dest string) (float64, error) {
-
-	latencyString := common.RuntimeLatancyMap[common.RuntimeLatancyMapIndex[src]][common.RuntimeLatancyMapIndex[dest]]
-	latency, err := strconv.ParseFloat(strings.ReplaceAll(latencyString, " ", ""), 32)
+	latency, err := model.GetLatencyValue(src, dest)
 	if err != nil {
-		log.Info().Err(err).Msgf("Cannot get GetLatency between src: %v, dest: %v (check assets)", src, dest)
+		log.Info().Err(err).Msgf("Cannot get GetLatency between src: %v, dest: %v (check database)", src, dest)
 		return 999999, err
 	}
 	return latency, nil

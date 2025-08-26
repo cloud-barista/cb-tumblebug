@@ -22,6 +22,7 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -52,12 +53,14 @@ func TbSpecReqStructLevelValidation(sl validator.StructLevel) {
 }
 
 // ConvertSpiderSpecToTumblebugSpec accepts an Spider spec object, converts to and returns an TB spec object
-func ConvertSpiderSpecToTumblebugSpec(providerName string, spiderSpec model.SpiderSpecInfo) (model.TbSpecInfo, error) {
+func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec model.SpiderSpecInfo) (model.TbSpecInfo, error) {
 	if spiderSpec.Name == "" {
 		err := fmt.Errorf("failed convertSpiderSpecToTumblebugSpec. spiderSpec.Name is empty")
 		emptyTumblebugSpec := model.TbSpecInfo{}
 		return emptyTumblebugSpec, err
 	}
+
+	providerName := connConfig.ProviderName
 
 	tumblebugSpec := model.TbSpecInfo{}
 
@@ -65,6 +68,9 @@ func ConvertSpiderSpecToTumblebugSpec(providerName string, spiderSpec model.Spid
 	tumblebugSpec.CspSpecName = spiderSpec.Name
 	tumblebugSpec.Uid = common.GenUid()
 	tumblebugSpec.RegionName = spiderSpec.Region
+	tumblebugSpec.RegionLatitude = connConfig.RegionDetail.Location.Latitude
+	tumblebugSpec.RegionLongitude = connConfig.RegionDetail.Location.Longitude
+	// log.Debug().Msgf("Region coordinates for spec %s: (%f, %f)", tumblebugSpec.CspSpecName, tumblebugSpec.RegionLatitude, tumblebugSpec.RegionLongitude)
 	tumblebugSpec.ProviderName = providerName
 
 	// For Azure, filter out Gen1-only VM families
@@ -387,7 +393,7 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 	for i := range specsInConnection.Vmspec {
 		spiderSpec := specsInConnection.Vmspec[i]
 
-		tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(connConfig.ProviderName, spiderSpec)
+		tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(connConfig, spiderSpec)
 		if errConvert != nil {
 			log.Debug().Err(errConvert).Msgf("Skip ConvertSpiderSpecToTumblebugSpec for %s", spiderSpec.Name)
 			// Clear the processed item immediately
@@ -1439,7 +1445,7 @@ func RegisterSpecWithCspResourceId(nsId string, u *model.TbSpecReq, update bool)
 		return content, err
 	}
 
-	content, err = ConvertSpiderSpecToTumblebugSpec(connConfig.ProviderName, res)
+	content, err = ConvertSpiderSpecToTumblebugSpec(connConfig, res)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot RegisterSpecWithCspResourceId")
 		return content, err
@@ -1632,7 +1638,7 @@ func getColumnMapping(modelType interface{}) map[string]string {
 }
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
-func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]model.TbSpecInfo, error) {
+func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest, orderBy string) ([]model.TbSpecInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
 		return nil, err
@@ -1651,6 +1657,11 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]
 		value := val.Field(i)
 
 		modelFieldName := field.Name
+
+		// Skip Limit field as it's not a database column
+		if modelFieldName == "Limit" {
+			continue
+		}
 
 		dbFieldName, exists := specColumnMapping[modelFieldName]
 		if !exists {
@@ -1672,8 +1683,27 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]
 			switch value.Kind() {
 			case reflect.String:
 				cleanValue := strings.ToLower(value.String())
-				query = query.Where("LOWER("+dbFieldName+") LIKE ?", "%"+cleanValue+"%")
-				log.Info().Msgf("Filtering by %s: %s", dbFieldName, cleanValue)
+
+				// Define fields that require LIKE search for partial matching only
+				// Use LIKE search sparingly due to performance impact on indexing
+				likeSearchFields := []string{
+					"AcceleratorModel", // e.g., "NVIDIA H100" -> search with "NVIDIA"
+					"Description",      // Description text partial search
+					// Note: AcceleratorType removed - uses exact matching for better performance
+					// since values are typically standardized (GPU, TPU, etc.)
+				}
+
+				// Check if current field requires LIKE search
+				useLikeSearch := slices.Contains(likeSearchFields, modelFieldName)
+
+				if useLikeSearch {
+					query = query.Where("LOWER("+dbFieldName+") LIKE ?", "%"+cleanValue+"%")
+					log.Info().Msgf("Filtering by %s (LIKE): %s", dbFieldName, cleanValue)
+				} else {
+					// Try exact match first (for normalized data)
+					query = query.Where(dbFieldName+" = ?", cleanValue)
+					log.Info().Msgf("Filtering by %s (EXACT NORMALIZED): %s", dbFieldName, cleanValue)
+				}
 			}
 		}
 	}
@@ -1682,8 +1712,20 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]
 
 	var specs []model.TbSpecInfo
 
-	// Check the query before executing
-	query = query.Debug()
+	// Apply ORDER BY if specified
+	if orderBy != "" {
+		query = query.Order(orderBy)
+		log.Info().Msgf("Applying ORDER BY: %s", orderBy)
+	}
+
+	// Apply limit if specified and greater than 0
+	if filter.Limit > 0 {
+		query = query.Limit(filter.Limit)
+		log.Info().Msgf("Applying LIMIT: %d", filter.Limit)
+	}
+
+	// Check the query before executing (only in debug mode to avoid performance impact)
+	// query = query.Debug()
 	result := query.Find(&specs)
 	if result.Error != nil {
 		log.Error().Err(result.Error).Msg("Failed to execute query")
@@ -1692,6 +1734,8 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest) ([]
 
 	elapsedTime := time.Since(startTime)
 	log.Info().
+		Int("resultCount", len(specs)).
+		Int("limitApplied", filter.Limit).
 		Dur("elapsedTime", elapsedTime).
 		Msg("ORM:session.Find(&specs)")
 
