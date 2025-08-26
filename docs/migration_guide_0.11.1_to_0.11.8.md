@@ -437,26 +437,13 @@ def create_mci_with_validation(mci_request):
 }
 ```
 
-### VM 추천 API 엔드포인트 및 응답 구조 변화
+### VM 추천 API 엔드포인트 명칭 변화
 ```diff
 # v0.11.1-v0.11.3 (mciRecommendVm)
 POST /mciRecommendVm
-{
--  "vm_list": [...],
--  "region_info": {...}
-}
 
 # v0.11.4+ (recommendSpec)  
 POST /recommendSpec
-[
-+  {
-+    "id": "aws+ap-northeast-2+t2.small",
-+    "cspSpecName": "t2.small", 
-+    "vCPU": 1,
-+    "memoryGiB": 1,
-+    "costPerHour": "0.0116"
-+  }
-]
 ```
 
 ## 📋 **마이그레이션 체크리스트**
