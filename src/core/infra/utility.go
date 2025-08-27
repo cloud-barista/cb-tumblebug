@@ -974,7 +974,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 
 			req.SubGroups = append(req.SubGroups, subGroupReq)
 
-			_, err = CreateMci(nsId, &req, optionFlag)
+			_, err = CreateMci(nsId, &req, optionFlag, false)
 
 			registeredStatus = ""
 			if err != nil {

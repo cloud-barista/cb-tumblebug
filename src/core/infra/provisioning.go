@@ -16,6 +16,7 @@ package infra
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -842,7 +843,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbCreateSubGro
 }
 
 // CreateMci is func to create MCI object and deploy requested VMs (register CSP native VM with option=register)
-func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInfo, error) {
+func CreateMci(nsId string, req *model.TbMciReq, option string, isReqFromDynamic bool) (*model.TbMciInfo, error) {
 	// Input validation
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
@@ -922,40 +923,6 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 	uid := common.GenUid()
 	mciId := req.Name
 
-	// Get mci object
-	mciTmp, err := GetMciObject(nsId, mciId)
-	if err != nil {
-		log.Debug().Msgf("MCI '%s' does not exist, creating new one", mciId)
-		// Create MCI object first
-		if err := createMciObject(nsId, mciId, req, uid); err != nil {
-			return nil, fmt.Errorf("failed to create MCI object: %w", err)
-		}
-	} else {
-		// MCI object exists
-		log.Debug().Msgf("MCI '%s' already exists, reusing it only if MCI is in prepared status", mciId)
-		mciStatusTmp, err := GetMciStatus(nsId, mciId)
-		if err != nil {
-			log.Debug().Msgf("Failed to get MCI status for '%s': %v", mciId, err)
-			return nil, fmt.Errorf("failed to get MCI status: %w", err)
-		}
-		if mciStatusTmp.Status == model.StatusPrepared {
-			// starting status for subgroups
-			mciTmp.Status = model.StatusCreating
-			mciTmp.TargetAction = model.ActionCreate
-			mciTmp.TargetStatus = model.StatusRunning
-			UpdateMciInfo(nsId, mciTmp)
-
-		} else {
-			log.Debug().Msgf("MCI '%s' is not in prepared status", mciId)
-			// Check MCI existence (skip for register option)
-			if option != "register" {
-				return nil, fmt.Errorf("MCI '%s' already exists in namespace '%s'", mciId, nsId)
-			} else {
-				req.SystemLabel = "Registered from CSP resource"
-			}
-		}
-	}
-
 	// Pre-calculate VM configurations to avoid duplication
 	type vmConfig struct {
 		vmInfo       model.TbVmInfo
@@ -966,6 +933,37 @@ func CreateMci(nsId string, req *model.TbMciReq, option string) (*model.TbMciInf
 	var vmConfigs []vmConfig
 	var subGroupsCreated []string
 	vmStartIndex := 1
+
+	// Get mci object
+	mciTmp, err := GetMciObject(nsId, mciId)
+
+	if isReqFromDynamic {
+		// isReqFromDynamic. Do not create MCI object. Reuse the existing one.
+		if err != nil {
+			log.Error().Err(err).Msgf("MCI '%s' does not exist in namespace '%s' should be prepared by dynamic request", mciId, nsId)
+		} else {
+			mciTmp.Status = model.StatusCreating
+			mciTmp.TargetAction = model.ActionCreate
+			mciTmp.TargetStatus = model.StatusRunning
+			UpdateMciInfo(nsId, mciTmp)
+		}
+	} else {
+		// fallback for manual mci create. not from isReqFromDynamic.
+		if err != nil {
+			log.Debug().Msgf("MCI '%s' does not exist, creating new one", mciId)
+			// Create MCI object first
+			if err := createMciObject(nsId, mciId, req, uid); err != nil {
+				return nil, fmt.Errorf("failed to create MCI object: %w", err)
+			}
+		} else {
+			// Check MCI existence (skip for register option)
+			if option != "register" {
+				return nil, fmt.Errorf("MCI '%s' already exists in namespace '%s'", mciId, nsId)
+			} else {
+				req.SystemLabel = "Registered from CSP"
+			}
+		}
+	}
 
 	// Process VM requests and build configurations
 	for _, subGroupReq := range req.SubGroups {
@@ -1284,74 +1282,6 @@ func CheckMciDynamicReq(req *model.MciConnectionConfigCandidatesReq) (*model.Che
 	return &mciReqInfo, err
 }
 
-// CreateSystemMciDynamic is func to create MCI obeject and deploy requested VMs in a dynamic way
-func CreateSystemMciDynamic(option string) (*model.TbMciInfo, error) {
-	nsId := model.SystemCommonNs
-	req := &model.TbMciDynamicReq{}
-
-	// special purpose MCI
-	req.Name = option
-	labels := map[string]string{
-		model.LabelPurpose: option,
-	}
-	req.Label = labels
-	req.SystemLabel = option
-	req.Description = option
-	req.InstallMonAgent = "no"
-
-	switch option {
-	case "probe":
-		connections, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return nil, err
-		}
-		for _, v := range connections.Connectionconfig {
-
-			subGroupDynamicReq := &model.TbCreateSubGroupDynamicReq{}
-			subGroupDynamicReq.ImageId = "ubuntu22.04"                // temporal default value. will be changed
-			subGroupDynamicReq.SpecId = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
-
-			recommendSpecReq := model.RecommendSpecReq{}
-			condition := []model.Operation{}
-			condition = append(condition, model.Operation{Operand: v.RegionZoneInfoName})
-
-			log.Debug().Msg(" - v.RegionName: " + v.RegionZoneInfoName)
-
-			recommendSpecReq.Filter.Policy = append(recommendSpecReq.Filter.Policy, model.FilterCondition{Metric: "region", Condition: condition})
-			recommendSpecReq.Limit = "1"
-			common.PrintJsonPretty(recommendSpecReq)
-
-			specList, err := RecommendSpec(model.SystemCommonNs, recommendSpecReq)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return nil, err
-			}
-			if len(specList) != 0 {
-				recommendedSpec := specList[0].Id
-				subGroupDynamicReq.SpecId = recommendedSpec
-
-				subGroupDynamicReq.Label = labels
-				subGroupDynamicReq.Name = subGroupDynamicReq.SpecId
-
-				subGroupDynamicReq.RootDiskType = specList[0].RootDiskType
-				subGroupDynamicReq.RootDiskSize = specList[0].RootDiskSize
-				req.SubGroups = append(req.SubGroups, *subGroupDynamicReq)
-			}
-		}
-
-	default:
-		err := fmt.Errorf("Not available option. Try (option=probe)")
-		return nil, err
-	}
-	if req.SubGroups == nil {
-		err := fmt.Errorf("No VM is defined")
-		return nil, err
-	}
-
-	return CreateMciDynamic("", nsId, req, "")
-}
-
 // CreateMciDynamic is func to create MCI obeject and deploy requested VMs in a dynamic way
 func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, deployOption string) (*model.TbMciInfo, error) {
 
@@ -1406,7 +1336,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
-	errStr := ""
+	var validationErrors []string
 
 	for i, k := range subGroupReqs {
 		wg.Add(1)
@@ -1424,7 +1354,8 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 			if err != nil {
 				log.Error().Err(err).Msgf("[%d] Failed to find common resource for MCI provision", index)
 				mutex.Lock()
-				errStr += "{[" + strconv.Itoa(index+1) + "] " + err.Error() + "} "
+				validationErrors = append(validationErrors, fmt.Sprintf("SubGroup[%d] '%s': %s",
+					index+1, subGroupReq.Name, err.Error()))
 				mutex.Unlock()
 			}
 		}(i, k)
@@ -1432,9 +1363,17 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 
 	wg.Wait()
 
-	if errStr != "" {
-		err = fmt.Errorf(errStr)
-		return emptyMci, err
+	if len(validationErrors) > 0 {
+		// Clean up MCI object on validation failure
+		DelMci(nsId, mciId, "force")
+
+		errorMsg := fmt.Sprintf("MCI '%s' validation failed due to resource availability errors:\n", req.Name)
+		for _, errStr := range validationErrors {
+			errorMsg += fmt.Sprintf("  • %s\n", errStr)
+		}
+		errorMsg += fmt.Sprintf("Total failed SubGroups: %d out of %d", len(validationErrors), len(subGroupReqs))
+
+		return emptyMci, errors.New(errorMsg)
 	}
 
 	// Check if vmRequest has elements
@@ -1556,7 +1495,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 	if deployOption == "hold" {
 		option = "hold"
 	}
-	result, err := CreateMci(nsId, &mciReq, option)
+	result, err := CreateMci(nsId, &mciReq, option, true)
 	return result, err
 }
 
@@ -2067,6 +2006,74 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 
 	log.Debug().Msgf("MCI review completed: %s - %s (Policy: %s)", reviewResult.OverallStatus, reviewResult.OverallMessage, policy)
 	return reviewResult, nil
+}
+
+// CreateSystemMciDynamic is func to create MCI obeject and deploy requested VMs in a dynamic way
+func CreateSystemMciDynamic(option string) (*model.TbMciInfo, error) {
+	nsId := model.SystemCommonNs
+	req := &model.TbMciDynamicReq{}
+
+	// special purpose MCI
+	req.Name = option
+	labels := map[string]string{
+		model.LabelPurpose: option,
+	}
+	req.Label = labels
+	req.SystemLabel = option
+	req.Description = option
+	req.InstallMonAgent = "no"
+
+	switch option {
+	case "probe":
+		connections, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return nil, err
+		}
+		for _, v := range connections.Connectionconfig {
+
+			subGroupDynamicReq := &model.TbCreateSubGroupDynamicReq{}
+			subGroupDynamicReq.ImageId = "ubuntu22.04"                // temporal default value. will be changed
+			subGroupDynamicReq.SpecId = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
+
+			recommendSpecReq := model.RecommendSpecReq{}
+			condition := []model.Operation{}
+			condition = append(condition, model.Operation{Operand: v.RegionZoneInfoName})
+
+			log.Debug().Msg(" - v.RegionName: " + v.RegionZoneInfoName)
+
+			recommendSpecReq.Filter.Policy = append(recommendSpecReq.Filter.Policy, model.FilterCondition{Metric: "region", Condition: condition})
+			recommendSpecReq.Limit = "1"
+			common.PrintJsonPretty(recommendSpecReq)
+
+			specList, err := RecommendSpec(model.SystemCommonNs, recommendSpecReq)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				return nil, err
+			}
+			if len(specList) != 0 {
+				recommendedSpec := specList[0].Id
+				subGroupDynamicReq.SpecId = recommendedSpec
+
+				subGroupDynamicReq.Label = labels
+				subGroupDynamicReq.Name = subGroupDynamicReq.SpecId
+
+				subGroupDynamicReq.RootDiskType = specList[0].RootDiskType
+				subGroupDynamicReq.RootDiskSize = specList[0].RootDiskSize
+				req.SubGroups = append(req.SubGroups, *subGroupDynamicReq)
+			}
+		}
+
+	default:
+		err := fmt.Errorf("Not available option. Try (option=probe)")
+		return nil, err
+	}
+	if req.SubGroups == nil {
+		err := fmt.Errorf("No VM is defined")
+		return nil, err
+	}
+
+	return CreateMciDynamic("", nsId, req, "")
 }
 
 // CreateMciVmDynamic is func to create requested VM in a dynamic way and add it to MCI
