@@ -883,6 +883,8 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 	mciStatus.StatusCount.CountTerminating = statusFlag[8]
 	mciStatus.StatusCount.CountUndefined = statusFlag[9]
 
+	// need to revisit
+	// addtional handling is required for TargetAction in under the Termiation action
 	isDone := true
 	for _, v := range mciStatus.Vm {
 		if v.TargetStatus != model.StatusComplete {
@@ -1784,7 +1786,9 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 			}
 			// for deletion, need to wait until termination is finished
 			// Sleep for 5 seconds
-			fmt.Printf("\n\n[Info] Sleep for 5 seconds for safe MCI-VMs termination.\n\n")
+
+			log.Info().Msg("Wait for MCI-VMs termination in 5 seconds")
+
 			time.Sleep(5 * time.Second)
 			mciStatus, _ = GetMciStatus(nsId, mciId)
 		}

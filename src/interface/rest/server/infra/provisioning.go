@@ -80,7 +80,7 @@ func RestPostMci(c echo.Context) error {
 	}
 
 	option := "create"
-	result, err := infra.CreateMci(nsId, req, option)
+	result, err := infra.CreateMci(nsId, req, option, false)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
@@ -140,7 +140,7 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 	}
 
 	option := "register"
-	result, err := infra.CreateMci(nsId, req, option)
+	result, err := infra.CreateMci(nsId, req, option, false)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
