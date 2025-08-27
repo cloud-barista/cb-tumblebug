@@ -883,8 +883,7 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 	mciStatus.StatusCount.CountTerminating = statusFlag[8]
 	mciStatus.StatusCount.CountUndefined = statusFlag[9]
 
-	// need to revisit
-	// addtional handling is required for TargetAction in under the Termiation action
+	// additional handling is required for TargetAction in under the Termination action
 	isDone := true
 	for _, v := range mciStatus.Vm {
 		if v.TargetStatus != model.StatusComplete {
