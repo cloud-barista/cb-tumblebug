@@ -948,7 +948,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string, isReqFromDynamic
 			UpdateMciInfo(nsId, mciTmp)
 		}
 	} else {
-		// fallback for manucal mci create. not from isReqFromDynamic.
+		// fallback for manual mci create. not from isReqFromDynamic.
 		if err != nil {
 			log.Debug().Msgf("MCI '%s' does not exist, creating new one", mciId)
 			// Create MCI object first
