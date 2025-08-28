@@ -324,7 +324,7 @@ func ControlMciAsync(nsId string, mciId string, action string, force bool) error
 		close(results)
 	}()
 
-	// Update MCI TargetAction to None. Evenif there are errors, we want to mark it as complete.
+	// Update MCI TargetAction to None. Even if there are errors, we want to mark it as complete.
 	mci, err = GetMciObject(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
