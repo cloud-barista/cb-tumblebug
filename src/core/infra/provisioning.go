@@ -1073,7 +1073,7 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	// Check for VM object creation errors
 	if len(createErrors) > 0 {
 		// Add VM object creation errors to MCI SystemMessage
-		mciTmp, err := GetMciObject(nsId, mciId)
+		mciTmp, _, err := GetMciObject(nsId, mciId)
 		if err == nil {
 			// Add VM object creation error summary
 			errorSummary := fmt.Sprintf("VM object creation failed for %d out of %d VMs", len(createErrors), len(vmConfigs))
@@ -1148,7 +1148,7 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	// Check for VM creation errors
 	if len(createErrors) > 0 {
 		// Add VM creation errors to MCI SystemMessage
-		mciTmp, err := GetMciObject(nsId, mciId)
+		mciTmp, _, err := GetMciObject(nsId, mciId)
 		if err == nil {
 			// Add VM creation error summary
 			errorSummary := fmt.Sprintf("VM creation failed for %d out of %d VMs", len(createErrors), len(vmConfigs))
@@ -1215,7 +1215,7 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	if err := handleMonitoringAgent(nsId, mciId, mciTmp, option); err != nil {
 		log.Error().Err(err).Msg("Failed to install monitoring agent, but continuing")
 		// Add monitoring agent error to SystemMessage
-		mciTmp, mciErr := GetMciObject(nsId, mciId)
+		mciTmp, _, mciErr := GetMciObject(nsId, mciId)
 		if mciErr == nil {
 			errorMsg := fmt.Sprintf("Monitoring agent installation failed: %s", err.Error())
 			mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorMsg)
@@ -1227,7 +1227,7 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	if err := handlePostCommands(nsId, mciId, mciTmp); err != nil {
 		log.Error().Err(err).Msg("Failed to execute post-deployment commands, but continuing")
 		// Add post-command error to SystemMessage
-		mciTmp, mciErr := GetMciObject(nsId, mciId)
+		mciTmp, _, mciErr := GetMciObject(nsId, mciId)
 		if mciErr == nil {
 			errorMsg := fmt.Sprintf("Post-deployment commands failed: %s", err.Error())
 			mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorMsg)
@@ -1539,7 +1539,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 		// If there were any errors, add error messages to MCI SystemMessage
 		if hasError {
 			// Add error messages to MCI SystemMessage
-			mciTmp, err := GetMciObject(nsId, mciId)
+			mciTmp, _, err := GetMciObject(nsId, mciId)
 			if err == nil {
 				// Add general error summary
 				errorSummary := fmt.Sprintf("Resource preparation failed for %d VM(s) out of %d total VMs", len(failedVMs), len(failedVMs)+len(successfulVMs))
