@@ -928,6 +928,22 @@ type MciSshCmdResult struct {
 	Results []SshCmdResult `json:"results"`
 }
 
+// SshCmdResultForAPI is struct for SshCmd Result with string error for API response
+type SshCmdResultForAPI struct { // For REST API response
+	MciId   string         `json:"mciId"`
+	VmId    string         `json:"vmId"`
+	VmIp    string         `json:"vmIp"`
+	Command map[int]string `json:"command"`
+	Stdout  map[int]string `json:"stdout"`
+	Stderr  map[int]string `json:"stderr"`
+	Error   string         `json:"error"` // String representation of error for JSON serialization
+}
+
+// MciSshCmdResultForAPI is struct for Set of SshCmd Results in terms of MCI for API response
+type MciSshCmdResultForAPI struct {
+	Results []SshCmdResultForAPI `json:"results"`
+}
+
 // SshInfo is struct for ssh info
 type SshInfo struct {
 	UserName   string // ex) root
