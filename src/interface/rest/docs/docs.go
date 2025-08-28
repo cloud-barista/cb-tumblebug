@@ -4846,6 +4846,156 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/mci/{mciId}/subGroupDynamic": {
+            "post": {
+                "description": "Dynamically add new virtual machines to an existing MCI using common specifications and automated resource management.\nThis endpoint provides elastic scaling capabilities for running MCIs:\n\n**Dynamic VM Addition Process:**\n1. **MCI Validation**: Verifies target MCI exists and is in a valid state for expansion\n2. **Resource Discovery**: Resolves common spec and image to provider-specific resources\n3. **Network Integration**: Automatically configures new VMs to use existing MCI network resources\n4. **Subgroup Management**: Creates new subgroups or expands existing ones based on configuration\n5. **Status Synchronization**: Updates MCI status and metadata to reflect new VM additions\n\n**Integration with Existing Infrastructure:**\n- **Network Reuse**: New VMs automatically join existing VNets and security groups\n- **SSH Key Sharing**: Uses existing SSH keys for consistent access management\n- **Monitoring Integration**: New VMs inherit monitoring configuration from parent MCI\n- **Label Propagation**: Applies MCI-level labels and policies to new VMs\n- **Resource Consistency**: Maintains naming conventions and resource organization\n\n**Scaling Scenarios:**\n- **Horizontal Scaling**: Add more instances to handle increased workload\n- **Multi-Region Expansion**: Deploy VMs in new regions while maintaining MCI cohesion\n- **Provider Diversification**: Add VMs from different cloud providers for redundancy\n- **Workload Specialization**: Deploy VMs with different specifications for specific tasks\n\n**Configuration Requirements:**\n- ` + "`" + `specId` + "`" + `: Must specify valid VM specification from system namespace\n- ` + "`" + `imageId` + "`" + `: Must specify valid image compatible with target provider/region\n- ` + "`" + `name` + "`" + `: Becomes subgroup name; VMs will be named with sequential suffixes\n- ` + "`" + `subGroupSize` + "`" + `: Number of identical VMs to create (default: 1)\n\n**Network and Security:**\n- New VMs automatically inherit security group rules from existing MCI\n- Network connectivity to existing VMs is established automatically\n- Firewall rules and access policies are applied consistently\n- SSH access is configured using existing key pairs\n\n**Example Use Cases:**\n- Scale out web tier during traffic spikes\n- Add GPU instances for machine learning workloads\n- Deploy edge nodes in additional geographic regions\n- Add specialized storage or database nodes to existing application stack\n\n**Post-Addition Operations:**\n- New VMs are immediately available for standard MCI operations\n- Can be individually managed or grouped with existing subgroups\n- Monitoring and logging are automatically configured\n- Application deployment and configuration management can proceed immediately",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Provisioning and Management"
+                ],
+                "summary": "Add VM Dynamically to Existing MCI",
+                "operationId": "PostMciSubGroupDynamic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID containing the target MCI",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID to which new VMs will be added",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "SubGroup dynamic request specifying specId, imageId, and scaling parameters",
+                        "name": "vmReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateSubGroupDynamicReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated MCI information including newly added VMs and current status",
+                        "schema": {
+                            "$ref": "#/definitions/model.MciInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid VM request or incompatible configuration parameters",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Target MCI not found or specified resources unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "Subgroup name conflicts or MCI in incompatible state",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "VM creation failed or network integration error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mci/{mciId}/subGroupDynamicReview": {
+            "post": {
+                "description": "Review and validate a VM dynamic addition request for an existing MCI before actual provisioning.\nThis endpoint provides comprehensive validation for adding new VMs to existing MCIs without actually creating resources.\nIt checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.\n\n**Key Features:**\n- Validates VM specification and image against CSP availability\n- Checks compatibility with existing MCI configuration\n- Provides cost estimation for the new VM addition\n- Identifies potential configuration issues and warnings\n- Recommends optimization strategies\n- Non-invasive validation (no resources are created)\n\n**Review Status:**\n- ` + "`" + `Ready` + "`" + `: VM can be added successfully\n- ` + "`" + `Warning` + "`" + `: VM can be added but with configuration warnings\n- ` + "`" + `Error` + "`" + `: Critical errors prevent VM addition\n\n**MCI Integration Validation:**\n- Ensures target MCI exists and is in a compatible state\n- Validates network integration possibilities\n- Checks resource naming conflicts\n- Verifies security group and SSH key compatibility\n\n**Use Cases:**\n- Pre-validation before expensive VM addition operations\n- Cost estimation for scaling decisions\n- Configuration optimization before deployment\n- Risk assessment for VM addition to existing infrastructure",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Provisioning and Management"
+                ],
+                "summary": "Review VM Dynamic Addition Request for Existing MCI",
+                "operationId": "PostMciDynamicSubGroupVmReview",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID containing the target MCI",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID to which the VM will be added",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body to review VM dynamic addition. Must include specId and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small, imageId: aws+ap-northeast-2+ubuntu22.04, subGroupSize: 2})",
+                        "name": "vmReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateSubGroupDynamicReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comprehensive VM addition review result with validation status, cost estimation, and recommendations",
+                        "schema": {
+                            "$ref": "#/definitions/model.ReviewSubGroupDynamicReqInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format or parameters",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Target MCI not found or namespace not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error during validation",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mci/{mciId}/subgroup": {
             "get": {
                 "description": "List SubGroup IDs in a specified MCI",
@@ -5716,156 +5866,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/mci/{mciId}/subGroupDynamic": {
-            "post": {
-                "description": "Dynamically add new virtual machines to an existing MCI using common specifications and automated resource management.\nThis endpoint provides elastic scaling capabilities for running MCIs:\n\n**Dynamic VM Addition Process:**\n1. **MCI Validation**: Verifies target MCI exists and is in a valid state for expansion\n2. **Resource Discovery**: Resolves common spec and image to provider-specific resources\n3. **Network Integration**: Automatically configures new VMs to use existing MCI network resources\n4. **Subgroup Management**: Creates new subgroups or expands existing ones based on configuration\n5. **Status Synchronization**: Updates MCI status and metadata to reflect new VM additions\n\n**Integration with Existing Infrastructure:**\n- **Network Reuse**: New VMs automatically join existing VNets and security groups\n- **SSH Key Sharing**: Uses existing SSH keys for consistent access management\n- **Monitoring Integration**: New VMs inherit monitoring configuration from parent MCI\n- **Label Propagation**: Applies MCI-level labels and policies to new VMs\n- **Resource Consistency**: Maintains naming conventions and resource organization\n\n**Scaling Scenarios:**\n- **Horizontal Scaling**: Add more instances to handle increased workload\n- **Multi-Region Expansion**: Deploy VMs in new regions while maintaining MCI cohesion\n- **Provider Diversification**: Add VMs from different cloud providers for redundancy\n- **Workload Specialization**: Deploy VMs with different specifications for specific tasks\n\n**Configuration Requirements:**\n- ` + "`" + `specId` + "`" + `: Must specify valid VM specification from system namespace\n- ` + "`" + `imageId` + "`" + `: Must specify valid image compatible with target provider/region\n- ` + "`" + `name` + "`" + `: Becomes subgroup name; VMs will be named with sequential suffixes\n- ` + "`" + `subGroupSize` + "`" + `: Number of identical VMs to create (default: 1)\n\n**Network and Security:**\n- New VMs automatically inherit security group rules from existing MCI\n- Network connectivity to existing VMs is established automatically\n- Firewall rules and access policies are applied consistently\n- SSH access is configured using existing key pairs\n\n**Example Use Cases:**\n- Scale out web tier during traffic spikes\n- Add GPU instances for machine learning workloads\n- Deploy edge nodes in additional geographic regions\n- Add specialized storage or database nodes to existing application stack\n\n**Post-Addition Operations:**\n- New VMs are immediately available for standard MCI operations\n- Can be individually managed or grouped with existing subgroups\n- Monitoring and logging are automatically configured\n- Application deployment and configuration management can proceed immediately",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] MCI Provisioning and Management"
-                ],
-                "summary": "Add VM Dynamically to Existing MCI",
-                "operationId": "PostMciSubGroupDynamic",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID containing the target MCI",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mci01",
-                        "description": "MCI ID to which new VMs will be added",
-                        "name": "mciId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "SubGroup dynamic request specifying specId, imageId, and scaling parameters",
-                        "name": "vmReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.CreateSubGroupDynamicReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Updated MCI information including newly added VMs and current status",
-                        "schema": {
-                            "$ref": "#/definitions/model.MciInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid VM request or incompatible configuration parameters",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Target MCI not found or specified resources unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "409": {
-                        "description": "Subgroup name conflicts or MCI in incompatible state",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "VM creation failed or network integration error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/mci/{mciId}/subGroupDynamicReview": {
-            "post": {
-                "description": "Review and validate a VM dynamic addition request for an existing MCI before actual provisioning.\nThis endpoint provides comprehensive validation for adding new VMs to existing MCIs without actually creating resources.\nIt checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.\n\n**Key Features:**\n- Validates VM specification and image against CSP availability\n- Checks compatibility with existing MCI configuration\n- Provides cost estimation for the new VM addition\n- Identifies potential configuration issues and warnings\n- Recommends optimization strategies\n- Non-invasive validation (no resources are created)\n\n**Review Status:**\n- ` + "`" + `Ready` + "`" + `: VM can be added successfully\n- ` + "`" + `Warning` + "`" + `: VM can be added but with configuration warnings\n- ` + "`" + `Error` + "`" + `: Critical errors prevent VM addition\n\n**MCI Integration Validation:**\n- Ensures target MCI exists and is in a compatible state\n- Validates network integration possibilities\n- Checks resource naming conflicts\n- Verifies security group and SSH key compatibility\n\n**Use Cases:**\n- Pre-validation before expensive VM addition operations\n- Cost estimation for scaling decisions\n- Configuration optimization before deployment\n- Risk assessment for VM addition to existing infrastructure",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] MCI Provisioning and Management"
-                ],
-                "summary": "Review VM Dynamic Addition Request for Existing MCI",
-                "operationId": "PostMciDynamicSubGroupVmReview",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID containing the target MCI",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mci01",
-                        "description": "MCI ID to which the VM will be added",
-                        "name": "mciId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Request body to review VM dynamic addition. Must include specId and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small, imageId: aws+ap-northeast-2+ubuntu22.04, subGroupSize: 2})",
-                        "name": "vmReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.CreateSubGroupDynamicReq"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID for tracking",
-                        "name": "x-request-id",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Comprehensive VM addition review result with validation status, cost estimation, and recommendations",
-                        "schema": {
-                            "$ref": "#/definitions/model.ReviewSubGroupDynamicReqInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request format or parameters",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Target MCI not found or namespace not found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error during validation",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
