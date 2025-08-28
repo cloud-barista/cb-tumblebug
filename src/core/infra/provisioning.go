@@ -831,7 +831,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 	vmList, err := ListVmBySubGroup(nsId, mciId, tentativeVmId)
 
 	if err != nil {
-		mciTmp.SystemMessage = err.Error()
+		mciTmp.SystemMessage = append(mciTmp.SystemMessage, err.Error())
 	}
 	if vmList != nil {
 		mciTmp.NewVmList = vmList
@@ -1072,6 +1072,27 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 
 	// Check for VM object creation errors
 	if len(createErrors) > 0 {
+		// Add VM object creation errors to MCI SystemMessage
+		mciTmp, _, err := GetMciObject(nsId, mciId)
+		if err == nil {
+			// Add VM object creation error summary
+			errorSummary := fmt.Sprintf("VM object creation failed for %d out of %d VMs", len(createErrors), len(vmConfigs))
+			mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorSummary)
+			
+			// Add each VM object creation error
+			for _, vmError := range vmObjectErrors {
+				errorDetail := fmt.Sprintf("VM '%s' object creation failed: %s", vmError.VmName, vmError.Error)
+				mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorDetail)
+			}
+			
+			// Add policy information
+			policyMsg := fmt.Sprintf("Failure handling policy: %s", req.PolicyOnPartialFailure)
+			mciTmp.SystemMessage = append(mciTmp.SystemMessage, policyMsg)
+			
+			UpdateMciInfo(nsId, mciTmp)
+			log.Info().Msgf("Added %d VM object creation errors to MCI SystemMessage", len(createErrors)+2)
+		}
+		
 		switch req.PolicyOnPartialFailure {
 		case model.PolicyRollback:
 			log.Warn().Msgf("VM object creation failed for %d VMs, rolling back entire MCI due to policy=rollback", len(createErrors))
@@ -1126,6 +1147,27 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 
 	// Check for VM creation errors
 	if len(createErrors) > 0 {
+		// Add VM creation errors to MCI SystemMessage
+		mciTmp, _, err := GetMciObject(nsId, mciId)
+		if err == nil {
+			// Add VM creation error summary
+			errorSummary := fmt.Sprintf("VM creation failed for %d out of %d VMs", len(createErrors), len(vmConfigs))
+			mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorSummary)
+			
+			// Add each VM creation error
+			for _, vmError := range vmCreateErrors {
+				errorDetail := fmt.Sprintf("VM '%s' creation failed: %s", vmError.VmName, vmError.Error)
+				mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorDetail)
+			}
+			
+			// Add policy information
+			policyMsg := fmt.Sprintf("Failure handling policy: %s", req.PolicyOnPartialFailure)
+			mciTmp.SystemMessage = append(mciTmp.SystemMessage, policyMsg)
+			
+			UpdateMciInfo(nsId, mciTmp)
+			log.Info().Msgf("Added %d VM creation errors to MCI SystemMessage", len(createErrors)+2)
+		}
+		
 		switch req.PolicyOnPartialFailure {
 		case model.PolicyRollback:
 			log.Error().Msgf("VM creation failed for %d VMs, rolling back entire MCI due to policy=rollback", len(createErrors))
@@ -1172,11 +1214,25 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	// Install monitoring agent if requested
 	if err := handleMonitoringAgent(nsId, mciId, mciTmp, option); err != nil {
 		log.Error().Err(err).Msg("Failed to install monitoring agent, but continuing")
+		// Add monitoring agent error to SystemMessage
+		mciTmp, _, mciErr := GetMciObject(nsId, mciId)
+		if mciErr == nil {
+			errorMsg := fmt.Sprintf("Monitoring agent installation failed: %s", err.Error())
+			mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorMsg)
+			UpdateMciInfo(nsId, mciTmp)
+		}
 	}
 
 	// Execute post-deployment commands
 	if err := handlePostCommands(nsId, mciId, mciTmp); err != nil {
 		log.Error().Err(err).Msg("Failed to execute post-deployment commands, but continuing")
+		// Add post-command error to SystemMessage
+		mciTmp, _, mciErr := GetMciObject(nsId, mciId)
+		if mciErr == nil {
+			errorMsg := fmt.Sprintf("Post-deployment commands failed: %s", err.Error())
+			mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorMsg)
+			UpdateMciInfo(nsId, mciTmp)
+		}
 	}
 
 	// Execute refine action if policy is set to refine and there were failures
@@ -1399,14 +1455,53 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 		}
 		resultChan := make(chan vmResult, len(subGroupReqs))
 
-		// Process all vmRequests in parallel
-		for _, k := range subGroupReqs {
+		// Group subGroupReqs by connectionName for sequential processing
+		connectionGroups := make(map[string][]model.CreateSubGroupDynamicReq)
+		
+		// First, determine the connection name for each subGroup
+		for _, subGroupReq := range subGroupReqs {
+			// Get spec info to determine connection
+			specInfo, err := resource.GetSpec(model.SystemCommonNs, subGroupReq.SpecId)
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed to get spec info for grouping: %s", subGroupReq.SpecId)
+				continue
+			}
+			
+			connectionName := specInfo.ConnectionName
+			if subGroupReq.ConnectionName != "" {
+				connectionName = subGroupReq.ConnectionName
+			}
+			
+			// Group by connection name
+			connectionGroups[connectionName] = append(connectionGroups[connectionName], subGroupReq)
+		}
+		
+		log.Info().Msgf("Grouped %d SubGroups into %d connection groups", len(subGroupReqs), len(connectionGroups))
+
+		// Process each connection group in parallel, but VMs within each group sequentially
+		for connectionName, subGroupsInConnection := range connectionGroups {
 			wg.Add(1)
-			go func(subGroupDynamicReq model.CreateSubGroupDynamicReq) {
+			go func(connName string, subGroups []model.CreateSubGroupDynamicReq) {
 				defer wg.Done()
-				result, err := getSubGroupReqFromDynamicReq(reqID, nsId, &subGroupDynamicReq)
-				resultChan <- vmResult{result: result, err: err}
-			}(k)
+				
+				log.Info().Msgf("Processing %d SubGroups for connection '%s' sequentially", len(subGroups), connName)
+				
+				// Process SubGroups in this connection sequentially
+				for i, subGroupDynamicReq := range subGroups {
+					log.Debug().Msgf("[%s][%d/%d] Processing SubGroup '%s' sequentially", 
+						connName, i+1, len(subGroups), subGroupDynamicReq.Name)
+					
+					// Add small delay between sequential requests to avoid rate limiting
+					if i > 0 {
+						time.Sleep(2 * time.Second)
+					}
+					
+					result, err := getSubGroupReqFromDynamicReq(reqID, nsId, &subGroupDynamicReq)
+					resultChan <- vmResult{result: result, err: err}
+				}
+				
+				log.Info().Msgf("Completed processing SubGroups for connection '%s'", connName)
+			}(connectionName, subGroupsInConnection)
 		}
 
 		// Wait for all goroutines to complete
@@ -1441,52 +1536,72 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 			}
 		}
 
-		// If there were any errors, rollback all created resources
+		// If there were any errors, add error messages to MCI SystemMessage
 		if hasError {
-			// Count resources by type for detailed rollback info
-			resourceSummary := make(map[string]int)
-			for _, resource := range allCreatedResources {
-				resourceSummary[resource.Type]++
-			}
-
-			log.Info().Msgf("Resource preparation failed for %d VM(s): %v", len(failedVMs), failedVMs)
-			log.Info().Msgf("Successfully prepared %d VM(s): %v", len(successfulVMs), successfulVMs)
-			log.Info().Msgf("Rolling back %d created resources: %+v", len(allCreatedResources), resourceSummary)
-
-			time.Sleep(5 * time.Second)
-			rollbackErr := rollbackCreatedResources(nsId, allCreatedResources)
-
-			// Build comprehensive error message
-			errorMsg := fmt.Sprintf("MCI '%s' creation failed due to resource preparation errors:\n", req.Name)
-			errorMsg += fmt.Sprintf("- Failed VMs (%d): %v\n", len(failedVMs), failedVMs)
-			if len(successfulVMs) > 0 {
-				errorMsg += fmt.Sprintf("- Successfully prepared VMs (%d): %v\n", len(successfulVMs), successfulVMs)
-			}
-
-			if len(allCreatedResources) > 0 {
-				errorMsg += fmt.Sprintf("- Rollback attempted for %d resources: ", len(allCreatedResources))
-				for resType, count := range resourceSummary {
-					errorMsg += fmt.Sprintf("%s(%d) ", resType, count)
+			// Add error messages to MCI SystemMessage
+			mciTmp, _, err := GetMciObject(nsId, mciId)
+			if err == nil {
+				// Add general error summary
+				errorSummary := fmt.Sprintf("Resource preparation failed for %d VM(s) out of %d total VMs", len(failedVMs), len(failedVMs)+len(successfulVMs))
+				mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorSummary)
+				
+				// Add detailed error messages for each failed VM
+				for _, detail := range errorDetails {
+					mciTmp.SystemMessage = append(mciTmp.SystemMessage, detail)
 				}
-				errorMsg += "\n"
+				
+				UpdateMciInfo(nsId, mciTmp)
 			}
+			
+			// // Count resources by type for detailed rollback info
+			// resourceSummary := make(map[string]int)
+			// for _, resource := range allCreatedResources {
+			// 	resourceSummary[resource.Type]++
+			// }
 
-			// Clean up MCI object on validation failure
-			DelMci(nsId, mciId, "force")
+			// log.Info().Msgf("Resource preparation failed for %d VM(s): %v", len(failedVMs), failedVMs)
+			// log.Info().Msgf("Successfully prepared %d VM(s): %v", len(successfulVMs), successfulVMs)
+			// log.Info().Msgf("Rolling back %d created resources: %+v", len(allCreatedResources), resourceSummary)
 
-			errorMsg += "Detailed errors:\n"
-			for _, detail := range errorDetails {
-				errorMsg += fmt.Sprintf("  • %s\n", detail)
-			}
+			// time.Sleep(5 * time.Second)
+			// rollbackErr := rollbackCreatedResources(nsId, allCreatedResources)
 
-			if rollbackErr != nil {
-				errorMsg += fmt.Sprintf("CRITICAL: Rollback operation failed: %s\n", rollbackErr.Error())
-				errorMsg += "Manual cleanup may be required for created resources."
-				return emptyMci, fmt.Errorf("%s", errorMsg)
-			} else {
-				errorMsg += "All created resources have been successfully rolled back."
-				return emptyMci, fmt.Errorf("%s", errorMsg)
-			}
+			// // Build comprehensive error message
+			// errorMsg := fmt.Sprintf("MCI '%s' creation failed due to resource preparation errors:\n", req.Name)
+			// errorMsg += fmt.Sprintf("- Failed VMs (%d): %v\n", len(failedVMs), failedVMs)
+			// if len(successfulVMs) > 0 {
+			// 	errorMsg += fmt.Sprintf("- Successfully prepared VMs (%d): %v\n", len(successfulVMs), successfulVMs)
+			// }
+
+			// if len(allCreatedResources) > 0 {
+			// 	errorMsg += fmt.Sprintf("- Rollback attempted for %d resources: ", len(allCreatedResources))
+			// 	for resType, count := range resourceSummary {
+			// 		errorMsg += fmt.Sprintf("%s(%d) ", resType, count)
+			// 	}
+			// 	errorMsg += "\n"
+			// }
+
+			// // Clean up MCI object on validation failure
+			// DelMci(nsId, mciId, "force")
+
+			// errorMsg += "Detailed errors:\n"
+			// for _, detail := range errorDetails {
+			// 	errorMsg += fmt.Sprintf("  • %s\n", detail)
+			// }
+
+			// if rollbackErr != nil {
+			// 	errorMsg += fmt.Sprintf("CRITICAL: Rollback operation failed: %s\n", rollbackErr.Error())
+			// 	errorMsg += "Manual cleanup may be required for created resources."
+			// 	return emptyMci, fmt.Errorf("%s", errorMsg)
+			// } else {
+			// 	errorMsg += "All created resources have been successfully rolled back."
+			// 	return emptyMci, fmt.Errorf("%s", errorMsg)
+			// }
+
+			// cancel is also one of the options
+			// // Return error but keep MCI object so user can see the error messages
+			// errorMsg := fmt.Sprintf("MCI '%s' resource preparation failed. Check MCI SystemMessage for detailed error information.", req.Name)
+			// return emptyMci, fmt.Errorf("%s", errorMsg)
 		}
 	}
 
