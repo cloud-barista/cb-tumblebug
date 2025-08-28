@@ -75,8 +75,8 @@ type SpiderClusterReqInfo struct {
 	NodeGroupList []SpiderNodeGroupReqInfo
 }
 
-// TbK8sClusterReq is a struct to handle 'Create K8sCluster' request toward CB-Tumblebug.
-type TbK8sClusterReq struct { // Tumblebug
+// K8sClusterReq is a struct to handle 'Create K8sCluster' request toward CB-Tumblebug.
+type K8sClusterReq struct {
 	//Namespace      string `json:"namespace" validate:"required" example:"default"`
 	ConnectionName string `json:"connectionName" validate:"required" example:"alibaba-ap-northeast-2"`
 	Description    string `json:"description" example:"My K8sCluster"`
@@ -91,7 +91,7 @@ type TbK8sClusterReq struct { // Tumblebug
 	SecurityGroupIds []string `json:"securityGroupIds" validate:"required" example:"sg-01"`
 
 	// (3) NodeGroupInfo List
-	K8sNodeGroupList []TbK8sNodeGroupReq `json:"k8sNodeGroupList"`
+	K8sNodeGroupList []K8sNodeGroupReq `json:"k8sNodeGroupList"`
 
 	// Fields for "Register existing K8sCluster" feature
 	// @description CspResourceId is required to register a k8s cluster from CSP (option=register)
@@ -129,8 +129,8 @@ type SpiderNodeGroupReqInfo struct {
 	MaxNodeSize     string
 }
 
-// TbK8sNodeGroupReq is a struct to handle requests related to K8sNodeGroup toward CB-Tumblebug.
-type TbK8sNodeGroupReq struct {
+// K8sNodeGroupReq is a struct to handle requests related to K8sNodeGroup toward CB-Tumblebug.
+type K8sNodeGroupReq struct {
 	Name         string `json:"name" example:"k8sng01"`
 	ImageId      string `json:"imageId" example:"image-01"`
 	SpecId       string `json:"specId" example:"spec-01"`
@@ -166,13 +166,13 @@ type SpiderSetAutoscalingRes struct {
 	Result string
 }
 
-// TbSetK8sNodeGroupAutoscalingReq is a struct to handle 'Set K8sNodeGroup's Autoscaling' request toward CB-Tumblebug.
-type TbSetK8sNodeGroupAutoscalingReq struct {
+// SetK8sNodeGroupAutoscalingReq is a struct to handle 'Set K8sNodeGroup's Autoscaling' request toward CB-Tumblebug.
+type SetK8sNodeGroupAutoscalingReq struct {
 	OnAutoScaling string `json:"onAutoScaling" example:"true"`
 }
 
-// TbSetK8sNodeGroupAutoscalingRes is a struct to handle 'Set K8sNodeGroup's Autoscaling' response from CB-Tumblebug.
-type TbSetK8sNodeGroupAutoscalingRes struct {
+// SetK8sNodeGroupAutoscalingRes is a struct to handle 'Set K8sNodeGroup's Autoscaling' response from CB-Tumblebug.
+type SetK8sNodeGroupAutoscalingRes struct {
 	Result string `json:"result" example:"true"`
 }
 
@@ -189,8 +189,8 @@ type SpiderChangeAutoscaleSizeReqInfo struct {
 	MaxNodeSize     string
 }
 
-// TbChangeK8sNodeGroupAutoscaleSizeReq is a struct to handle 'Change K8sNodeGroup's Autoscale Size' request toward CB-Tumblebug.
-type TbChangeK8sNodeGroupAutoscaleSizeReq struct {
+// ChangeK8sNodeGroupAutoscaleSizeReq is a struct to handle 'Change K8sNodeGroup's Autoscale Size' request toward CB-Tumblebug.
+type ChangeK8sNodeGroupAutoscaleSizeReq struct {
 	DesiredNodeSize string `json:"desiredNodeSize" example:"1"`
 	MinNodeSize     string `json:"minNodeSize" example:"1"`
 	MaxNodeSize     string `json:"maxNodeSize" example:"3"`
@@ -201,9 +201,9 @@ type SpiderChangeAutoscaleSizeRes struct {
 	SpiderNodeGroupInfo
 }
 
-// TbChangeK8sNodeGroupAutoscaleSizeRes is a struct to handle 'Change K8sNodeGroup's Autoscale Size' response from CB-Tumblebug.
-type TbChangeK8sNodeGroupAutoscaleSizeRes struct {
-	TbK8sNodeGroupInfo
+// ChangeK8sNodeGroupAutoscaleSizeRes is a struct to handle 'Change K8sNodeGroup's Autoscale Size' response from CB-Tumblebug.
+type ChangeK8sNodeGroupAutoscaleSizeRes struct {
+	K8sNodeGroupInfo
 }
 
 // SpiderUpgradeClusterReq is a wrapper struct to create JSON body of 'Upgrade Cluster' request
@@ -218,8 +218,8 @@ type SpiderUpgradeClusterReqInfo struct {
 	Version string
 }
 
-// TbUpgradeK8sClusterReq is a struct to handle 'Upgrade K8sCluster' request toward CB-Tumblebug.
-type TbUpgradeK8sClusterReq struct {
+// UpgradeK8sClusterReq is a struct to handle 'Upgrade K8sCluster' request toward CB-Tumblebug.
+type UpgradeK8sClusterReq struct {
 	Version string `json:"version" example:"1.30.1-alyun.1"`
 }
 
@@ -249,24 +249,24 @@ const (
 	SpiderNodeGroupDeleting SpiderNodeGroupStatus = "Deleting"
 )
 
-type TbK8sClusterStatus string
+type K8sClusterStatus string
 
 const (
-	TbK8sClusterCreating TbK8sClusterStatus = "Creating"
-	TbK8sClusterActive   TbK8sClusterStatus = "Active"
-	TbK8sClusterInactive TbK8sClusterStatus = "Inactive"
-	TbK8sClusterUpdating TbK8sClusterStatus = "Updating"
-	TbK8sClusterDeleting TbK8sClusterStatus = "Deleting"
+	K8sClusterCreating K8sClusterStatus = "Creating"
+	K8sClusterActive   K8sClusterStatus = "Active"
+	K8sClusterInactive K8sClusterStatus = "Inactive"
+	K8sClusterUpdating K8sClusterStatus = "Updating"
+	K8sClusterDeleting K8sClusterStatus = "Deleting"
 )
 
-type TbK8sNodeGroupStatus string
+type K8sNodeGroupStatus string
 
 const (
-	TbK8sNodeGroupCreating TbK8sNodeGroupStatus = "Creating"
-	TbK8sNodeGroupActive   TbK8sNodeGroupStatus = "Active"
-	TbK8sNodeGroupInactive TbK8sNodeGroupStatus = "Inactive"
-	TbK8sNodeGroupUpdating TbK8sNodeGroupStatus = "Updating"
-	TbK8sNodeGroupDeleting TbK8sNodeGroupStatus = "Deleting"
+	K8sNodeGroupCreating K8sNodeGroupStatus = "Creating"
+	K8sNodeGroupActive   K8sNodeGroupStatus = "Active"
+	K8sNodeGroupInactive K8sNodeGroupStatus = "Inactive"
+	K8sNodeGroupUpdating K8sNodeGroupStatus = "Updating"
+	K8sNodeGroupDeleting K8sNodeGroupStatus = "Deleting"
 )
 
 /*
@@ -299,8 +299,8 @@ type SpiderClusterInfo struct {
 	KeyValueList []KeyValue
 }
 
-// TbK8sClusterInfo is a struct that represents TB K8sCluster object.
-type TbK8sClusterInfo struct {
+// K8sClusterInfo is a struct that represents TB K8sCluster object.
+type K8sClusterInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 
@@ -332,14 +332,14 @@ type TbK8sClusterInfo struct {
 	Version string `json:"version" example:"1.30.1"` // Kubernetes Version, ex) 1.30.1
 
 	// Network is for describing network information about the cluster
-	Network TbK8sClusterNetworkInfo `json:"network"`
+	Network K8sClusterNetworkInfo `json:"network"`
 
 	// K8sNodeGroupList is for describing network information about the cluster
-	K8sNodeGroupList []TbK8sNodeGroupInfo `json:"k8sNodeGroupList"`
-	AccessInfo       TbK8sAccessInfo      `json:"accessInfo"`
-	Addons           TbK8sAddonsInfo      `json:"addons"`
+	K8sNodeGroupList []K8sNodeGroupInfo `json:"k8sNodeGroupList"`
+	AccessInfo       K8sAccessInfo      `json:"accessInfo"`
+	Addons           K8sAddonsInfo      `json:"addons"`
 
-	Status TbK8sClusterStatus `json:"status" example:"Active"` // Creating, Active, Inactive, Updating, Deleting
+	Status K8sClusterStatus `json:"status" example:"Active"` // Creating, Active, Inactive, Updating, Deleting
 
 	CreatedTime  time.Time  `json:"createdTime" example:"1970-01-01T00:00:00.00Z"`
 	KeyValueList []KeyValue `json:"keyValueList"`
@@ -364,8 +364,8 @@ type SpiderNetworkInfo struct {
 	KeyValueList []KeyValue
 }
 
-// TbK8sClusterNetworkInfo is a struct to handle K8sCluster Network information from the CB-Tumblebug's REST API response
-type TbK8sClusterNetworkInfo struct {
+// K8sClusterNetworkInfo is a struct to handle K8sCluster Network information from the CB-Tumblebug's REST API response
+type K8sClusterNetworkInfo struct {
 	VNetId           string   `json:"vNetId" example:"vpc-01"`
 	SubnetIds        []string `json:"subnetIds" example:"subnet-01"`
 	SecurityGroupIds []string `json:"securityGroupIds" example:"sg-01"`
@@ -401,26 +401,26 @@ type SpiderNodeGroupInfo struct {
 	KeyValueList []KeyValue `json:"KeyValueList,omitempty" validate:"omitempty"`
 }
 
-// TbK8sNodeGroupInfo is a struct to handle K8sCluster's Node Group information from the CB-Tumblebug's REST API response
-type TbK8sNodeGroupInfo struct {
+// K8sNodeGroupInfo is a struct to handle K8sCluster's Node Group information from the CB-Tumblebug's REST API response
+type K8sNodeGroupInfo struct {
 	// Id is unique identifier for the object
 	Id string `json:"id" example:"aws-ap-southeast-1"`
 
 	// Name is human-readable string to represent the object
 	Name string `json:"name" example:"aws-ap-southeast-1"`
 
-	ImageId         string               `json:"imageId"`
-	SpecId          string               `json:"specId"`
-	RootDiskType    string               `json:"rootDiskType"`
-	RootDiskSize    string               `json:"rootDiskSize"`
-	SshKeyId        string               `json:"sshKeyId"`
-	OnAutoScaling   bool                 `json:"onAutoScaling"`
-	DesiredNodeSize int                  `json:"desiredNodeSize"`
-	MinNodeSize     int                  `json:"minNodeSize"`
-	MaxNodeSize     int                  `json:"maxNodeSize"`
-	Status          TbK8sNodeGroupStatus `json:"status" example:"Active"` // Creating, Active, Inactive, Updating, Deleting
-	K8sNodes        []TbK8sNodeInfo      `json:"k8sNodes"`
-	KeyValueList    []KeyValue           `json:"keyValueList"`
+	ImageId         string             `json:"imageId"`
+	SpecId          string             `json:"specId"`
+	RootDiskType    string             `json:"rootDiskType"`
+	RootDiskSize    string             `json:"rootDiskSize"`
+	SshKeyId        string             `json:"sshKeyId"`
+	OnAutoScaling   bool               `json:"onAutoScaling"`
+	DesiredNodeSize int                `json:"desiredNodeSize"`
+	MinNodeSize     int                `json:"minNodeSize"`
+	MaxNodeSize     int                `json:"maxNodeSize"`
+	Status          K8sNodeGroupStatus `json:"status" example:"Active"` // Creating, Active, Inactive, Updating, Deleting
+	K8sNodes        []K8sNodeInfo      `json:"k8sNodes"`
+	KeyValueList    []KeyValue         `json:"keyValueList"`
 
 	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
 	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
@@ -431,8 +431,8 @@ type TbK8sNodeGroupInfo struct {
 	SpiderViewK8sNodeGroupDetail SpiderNodeGroupInfo `json:"spiderViewK8sNodeGroupDetail,omitempty"`
 }
 
-// TbK8sNodeInfo is a struct to handle K8sCluster's Node information
-type TbK8sNodeInfo struct {
+// K8sNodeInfo is a struct to handle K8sCluster's Node information
+type K8sNodeInfo struct {
 	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
 	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
 
@@ -446,8 +446,8 @@ type SpiderAccessInfo struct {
 	Kubeconfig string
 }
 
-// TbK8sAccessInfo is a struct to handle K8sCluster Access information from the CB-Tumblebug's REST API response
-type TbK8sAccessInfo struct {
+// K8sAccessInfo is a struct to handle K8sCluster Access information from the CB-Tumblebug's REST API response
+type K8sAccessInfo struct {
 	Endpoint   string `json:"endpoint" example:"http://1.2.3.4:6443"`
 	Kubeconfig string `json:"kubeconfig" example:"apiVersion: v1\nclusters:\n- cluster:\n certificate-authority-data: LS0..."`
 }
@@ -457,8 +457,8 @@ type SpiderAddonsInfo struct {
 	KeyValueList []KeyValue
 }
 
-// TbK8sAddonsInfo is a struct to handle K8sCluster Addons information from the CB-Tumblebug's REST API response
-type TbK8sAddonsInfo struct {
+// K8sAddonsInfo is a struct to handle K8sCluster Addons information from the CB-Tumblebug's REST API response
+type K8sAddonsInfo struct {
 	KeyValueList []KeyValue `json:"keyValueList"`
 }
 
@@ -479,17 +479,17 @@ type CheckNodeDynamicReqInfo struct {
 	// ConnectionConfigCandidates will provide ConnectionConfig options
 	ConnectionConfigCandidates []string `json:"connectionConfigCandidates" default:""`
 
-	Spec   TbSpecInfo    `json:"spec" default:""`
-	Image  []TbImageInfo `json:"image" default:""`
-	Region RegionDetail  `json:"region" default:""`
+	Spec   SpecInfo     `json:"spec" default:""`
+	Image  []ImageInfo  `json:"image" default:""`
+	Region RegionDetail `json:"region" default:""`
 
 	// Latest system message such as error message
 	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
 
 }
 
-// TbK8sClusterDynamicReq is struct for requirements to create K8sCluster dynamically (with default resource option)
-type TbK8sClusterDynamicReq struct {
+// K8sClusterDynamicReq is struct for requirements to create K8sCluster dynamically (with default resource option)
+type K8sClusterDynamicReq struct {
 	// K8sCluster name if it is not empty.
 	Name string `json:"name" validate:"required" example:"k8scluster01"`
 
@@ -523,8 +523,8 @@ type TbK8sClusterDynamicReq struct {
 	ConnectionName string `json:"connectionName,omitempty" default:"tencent-ap-seoul"`
 }
 
-// TbK8sNodeGroupDynamicReq is struct for requirements to create K8sNodeGroup dynamically (with default resource option)
-type TbK8sNodeGroupDynamicReq struct {
+// K8sNodeGroupDynamicReq is struct for requirements to create K8sNodeGroup dynamically (with default resource option)
+type K8sNodeGroupDynamicReq struct {
 	// K8sNodeGroup name if it is not empty.
 	Name string `json:"name" validate:"required" example:"k8sng01"`
 
@@ -548,20 +548,20 @@ type TbK8sNodeGroupDynamicReq struct {
 	MaxNodeSize     string `json:"maxNodeSize,omitempty" default:"2" example:"3"`
 }
 
-// TbK8sClusterContainerCmdReq is struct for remote command
-type TbK8sClusterContainerCmdReq struct {
+// K8sClusterContainerCmdReq is struct for remote command
+type K8sClusterContainerCmdReq struct {
 	Command []string `json:"command" validate:"required" example:"echo hello"`
 }
 
-// TbK8sClusterContainerCmdResult is struct for K8sClusterContainerCmd Result
-type TbK8sClusterContainerCmdResult struct {
+// K8sClusterContainerCmdResult is struct for K8sClusterContainerCmd Result
+type K8sClusterContainerCmdResult struct {
 	Command string `json:"command"`
 	Stdout  string `json:"stdout"`
 	Stderr  string `json:"stderr"`
 	Err     error  `json:"err"`
 }
 
-// TbK8sClusterContainerCmdResultMap is struct maps for K8sClusterContainerCmd Result
-type TbK8sClusterContainerCmdResults struct {
-	Results []*TbK8sClusterContainerCmdResult `json:"results"`
+// K8sClusterContainerCmdResultMap is struct maps for K8sClusterContainerCmd Result
+type K8sClusterContainerCmdResults struct {
+	Results []*K8sClusterContainerCmdResult `json:"results"`
 }

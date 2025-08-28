@@ -49,7 +49,7 @@ type JSONResult struct {
 // @Param filterKey query string false "(For option=id) Field key for filtering (ex: connectionName)"
 // @Param filterVal query string false "(For option=id) Field value for filtering (ex: aws-ap-northeast-2)"
 // @Param accessInfoOption query string false "(For option=accessinfo) accessInfoOption (showSshKey)"
-// @success 200 {object} JSONResult{[DEFAULT]=model.TbMciInfo,[ID]=model.IdList,[STATUS]=model.MciStatusInfo,[AccessInfo]=model.MciAccessInfo} "Different return structures by the given action param"
+// @success 200 {object} JSONResult{[DEFAULT]=model.MciInfo,[ID]=model.IdList,[STATUS]=model.MciStatusInfo,[AccessInfo]=model.MciAccessInfo} "Different return structures by the given action param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId} [get]
@@ -97,7 +97,7 @@ func RestGetMci(c echo.Context) error {
 
 // RestGetAllMciResponse is a response structure for RestGetAllMci
 type RestGetAllMciResponse struct {
-	Mci []model.TbMciInfo `json:"mci"`
+	Mci []model.MciInfo `json:"mci"`
 }
 
 // RestGetAllMciStatusResponse is a response structure for RestGetAllMciStatus
@@ -169,8 +169,8 @@ func RestGetAllMci(c echo.Context) error {
 // @Tags [MC-Infra] MCI Provisioning and Management
 // @Accept  json
 // @Produce  json
-// @Param mciInfo body TbMciInfo true "Details for an MCI object"
-// @Success 200 {object} TbMciInfo
+// @Param mciInfo body MciInfo true "Details for an MCI object"
+// @Success 200 {object} MciInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId} [put]
@@ -239,7 +239,7 @@ func RestDelAllMci(c echo.Context) error {
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Param option query string false "Option for MCI" Enums(default, status, idsInDetail, accessinfo)
 // @Param accessInfoOption query string false "(For option=accessinfo) accessInfoOption (showSshKey)"
-// @success 200 {object} JSONResult{[DEFAULT]=model.TbVmInfo,[STATUS]=model.TbVmStatusInfo,[IDNAME]=model.TbIdNameInDetailInfo} "Different return structures by the given option param"
+// @success 200 {object} JSONResult{[DEFAULT]=model.VmInfo,[STATUS]=model.VmStatusInfo,[IDNAME]=model.IdNameInDetailInfo} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId} [get]
@@ -282,8 +282,8 @@ func RestGetMciVm(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
-// @Param vmInfo body model.TbVmInfo true "Details for an VM object"
-// @Success 200 {object} model.TbVmInfo
+// @Param vmInfo body model.VmInfo true "Details for an VM object"
+// @Success 200 {object} model.VmInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId} [put]
@@ -407,8 +407,8 @@ func RestGetMciAssociatedResources(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Param securityGroupInfo body model.TbSecurityGroupUpdateReq true "Details for SecurityGroup update (only firewallRules field is used for update)"
-// @Success 200 {array} model.TbSecurityGroupInfo "Updated Security Group info list with synchronized firewall rules"
+// @Param securityGroupInfo body model.SecurityGroupUpdateReq true "Details for SecurityGroup update (only firewallRules field is used for update)"
+// @Success 200 {array} model.SecurityGroupInfo "Updated Security Group info list with synchronized firewall rules"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/associatedSecurityGroups [put]
@@ -433,12 +433,12 @@ func RestGetMciAssociatedResources(c echo.Context) error {
 // @Description - "CIDR" is the allowed IP range.
 // @Description - All existing rules not in the request (including default ICMP, etc.) will be deleted.
 // @Description - Metadata (name, description, etc.) is not changed.
-// @Success 200 {object} model.TbRestWrapperSecurityGroupUpdateResponse "Updated Security Group info list with synchronized firewall rules"
+// @Success 200 {object} model.RestWrapperSecurityGroupUpdateResponse "Updated Security Group info list with synchronized firewall rules"
 func RestPutMciAssociatedSecurityGroups(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
-	req := &model.TbSecurityGroupUpdateReq{}
+	req := &model.SecurityGroupUpdateReq{}
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}

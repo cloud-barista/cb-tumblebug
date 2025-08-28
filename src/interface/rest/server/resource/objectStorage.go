@@ -126,7 +126,7 @@ import (
 // 				log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
 // 				continue
 // 			}
-// 			vNetInfo := result.(model.TbVNetInfo)
+// 			vNetInfo := result.(model.VNetInfo)
 
 // 			// Get the last subnet
 // 			subnetCount := len(vNetInfo.SubnetInfoList)
@@ -168,7 +168,7 @@ import (
 // 				log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
 // 				continue
 // 			}
-// 			vNetInfo := result.(model.TbVNetInfo)
+// 			vNetInfo := result.(model.VNetInfo)
 
 // 			// Get the last subnet CIDR block
 // 			subnetCount := len(vNetInfo.SubnetInfoList)

@@ -116,10 +116,10 @@ func (na NetworkAction) IsValidToDeleteVNet() bool {
 	return actionsToDeleteVNet[na]
 }
 
-// TbVNetReqStructLevelValidation is a function to validate 'TbVNetReq' object.
-func TbVNetReqStructLevelValidation(sl validator.StructLevel) {
+// VNetReqStructLevelValidation is a function to validate 'VNetReq' object.
+func VNetReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(model.TbVNetReq)
+	u := sl.Current().Interface().(model.VNetReq)
 
 	err := common.CheckString(u.Name)
 	if err != nil {
@@ -128,7 +128,7 @@ func TbVNetReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
-func ValidateVNetReq(vNetReq *model.TbVNetReq) error {
+func ValidateVNetReq(vNetReq *model.VNetReq) error {
 	log.Debug().Msg("ValidateVNetReq")
 	log.Debug().Msgf("vNetReq: %+v", vNetReq)
 
@@ -245,7 +245,7 @@ func ContainsZone(zones []string, zone string) bool {
 	return false
 }
 
-func IsAvailableForUseInCSP(vNetReq *model.TbVNetReq, provider string) (bool, error) {
+func IsAvailableForUseInCSP(vNetReq *model.VNetReq, provider string) (bool, error) {
 
 	// * 1. Check if the provider info exists
 	csp, ok := common.RuntimeCloudNetworkInfo.CSPs[provider]
@@ -492,12 +492,12 @@ type spiderVPCInfo struct {
 }
 
 // CreateVNet accepts vNet creation request, creates and returns an TB vNet object
-func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error) {
+func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
 	log.Info().Msg("CreateVNet")
 
 	// vNet objects
-	var emptyRet model.TbVNetInfo
-	var vNetInfo model.TbVNetInfo
+	var emptyRet model.VNetInfo
+	var vNetInfo model.VNetInfo
 	var err error = nil
 
 	/*
@@ -543,7 +543,7 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	// Note: Set subnetInfoList in vNetInfo in advance
 	//       since each subnet uid must be consistent
 	for _, subnetInfo := range vNetReq.SubnetInfoList {
-		vNetInfo.SubnetInfoList = append(vNetInfo.SubnetInfoList, model.TbSubnetInfo{
+		vNetInfo.SubnetInfoList = append(vNetInfo.SubnetInfoList, model.SubnetInfo{
 			ResourceType: model.StrSubnet,
 			Id:           subnetInfo.Name,
 			Name:         subnetInfo.Name,
@@ -805,12 +805,12 @@ func CreateVNet(nsId string, vNetReq *model.TbVNetReq) (model.TbVNetInfo, error)
 	return vNetInfo, nil
 }
 
-func GetVNet(nsId string, vNetId string) (model.TbVNetInfo, error) {
+func GetVNet(nsId string, vNetId string) (model.VNetInfo, error) {
 	log.Info().Msg("GetVNet")
 
 	// vNet object
-	var emptyRet model.TbVNetInfo
-	var vNetInfo model.TbVNetInfo
+	var emptyRet model.VNetInfo
+	var vNetInfo model.VNetInfo
 
 	/*
 	 *	Validate the input parameters
@@ -983,7 +983,7 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 
 	// First, delete the subnets associated with the vNet
 	for _, kv := range subnetsKv {
-		subnet := model.TbSubnetInfo{}
+		subnet := model.SubnetInfo{}
 		err = json.Unmarshal([]byte(kv.Value), &subnet)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -1009,7 +1009,7 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 	}
 
 	// vNet object
-	var vNetInfo model.TbVNetInfo
+	var vNetInfo model.VNetInfo
 	err = json.Unmarshal([]byte(vNetKv.Value), &vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1136,7 +1136,7 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	// vNet object
 	var emptyRet model.SimpleMsg
 	var ret model.SimpleMsg
-	var vNetInfo model.TbVNetInfo
+	var vNetInfo model.VNetInfo
 
 	// Set the resource type
 	resourceType := model.StrVNet
@@ -1227,7 +1227,7 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 		}
 
 		for _, subnetKv := range subnetKvList {
-			subnetInfo := model.TbSubnetInfo{}
+			subnetInfo := model.SubnetInfo{}
 			err2 = json.Unmarshal([]byte(subnetKv.Value), &subnetInfo)
 			if err2 != nil {
 				log.Warn().Err(err2).Msg("")
@@ -1313,12 +1313,12 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 }
 
 // RegisterVNet accepts vNet registration request, register and returns an TB vNet object
-func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.TbVNetInfo, error) {
+func RegisterVNet(nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VNetInfo, error) {
 	log.Info().Msg("RegisterVNet")
 
 	// vNet objects
-	var emptyRet model.TbVNetInfo
-	var vNetInfo model.TbVNetInfo
+	var emptyRet model.VNetInfo
+	var vNetInfo model.VNetInfo
 	var err error = nil
 
 	/*
@@ -1477,7 +1477,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.TbRegisterVNetReq) (model.
 	// Note: Check one by one and update the vNet object with the response from the Spider
 	//       since the order may differ different between slices
 	for i, spSubnetInfo := range spResp.SubnetInfoList {
-		subnetInfo := model.TbSubnetInfo{
+		subnetInfo := model.SubnetInfo{
 			Id:              fmt.Sprintf("reg-subnet-%02d", i+1),
 			Name:            fmt.Sprintf("reg-subnet-%02d", i+1),
 			Uid:             common.GenUid(),
@@ -1652,7 +1652,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 
 	// Delete the subnets associated with the vNet
 	for _, kv := range subnetsKv {
-		subnet := model.TbSubnetInfo{}
+		subnet := model.SubnetInfo{}
 		err = json.Unmarshal([]byte(kv.Value), &subnet)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -1678,7 +1678,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 	}
 
 	// vNet object
-	var vNetInfo model.TbVNetInfo
+	var vNetInfo model.VNetInfo
 	err = json.Unmarshal([]byte(vNetKv.Value), &vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1775,7 +1775,7 @@ func DesignVNets(reqt *model.VNetDesignRequest) (model.VNetDesignResponse, error
 	log.Info().Msg("DesignVNets")
 
 	var vNetDesignResp model.VNetDesignResponse
-	var vNetReqList []model.TbVNetReq
+	var vNetReqList []model.VNetReq
 	var allCIDRs []string
 
 	baseIP, _, err := net.ParseCIDR(reqt.DesiredPrivateNetwork)
@@ -1827,7 +1827,7 @@ func DesignVNets(reqt *model.VNetDesignRequest) (model.VNetDesignResponse, error
 					continue
 				}
 				log.Debug().Msgf("vNet: %s", cidr)
-				vNetReq := model.TbVNetReq{
+				vNetReq := model.VNetReq{
 					Name:           fmt.Sprintf("vnet%02d", idx),
 					ConnectionName: connectionName,
 					CidrBlock:      cidr,
@@ -1841,7 +1841,7 @@ func DesignVNets(reqt *model.VNetDesignRequest) (model.VNetDesignResponse, error
 				}
 
 				for l, subnet := range subnets {
-					subnetReq := model.TbSubnetReq{}
+					subnetReq := model.SubnetReq{}
 					subnetReq.IPv4_CIDR = subnet
 
 					// Note - Depending on the input, a few more subnets can be created

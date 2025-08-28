@@ -353,7 +353,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 	callResult := model.ControlVmResult{}
 	callResult.VmId = vmId
 	callResult.Status = ""
-	temp := model.TbVmInfo{}
+	temp := model.VmInfo{}
 
 	key := common.GenMciKey(nsId, mciId, vmId)
 	log.Debug().Msg("[ControlVmAsync] " + key)

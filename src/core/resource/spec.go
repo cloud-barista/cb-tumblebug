@@ -40,10 +40,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// TbSpecReqStructLevelValidation is a function to validate 'TbSpecReq' object.
-func TbSpecReqStructLevelValidation(sl validator.StructLevel) {
+// SpecReqStructLevelValidation is a function to validate 'SpecReq' object.
+func SpecReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(model.TbSpecReq)
+	u := sl.Current().Interface().(model.SpecReq)
 
 	err := common.CheckString(u.Name)
 	if err != nil {
@@ -53,16 +53,16 @@ func TbSpecReqStructLevelValidation(sl validator.StructLevel) {
 }
 
 // ConvertSpiderSpecToTumblebugSpec accepts an Spider spec object, converts to and returns an TB spec object
-func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec model.SpiderSpecInfo) (model.TbSpecInfo, error) {
+func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec model.SpiderSpecInfo) (model.SpecInfo, error) {
 	if spiderSpec.Name == "" {
 		err := fmt.Errorf("failed convertSpiderSpecToTumblebugSpec. spiderSpec.Name is empty")
-		emptyTumblebugSpec := model.TbSpecInfo{}
+		emptyTumblebugSpec := model.SpecInfo{}
 		return emptyTumblebugSpec, err
 	}
 
 	providerName := connConfig.ProviderName
 
-	tumblebugSpec := model.TbSpecInfo{}
+	tumblebugSpec := model.SpecInfo{}
 
 	tumblebugSpec.Name = spiderSpec.Name
 	tumblebugSpec.CspSpecName = spiderSpec.Name
@@ -77,7 +77,7 @@ func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec mo
 	if providerName == string(csp.Azure) {
 		if isAzureGen1OnlySpec(tumblebugSpec.CspSpecName) {
 			err := fmt.Errorf("skipping Azure Gen1-only VM family spec: %s", tumblebugSpec.CspSpecName)
-			emptyTumblebugSpec := model.TbSpecInfo{}
+			emptyTumblebugSpec := model.SpecInfo{}
 			return emptyTumblebugSpec, err
 		}
 	}
@@ -387,7 +387,7 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 	}
 
 	// Pre-allocate slice with known capacity to reduce memory allocations
-	tmpSpecList := make([]model.TbSpecInfo, 0, len(specsInConnection.Vmspec))
+	tmpSpecList := make([]model.SpecInfo, 0, len(specsInConnection.Vmspec))
 
 	// Process specs and clean up memory immediately
 	for i := range specsInConnection.Vmspec {
@@ -893,13 +893,13 @@ func UpdateSpecsFromAsset(nsId string) error {
 	}
 	log.Info().Msgf("Loaded %d existing specs into memory in %v", len(existingSpecsMap), time.Since(startTime))
 
-	var specList []model.TbSpecInfo
+	var specList []model.SpecInfo
 
 	// Process each row (skip header)
 	for _, row := range rows[1:] {
 
-		// Parse CSV data directly into TbSpecInfo struct
-		specInfo := model.TbSpecInfo{}
+		// Parse CSV data directly into SpecInfo struct
+		specInfo := model.SpecInfo{}
 
 		providerName := strings.ToLower(row[0])
 		regionName := strings.ToLower(row[1])
@@ -1011,7 +1011,7 @@ func UpdateSpecsFromAsset(nsId string) error {
 			log.Debug().Msgf("Spec %s not found in DB, recommended to remove from assets", specInfo.Id)
 		}
 		// clear memory for specInfo
-		specInfo = model.TbSpecInfo{}
+		specInfo = model.SpecInfo{}
 	}
 	existingSpecsMap = nil
 	runtime.GC()
@@ -1034,8 +1034,8 @@ func UpdateSpecsFromAsset(nsId string) error {
 }
 
 // loadAllSpecsIntoMemory loads all existing specs for a namespace into a map for O(1) lookup
-func loadAllSpecsIntoMemory(nsId string) (map[string]model.TbSpecInfo, error) {
-	var allSpecs []model.TbSpecInfo
+func loadAllSpecsIntoMemory(nsId string) (map[string]model.SpecInfo, error) {
+	var allSpecs []model.SpecInfo
 
 	// Single query to get all specs for the namespace
 	result := model.ORM.Where("namespace = ?", nsId).Find(&allSpecs)
@@ -1044,7 +1044,7 @@ func loadAllSpecsIntoMemory(nsId string) (map[string]model.TbSpecInfo, error) {
 	}
 
 	// Build map for O(1) lookup using spec ID as key
-	specsMap := make(map[string]model.TbSpecInfo, len(allSpecs))
+	specsMap := make(map[string]model.SpecInfo, len(allSpecs))
 	for _, spec := range allSpecs {
 		specsMap[spec.Id] = spec
 	}
@@ -1054,7 +1054,7 @@ func loadAllSpecsIntoMemory(nsId string) (map[string]model.TbSpecInfo, error) {
 }
 
 // mergeSpecWithCSVData merges CSV spec data into existing spec (CSV data has priority for non-empty values)
-func mergeSpecWithCSVData(existingSpec model.TbSpecInfo, csvSpec model.TbSpecInfo) model.TbSpecInfo {
+func mergeSpecWithCSVData(existingSpec model.SpecInfo, csvSpec model.SpecInfo) model.SpecInfo {
 	mergedSpec := existingSpec
 
 	// Merge cost information (existingSpec priority)
@@ -1423,9 +1423,9 @@ func LookupPriceList(connConfig model.ConnConfig) (model.SpiderCloudPrice, error
 }
 
 // RegisterSpecWithCspResourceId accepts spec creation request, creates and returns an TB spec object
-func RegisterSpecWithCspResourceId(nsId string, u *model.TbSpecReq, update bool) (model.TbSpecInfo, error) {
+func RegisterSpecWithCspResourceId(nsId string, u *model.SpecReq, update bool) (model.SpecInfo, error) {
 
-	content := model.TbSpecInfo{}
+	content := model.SpecInfo{}
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1469,11 +1469,11 @@ func RegisterSpecWithCspResourceId(nsId string, u *model.TbSpecReq, update bool)
 }
 
 // RegisterSpecWithInfo accepts spec creation request, creates and returns an TB spec object
-func RegisterSpecWithInfo(nsId string, content *model.TbSpecInfo, update bool) (model.TbSpecInfo, error) {
+func RegisterSpecWithInfo(nsId string, content *model.SpecInfo, update bool) (model.SpecInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := model.TbSpecInfo{}
+		temp := model.SpecInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
@@ -1487,7 +1487,7 @@ func RegisterSpecWithInfo(nsId string, content *model.TbSpecInfo, update bool) (
 	result := model.ORM.Create(content)
 	if result.Error != nil {
 		if update {
-			updateResult := model.ORM.Model(&model.TbSpecInfo{}).
+			updateResult := model.ORM.Model(&model.SpecInfo{}).
 				Where("namespace = ? AND id = ?", content.Namespace, content.Id).
 				Updates(content)
 
@@ -1509,19 +1509,19 @@ func RegisterSpecWithInfo(nsId string, content *model.TbSpecInfo, update bool) (
 }
 
 // RegisterSpecWithInfoInBulk register a list of specs in bulk
-func RegisterSpecWithInfoInBulk(specList []model.TbSpecInfo) error {
+func RegisterSpecWithInfoInBulk(specList []model.SpecInfo) error {
 	// In PostgreSQL, use session_replication_role instead of PRAGMA
 	model.ORM.Exec("SET session_replication_role = 'replica'")
 
 	// Batch size - PostgreSQL can handle larger batches
 	batchSize := 100
 
-	uniqueSpecs := make(map[string]model.TbSpecInfo)
+	uniqueSpecs := make(map[string]model.SpecInfo)
 	for _, spec := range specList {
 		key := spec.Namespace + ":" + spec.Id
 		uniqueSpecs[key] = spec
 	}
-	dedupedSpecList := make([]model.TbSpecInfo, 0, len(uniqueSpecs))
+	dedupedSpecList := make([]model.SpecInfo, 0, len(uniqueSpecs))
 	for _, spec := range uniqueSpecs {
 		dedupedSpecList = append(dedupedSpecList, spec)
 	}
@@ -1596,10 +1596,10 @@ type Range struct {
 }
 
 // GetSpec accepts namespace Id and specKey(Id,CspResourceName,...), and returns the TB spec object
-func GetSpec(nsId string, specKey string) (model.TbSpecInfo, error) {
+func GetSpec(nsId string, specKey string) (model.SpecInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
-		return model.TbSpecInfo{}, err
+		return model.SpecInfo{}, err
 	}
 
 	log.Debug().Msg("[Get spec] " + specKey)
@@ -1609,7 +1609,7 @@ func GetSpec(nsId string, specKey string) (model.TbSpecInfo, error) {
 	specKey = strings.ToLower(specKey)
 
 	// ex: tencent+ap-jakarta+ubuntu22.04
-	var spec model.TbSpecInfo
+	var spec model.SpecInfo
 	result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(id) = ?", nsId, specKey).First(&spec)
 	if result.Error == nil {
 		return spec, nil
@@ -1621,7 +1621,7 @@ func GetSpec(nsId string, specKey string) (model.TbSpecInfo, error) {
 		return spec, nil
 	}
 
-	return model.TbSpecInfo{}, fmt.Errorf("The specKey %s not found by any of ID, CspSpecName", specKey)
+	return model.SpecInfo{}, fmt.Errorf("The specKey %s not found by any of ID, CspSpecName", specKey)
 }
 
 // Retrieve field-to-column mapping information for the model
@@ -1638,7 +1638,7 @@ func getColumnMapping(modelType interface{}) map[string]string {
 }
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
-func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest, orderBy string) ([]model.TbSpecInfo, error) {
+func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest, orderBy string) ([]model.SpecInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
 		return nil, err
@@ -1647,7 +1647,7 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest, ord
 	// Start building the query using field names as database column names
 	query := model.ORM.Where("namespace = ?", nsId)
 
-	specColumnMapping := getColumnMapping(&model.TbSpecInfo{})
+	specColumnMapping := getColumnMapping(&model.SpecInfo{})
 	// Change field names to start with lowercase (GORM convention)
 	val := reflect.ValueOf(filter)
 	typ := val.Type()
@@ -1710,7 +1710,7 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest, ord
 
 	startTime := time.Now()
 
-	var specs []model.TbSpecInfo
+	var specs []model.SpecInfo
 
 	// Apply ORDER BY if specified
 	if orderBy != "" {
@@ -1744,9 +1744,9 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest, ord
 
 // UpdateSpec accepts to-be TB spec objects,
 // updates and returns the updated TB spec objects
-func UpdateSpec(nsId string, specId string, fieldsToUpdate model.TbSpecInfo) (model.TbSpecInfo, error) {
+func UpdateSpec(nsId string, specId string, fieldsToUpdate model.SpecInfo) (model.SpecInfo, error) {
 
-	result := model.ORM.Model(&model.TbSpecInfo{}).
+	result := model.ORM.Model(&model.SpecInfo{}).
 		Where("namespace = ? AND id = ?", nsId, specId).
 		Updates(fieldsToUpdate)
 
@@ -1783,7 +1783,7 @@ func BulkUpdateSpec(nsId string, updates map[string]float32) (int, error) {
 	caseClause += "END"
 
 	// Execute with proper casting
-	result := model.ORM.Model(&model.TbSpecInfo{}).
+	result := model.ORM.Model(&model.SpecInfo{}).
 		Where("namespace = ? AND id IN ?", nsId, specIds).
 		Update("cost_per_hour", gorm.Expr(caseClause, args...))
 

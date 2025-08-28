@@ -59,7 +59,7 @@ func RestPostInstallMonitorAgentToMci(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(vm01)
-// @Success 200 {object} model.TbVmInfo
+// @Success 200 {object} model.VmInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/monitoring/status/mci/{mciId}/vm/{vmId} [put]

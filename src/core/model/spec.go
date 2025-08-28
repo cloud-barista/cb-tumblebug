@@ -112,8 +112,8 @@ type SpiderPriceInfoHandler interface {
 	GetPriceInfo(productFamily string, regionName string, filterList []KeyValue) (string, error) // return string: json format
 }
 
-// TbSpecReq is a struct to handle 'Register spec' request toward CB-Tumblebug.
-type TbSpecReq struct {
+// SpecReq is a struct to handle 'Register spec' request toward CB-Tumblebug.
+type SpecReq struct {
 	// Name is human-readable string to represent the object, used to generate Id
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
@@ -122,8 +122,8 @@ type TbSpecReq struct {
 	Description string `json:"description"`
 }
 
-// TbSpecInfo is a struct that represents TB spec object.
-type TbSpecInfo struct { // Tumblebug
+// SpecInfo is a struct that represents TB spec object.
+type SpecInfo struct { // Tumblebug
 	// Id is unique identifier for the object
 	Id string `json:"id" example:"aws+ap-southeast+csp-06eb41e14121c550a" gorm:"primaryKey"`
 	// Uid is universally unique identifier for the object, used for labelSelector
@@ -177,8 +177,8 @@ type TbSpecInfo struct { // Tumblebug
 	Details     []KeyValue `json:"details" gorm:"type:text;serializer:json"`
 }
 
-// TbLatencyInfo is a struct that represents TB latency map object.
-type TbLatencyInfo struct {
+// LatencyInfo is a struct that represents TB latency map object.
+type LatencyInfo struct {
 	// SourceRegion is the source region for latency measurement
 	SourceRegion string `json:"sourceRegion" gorm:"primaryKey" example:"aws+us-east-1"`
 	// TargetRegion is the target region for latency measurement
@@ -365,7 +365,7 @@ func StoreLatencyInfo(sourceRegion, targetRegion string, latencyMs float64) erro
 		return fmt.Errorf("latency cannot be negative: %f", latencyMs)
 	}
 
-	latencyInfo := TbLatencyInfo{
+	latencyInfo := LatencyInfo{
 		SourceRegion: sourceRegion,
 		TargetRegion: targetRegion,
 		LatencyMs:    latencyMs,
@@ -378,12 +378,12 @@ func StoreLatencyInfo(sourceRegion, targetRegion string, latencyMs float64) erro
 }
 
 // GetLatencyInfo retrieves latency information from database
-func GetLatencyInfo(sourceRegion, targetRegion string) (*TbLatencyInfo, error) {
+func GetLatencyInfo(sourceRegion, targetRegion string) (*LatencyInfo, error) {
 	if sourceRegion == "" || targetRegion == "" {
 		return nil, fmt.Errorf("source region and target region cannot be empty")
 	}
 
-	var latencyInfo TbLatencyInfo
+	var latencyInfo LatencyInfo
 	result := ORM.Where("source_region = ? AND target_region = ?", sourceRegion, targetRegion).First(&latencyInfo)
 	if result.Error != nil {
 		return nil, result.Error
@@ -401,7 +401,7 @@ func GetLatencyValue(sourceRegion, targetRegion string) (float64, error) {
 }
 
 // BatchStoreLatencyInfo stores multiple latency records in a single transaction
-func BatchStoreLatencyInfo(latencyData []TbLatencyInfo) error {
+func BatchStoreLatencyInfo(latencyData []LatencyInfo) error {
 	if len(latencyData) == 0 {
 		return nil
 	}
@@ -419,8 +419,8 @@ func BatchStoreLatencyInfo(latencyData []TbLatencyInfo) error {
 }
 
 // GetAllLatencyInfo retrieves all latency information from database
-func GetAllLatencyInfo() ([]TbLatencyInfo, error) {
-	var latencyInfos []TbLatencyInfo
+func GetAllLatencyInfo() ([]LatencyInfo, error) {
+	var latencyInfos []LatencyInfo
 	result := ORM.Find(&latencyInfos)
 	return latencyInfos, result.Error
 }

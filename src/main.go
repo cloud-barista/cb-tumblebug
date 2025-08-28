@@ -129,10 +129,10 @@ func init() {
 		log.Info().Msg("PostgreSQL database connected successfully")
 	}
 	err = model.ORM.AutoMigrate(
-		&model.TbSpecInfo{},
-		&model.TbImageInfo{},
-		&model.TbCustomImageInfo{},
-		&model.TbLatencyInfo{},
+		&model.SpecInfo{},
+		&model.ImageInfo{},
+		&model.CustomImageInfo{},
+		&model.LatencyInfo{},
 	)
 
 	if err != nil {
@@ -398,7 +398,7 @@ func setConfig() {
 func migrateLatencyDataFromCSV() error {
 	// Check if latency data already exists in database
 	var count int64
-	if err := model.ORM.Model(&model.TbLatencyInfo{}).Count(&count).Error; err != nil {
+	if err := model.ORM.Model(&model.LatencyInfo{}).Count(&count).Error; err != nil {
 		return err
 	}
 
@@ -435,7 +435,7 @@ func migrateLatencyDataFromCSV() error {
 
 	// Extract header (target regions)
 	header := records[0]
-	var latencyData []model.TbLatencyInfo
+	var latencyData []model.LatencyInfo
 
 	// Process each row (source region)
 	for _, row := range records[1:] {
@@ -463,7 +463,7 @@ func migrateLatencyDataFromCSV() error {
 				continue // Skip invalid values
 			}
 
-			latencyData = append(latencyData, model.TbLatencyInfo{
+			latencyData = append(latencyData, model.LatencyInfo{
 				SourceRegion: sourceRegion,
 				TargetRegion: targetRegion,
 				LatencyMs:    latencyValue,

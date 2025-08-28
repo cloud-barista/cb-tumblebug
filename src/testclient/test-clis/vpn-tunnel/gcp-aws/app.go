@@ -244,7 +244,7 @@ func createMci(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	reqMciDynamic := new(model.TbMciDynamicReq)
+	reqMciDynamic := new(model.MciDynamicReq)
 	err = json.Unmarshal(mciDynamicData, &reqMciDynamic)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to unmarshal %s", filePath)
@@ -261,7 +261,7 @@ func createMci(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-	mciInfo := new(model.TbMciInfo)
+	mciInfo := new(model.MciInfo)
 	if err := json.Unmarshal(respBytes, mciInfo); err != nil {
 		log.Error().Err(err).Msg("")
 		return
@@ -390,7 +390,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-	mciInfo := new(model.TbMciInfo)
+	mciInfo := new(model.MciInfo)
 	if err := json.Unmarshal(respBytes, mciInfo); err != nil {
 		log.Error().Err(err).Msg("")
 		return
@@ -480,7 +480,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	vNetInfo := new(model.TbVNetInfo)
+	vNetInfo := new(model.VNetInfo)
 	if err := json.Unmarshal(respBytes, vNetInfo); err != nil {
 		log.Error().Err(err).Msg("")
 		return
@@ -898,7 +898,7 @@ func terminateMci(cmd *cobra.Command, args []string) {
 		}
 
 		// Print the response
-		mciInfo := new(model.TbMciInfo)
+		mciInfo := new(model.MciInfo)
 		if err := json.Unmarshal(respBytes, mciInfo); err != nil {
 			log.Error().Err(err).Msg("")
 			return
@@ -966,7 +966,7 @@ func terminateMci(cmd *cobra.Command, args []string) {
 		}
 
 		// Print the response
-		mciInfo := new(model.TbMciInfo)
+		mciInfo := new(model.MciInfo)
 		if err := json.Unmarshal(respBytes, mciInfo); err != nil {
 			log.Error().Err(err).Msg("")
 			return

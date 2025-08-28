@@ -45,8 +45,8 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param securityGroupId path string true "Security Group ID"
-// @Param firewallRuleReq body model.TbSecurityGroupUpdateReq true "FirewallRules to add (only firewallRules field is used)"
-// @Success 200 {object} model.TbSecurityGroupUpdateResponse "Updated Security Group info with added firewall rules"
+// @Param firewallRuleReq body model.SecurityGroupUpdateReq true "FirewallRules to add (only firewallRules field is used)"
+// @Success 200 {object} model.SecurityGroupUpdateResponse "Updated Security Group info with added firewall rules"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [post]
@@ -55,13 +55,13 @@ func RestPostFirewallRules(c echo.Context) error {
 	nsId := c.Param("nsId")
 	securityGroupId := c.Param("securityGroupId")
 
-	u := &model.TbSecurityGroupUpdateReq{}
+	u := &model.SecurityGroupUpdateReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	// Convert TbFirewallRuleReq to TbFirewallRuleInfo for addition
-	var rulesToAdd []model.TbFirewallRuleInfo
+	// Convert FirewallRuleReq to FirewallRuleInfo for addition
+	var rulesToAdd []model.FirewallRuleInfo
 	for _, ruleReq := range u.FirewallRules {
 		// Convert each rule request to info object(s)
 		ruleInfos := resource.ConvertFirewallRuleRequestObjToInfoObjs(ruleReq)
@@ -73,8 +73,8 @@ func RestPostFirewallRules(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	// Convert TbSecurityGroupInfo to TbSecurityGroupUpdateResponse for consistency
-	response := model.TbSecurityGroupUpdateResponse{
+	// Convert SecurityGroupInfo to SecurityGroupUpdateResponse for consistency
+	response := model.SecurityGroupUpdateResponse{
 		Id:       sgInfo.Id,
 		Name:     sgInfo.Name,
 		Success:  true,
@@ -153,8 +153,8 @@ type RestGetAllFirewallRulesResponse struct {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param securityGroupId path string true "Security Group ID"
-// @Param firewallRuleReq body model.TbSecurityGroupUpdateReq true "FirewallRules to delete (only firewallRules field is used)"
-// @Success 200 {object} model.TbSecurityGroupUpdateResponse "Updated Security Group info after rule deletion"
+// @Param firewallRuleReq body model.SecurityGroupUpdateReq true "FirewallRules to delete (only firewallRules field is used)"
+// @Success 200 {object} model.SecurityGroupUpdateResponse "Updated Security Group info after rule deletion"
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [delete]
 func RestDelFirewallRules(c echo.Context) error {
@@ -162,13 +162,13 @@ func RestDelFirewallRules(c echo.Context) error {
 	nsId := c.Param("nsId")
 	securityGroupId := c.Param("securityGroupId")
 
-	u := &model.TbSecurityGroupUpdateReq{}
+	u := &model.SecurityGroupUpdateReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	// Convert TbFirewallRuleReq to TbFirewallRuleInfo for deletion
-	var rulesToDelete []model.TbFirewallRuleInfo
+	// Convert FirewallRuleReq to FirewallRuleInfo for deletion
+	var rulesToDelete []model.FirewallRuleInfo
 	for _, ruleReq := range u.FirewallRules {
 		// Convert each rule request to info object(s)
 		ruleInfos := resource.ConvertFirewallRuleRequestObjToInfoObjs(ruleReq)
@@ -180,8 +180,8 @@ func RestDelFirewallRules(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	// Convert TbSecurityGroupInfo to TbSecurityGroupUpdateResponse for consistency
-	response := model.TbSecurityGroupUpdateResponse{
+	// Convert SecurityGroupInfo to SecurityGroupUpdateResponse for consistency
+	response := model.SecurityGroupUpdateResponse{
 		Id:       sgInfo.Id,
 		Name:     sgInfo.Name,
 		Success:  true,

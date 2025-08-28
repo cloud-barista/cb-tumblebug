@@ -33,8 +33,8 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param vNetReq body model.TbVNetReq false "Details for an VNet object"
-// @Success 201 {object} model.TbVNetInfo
+// @Param vNetReq body model.VNetReq false "Details for an VNet object"
+// @Success 201 {object} model.VNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet [post]
@@ -51,7 +51,7 @@ func RestPostVNet(c echo.Context) error {
 
 	// Create vNet
 	// [Input] Bind the request body
-	reqt := &model.TbVNetReq{}
+	reqt := &model.VNetReq{}
 	if err := c.Bind(reqt); err != nil {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
@@ -84,8 +84,8 @@ func RestPostVNet(c echo.Context) error {
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
-// @Param vNetInfo body model.TbVNetInfo true "Details for an VNet object"
-// @Success 200 {object} model.TbVNetInfo
+// @Param vNetInfo body model.VNetInfo true "Details for an VNet object"
+// @Success 200 {object} model.VNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [put]
@@ -105,7 +105,7 @@ func RestPostVNet(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
-// @Success 200 {object} model.TbVNetInfo
+// @Success 200 {object} model.VNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [get]
@@ -139,7 +139,7 @@ func RestGetVNet(c echo.Context) error {
 
 // Response structure for RestGetAllVNet
 type RestGetAllVNetResponse struct {
-	VNet []model.TbVNetInfo `json:"vNet"`
+	VNet []model.VNetInfo `json:"vNet"`
 }
 
 // RestGetAllVNet godoc
@@ -257,8 +257,8 @@ func RestDelAllVNet(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param vNetRegisterReq body model.TbRegisterVNetReq true "Inforamation required to register the VNet created externally"
-// @Success 201 {object} model.TbVNetInfo
+// @Param vNetRegisterReq body model.RegisterVNetReq true "Inforamation required to register the VNet created externally"
+// @Success 201 {object} model.VNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/registerCspResource/vNet [post]
@@ -284,7 +284,7 @@ func RestPostRegisterVNet(c echo.Context) error {
 
 	// Register vNet if the action is 'register'
 	// [Input] Bind the request body
-	reqt := &model.TbRegisterVNetReq{}
+	reqt := &model.RegisterVNetReq{}
 	if err := c.Bind(reqt); err != nil {
 		log.Warn().Err(err).Msgf("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
@@ -311,7 +311,7 @@ func RestPostRegisterVNet(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
 // @Param withSubnets query string false "Delete subnets as well" Enums(true,false)
-// @Success 201 {object} model.TbVNetInfo
+// @Success 201 {object} model.VNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/deregisterCspResource/vNet/{vNetId} [delete]

@@ -31,8 +31,8 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option: [required params for register] connectionName, name, vNetId, cspResourceId" Enums(register)
-// @Param securityGroupReq body model.TbSecurityGroupReq true "Details for an securityGroup object"
-// @Success 200 {object} model.TbSecurityGroupInfo
+// @Param securityGroupReq body model.SecurityGroupReq true "Details for an securityGroup object"
+// @Success 200 {object} model.SecurityGroupInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup [post]
@@ -42,7 +42,7 @@ func RestPostSecurityGroup(c echo.Context) error {
 
 	optionFlag := c.QueryParam("option")
 
-	u := &model.TbSecurityGroupReq{}
+	u := &model.SecurityGroupReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -78,8 +78,8 @@ func RestPostSecurityGroup(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param securityGroupId path string true "Security Group ID"
-// @Param securityGroupInfo body model.TbSecurityGroupUpdateReq true "Details for an securityGroup object (only firewallRules field is used for update)"
-// @Success 200 {object} model.TbSecurityGroupUpdateResponse "Updated Security Group info with synchronized firewall rules"
+// @Param securityGroupInfo body model.SecurityGroupUpdateReq true "Details for an securityGroup object (only firewallRules field is used for update)"
+// @Success 200 {object} model.SecurityGroupUpdateResponse "Updated Security Group info with synchronized firewall rules"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId} [put]
@@ -87,7 +87,7 @@ func RestPutSecurityGroup(c echo.Context) error {
 	nsId := c.Param("nsId")
 	securityGroupId := c.Param("resourceId")
 
-	u := &model.TbSecurityGroupUpdateReq{}
+	u := &model.SecurityGroupUpdateReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -107,7 +107,7 @@ func RestPutSecurityGroup(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param securityGroupId path string true "Security Group ID"
-// @Success 200 {object} model.TbSecurityGroupInfo
+// @Success 200 {object} model.SecurityGroupInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId} [get]
@@ -118,7 +118,7 @@ func RestGetSecurityGroup(c echo.Context) error {
 
 // Response structure for RestGetAllSecurityGroup
 type RestGetAllSecurityGroupResponse struct {
-	SecurityGroup []model.TbSecurityGroupInfo `json:"securityGroup"`
+	SecurityGroup []model.SecurityGroupInfo `json:"securityGroup"`
 }
 
 // RestGetAllSecurityGroup godoc

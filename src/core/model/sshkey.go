@@ -35,8 +35,8 @@ type SpiderKeyPairInfo struct {
 	KeyValueList []KeyValue
 }
 
-// TbSshKeyReq is a struct to handle 'Create SSH key' request toward CB-Tumblebug.
-type TbSshKeyReq struct {
+// SshKeyReq is a struct to handle 'Create SSH key' request toward CB-Tumblebug.
+type SshKeyReq struct {
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
 	Description    string `json:"description"`
@@ -51,8 +51,8 @@ type TbSshKeyReq struct {
 	PrivateKey       string `json:"privateKey"`
 }
 
-// TbSshKeyInfo is a struct that represents TB SSH key object.
-type TbSshKeyInfo struct {
+// SshKeyInfo is a struct that represents TB SSH key object.
+type SshKeyInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 

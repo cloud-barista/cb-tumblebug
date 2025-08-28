@@ -703,7 +703,7 @@ const newRecommendation = await api.post('/recommendSpec', {
 - `model.MciAssociatedResourceList` - MCI 연관 리소스
 - `model.ProvisioningEvent` - 프로비저닝 이벤트
 - `model.RiskAnalysis` - 리스크 분석
-- `model.TbSecurityGroupUpdateReq` - 보안 그룹 업데이트
+- `model.SecurityGroupUpdateReq` - 보안 그룹 업데이트
 
 ### ❌ 제거된 스키마
 - `model.DeploymentPlan` - 더 이상 사용되지 않음
@@ -745,7 +745,7 @@ const newRecommendation = await api.post('/recommendSpec', {
 # 응답 스키마 통합 및 정리
 - model.TbVmDynamicReq           ← 기존 개별 스키마
 - model.TbVmReq                  ← 기존 개별 스키마
-+ model.TbCreateSubGroupDynamicReq ← 통합된 스키마
++ model.CreateSubGroupDynamicReq ← 통합된 스키마
 ```
 
 ## 🎯 권장 마이그레이션 순서

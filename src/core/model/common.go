@@ -144,18 +144,18 @@ type SpiderConnectionName struct {
 
 // ResourceTypeRegistry is map for Resource type
 var ResourceTypeRegistry = map[string]func() interface{}{
-	StrSSHKey:        func() interface{} { return &TbSshKeyInfo{} },
-	StrImage:         func() interface{} { return &TbImageInfo{} },
-	StrCustomImage:   func() interface{} { return &TbCustomImageInfo{} },
-	StrSecurityGroup: func() interface{} { return &TbSecurityGroupInfo{} },
-	StrSpec:          func() interface{} { return &TbSpecInfo{} },
-	StrVNet:          func() interface{} { return &TbVNetInfo{} },
-	StrSubnet:        func() interface{} { return &TbSubnetInfo{} },
-	StrDataDisk:      func() interface{} { return &TbDataDiskInfo{} },
-	StrNLB:           func() interface{} { return &TbNLBInfo{} },
-	StrVM:            func() interface{} { return &TbVmInfo{} },
-	StrMCI:           func() interface{} { return &TbMciInfo{} },
-	StrK8s:           func() interface{} { return &TbK8sClusterInfo{} },
+	StrSSHKey:        func() interface{} { return &SshKeyInfo{} },
+	StrImage:         func() interface{} { return &ImageInfo{} },
+	StrCustomImage:   func() interface{} { return &CustomImageInfo{} },
+	StrSecurityGroup: func() interface{} { return &SecurityGroupInfo{} },
+	StrSpec:          func() interface{} { return &SpecInfo{} },
+	StrVNet:          func() interface{} { return &VNetInfo{} },
+	StrSubnet:        func() interface{} { return &SubnetInfo{} },
+	StrDataDisk:      func() interface{} { return &DataDiskInfo{} },
+	StrNLB:           func() interface{} { return &NLBInfo{} },
+	StrVM:            func() interface{} { return &VmInfo{} },
+	StrMCI:           func() interface{} { return &MciInfo{} },
+	StrK8s:           func() interface{} { return &K8sClusterInfo{} },
 	StrNamespace:     func() interface{} { return &NsInfo{} },
 	StrVPN:           func() interface{} { return &VpnInfo{} },
 }
@@ -301,8 +301,8 @@ type SpiderAllList struct {
 	OnlyCSPList    []SpiderNameIdSystemId
 }
 
-// TbInspectResourcesResponse is struct for response of InspectResources request
-type TbInspectResourcesResponse struct {
+// InspectResourcesResponse is struct for response of InspectResources request
+type InspectResourcesResponse struct {
 	InspectResources []InspectResource `json:"inspectResources"`
 }
 

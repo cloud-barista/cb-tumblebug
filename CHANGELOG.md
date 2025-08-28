@@ -42,7 +42,7 @@
 * Feat: StartVmWithSnapshot + RegisterConsequentVolumes by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1192
 * Implement `cloud_conf.yaml` manifest handling feat. for NLB by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1193
 * Add example values for NLB request by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1194
-* Tidy `TbNLBReq` fields by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1197
+* Tidy `NLBReq` fields by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1197
 * Set NLB health checker info by reflection by @yunkon-kim in https://github.com/cloud-barista/cb-tumblebug/pull/1196
 * Provide one-stop values for nlb api by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1198
 * Simplify docker install script by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1200

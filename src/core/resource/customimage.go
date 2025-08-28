@@ -29,10 +29,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// TbImageReqStructLevelValidation func is for Validation
-func TbCustomImageReqStructLevelValidation(sl validator.StructLevel) {
+// ImageReqStructLevelValidation func is for Validation
+func CustomImageReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(model.TbCustomImageReq)
+	u := sl.Current().Interface().(model.CustomImageReq)
 
 	err := common.CheckString(u.Name)
 	if err != nil {
@@ -42,30 +42,30 @@ func TbCustomImageReqStructLevelValidation(sl validator.StructLevel) {
 }
 
 // RegisterCustomImageWithInfo accepts customimage registration request, creates and returns an TB customimage object
-func RegisterCustomImageWithInfo(nsId string, content model.TbCustomImageInfo) (model.TbCustomImageInfo, error) {
+func RegisterCustomImageWithInfo(nsId string, content model.CustomImageInfo) (model.CustomImageInfo, error) {
 
 	resourceType := model.StrCustomImage
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 	err = common.CheckString(content.Name)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 	check, err := CheckResource(nsId, resourceType, content.Name)
 
 	if check {
 		err := fmt.Errorf("The customImage " + content.Name + " already exists.")
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 
 	if err != nil {
 		err := fmt.Errorf("Failed to check the existence of the customImage " + content.Name + ".")
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 
 	content.ResourceType = resourceType
@@ -79,7 +79,7 @@ func RegisterCustomImageWithInfo(nsId string, content model.TbCustomImageInfo) (
 	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 
 	// "INSERT INTO `image`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
@@ -136,13 +136,13 @@ func LookupMyImage(connConfig string, myImageId string) (model.SpiderMyImageInfo
 }
 
 // ConvertSpiderMyImageToTumblebugCustomImage accepts an Spider MyImage object, converts to and returns an TB customImage object
-func ConvertSpiderMyImageToTumblebugCustomImage(spiderMyImage model.SpiderMyImageInfo) (model.TbCustomImageInfo, error) {
+func ConvertSpiderMyImageToTumblebugCustomImage(spiderMyImage model.SpiderMyImageInfo) (model.CustomImageInfo, error) {
 	if spiderMyImage.IId.NameId == "" {
 		err := fmt.Errorf("ConvertSpiderMyImageToTumblebugCustomImage failed; spiderMyImage.IId.NameId == \"\" ")
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 
-	tumblebugCustomImage := model.TbCustomImageInfo{
+	tumblebugCustomImage := model.CustomImageInfo{
 		CspResourceId:        spiderMyImage.IId.SystemId,
 		CspResourceName:      spiderMyImage.IId.NameId, // common.LookupKeyValueList(spiderMyImage.KeyValueList, "Name"),
 		Description:          common.LookupKeyValueList(spiderMyImage.KeyValueList, "Description"),
@@ -165,14 +165,14 @@ func ConvertSpiderMyImageToTumblebugCustomImage(spiderMyImage model.SpiderMyImag
 }
 
 // RegisterCustomImageWithId accepts customimage creation request, creates and returns an TB customimage object
-func RegisterCustomImageWithId(nsId string, u *model.TbCustomImageReq) (model.TbCustomImageInfo, error) {
+func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.CustomImageInfo, error) {
 
 	resourceType := model.StrCustomImage
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 
 	err = validate.Struct(u)
@@ -180,22 +180,22 @@ func RegisterCustomImageWithId(nsId string, u *model.TbCustomImageReq) (model.Tb
 
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			log.Err(err).Msg("")
-			return model.TbCustomImageInfo{}, err
+			return model.CustomImageInfo{}, err
 		}
 
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {
 		err := fmt.Errorf("The customimage " + u.Name + " already exists.")
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 
 	if err != nil {
 		err := fmt.Errorf("Failed to check the existence of the customimage " + u.Name + ".")
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 
 	client := resty.New()
@@ -234,10 +234,10 @@ func RegisterCustomImageWithId(nsId string, u *model.TbCustomImageReq) (model.Tb
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 
-	content := model.TbCustomImageInfo{
+	content := model.CustomImageInfo{
 		ResourceType:         resourceType,
 		Namespace:            nsId,
 		Id:                   u.Name,

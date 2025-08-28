@@ -147,8 +147,8 @@ func RestGetRequiredK8sSubnetCount(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option: [required params for register] connectionName, name, cspResourceId" Enums(register)
-// @Param k8sClusterReq body model.TbK8sClusterReq true "Details of the K8sCluster object"
-// @Success 200 {object} model.TbK8sClusterInfo
+// @Param k8sClusterReq body model.K8sClusterReq true "Details of the K8sCluster object"
+// @Success 200 {object} model.K8sClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/k8sCluster [post]
@@ -158,7 +158,7 @@ func RestPostK8sCluster(c echo.Context) error {
 
 	optionFlag := c.QueryParam("option")
 
-	u := &model.TbK8sClusterReq{}
+	u := &model.K8sClusterReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -188,8 +188,8 @@ func RestPostK8sCluster(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param k8sClusterInfo body model.TbK8sClusterInfo true "Details of the K8sCluster object"
-// @Success 200 {object} model.TbK8sClusterInfo
+// @Param k8sClusterInfo body model.K8sClusterInfo true "Details of the K8sCluster object"
+// @Success 200 {object} model.K8sClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId} [put]
@@ -210,8 +210,8 @@ func RestPutK8sCluster(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param k8sNodeGroupReq body model.TbK8sNodeGroupReq true "Details of the K8sNodeGroup object"
-// @Success 200 {object} model.TbK8sClusterInfo
+// @Param k8sNodeGroupReq body model.K8sNodeGroupReq true "Details of the K8sNodeGroup object"
+// @Success 200 {object} model.K8sClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup [post]
@@ -220,7 +220,7 @@ func RestPostK8sNodeGroup(c echo.Context) error {
 	nsId := c.Param("nsId")
 	k8sClusterId := c.Param("k8sClusterId")
 
-	u := &model.TbK8sNodeGroupReq{}
+	u := &model.K8sNodeGroupReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -289,8 +289,8 @@ func RestDeleteK8sNodeGroup(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
 // @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(k8sng01)
-// @Param setK8sNodeGroupAutoscalingReq body model.TbSetK8sNodeGroupAutoscalingReq true "Details of the TbSetK8sNodeGroupAutoscalingReq object"
-// @Success 200 {object} model.TbSetK8sNodeGroupAutoscalingRes
+// @Param setK8sNodeGroupAutoscalingReq body model.SetK8sNodeGroupAutoscalingReq true "Details of the SetK8sNodeGroupAutoscalingReq object"
+// @Success 200 {object} model.SetK8sNodeGroupAutoscalingRes
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/onAutoscaling [put]
@@ -300,7 +300,7 @@ func RestPutSetK8sNodeGroupAutoscaling(c echo.Context) error {
 	k8sClusterId := c.Param("k8sClusterId")
 	k8sNodeGroupName := c.Param("k8sNodeGroupName")
 
-	u := &model.TbSetK8sNodeGroupAutoscalingReq{}
+	u := &model.SetK8sNodeGroupAutoscalingReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -329,8 +329,8 @@ func RestPutSetK8sNodeGroupAutoscaling(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
 // @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(k8sng01)
-// @Param changeK8sNodeGroupAutoscaleSizeReq body model.TbChangeK8sNodeGroupAutoscaleSizeReq true "Details of the TbChangeK8sNodeGroupAutoscaleSizeReq object"
-// @Success 200 {object} model.TbChangeK8sNodeGroupAutoscaleSizeRes
+// @Param changeK8sNodeGroupAutoscaleSizeReq body model.ChangeK8sNodeGroupAutoscaleSizeReq true "Details of the ChangeK8sNodeGroupAutoscaleSizeReq object"
+// @Success 200 {object} model.ChangeK8sNodeGroupAutoscaleSizeRes
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroup/{k8sNodeGroupName}/autoscaleSize [put]
@@ -340,7 +340,7 @@ func RestPutChangeK8sNodeGroupAutoscaleSize(c echo.Context) error {
 	k8sClusterId := c.Param("k8sClusterId")
 	k8sNodeGroupName := c.Param("k8sNodeGroupName")
 
-	u := &model.TbChangeK8sNodeGroupAutoscaleSizeReq{}
+	u := &model.ChangeK8sNodeGroupAutoscaleSizeReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -368,7 +368,7 @@ func RestPutChangeK8sNodeGroupAutoscaleSize(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Success 200 {object} model.TbK8sClusterInfo
+// @Success 200 {object} model.K8sClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId} [get]
@@ -388,7 +388,7 @@ func RestGetK8sCluster(c echo.Context) error {
 
 // Response structure for RestGetAllK8sCluster
 type RestGetAllK8sClusterResponse struct {
-	K8sCluster []model.TbK8sClusterInfo `json:"cluster"`
+	K8sCluster []model.K8sClusterInfo `json:"cluster"`
 }
 
 // RestGetAllK8sCluster godoc
@@ -433,10 +433,10 @@ func RestGetAllK8sCluster(c echo.Context) error {
 		}
 
 		var content struct {
-			K8sCluster []model.TbK8sClusterInfo `json:"K8sClusterInfo"`
+			K8sCluster []model.K8sClusterInfo `json:"K8sClusterInfo"`
 		}
 
-		content.K8sCluster = resourceList.([]model.TbK8sClusterInfo) // type assertion (interface{} -> array)
+		content.K8sCluster = resourceList.([]model.K8sClusterInfo) // type assertion (interface{} -> array)
 		return c.JSON(http.StatusOK, &content)
 	}
 }
@@ -519,7 +519,7 @@ func RestDeleteAllK8sCluster(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param upgradeK8sClusterReq body model.TbUpgradeK8sClusterReq true "Details of the TbUpgradeK8sClusterReq object"
+// @Param upgradeK8sClusterReq body model.UpgradeK8sClusterReq true "Details of the UpgradeK8sClusterReq object"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -529,7 +529,7 @@ func RestPutUpgradeK8sCluster(c echo.Context) error {
 	nsId := c.Param("nsId")
 	k8sClusterId := c.Param("k8sClusterId")
 
-	u := &model.TbUpgradeK8sClusterReq{}
+	u := &model.UpgradeK8sClusterReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -578,10 +578,10 @@ func RestPostK8sClusterDynamicCheckRequest(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param k8sClusterDyanmicReq body model.TbK8sClusterDynamicReq true "Request body to provision K8sCluster dynamically. <br> Must include specId and imageId info. <br> (ex: {name: k8scluster01, imageId: azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
+// @Param k8sClusterDyanmicReq body model.K8sClusterDynamicReq true "Request body to provision K8sCluster dynamically. <br> Must include specId and imageId info. <br> (ex: {name: k8scluster01, imageId: azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
 // @Param option query string false "Option for K8sCluster creation" Enums(hold)
 // @Param x-request-id header string false "Custom request ID"
-// @Success 200 {object} model.TbK8sClusterInfo
+// @Success 200 {object} model.K8sClusterInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/k8sClusterDynamic [post]
@@ -591,7 +591,7 @@ func RestPostK8sClusterDynamic(c echo.Context) error {
 	nsId := c.Param("nsId")
 	optionFlag := c.QueryParam("option")
 
-	req := &model.TbK8sClusterDynamicReq{}
+	req := &model.K8sClusterDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		log.Warn().Err(err).Msg("invalid request")
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -614,9 +614,9 @@ func RestPostK8sClusterDynamic(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
-// @Param k8sNodeGroupDynamicReq body model.TbK8sNodeGroupDynamicReq true "Request body to provision K8sNodeGroup dynamically. <br> Must include specId and imageId info. <br> (ex: {name: k8sng01, imageId: azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
+// @Param k8sNodeGroupDynamicReq body model.K8sNodeGroupDynamicReq true "Request body to provision K8sNodeGroup dynamically. <br> Must include specId and imageId info. <br> (ex: {name: k8sng01, imageId: azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
 // @Param x-request-id header string false "Custom request ID"
-// @Success 200 {object} model.TbK8sNodeGroupInfo
+// @Success 200 {object} model.K8sNodeGroupInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/k8sCluster/{k8sClusterId}/k8sNodeGroupDynamic [post]
@@ -626,7 +626,7 @@ func RestPostK8sNodeGroupDynamic(c echo.Context) error {
 	nsId := c.Param("nsId")
 	k8sClusterId := c.Param("k8sClusterId")
 
-	req := &model.TbK8sNodeGroupDynamicReq{}
+	req := &model.K8sNodeGroupDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		log.Warn().Err(err).Msg("invalid request")
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -686,7 +686,7 @@ func RestGetControlK8sCluster(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param recommendSpecReq body model.RecommendSpecReq false "Recommend K8sCluster's Node plan (filter and priority)"
-// @Success 200 {object} []model.TbSpecInfo
+// @Success 200 {object} []model.SpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /k8sClusterRecommendNode [post]
@@ -718,9 +718,9 @@ func RestRecommendK8sNode(c echo.Context) error {
 // @Param k8sClusterNamespace query string true "Namespace in K8sCluster to apply the command" default(default)
 // @Param k8sClusterPodName query string true "Pod Name in K8sCluster to apply the command" default(mypod)
 // @Param k8sClusterContainerName query string false "Container Name in K8sCluster to apply the command"
-// @Param k8sClusterContainerCmdReq body model.TbK8sClusterContainerCmdReq true "K8sCluster's Container Command Request"
+// @Param k8sClusterContainerCmdReq body model.K8sClusterContainerCmdReq true "K8sCluster's Container Command Request"
 // @Param x-request-id header string false "Custom request ID"
-// @Success 200 {object} model.TbK8sClusterContainerCmdResult
+// @Success 200 {object} model.K8sClusterContainerCmdResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/cmd/k8sCluster/{k8sClusterId} [post]
@@ -732,7 +732,7 @@ func RestPostCmdK8sCluster(c echo.Context) error {
 	k8sClusterPodName := c.QueryParam("k8sClusterPodName")
 	k8sClusterContainerName := c.QueryParam("k8sClusterContainerName")
 
-	req := &model.TbK8sClusterContainerCmdReq{}
+	req := &model.K8sClusterContainerCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -759,7 +759,7 @@ func RestPostCmdK8sCluster(c echo.Context) error {
 // @Param path formData string true "Target path where the file will be stored" default(/tmp)
 // @Param file formData file true "The file to be uploaded (Max 10MB)"
 // @Param x-request-id header string false "Custom request ID"
-// @Success 200 {object} model.TbK8sClusterContainerCmdResults
+// @Success 200 {object} model.K8sClusterContainerCmdResults
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/transferFile/k8sCluster/{k8sClusterId} [post]

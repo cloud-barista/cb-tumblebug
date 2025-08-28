@@ -68,16 +68,16 @@ type SpiderImageInfo struct {
 	KeyValueList []KeyValue `json:"KeyValueList,omitempty" validate:"omitempty" description:"A list of key-value pairs associated with the image."`
 }
 
-// TbImageReq is a struct to handle 'Register image' request toward CB-Tumblebug.
-type TbImageReq struct {
+// ImageReq is a struct to handle 'Register image' request toward CB-Tumblebug.
+type ImageReq struct {
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
 	CspImageName   string `json:"cspImageName" validate:"required"`
 	Description    string `json:"description"`
 }
 
-// TbImageInfo is a struct that represents TB image object.
-type TbImageInfo struct {
+// ImageInfo is a struct that represents TB image object.
+type ImageInfo struct {
 	// Composite primary key
 	Namespace    string `json:"namespace" example:"default" gorm:"primaryKey"`
 	ProviderName string `json:"providerName" gorm:"primaryKey"`
@@ -230,8 +230,8 @@ type SearchImageRequestOptions struct {
 
 // SearchImageResponse is struct for Search Image Request
 type SearchImageResponse struct {
-	ImageCount int           `json:"imageCount"`
-	ImageList  []TbImageInfo `json:"imageList"`
+	ImageCount int         `json:"imageCount"`
+	ImageList  []ImageInfo `json:"imageList"`
 }
 
 // SpiderImageList is struct for Spider Image List

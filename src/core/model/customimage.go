@@ -25,8 +25,8 @@ const (
 	MyImageUnavailable CustomImageStatus = "Unavailable"
 )
 
-// TbVmSnapshotReq is a struct to handle 'Create VM snapshot' request toward CB-Tumblebug.
-type TbVmSnapshotReq struct {
+// VmSnapshotReq is a struct to handle 'Create VM snapshot' request toward CB-Tumblebug.
+type VmSnapshotReq struct {
 	Name string `json:"name" example:"aws-ap-southeast-1-snapshot"`
 }
 
@@ -57,8 +57,8 @@ type SpiderMyImageRegisterReq struct {
 	}
 }
 
-// TbCustomImageReq is a struct to handle a request for Create custom image (VM snapshot)
-type TbCustomImageReq struct {
+// CustomImageReq is a struct to handle a request for Create custom image (VM snapshot)
+type CustomImageReq struct {
 	// This field is for 'Register existing custom image'
 	CspResourceId string `json:"cspResourceId"`
 
@@ -68,8 +68,8 @@ type TbCustomImageReq struct {
 	Description    string `json:"description"`
 }
 
-// TbCustomImageInfo is a struct for custom image (VM snapshot)
-type TbCustomImageInfo struct {
+// CustomImageInfo is a struct for custom image (VM snapshot)
+type CustomImageInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 

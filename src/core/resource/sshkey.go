@@ -65,10 +65,10 @@ func normalizePrivateKey(privateKey string, keyValueList []model.KeyValue) strin
 	return privateKey
 }
 
-// TbSshKeyReqStructLevelValidation is a function to validate 'TbSshKeyReq' object.
-func TbSshKeyReqStructLevelValidation(sl validator.StructLevel) {
+// SshKeyReqStructLevelValidation is a function to validate 'SshKeyReq' object.
+func SshKeyReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(model.TbSshKeyReq)
+	u := sl.Current().Interface().(model.SshKeyReq)
 
 	err := common.CheckString(u.Name)
 	if err != nil {
@@ -78,9 +78,9 @@ func TbSshKeyReqStructLevelValidation(sl validator.StructLevel) {
 }
 
 // CreateSshKey accepts SSH key creation request, creates and returns an TB sshKey object
-func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSshKeyInfo, error) {
+func CreateSshKey(nsId string, u *model.SshKeyReq, option string) (model.SshKeyInfo, error) {
 
-	emptyObj := model.TbSshKeyInfo{}
+	emptyObj := model.SshKeyInfo{}
 
 	resourceType := model.StrSSHKey
 
@@ -194,7 +194,7 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 		return emptyObj, err
 	}
 
-	content := model.TbSshKeyInfo{}
+	content := model.SshKeyInfo{}
 	content.ResourceType = resourceType
 	content.Id = u.Name
 	content.Name = u.Name
@@ -265,9 +265,9 @@ func CreateSshKey(nsId string, u *model.TbSshKeyReq, option string) (model.TbSsh
 
 // UpdateSshKey accepts to-be TB sshKey objects,
 // updates and returns the updated TB sshKey objects
-func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate model.TbSshKeyInfo) (model.TbSshKeyInfo, error) {
+func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate model.SshKeyInfo) (model.SshKeyInfo, error) {
 
-	emptyObj := model.TbSshKeyInfo{}
+	emptyObj := model.SshKeyInfo{}
 
 	resourceType := model.StrSSHKey
 
@@ -300,7 +300,7 @@ func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate model.TbSshKeyInf
 		err := fmt.Errorf("Failed to get the sshKey %s.", sshKeyId)
 		return emptyObj, err
 	}
-	asIsSshKey := model.TbSshKeyInfo{}
+	asIsSshKey := model.SshKeyInfo{}
 	err = common.CopySrcToDest(&tempInterface, &asIsSshKey)
 	if err != nil {
 		err := fmt.Errorf("Failed to CopySrcToDest() %s.", sshKeyId)

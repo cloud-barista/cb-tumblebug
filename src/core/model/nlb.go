@@ -55,7 +55,7 @@ type SpiderNLBHealthCheckerReq struct {
 	Threshold string `json:"threshold" example:"default"` // num, The number of continuous health checks to change the VM status.
 }
 
-type TbNLBHealthCheckerReq struct {
+type NLBHealthCheckerReq struct {
 	// Protocol  string `json:"protocol" example:"TCP"`      // TCP|HTTP|HTTPS
 	// Port      string `json:"port" example:"22"`           // Listener Port or 1-65535
 
@@ -112,8 +112,8 @@ type SpiderNLBListenerInfo struct {
 	KeyValueList []KeyValue `json:"keyValueList"`
 }
 
-// TbNLBListenerInfo is a struct to handle NLB Listener information from the CB-Tumblebug's REST API response
-type TbNLBListenerInfo struct {
+// NLBListenerInfo is a struct to handle NLB Listener information from the CB-Tumblebug's REST API response
+type NLBListenerInfo struct {
 	Protocol string `json:"protocol" example:"TCP"`                                               // TCP|UDP
 	IP       string `json:"ip" example:"x.x.x.x"`                                                 // Auto Generated and attached
 	Port     string `json:"port" example:"80"`                                                    // 1-65535
@@ -143,7 +143,7 @@ type SpiderNLBHealthCheckerInfo struct {
 	KeyValueList []KeyValue `json:"keyValueList"`
 }
 
-type TbNLBHealthCheckerInfo struct {
+type NLBHealthCheckerInfo struct {
 	Protocol  string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port      string `json:"port" example:"22"`      // Listener Port or 1-65535
 	Interval  int    `json:"interval" example:"10"`  // secs, Interval time between health checks.
@@ -163,13 +163,13 @@ type SpiderNLBHealthInfo struct {
 	UnHealthyVMs *[]IID
 }
 
-type TbNLBTargetGroupReq struct {
+type NLBTargetGroupReq struct {
 	Protocol   string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port       string `json:"port" example:"80"`      // Listener Port or 1-65535
 	SubGroupId string `json:"subGroupId" example:"g1"`
 }
 
-type TbNLBTargetGroupInfo struct {
+type NLBTargetGroupInfo struct {
 	Protocol string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port     string `json:"port" example:"80"`      // Listener Port or 1-65535
 
@@ -179,8 +179,8 @@ type TbNLBTargetGroupInfo struct {
 	KeyValueList []KeyValue
 }
 
-// TbNLBReq is a struct to handle 'Create nlb' request toward CB-Tumblebug.
-type TbNLBReq struct { // Tumblebug
+// NLBReq is a struct to handle 'Create nlb' request toward CB-Tumblebug.
+type NLBReq struct { // Tumblebug
 	// Name           string `json:"name" validate:"required" example:"mc"`
 	// ConnectionName string `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
 	// VNetId         string `json:"vNetId" validate:"required" example:"default-shared-aws-ap-northeast-2"`
@@ -195,13 +195,13 @@ type TbNLBReq struct { // Tumblebug
 	// Frontend
 	Listener NLBListenerReq `json:"listener" validate:"required"`
 	// Backend
-	TargetGroup TbNLBTargetGroupReq `json:"targetGroup" validate:"required"`
+	TargetGroup NLBTargetGroupReq `json:"targetGroup" validate:"required"`
 	// HealthChecker
-	HealthChecker TbNLBHealthCheckerReq `json:"healthChecker" validate:"required"`
+	HealthChecker NLBHealthCheckerReq `json:"healthChecker" validate:"required"`
 }
 
-// TbNLBInfo is a struct that represents TB nlb object.
-type TbNLBInfo struct {
+// NLBInfo is a struct that represents TB nlb object.
+type NLBInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 
@@ -225,12 +225,12 @@ type TbNLBInfo struct {
 
 	//------ Frontend
 
-	Listener TbNLBListenerInfo `json:"listener"`
+	Listener NLBListenerInfo `json:"listener"`
 
 	//------ Backend
 
-	TargetGroup   TbNLBTargetGroupInfo   `json:"targetGroup"`
-	HealthChecker TbNLBHealthCheckerInfo `json:"healthChecker"`
+	TargetGroup   NLBTargetGroupInfo   `json:"targetGroup"`
+	HealthChecker NLBHealthCheckerInfo `json:"healthChecker"`
 
 	CreatedTime time.Time
 
@@ -249,20 +249,20 @@ type TbNLBInfo struct {
 	//ResourceGroupName string `json:"resourceGroupName"`
 }
 
-type TbNLBHealthInfo struct { // Tumblebug
+type NLBHealthInfo struct { // Tumblebug
 	AllVMs       []string
 	HealthyVMs   []string
 	UnHealthyVMs []string
 }
 
-// TbNLBAddRemoveVMReq is a struct to handle 'Add/Remove VMs to/from NLB' request toward CB-Tumblebug.
-type TbNLBAddRemoveVMReq struct { // Tumblebug
-	TargetGroup TbNLBTargetGroupInfo `json:"targetGroup"`
+// NLBAddRemoveVMReq is a struct to handle 'Add/Remove VMs to/from NLB' request toward CB-Tumblebug.
+type NLBAddRemoveVMReq struct { // Tumblebug
+	TargetGroup NLBTargetGroupInfo `json:"targetGroup"`
 }
 
 // McNlbInfo is a struct for response of CreateMcSwNlb
 type McNlbInfo struct {
 	MciAccessInfo *MciAccessInfo  `json:"mciAccessInfo"`
-	McNlbHostInfo *TbMciInfo      `json:"mcNlbHostInfo"`
+	McNlbHostInfo *MciInfo        `json:"mcNlbHostInfo"`
 	DeploymentLog MciSshCmdResult `json:"deploymentLog"`
 }

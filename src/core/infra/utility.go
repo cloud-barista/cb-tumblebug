@@ -54,11 +54,11 @@ func init() {
 	// NOTE: only have to register a non-pointer type for 'Tb*Req', validator
 	// internally dereferences during it's type checks.
 
-	validate.RegisterStructValidation(TbMciReqStructLevelValidation, model.TbMciReq{})
-	validate.RegisterStructValidation(TbCreateSubGroupReqStructLevelValidation, model.TbCreateSubGroupReq{})
+	validate.RegisterStructValidation(MciReqStructLevelValidation, model.MciReq{})
+	validate.RegisterStructValidation(CreateSubGroupReqStructLevelValidation, model.CreateSubGroupReq{})
 	validate.RegisterStructValidation(TbMciCmdReqStructLevelValidation, model.MciCmdReq{})
 	// validate.RegisterStructValidation(TbMciRecommendReqStructLevelValidation, MciRecommendReq{})
-	// validate.RegisterStructValidation(TbVmRecommendReqStructLevelValidation, TbVmRecommendReq{})
+	// validate.RegisterStructValidation(VmRecommendReqStructLevelValidation, VmRecommendReq{})
 	// validate.RegisterStructValidation(TbBenchmarkReqStructLevelValidation, BenchmarkReq{})
 	// validate.RegisterStructValidation(TbMultihostBenchmarkReqStructLevelValidation, MultihostBenchmarkReq{})
 
@@ -339,7 +339,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			resourcesInNs := resourceListInNs.([]model.TbVNetInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.VNetInfo) // type assertion
 			if len(resourcesInNs) == 0 {
 				continue
 			}
@@ -363,7 +363,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				err := fmt.Errorf("an error occurred while getting VNet list for subnet inspection")
 				return nullObj, err
 			}
-			vnetsInNs := vnetListInNs.([]model.TbVNetInfo) // type assertion
+			vnetsInNs := vnetListInNs.([]model.VNetInfo) // type assertion
 			if len(vnetsInNs) == 0 {
 				continue
 			}
@@ -388,7 +388,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			resourcesInNs := resourceListInNs.([]model.TbSecurityGroupInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.SecurityGroupInfo) // type assertion
 			if len(resourcesInNs) == 0 {
 				continue
 			}
@@ -410,7 +410,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			resourcesInNs := resourceListInNs.([]model.TbSshKeyInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.SshKeyInfo) // type assertion
 			if len(resourcesInNs) == 0 {
 				continue
 			}
@@ -432,7 +432,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			resourcesInNs := resourceListInNs.([]model.TbDataDiskInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.DataDiskInfo) // type assertion
 			if len(resourcesInNs) == 0 {
 				continue
 			}
@@ -454,7 +454,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			resourcesInNs := resourceListInNs.([]model.TbCustomImageInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.CustomImageInfo) // type assertion
 			if len(resourcesInNs) == 0 {
 				continue
 			}
@@ -782,7 +782,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 			result.SystemMessage = err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := model.TbRegisterVNetReq{}
+			req := model.RegisterVNetReq{}
 			req.ConnectionName = connConfig
 			req.CspResourceId = r.CspResourceId
 			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
@@ -812,7 +812,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := model.TbSecurityGroupReq{}
+			req := model.SecurityGroupReq{}
 			req.ConnectionName = connConfig
 			req.VNetId = "not defined"
 			req.CspResourceId = r.CspResourceId
@@ -843,7 +843,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := model.TbSshKeyReq{}
+			req := model.SshKeyReq{}
 			req.ConnectionName = connConfig
 			req.CspResourceId = r.CspResourceId
 			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
@@ -879,7 +879,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := model.TbDataDiskReq{
+			req := model.DataDiskReq{
 				Name:           fmt.Sprintf("%s-%s", connConfig, r.CspResourceId),
 				ConnectionName: connConfig,
 				CspResourceId:  r.CspResourceId,
@@ -910,7 +910,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := model.TbCustomImageReq{
+			req := model.CustomImageReq{
 				Name:           fmt.Sprintf("%s-%s", connConfig, r.CspResourceId),
 				ConnectionName: connConfig,
 				CspResourceId:  r.CspResourceId,
@@ -944,13 +944,13 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResourcesVm.Resources.OnCspOnly.Info {
-			req := model.TbMciReq{}
+			req := model.MciReq{}
 			req.Description = "MCI for CSP managed VMs (registered to CB-TB)"
 			req.InstallMonAgent = "no"
 			req.Name = mciId
 			req.Name = common.ChangeIdString(req.Name)
 
-			subGroupReq := model.TbCreateSubGroupReq{}
+			subGroupReq := model.CreateSubGroupReq{}
 			subGroupReq.ConnectionName = connConfig
 			subGroupReq.CspResourceId = r.CspResourceId
 			subGroupReq.Description = "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)"
@@ -999,42 +999,42 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 
 }
 
-func FindTbVmByCspId(nsId string, mciId string, vmCspResourceId string) (model.TbVmInfo, error) {
+func FindTbVmByCspId(nsId string, mciId string, vmCspResourceId string) (model.VmInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 
 	err = common.CheckString(mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 
 	err = common.CheckString(vmCspResourceId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 
 	check, err := CheckMci(nsId, mciId)
 
 	if !check {
 		err := fmt.Errorf("The MCI " + mciId + " does not exist.")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 
 	if err != nil {
 		err := fmt.Errorf("Failed to check the existence of the MCI " + mciId + ".")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 
 	mci, err := GetMciObject(nsId, mciId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the MCI " + mciId + ".")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 
 	vms := mci.Vm
@@ -1045,5 +1045,5 @@ func FindTbVmByCspId(nsId string, mciId string, vmCspResourceId string) (model.T
 	}
 
 	err = fmt.Errorf("Cannot find the VM %s in %s/%s", vmCspResourceId, nsId, mciId)
-	return model.TbVmInfo{}, err
+	return model.VmInfo{}, err
 }

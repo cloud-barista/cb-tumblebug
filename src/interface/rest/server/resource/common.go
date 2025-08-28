@@ -148,52 +148,52 @@ func RestGetAllResources(c echo.Context) error {
 		switch resourceType {
 		case model.StrImage:
 			var content struct {
-				Image []model.TbImageInfo `json:"image"`
+				Image []model.ImageInfo `json:"image"`
 			}
 
-			content.Image = resourceList.([]model.TbImageInfo) // type assertion (interface{} -> array)
+			content.Image = resourceList.([]model.ImageInfo) // type assertion (interface{} -> array)
 			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrCustomImage:
 			var content struct {
-				Image []model.TbCustomImageInfo `json:"customImage"`
+				Image []model.CustomImageInfo `json:"customImage"`
 			}
 
-			content.Image = resourceList.([]model.TbCustomImageInfo) // type assertion (interface{} -> array)
+			content.Image = resourceList.([]model.CustomImageInfo) // type assertion (interface{} -> array)
 			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrSecurityGroup:
 			var content struct {
-				SecurityGroup []model.TbSecurityGroupInfo `json:"securityGroup"`
+				SecurityGroup []model.SecurityGroupInfo `json:"securityGroup"`
 			}
 
-			content.SecurityGroup = resourceList.([]model.TbSecurityGroupInfo) // type assertion (interface{} -> array)
+			content.SecurityGroup = resourceList.([]model.SecurityGroupInfo) // type assertion (interface{} -> array)
 			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrSpec:
 			var content struct {
-				Spec []model.TbSpecInfo `json:"spec"`
+				Spec []model.SpecInfo `json:"spec"`
 			}
 
-			content.Spec = resourceList.([]model.TbSpecInfo) // type assertion (interface{} -> array)
+			content.Spec = resourceList.([]model.SpecInfo) // type assertion (interface{} -> array)
 			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrSSHKey:
 			var content struct {
-				SshKey []model.TbSshKeyInfo `json:"sshKey"`
+				SshKey []model.SshKeyInfo `json:"sshKey"`
 			}
 
-			content.SshKey = resourceList.([]model.TbSshKeyInfo) // type assertion (interface{} -> array)
+			content.SshKey = resourceList.([]model.SshKeyInfo) // type assertion (interface{} -> array)
 			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrVNet:
 			var content struct {
-				VNet []model.TbVNetInfo `json:"vNet"`
+				VNet []model.VNetInfo `json:"vNet"`
 			}
 
-			content.VNet = resourceList.([]model.TbVNetInfo) // type assertion (interface{} -> array)
+			content.VNet = resourceList.([]model.VNetInfo) // type assertion (interface{} -> array)
 			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrDataDisk:
 			var content struct {
-				DataDisk []model.TbDataDiskInfo `json:"dataDisk"`
+				DataDisk []model.DataDiskInfo `json:"dataDisk"`
 			}
 
-			content.DataDisk = resourceList.([]model.TbDataDiskInfo) // type assertion (interface{} -> array)
+			content.DataDisk = resourceList.([]model.DataDiskInfo) // type assertion (interface{} -> array)
 			return clientManager.EndRequestWithLog(c, err, content)
 		default:
 			err := fmt.Errorf("Not accepatble resourceType: " + resourceType)

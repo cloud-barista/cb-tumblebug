@@ -320,7 +320,7 @@ func RunAllBenchmarks(nsId string, mciId string, host string) (*model.BenchmarkI
 		if targetSpecId == empty {
 			break
 		}
-		specInfo := model.TbSpecInfo{}
+		specInfo := model.SpecInfo{}
 		specInfo, err = resource.GetSpec(model.SystemCommonNs, targetSpecId)
 		if err == nil {
 
@@ -457,7 +457,7 @@ func RunLatencyBenchmark(nsId string, mciId string, host string) (*model.Benchma
 		if targetSpecId == empty {
 			break
 		}
-		specInfo := model.TbSpecInfo{}
+		specInfo := model.SpecInfo{}
 		specInfo, err = resource.GetSpec(model.SystemCommonNs, targetSpecId)
 		if err == nil {
 			mrttArray[0][i] = specInfo.RegionName

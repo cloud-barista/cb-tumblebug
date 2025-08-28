@@ -30,8 +30,8 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option: [required params for register] connectionName, name, cspResourceId, fingerprint, username, publicKey, privateKey" Enums(register)
-// @Param sshKeyInfo body model.TbSshKeyReq true "Details for an SSH Key object"
-// @Success 200 {object} model.TbSshKeyInfo
+// @Param sshKeyInfo body model.SshKeyReq true "Details for an SSH Key object"
+// @Success 200 {object} model.SshKeyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey [post]
@@ -41,7 +41,7 @@ func RestPostSshKey(c echo.Context) error {
 
 	optionFlag := c.QueryParam("option")
 
-	u := &model.TbSshKeyReq{}
+	u := &model.SshKeyReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -57,10 +57,10 @@ func RestPostSshKey(c echo.Context) error {
 // @Tags [Infra Resource] Access Key Management
 // @Accept  json
 // @Produce  json
-// @Param sshKeyInfo body model.TbSshKeyInfo true "Details for an SSH Key object"
+// @Param sshKeyInfo body model.SshKeyInfo true "Details for an SSH Key object"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param sshKeyId path string true "SshKey ID"
-// @Success 200 {object} model.TbSshKeyInfo
+// @Success 200 {object} model.SshKeyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [put]
@@ -69,7 +69,7 @@ func RestPutSshKey(c echo.Context) error {
 	nsId := c.Param("nsId")
 	sshKeyId := c.Param("resourceId")
 
-	u := &model.TbSshKeyInfo{}
+	u := &model.SshKeyInfo{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -87,7 +87,7 @@ func RestPutSshKey(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param sshKeyId path string true "SSH Key ID"
-// @Success 200 {object} model.TbSshKeyInfo
+// @Success 200 {object} model.SshKeyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [get]
@@ -98,7 +98,7 @@ func RestGetSshKey(c echo.Context) error {
 
 // Response struct for RestGetAllSshKey
 type RestGetAllSshKeyResponse struct {
-	SshKey []model.TbSshKeyInfo `json:"sshKey"`
+	SshKey []model.SshKeyInfo `json:"sshKey"`
 }
 
 // RestGetAllSshKey godoc

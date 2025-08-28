@@ -34,8 +34,8 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option: " Enums(register)
-// @Param dataDiskInfo body model.TbDataDiskReq true "Details for an Data Disk object"
-// @Success 200 {object} model.TbDataDiskInfo
+// @Param dataDiskInfo body model.DataDiskReq true "Details for an Data Disk object"
+// @Success 200 {object} model.DataDiskInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/dataDisk [post]
@@ -45,7 +45,7 @@ func RestPostDataDisk(c echo.Context) error {
 
 	optionFlag := c.QueryParam("option")
 
-	u := &model.TbDataDiskReq{}
+	u := &model.DataDiskReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -61,10 +61,10 @@ func RestPostDataDisk(c echo.Context) error {
 // @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
-// @Param dataDiskUpsizeReq body model.TbDataDiskUpsizeReq true "Request body to upsize the dataDisk"
+// @Param dataDiskUpsizeReq body model.DataDiskUpsizeReq true "Request body to upsize the dataDisk"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param dataDiskId path string true "DataDisk ID"
-// @Success 200 {object} model.TbDataDiskInfo
+// @Success 200 {object} model.DataDiskInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/dataDisk/{dataDiskId} [put]
@@ -73,7 +73,7 @@ func RestPutDataDisk(c echo.Context) error {
 	nsId := c.Param("nsId")
 	dataDiskId := c.Param("resourceId")
 
-	u := &model.TbDataDiskUpsizeReq{}
+	u := &model.DataDiskUpsizeReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -91,7 +91,7 @@ func RestPutDataDisk(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param dataDiskId path string true "Data Disk ID"
-// @Success 200 {object} model.TbDataDiskInfo
+// @Success 200 {object} model.DataDiskInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/dataDisk/{dataDiskId} [get]
@@ -102,7 +102,7 @@ func RestGetDataDisk(c echo.Context) error {
 
 // Response struct for RestGetAllDataDisk
 type RestGetAllDataDiskResponse struct {
-	DataDisk []model.TbDataDiskInfo `json:"dataDisk"`
+	DataDisk []model.DataDiskInfo `json:"dataDisk"`
 }
 
 // RestGetAllDataDisk godoc
@@ -166,13 +166,13 @@ func RestDelAllDataDisk(c echo.Context) error {
 // @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
-// @Param attachDetachDataDiskReq body model.TbAttachDetachDataDiskReq false "Request body to attach/detach dataDisk"
+// @Param attachDetachDataDiskReq body model.AttachDetachDataDiskReq false "Request body to attach/detach dataDisk"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Param option query string true "Option for MCI" Enums(attach, detach)
 // @Param force query string false "Force to attach/detach even if VM info is not matched" Enums(true, false)
-// @Success 200 {object} model.TbVmInfo
+// @Success 200 {object} model.VmInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [put]
@@ -193,7 +193,7 @@ func RestPutVmDataDisk(c echo.Context) error {
 		}
 	}
 
-	u := &model.TbAttachDetachDataDiskReq{}
+	u := &model.AttachDetachDataDiskReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -218,11 +218,11 @@ func RestPutVmDataDisk(c echo.Context) error {
 // @Tags [Infra Resource] Data Disk Management
 // @Accept  json
 // @Produce  json
-// @Param dataDiskInfo body model.TbDataDiskVmReq true "Details for an Data Disk object"
+// @Param dataDiskInfo body model.DataDiskVmReq true "Details for an Data Disk object"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
-// @Success 200 {object} model.TbVmInfo
+// @Success 200 {object} model.VmInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk [post]
 func RestPostVmDataDisk(c echo.Context) error {
@@ -231,7 +231,7 @@ func RestPostVmDataDisk(c echo.Context) error {
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
 
-	u := &model.TbDataDiskVmReq{}
+	u := &model.DataDiskVmReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -277,7 +277,7 @@ func RestGetVmDataDisk(c echo.Context) error {
 		}
 	} else {
 		content = RestGetAllDataDiskResponse{
-			DataDisk: result.([]model.TbDataDiskInfo),
+			DataDisk: result.([]model.DataDiskInfo),
 		}
 	}
 
