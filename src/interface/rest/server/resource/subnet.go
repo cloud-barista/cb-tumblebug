@@ -34,8 +34,8 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
-// @Param subnetReq body model.TbSubnetReq true "Details for an Subnet object"
-// @Success 200 {object} model.TbSubnetInfo
+// @Param subnetReq body model.SubnetReq true "Details for an Subnet object"
+// @Success 200 {object} model.SubnetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet [post]
@@ -56,7 +56,7 @@ func RestPostSubnet(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	reqt := &model.TbSubnetReq{}
+	reqt := &model.SubnetReq{}
 	if err := c.Bind(reqt); err != nil {
 		log.Warn().Err(err).Msg("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
@@ -83,7 +83,7 @@ func RestPostSubnet(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
 // @Param subnetId path string true "Subnet ID"
-// @Success 200 {object} model.TbSubnetInfo
+// @Success 200 {object} model.SubnetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId} [get]
@@ -123,7 +123,7 @@ func RestGetSubnet(c echo.Context) error {
 
 // Response structure for RestGetAllSubnet
 type RestGetAllSubnetResponse struct {
-	SubnetInfoList []model.TbSubnetInfo `json:"subnetInfoList"`
+	SubnetInfoList []model.SubnetInfo `json:"subnetInfoList"`
 }
 
 // RestGetListSubnet godoc
@@ -177,8 +177,8 @@ func RestGetListSubnet(c echo.Context) error {
 // @Tags [Infra Resource] Network Management
 // @Accept  json
 // @Produce  json
-// @Param subnetInfo body model.TbSubnetInfo true "Details for an Subnet object"
-// @Success 200 {object} model.TbSubnetInfo
+// @Param subnetInfo body model.SubnetInfo true "Details for an Subnet object"
+// @Success 200 {object} model.SubnetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId} [put]
@@ -192,7 +192,7 @@ func RestPutSubnet(c echo.Context) error {
 /*
 // Response structure for RestGetAllSubnet
 type RestGetAllSubnetResponse struct {
-	Subnet []model.TbSubnetInfo `json:"subnet"`
+	Subnet []model.SubnetInfo `json:"subnet"`
 }
 
 */
@@ -299,8 +299,8 @@ func RestDelAllSubnet(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param vNetId path string true "VNet ID"
-// @Param subnetReq body model.TbRegisterSubnetReq true "Details for an Subnet object"
-// @Success 200 {object} model.TbSubnetInfo
+// @Param subnetReq body model.RegisterSubnetReq true "Details for an Subnet object"
+// @Success 200 {object} model.SubnetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/registerCspResource/vNet/{vNetId}/subnet [post]
@@ -321,7 +321,7 @@ func RestPostRegisterSubnet(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
 	}
 
-	reqt := &model.TbRegisterSubnetReq{}
+	reqt := &model.RegisterSubnetReq{}
 	if err := c.Bind(reqt); err != nil {
 		log.Warn().Err(err).Msg("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})

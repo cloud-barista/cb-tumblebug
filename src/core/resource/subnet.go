@@ -32,10 +32,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// TbSubnetReqStructLevelValidation is a function to validate 'TbSubnetReq' object.
-func TbSubnetReqStructLevelValidation(sl validator.StructLevel) {
+// SubnetReqStructLevelValidation is a function to validate 'SubnetReq' object.
+func SubnetReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(model.TbSubnetReq)
+	u := sl.Current().Interface().(model.SubnetReq)
 
 	err := common.CheckString(u.Name)
 	if err != nil {
@@ -44,7 +44,7 @@ func TbSubnetReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
-func ValidateSubnetReq(subnetReq *model.TbSubnetReq, existingVNet model.TbVNetInfo) error {
+func ValidateSubnetReq(subnetReq *model.SubnetReq, existingVNet model.VNetInfo) error {
 	log.Debug().Msg("ValidateSubnetReq")
 	log.Debug().Msgf("Subnet: %+v", subnetReq)
 
@@ -189,7 +189,7 @@ type spiderSubnetInfo struct {
 }
 
 // CreateSubnet creates and returns the vNet object
-func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (model.TbSubnetInfo, error) {
+func CreateSubnet(nsId string, vNetId string, subnetReq *model.SubnetReq) (model.SubnetInfo, error) {
 	log.Info().Msg("CreateSubnet")
 
 	log.Debug().Msgf("nsId: %s", nsId)
@@ -197,9 +197,9 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 	log.Debug().Msgf("subnetReq: %+v", subnetReq)
 
 	// subnet objects
-	var emptyRet model.TbSubnetInfo
-	var vNetInfo model.TbVNetInfo
-	var subnetInfo model.TbSubnetInfo
+	var emptyRet model.SubnetInfo
+	var vNetInfo model.VNetInfo
+	var subnetInfo model.SubnetInfo
 	var err error = nil
 
 	/*
@@ -452,12 +452,12 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.TbSubnetReq) (mod
 }
 
 // GetSubnet
-func GetSubnet(nsId string, vNetId string, subnetId string) (model.TbSubnetInfo, error) {
+func GetSubnet(nsId string, vNetId string, subnetId string) (model.SubnetInfo, error) {
 	log.Info().Msg("GetSubnet")
 
 	// subnet objects
-	var emptyRet model.TbSubnetInfo
-	var subnetInfo model.TbSubnetInfo
+	var emptyRet model.SubnetInfo
+	var subnetInfo model.SubnetInfo
 
 	/*
 	 *	Validate the input parameters
@@ -577,12 +577,12 @@ func GetSubnet(nsId string, vNetId string, subnetId string) (model.TbSubnetInfo,
 }
 
 // ListSubnet
-func ListSubnet(nsId string, vNetId string) ([]model.TbSubnetInfo, error) {
+func ListSubnet(nsId string, vNetId string) ([]model.SubnetInfo, error) {
 	log.Info().Msg("ListSubnet")
 
 	// subnet objects
-	var emptyRet []model.TbSubnetInfo
-	var subnetInfoList []model.TbSubnetInfo
+	var emptyRet []model.SubnetInfo
+	var subnetInfoList []model.SubnetInfo
 
 	/*
 	 *	Validate the input parameters
@@ -674,7 +674,7 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 		return emptyRet, err
 	}
 	// vNet object
-	var vNetInfo model.TbVNetInfo
+	var vNetInfo model.VNetInfo
 	err = json.Unmarshal([]byte(vNetKv.Value), &vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -693,7 +693,7 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 		return emptyRet, err
 	}
 	// subnet object
-	var subnetInfo model.TbSubnetInfo
+	var subnetInfo model.SubnetInfo
 	err = json.Unmarshal([]byte(subnetKeyValue.Value), &subnetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -857,8 +857,8 @@ func RefineSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 	// subnet objects
 	var emptyRet model.SimpleMsg
 	var ret model.SimpleMsg
-	var vNetInfo model.TbVNetInfo
-	var subnetInfo model.TbSubnetInfo
+	var vNetInfo model.VNetInfo
+	var subnetInfo model.SubnetInfo
 
 	// Set the resource type
 	parentResourceType := model.StrVNet
@@ -1026,13 +1026,13 @@ func RefineSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 	return ret, nil
 }
 
-func RegisterSubnet(nsId string, vNetId string, subnetReq *model.TbRegisterSubnetReq) (model.TbSubnetInfo, error) {
+func RegisterSubnet(nsId string, vNetId string, subnetReq *model.RegisterSubnetReq) (model.SubnetInfo, error) {
 	log.Info().Msg("RegisterSubnet")
 
 	// subnet objects
-	var emptyRet model.TbSubnetInfo
-	var vNetInfo model.TbVNetInfo
-	var subnetInfo model.TbSubnetInfo
+	var emptyRet model.SubnetInfo
+	var vNetInfo model.VNetInfo
+	var subnetInfo model.SubnetInfo
 	var err error = nil
 
 	/*
@@ -1317,7 +1317,7 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 		return emptyRet, err
 	}
 	// vNet object
-	var vNetInfo model.TbVNetInfo
+	var vNetInfo model.VNetInfo
 	err = json.Unmarshal([]byte(vNetKv.Value), &vNetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1336,7 +1336,7 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 		return emptyRet, err
 	}
 	// subnet object
-	var subnetInfo model.TbSubnetInfo
+	var subnetInfo model.SubnetInfo
 	err = json.Unmarshal([]byte(subnetKv.Value), &subnetInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")

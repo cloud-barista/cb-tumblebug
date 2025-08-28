@@ -860,7 +860,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/model.TbSpecInfo'
+                  $ref: '#/components/schemas/model.SpecInfo'
         "404":
           description: Not Found
           content:
@@ -1812,7 +1812,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbK8sClusterContainerCmdReq'
+              $ref: '#/components/schemas/model.K8sClusterContainerCmdReq'
         required: true
       responses:
         "200":
@@ -1820,7 +1820,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbK8sClusterContainerCmdResult'
+                $ref: '#/components/schemas/model.K8sClusterContainerCmdResult'
         "404":
           description: Not Found
           content:
@@ -2121,7 +2121,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbVNetInfo'
+                $ref: '#/components/schemas/model.VNetInfo'
         "404":
           description: Not Found
           content:
@@ -2315,7 +2315,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbK8sClusterReq'
+              $ref: '#/components/schemas/model.K8sClusterReq'
         required: true
       responses:
         "200":
@@ -2323,7 +2323,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbK8sClusterInfo'
+                $ref: '#/components/schemas/model.K8sClusterInfo'
         "404":
           description: Not Found
           content:
@@ -2404,7 +2404,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbK8sClusterInfo'
+                $ref: '#/components/schemas/model.K8sClusterInfo'
         "404":
           description: Not Found
           content:
@@ -2485,7 +2485,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbK8sNodeGroupReq'
+              $ref: '#/components/schemas/model.K8sNodeGroupReq'
         required: true
       responses:
         "200":
@@ -2493,7 +2493,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbK8sClusterInfo'
+                $ref: '#/components/schemas/model.K8sClusterInfo'
         "404":
           description: Not Found
           content:
@@ -2586,11 +2586,11 @@ paths:
           type: string
           default: k8sng01
       requestBody:
-        description: Details of the TbChangeK8sNodeGroupAutoscaleSizeReq object
+        description: Details of the ChangeK8sNodeGroupAutoscaleSizeReq object
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbChangeK8sNodeGroupAutoscaleSizeReq'
+              $ref: '#/components/schemas/model.ChangeK8sNodeGroupAutoscaleSizeReq'
         required: true
       responses:
         "200":
@@ -2598,7 +2598,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbChangeK8sNodeGroupAutoscaleSizeRes'
+                $ref: '#/components/schemas/model.ChangeK8sNodeGroupAutoscaleSizeRes'
         "404":
           description: Not Found
           content:
@@ -2642,11 +2642,11 @@ paths:
           type: string
           default: k8sng01
       requestBody:
-        description: Details of the TbSetK8sNodeGroupAutoscalingReq object
+        description: Details of the SetK8sNodeGroupAutoscalingReq object
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbSetK8sNodeGroupAutoscalingReq'
+              $ref: '#/components/schemas/model.SetK8sNodeGroupAutoscalingReq'
         required: true
       responses:
         "200":
@@ -2654,7 +2654,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSetK8sNodeGroupAutoscalingRes'
+                $ref: '#/components/schemas/model.SetK8sNodeGroupAutoscalingRes'
         "404":
           description: Not Found
           content:
@@ -2703,7 +2703,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbK8sNodeGroupDynamicReq'
+              $ref: '#/components/schemas/model.K8sNodeGroupDynamicReq'
         required: true
       responses:
         "200":
@@ -2711,7 +2711,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbK8sNodeGroupInfo'
+                $ref: '#/components/schemas/model.K8sNodeGroupInfo'
         "404":
           description: Not Found
           content:
@@ -2748,11 +2748,11 @@ paths:
           type: string
           default: k8scluster01
       requestBody:
-        description: Details of the TbUpgradeK8sClusterReq object
+        description: Details of the UpgradeK8sClusterReq object
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbUpgradeK8sClusterReq'
+              $ref: '#/components/schemas/model.UpgradeK8sClusterReq'
         required: true
       responses:
         "200":
@@ -2810,7 +2810,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbK8sClusterDynamicReq'
+              $ref: '#/components/schemas/model.K8sClusterDynamicReq'
         required: true
       responses:
         "200":
@@ -2818,7 +2818,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbK8sClusterInfo'
+                $ref: '#/components/schemas/model.K8sClusterInfo'
         "404":
           description: Not Found
           content:
@@ -2936,7 +2936,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbMciReq'
+              $ref: '#/components/schemas/model.MciReq'
         required: true
       responses:
         "200":
@@ -2945,7 +2945,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbMciInfo'
+                $ref: '#/components/schemas/model.MciInfo'
         "400":
           description: Invalid request parameters or missing required fields
           content:
@@ -3068,7 +3068,7 @@ paths:
                     '[AccessInfo]':
                       $ref: '#/components/schemas/model.MciAccessInfo'
                     '[DEFAULT]':
-                      $ref: '#/components/schemas/model.TbMciInfo'
+                      $ref: '#/components/schemas/model.MciInfo'
                     '[ID]':
                       $ref: '#/components/schemas/model.IdList'
                     '[STATUS]':
@@ -3219,7 +3219,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbSecurityGroupUpdateReq'
+              $ref: '#/components/schemas/model.SecurityGroupUpdateReq'
         required: true
       responses:
         "200":
@@ -3228,7 +3228,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbRestWrapperSecurityGroupUpdateResponse'
+                $ref: '#/components/schemas/model.RestWrapperSecurityGroupUpdateResponse'
         "404":
           description: Not Found
           content:
@@ -3318,7 +3318,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbNLBReq'
+              $ref: '#/components/schemas/model.NLBReq'
         required: true
       responses:
         "200":
@@ -3439,7 +3439,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbNLBReq'
+              $ref: '#/components/schemas/model.NLBReq'
         required: true
       responses:
         "200":
@@ -3447,7 +3447,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbNLBInfo'
+                $ref: '#/components/schemas/model.NLBInfo'
         "404":
           description: Not Found
           content:
@@ -3535,7 +3535,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbNLBInfo'
+                $ref: '#/components/schemas/model.NLBInfo'
         "404":
           description: Not Found
           content:
@@ -3623,7 +3623,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbNLBInfo'
+                $ref: '#/components/schemas/model.NLBInfo'
         "404":
           description: Not Found
           content:
@@ -3670,7 +3670,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbNLBAddRemoveVMReq'
+              $ref: '#/components/schemas/model.NLBAddRemoveVMReq'
         required: true
       responses:
         "200":
@@ -3678,7 +3678,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbNLBInfo'
+                $ref: '#/components/schemas/model.NLBInfo'
         "404":
           description: Not Found
           content:
@@ -3725,7 +3725,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbNLBAddRemoveVMReq'
+              $ref: '#/components/schemas/model.NLBAddRemoveVMReq'
         required: true
       responses:
         "200":
@@ -3975,7 +3975,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbScaleOutSubGroupReq'
+              $ref: '#/components/schemas/model.ScaleOutSubGroupReq'
         required: true
       responses:
         "200":
@@ -3984,7 +3984,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbMciInfo'
+                $ref: '#/components/schemas/model.MciInfo'
         "400":
           description: "Invalid scale-out request, insufficient quotas, or invalid\
             \ VM count"
@@ -4090,7 +4090,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbCreateSubGroupReq'
+              $ref: '#/components/schemas/model.CreateSubGroupReq'
         required: true
       responses:
         "200":
@@ -4099,7 +4099,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbMciInfo'
+                $ref: '#/components/schemas/model.MciInfo'
         "400":
           description: "Invalid VM request, missing required resources, or configuration\
             \ conflicts"
@@ -4289,11 +4289,11 @@ paths:
                 - type: object
                   properties:
                     '[DEFAULT]':
-                      $ref: '#/components/schemas/model.TbVmInfo'
+                      $ref: '#/components/schemas/model.VmInfo'
                     '[IDNAME]':
-                      $ref: '#/components/schemas/model.TbIdNameInDetailInfo'
+                      $ref: '#/components/schemas/model.IdNameInDetailInfo'
                     '[STATUS]':
-                      $ref: '#/components/schemas/model.TbVmStatusInfo'
+                      $ref: '#/components/schemas/model.VmStatusInfo'
         "404":
           description: Not Found
           content:
@@ -4459,7 +4459,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbAttachDetachDataDiskReq'
+              $ref: '#/components/schemas/model.AttachDetachDataDiskReq'
         required: false
       responses:
         "200":
@@ -4467,7 +4467,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbVmInfo'
+                $ref: '#/components/schemas/model.VmInfo'
         "404":
           description: Not Found
           content:
@@ -4514,7 +4514,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbDataDiskVmReq'
+              $ref: '#/components/schemas/model.DataDiskVmReq'
         required: true
       responses:
         "200":
@@ -4522,7 +4522,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbVmInfo'
+                $ref: '#/components/schemas/model.VmInfo'
         "404":
           description: Not Found
           content:
@@ -4564,7 +4564,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbVmSnapshotReq'
+              $ref: '#/components/schemas/model.VmSnapshotReq'
         required: true
       responses:
         "200":
@@ -4572,7 +4572,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbCustomImageInfo'
+                $ref: '#/components/schemas/model.CustomImageInfo'
         "404":
           description: Not Found
           content:
@@ -4660,7 +4660,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbCreateSubGroupDynamicReq'
+              $ref: '#/components/schemas/model.CreateSubGroupDynamicReq'
         required: true
       responses:
         "200":
@@ -4669,7 +4669,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbMciInfo'
+                $ref: '#/components/schemas/model.MciInfo'
         "400":
           description: Invalid VM request or incompatible configuration parameters
           content:
@@ -5090,7 +5090,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbMciDynamicReq'
+              $ref: '#/components/schemas/model.MciDynamicReq'
         required: true
       responses:
         "200":
@@ -5099,7 +5099,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbMciInfo'
+                $ref: '#/components/schemas/model.MciInfo'
         "400":
           description: "Invalid request format, missing required fields, or unsupported\
             \ configuration"
@@ -5185,7 +5185,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbMciDynamicReq'
+              $ref: '#/components/schemas/model.MciDynamicReq'
         required: true
       responses:
         "200":
@@ -5349,7 +5349,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbVmInfo'
+                $ref: '#/components/schemas/model.VmInfo'
         "404":
           description: Not Found
           content:
@@ -5566,7 +5566,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbRegisterVNetReq'
+              $ref: '#/components/schemas/model.RegisterVNetReq'
         required: true
       responses:
         "201":
@@ -5574,7 +5574,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbVNetInfo'
+                $ref: '#/components/schemas/model.VNetInfo'
         "404":
           description: Not Found
           content:
@@ -5614,7 +5614,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbRegisterSubnetReq'
+              $ref: '#/components/schemas/model.RegisterSubnetReq'
         required: true
       responses:
         "200":
@@ -5622,7 +5622,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSubnetInfo'
+                $ref: '#/components/schemas/model.SubnetInfo'
         "404":
           description: Not Found
           content:
@@ -5689,7 +5689,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbMciReq'
+              $ref: '#/components/schemas/model.MciReq'
         required: true
       responses:
         "200":
@@ -5698,7 +5698,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbMciInfo'
+                $ref: '#/components/schemas/model.MciInfo'
         "400":
           description: Invalid request format or missing required CSP VM identifiers
           content:
@@ -5810,7 +5810,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbCustomImageReq'
+              $ref: '#/components/schemas/model.CustomImageReq'
         required: true
       responses:
         "200":
@@ -5818,7 +5818,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbCustomImageInfo'
+                $ref: '#/components/schemas/model.CustomImageInfo'
         "404":
           description: Not Found
           content:
@@ -5891,7 +5891,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbCustomImageInfo'
+                $ref: '#/components/schemas/model.CustomImageInfo'
         "404":
           description: Not Found
           content:
@@ -6021,7 +6021,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbDataDiskReq'
+              $ref: '#/components/schemas/model.DataDiskReq'
         required: true
       responses:
         "200":
@@ -6029,7 +6029,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbDataDiskInfo'
+                $ref: '#/components/schemas/model.DataDiskInfo'
         "404":
           description: Not Found
           content:
@@ -6102,7 +6102,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbDataDiskInfo'
+                $ref: '#/components/schemas/model.DataDiskInfo'
         "404":
           description: Not Found
           content:
@@ -6140,7 +6140,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbDataDiskUpsizeReq'
+              $ref: '#/components/schemas/model.DataDiskUpsizeReq'
         required: true
       responses:
         "200":
@@ -6148,7 +6148,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbDataDiskInfo'
+                $ref: '#/components/schemas/model.DataDiskInfo'
         "404":
           description: Not Found
           content:
@@ -6333,7 +6333,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbImageReq'
+              $ref: '#/components/schemas/model.ImageReq'
         required: false
       responses:
         "200":
@@ -6341,7 +6341,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbImageInfo'
+                $ref: '#/components/schemas/model.ImageInfo'
         "404":
           description: Not Found
           content:
@@ -6417,7 +6417,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbImageInfo'
+                $ref: '#/components/schemas/model.ImageInfo'
         "404":
           description: Not Found
           content:
@@ -6455,7 +6455,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbImageInfo'
+              $ref: '#/components/schemas/model.ImageInfo'
         required: true
       responses:
         "200":
@@ -6463,7 +6463,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbImageInfo'
+                $ref: '#/components/schemas/model.ImageInfo'
         "404":
           description: Not Found
           content:
@@ -6880,7 +6880,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbSecurityGroupReq'
+              $ref: '#/components/schemas/model.SecurityGroupReq'
         required: true
       responses:
         "200":
@@ -6888,7 +6888,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSecurityGroupInfo'
+                $ref: '#/components/schemas/model.SecurityGroupInfo'
         "404":
           description: Not Found
           content:
@@ -6961,7 +6961,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSecurityGroupInfo'
+                $ref: '#/components/schemas/model.SecurityGroupInfo'
         "404":
           description: Not Found
           content:
@@ -7019,7 +7019,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbSecurityGroupUpdateReq'
+              $ref: '#/components/schemas/model.SecurityGroupUpdateReq'
         required: true
       responses:
         "200":
@@ -7027,7 +7027,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSecurityGroupUpdateResponse'
+                $ref: '#/components/schemas/model.SecurityGroupUpdateResponse'
         "404":
           description: Not Found
           content:
@@ -7116,7 +7116,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbSecurityGroupUpdateReq'
+              $ref: '#/components/schemas/model.SecurityGroupUpdateReq'
         required: true
       responses:
         "200":
@@ -7124,7 +7124,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSecurityGroupUpdateResponse'
+                $ref: '#/components/schemas/model.SecurityGroupUpdateResponse'
         "404":
           description: Not Found
           content:
@@ -7176,7 +7176,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbSecurityGroupUpdateReq'
+              $ref: '#/components/schemas/model.SecurityGroupUpdateReq'
         required: true
       responses:
         "200":
@@ -7184,7 +7184,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSecurityGroupUpdateResponse'
+                $ref: '#/components/schemas/model.SecurityGroupUpdateResponse'
         "404":
           description: Not Found
           content:
@@ -7228,7 +7228,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbSpecReq'
+              $ref: '#/components/schemas/model.SpecReq'
         required: false
       responses:
         "200":
@@ -7236,7 +7236,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSpecInfo'
+                $ref: '#/components/schemas/model.SpecInfo'
         "404":
           description: Not Found
           content:
@@ -7277,7 +7277,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSpecInfo'
+                $ref: '#/components/schemas/model.SpecInfo'
         "404":
           description: Not Found
           content:
@@ -7315,7 +7315,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbSpecInfo'
+              $ref: '#/components/schemas/model.SpecInfo'
         required: true
       responses:
         "200":
@@ -7323,7 +7323,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSpecInfo'
+                $ref: '#/components/schemas/model.SpecInfo'
         "404":
           description: Not Found
           content:
@@ -7665,7 +7665,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbSshKeyReq'
+              $ref: '#/components/schemas/model.SshKeyReq'
         required: true
       responses:
         "200":
@@ -7673,7 +7673,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSshKeyInfo'
+                $ref: '#/components/schemas/model.SshKeyInfo'
         "404":
           description: Not Found
           content:
@@ -7746,7 +7746,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSshKeyInfo'
+                $ref: '#/components/schemas/model.SshKeyInfo'
         "404":
           description: Not Found
           content:
@@ -7784,7 +7784,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbSshKeyInfo'
+              $ref: '#/components/schemas/model.SshKeyInfo'
         required: true
       responses:
         "200":
@@ -7792,7 +7792,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSshKeyInfo'
+                $ref: '#/components/schemas/model.SshKeyInfo'
         "404":
           description: Not Found
           content:
@@ -7916,7 +7916,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbVNetReq'
+              $ref: '#/components/schemas/model.VNetReq'
         required: false
       responses:
         "201":
@@ -7924,7 +7924,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbVNetInfo'
+                $ref: '#/components/schemas/model.VNetInfo'
         "404":
           description: Not Found
           content:
@@ -7997,7 +7997,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbVNetInfo'
+                $ref: '#/components/schemas/model.VNetInfo'
         "404":
           description: Not Found
           content:
@@ -8121,7 +8121,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbSubnetReq'
+              $ref: '#/components/schemas/model.SubnetReq'
         required: true
       responses:
         "200":
@@ -8129,7 +8129,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSubnetInfo'
+                $ref: '#/components/schemas/model.SubnetInfo'
         "404":
           description: Not Found
           content:
@@ -8176,7 +8176,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbSubnetInfo'
+                $ref: '#/components/schemas/model.SubnetInfo'
         "404":
           description: Not Found
           content:
@@ -8385,7 +8385,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbK8sClusterContainerCmdResults'
+                $ref: '#/components/schemas/model.K8sClusterContainerCmdResults'
         "404":
           description: Not Found
           content:
@@ -8993,7 +8993,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/model.TbSpecInfo'
+                  $ref: '#/components/schemas/model.SpecInfo'
         "404":
           description: Not Found
           content:
@@ -9445,7 +9445,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.TbMciDynamicReq'
+              $ref: '#/components/schemas/model.MciDynamicReq'
         required: false
       responses:
         "200":
@@ -9453,7 +9453,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.TbMciInfo'
+                $ref: '#/components/schemas/model.MciInfo'
         "400":
           description: Invalid system option or malformed request
           content:
@@ -9835,7 +9835,7 @@ components:
         mci:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbMciInfo'
+            $ref: '#/components/schemas/model.MciInfo'
     infra.RestGetAllMciStatusResponse:
       type: object
       properties:
@@ -9849,7 +9849,7 @@ components:
         nlb:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbNLBInfo'
+            $ref: '#/components/schemas/model.NLBInfo'
     infra.RestGetBenchmarkRequest:
       type: object
       properties:
@@ -9887,6 +9887,13 @@ components:
           type: string
           example: "65532"
           default: "65532"
+    model.AttachDetachDataDiskReq:
+      required:
+      - dataDiskId
+      type: object
+      properties:
+        dataDiskId:
+          type: string
     model.AutoAction:
       type: object
       properties:
@@ -9907,7 +9914,7 @@ components:
           allOf:
           - $ref: '#/components/schemas/model.MciCmdReq'
         vmDynamicReq:
-          $ref: '#/components/schemas/model.TbCreateSubGroupDynamicReq'
+          $ref: '#/components/schemas/model.CreateSubGroupDynamicReq'
     model.AutoCondition:
       type: object
       properties:
@@ -10002,6 +10009,72 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/model.RegionDetail'
+    model.ChangeK8sNodeGroupAutoscaleSizeReq:
+      type: object
+      properties:
+        desiredNodeSize:
+          type: string
+          example: "1"
+        maxNodeSize:
+          type: string
+          example: "3"
+        minNodeSize:
+          type: string
+          example: "1"
+    model.ChangeK8sNodeGroupAutoscaleSizeRes:
+      type: object
+      properties:
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        desiredNodeSize:
+          type: integer
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        imageId:
+          type: string
+        k8sNodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sNodeInfo'
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        maxNodeSize:
+          type: integer
+        minNodeSize:
+          type: integer
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        onAutoScaling:
+          type: boolean
+        rootDiskSize:
+          type: string
+        rootDiskType:
+          type: string
+        specId:
+          type: string
+        spiderViewK8sNodeGroupDetail:
+          $ref: '#/components/schemas/model.SpiderNodeGroupInfo'
+        sshKeyId:
+          type: string
+        status:
+          type: object
+          description: "Creating, Active, Inactive, Updating, Deleting"
+          example: Active
+          allOf:
+          - $ref: '#/components/schemas/model.K8sNodeGroupStatus'
     model.CheckK8sClusterDynamicReqInfo:
       required:
       - reqCheck
@@ -10031,11 +10104,11 @@ components:
         image:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbImageInfo'
+            $ref: '#/components/schemas/model.ImageInfo'
         region:
           $ref: '#/components/schemas/model.RegionDetail'
         spec:
-          $ref: '#/components/schemas/model.TbSpecInfo'
+          $ref: '#/components/schemas/model.SpecInfo'
         systemMessage:
           type: string
           description: Latest system message such as error message
@@ -10051,11 +10124,11 @@ components:
         image:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbImageInfo'
+            $ref: '#/components/schemas/model.ImageInfo'
         region:
           $ref: '#/components/schemas/model.RegionDetail'
         spec:
-          $ref: '#/components/schemas/model.TbSpecInfo'
+          $ref: '#/components/schemas/model.SpecInfo'
         systemMessage:
           type: string
           description: Latest system message such as error message
@@ -10118,6 +10191,137 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.ConnConfig'
+    model.CreateSubGroupDynamicReq:
+      required:
+      - imageId
+      - specId
+      type: object
+      properties:
+        connectionName:
+          type: string
+          description: |-
+            if ConnectionName is given, the VM tries to use associtated credential.
+            if not, it will use predefined ConnectionName in Spec objects
+          example: aws-ap-northeast-2
+        description:
+          type: string
+          example: Created via CB-Tumblebug
+        imageId:
+          type: string
+          description: ImageId is field for id of a image in common namespace
+          example: ami-01f71f215b23ba262
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+          example:
+            '"env"': "\"test\"}"
+            '{"role"': '"worker"'
+        name:
+          type: string
+          description: "SubGroup name, actual VM name will be generated with -N postfix."
+          example: g1
+        rootDiskSize:
+          type: string
+          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
+          example: "50"
+          default: default
+        rootDiskType:
+          type: string
+          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
+            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
+            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
+            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT:\
+            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
+          example: gp3
+          default: default
+        specId:
+          type: string
+          description: SpecId is field for id of a spec in common namespace
+          example: aws+ap-northeast-2+t3.nano
+        subGroupSize:
+          type: string
+          description: "if subGroupSize is (not empty) && (> 0), subGroup will be\
+            \ generated. VMs will be created accordingly."
+          example: "3"
+          default: "1"
+        vmUserPassword:
+          type: string
+          example: ""
+    model.CreateSubGroupReq:
+      required:
+      - connectionName
+      - imageId
+      - name
+      - securityGroupIds
+      - specId
+      - sshKeyId
+      - subnetId
+      - vNetId
+      type: object
+      properties:
+        connectionName:
+          type: string
+          example: testcloud01-seoul
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP (required
+            for option=register)
+          example: i-014fa6ede6ada0b2c
+        dataDiskIds:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+          example: Description
+        imageId:
+          type: string
+          description: ImageType        string   `json:"imageType"`
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+        name:
+          type: string
+          description: SubGroup name of VMs. Actual VM name will be generated with
+            -N postfix.
+          example: g1-1
+        rootDiskSize:
+          type: string
+          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
+          example: "default, 30, 42, ..."
+        rootDiskType:
+          type: string
+          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
+            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
+            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
+            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT:\
+            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
+          example: "default, TYPE1, ..."
+        securityGroupIds:
+          type: array
+          items:
+            type: string
+        specId:
+          type: string
+        sshKeyId:
+          type: string
+        subGroupSize:
+          type: string
+          description: "if subGroupSize is (not empty) && (> 0), subGroup will be\
+            \ generated. VMs will be created accordingly."
+          example: "3"
+        subnetId:
+          type: string
+        vNetId:
+          type: string
+        vmUserName:
+          type: string
+        vmUserPassword:
+          type: string
     model.CredentialInfo:
       type: object
       properties:
@@ -10175,6 +10379,90 @@ components:
           $ref: '#/components/schemas/model.AzureSpecificProperty'
         gcp:
           $ref: '#/components/schemas/model.GcpSpecificProperty'
+    model.CustomImageInfo:
+      type: object
+      properties:
+        associatedObjectList:
+          type: array
+          items:
+            type: string
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+          example: aws-ap-southeast-1
+        creationDate:
+          type: string
+          example: 2022-10-18T08:12:48Z
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        description:
+          type: string
+        guestOS:
+          type: string
+          description: "Windows7, Ubuntu etc."
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        isAutoGenerated:
+          type: boolean
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        namespace:
+          type: string
+          description: required to save in RDB
+          example: default
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        sourceVmId:
+          type: string
+          example: aws-ap-southeast-1-1
+        status:
+          type: object
+          example: Available
+          allOf:
+          - $ref: '#/components/schemas/model.CustomImageStatus'
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the Resource in a keyword (any
+            string can be used) for special System purpose
+          example: Managed by CB-Tumblebug
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+    model.CustomImageReq:
+      required:
+      - name
+      type: object
+      properties:
+        connectionName:
+          type: string
+        cspResourceId:
+          type: string
+          description: This field is for 'Register existing custom image'
+        description:
+          type: string
+        name:
+          type: string
+        sourceVmId:
+          type: string
     model.CustomImageStatus:
       type: string
       enum:
@@ -10183,6 +10471,132 @@ components:
       x-enum-varnames:
       - MyImageAvailable
       - MyImageUnavailable
+    model.DataDiskInfo:
+      type: object
+      properties:
+        associatedObjectList:
+          type: array
+          example:
+          - /ns/default/mci/mci01/vm/aws-ap-southeast-1-1
+          items:
+            type: string
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+          example: aws-ap-southeast-1
+        createdTime:
+          type: string
+          example: 2022-10-12T05:09:51.05Z
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        description:
+          type: string
+          example: Available
+        diskSize:
+          type: string
+          example: "77"
+        diskType:
+          type: string
+          example: standard
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        isAutoGenerated:
+          type: boolean
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        status:
+          type: object
+          description: "Available, Unavailable, Attached, ..."
+          example: Available
+          allOf:
+          - $ref: '#/components/schemas/model.DiskStatus'
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the Resource in a keyword (any
+            string can be used) for special System purpose
+          example: Managed by CB-Tumblebug
+        systemMessage:
+          type: string
+          description: Latest system message such as error message
+          example: Failed because ...
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+    model.DataDiskReq:
+      required:
+      - connectionName
+      - diskSize
+      - name
+      type: object
+      properties:
+        connectionName:
+          type: string
+          example: aws-ap-southeast-1
+        cspResourceId:
+          type: string
+          description: |-
+            Fields for "Register existing dataDisk" feature
+            CspResourceId is required to register object from CSP (option=register)
+        description:
+          type: string
+        diskSize:
+          type: string
+          example: "77"
+          default: "100"
+        diskType:
+          type: string
+          example: default
+        name:
+          type: string
+          example: aws-ap-southeast-1-datadisk
+    model.DataDiskUpsizeReq:
+      required:
+      - diskSize
+      type: object
+      properties:
+        description:
+          type: string
+        diskSize:
+          type: string
+    model.DataDiskVmReq:
+      required:
+      - diskSize
+      - name
+      type: object
+      properties:
+        description:
+          type: string
+        diskSize:
+          type: string
+          example: "77"
+          default: "100"
+        diskType:
+          type: string
+          example: default
+        name:
+          type: string
+          example: aws-ap-southeast-1-datadisk
     model.DiskStatus:
       type: string
       enum:
@@ -10399,6 +10813,72 @@ components:
           type: string
         vCPU:
           $ref: '#/components/schemas/model.Range'
+    model.FirewallRuleInfo:
+      required:
+      - Direction
+      - Protocol
+      type: object
+      properties:
+        CIDR:
+          type: string
+          description: "CIDR is the allowed IP range (e.g. 0.0.0.0/0, 10.0.0/8)"
+          example: 0.0.0.0/0
+        Direction:
+          type: string
+          description: Direction is the direction of the rule (inbound or outbound)
+          example: inbound
+          enum:
+          - inbound
+          - outbound
+        Port:
+          type: string
+          description: Port is the single port (e.g. "22") or port range (e.g. "1-65535")
+            for the rule
+          example: 1-65535
+        Protocol:
+          type: string
+          description: "Protocol is the protocol type for the rule (TCP, UDP, ICMP,\
+            \ ALL)"
+          example: TCP
+          enum:
+          - TCP
+          - UDP
+          - ICMP
+          - ALL
+    model.FirewallRuleReq:
+      required:
+      - Direction
+      - Protocol
+      type: object
+      properties:
+        CIDR:
+          type: string
+          description: "CIDR is the allowed IP range (e.g. 0.0.0.0/0, 10.0.0/8)"
+          example: 0.0.0.0/0
+        Direction:
+          type: string
+          description: Direction is the direction of the rule (inbound or outbound)
+          example: inbound
+          enum:
+          - inbound
+          - outbound
+        Ports:
+          type: string
+          description: |-
+            Ports is to get multiple ports or port ranges as a string (e.g. "22,900-1000,2000-3000")
+            This allows flexibility in specifying single ports or ranges in a comma-separated format.
+            This field is used to handle both single ports and port ranges in a unified way.
+            It can accept a single port (e.g. "22"), a range (e.g. "900-1000"), or multiple ports/ranges (e.g. "22,900-1000,2000-3000").
+          example: "22,900-1000,2000-3000"
+        Protocol:
+          type: string
+          description: "Protocol is the protocol type for the rule (TCP, UDP, ICMP).\
+            \ Don't use ALL here."
+          example: TCP
+          enum:
+          - TCP
+          - UDP
+          - ICMP
     model.GcpSpecificProperty:
       type: object
       properties:
@@ -10425,6 +10905,17 @@ components:
           type: array
           items:
             type: string
+    model.IdNameInDetailInfo:
+      type: object
+      properties:
+        idInCsp:
+          type: string
+        idInSp:
+          type: string
+        idInTb:
+          type: string
+        nameInCsp:
+          type: string
     model.ImageFetchOption:
       type: object
       properties:
@@ -10444,6 +10935,107 @@ components:
           - tencent
           items:
             type: string
+    model.ImageInfo:
+      type: object
+      properties:
+        connectionName:
+          type: string
+        creationDate:
+          type: string
+        cspImageName:
+          type: string
+          example: csp-06eb41e14121c550a
+        description:
+          type: string
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        fetchedTime:
+          type: string
+        id:
+          type: string
+          example: aws-ap-southeast-1
+        imageStatus:
+          type: object
+          description: "Available, Deprecated, NA"
+          example: Available
+          allOf:
+          - $ref: '#/components/schemas/model.ImageStatus'
+        infraType:
+          type: string
+          description: "vm|k8s|kubernetes|container, etc."
+        isBasicImage:
+          type: boolean
+          default: false
+        isGPUImage:
+          type: boolean
+          default: false
+        isKubernetesImage:
+          type: boolean
+          default: false
+        name:
+          type: string
+          example: aws-ap-southeast-1
+        namespace:
+          type: string
+          description: Composite primary key
+          example: default
+        osArchitecture:
+          type: object
+          description: "arm64, x86_64 etc."
+          example: x86_64
+          allOf:
+          - $ref: '#/components/schemas/model.OSArchitecture'
+        osDiskSizeGB:
+          type: number
+          description: "10, 50, 100 etc."
+          example: 50.0
+        osDiskType:
+          type: string
+          description: "ebs, HDD, etc."
+          example: HDD
+        osDistribution:
+          type: string
+          description: "Ubuntu 22.04~, CentOS 8 etc."
+          example: Ubuntu 22.04~
+        osPlatform:
+          type: object
+          description: "Linux/UNIX, Windows, NA"
+          example: Linux/UNIX
+          allOf:
+          - $ref: '#/components/schemas/model.OSPlatform'
+        osType:
+          type: string
+          example: ubuntu 22.04
+        providerName:
+          type: string
+        regionList:
+          type: array
+          description: Array field for supporting multiple regions
+          items:
+            type: string
+        systemLabel:
+          type: string
+          example: Managed by CB-Tumblebug
+        uid:
+          type: string
+          example: wef12awefadf1221edcf
+    model.ImageReq:
+      required:
+      - connectionName
+      - cspImageName
+      - name
+      type: object
+      properties:
+        connectionName:
+          type: string
+        cspImageName:
+          type: string
+        description:
+          type: string
+        name:
+          type: string
     model.ImageRiskInfo:
       type: object
       properties:
@@ -10535,6 +11127,26 @@ components:
           - securityGroup
           - sshKey
           - vm
+    model.K8sAccessInfo:
+      type: object
+      properties:
+        endpoint:
+          type: string
+          example: http://1.2.3.4:6443
+        kubeconfig:
+          type: string
+          example: |-
+            apiVersion: v1
+            clusters:
+            - cluster:
+             certificate-authority-data: LS0...
+    model.K8sAddonsInfo:
+      type: object
+      properties:
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
     model.K8sClusterConnectionConfigCandidatesReq:
       required:
       - specId
@@ -10547,36 +11159,215 @@ components:
           - tencent+ap-seoul+S2.MEDIUM4
           items:
             type: string
-    model.K8sClusterDetail:
+    model.K8sClusterContainerCmdReq:
+      required:
+      - command
       type: object
       properties:
-        node_image_designation:
-          type: boolean
-        node_images:
+        command:
           type: array
+          example:
+          - echo hello
           items:
-            $ref: '#/components/schemas/model.K8sClusterNodeImageDetail'
-        nodegroup_naming_rule:
+            type: string
+    model.K8sClusterContainerCmdResult:
+      type: object
+      properties:
+        command:
           type: string
-        nodegroups_on_creation:
-          type: boolean
-        required_subnet_count:
-          type: integer
-        root_disks:
+        err:
+          type: object
+        stderr:
+          type: string
+        stdout:
+          type: string
+    model.K8sClusterContainerCmdResults:
+      type: object
+      properties:
+        results:
           type: array
           items:
-            $ref: '#/components/schemas/model.K8sClusterRootDiskDetail'
-        versions:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.K8sClusterVersionDetail'
+            $ref: '#/components/schemas/model.K8sClusterContainerCmdResult'
+    model.K8sClusterDynamicReq:
+      required:
+      - imageId
+      - name
+      - specId
+      type: object
+      properties:
+        connectionName:
+          type: string
+          description: |-
+            if ConnectionName is given, the VM tries to use associtated credential.
+            if not, it will use predefined ConnectionName in Spec objects
+          default: tencent-ap-seoul
+        description:
+          type: string
+          example: Description
+        desiredNodeSize:
+          type: string
+          example: "1"
+          default: "1"
+        imageId:
+          type: string
+          description: ImageId is field for id of a image in common namespace
+          example: "default, tencent+ap-seoul+ubuntu20.04"
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+        maxNodeSize:
+          type: string
+          example: "3"
+          default: "2"
+        minNodeSize:
+          type: string
+          example: "1"
+          default: "1"
+        name:
+          type: string
+          description: K8sCluster name if it is not empty.
+          example: k8scluster01
+        nodeGroupName:
+          type: string
+          description: NodeGroup name if it is not empty
+          example: k8sng01
+        onAutoScaling:
+          type: string
+          example: "true"
+          default: "true"
+        rootDiskSize:
+          type: string
+          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
+          example: "default, 30, 42, ..."
+          default: default
+        rootDiskType:
+          type: string
+          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
+            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
+            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
+            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT:\
+            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
+          example: "default, TYPE1, ..."
+          default: default
+        specId:
+          type: string
+          description: SpecId is field for id of a spec in common namespace
+          example: tencent+ap-seoul+S2.MEDIUM4
+        version:
+          type: string
+          description: K8s Clsuter version
+          example: "1.29"
     model.K8sClusterInfo:
       type: object
       properties:
-        k8s_cluster:
+        accessInfo:
+          $ref: '#/components/schemas/model.K8sAccessInfo'
+        addons:
+          $ref: '#/components/schemas/model.K8sAddonsInfo'
+        connectionConfig:
+          type: object
+          description: ConnectionConfig shows connection info to cloud service provider
+          allOf:
+          - $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+          example: alibaba-ap-northeast-2
+        createdTime:
+          type: string
+          example: 1970-01-01T00:00:00.00Z
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        description:
+          type: string
+          example: My K8sCluster
+        id:
+          type: string
+          description: "Id is unique identifier for the object, same as Name"
+          example: k8scluster01
+        k8sNodeGroupList:
+          type: array
+          description: K8sNodeGroupList is for describing network information about
+            the cluster
+          items:
+            $ref: '#/components/schemas/model.K8sNodeGroupInfo'
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        label:
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/model.K8sClusterDetail'
+            type: string
+          description: Label is for describing the object by keywords
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: k8scluster01
+        network:
+          type: object
+          description: Network is for describing network information about the cluster
+          allOf:
+          - $ref: '#/components/schemas/model.K8sClusterNetworkInfo'
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        spiderViewK8sClusterDetail:
+          $ref: '#/components/schemas/model.SpiderClusterInfo'
+        status:
+          type: object
+          description: "Creating, Active, Inactive, Updating, Deleting"
+          example: Active
+          allOf:
+          - $ref: '#/components/schemas/model.K8sClusterStatus'
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the Resource in a keyword (any
+            string can be used) for special System purpose
+          example: Managed by CB-Tumblebug
+        systemMessage:
+          type: string
+          description: Latest system message such as error message
+          example: Failed because ...
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+        version:
+          type: string
+          description: Version is for kubernetes version
+          example: 1.30.1
+    model.K8sClusterNetworkInfo:
+      type: object
+      properties:
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        securityGroupIds:
+          type: array
+          example:
+          - sg-01
+          items:
+            type: string
+        subnetIds:
+          type: array
+          example:
+          - subnet-01
+          items:
+            type: string
+        vNetId:
+          type: string
+          example: vpc-01
     model.K8sClusterNodeGroupsOnCreation:
       type: object
       properties:
@@ -10589,17 +11380,6 @@ components:
         result:
           type: string
           example: "true"
-    model.K8sClusterNodeImageDetail:
-      type: object
-      properties:
-        availables:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.K8sClusterNodeImageDetailAvailable'
-        region:
-          type: array
-          items:
-            type: string
     model.K8sClusterNodeImageDetailAvailable:
       type: object
       properties:
@@ -10607,50 +11387,87 @@ components:
           type: string
         name:
           type: string
+    model.K8sClusterReq:
+      required:
+      - connectionName
+      - name
+      - securityGroupIds
+      - subnetIds
+      - vNetId
+      type: object
+      properties:
+        connectionName:
+          type: string
+          description: Namespace      string `json:"namespace" validate:"required"
+            example:"default"`
+          example: alibaba-ap-northeast-2
+        cspResourceId:
+          type: string
+          description: |-
+            Fields for "Register existing K8sCluster" feature
+            @description CspResourceId is required to register a k8s cluster from CSP (option=register)
+          example: required when option is register
+        description:
+          type: string
+          example: My K8sCluster
+        k8sNodeGroupList:
+          type: array
+          description: (3) NodeGroupInfo List
+          items:
+            $ref: '#/components/schemas/model.K8sNodeGroupReq'
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+        name:
+          type: string
+          description: (1) K8sCluster Info
+          example: k8scluster01
+        securityGroupIds:
+          type: array
+          example:
+          - sg-01
+          items:
+            type: string
+        subnetIds:
+          type: array
+          example:
+          - subnet-01
+          items:
+            type: string
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the k8scluster in a keyword (any
+            string can be used) for special System purpose
+          example: ""
+        vNetId:
+          type: string
+          description: (2) Network Info
+          example: vpc-01
+        version:
+          type: string
+          example: 1.30.1-aliyun.1
     model.K8sClusterRequiredSubnetCount:
       type: object
       properties:
         result:
           type: string
           example: "1"
-    model.K8sClusterRootDiskDetail:
-      type: object
-      properties:
-        region:
-          type: array
-          items:
-            type: string
-        size:
-          $ref: '#/components/schemas/model.K8sClusterRootDiskDetailSize'
-        type:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.K8sClusterRootDiskDetailType'
-    model.K8sClusterRootDiskDetailSize:
-      type: object
-      properties:
-        max:
-          type: integer
-        min:
-          type: integer
-    model.K8sClusterRootDiskDetailType:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-    model.K8sClusterVersionDetail:
-      type: object
-      properties:
-        availables:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.K8sClusterVersionDetailAvailable'
-        region:
-          type: array
-          items:
-            type: string
+    model.K8sClusterStatus:
+      type: string
+      enum:
+      - Creating
+      - Active
+      - Inactive
+      - Updating
+      - Deleting
+      x-enum-varnames:
+      - K8sClusterCreating
+      - K8sClusterActive
+      - K8sClusterInactive
+      - K8sClusterUpdating
+      - K8sClusterDeleting
     model.K8sClusterVersionDetailAvailable:
       type: object
       properties:
@@ -10660,6 +11477,191 @@ components:
         name:
           type: string
           example: "1.30"
+    model.K8sNodeGroupDynamicReq:
+      required:
+      - imageId
+      - name
+      - specId
+      type: object
+      properties:
+        description:
+          type: string
+          example: Description
+        desiredNodeSize:
+          type: string
+          example: "1"
+          default: "1"
+        imageId:
+          type: string
+          description: ImageId is field for id of a image in common namespace
+          example: "default, tencent+ap-seoul+ubuntu20.04"
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+        maxNodeSize:
+          type: string
+          example: "3"
+          default: "2"
+        minNodeSize:
+          type: string
+          example: "1"
+          default: "1"
+        name:
+          type: string
+          description: K8sNodeGroup name if it is not empty.
+          example: k8sng01
+        onAutoScaling:
+          type: string
+          example: "true"
+          default: "true"
+        rootDiskSize:
+          type: string
+          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
+          example: "default, 30, 42, ..."
+          default: default
+        rootDiskType:
+          type: string
+          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
+            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
+            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
+            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT:\
+            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
+          example: "default, TYPE1, ..."
+          default: default
+        specId:
+          type: string
+          description: SpecId is field for id of a spec in common namespace
+          example: tencent+ap-seoul+S2.MEDIUM4
+    model.K8sNodeGroupInfo:
+      type: object
+      properties:
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        desiredNodeSize:
+          type: integer
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        imageId:
+          type: string
+        k8sNodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sNodeInfo'
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        maxNodeSize:
+          type: integer
+        minNodeSize:
+          type: integer
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        onAutoScaling:
+          type: boolean
+        rootDiskSize:
+          type: string
+        rootDiskType:
+          type: string
+        specId:
+          type: string
+        spiderViewK8sNodeGroupDetail:
+          $ref: '#/components/schemas/model.SpiderNodeGroupInfo'
+        sshKeyId:
+          type: string
+        status:
+          type: object
+          description: "Creating, Active, Inactive, Updating, Deleting"
+          example: Active
+          allOf:
+          - $ref: '#/components/schemas/model.K8sNodeGroupStatus'
+    model.K8sNodeGroupReq:
+      type: object
+      properties:
+        description:
+          type: string
+          example: Description
+        desiredNodeSize:
+          type: string
+          example: "1"
+        imageId:
+          type: string
+          example: image-01
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+        maxNodeSize:
+          type: string
+          example: "3"
+        minNodeSize:
+          type: string
+          example: "1"
+        name:
+          type: string
+          example: k8sng01
+        onAutoScaling:
+          type: string
+          description: autoscale config.
+          example: "true"
+        rootDiskSize:
+          type: string
+          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
+          example: "40"
+        rootDiskType:
+          type: string
+          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
+            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
+            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
+            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT:\
+            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
+          example: cloud_essd
+        specId:
+          type: string
+          example: spec-01
+        sshKeyId:
+          type: string
+          example: sshkey-01
+    model.K8sNodeGroupStatus:
+      type: string
+      enum:
+      - Creating
+      - Active
+      - Inactive
+      - Updating
+      - Deleting
+      x-enum-varnames:
+      - K8sNodeGroupCreating
+      - K8sNodeGroupActive
+      - K8sNodeGroupInactive
+      - K8sNodeGroupUpdating
+      - K8sNodeGroupDeleting
+    model.K8sNodeInfo:
+      type: object
+      properties:
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
     model.KeyValue:
       type: object
       properties:
@@ -10716,7 +11718,7 @@ components:
         deploymentLog:
           $ref: '#/components/schemas/model.MciSshCmdResult'
         mcNlbHostInfo:
-          $ref: '#/components/schemas/model.TbMciInfo'
+          $ref: '#/components/schemas/model.MciInfo'
         mciAccessInfo:
           $ref: '#/components/schemas/model.MciAccessInfo'
     model.MciAccessInfo:
@@ -10849,6 +11851,178 @@ components:
             phase
           items:
             $ref: '#/components/schemas/model.VmCreationError'
+    model.MciDynamicReq:
+      required:
+      - name
+      - subGroups
+      type: object
+      properties:
+        description:
+          type: string
+          example: Made in CB-TB
+        installMonAgent:
+          type: string
+          description: "InstallMonAgent Option for CB-Dragonfly agent installation\
+            \ ([yes/no] default:no)"
+          example: "no"
+          default: "no"
+          enum:
+          - "yes"
+          - "no"
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+        name:
+          type: string
+          example: mci01
+        policyOnPartialFailure:
+          type: string
+          description: |-
+            PolicyOnPartialFailure determines how to handle VM creation failures
+            - "continue": Continue with partial MCI creation (default)
+            - "rollback": Cleanup entire MCI when any VM fails
+            - "refine": Mark failed VMs for refinement
+          example: continue
+          default: continue
+          enum:
+          - continue
+          - rollback
+          - refine
+        postCommand:
+          type: object
+          description: PostCommand is for the command to bootstrap the VMs
+          allOf:
+          - $ref: '#/components/schemas/model.MciCmdReq'
+        subGroups:
+          type: array
+          description: |-
+            SubGroups is array of VM requests for multi-cloud infrastructure
+            Example: Multiple VM groups across different CSPs
+            [
+              {
+                "name": "aws-group",
+                "subGroupSize": "3",
+                "specId": "aws+ap-northeast-2+t3.nano",
+                "imageId": "ami-01f71f215b23ba262",
+                "rootDiskSize": "50",
+                "label": {"role": "worker", "csp": "aws"}
+              },
+              {
+                "name": "azure-group",
+                "subGroupSize": "2",
+                "specId": "azure+koreasouth+standard_b1s",
+                "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210",
+                "rootDiskSize": "50",
+                "label": {"role": "head", "csp": "azure"}
+              },
+              {
+                "name": "gcp-group",
+                "subGroupSize": "1",
+                "specId": "gcp+asia-northeast3+g1-small",
+                "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712",
+                "rootDiskSize": "50",
+                "label": {"role": "test", "csp": "gcp"}
+              }
+            ]
+          items:
+            $ref: '#/components/schemas/model.CreateSubGroupDynamicReq'
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the mci in a keyword (any string
+            can be used) for special System purpose
+          example: ""
+    model.MciInfo:
+      type: object
+      properties:
+        configureCloudAdaptiveNetwork:
+          type: string
+          description: "ConfigureCloudAdaptiveNetwork is an option to configure Cloud\
+            \ Adaptive Network (CLADNet) ([yes/no] default:yes)"
+          example: "yes"
+          default: "no"
+          enum:
+          - "yes"
+          - "no"
+        creationErrors:
+          type: object
+          description: CreationErrors contains information about VM creation failures
+            (if any)
+          allOf:
+          - $ref: '#/components/schemas/model.MciCreationErrors'
+        description:
+          type: string
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        installMonAgent:
+          type: string
+          description: "InstallMonAgent Option for CB-Dragonfly agent installation\
+            \ ([yes/no] default:no)"
+          example: "no"
+          default: "no"
+          enum:
+          - "yes"
+          - "no"
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        newVmList:
+          type: array
+          description: List of IDs for new VMs. Return IDs if the VMs are newly added.
+            This field should be used for return body only.
+          items:
+            type: string
+        placementAlgo:
+          type: string
+        postCommand:
+          type: object
+          description: PostCommand is for the command to bootstrap the VMs
+          allOf:
+          - $ref: '#/components/schemas/model.MciCmdReq'
+        postCommandResult:
+          type: object
+          description: PostCommandResult is the result of the command for bootstraping
+            the VMs
+          allOf:
+          - $ref: '#/components/schemas/model.MciSshCmdResult'
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        status:
+          type: string
+        statusCount:
+          $ref: '#/components/schemas/model.StatusCountInfo'
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the mci in a keyword (any string
+            can be used) for special System purpose
+          example: Managed by CB-Tumblebug
+        systemMessage:
+          type: string
+          description: Latest system message such as error message
+          example: Failed because ...
+        targetAction:
+          type: string
+        targetStatus:
+          type: string
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+        vm:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.VmInfo'
     model.MciPolicyInfo:
       type: object
       properties:
@@ -10877,6 +12051,61 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.Policy'
+    model.MciReq:
+      required:
+      - name
+      - subGroups
+      type: object
+      properties:
+        description:
+          type: string
+          example: Made in CB-TB
+        installMonAgent:
+          type: string
+          description: "InstallMonAgent Option for CB-Dragonfly agent installation\
+            \ ([yes/no] default:yes)"
+          example: "no"
+          default: "no"
+          enum:
+          - "yes"
+          - "no"
+        label:
+          type: object
+          additionalProperties:
+            type: string
+          description: Label is for describing the object by keywords
+        name:
+          type: string
+          example: mci01
+        placementAlgo:
+          type: string
+        policyOnPartialFailure:
+          type: string
+          description: |-
+            PolicyOnPartialFailure determines how to handle VM creation failures
+            - "continue": Continue with partial MCI creation (default)
+            - "rollback": Cleanup entire MCI when any VM fails
+            - "refine": Mark failed VMs for refinement
+          example: continue
+          default: continue
+          enum:
+          - continue
+          - rollback
+          - refine
+        postCommand:
+          type: object
+          description: PostCommand is for the command to bootstrap the VMs
+          allOf:
+          - $ref: '#/components/schemas/model.MciCmdReq'
+        subGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.CreateSubGroupReq'
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the mci in a keyword (any string
+            can be used) for special System purpose
+          example: ""
     model.MciSshCmdResult:
       type: object
       properties:
@@ -10925,7 +12154,7 @@ components:
         vm:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbVmStatusInfo'
+            $ref: '#/components/schemas/model.VmStatusInfo'
     model.MciSubGroupAccessInfo:
       type: object
       properties:
@@ -10936,7 +12165,7 @@ components:
           items:
             $ref: '#/components/schemas/model.MciVmAccessInfo'
         nlbListener:
-          $ref: '#/components/schemas/model.TbNLBListenerInfo'
+          $ref: '#/components/schemas/model.NLBListenerInfo'
         subGroupId:
           type: string
     model.MciVmAccessInfo:
@@ -10980,6 +12209,145 @@ components:
             $ref: '#/components/schemas/model.MonResultSimple'
         nsId:
           type: string
+    model.NLBAddRemoveVMReq:
+      type: object
+      properties:
+        targetGroup:
+          $ref: '#/components/schemas/model.NLBTargetGroupInfo'
+    model.NLBHealthCheckerInfo:
+      type: object
+      properties:
+        interval:
+          type: integer
+          description: "secs, Interval time between health checks."
+          example: 10
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        port:
+          type: string
+          description: Listener Port or 1-65535
+          example: "22"
+        protocol:
+          type: string
+          description: TCP|HTTP|HTTPS
+          example: TCP
+        threshold:
+          type: integer
+          description: "num, The number of continuous health checks to change the\
+            \ VM status."
+          example: 3
+        timeout:
+          type: integer
+          description: "secs, Waiting time to decide an unhealthy VM when no response."
+          example: 10
+    model.NLBHealthCheckerReq:
+      type: object
+      properties:
+        interval:
+          type: string
+          description: "secs, Interval time between health checks."
+          example: default
+        threshold:
+          type: string
+          description: "num, The number of continuous health checks to change the\
+            \ VM status."
+          example: default
+        timeout:
+          type: string
+          description: "secs, Waiting time to decide an unhealthy VM when no response."
+          example: default
+    model.NLBInfo:
+      type: object
+      properties:
+        associatedObjectList:
+          type: array
+          items:
+            type: string
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+        createdTime:
+          type: string
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        description:
+          type: string
+        healthChecker:
+          $ref: '#/components/schemas/model.NLBHealthCheckerInfo'
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        isAutoGenerated:
+          type: boolean
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        listener:
+          $ref: '#/components/schemas/model.NLBListenerInfo'
+        location:
+          $ref: '#/components/schemas/model.Location'
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        scope:
+          type: string
+          description: REGION(V) | GLOBAL
+        status:
+          type: string
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the Resource in a keyword (any
+            string can be used) for special System purpose
+          example: Managed by CB-Tumblebug
+        targetGroup:
+          $ref: '#/components/schemas/model.NLBTargetGroupInfo'
+        type:
+          type: string
+          description: PUBLIC(V) | INTERNAL
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+    model.NLBListenerInfo:
+      type: object
+      properties:
+        dnsName:
+          type: string
+          description: "Optional, Auto Generated and attached"
+          example: default-group-cd3.elb.ap-northeast-2.amazonaws.com
+        ip:
+          type: string
+          description: Auto Generated and attached
+          example: x.x.x.x
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        port:
+          type: string
+          description: 1-65535
+          example: "80"
+        protocol:
+          type: string
+          description: TCP|UDP
+          example: TCP
     model.NLBListenerReq:
       type: object
       properties:
@@ -10991,6 +12359,85 @@ components:
           type: string
           description: TCP|UDP
           example: TCP
+    model.NLBReq:
+      required:
+      - healthChecker
+      - listener
+      - scope
+      - targetGroup
+      - type
+      type: object
+      properties:
+        cspResourceId:
+          type: string
+          description: Existing NLB (used only for option=register)
+        description:
+          type: string
+        healthChecker:
+          type: object
+          description: HealthChecker
+          allOf:
+          - $ref: '#/components/schemas/model.NLBHealthCheckerReq'
+        listener:
+          type: object
+          description: Frontend
+          allOf:
+          - $ref: '#/components/schemas/model.NLBListenerReq'
+        scope:
+          type: string
+          description: REGION(V) | GLOBAL
+          example: REGION
+          enum:
+          - REGION
+          - GLOBAL
+        targetGroup:
+          type: object
+          description: Backend
+          allOf:
+          - $ref: '#/components/schemas/model.NLBTargetGroupReq'
+        type:
+          type: string
+          description: PUBLIC(V) | INTERNAL
+          example: PUBLIC
+          enum:
+          - PUBLIC
+          - INTERNAL
+    model.NLBTargetGroupInfo:
+      type: object
+      properties:
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        port:
+          type: string
+          description: Listener Port or 1-65535
+          example: "80"
+        protocol:
+          type: string
+          description: TCP|HTTP|HTTPS
+          example: TCP
+        subGroupId:
+          type: string
+          example: g1
+        vms:
+          type: array
+          items:
+            type: string
+    model.NLBTargetGroupReq:
+      type: object
+      properties:
+        port:
+          type: string
+          description: Listener Port or 1-65535
+          example: "80"
+        protocol:
+          type: string
+          description: TCP|HTTP|HTTPS
+          example: TCP
+        subGroupId:
+          type: string
+          example: g1
     model.NsInfo:
       type: object
       properties:
@@ -11486,6 +12933,38 @@ components:
           $ref: '#/components/schemas/model.RegisterationOverview'
         systemMessage:
           type: string
+    model.RegisterSubnetReq:
+      required:
+      - connectionName
+      - cspResourceId
+      - name
+      type: object
+      properties:
+        connectionName:
+          type: string
+        cspResourceId:
+          type: string
+        description:
+          type: string
+        name:
+          type: string
+        zone:
+          type: string
+    model.RegisterVNetReq:
+      required:
+      - connectionName
+      - cspResourceId
+      - name
+      type: object
+      properties:
+        connectionName:
+          type: string
+        cspResourceId:
+          type: string
+        description:
+          type: string
+        name:
+          type: string
     model.RegisterationOverview:
       type: object
       properties:
@@ -11747,6 +13226,15 @@ components:
           $ref: '#/components/schemas/model.SiteProperty'
         site2:
           $ref: '#/components/schemas/model.SiteProperty'
+    model.RestWrapperSecurityGroupUpdateResponse:
+      type: object
+      properties:
+        response:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.SecurityGroupUpdateResponse'
+        summary:
+          $ref: '#/components/schemas/model.UpdateSummary'
     model.RetrievedRegionList:
       type: object
       properties:
@@ -11925,6 +13413,15 @@ components:
           description: SpecRisk contains spec-specific risk analysis
           allOf:
           - $ref: '#/components/schemas/model.SpecRiskInfo'
+    model.ScaleOutSubGroupReq:
+      required:
+      - numVMsToAdd
+      type: object
+      properties:
+        numVMsToAdd:
+          type: string
+          description: Define addtional VMs to scaleOut
+          example: "2"
     model.SearchImageRequest:
       type: object
       properties:
@@ -12107,7 +13604,120 @@ components:
         imageList:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbImageInfo'
+            $ref: '#/components/schemas/model.ImageInfo'
+    model.SecurityGroupInfo:
+      type: object
+      properties:
+        associatedObjectList:
+          type: array
+          items:
+            type: string
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        description:
+          type: string
+        firewallRules:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.FirewallRuleInfo'
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        isAutoGenerated:
+          type: boolean
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the Resource in a keyword (any
+            string can be used) for special System purpose
+          example: Managed by CB-Tumblebug
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+        vNetId:
+          type: string
+    model.SecurityGroupReq:
+      required:
+      - connectionName
+      - name
+      - vNetId
+      type: object
+      properties:
+        connectionName:
+          type: string
+        cspResourceId:
+          type: string
+          description: CspResourceId is required to register object from CSP (option=register)
+          example: "required for option=register only. ex: csp-06eb41e14121c550a"
+        description:
+          type: string
+        firewallRules:
+          type: array
+          description: validate:"required"`
+          items:
+            $ref: '#/components/schemas/model.FirewallRuleReq'
+        name:
+          type: string
+        vNetId:
+          type: string
+    model.SecurityGroupUpdateReq:
+      type: object
+      properties:
+        firewallRules:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.FirewallRuleReq'
+    model.SecurityGroupUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        message:
+          type: string
+        name:
+          type: string
+        previous:
+          $ref: '#/components/schemas/model.SecurityGroupInfo'
+        success:
+          type: boolean
+        updated:
+          $ref: '#/components/schemas/model.SecurityGroupInfo'
+    model.SetK8sNodeGroupAutoscalingReq:
+      type: object
+      properties:
+        onAutoScaling:
+          type: string
+          example: "true"
+    model.SetK8sNodeGroupAutoscalingRes:
+      type: object
+      properties:
+        result:
+          type: string
+          example: "true"
     model.SimpleMsg:
       type: object
       properties:
@@ -12180,6 +13790,130 @@ components:
           - tencent
           items:
             type: string
+    model.SpecInfo:
+      type: object
+      properties:
+        acceleratorCount:
+          type: integer
+        acceleratorMemoryGB:
+          type: number
+        acceleratorModel:
+          type: string
+        acceleratorType:
+          type: string
+        architecture:
+          type: string
+          example: x86_64
+        associatedObjectList:
+          type: array
+          items:
+            type: string
+        connectionName:
+          type: string
+        costPerHour:
+          type: number
+        cspSpecName:
+          type: string
+          description: CspSpecName is name of the spec given by CSP
+          example: csp-06eb41e14121c550a
+        description:
+          type: string
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        diskSizeGB:
+          type: number
+        evaluationScore01:
+          type: number
+        evaluationScore02:
+          type: number
+        evaluationScore03:
+          type: number
+        evaluationScore04:
+          type: number
+        evaluationScore05:
+          type: number
+        evaluationScore06:
+          type: number
+        evaluationScore07:
+          type: number
+        evaluationScore08:
+          type: number
+        evaluationScore09:
+          type: number
+        evaluationScore10:
+          type: number
+        evaluationStatus:
+          type: string
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws+ap-southeast+csp-06eb41e14121c550a
+        infraType:
+          type: string
+          description: "InfraType can be one of vm|k8s|kubernetes|container, etc."
+        isAutoGenerated:
+          type: boolean
+        maxTotalStorageTiB:
+          type: integer
+        memoryGiB:
+          type: number
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        namespace:
+          type: string
+          example: default
+        netBwGbps:
+          type: integer
+        orderInFilteredResult:
+          type: integer
+        osType:
+          type: string
+        providerName:
+          type: string
+        regionLatitude:
+          type: number
+        regionLongitude:
+          type: number
+        regionName:
+          type: string
+        rootDiskSize:
+          type: string
+        rootDiskType:
+          type: string
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the Resource in a keyword (any
+            string can be used) for special System purpose
+          example: Managed by CB-Tumblebug
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+        vCPU:
+          type: integer
+    model.SpecReq:
+      required:
+      - connectionName
+      - cspSpecName
+      - name
+      type: object
+      properties:
+        connectionName:
+          type: string
+        cspSpecName:
+          type: string
+          description: CspSpecName is name of the spec given by CSP
+        description:
+          type: string
+        name:
+          type: string
+          description: "Name is human-readable string to represent the object, used\
+            \ to generate Id"
     model.SpecRiskInfo:
       type: object
       properties:
@@ -12577,6 +14311,92 @@ components:
           type: string
         vmIp:
           type: string
+    model.SshKeyInfo:
+      type: object
+      properties:
+        associatedObjectList:
+          type: array
+          items:
+            type: string
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: csp-06eb41e14121c550a
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: we12fawefadf1221edcf
+        description:
+          type: string
+        fingerprint:
+          type: string
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: aws-ap-southeast-1
+        isAutoGenerated:
+          type: boolean
+        keyValueList:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.KeyValue'
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: aws-ap-southeast-1
+        privateKey:
+          type: string
+        publicKey:
+          type: string
+        resourceType:
+          type: string
+          description: ResourceType is the type of the resource
+        systemLabel:
+          type: string
+          description: SystemLabel is for describing the Resource in a keyword (any
+            string can be used) for special System purpose
+          example: Managed by CB-Tumblebug
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+        username:
+          type: string
+        verifiedUsername:
+          type: string
+    model.SshKeyReq:
+      required:
+      - connectionName
+      - name
+      type: object
+      properties:
+        connectionName:
+          type: string
+        cspResourceId:
+          type: string
+          description: |-
+            Fields for "Register existing SSH keys" feature
+            CspResourceId is required to register object from CSP (option=register)
+        description:
+          type: string
+        fingerprint:
+          type: string
+        name:
+          type: string
+        privateKey:
+          type: string
+        publicKey:
+          type: string
+        username:
+          type: string
+        verifiedUsername:
+          type: string
     model.StatusCountInfo:
       type: object
       properties:
@@ -12613,1917 +14433,7 @@ components:
         countUndefined:
           type: integer
           description: CountUndefined is for counting Undefined
-    model.SystemLabelInfo:
-      type: object
-      properties:
-        labelTypes:
-          type: array
-          items:
-            type: string
-        systemLabels:
-          type: object
-          additionalProperties:
-            type: string
-    model.TbAttachDetachDataDiskReq:
-      required:
-      - dataDiskId
-      type: object
-      properties:
-        dataDiskId:
-          type: string
-    model.TbChangeK8sNodeGroupAutoscaleSizeReq:
-      type: object
-      properties:
-        desiredNodeSize:
-          type: string
-          example: "1"
-        maxNodeSize:
-          type: string
-          example: "3"
-        minNodeSize:
-          type: string
-          example: "1"
-    model.TbChangeK8sNodeGroupAutoscaleSizeRes:
-      type: object
-      properties:
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-        desiredNodeSize:
-          type: integer
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: aws-ap-southeast-1
-        imageId:
-          type: string
-        k8sNodes:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.TbK8sNodeInfo'
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        maxNodeSize:
-          type: integer
-        minNodeSize:
-          type: integer
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: aws-ap-southeast-1
-        onAutoScaling:
-          type: boolean
-        rootDiskSize:
-          type: string
-        rootDiskType:
-          type: string
-        specId:
-          type: string
-        spiderViewK8sNodeGroupDetail:
-          $ref: '#/components/schemas/model.SpiderNodeGroupInfo'
-        sshKeyId:
-          type: string
-        status:
-          type: object
-          description: "Creating, Active, Inactive, Updating, Deleting"
-          example: Active
-          allOf:
-          - $ref: '#/components/schemas/model.TbK8sNodeGroupStatus'
-    model.TbCreateSubGroupDynamicReq:
-      required:
-      - imageId
-      - specId
-      type: object
-      properties:
-        connectionName:
-          type: string
-          description: |-
-            if ConnectionName is given, the VM tries to use associtated credential.
-            if not, it will use predefined ConnectionName in Spec objects
-          example: aws-ap-northeast-2
-        description:
-          type: string
-          example: Created via CB-Tumblebug
-        imageId:
-          type: string
-          description: ImageId is field for id of a image in common namespace
-          example: ami-01f71f215b23ba262
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
-          example:
-            '"env"': "\"test\"}"
-            '{"role"': '"worker"'
-        name:
-          type: string
-          description: "SubGroup name, actual VM name will be generated with -N postfix."
-          example: g1
-        rootDiskSize:
-          type: string
-          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
-          example: "50"
-          default: default
-        rootDiskType:
-          type: string
-          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
-            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
-            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
-            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT:\
-            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
-          example: gp3
-          default: default
-        specId:
-          type: string
-          description: SpecId is field for id of a spec in common namespace
-          example: aws+ap-northeast-2+t3.nano
-        subGroupSize:
-          type: string
-          description: "if subGroupSize is (not empty) && (> 0), subGroup will be\
-            \ generated. VMs will be created accordingly."
-          example: "3"
-          default: "1"
-        vmUserPassword:
-          type: string
-          example: ""
-    model.TbCreateSubGroupReq:
-      required:
-      - connectionName
-      - imageId
-      - name
-      - securityGroupIds
-      - specId
-      - sshKeyId
-      - subnetId
-      - vNetId
-      type: object
-      properties:
-        connectionName:
-          type: string
-          example: testcloud01-seoul
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP (required
-            for option=register)
-          example: i-014fa6ede6ada0b2c
-        dataDiskIds:
-          type: array
-          items:
-            type: string
-        description:
-          type: string
-          example: Description
-        imageId:
-          type: string
-          description: ImageType        string   `json:"imageType"`
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
-        name:
-          type: string
-          description: SubGroup name of VMs. Actual VM name will be generated with
-            -N postfix.
-          example: g1-1
-        rootDiskSize:
-          type: string
-          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
-          example: "default, 30, 42, ..."
-        rootDiskType:
-          type: string
-          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
-            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
-            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
-            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT:\
-            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
-          example: "default, TYPE1, ..."
-        securityGroupIds:
-          type: array
-          items:
-            type: string
-        specId:
-          type: string
-        sshKeyId:
-          type: string
-        subGroupSize:
-          type: string
-          description: "if subGroupSize is (not empty) && (> 0), subGroup will be\
-            \ generated. VMs will be created accordingly."
-          example: "3"
-        subnetId:
-          type: string
-        vNetId:
-          type: string
-        vmUserName:
-          type: string
-        vmUserPassword:
-          type: string
-    model.TbCustomImageInfo:
-      type: object
-      properties:
-        associatedObjectList:
-          type: array
-          items:
-            type: string
-        connectionConfig:
-          $ref: '#/components/schemas/model.ConnConfig'
-        connectionName:
-          type: string
-          example: aws-ap-southeast-1
-        creationDate:
-          type: string
-          example: 2022-10-18T08:12:48Z
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-        description:
-          type: string
-        guestOS:
-          type: string
-          description: "Windows7, Ubuntu etc."
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: aws-ap-southeast-1
-        isAutoGenerated:
-          type: boolean
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: aws-ap-southeast-1
-        namespace:
-          type: string
-          description: required to save in RDB
-          example: default
-        resourceType:
-          type: string
-          description: ResourceType is the type of the resource
-        sourceVmId:
-          type: string
-          example: aws-ap-southeast-1-1
-        status:
-          type: object
-          example: Available
-          allOf:
-          - $ref: '#/components/schemas/model.CustomImageStatus'
-        systemLabel:
-          type: string
-          description: SystemLabel is for describing the Resource in a keyword (any
-            string can be used) for special System purpose
-          example: Managed by CB-Tumblebug
-        uid:
-          type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
-    model.TbCustomImageReq:
-      required:
-      - name
-      type: object
-      properties:
-        connectionName:
-          type: string
-        cspResourceId:
-          type: string
-          description: This field is for 'Register existing custom image'
-        description:
-          type: string
-        name:
-          type: string
-        sourceVmId:
-          type: string
-    model.TbDataDiskInfo:
-      type: object
-      properties:
-        associatedObjectList:
-          type: array
-          example:
-          - /ns/default/mci/mci01/vm/aws-ap-southeast-1-1
-          items:
-            type: string
-        connectionConfig:
-          $ref: '#/components/schemas/model.ConnConfig'
-        connectionName:
-          type: string
-          example: aws-ap-southeast-1
-        createdTime:
-          type: string
-          example: 2022-10-12T05:09:51.05Z
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-        description:
-          type: string
-          example: Available
-        diskSize:
-          type: string
-          example: "77"
-        diskType:
-          type: string
-          example: standard
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: aws-ap-southeast-1
-        isAutoGenerated:
-          type: boolean
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: aws-ap-southeast-1
-        resourceType:
-          type: string
-          description: ResourceType is the type of the resource
-        status:
-          type: object
-          description: "Available, Unavailable, Attached, ..."
-          example: Available
-          allOf:
-          - $ref: '#/components/schemas/model.DiskStatus'
-        systemLabel:
-          type: string
-          description: SystemLabel is for describing the Resource in a keyword (any
-            string can be used) for special System purpose
-          example: Managed by CB-Tumblebug
-        systemMessage:
-          type: string
-          description: Latest system message such as error message
-          example: Failed because ...
-        uid:
-          type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
-    model.TbDataDiskReq:
-      required:
-      - connectionName
-      - diskSize
-      - name
-      type: object
-      properties:
-        connectionName:
-          type: string
-          example: aws-ap-southeast-1
-        cspResourceId:
-          type: string
-          description: |-
-            Fields for "Register existing dataDisk" feature
-            CspResourceId is required to register object from CSP (option=register)
-        description:
-          type: string
-        diskSize:
-          type: string
-          example: "77"
-          default: "100"
-        diskType:
-          type: string
-          example: default
-        name:
-          type: string
-          example: aws-ap-southeast-1-datadisk
-    model.TbDataDiskUpsizeReq:
-      required:
-      - diskSize
-      type: object
-      properties:
-        description:
-          type: string
-        diskSize:
-          type: string
-    model.TbDataDiskVmReq:
-      required:
-      - diskSize
-      - name
-      type: object
-      properties:
-        description:
-          type: string
-        diskSize:
-          type: string
-          example: "77"
-          default: "100"
-        diskType:
-          type: string
-          example: default
-        name:
-          type: string
-          example: aws-ap-southeast-1-datadisk
-    model.TbFirewallRuleInfo:
-      required:
-      - Direction
-      - Protocol
-      type: object
-      properties:
-        CIDR:
-          type: string
-          description: "CIDR is the allowed IP range (e.g. 0.0.0.0/0, 10.0.0/8)"
-          example: 0.0.0.0/0
-        Direction:
-          type: string
-          description: Direction is the direction of the rule (inbound or outbound)
-          example: inbound
-          enum:
-          - inbound
-          - outbound
-        Port:
-          type: string
-          description: Port is the single port (e.g. "22") or port range (e.g. "1-65535")
-            for the rule
-          example: 1-65535
-        Protocol:
-          type: string
-          description: "Protocol is the protocol type for the rule (TCP, UDP, ICMP,\
-            \ ALL)"
-          example: TCP
-          enum:
-          - TCP
-          - UDP
-          - ICMP
-          - ALL
-    model.TbFirewallRuleReq:
-      required:
-      - Direction
-      - Protocol
-      type: object
-      properties:
-        CIDR:
-          type: string
-          description: "CIDR is the allowed IP range (e.g. 0.0.0.0/0, 10.0.0/8)"
-          example: 0.0.0.0/0
-        Direction:
-          type: string
-          description: Direction is the direction of the rule (inbound or outbound)
-          example: inbound
-          enum:
-          - inbound
-          - outbound
-        Ports:
-          type: string
-          description: |-
-            Ports is to get multiple ports or port ranges as a string (e.g. "22,900-1000,2000-3000")
-            This allows flexibility in specifying single ports or ranges in a comma-separated format.
-            This field is used to handle both single ports and port ranges in a unified way.
-            It can accept a single port (e.g. "22"), a range (e.g. "900-1000"), or multiple ports/ranges (e.g. "22,900-1000,2000-3000").
-          example: "22,900-1000,2000-3000"
-        Protocol:
-          type: string
-          description: "Protocol is the protocol type for the rule (TCP, UDP, ICMP).\
-            \ Don't use ALL here."
-          example: TCP
-          enum:
-          - TCP
-          - UDP
-          - ICMP
-    model.TbIdNameInDetailInfo:
-      type: object
-      properties:
-        idInCsp:
-          type: string
-        idInSp:
-          type: string
-        idInTb:
-          type: string
-        nameInCsp:
-          type: string
-    model.TbImageInfo:
-      type: object
-      properties:
-        connectionName:
-          type: string
-        creationDate:
-          type: string
-        cspImageName:
-          type: string
-          example: csp-06eb41e14121c550a
-        description:
-          type: string
-        details:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        fetchedTime:
-          type: string
-        id:
-          type: string
-          example: aws-ap-southeast-1
-        imageStatus:
-          type: object
-          description: "Available, Deprecated, NA"
-          example: Available
-          allOf:
-          - $ref: '#/components/schemas/model.ImageStatus'
-        infraType:
-          type: string
-          description: "vm|k8s|kubernetes|container, etc."
-        isBasicImage:
-          type: boolean
-          default: false
-        isGPUImage:
-          type: boolean
-          default: false
-        isKubernetesImage:
-          type: boolean
-          default: false
-        name:
-          type: string
-          example: aws-ap-southeast-1
-        namespace:
-          type: string
-          description: Composite primary key
-          example: default
-        osArchitecture:
-          type: object
-          description: "arm64, x86_64 etc."
-          example: x86_64
-          allOf:
-          - $ref: '#/components/schemas/model.OSArchitecture'
-        osDiskSizeGB:
-          type: number
-          description: "10, 50, 100 etc."
-          example: 50.0
-        osDiskType:
-          type: string
-          description: "ebs, HDD, etc."
-          example: HDD
-        osDistribution:
-          type: string
-          description: "Ubuntu 22.04~, CentOS 8 etc."
-          example: Ubuntu 22.04~
-        osPlatform:
-          type: object
-          description: "Linux/UNIX, Windows, NA"
-          example: Linux/UNIX
-          allOf:
-          - $ref: '#/components/schemas/model.OSPlatform'
-        osType:
-          type: string
-          example: ubuntu 22.04
-        providerName:
-          type: string
-        regionList:
-          type: array
-          description: Array field for supporting multiple regions
-          items:
-            type: string
-        systemLabel:
-          type: string
-          example: Managed by CB-Tumblebug
-        uid:
-          type: string
-          example: wef12awefadf1221edcf
-    model.TbImageReq:
-      required:
-      - connectionName
-      - cspImageName
-      - name
-      type: object
-      properties:
-        connectionName:
-          type: string
-        cspImageName:
-          type: string
-        description:
-          type: string
-        name:
-          type: string
-    model.TbK8sAccessInfo:
-      type: object
-      properties:
-        endpoint:
-          type: string
-          example: http://1.2.3.4:6443
-        kubeconfig:
-          type: string
-          example: |-
-            apiVersion: v1
-            clusters:
-            - cluster:
-             certificate-authority-data: LS0...
-    model.TbK8sAddonsInfo:
-      type: object
-      properties:
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-    model.TbK8sClusterContainerCmdReq:
-      required:
-      - command
-      type: object
-      properties:
-        command:
-          type: array
-          example:
-          - echo hello
-          items:
-            type: string
-    model.TbK8sClusterContainerCmdResult:
-      type: object
-      properties:
-        command:
-          type: string
-        err:
-          type: object
-        stderr:
-          type: string
-        stdout:
-          type: string
-    model.TbK8sClusterContainerCmdResults:
-      type: object
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.TbK8sClusterContainerCmdResult'
-    model.TbK8sClusterDynamicReq:
-      required:
-      - imageId
-      - name
-      - specId
-      type: object
-      properties:
-        connectionName:
-          type: string
-          description: |-
-            if ConnectionName is given, the VM tries to use associtated credential.
-            if not, it will use predefined ConnectionName in Spec objects
-          default: tencent-ap-seoul
-        description:
-          type: string
-          example: Description
-        desiredNodeSize:
-          type: string
-          example: "1"
-          default: "1"
-        imageId:
-          type: string
-          description: ImageId is field for id of a image in common namespace
-          example: "default, tencent+ap-seoul+ubuntu20.04"
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
-        maxNodeSize:
-          type: string
-          example: "3"
-          default: "2"
-        minNodeSize:
-          type: string
-          example: "1"
-          default: "1"
-        name:
-          type: string
-          description: K8sCluster name if it is not empty.
-          example: k8scluster01
-        nodeGroupName:
-          type: string
-          description: NodeGroup name if it is not empty
-          example: k8sng01
-        onAutoScaling:
-          type: string
-          example: "true"
-          default: "true"
-        rootDiskSize:
-          type: string
-          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
-          example: "default, 30, 42, ..."
-          default: default
-        rootDiskType:
-          type: string
-          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
-            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
-            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
-            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT:\
-            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
-          example: "default, TYPE1, ..."
-          default: default
-        specId:
-          type: string
-          description: SpecId is field for id of a spec in common namespace
-          example: tencent+ap-seoul+S2.MEDIUM4
-        version:
-          type: string
-          description: K8s Clsuter version
-          example: "1.29"
-    model.TbK8sClusterInfo:
-      type: object
-      properties:
-        accessInfo:
-          $ref: '#/components/schemas/model.TbK8sAccessInfo'
-        addons:
-          $ref: '#/components/schemas/model.TbK8sAddonsInfo'
-        connectionConfig:
-          type: object
-          description: ConnectionConfig shows connection info to cloud service provider
-          allOf:
-          - $ref: '#/components/schemas/model.ConnConfig'
-        connectionName:
-          type: string
-          example: alibaba-ap-northeast-2
-        createdTime:
-          type: string
-          example: 1970-01-01T00:00:00.00Z
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-        description:
-          type: string
-          example: My K8sCluster
-        id:
-          type: string
-          description: "Id is unique identifier for the object, same as Name"
-          example: k8scluster01
-        k8sNodeGroupList:
-          type: array
-          description: K8sNodeGroupList is for describing network information about
-            the cluster
-          items:
-            $ref: '#/components/schemas/model.TbK8sNodeGroupInfo'
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: k8scluster01
-        network:
-          type: object
-          description: Network is for describing network information about the cluster
-          allOf:
-          - $ref: '#/components/schemas/model.TbK8sClusterNetworkInfo'
-        resourceType:
-          type: string
-          description: ResourceType is the type of the resource
-        spiderViewK8sClusterDetail:
-          $ref: '#/components/schemas/model.SpiderClusterInfo'
-        status:
-          type: object
-          description: "Creating, Active, Inactive, Updating, Deleting"
-          example: Active
-          allOf:
-          - $ref: '#/components/schemas/model.TbK8sClusterStatus'
-        systemLabel:
-          type: string
-          description: SystemLabel is for describing the Resource in a keyword (any
-            string can be used) for special System purpose
-          example: Managed by CB-Tumblebug
-        systemMessage:
-          type: string
-          description: Latest system message such as error message
-          example: Failed because ...
-        uid:
-          type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
-        version:
-          type: string
-          description: Version is for kubernetes version
-          example: 1.30.1
-    model.TbK8sClusterNetworkInfo:
-      type: object
-      properties:
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        securityGroupIds:
-          type: array
-          example:
-          - sg-01
-          items:
-            type: string
-        subnetIds:
-          type: array
-          example:
-          - subnet-01
-          items:
-            type: string
-        vNetId:
-          type: string
-          example: vpc-01
-    model.TbK8sClusterReq:
-      required:
-      - connectionName
-      - name
-      - securityGroupIds
-      - subnetIds
-      - vNetId
-      type: object
-      properties:
-        connectionName:
-          type: string
-          description: Namespace      string `json:"namespace" validate:"required"
-            example:"default"`
-          example: alibaba-ap-northeast-2
-        cspResourceId:
-          type: string
-          description: |-
-            Fields for "Register existing K8sCluster" feature
-            @description CspResourceId is required to register a k8s cluster from CSP (option=register)
-          example: required when option is register
-        description:
-          type: string
-          example: My K8sCluster
-        k8sNodeGroupList:
-          type: array
-          description: (3) NodeGroupInfo List
-          items:
-            $ref: '#/components/schemas/model.TbK8sNodeGroupReq'
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
-        name:
-          type: string
-          description: (1) K8sCluster Info
-          example: k8scluster01
-        securityGroupIds:
-          type: array
-          example:
-          - sg-01
-          items:
-            type: string
-        subnetIds:
-          type: array
-          example:
-          - subnet-01
-          items:
-            type: string
-        systemLabel:
-          type: string
-          description: SystemLabel is for describing the k8scluster in a keyword (any
-            string can be used) for special System purpose
-          example: ""
-        vNetId:
-          type: string
-          description: (2) Network Info
-          example: vpc-01
-        version:
-          type: string
-          example: 1.30.1-aliyun.1
-    model.TbK8sClusterStatus:
-      type: string
-      enum:
-      - Creating
-      - Active
-      - Inactive
-      - Updating
-      - Deleting
-      x-enum-varnames:
-      - TbK8sClusterCreating
-      - TbK8sClusterActive
-      - TbK8sClusterInactive
-      - TbK8sClusterUpdating
-      - TbK8sClusterDeleting
-    model.TbK8sNodeGroupDynamicReq:
-      required:
-      - imageId
-      - name
-      - specId
-      type: object
-      properties:
-        description:
-          type: string
-          example: Description
-        desiredNodeSize:
-          type: string
-          example: "1"
-          default: "1"
-        imageId:
-          type: string
-          description: ImageId is field for id of a image in common namespace
-          example: "default, tencent+ap-seoul+ubuntu20.04"
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
-        maxNodeSize:
-          type: string
-          example: "3"
-          default: "2"
-        minNodeSize:
-          type: string
-          example: "1"
-          default: "1"
-        name:
-          type: string
-          description: K8sNodeGroup name if it is not empty.
-          example: k8sng01
-        onAutoScaling:
-          type: string
-          example: "true"
-          default: "true"
-        rootDiskSize:
-          type: string
-          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
-          example: "default, 30, 42, ..."
-          default: default
-        rootDiskType:
-          type: string
-          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
-            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
-            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
-            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT:\
-            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
-          example: "default, TYPE1, ..."
-          default: default
-        specId:
-          type: string
-          description: SpecId is field for id of a spec in common namespace
-          example: tencent+ap-seoul+S2.MEDIUM4
-    model.TbK8sNodeGroupInfo:
-      type: object
-      properties:
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-        desiredNodeSize:
-          type: integer
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: aws-ap-southeast-1
-        imageId:
-          type: string
-        k8sNodes:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.TbK8sNodeInfo'
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        maxNodeSize:
-          type: integer
-        minNodeSize:
-          type: integer
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: aws-ap-southeast-1
-        onAutoScaling:
-          type: boolean
-        rootDiskSize:
-          type: string
-        rootDiskType:
-          type: string
-        specId:
-          type: string
-        spiderViewK8sNodeGroupDetail:
-          $ref: '#/components/schemas/model.SpiderNodeGroupInfo'
-        sshKeyId:
-          type: string
-        status:
-          type: object
-          description: "Creating, Active, Inactive, Updating, Deleting"
-          example: Active
-          allOf:
-          - $ref: '#/components/schemas/model.TbK8sNodeGroupStatus'
-    model.TbK8sNodeGroupReq:
-      type: object
-      properties:
-        description:
-          type: string
-          example: Description
-        desiredNodeSize:
-          type: string
-          example: "1"
-        imageId:
-          type: string
-          example: image-01
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
-        maxNodeSize:
-          type: string
-          example: "3"
-        minNodeSize:
-          type: string
-          example: "1"
-        name:
-          type: string
-          example: k8sng01
-        onAutoScaling:
-          type: string
-          description: autoscale config.
-          example: "true"
-        rootDiskSize:
-          type: string
-          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
-          example: "40"
-        rootDiskType:
-          type: string
-          description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
-            , \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"],\
-            \ GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"],\
-            \ ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT:\
-            \ [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]"
-          example: cloud_essd
-        specId:
-          type: string
-          example: spec-01
-        sshKeyId:
-          type: string
-          example: sshkey-01
-    model.TbK8sNodeGroupStatus:
-      type: string
-      enum:
-      - Creating
-      - Active
-      - Inactive
-      - Updating
-      - Deleting
-      x-enum-varnames:
-      - TbK8sNodeGroupCreating
-      - TbK8sNodeGroupActive
-      - TbK8sNodeGroupInactive
-      - TbK8sNodeGroupUpdating
-      - TbK8sNodeGroupDeleting
-    model.TbK8sNodeInfo:
-      type: object
-      properties:
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-    model.TbMciDynamicReq:
-      required:
-      - name
-      - subGroups
-      type: object
-      properties:
-        description:
-          type: string
-          example: Made in CB-TB
-        installMonAgent:
-          type: string
-          description: "InstallMonAgent Option for CB-Dragonfly agent installation\
-            \ ([yes/no] default:no)"
-          example: "no"
-          default: "no"
-          enum:
-          - "yes"
-          - "no"
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
-        name:
-          type: string
-          example: mci01
-        policyOnPartialFailure:
-          type: string
-          description: |-
-            PolicyOnPartialFailure determines how to handle VM creation failures
-            - "continue": Continue with partial MCI creation (default)
-            - "rollback": Cleanup entire MCI when any VM fails
-            - "refine": Mark failed VMs for refinement
-          example: continue
-          default: continue
-          enum:
-          - continue
-          - rollback
-          - refine
-        postCommand:
-          type: object
-          description: PostCommand is for the command to bootstrap the VMs
-          allOf:
-          - $ref: '#/components/schemas/model.MciCmdReq'
-        subGroups:
-          type: array
-          description: |-
-            SubGroups is array of VM requests for multi-cloud infrastructure
-            Example: Multiple VM groups across different CSPs
-            [
-              {
-                "name": "aws-group",
-                "subGroupSize": "3",
-                "specId": "aws+ap-northeast-2+t3.nano",
-                "imageId": "ami-01f71f215b23ba262",
-                "rootDiskSize": "50",
-                "label": {"role": "worker", "csp": "aws"}
-              },
-              {
-                "name": "azure-group",
-                "subGroupSize": "2",
-                "specId": "azure+koreasouth+standard_b1s",
-                "imageId": "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202505210",
-                "rootDiskSize": "50",
-                "label": {"role": "head", "csp": "azure"}
-              },
-              {
-                "name": "gcp-group",
-                "subGroupSize": "1",
-                "specId": "gcp+asia-northeast3+g1-small",
-                "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20250712",
-                "rootDiskSize": "50",
-                "label": {"role": "test", "csp": "gcp"}
-              }
-            ]
-          items:
-            $ref: '#/components/schemas/model.TbCreateSubGroupDynamicReq'
-        systemLabel:
-          type: string
-          description: SystemLabel is for describing the mci in a keyword (any string
-            can be used) for special System purpose
-          example: ""
-    model.TbMciInfo:
-      type: object
-      properties:
-        configureCloudAdaptiveNetwork:
-          type: string
-          description: "ConfigureCloudAdaptiveNetwork is an option to configure Cloud\
-            \ Adaptive Network (CLADNet) ([yes/no] default:yes)"
-          example: "yes"
-          default: "no"
-          enum:
-          - "yes"
-          - "no"
-        creationErrors:
-          type: object
-          description: CreationErrors contains information about VM creation failures
-            (if any)
-          allOf:
-          - $ref: '#/components/schemas/model.MciCreationErrors'
-        description:
-          type: string
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: aws-ap-southeast-1
-        installMonAgent:
-          type: string
-          description: "InstallMonAgent Option for CB-Dragonfly agent installation\
-            \ ([yes/no] default:no)"
-          example: "no"
-          default: "no"
-          enum:
-          - "yes"
-          - "no"
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: aws-ap-southeast-1
-        newVmList:
-          type: array
-          description: List of IDs for new VMs. Return IDs if the VMs are newly added.
-            This field should be used for return body only.
-          items:
-            type: string
-        placementAlgo:
-          type: string
-        postCommand:
-          type: object
-          description: PostCommand is for the command to bootstrap the VMs
-          allOf:
-          - $ref: '#/components/schemas/model.MciCmdReq'
-        postCommandResult:
-          type: object
-          description: PostCommandResult is the result of the command for bootstraping
-            the VMs
-          allOf:
-          - $ref: '#/components/schemas/model.MciSshCmdResult'
-        resourceType:
-          type: string
-          description: ResourceType is the type of the resource
-        status:
-          type: string
-        statusCount:
-          $ref: '#/components/schemas/model.StatusCountInfo'
-        systemLabel:
-          type: string
-          description: SystemLabel is for describing the mci in a keyword (any string
-            can be used) for special System purpose
-          example: Managed by CB-Tumblebug
-        systemMessage:
-          type: string
-          description: Latest system message such as error message
-          example: Failed because ...
-        targetAction:
-          type: string
-        targetStatus:
-          type: string
-        uid:
-          type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
-        vm:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.TbVmInfo'
-    model.TbMciReq:
-      required:
-      - name
-      - subGroups
-      type: object
-      properties:
-        description:
-          type: string
-          example: Made in CB-TB
-        installMonAgent:
-          type: string
-          description: "InstallMonAgent Option for CB-Dragonfly agent installation\
-            \ ([yes/no] default:yes)"
-          example: "no"
-          default: "no"
-          enum:
-          - "yes"
-          - "no"
-        label:
-          type: object
-          additionalProperties:
-            type: string
-          description: Label is for describing the object by keywords
-        name:
-          type: string
-          example: mci01
-        placementAlgo:
-          type: string
-        policyOnPartialFailure:
-          type: string
-          description: |-
-            PolicyOnPartialFailure determines how to handle VM creation failures
-            - "continue": Continue with partial MCI creation (default)
-            - "rollback": Cleanup entire MCI when any VM fails
-            - "refine": Mark failed VMs for refinement
-          example: continue
-          default: continue
-          enum:
-          - continue
-          - rollback
-          - refine
-        postCommand:
-          type: object
-          description: PostCommand is for the command to bootstrap the VMs
-          allOf:
-          - $ref: '#/components/schemas/model.MciCmdReq'
-        subGroups:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.TbCreateSubGroupReq'
-        systemLabel:
-          type: string
-          description: SystemLabel is for describing the mci in a keyword (any string
-            can be used) for special System purpose
-          example: ""
-    model.TbNLBAddRemoveVMReq:
-      type: object
-      properties:
-        targetGroup:
-          $ref: '#/components/schemas/model.TbNLBTargetGroupInfo'
-    model.TbNLBHealthCheckerInfo:
-      type: object
-      properties:
-        interval:
-          type: integer
-          description: "secs, Interval time between health checks."
-          example: 10
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        port:
-          type: string
-          description: Listener Port or 1-65535
-          example: "22"
-        protocol:
-          type: string
-          description: TCP|HTTP|HTTPS
-          example: TCP
-        threshold:
-          type: integer
-          description: "num, The number of continuous health checks to change the\
-            \ VM status."
-          example: 3
-        timeout:
-          type: integer
-          description: "secs, Waiting time to decide an unhealthy VM when no response."
-          example: 10
-    model.TbNLBHealthCheckerReq:
-      type: object
-      properties:
-        interval:
-          type: string
-          description: "secs, Interval time between health checks."
-          example: default
-        threshold:
-          type: string
-          description: "num, The number of continuous health checks to change the\
-            \ VM status."
-          example: default
-        timeout:
-          type: string
-          description: "secs, Waiting time to decide an unhealthy VM when no response."
-          example: default
-    model.TbNLBInfo:
-      type: object
-      properties:
-        associatedObjectList:
-          type: array
-          items:
-            type: string
-        connectionConfig:
-          $ref: '#/components/schemas/model.ConnConfig'
-        connectionName:
-          type: string
-        createdTime:
-          type: string
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-        description:
-          type: string
-        healthChecker:
-          $ref: '#/components/schemas/model.TbNLBHealthCheckerInfo'
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: aws-ap-southeast-1
-        isAutoGenerated:
-          type: boolean
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        listener:
-          $ref: '#/components/schemas/model.TbNLBListenerInfo'
-        location:
-          $ref: '#/components/schemas/model.Location'
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: aws-ap-southeast-1
-        resourceType:
-          type: string
-          description: ResourceType is the type of the resource
-        scope:
-          type: string
-          description: REGION(V) | GLOBAL
-        status:
-          type: string
-        systemLabel:
-          type: string
-          description: SystemLabel is for describing the Resource in a keyword (any
-            string can be used) for special System purpose
-          example: Managed by CB-Tumblebug
-        targetGroup:
-          $ref: '#/components/schemas/model.TbNLBTargetGroupInfo'
-        type:
-          type: string
-          description: PUBLIC(V) | INTERNAL
-        uid:
-          type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
-    model.TbNLBListenerInfo:
-      type: object
-      properties:
-        dnsName:
-          type: string
-          description: "Optional, Auto Generated and attached"
-          example: default-group-cd3.elb.ap-northeast-2.amazonaws.com
-        ip:
-          type: string
-          description: Auto Generated and attached
-          example: x.x.x.x
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        port:
-          type: string
-          description: 1-65535
-          example: "80"
-        protocol:
-          type: string
-          description: TCP|UDP
-          example: TCP
-    model.TbNLBReq:
-      required:
-      - healthChecker
-      - listener
-      - scope
-      - targetGroup
-      - type
-      type: object
-      properties:
-        cspResourceId:
-          type: string
-          description: Existing NLB (used only for option=register)
-        description:
-          type: string
-        healthChecker:
-          type: object
-          description: HealthChecker
-          allOf:
-          - $ref: '#/components/schemas/model.TbNLBHealthCheckerReq'
-        listener:
-          type: object
-          description: Frontend
-          allOf:
-          - $ref: '#/components/schemas/model.NLBListenerReq'
-        scope:
-          type: string
-          description: REGION(V) | GLOBAL
-          example: REGION
-          enum:
-          - REGION
-          - GLOBAL
-        targetGroup:
-          type: object
-          description: Backend
-          allOf:
-          - $ref: '#/components/schemas/model.TbNLBTargetGroupReq'
-        type:
-          type: string
-          description: PUBLIC(V) | INTERNAL
-          example: PUBLIC
-          enum:
-          - PUBLIC
-          - INTERNAL
-    model.TbNLBTargetGroupInfo:
-      type: object
-      properties:
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        port:
-          type: string
-          description: Listener Port or 1-65535
-          example: "80"
-        protocol:
-          type: string
-          description: TCP|HTTP|HTTPS
-          example: TCP
-        subGroupId:
-          type: string
-          example: g1
-        vms:
-          type: array
-          items:
-            type: string
-    model.TbNLBTargetGroupReq:
-      type: object
-      properties:
-        port:
-          type: string
-          description: Listener Port or 1-65535
-          example: "80"
-        protocol:
-          type: string
-          description: TCP|HTTP|HTTPS
-          example: TCP
-        subGroupId:
-          type: string
-          example: g1
-    model.TbRegisterSubnetReq:
-      required:
-      - connectionName
-      - cspResourceId
-      - name
-      type: object
-      properties:
-        connectionName:
-          type: string
-        cspResourceId:
-          type: string
-        description:
-          type: string
-        name:
-          type: string
-        zone:
-          type: string
-    model.TbRegisterVNetReq:
-      required:
-      - connectionName
-      - cspResourceId
-      - name
-      type: object
-      properties:
-        connectionName:
-          type: string
-        cspResourceId:
-          type: string
-        description:
-          type: string
-        name:
-          type: string
-    model.TbRestWrapperSecurityGroupUpdateResponse:
-      type: object
-      properties:
-        response:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.TbSecurityGroupUpdateResponse'
-        summary:
-          $ref: '#/components/schemas/model.TbUpdateSummary'
-    model.TbScaleOutSubGroupReq:
-      required:
-      - numVMsToAdd
-      type: object
-      properties:
-        numVMsToAdd:
-          type: string
-          description: Define addtional VMs to scaleOut
-          example: "2"
-    model.TbSecurityGroupInfo:
-      type: object
-      properties:
-        associatedObjectList:
-          type: array
-          items:
-            type: string
-        connectionConfig:
-          $ref: '#/components/schemas/model.ConnConfig'
-        connectionName:
-          type: string
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-        description:
-          type: string
-        firewallRules:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.TbFirewallRuleInfo'
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: aws-ap-southeast-1
-        isAutoGenerated:
-          type: boolean
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: aws-ap-southeast-1
-        resourceType:
-          type: string
-          description: ResourceType is the type of the resource
-        systemLabel:
-          type: string
-          description: SystemLabel is for describing the Resource in a keyword (any
-            string can be used) for special System purpose
-          example: Managed by CB-Tumblebug
-        uid:
-          type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
-        vNetId:
-          type: string
-    model.TbSecurityGroupReq:
-      required:
-      - connectionName
-      - name
-      - vNetId
-      type: object
-      properties:
-        connectionName:
-          type: string
-        cspResourceId:
-          type: string
-          description: CspResourceId is required to register object from CSP (option=register)
-          example: "required for option=register only. ex: csp-06eb41e14121c550a"
-        description:
-          type: string
-        firewallRules:
-          type: array
-          description: validate:"required"`
-          items:
-            $ref: '#/components/schemas/model.TbFirewallRuleReq'
-        name:
-          type: string
-        vNetId:
-          type: string
-    model.TbSecurityGroupUpdateReq:
-      type: object
-      properties:
-        firewallRules:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.TbFirewallRuleReq'
-    model.TbSecurityGroupUpdateResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        message:
-          type: string
-        name:
-          type: string
-        previous:
-          $ref: '#/components/schemas/model.TbSecurityGroupInfo'
-        success:
-          type: boolean
-        updated:
-          $ref: '#/components/schemas/model.TbSecurityGroupInfo'
-    model.TbSetK8sNodeGroupAutoscalingReq:
-      type: object
-      properties:
-        onAutoScaling:
-          type: string
-          example: "true"
-    model.TbSetK8sNodeGroupAutoscalingRes:
-      type: object
-      properties:
-        result:
-          type: string
-          example: "true"
-    model.TbSpecInfo:
-      type: object
-      properties:
-        acceleratorCount:
-          type: integer
-        acceleratorMemoryGB:
-          type: number
-        acceleratorModel:
-          type: string
-        acceleratorType:
-          type: string
-        architecture:
-          type: string
-          example: x86_64
-        associatedObjectList:
-          type: array
-          items:
-            type: string
-        connectionName:
-          type: string
-        costPerHour:
-          type: number
-        cspSpecName:
-          type: string
-          description: CspSpecName is name of the spec given by CSP
-          example: csp-06eb41e14121c550a
-        description:
-          type: string
-        details:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        diskSizeGB:
-          type: number
-        evaluationScore01:
-          type: number
-        evaluationScore02:
-          type: number
-        evaluationScore03:
-          type: number
-        evaluationScore04:
-          type: number
-        evaluationScore05:
-          type: number
-        evaluationScore06:
-          type: number
-        evaluationScore07:
-          type: number
-        evaluationScore08:
-          type: number
-        evaluationScore09:
-          type: number
-        evaluationScore10:
-          type: number
-        evaluationStatus:
-          type: string
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: aws+ap-southeast+csp-06eb41e14121c550a
-        infraType:
-          type: string
-          description: "InfraType can be one of vm|k8s|kubernetes|container, etc."
-        isAutoGenerated:
-          type: boolean
-        maxTotalStorageTiB:
-          type: integer
-        memoryGiB:
-          type: number
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: aws-ap-southeast-1
-        namespace:
-          type: string
-          example: default
-        netBwGbps:
-          type: integer
-        orderInFilteredResult:
-          type: integer
-        osType:
-          type: string
-        providerName:
-          type: string
-        regionLatitude:
-          type: number
-        regionLongitude:
-          type: number
-        regionName:
-          type: string
-        rootDiskSize:
-          type: string
-        rootDiskType:
-          type: string
-        systemLabel:
-          type: string
-          description: SystemLabel is for describing the Resource in a keyword (any
-            string can be used) for special System purpose
-          example: Managed by CB-Tumblebug
-        uid:
-          type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
-        vCPU:
-          type: integer
-    model.TbSpecReq:
-      required:
-      - connectionName
-      - cspSpecName
-      - name
-      type: object
-      properties:
-        connectionName:
-          type: string
-        cspSpecName:
-          type: string
-          description: CspSpecName is name of the spec given by CSP
-        description:
-          type: string
-        name:
-          type: string
-          description: "Name is human-readable string to represent the object, used\
-            \ to generate Id"
-    model.TbSshKeyInfo:
-      type: object
-      properties:
-        associatedObjectList:
-          type: array
-          items:
-            type: string
-        connectionConfig:
-          $ref: '#/components/schemas/model.ConnConfig'
-        connectionName:
-          type: string
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-        description:
-          type: string
-        fingerprint:
-          type: string
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: aws-ap-southeast-1
-        isAutoGenerated:
-          type: boolean
-        keyValueList:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.KeyValue'
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: aws-ap-southeast-1
-        privateKey:
-          type: string
-        publicKey:
-          type: string
-        resourceType:
-          type: string
-          description: ResourceType is the type of the resource
-        systemLabel:
-          type: string
-          description: SystemLabel is for describing the Resource in a keyword (any
-            string can be used) for special System purpose
-          example: Managed by CB-Tumblebug
-        uid:
-          type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
-        username:
-          type: string
-        verifiedUsername:
-          type: string
-    model.TbSshKeyReq:
-      required:
-      - connectionName
-      - name
-      type: object
-      properties:
-        connectionName:
-          type: string
-        cspResourceId:
-          type: string
-          description: |-
-            Fields for "Register existing SSH keys" feature
-            CspResourceId is required to register object from CSP (option=register)
-        description:
-          type: string
-        fingerprint:
-          type: string
-        name:
-          type: string
-        privateKey:
-          type: string
-        publicKey:
-          type: string
-        username:
-          type: string
-        verifiedUsername:
-          type: string
-    model.TbSubnetInfo:
+    model.SubnetInfo:
       type: object
       properties:
         bastionNodes:
@@ -14579,7 +14489,7 @@ components:
           example: wef12awefadf1221edcf
         zone:
           type: string
-    model.TbSubnetReq:
+    model.SubnetReq:
       required:
       - ipv4_CIDR
       - name
@@ -14596,7 +14506,18 @@ components:
           example: subnet00
         zone:
           type: string
-    model.TbUpdateSummary:
+    model.SystemLabelInfo:
+      type: object
+      properties:
+        labelTypes:
+          type: array
+          items:
+            type: string
+        systemLabels:
+          type: object
+          additionalProperties:
+            type: string
+    model.UpdateSummary:
       type: object
       properties:
         allSuccess:
@@ -14607,13 +14528,22 @@ components:
           type: integer
         total:
           type: integer
-    model.TbUpgradeK8sClusterReq:
+    model.UpgradeK8sClusterReq:
       type: object
       properties:
         version:
           type: string
           example: 1.30.1-alyun.1
-    model.TbVNetInfo:
+    model.VNetDetails:
+      type: object
+      properties:
+        hostsPerSubnet:
+          type: string
+        subnetCount:
+          type: string
+        useFirstNZones:
+          type: string
+    model.VNetInfo:
       type: object
       properties:
         associatedObjectList:
@@ -14659,7 +14589,7 @@ components:
         subnetInfoList:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbSubnetInfo'
+            $ref: '#/components/schemas/model.SubnetInfo'
         systemLabel:
           type: string
           description: SystemLabel is for describing the Resource in a keyword (any
@@ -14670,7 +14600,7 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
-    model.TbVNetReq:
+    model.VNetReq:
       required:
       - connectionName
       - name
@@ -14691,8 +14621,23 @@ components:
         subnetInfoList:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbSubnetReq'
-    model.TbVmInfo:
+            $ref: '#/components/schemas/model.SubnetReq'
+    model.VmCreationError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error is the error message
+        phase:
+          type: string
+          description: Phase indicates when the error occurred
+        timestamp:
+          type: string
+          description: Timestamp when the error occurred
+        vmName:
+          type: string
+          description: VmName is the name of the VM that failed
+    model.VmInfo:
       type: object
       properties:
         addtionalDetails:
@@ -14817,13 +14762,13 @@ components:
           type: string
         vmUserPassword:
           type: string
-    model.TbVmSnapshotReq:
+    model.VmSnapshotReq:
       type: object
       properties:
         name:
           type: string
           example: aws-ap-southeast-1-snapshot
-    model.TbVmStatusInfo:
+    model.VmStatusInfo:
       type: object
       properties:
         createdTime:
@@ -14876,30 +14821,6 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
-    model.VNetDetails:
-      type: object
-      properties:
-        hostsPerSubnet:
-          type: string
-        subnetCount:
-          type: string
-        useFirstNZones:
-          type: string
-    model.VmCreationError:
-      type: object
-      properties:
-        error:
-          type: string
-          description: Error is the error message
-        phase:
-          type: string
-          description: Phase indicates when the error occurred
-        timestamp:
-          type: string
-          description: Timestamp when the error occurred
-        vmName:
-          type: string
-          description: VmName is the name of the VM that failed
     model.VpnIdList:
       type: object
       properties:
@@ -15039,7 +14960,7 @@ components:
         vNetReqList:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbVNetReq'
+            $ref: '#/components/schemas/model.VNetReq'
     netutil.RestPostUtilToDesignVNetRequest:
       type: object
       properties:
@@ -15171,56 +15092,56 @@ components:
         spec:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbSpecInfo'
+            $ref: '#/components/schemas/model.SpecInfo'
     resource.RestGetAllCustomImageResponse:
       type: object
       properties:
         customImage:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbCustomImageInfo'
+            $ref: '#/components/schemas/model.CustomImageInfo'
     resource.RestGetAllDataDiskResponse:
       type: object
       properties:
         dataDisk:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbDataDiskInfo'
+            $ref: '#/components/schemas/model.DataDiskInfo'
     resource.RestGetAllK8sClusterResponse:
       type: object
       properties:
         cluster:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbK8sClusterInfo'
+            $ref: '#/components/schemas/model.K8sClusterInfo'
     resource.RestGetAllSecurityGroupResponse:
       type: object
       properties:
         securityGroup:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbSecurityGroupInfo'
+            $ref: '#/components/schemas/model.SecurityGroupInfo'
     resource.RestGetAllSshKeyResponse:
       type: object
       properties:
         sshKey:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbSshKeyInfo'
+            $ref: '#/components/schemas/model.SshKeyInfo'
     resource.RestGetAllSubnetResponse:
       type: object
       properties:
         subnetInfoList:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbSubnetInfo'
+            $ref: '#/components/schemas/model.SubnetInfo'
     resource.RestGetAllVNetResponse:
       type: object
       properties:
         vNet:
           type: array
           items:
-            $ref: '#/components/schemas/model.TbVNetInfo'
+            $ref: '#/components/schemas/model.VNetInfo'
     resource.RestLookupImageRequest:
       type: object
       properties:

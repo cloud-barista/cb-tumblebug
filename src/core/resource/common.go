@@ -76,7 +76,7 @@ func getResourceConnectionName(nsId, resourceType, resourceId string) (string, e
 	// Parse the JSON value to extract connection name
 	switch resourceType {
 	case model.StrSpec:
-		var resource model.TbSpecInfo
+		var resource model.SpecInfo
 		err = json.Unmarshal([]byte(keyValue.Value), &resource)
 		if err != nil {
 			return "unknown", err
@@ -84,7 +84,7 @@ func getResourceConnectionName(nsId, resourceType, resourceId string) (string, e
 		return resource.ConnectionName, nil
 
 	case model.StrImage:
-		var resource model.TbImageInfo
+		var resource model.ImageInfo
 		err = json.Unmarshal([]byte(keyValue.Value), &resource)
 		if err != nil {
 			return "unknown", err
@@ -92,7 +92,7 @@ func getResourceConnectionName(nsId, resourceType, resourceId string) (string, e
 		return resource.ConnectionName, nil
 
 	case model.StrCustomImage:
-		var resource model.TbCustomImageInfo
+		var resource model.CustomImageInfo
 		err = json.Unmarshal([]byte(keyValue.Value), &resource)
 		if err != nil {
 			return "unknown", err
@@ -100,7 +100,7 @@ func getResourceConnectionName(nsId, resourceType, resourceId string) (string, e
 		return resource.ConnectionName, nil
 
 	case model.StrSSHKey:
-		var resource model.TbSshKeyInfo
+		var resource model.SshKeyInfo
 		err = json.Unmarshal([]byte(keyValue.Value), &resource)
 		if err != nil {
 			return "unknown", err
@@ -108,7 +108,7 @@ func getResourceConnectionName(nsId, resourceType, resourceId string) (string, e
 		return resource.ConnectionName, nil
 
 	case model.StrSecurityGroup:
-		var resource model.TbSecurityGroupInfo
+		var resource model.SecurityGroupInfo
 		err = json.Unmarshal([]byte(keyValue.Value), &resource)
 		if err != nil {
 			return "unknown", err
@@ -116,7 +116,7 @@ func getResourceConnectionName(nsId, resourceType, resourceId string) (string, e
 		return resource.ConnectionName, nil
 
 	case model.StrVNet:
-		var resource model.TbVNetInfo
+		var resource model.VNetInfo
 		err = json.Unmarshal([]byte(keyValue.Value), &resource)
 		if err != nil {
 			return "unknown", err
@@ -124,7 +124,7 @@ func getResourceConnectionName(nsId, resourceType, resourceId string) (string, e
 		return resource.ConnectionName, nil
 
 	case model.StrSubnet:
-		var resource model.TbSubnetInfo
+		var resource model.SubnetInfo
 		err = json.Unmarshal([]byte(keyValue.Value), &resource)
 		if err != nil {
 			return "unknown", err
@@ -132,7 +132,7 @@ func getResourceConnectionName(nsId, resourceType, resourceId string) (string, e
 		return resource.ConnectionName, nil
 
 	case model.StrDataDisk:
-		var resource model.TbDataDiskInfo
+		var resource model.DataDiskInfo
 		err = json.Unmarshal([]byte(keyValue.Value), &resource)
 		if err != nil {
 			return "unknown", err
@@ -164,13 +164,13 @@ func init() {
 	// register validation for 'Tb*Req'
 	// NOTE: only have to register a non-pointer type for 'Tb*Req', validator
 	// internally dereferences during it's type checks.
-	validate.RegisterStructValidation(TbDataDiskReqStructLevelValidation, model.TbDataDiskReq{})
-	validate.RegisterStructValidation(TbImageReqStructLevelValidation, model.TbImageReq{})
-	validate.RegisterStructValidation(TbCustomImageReqStructLevelValidation, model.TbCustomImageReq{})
-	validate.RegisterStructValidation(TbSecurityGroupReqStructLevelValidation, model.TbSecurityGroupReq{})
-	validate.RegisterStructValidation(TbSpecReqStructLevelValidation, model.TbSpecReq{})
-	validate.RegisterStructValidation(TbSshKeyReqStructLevelValidation, model.TbSshKeyReq{})
-	validate.RegisterStructValidation(TbVNetReqStructLevelValidation, model.TbVNetReq{})
+	validate.RegisterStructValidation(DataDiskReqStructLevelValidation, model.DataDiskReq{})
+	validate.RegisterStructValidation(ImageReqStructLevelValidation, model.ImageReq{})
+	validate.RegisterStructValidation(CustomImageReqStructLevelValidation, model.CustomImageReq{})
+	validate.RegisterStructValidation(SecurityGroupReqStructLevelValidation, model.SecurityGroupReq{})
+	validate.RegisterStructValidation(SpecReqStructLevelValidation, model.SpecReq{})
+	validate.RegisterStructValidation(SshKeyReqStructLevelValidation, model.SshKeyReq{})
+	validate.RegisterStructValidation(VNetReqStructLevelValidation, model.VNetReq{})
 }
 
 // DelAllResources deletes all TB Resource objects of the given resourceType.
@@ -396,7 +396,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 
 		// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-		result := model.ORM.Delete(&model.TbImageInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
+		result := model.ORM.Delete(&model.ImageInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
 		if result.Error != nil {
 			fmt.Println(result.Error.Error())
 		} else {
@@ -405,7 +405,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		return nil
 	case model.StrCustomImage:
-		temp := model.TbCustomImageInfo{}
+		temp := model.CustomImageInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -424,7 +424,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 
 			// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-			_, err = model.ORM.Delete(&TbCustomImageInfo{Namespace: nsId, Id: resourceId})
+			_, err = model.ORM.Delete(&CustomImageInfo{Namespace: nsId, Id: resourceId})
 			if err != nil {
 				fmt.Println(err.Error())
 			} else {
@@ -438,7 +438,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		//get related recommend spec
 		//keyValue, err := kvstore.GetKv(key)
-		// content := TbSpecInfo{}
+		// content := SpecInfo{}
 		// err := json.Unmarshal([]byte(keyValue.Value), &content)
 		// if err != nil {
 		// 	log.Error().Err(err).Msg("")
@@ -452,7 +452,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		// }
 
 		// "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
-		result := model.ORM.Delete(&model.TbCustomImageInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
+		result := model.ORM.Delete(&model.CustomImageInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
 		if result.Error != nil {
 			fmt.Println(result.Error.Error())
 		} else {
@@ -461,7 +461,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		return nil
 	case model.StrSSHKey:
-		temp := model.TbSshKeyInfo{}
+		temp := model.SshKeyInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -472,7 +472,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		uid = temp.Uid
 
 	case model.StrVNet:
-		temp := model.TbVNetInfo{}
+		temp := model.VNetInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -484,7 +484,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		uid = temp.Uid
 
 	case model.StrSecurityGroup:
-		temp := model.TbSecurityGroupInfo{}
+		temp := model.SecurityGroupInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -495,7 +495,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		uid = temp.Uid
 
 	case model.StrDataDisk:
-		temp := model.TbDataDiskInfo{}
+		temp := model.DataDiskInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -554,7 +554,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	if strings.EqualFold(resourceType, model.StrVNet) {
 		// var subnetKeys []string
-		subnets := childResources.([]model.TbSubnetInfo)
+		subnets := childResources.([]model.SubnetInfo)
 		for _, v := range subnets {
 			subnetKey := common.GenChildResourceKey(nsId, model.StrSubnet, resourceId, v.Id)
 			// subnetKeys = append(subnetKeys, subnetKey)
@@ -572,7 +572,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 	} else if strings.EqualFold(resourceType, model.StrCustomImage) {
 		// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-		result := model.ORM.Delete(&model.TbSpecInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
+		result := model.ORM.Delete(&model.SpecInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
 		if result.Error != nil {
 			fmt.Println(result.Error.Error())
 		} else {
@@ -695,10 +695,10 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 	if keyValue != nil {
 		switch resourceType {
 		case model.StrImage:
-			res := []model.TbImageInfo{}
+			res := []model.ImageInfo{}
 			for _, v := range keyValue {
 
-				tempObj := model.TbImageInfo{}
+				tempObj := model.ImageInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
 					log.Error().Err(err).Msg("")
@@ -716,10 +716,10 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 			}
 			return res, nil
 		case model.StrCustomImage:
-			res := []model.TbCustomImageInfo{}
+			res := []model.CustomImageInfo{}
 			for _, v := range keyValue {
 
-				tempObj := model.TbCustomImageInfo{}
+				tempObj := model.CustomImageInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
 					log.Error().Err(err).Msg("")
@@ -731,7 +731,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				newObj, err := GetResource(nsId, model.StrCustomImage, tempObj.Id)
 				// do not return here to gather whole list. leave error message in the return body.
 				if newObj != nil {
-					tempObj = newObj.(model.TbCustomImageInfo)
+					tempObj = newObj.(model.CustomImageInfo)
 				} else {
 					tempObj.Id = tempObj.Id
 				}
@@ -753,9 +753,9 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 			}
 			return res, nil
 		case model.StrSecurityGroup:
-			res := []model.TbSecurityGroupInfo{}
+			res := []model.SecurityGroupInfo{}
 			for _, v := range keyValue {
-				tempObj := model.TbSecurityGroupInfo{}
+				tempObj := model.SecurityGroupInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
 					log.Error().Err(err).Msg("")
@@ -773,9 +773,9 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 			}
 			return res, nil
 		case model.StrSpec:
-			res := []model.TbSpecInfo{}
+			res := []model.SpecInfo{}
 			for _, v := range keyValue {
-				tempObj := model.TbSpecInfo{}
+				tempObj := model.SpecInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
 					log.Error().Err(err).Msg("")
@@ -793,9 +793,9 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 			}
 			return res, nil
 		case model.StrSSHKey:
-			res := []model.TbSshKeyInfo{}
+			res := []model.SshKeyInfo{}
 			for _, v := range keyValue {
-				tempObj := model.TbSshKeyInfo{}
+				tempObj := model.SshKeyInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
 					log.Error().Err(err).Msg("")
@@ -813,9 +813,9 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 			}
 			return res, nil
 		case model.StrVNet:
-			res := []model.TbVNetInfo{}
+			res := []model.VNetInfo{}
 			for _, v := range keyValue {
-				tempObj := model.TbVNetInfo{}
+				tempObj := model.VNetInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
 					log.Error().Err(err).Msg("")
@@ -833,9 +833,9 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 			}
 			return res, nil
 		case model.StrDataDisk:
-			res := []model.TbDataDiskInfo{}
+			res := []model.DataDiskInfo{}
 			for _, v := range keyValue {
-				tempObj := model.TbDataDiskInfo{}
+				tempObj := model.DataDiskInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
 					log.Error().Err(err).Msg("")
@@ -850,7 +850,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 					tempObj.Status = "Failed"
 					tempObj.SystemMessage = err.Error()
 				} else {
-					tempObj = newObj.(model.TbDataDiskInfo)
+					tempObj = newObj.(model.DataDiskInfo)
 				}
 
 				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
@@ -869,19 +869,19 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 	} else { //return empty object according to resourceType
 		switch resourceType {
 		case model.StrImage:
-			return []model.TbImageInfo{}, nil
+			return []model.ImageInfo{}, nil
 		case model.StrCustomImage:
-			return []model.TbCustomImageInfo{}, nil
+			return []model.CustomImageInfo{}, nil
 		case model.StrSecurityGroup:
-			return []model.TbSecurityGroupInfo{}, nil
+			return []model.SecurityGroupInfo{}, nil
 		case model.StrSpec:
-			return []model.TbSpecInfo{}, nil
+			return []model.SpecInfo{}, nil
 		case model.StrSSHKey:
-			return []model.TbSshKeyInfo{}, nil
+			return []model.SshKeyInfo{}, nil
 		case model.StrVNet:
-			return []model.TbVNetInfo{}, nil
+			return []model.VNetInfo{}, nil
 		case model.StrDataDisk:
-			return []model.TbDataDiskInfo{}, nil
+			return []model.DataDiskInfo{}, nil
 		}
 	}
 
@@ -1133,7 +1133,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 	if keyValue != (kvstore.KeyValue{}) {
 		switch resourceType {
 		case model.StrImage:
-			res := model.TbImageInfo{}
+			res := model.ImageInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
 				log.Error().Err(err).Msg("")
@@ -1141,7 +1141,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			}
 			return res, nil
 		case model.StrCustomImage:
-			res := model.TbCustomImageInfo{}
+			res := model.CustomImageInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
 				log.Error().Err(err).Msg("")
@@ -1183,7 +1183,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 
 			return res, nil
 		case model.StrSecurityGroup:
-			res := model.TbSecurityGroupInfo{}
+			res := model.SecurityGroupInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
 				log.Error().Err(err).Msg("")
@@ -1191,7 +1191,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			}
 			return res, nil
 		case model.StrSpec:
-			res := model.TbSpecInfo{}
+			res := model.SpecInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
 				log.Error().Err(err).Msg("")
@@ -1199,7 +1199,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			}
 			return res, nil
 		case model.StrSSHKey:
-			res := model.TbSshKeyInfo{}
+			res := model.SshKeyInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
 				log.Error().Err(err).Msg("")
@@ -1207,7 +1207,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			}
 			return res, nil
 		case model.StrVNet:
-			res := model.TbVNetInfo{}
+			res := model.VNetInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
 				log.Error().Err(err).Msg("")
@@ -1215,7 +1215,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			}
 			return res, nil
 		case model.StrDataDisk:
-			res := model.TbDataDiskInfo{}
+			res := model.DataDiskInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
 				log.Error().Err(err).Msg("")
@@ -1625,7 +1625,7 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 		if strings.EqualFold(resType, model.StrVNet) {
 			log.Debug().Msg(model.StrVNet)
 
-			reqTmp := model.TbVNetReq{}
+			reqTmp := model.VNetReq{}
 			reqTmp.ConnectionName = connectionName
 			reqTmp.Name = resourceName
 			reqTmp.Description = description
@@ -1638,7 +1638,7 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 			zones, length, _ := GetFirstNZones(connectionName, 2)
 			subnetName := reqTmp.Name
 			subnetCidr := "10." + strconv.Itoa(sliceIndex) + ".0.0/18"
-			subnet := model.TbSubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
+			subnet := model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
 			if length > 0 {
 				subnet.Zone = zones[0]
 			}
@@ -1646,7 +1646,7 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 
 			subnetName = reqTmp.Name + "-01"
 			subnetCidr = "10." + strconv.Itoa(sliceIndex) + ".64.0/18"
-			subnet = model.TbSubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
+			subnet = model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
 			if length > 1 {
 				subnet.Zone = zones[1]
 				// ref IBM VPC Network structure: https://cloud.ibm.com/docs/vpc?topic=vpc-about-networking-for-vpc&locale=en
@@ -1669,7 +1669,7 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 		} else if strings.EqualFold(resType, model.StrSecurityGroup) {
 			log.Debug().Msg(model.StrSecurityGroup)
 
-			reqTmp := model.TbSecurityGroupReq{}
+			reqTmp := model.SecurityGroupReq{}
 
 			reqTmp.ConnectionName = connectionName
 			reqTmp.Name = resourceName
@@ -1678,14 +1678,14 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 			reqTmp.VNetId = resourceName
 
 			// open all firewall for default securityGroup
-			var ruleList []model.TbFirewallRuleReq
-			rule := model.TbFirewallRuleReq{Ports: "1-65535", Protocol: "tcp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+			var ruleList []model.FirewallRuleReq
+			rule := model.FirewallRuleReq{Ports: "1-65535", Protocol: "tcp", Direction: "inbound", CIDR: "0.0.0.0/0"}
 			ruleList = append(ruleList, rule)
-			rule = model.TbFirewallRuleReq{Ports: "1-65535", Protocol: "udp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+			rule = model.FirewallRuleReq{Ports: "1-65535", Protocol: "udp", Direction: "inbound", CIDR: "0.0.0.0/0"}
 			ruleList = append(ruleList, rule)
 			// CloudIt only offers tcp, udp Protocols
 			if !strings.EqualFold(provider, "cloudit") {
-				rule = model.TbFirewallRuleReq{Protocol: "icmp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+				rule = model.FirewallRuleReq{Protocol: "icmp", Direction: "inbound", CIDR: "0.0.0.0/0"}
 				ruleList = append(ruleList, rule)
 			}
 
@@ -1704,7 +1704,7 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 		} else if strings.EqualFold(resType, model.StrSSHKey) {
 			log.Debug().Msg(model.StrSSHKey)
 
-			reqTmp := model.TbSshKeyReq{}
+			reqTmp := model.SshKeyReq{}
 
 			reqTmp.ConnectionName = connectionName
 			reqTmp.Name = resourceName

@@ -36,10 +36,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// TbMciReqStructLevelValidation is func to validate fields in TbMciReqStruct
-func TbMciReqStructLevelValidation(sl validator.StructLevel) {
+// MciReqStructLevelValidation is func to validate fields in MciReqStruct
+func MciReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(model.TbMciReq)
+	u := sl.Current().Interface().(model.MciReq)
 
 	err := common.CheckString(u.Name)
 	if err != nil {
@@ -48,10 +48,10 @@ func TbMciReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
-// TbCreateSubGroupReqStructLevelValidation is func to validate fields in model.TbCreateSubGroupReqStruct
-func TbCreateSubGroupReqStructLevelValidation(sl validator.StructLevel) {
+// CreateSubGroupReqStructLevelValidation is func to validate fields in model.CreateSubGroupReqStruct
+func CreateSubGroupReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(model.TbCreateSubGroupReq)
+	u := sl.Current().Interface().(model.CreateSubGroupReq)
 
 	err := common.CheckString(u.Name)
 	if err != nil {
@@ -63,14 +63,14 @@ func TbCreateSubGroupReqStructLevelValidation(sl validator.StructLevel) {
 var holdingMciMap sync.Map
 
 // createVmObjectSafe creates VM object without WaitGroup management
-func createVmObjectSafe(nsId, mciId string, vmInfoData *model.TbVmInfo) error {
+func createVmObjectSafe(nsId, mciId string, vmInfoData *model.VmInfo) error {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	return CreateVmObject(&wg, nsId, mciId, vmInfoData)
 }
 
 // createVmSafe creates VM without WaitGroup management
-func createVmSafe(nsId, mciId string, vmInfoData *model.TbVmInfo, option string) error {
+func createVmSafe(nsId, mciId string, vmInfoData *model.VmInfo, option string) error {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	err := CreateVm(&wg, nsId, mciId, vmInfoData, option)
@@ -91,11 +91,11 @@ func contains(slice []string, item string) bool {
 }
 
 // createSubGroup creates a subGroup with proper error handling
-func createSubGroup(nsId, mciId string, vmRequest *model.TbCreateSubGroupReq, subGroupSize, vmStartIndex int, uid string, req *model.TbMciReq) error {
+func createSubGroup(nsId, mciId string, vmRequest *model.CreateSubGroupReq, subGroupSize, vmStartIndex int, uid string, req *model.MciReq) error {
 	log.Info().Msgf("Creating MCI subGroup object for '%s'", vmRequest.Name)
 	key := common.GenMciSubGroupKey(nsId, mciId, vmRequest.Name)
 
-	subGroupInfoData := model.TbSubGroupInfo{
+	subGroupInfoData := model.SubGroupInfo{
 		ResourceType: model.StrSubGroup,
 		Id:           common.ToLower(vmRequest.Name),
 		Name:         common.ToLower(vmRequest.Name),
@@ -136,11 +136,11 @@ func createSubGroup(nsId, mciId string, vmRequest *model.TbCreateSubGroupReq, su
 }
 
 // createMciObject creates the MCI object with proper error handling
-func createMciObject(nsId, mciId string, req *model.TbMciReq, uid string) error {
+func createMciObject(nsId, mciId string, req *model.MciReq, uid string) error {
 	log.Info().Msg("Creating MCI object")
 	key := common.GenMciKey(nsId, mciId, "")
 
-	mciInfo := model.TbMciInfo{
+	mciInfo := model.MciInfo{
 		ResourceType:    model.StrMCI,
 		Id:              mciId,
 		Name:            req.Name,
@@ -220,7 +220,7 @@ func cleanupPartialMci(nsId, mciId string) error {
 }
 
 // handleMonitoringAgent handles CB-Dragonfly monitoring agent installation
-func handleMonitoringAgent(nsId, mciId string, mciTmp model.TbMciInfo, option string) error {
+func handleMonitoringAgent(nsId, mciId string, mciTmp model.MciInfo, option string) error {
 	if !strings.Contains(mciTmp.InstallMonAgent, "yes") || option == "register" {
 		return nil
 	}
@@ -256,7 +256,7 @@ func handleMonitoringAgent(nsId, mciId string, mciTmp model.TbMciInfo, option st
 }
 
 // handlePostCommands handles post-deployment command execution
-func handlePostCommands(nsId, mciId string, mciTmp model.TbMciInfo) error {
+func handlePostCommands(nsId, mciId string, mciTmp model.MciInfo) error {
 	if len(mciTmp.PostCommand.Command) == 0 {
 		return nil
 	}
@@ -291,8 +291,8 @@ type CreatedResource struct {
 
 // VmReqWithCreatedResources contains VM request and list of created resources for rollback
 type VmReqWithCreatedResources struct {
-	VmReq            *model.TbCreateSubGroupReq `json:"vmReq"`
-	CreatedResources []CreatedResource          `json:"createdResources"`
+	VmReq            *model.CreateSubGroupReq `json:"vmReq"`
+	CreatedResources []CreatedResource        `json:"createdResources"`
 }
 
 // rollbackCreatedResources deletes only the resources that were created during this MCI creation
@@ -435,31 +435,31 @@ func rollbackCreatedResources(nsId string, createdResources []CreatedResource) e
 // MCI and VM Provisioning
 
 // CreateMciVm is func to post (create) MciVm
-func CreateMciVm(nsId string, mciId string, vmInfoData *model.TbVmInfo) (*model.TbVmInfo, error) {
+func CreateMciVm(nsId string, mciId string, vmInfoData *model.VmInfo) (*model.VmInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := &model.TbVmInfo{}
+		temp := &model.VmInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mciId)
 	if err != nil {
-		temp := &model.TbVmInfo{}
+		temp := &model.VmInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	err = common.CheckString(vmInfoData.Name)
 	if err != nil {
-		temp := &model.TbVmInfo{}
+		temp := &model.VmInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	check, _ := CheckVm(nsId, mciId, vmInfoData.Name)
 
 	if check {
-		temp := &model.TbVmInfo{}
+		temp := &model.VmInfo{}
 		err := fmt.Errorf("The vm " + vmInfoData.Name + " already exists.")
 		return temp, err
 	}
@@ -525,19 +525,19 @@ func CreateMciVm(nsId string, mciId string, vmInfoData *model.TbVmInfo) (*model.
 }
 
 // ScaleOutMciSubGroup is func to create MCI groupVM
-func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToAdd string) (*model.TbMciInfo, error) {
+func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToAdd string) (*model.MciInfo, error) {
 	vmIdList, err := ListVmBySubGroup(nsId, mciId, subGroupId)
 	if err != nil {
-		temp := &model.TbMciInfo{}
+		temp := &model.MciInfo{}
 		return temp, err
 	}
 	vmObj, err := GetVmObject(nsId, mciId, vmIdList[0])
 	if err != nil {
-		temp := &model.TbMciInfo{}
+		temp := &model.MciInfo{}
 		return temp, err
 	}
 
-	vmSubGroupReqTemplate := &model.TbCreateSubGroupReq{}
+	vmSubGroupReqTemplate := &model.CreateSubGroupReq{}
 
 	// only take template required to create VM
 	vmSubGroupReqTemplate.Name = vmObj.SubGroupId
@@ -558,7 +558,7 @@ func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToA
 
 	result, err := CreateMciGroupVm(nsId, mciId, vmSubGroupReqTemplate, true)
 	if err != nil {
-		temp := &model.TbMciInfo{}
+		temp := &model.MciInfo{}
 		return temp, err
 	}
 	return result, nil
@@ -566,18 +566,18 @@ func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToA
 }
 
 // CreateMciGroupVm is func to create MCI groupVM
-func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbCreateSubGroupReq, newSubGroup bool) (*model.TbMciInfo, error) {
+func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroupReq, newSubGroup bool) (*model.MciInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := &model.TbMciInfo{}
+		temp := &model.MciInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mciId)
 	if err != nil {
-		temp := &model.TbMciInfo{}
+		temp := &model.MciInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
@@ -615,7 +615,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbCreateSubGro
 	mciTmp, err := GetMciObject(nsId, mciId)
 
 	if err != nil {
-		temp := &model.TbMciInfo{}
+		temp := &model.MciInfo{}
 		return temp, err
 	}
 
@@ -643,14 +643,14 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbCreateSubGro
 	err = common.CheckString(tentativeVmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &model.TbMciInfo{}, err
+		return &model.MciInfo{}, err
 	}
 
 	if subGroupSize > 0 {
 
 		log.Info().Msg("Create MCI subGroup object")
 
-		subGroupInfoData := model.TbSubGroupInfo{}
+		subGroupInfoData := model.SubGroupInfo{}
 		subGroupInfoData.ResourceType = model.StrSubGroup
 		subGroupInfoData.Id = tentativeVmId
 		subGroupInfoData.Name = tentativeVmId
@@ -701,7 +701,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbCreateSubGro
 	}
 
 	for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
-		vmInfoData := model.TbVmInfo{}
+		vmInfoData := model.VmInfo{}
 
 		if subGroupSize == 0 { // for VM (not in a group)
 			vmInfoData.Name = common.ToLower(vmRequest.Name)
@@ -758,7 +758,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbCreateSubGro
 	option := "create"
 
 	for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
-		vmInfoData := model.TbVmInfo{}
+		vmInfoData := model.VmInfo{}
 
 		if subGroupSize == 0 { // for VM (not in a group)
 			vmInfoData.Name = common.ToLower(vmRequest.Name)
@@ -789,7 +789,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbCreateSubGro
 
 	mciTmp, err = GetMciObject(nsId, mciId)
 	if err != nil {
-		temp := &model.TbMciInfo{}
+		temp := &model.MciInfo{}
 		return temp, err
 	}
 
@@ -843,11 +843,11 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.TbCreateSubGro
 }
 
 // CreateMci is func to create MCI object and deploy requested VMs (register CSP native VM with option=register)
-func CreateMci(nsId string, req *model.TbMciReq, option string, isReqFromDynamic bool) (*model.TbMciInfo, error) {
+func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic bool) (*model.MciInfo, error) {
 	// Input validation
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
-		return &model.TbMciInfo{}, fmt.Errorf("invalid namespace ID: %w", err)
+		return &model.MciInfo{}, fmt.Errorf("invalid namespace ID: %w", err)
 	}
 
 	if err := validate.Struct(req); err != nil {
@@ -925,7 +925,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string, isReqFromDynamic
 
 	// Pre-calculate VM configurations to avoid duplication
 	type vmConfig struct {
-		vmInfo       model.TbVmInfo
+		vmInfo       model.VmInfo
 		subGroupSize int
 		vmIndex      int
 	}
@@ -997,7 +997,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string, isReqFromDynamic
 				break
 			}
 
-			vmInfo := model.TbVmInfo{
+			vmInfo := model.VmInfo{
 				ResourceType:     model.StrVM,
 				Uid:              common.GenUid(),
 				PublicIP:         "empty",
@@ -1110,7 +1110,7 @@ func CreateMci(nsId string, req *model.TbMciReq, option string, isReqFromDynamic
 		}
 
 		wg.Add(1)
-		go func(vmData model.TbVmInfo, vmName string) {
+		go func(vmData model.VmInfo, vmName string) {
 			defer wg.Done()
 			if err := createVmSafe(nsId, mciId, &vmData, option); err != nil {
 				errorMu.Lock()
@@ -1283,9 +1283,9 @@ func CheckMciDynamicReq(req *model.MciConnectionConfigCandidatesReq) (*model.Che
 }
 
 // CreateMciDynamic is func to create MCI obeject and deploy requested VMs in a dynamic way
-func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, deployOption string) (*model.TbMciInfo, error) {
+func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deployOption string) (*model.MciInfo, error) {
 
-	mciReq := model.TbMciReq{}
+	mciReq := model.MciReq{}
 	mciReq.Name = req.Name
 	mciReq.Label = req.Label
 	mciReq.SystemLabel = req.SystemLabel
@@ -1294,7 +1294,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 	mciReq.PostCommand = req.PostCommand
 	mciReq.PolicyOnPartialFailure = req.PolicyOnPartialFailure
 
-	emptyMci := &model.TbMciInfo{}
+	emptyMci := &model.MciInfo{}
 	err := common.CheckString(nsId)
 	if err != nil {
 		err := fmt.Errorf("invalid namespace. %w", err)
@@ -1340,7 +1340,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 
 	for i, k := range subGroupReqs {
 		wg.Add(1)
-		go func(index int, subGroupReq model.TbCreateSubGroupDynamicReq) {
+		go func(index int, subGroupReq model.CreateSubGroupDynamicReq) {
 			defer wg.Done()
 
 			// Acquire semaphore
@@ -1391,7 +1391,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 		// Process all vmRequests in parallel
 		for _, k := range subGroupReqs {
 			wg.Add(1)
-			go func(subGroupDynamicReq model.TbCreateSubGroupDynamicReq) {
+			go func(subGroupDynamicReq model.CreateSubGroupDynamicReq) {
 				defer wg.Done()
 				result, err := getSubGroupReqFromDynamicReq(reqID, nsId, &subGroupDynamicReq)
 				resultChan <- vmResult{result: result, err: err}
@@ -1500,12 +1500,12 @@ func CreateMciDynamic(reqID string, nsId string, req *model.TbMciDynamicReq, dep
 }
 
 // ValidateMciDynamicReq is func to validate MCI dynamic request before actual provisioning
-func ValidateMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, deployOption string) (*model.ReviewMciDynamicReqInfo, error) {
+func ValidateMciDynamicReq(reqID string, nsId string, req *model.MciDynamicReq, deployOption string) (*model.ReviewMciDynamicReqInfo, error) {
 	return ReviewMciDynamicReq(reqID, nsId, req, deployOption)
 }
 
 // ReviewMciDynamicReq is func to review and validate MCI dynamic request comprehensively
-func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, deployOption string) (*model.ReviewMciDynamicReqInfo, error) {
+func ReviewMciDynamicReq(reqID string, nsId string, req *model.MciDynamicReq, deployOption string) (*model.ReviewMciDynamicReqInfo, error) {
 
 	log.Debug().Msgf("Starting MCI dynamic request review for: %s", req.Name)
 
@@ -1564,7 +1564,7 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 	vmReviewChan := make(chan struct {
 		index    int
 		vmReview model.ReviewVmDynamicReqInfo
-		specInfo *model.TbSpecInfo
+		specInfo *model.SpecInfo
 		viable   bool
 		warning  bool
 		cost     float64
@@ -1576,7 +1576,7 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 	// Validate each VM request in parallel
 	for i, subGroupReq := range req.SubGroups {
 		wg.Add(1)
-		go func(index int, subGroupDynamicReq model.TbCreateSubGroupDynamicReq) {
+		go func(index int, subGroupDynamicReq model.CreateSubGroupDynamicReq) {
 			defer wg.Done()
 
 			// Acquire semaphore
@@ -1595,7 +1595,7 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 
 			viable := true
 			hasVmWarning := false
-			var specInfoPtr *model.TbSpecInfo
+			var specInfoPtr *model.SpecInfo
 			vmCost := 0.0
 
 			// Validate VM name
@@ -1777,7 +1777,7 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 			vmReviewChan <- struct {
 				index    int
 				vmReview model.ReviewVmDynamicReqInfo
-				specInfo *model.TbSpecInfo
+				specInfo *model.SpecInfo
 				viable   bool
 				warning  bool
 				cost     float64
@@ -2009,9 +2009,9 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.TbMciDynamicReq, 
 }
 
 // CreateSystemMciDynamic is func to create MCI obeject and deploy requested VMs in a dynamic way
-func CreateSystemMciDynamic(option string) (*model.TbMciInfo, error) {
+func CreateSystemMciDynamic(option string) (*model.MciInfo, error) {
 	nsId := model.SystemCommonNs
-	req := &model.TbMciDynamicReq{}
+	req := &model.MciDynamicReq{}
 
 	// special purpose MCI
 	req.Name = option
@@ -2032,7 +2032,7 @@ func CreateSystemMciDynamic(option string) (*model.TbMciInfo, error) {
 		}
 		for _, v := range connections.Connectionconfig {
 
-			subGroupDynamicReq := &model.TbCreateSubGroupDynamicReq{}
+			subGroupDynamicReq := &model.CreateSubGroupDynamicReq{}
 			subGroupDynamicReq.ImageId = "ubuntu22.04"                // temporal default value. will be changed
 			subGroupDynamicReq.SpecId = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
 
@@ -2077,9 +2077,9 @@ func CreateSystemMciDynamic(option string) (*model.TbMciInfo, error) {
 }
 
 // CreateMciVmDynamic is func to create requested VM in a dynamic way and add it to MCI
-func CreateMciVmDynamic(nsId string, mciId string, req *model.TbCreateSubGroupDynamicReq) (*model.TbMciInfo, error) {
+func CreateMciVmDynamic(nsId string, mciId string, req *model.CreateSubGroupDynamicReq) (*model.MciInfo, error) {
 
-	emptyMci := &model.TbMciInfo{}
+	emptyMci := &model.MciInfo{}
 	subGroupId := req.Name
 	check, err := CheckSubGroup(nsId, mciId, subGroupId)
 	if err != nil {
@@ -2107,7 +2107,7 @@ func CreateMciVmDynamic(nsId string, mciId string, req *model.TbCreateSubGroupDy
 }
 
 // checkCommonResAvailableForSubGroupDynamicReq is func to check common resources availability for VmDynamicReq
-func checkCommonResAvailableForSubGroupDynamicReq(req *model.TbCreateSubGroupDynamicReq, nsId string) error {
+func checkCommonResAvailableForSubGroupDynamicReq(req *model.CreateSubGroupDynamicReq, nsId string) error {
 
 	log.Debug().Msgf("Checking common resources for VM Dynamic Request: %+v", req)
 	log.Debug().Msgf("Namespace ID: %s", nsId)
@@ -2226,7 +2226,7 @@ func waitForVNetReady(nsId string, vNetId string, reqID string) error {
 }
 
 // getSubGroupReqFromDynamicReq is func to getSubGroupReqFromDynamicReq with created resource tracking
-func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreateSubGroupDynamicReq) (*VmReqWithCreatedResources, error) {
+func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSubGroupDynamicReq) (*VmReqWithCreatedResources, error) {
 
 	onDemand := true
 	var createdResources []CreatedResource
@@ -2235,13 +2235,13 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 	// Check whether VM names meet requirement.
 	k := vmRequest
 
-	subGroupReq := &model.TbCreateSubGroupReq{}
+	subGroupReq := &model.CreateSubGroupReq{}
 
 	specInfo, err := resource.GetSpec(model.SystemCommonNs, req.SpecId)
 	if err != nil {
 		detailedErr := fmt.Errorf("failed to find VM specification '%s': %w. Please verify the spec exists and is properly configured", req.SpecId, err)
 		log.Error().Err(err).Msgf("Spec lookup failed for VM '%s' with SpecId '%s'", req.Name, req.SpecId)
-		return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name}, CreatedResources: createdResources}, detailedErr
+		return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name}, CreatedResources: createdResources}, detailedErr
 	}
 
 	// remake vmReqest from given input and check resource availability
@@ -2258,7 +2258,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 		detailedErr := fmt.Errorf("failed to get connection configuration '%s' for VM '%s' with spec '%s': %w. Please verify the connection exists and is properly configured",
 			subGroupReq.ConnectionName, req.Name, k.SpecId, err)
 		log.Error().Err(err).Msgf("Connection config lookup failed for VM '%s', ConnectionName '%s', Spec '%s'", req.Name, subGroupReq.ConnectionName, k.SpecId)
-		return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName}, CreatedResources: createdResources}, detailedErr
+		return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName}, CreatedResources: createdResources}, detailedErr
 	}
 
 	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
@@ -2274,7 +2274,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 			subGroupReq.ImageId, req.Name, connection.ProviderName, connection.ConfigName, err)
 		log.Error().Err(err).Msgf("Image lookup failed for VM '%s', ImageId '%s', Provider '%s', Connection '%s'",
 			req.Name, subGroupReq.ImageId, connection.ProviderName, connection.ConfigName)
-		return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, ImageId: subGroupReq.ImageId}, CreatedResources: createdResources}, detailedErr
+		return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, ImageId: subGroupReq.ImageId}, CreatedResources: createdResources}, detailedErr
 	}
 	// Need enhancement to handle custom image request
 
@@ -2288,7 +2288,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 				subGroupReq.VNetId, req.Name, subGroupReq.ConnectionName, err)
 			log.Error().Err(err).Msgf("VNet lookup failed for VM '%s', VNetId '%s', Connection '%s' (onDemand disabled)",
 				req.Name, subGroupReq.VNetId, subGroupReq.ConnectionName)
-			return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+			return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
 
@@ -2303,7 +2303,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 					req.Name, nsId, subGroupReq.ConnectionName, err2)
 				log.Error().Err(err2).Msgf("VNet creation failed for VM '%s', VNetId '%s', Namespace '%s', Connection '%s'",
 					req.Name, subGroupReq.VNetId, nsId, subGroupReq.ConnectionName)
-				return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+				return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
 			} else {
 				log.Info().Msg("Created new default vNet: " + subGroupReq.VNetId)
 				// Track the newly created VNet
@@ -2315,7 +2315,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 		if err != nil {
 			detailedErr := fmt.Errorf("VNet '%s' is not ready for use after creation: %w", subGroupReq.VNetId, err)
 			log.Error().Err(err).Msgf("VNet ready check failed for VM '%s', VNetId '%s'", req.Name, subGroupReq.VNetId)
-			return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+			return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
 		}
 	} else {
 		log.Info().Msg("Found and utilize default vNet: " + subGroupReq.VNetId)
@@ -2325,7 +2325,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 		if err != nil {
 			detailedErr := fmt.Errorf("failed to get VNet info for '%s': %w", subGroupReq.VNetId, err)
 			log.Error().Err(err).Msg(detailedErr.Error())
-			return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+			return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
 		}
 
 		// Check if VNet is ready, if not wait for it
@@ -2335,7 +2335,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 			if err != nil {
 				detailedErr := fmt.Errorf("existing VNet '%s' is not ready for use: %w", subGroupReq.VNetId, err)
 				log.Error().Err(err).Msgf("VNet ready check failed for VM '%s', VNetId '%s'", req.Name, subGroupReq.VNetId)
-				return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
+				return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, VNetId: subGroupReq.VNetId}, CreatedResources: createdResources}, detailedErr
 			}
 		}
 	}
@@ -2350,7 +2350,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 				subGroupReq.SshKeyId, req.Name, subGroupReq.ConnectionName, err)
 			log.Error().Err(err).Msgf("SSHKey lookup failed for VM '%s', SshKeyId '%s', Connection '%s' (onDemand disabled)",
 				req.Name, subGroupReq.SshKeyId, subGroupReq.ConnectionName)
-			return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, SshKeyId: subGroupReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
+			return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, SshKeyId: subGroupReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
 
@@ -2365,7 +2365,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 					req.Name, nsId, subGroupReq.ConnectionName, err2)
 				log.Error().Err(err2).Msgf("SSHKey creation failed for VM '%s', SshKeyId '%s', Namespace '%s', Connection '%s'",
 					req.Name, subGroupReq.SshKeyId, nsId, subGroupReq.ConnectionName)
-				return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, SshKeyId: subGroupReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
+				return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, SshKeyId: subGroupReq.SshKeyId}, CreatedResources: createdResources}, detailedErr
 			} else {
 				log.Info().Msg("Created new default SSHKey: " + subGroupReq.SshKeyId)
 				// Track the newly created SSHKey
@@ -2386,7 +2386,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 				securityGroup, req.Name, subGroupReq.ConnectionName, err)
 			log.Error().Err(err).Msgf("SecurityGroup lookup failed for VM '%s', SecurityGroup '%s', Connection '%s' (onDemand disabled)",
 				req.Name, securityGroup, subGroupReq.ConnectionName)
-			return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
+			return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
 		}
 		clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
 
@@ -2401,7 +2401,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 					req.Name, nsId, subGroupReq.ConnectionName, err2)
 				log.Error().Err(err2).Msgf("SecurityGroup creation failed for VM '%s', SecurityGroup '%s', Namespace '%s', Connection '%s'",
 					req.Name, securityGroup, nsId, subGroupReq.ConnectionName)
-				return &VmReqWithCreatedResources{VmReq: &model.TbCreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
+				return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, SecurityGroupIds: []string{securityGroup}}, CreatedResources: createdResources}, detailedErr
 			} else {
 				log.Info().Msg("Created new default securityGroup: " + securityGroup)
 				// Track the newly created SecurityGroup
@@ -2430,7 +2430,7 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.TbCreate
 }
 
 // CreateVmObject is func to add VM to MCI
-func CreateVmObject(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.TbVmInfo) error {
+func CreateVmObject(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.VmInfo) error {
 	log.Debug().Msg("Start to add VM To MCI")
 	//goroutin
 	defer wg.Done()
@@ -2465,7 +2465,7 @@ func CreateVmObject(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *m
 }
 
 // CreateVm is func to create VM (option = "register" for register existing VM)
-func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.TbVmInfo, option string) error {
+func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.VmInfo, option string) error {
 	log.Info().Msgf("Start to create VM: %s", vmInfoData.Name)
 	//goroutin
 	defer wg.Done()
@@ -2707,7 +2707,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		} else {
-			resourcesInNs := resourceListInNs.([]model.TbVNetInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.VNetInfo) // type assertion
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == requestBody.ConnectionName {
 					vmInfoData.VNetId = resource.Id
@@ -2721,7 +2721,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		} else {
-			resourcesInNs := resourceListInNs.([]model.TbSshKeyInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.SshKeyInfo) // type assertion
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == requestBody.ConnectionName {
 					vmInfoData.SshKeyId = resource.Id
@@ -2752,7 +2752,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.T
 
 	// Register dataDisks which are created with the creation of VM
 	for _, v := range callResult.DataDiskIIDs {
-		tbDataDiskReq := model.TbDataDiskReq{
+		tbDataDiskReq := model.DataDiskReq{
 			Name:           v.NameId,
 			ConnectionName: vmInfoData.ConnectionName,
 			CspResourceId:  v.SystemId,
@@ -2847,7 +2847,7 @@ func filterCheckMciDynamicReqInfoToCheckK8sClusterDynamicReqInfo(mciDReqInfo *mo
 			if strings.Contains(k.Spec.InfraType, model.StrK8s) ||
 				strings.Contains(k.Spec.InfraType, model.StrKubernetes) {
 
-				imageListForK8s := []model.TbImageInfo{}
+				imageListForK8s := []model.ImageInfo{}
 				for _, i := range k.Image {
 					if strings.Contains(i.InfraType, model.StrK8s) ||
 						strings.Contains(i.InfraType, model.StrKubernetes) {
@@ -2866,7 +2866,7 @@ func filterCheckMciDynamicReqInfoToCheckK8sClusterDynamicReqInfo(mciDReqInfo *mo
 					nodeDReqInfo.Image = imageListForK8s
 				} else {
 					// No available image because some CSP(ex. azure) can not specify an image
-					nodeDReqInfo.Image = []model.TbImageInfo{{Id: "default", Name: "default"}}
+					nodeDReqInfo.Image = []model.ImageInfo{{Id: "default", Name: "default"}}
 				}
 
 				k8sDReqInfo.ReqCheck = append(k8sDReqInfo.ReqCheck, nodeDReqInfo)
@@ -2941,7 +2941,7 @@ func getK8sRecommendVersion(providerName, regionName, reqVersion string) (string
 }
 
 // checkCommonResAvailableForK8sClusterDynamicReq is func to check common resources availability for K8sClusterDynamicReq
-func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.TbK8sClusterDynamicReq) error {
+func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.K8sClusterDynamicReq) error {
 	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.SpecId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -2995,8 +2995,8 @@ func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.TbK8sClusterDyna
 }
 
 // checkCommonResAvailableForK8sNodeGroupDynamicReq is func to check common resources availability for K8sNodeGroupDynamicReq
-func checkCommonResAvailableForK8sNodeGroupDynamicReq(connName string, dReq *model.TbK8sNodeGroupDynamicReq) error {
-	k8sClusterDReq := &model.TbK8sClusterDynamicReq{
+func checkCommonResAvailableForK8sNodeGroupDynamicReq(connName string, dReq *model.K8sNodeGroupDynamicReq) error {
+	k8sClusterDReq := &model.K8sClusterDynamicReq{
 		SpecId:         dReq.SpecId,
 		ImageId:        dReq.ImageId,
 		ConnectionName: connName,
@@ -3010,13 +3010,13 @@ func checkCommonResAvailableForK8sNodeGroupDynamicReq(connName string, dReq *mod
 	return nil
 }
 
-// getK8sClusterReqFromDynamicReq is func to get TbK8sClusterReq from TbK8sClusterDynamicReq
-func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8sClusterDynamicReq) (*model.TbK8sClusterReq, error) {
+// getK8sClusterReqFromDynamicReq is func to get K8sClusterReq from K8sClusterDynamicReq
+func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.K8sClusterDynamicReq) (*model.K8sClusterReq, error) {
 	onDemand := true
 
-	emptyK8sReq := &model.TbK8sClusterReq{}
-	k8sReq := &model.TbK8sClusterReq{}
-	k8sngReq := &model.TbK8sNodeGroupReq{}
+	emptyK8sReq := &model.K8sClusterReq{}
+	k8sReq := &model.K8sClusterReq{}
+	k8sngReq := &model.K8sNodeGroupReq{}
 
 	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.SpecId)
 	if err != nil {
@@ -3186,8 +3186,8 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.TbK8s
 }
 
 // CreateK8sClusterDynamic is func to create K8sCluster obeject and deploy requested K8sCluster and NodeGroup in a dynamic way
-func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.TbK8sClusterDynamicReq, deployOption string) (*model.TbK8sClusterInfo, error) {
-	emptyK8sCluster := &model.TbK8sClusterInfo{}
+func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.K8sClusterDynamicReq, deployOption string) (*model.K8sClusterInfo, error) {
+	emptyK8sCluster := &model.K8sClusterInfo{}
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Err(err).Msg("")
@@ -3247,10 +3247,10 @@ func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.TbK8sCluster
 	return resource.CreateK8sCluster(nsId, k8sReq, option)
 }
 
-// getK8sNodeGroupReqFromDynamicReq is func to get TbK8sNodeGroupReq from TbK8sNodeGroupDynamicReq
-func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo *model.TbK8sClusterInfo, dReq *model.TbK8sNodeGroupDynamicReq) (*model.TbK8sNodeGroupReq, error) {
-	emptyK8sNgReq := &model.TbK8sNodeGroupReq{}
-	k8sNgReq := &model.TbK8sNodeGroupReq{}
+// getK8sNodeGroupReqFromDynamicReq is func to get K8sNodeGroupReq from K8sNodeGroupDynamicReq
+func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo *model.K8sClusterInfo, dReq *model.K8sNodeGroupDynamicReq) (*model.K8sNodeGroupReq, error) {
+	emptyK8sNgReq := &model.K8sNodeGroupReq{}
+	k8sNgReq := &model.K8sNodeGroupReq{}
 
 	specInfo, err := resource.GetSpec(model.SystemCommonNs, dReq.SpecId)
 	if err != nil {
@@ -3324,10 +3324,10 @@ func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo 
 }
 
 // CreateK8sNodeGroupDynamic is func to create K8sNodeGroup obeject and deploy requested K8sNodeGroup in a dynamic way
-func CreateK8sNodeGroupDynamic(reqID string, nsId string, k8sClusterId string, dReq *model.TbK8sNodeGroupDynamicReq) (*model.TbK8sClusterInfo, error) {
+func CreateK8sNodeGroupDynamic(reqID string, nsId string, k8sClusterId string, dReq *model.K8sNodeGroupDynamicReq) (*model.K8sClusterInfo, error) {
 	log.Debug().Msgf("reqID: %s, nsId: %s, k8sClusterId: %s, dReq: %v\n", reqID, nsId, k8sClusterId, dReq)
 
-	emptyK8sCluster := &model.TbK8sClusterInfo{}
+	emptyK8sCluster := &model.K8sClusterInfo{}
 
 	check, err := resource.CheckK8sCluster(nsId, k8sClusterId)
 	if err != nil {
@@ -3346,7 +3346,7 @@ func CreateK8sNodeGroupDynamic(reqID string, nsId string, k8sClusterId string, d
 		return emptyK8sCluster, err
 	}
 
-	if tbK8sCInfo.Status != model.TbK8sClusterActive {
+	if tbK8sCInfo.Status != model.K8sClusterActive {
 		err := fmt.Errorf("K8sCluster(%s) is not active status", k8sClusterId)
 		log.Err(err).Msgf("Failed to Create K8sNodeGroup(%s) in K8sCluster(%s) Dynamically", dReq.Name, k8sClusterId)
 		return emptyK8sCluster, err
@@ -3564,7 +3564,7 @@ func RecordProvisioningEvent(event *model.ProvisioningEvent) error {
 }
 
 // RecordProvisioningEventsFromMci analyzes MCI creation result and records provisioning events
-func RecordProvisioningEventsFromMci(nsId string, mciInfo *model.TbMciInfo) error {
+func RecordProvisioningEventsFromMci(nsId string, mciInfo *model.MciInfo) error {
 	log.Debug().Msgf("Recording provisioning events from MCI: %s", mciInfo.Id)
 
 	if mciInfo.CreationErrors == nil {

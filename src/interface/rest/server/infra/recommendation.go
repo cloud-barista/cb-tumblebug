@@ -31,7 +31,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param recommendSpecReq body model.RecommendSpecReq false "Conditions for recommending specs (filter and priority)"
-// @Success 200 {object} []model.TbSpecInfo
+// @Success 200 {object} []model.SpecInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /recommendSpec [post]
@@ -73,10 +73,10 @@ func RestRecommendSpecOptions(c echo.Context) error {
 }
 
 type RestPostMciRecommendResponse struct {
-	//VmReq          []TbVmRecommendReq    `json:"vmReq"`
-	VmRecommend    []model.TbVmRecommendInfo `json:"vmRecommend"`
-	PlacementAlgo  string                    `json:"placementAlgo"`
-	PlacementParam []model.KeyValue          `json:"placementParam"`
+	//VmReq          []VmRecommendReq    `json:"vmReq"`
+	VmRecommend    []model.VmRecommendInfo `json:"vmRecommend"`
+	PlacementAlgo  string                  `json:"placementAlgo"`
+	PlacementParam []model.KeyValue        `json:"placementParam"`
 }
 
 // RestPostMciRecommend godoc

@@ -140,12 +140,12 @@ func ListVmByLabel(nsId string, mciId string, labelKey string) ([]string, error)
 	// Slice to store the list of VM IDs
 	var vmListByLabel []string
 
-	// Convert []interface{} to TbVmInfo and extract IDs
+	// Convert []interface{} to VmInfo and extract IDs
 	for _, resource := range resources {
-		if vmInfo, ok := resource.(*model.TbVmInfo); ok {
+		if vmInfo, ok := resource.(*model.VmInfo); ok {
 			vmListByLabel = append(vmListByLabel, vmInfo.Id)
 		} else {
-			log.Warn().Msg("Resource is not of type TbVmInfo")
+			log.Warn().Msg("Resource is not of type VmInfo")
 		}
 	}
 
@@ -206,14 +206,14 @@ func ListVmByFilter(nsId string, mciId string, filterKey string, filterVal strin
 
 // ListVmBySubGroup is func to get VM list with a SubGroup label in a specified MCI
 func ListVmBySubGroup(nsId string, mciId string, groupId string) ([]string, error) {
-	// SubGroupId is the Key for SubGroupId in model.TbVmInfo struct
+	// SubGroupId is the Key for SubGroupId in model.VmInfo struct
 	filterKey := "SubGroupId"
 	return ListVmByFilter(nsId, mciId, filterKey, groupId)
 }
 
 // GetSubGroup is func to return list of SubGroups in a given MCI
-func GetSubGroup(nsId string, mciId string, subGroupId string) (model.TbSubGroupInfo, error) {
-	subGroupInfo := model.TbSubGroupInfo{}
+func GetSubGroup(nsId string, mciId string, subGroupId string) (model.SubGroupInfo, error) {
+	subGroupInfo := model.SubGroupInfo{}
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -279,25 +279,25 @@ func ListSubGroupId(nsId string, mciId string) ([]string, error) {
 }
 
 // GetMciInfo is func to return MCI information with the current status update
-func GetMciInfo(nsId string, mciId string) (*model.TbMciInfo, error) {
+func GetMciInfo(nsId string, mciId string) (*model.MciInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := &model.TbMciInfo{}
+		temp := &model.MciInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mciId)
 	if err != nil {
-		temp := &model.TbMciInfo{}
+		temp := &model.MciInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	check, _ := CheckMci(nsId, mciId)
 
 	if !check {
-		temp := &model.TbMciInfo{}
+		temp := &model.MciInfo{}
 		err := fmt.Errorf("The mci " + mciId + " does not exist.")
 		return temp, err
 	}
@@ -534,7 +534,7 @@ func GetMciVmAccessInfo(nsId string, mciId string, vmId string, option string) (
 }
 
 // ListMciInfo is func to get all MCI objects
-func ListMciInfo(nsId string, option string) ([]model.TbMciInfo, error) {
+func ListMciInfo(nsId string, option string) ([]model.MciInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -542,7 +542,7 @@ func ListMciInfo(nsId string, option string) ([]model.TbMciInfo, error) {
 		return nil, err
 	}
 
-	Mci := []model.TbMciInfo{}
+	Mci := []model.MciInfo{}
 
 	mciList, err := ListMciId(nsId)
 	if err != nil {
@@ -565,32 +565,32 @@ func ListMciInfo(nsId string, option string) ([]model.TbMciInfo, error) {
 }
 
 // ListVmInfo is func to Get MciVm Info
-func ListVmInfo(nsId string, mciId string, vmId string) (*model.TbVmInfo, error) {
+func ListVmInfo(nsId string, mciId string, vmId string) (*model.VmInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := &model.TbVmInfo{}
+		temp := &model.VmInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mciId)
 	if err != nil {
-		temp := &model.TbVmInfo{}
+		temp := &model.VmInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(vmId)
 	if err != nil {
-		temp := &model.TbVmInfo{}
+		temp := &model.VmInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	check, _ := CheckVm(nsId, mciId, vmId)
 
 	if !check {
-		temp := &model.TbVmInfo{}
+		temp := &model.VmInfo{}
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
 		return temp, err
 	}
@@ -611,7 +611,7 @@ func ListVmInfo(nsId string, mciId string, vmId string) (*model.TbVmInfo, error)
 	if vmKeyValue == (kvstore.KeyValue{}) {
 		return nil, fmt.Errorf("Cannot find " + key)
 	}
-	vmTmp := model.TbVmInfo{}
+	vmTmp := model.VmInfo{}
 	json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
 	vmTmp.Id = vmId
 
@@ -629,28 +629,28 @@ func ListVmInfo(nsId string, mciId string, vmId string) (*model.TbVmInfo, error)
 }
 
 // GetMciObject is func to retrieve MCI object from database (no current status update)
-func GetMciObject(nsId string, mciId string) (model.TbMciInfo, error) {
+func GetMciObject(nsId string, mciId string) (model.MciInfo, error) {
 	//log.Debug().Msg("[GetMciObject]" + mciId)
 	key := common.GenMciKey(nsId, mciId, "")
 	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbMciInfo{}, err
+		return model.MciInfo{}, err
 	}
-	mciTmp := model.TbMciInfo{}
+	mciTmp := model.MciInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mciTmp)
 
 	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbMciInfo{}, err
+		return model.MciInfo{}, err
 	}
 
 	for _, vmID := range vmList {
 		vmtmp, err := GetVmObject(nsId, mciId, vmID)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return model.TbMciInfo{}, err
+			return model.MciInfo{}, err
 		}
 		mciTmp.Vm = append(mciTmp.Vm, vmtmp)
 	}
@@ -659,36 +659,36 @@ func GetMciObject(nsId string, mciId string) (model.TbMciInfo, error) {
 }
 
 // GetVmObject is func to get VM object
-func GetVmObject(nsId string, mciId string, vmId string) (model.TbVmInfo, error) {
+func GetVmObject(nsId string, mciId string, vmId string) (model.VmInfo, error) {
 	key := common.GenMciKey(nsId, mciId, vmId)
 	keyValue, err := kvstore.GetKv(key)
 	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		err = fmt.Errorf("failed to get GetVmObject (ID: %s)", key)
 		log.Error().Err(err).Msg("")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
-	vmTmp := model.TbVmInfo{}
+	vmTmp := model.VmInfo{}
 	err = json.Unmarshal([]byte(keyValue.Value), &vmTmp)
 	if err != nil {
 		err = fmt.Errorf("failed to get GetVmObject (ID: %s), message: failed to unmarshal", key)
 		log.Error().Err(err).Msg("")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 	return vmTmp, nil
 }
 
 // GetVmIdNameInDetail is func to get ID and Name details
-func GetVmIdNameInDetail(nsId string, mciId string, vmId string) (*model.TbIdNameInDetailInfo, error) {
+func GetVmIdNameInDetail(nsId string, mciId string, vmId string) (*model.IdNameInDetailInfo, error) {
 	key := common.GenMciKey(nsId, mciId, vmId)
 	keyValue, err := kvstore.GetKv(key)
 	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		log.Error().Err(err).Msg("")
-		return &model.TbIdNameInDetailInfo{}, err
+		return &model.IdNameInDetailInfo{}, err
 	}
-	vmTmp := model.TbVmInfo{}
+	vmTmp := model.VmInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &vmTmp)
 
-	var idDetails model.TbIdNameInDetailInfo
+	var idDetails model.IdNameInDetailInfo
 
 	idDetails.IdInTb = vmTmp.Id
 	idDetails.IdInSp = vmTmp.CspResourceName
@@ -727,7 +727,7 @@ func GetVmIdNameInDetail(nsId string, mciId string, vmId string) (*model.TbIdNam
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return &model.TbIdNameInDetailInfo{}, err
+		return &model.IdNameInDetailInfo{}, err
 	}
 
 	idDetails.NameInCsp = callResult.Name
@@ -768,7 +768,7 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 	mciStatus := model.MciStatusInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mciStatus)
 
-	mciTmp := model.TbMciInfo{}
+	mciTmp := model.MciInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mciTmp)
 
 	vmList, err := ListVmId(nsId, mciId)
@@ -948,8 +948,8 @@ func ListMciStatus(nsId string) ([]model.MciStatusInfo, error) {
 }
 
 // GetVmCurrentPublicIp is func to get VM public IP
-func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (model.TbVmStatusInfo, error) {
-	errorInfo := model.TbVmStatusInfo{}
+func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (model.VmStatusInfo, error) {
+	errorInfo := model.VmStatusInfo{}
 	errorInfo.Status = model.StatusFailed
 
 	temp, err := GetVmObject(nsId, mciId, vmId) // to check if the VM exists
@@ -998,7 +998,7 @@ func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (model.TbVmSta
 		return errorInfo, err
 	}
 
-	vmStatusTmp := model.TbVmStatusInfo{}
+	vmStatusTmp := model.VmStatusInfo{}
 	vmStatusTmp.PublicIp = callResult.PublicIP
 	vmStatusTmp.PrivateIp = callResult.PrivateIP
 	vmStatusTmp.SSHPort, _ = TrimIP(callResult.SSHAccessPoint)
@@ -1054,7 +1054,7 @@ func FetchVmStatusAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId stri
 			vmStatusTmp.Status = model.StatusFailed
 			vmStatusTmp.SystemMessage = err.Error()
 		}
-		if vmStatusTmp != (model.TbVmStatusInfo{}) {
+		if vmStatusTmp != (model.VmStatusInfo{}) {
 			results.Vm = append(results.Vm, vmStatusTmp)
 		}
 	}
@@ -1062,9 +1062,9 @@ func FetchVmStatusAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId stri
 }
 
 // FetchVmStatus is func to fetch VM status (call to CSPs)
-func FetchVmStatus(nsId string, mciId string, vmId string) (model.TbVmStatusInfo, error) {
+func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, error) {
 
-	errorInfo := model.TbVmStatusInfo{}
+	errorInfo := model.VmStatusInfo{}
 
 	temp, err := GetVmObject(nsId, mciId, vmId)
 	if err != nil {
@@ -1167,7 +1167,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.TbVmStatusInfo
 		log.Err(err).Msg("")
 		return errorInfo, err
 	}
-	vmStatusTmp := model.TbVmStatusInfo{}
+	vmStatusTmp := model.VmStatusInfo{}
 	vmStatusTmp.Id = temp.Id
 	vmStatusTmp.Name = temp.Name
 	vmStatusTmp.CspResourceName = temp.CspResourceName
@@ -1269,25 +1269,25 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.TbVmStatusInfo
 }
 
 // GetMciVmStatus is func to Get MciVm Status
-func GetMciVmStatus(nsId string, mciId string, vmId string) (*model.TbVmStatusInfo, error) {
+func GetMciVmStatus(nsId string, mciId string, vmId string) (*model.VmStatusInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := &model.TbVmStatusInfo{}
+		temp := &model.VmStatusInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mciId)
 	if err != nil {
-		temp := &model.TbVmStatusInfo{}
+		temp := &model.VmStatusInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(vmId)
 	if err != nil {
-		temp := &model.TbVmStatusInfo{}
+		temp := &model.VmStatusInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
@@ -1295,7 +1295,7 @@ func GetMciVmStatus(nsId string, mciId string, vmId string) (*model.TbVmStatusIn
 	check, _ := CheckVm(nsId, mciId, vmId)
 
 	if !check {
-		temp := &model.TbVmStatusInfo{}
+		temp := &model.VmStatusInfo{}
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
 		return temp, err
 	}
@@ -1313,7 +1313,7 @@ func GetMciVmStatus(nsId string, mciId string, vmId string) (*model.TbVmStatusIn
 // [Update MCI and VM object]
 
 // UpdateMciInfo is func to update MCI Info (without VM info in MCI)
-func UpdateMciInfo(nsId string, mciInfoData model.TbMciInfo) {
+func UpdateMciInfo(nsId string, mciInfoData model.MciInfo) {
 	mciInfoMutex.Lock()
 	defer mciInfoMutex.Unlock()
 
@@ -1327,7 +1327,7 @@ func UpdateMciInfo(nsId string, mciInfoData model.TbMciInfo) {
 		return
 	}
 
-	mciTmp := model.TbMciInfo{}
+	mciTmp := model.MciInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mciTmp)
 
 	if !reflect.DeepEqual(mciTmp, mciInfoData) {
@@ -1340,7 +1340,7 @@ func UpdateMciInfo(nsId string, mciInfoData model.TbMciInfo) {
 }
 
 // UpdateVmInfo is func to update VM Info
-func UpdateVmInfo(nsId string, mciId string, vmInfoData model.TbVmInfo) {
+func UpdateVmInfo(nsId string, mciId string, vmInfoData model.VmInfo) {
 	mciInfoMutex.Lock()
 	defer func() {
 		mciInfoMutex.Unlock()
@@ -1354,7 +1354,7 @@ func UpdateVmInfo(nsId string, mciId string, vmInfoData model.TbVmInfo) {
 		return
 	}
 
-	vmTmp := model.TbVmInfo{}
+	vmTmp := model.VmInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &vmTmp)
 
 	if !reflect.DeepEqual(vmTmp, vmInfoData) {
@@ -1471,14 +1471,14 @@ func GetMciAssociatedResources(nsId string, mciId string) (model.MciAssociatedRe
 }
 
 // ProvisionDataDisk is func to provision DataDisk to VM (create and attach to VM)
-func ProvisionDataDisk(nsId string, mciId string, vmId string, u *model.TbDataDiskVmReq) (model.TbVmInfo, error) {
+func ProvisionDataDisk(nsId string, mciId string, vmId string, u *model.DataDiskVmReq) (model.VmInfo, error) {
 	vm, err := GetVmObject(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 
-	createDiskReq := model.TbDataDiskReq{
+	createDiskReq := model.DataDiskReq{
 		Name:           u.Name,
 		ConnectionName: vm.ConnectionName,
 		DiskType:       u.DiskType,
@@ -1489,7 +1489,7 @@ func ProvisionDataDisk(nsId string, mciId string, vmId string, u *model.TbDataDi
 	newDataDisk, err := resource.CreateDataDisk(nsId, &createDiskReq, "")
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 	retry := 3
 	for i := 0; i < retry; i++ {
@@ -1501,11 +1501,11 @@ func ProvisionDataDisk(nsId string, mciId string, vmId string, u *model.TbDataDi
 		}
 		time.Sleep(5 * time.Second)
 	}
-	return model.TbVmInfo{}, err
+	return model.VmInfo{}, err
 }
 
 // AttachDetachDataDisk is func to attach/detach DataDisk to/from VM
-func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string, dataDiskId string, force bool) (model.TbVmInfo, error) {
+func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string, dataDiskId string, force bool) (model.VmInfo, error) {
 	vmKey := common.GenMciKey(nsId, mciId, vmId)
 
 	// Check existence of the key. If no key, no update.
@@ -1513,21 +1513,21 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 
-	vm := model.TbVmInfo{}
+	vm := model.VmInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &vm)
 
 	isInList := common.CheckElement(dataDiskId, vm.DataDiskIds)
 	if strings.EqualFold(command, model.DetachDataDisk) && !isInList && !force {
 		err := fmt.Errorf("Failed to find the dataDisk %s in the attached dataDisk list %v", dataDiskId, vm.DataDiskIds)
 		log.Error().Err(err).Msg("")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	} else if strings.EqualFold(command, model.AttachDataDisk) && isInList && !force {
 		err := fmt.Errorf("The dataDisk %s is already in the attached dataDisk list %v", dataDiskId, vm.DataDiskIds)
 		log.Error().Err(err).Msg("")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 
 	dataDiskKey := common.GenResourceKey(nsId, model.StrDataDisk, dataDiskId)
@@ -1535,10 +1535,10 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	// Check existence of the key. If no key, no update.
 	keyValue, err = kvstore.GetKv(dataDiskKey)
 	if keyValue == (kvstore.KeyValue{}) || err != nil {
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 
-	dataDisk := model.TbDataDiskInfo{}
+	dataDisk := model.DataDiskInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &dataDisk)
 
 	client := resty.New()
@@ -1586,7 +1586,7 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 
 	switch command {
@@ -1613,7 +1613,7 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 		if !flag && !force {
 			err := fmt.Errorf("Failed to find the dataDisk %s in the attached dataDisk list.", dataDiskId)
 			log.Error().Err(err).Msg("")
-			return model.TbVmInfo{}, err
+			return model.VmInfo{}, err
 		} else {
 			vm.DataDiskIds = newDataDiskIds
 		}
@@ -1694,7 +1694,7 @@ func GetAvailableDataDisks(nsId string, mciId string, vmId string, option string
 		return nil, err
 	}
 
-	vm := model.TbVmInfo{}
+	vm := model.VmInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &vm)
 
 	tbDataDisksInterface, err := resource.ListResource(nsId, model.StrDataDisk, "", "")
@@ -1711,7 +1711,7 @@ func GetAvailableDataDisks(nsId string, mciId string, vmId string, option string
 		return nil, err
 	}
 
-	tbDataDisks := []model.TbDataDiskInfo{}
+	tbDataDisks := []model.DataDiskInfo{}
 	json.Unmarshal(jsonString, &tbDataDisks)
 
 	if option != "id" {
@@ -1726,7 +1726,7 @@ func GetAvailableDataDisks(nsId string, mciId string, vmId string, option string
 				log.Error().Err(err).Msg("")
 				return nil, err
 			}
-			tempObj := newObj.(model.TbDataDiskInfo)
+			tempObj := newObj.(model.DataDiskInfo)
 
 			if v.ConnectionName == vm.ConnectionName && tempObj.Status == "Available" {
 				idList = append(idList, v.Id)
@@ -2088,7 +2088,7 @@ func DelAllMci(nsId string, option string) (string, error) {
 }
 
 // UpdateVmPublicIp is func to update VM public IP
-func UpdateVmPublicIp(nsId string, mciId string, vmInfoData model.TbVmInfo) error {
+func UpdateVmPublicIp(nsId string, mciId string, vmInfoData model.VmInfo) error {
 
 	vmInfoTmp, err := GetVmCurrentPublicIp(nsId, mciId, vmInfoData.Id)
 	if err != nil {
@@ -2104,23 +2104,23 @@ func UpdateVmPublicIp(nsId string, mciId string, vmInfoData model.TbVmInfo) erro
 }
 
 // GetVmTemplate is func to get VM template
-func GetVmTemplate(nsId string, mciId string, algo string) (model.TbVmInfo, error) {
+func GetVmTemplate(nsId string, mciId string, algo string) (model.VmInfo, error) {
 
 	log.Debug().Msg("[GetVmTemplate]" + mciId + " by algo: " + algo)
 
 	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbVmInfo{}, err
+		return model.VmInfo{}, err
 	}
 	if len(vmList) == 0 {
-		return model.TbVmInfo{}, nil
+		return model.VmInfo{}, nil
 	}
 
 	rand.Seed(time.Now().UnixNano())
 	index := rand.Intn(len(vmList))
 	vmObj, vmErr := GetVmObject(nsId, mciId, vmList[index])
-	var vmTemplate model.TbVmInfo
+	var vmTemplate model.VmInfo
 
 	// only take template required to create VM
 	vmTemplate.Name = vmObj.Name
@@ -2136,7 +2136,7 @@ func GetVmTemplate(nsId string, mciId string, algo string) (model.TbVmInfo, erro
 
 	if vmErr != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbVmInfo{}, vmErr
+		return model.VmInfo{}, vmErr
 	}
 
 	return vmTemplate, nil

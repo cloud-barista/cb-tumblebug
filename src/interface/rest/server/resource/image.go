@@ -35,10 +35,10 @@ import (
 // @Produce  json
 // @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithId)
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param imageInfo body model.TbImageInfo false "Specify details of a image object (cspResourceName, guestOS, description, ...) manually"
-// @Param imageReq body model.TbImageReq false "Specify (name, connectionName, cspImageName) to register an image object automatically"
+// @Param imageInfo body model.ImageInfo false "Specify details of a image object (cspResourceName, guestOS, description, ...) manually"
+// @Param imageReq body model.ImageReq false "Specify (name, connectionName, cspImageName) to register an image object automatically"
 // @Param update query boolean false "Force update to existing image object" default(false)
-// @Success 200 {object} model.TbImageInfo
+// @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image [post]
@@ -63,7 +63,7 @@ func RestPostImage(c echo.Context) error {
 		} else */
 	if action == "registerWithInfo" {
 		log.Debug().Msg("[Registering Image with info]")
-		u := &model.TbImageInfo{}
+		u := &model.ImageInfo{}
 		if err := c.Bind(u); err != nil {
 			return clientManager.EndRequestWithLog(c, err, nil)
 		}
@@ -71,7 +71,7 @@ func RestPostImage(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, content)
 	} else if action == "registerWithId" {
 		log.Debug().Msg("[Registering Image with ID]")
-		u := &model.TbImageReq{}
+		u := &model.ImageReq{}
 		if err := c.Bind(u); err != nil {
 			return clientManager.EndRequestWithLog(c, err, nil)
 		}
@@ -91,10 +91,10 @@ func RestPostImage(c echo.Context) error {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param imageInfo body model.TbImageInfo true "Details for an image object"
+// @Param imageInfo body model.ImageInfo true "Details for an image object"
 // @Param nsId path string true "Namespace ID" default(system)
 // @Param imageId path string true "Image ID ({providerName}+{regionName}+{cspImageName})"
-// @Success 200 {object} model.TbImageInfo
+// @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [put]
@@ -105,7 +105,7 @@ func RestPutImage(c echo.Context) error {
 	resourceId = strings.ReplaceAll(resourceId, " ", "+")
 	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
-	u := &model.TbImageInfo{}
+	u := &model.ImageInfo{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -283,7 +283,7 @@ func RestUpdateImagesFromAsset(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
 // @Param imageId path string true "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts vaious input types as Image Key: cspImageName"
-// @Success 200 {object} model.TbImageInfo
+// @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [get]

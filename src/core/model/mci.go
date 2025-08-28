@@ -106,8 +106,8 @@ type RegionInfo struct {
 	Zone   string
 }
 
-// TbMciReq is struct for requirements to create MCI
-type TbMciReq struct {
+// MciReq is struct for requirements to create MCI
+type MciReq struct {
 	Name string `json:"name" validate:"required" example:"mci01"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
@@ -122,7 +122,7 @@ type TbMciReq struct {
 	PlacementAlgo string `json:"placementAlgo,omitempty"`
 	Description   string `json:"description" example:"Made in CB-TB"`
 
-	SubGroups []TbCreateSubGroupReq `json:"subGroups" validate:"required"`
+	SubGroups []CreateSubGroupReq `json:"subGroups" validate:"required"`
 
 	// PostCommand is for the command to bootstrap the VMs
 	PostCommand MciCmdReq `json:"postCommand" validate:"omitempty"`
@@ -141,8 +141,8 @@ type ResourceStatusInfo struct {
 	TargetAction string `json:"targetAction"`
 }
 
-// TbMciInfo is struct for MCI info
-type TbMciInfo struct {
+// MciInfo is struct for MCI info
+type MciInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 
@@ -174,9 +174,9 @@ type TbMciInfo struct {
 	// Latest system message such as error message
 	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
 
-	PlacementAlgo string     `json:"placementAlgo,omitempty"`
-	Description   string     `json:"description"`
-	Vm            []TbVmInfo `json:"vm"`
+	PlacementAlgo string   `json:"placementAlgo,omitempty"`
+	Description   string   `json:"description"`
+	Vm            []VmInfo `json:"vm"`
 
 	// List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.
 	NewVmList []string `json:"newVmList"`
@@ -227,8 +227,8 @@ type VmCreationError struct {
 	Timestamp string `json:"timestamp"`
 }
 
-// TbCreateSubGroupReq is struct to get requirements to create a new server instance
-type TbCreateSubGroupReq struct {
+// CreateSubGroupReq is struct to get requirements to create a new server instance
+type CreateSubGroupReq struct {
 	// SubGroup name of VMs. Actual VM name will be generated with -N postfix.
 	Name string `json:"name" validate:"required" example:"g1-1"`
 
@@ -258,16 +258,16 @@ type TbCreateSubGroupReq struct {
 	DataDiskIds      []string `json:"dataDiskIds"`
 }
 
-// TbCreateSubGroupReq is struct to get requirements to create a new server instance
-type TbScaleOutSubGroupReq struct {
+// CreateSubGroupReq is struct to get requirements to create a new server instance
+type ScaleOutSubGroupReq struct {
 	// Define addtional VMs to scaleOut
 	NumVMsToAdd string `json:"numVMsToAdd" validate:"required" example:"2"`
 
 	//tobe added accoring to new future capability
 }
 
-// TbMciDynamicReq is struct for requirements to create MCI dynamically (with default resource option)
-type TbMciDynamicReq struct {
+// MciDynamicReq is struct for requirements to create MCI dynamically (with default resource option)
+type MciDynamicReq struct {
 	Name string `json:"name" validate:"required" example:"mci01"`
 
 	// PolicyOnPartialFailure determines how to handle VM creation failures
@@ -307,7 +307,7 @@ type TbMciDynamicReq struct {
 	//     "label": {"role": "test", "csp": "gcp"}
 	//   }
 	// ]
-	SubGroups []TbCreateSubGroupDynamicReq `json:"subGroups" validate:"required"`
+	SubGroups []CreateSubGroupDynamicReq `json:"subGroups" validate:"required"`
 
 	// PostCommand is for the command to bootstrap the VMs
 	PostCommand MciCmdReq `json:"postCommand"`
@@ -321,8 +321,8 @@ type TbMciDynamicReq struct {
 	Label map[string]string `json:"label"`
 }
 
-// TbCreateSubGroupDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
-type TbCreateSubGroupDynamicReq struct {
+// CreateSubGroupDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
+type CreateSubGroupDynamicReq struct {
 	// SubGroup name, actual VM name will be generated with -N postfix.
 	Name string `json:"name" example:"g1"`
 
@@ -367,9 +367,9 @@ type CheckVmDynamicReqInfo struct {
 
 	//RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
 
-	Spec   TbSpecInfo    `json:"spec" default:""`
-	Image  []TbImageInfo `json:"image" default:""`
-	Region RegionDetail  `json:"region" default:""`
+	Spec   SpecInfo     `json:"spec" default:""`
+	Image  []ImageInfo  `json:"image" default:""`
+	Region RegionDetail `json:"region" default:""`
 
 	// Latest system message such as error message
 	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
@@ -532,8 +532,8 @@ type SpiderVMInfo struct {
 	KeyValueList      []KeyValue
 }
 
-// TbSubGroupInfo is struct to define an object that includes homogeneous VMs
-type TbSubGroupInfo struct {
+// SubGroupInfo is struct to define an object that includes homogeneous VMs
+type SubGroupInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 
@@ -569,7 +569,7 @@ type MciAssociatedResourceList struct {
 	SSHKeyIds        []string `json:"sshKeyIds"`
 }
 
-type TbVmInfo struct {
+type VmInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 
@@ -651,7 +651,7 @@ type MciAccessInfo struct {
 // MciSubGroupAccessInfo is struct for MciSubGroupAccessInfo
 type MciSubGroupAccessInfo struct {
 	SubGroupId      string
-	NlbListener     *TbNLBListenerInfo `json:"nlbListener,omitempty"`
+	NlbListener     *NLBListenerInfo `json:"nlbListener,omitempty"`
 	BastionVmId     string
 	MciVmAccessInfo []MciVmAccessInfo
 }
@@ -668,8 +668,8 @@ type MciVmAccessInfo struct {
 	ConnectionConfig ConnConfig `json:"connectionConfig"`
 }
 
-// TbVmIdNameInDetailInfo is struct for details related with ID and Name
-type TbIdNameInDetailInfo struct {
+// IdNameInDetailInfo is struct for details related with ID and Name
+type IdNameInDetailInfo struct {
 	IdInTb    string `json:"idInTb"`
 	IdInSp    string `json:"idInSp"`
 	IdInCsp   string `json:"idInCsp"`
@@ -715,14 +715,14 @@ type StatusCountInfo struct {
 
 // MciRecommendReq is struct for MciRecommendReq
 type MciRecommendReq struct {
-	VmReq          []TbVmRecommendReq `json:"vmReq"`
-	PlacementAlgo  string             `json:"placementAlgo"`
-	PlacementParam []KeyValue         `json:"placementParam"`
-	MaxResultNum   string             `json:"maxResultNum"`
+	VmReq          []VmRecommendReq `json:"vmReq"`
+	PlacementAlgo  string           `json:"placementAlgo"`
+	PlacementParam []KeyValue       `json:"placementParam"`
+	MaxResultNum   string           `json:"maxResultNum"`
 }
 
-// TbVmRecommendReq is struct for TbVmRecommendReq
-type TbVmRecommendReq struct {
+// VmRecommendReq is struct for VmRecommendReq
+type VmRecommendReq struct {
 	RequestName  string `json:"requestName"`
 	MaxResultNum string `json:"maxResultNum"`
 
@@ -735,18 +735,18 @@ type TbVmRecommendReq struct {
 	PlacementParam []KeyValue `json:"placementParam"`
 }
 
-// TbVmPriority is struct for TbVmPriority
-type TbVmPriority struct {
-	Priority string     `json:"priority"`
-	VmSpec   TbSpecInfo `json:"vmSpec"`
+// VmPriority is struct for VmPriority
+type VmPriority struct {
+	Priority string   `json:"priority"`
+	VmSpec   SpecInfo `json:"vmSpec"`
 }
 
-// TbVmRecommendInfo is struct for TbVmRecommendInfo
-type TbVmRecommendInfo struct {
-	VmReq          TbVmRecommendReq `json:"vmReq"`
-	VmPriority     []TbVmPriority   `json:"vmPriority"`
-	PlacementAlgo  string           `json:"placementAlgo"`
-	PlacementParam []KeyValue       `json:"placementParam"`
+// VmRecommendInfo is struct for VmRecommendInfo
+type VmRecommendInfo struct {
+	VmReq          VmRecommendReq `json:"vmReq"`
+	VmPriority     []VmPriority   `json:"vmPriority"`
+	PlacementAlgo  string         `json:"placementAlgo"`
+	PlacementParam []KeyValue     `json:"placementParam"`
 }
 
 // MciStatusInfo is struct to define simple information of MCI with updated status of all VMs
@@ -772,7 +772,7 @@ type MciStatusInfo struct {
 	// SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
 
-	Vm []TbVmStatusInfo `json:"vm"`
+	Vm []VmStatusInfo `json:"vm"`
 }
 
 // ControlVmResult is struct for result of VM control
@@ -787,8 +787,8 @@ type ControlVmResultWrapper struct {
 	ResultArray []ControlVmResult `json:"resultarray"`
 }
 
-// TbVmStatusInfo is to define simple information of VM with updated status
-type TbVmStatusInfo struct {
+// VmStatusInfo is to define simple information of VM with updated status
+type VmStatusInfo struct {
 
 	// Id is unique identifier for the object
 	Id string `json:"id" example:"aws-ap-southeast-1"`
@@ -872,8 +872,8 @@ type AutoCondition struct {
 
 // AutoAction is struct for MCI auto-control action.
 type AutoAction struct {
-	ActionType   string                     `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
-	VmDynamicReq TbCreateSubGroupDynamicReq `json:"vmDynamicReq"`
+	ActionType   string                   `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
+	VmDynamicReq CreateSubGroupDynamicReq `json:"vmDynamicReq"`
 
 	// PostCommand is field for providing command to VMs after its creation. example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
 	PostCommand   MciCmdReq `json:"postCommand"`

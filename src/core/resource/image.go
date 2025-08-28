@@ -45,10 +45,10 @@ import (
 	validator "github.com/go-playground/validator/v10"
 )
 
-// TbImageReqStructLevelValidation func is for Validation
-func TbImageReqStructLevelValidation(sl validator.StructLevel) {
+// ImageReqStructLevelValidation func is for Validation
+func ImageReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(model.TbImageReq)
+	u := sl.Current().Interface().(model.ImageReq)
 
 	err := common.CheckString(u.Name)
 	if err != nil {
@@ -58,13 +58,13 @@ func TbImageReqStructLevelValidation(sl validator.StructLevel) {
 }
 
 // ConvertSpiderImageToTumblebugImage accepts an Spider image object, converts to and returns an TB image object
-func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage model.SpiderImageInfo) (model.TbImageInfo, error) {
+func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage model.SpiderImageInfo) (model.ImageInfo, error) {
 
 	regionAgnosticProviders := []string{csp.Azure, csp.GCP, csp.Tencent}
 
 	if spiderImage.IId.NameId == "" {
 		err := fmt.Errorf("ConvertSpiderImageToTumblebugImage failed; spiderImage.IId.NameId == EmptyString")
-		emptyTumblebugImage := model.TbImageInfo{}
+		emptyTumblebugImage := model.ImageInfo{}
 		return emptyTumblebugImage, err
 	}
 
@@ -72,7 +72,7 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	if err != nil {
 		err = fmt.Errorf("cannot retrieve ConnectionConfig %s: %v", connectionConfig.ConfigName, err)
 		log.Error().Err(err).Msg("")
-		return model.TbImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 
 	cspImageName := spiderImage.IId.NameId
@@ -84,7 +84,7 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	}
 
 	// Create new image instance
-	tumblebugImage := model.TbImageInfo{}
+	tumblebugImage := model.ImageInfo{}
 
 	// // Generate ID for backward compatibility
 	// tumblebugImageId := GetProviderRegionZoneResourceKey(providerName, "", "", cspImageName)
@@ -184,8 +184,8 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 }
 
 // GetImageInfoFromLookupImage
-func GetImageInfoFromLookupImage(nsId string, u model.TbImageReq) (model.TbImageInfo, error) {
-	content := model.TbImageInfo{}
+func GetImageInfoFromLookupImage(nsId string, u model.ImageReq) (model.ImageInfo, error) {
+	content := model.ImageInfo{}
 	res, err := LookupImage(u.ConnectionName, u.CspImageName)
 	if err != nil {
 		log.Trace().Err(err).Msg("")
@@ -211,9 +211,9 @@ func GetImageInfoFromLookupImage(nsId string, u model.TbImageReq) (model.TbImage
 }
 
 // RegisterImageWithInfoInBulk register a list of images in bulk
-func RegisterImageWithInfoInBulk(imageList []model.TbImageInfo) error {
+func RegisterImageWithInfoInBulk(imageList []model.ImageInfo) error {
 	// Advanced deduplication logic with region merging
-	uniqueImages := make(map[string]model.TbImageInfo)
+	uniqueImages := make(map[string]model.ImageInfo)
 	for _, img := range imageList {
 		key := img.Namespace + ":" + img.ProviderName + ":" + img.CspImageName
 
@@ -254,11 +254,11 @@ func RegisterImageWithInfoInBulk(imageList []model.TbImageInfo) error {
 	}
 
 	// Step 2: Selectively check and merge with existing images in DB
-	dedupedImageList := make([]model.TbImageInfo, 0, len(uniqueImages))
+	dedupedImageList := make([]model.ImageInfo, 0, len(uniqueImages))
 
 	for _, img := range uniqueImages {
 		// Check if image exists in database
-		var dbImage model.TbImageInfo
+		var dbImage model.ImageInfo
 		result := model.ORM.Where("namespace = ? AND provider_name = ? AND csp_image_name = ?",
 			img.Namespace, img.ProviderName, img.CspImageName).First(&dbImage)
 
@@ -342,7 +342,7 @@ func RegisterImageWithInfoInBulk(imageList []model.TbImageInfo) error {
 
 					if exists {
 						// Update - using composite key
-						if err := altTx.Model(&model.TbImageInfo{}).
+						if err := altTx.Model(&model.ImageInfo{}).
 							Where("namespace = ? AND provider_name = ? AND csp_image_name = ?",
 								img.Namespace, img.ProviderName, img.CspImageName).
 							Updates(img).Error; err != nil {
@@ -404,9 +404,9 @@ func RemoveDuplicateImagesInSQL() error {
 }
 
 // RegisterImageWithId accepts image creation request, creates and returns an TB image object
-func RegisterImageWithId(nsId string, u *model.TbImageReq, update bool, RDBonly bool) (model.TbImageInfo, error) {
+func RegisterImageWithId(nsId string, u *model.ImageReq, update bool, RDBonly bool) (model.ImageInfo, error) {
 
-	content := model.TbImageInfo{}
+	content := model.ImageInfo{}
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -463,7 +463,7 @@ func RegisterImageWithId(nsId string, u *model.TbImageReq, update bool, RDBonly 
 	if result.Error != nil {
 		if update {
 			// If insert fails and update is true, attempt to update the existing record
-			updateResult := model.ORM.Model(&model.TbImageInfo{}).Where("namespace = ? AND id = ?", content.Namespace, content.Id).Updates(content)
+			updateResult := model.ORM.Model(&model.ImageInfo{}).Where("namespace = ? AND id = ?", content.Namespace, content.Id).Updates(content)
 			if updateResult.Error != nil {
 				log.Error().Err(updateResult.Error).Msg("Error updating image after insert failure")
 				return content, updateResult.Error
@@ -482,32 +482,32 @@ func RegisterImageWithId(nsId string, u *model.TbImageReq, update bool, RDBonly 
 }
 
 // RegisterImageWithInfo accepts image creation request, creates and returns an TB image object
-func RegisterImageWithInfo(nsId string, content *model.TbImageInfo, update bool) (model.TbImageInfo, error) {
+func RegisterImageWithInfo(nsId string, content *model.ImageInfo, update bool) (model.ImageInfo, error) {
 
 	resourceType := model.StrImage
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 	// err = common.CheckString(content.Name)
 	// if err != nil {
 	// 	log.Error().Err(err).Msg("")
-	// 	return model.TbImageInfo{}, err
+	// 	return model.ImageInfo{}, err
 	// }
 	check, err := CheckResource(nsId, resourceType, content.Name)
 
 	if !update {
 		if check {
 			err := fmt.Errorf("The image " + content.Name + " already exists.")
-			return model.TbImageInfo{}, err
+			return model.ImageInfo{}, err
 		}
 	}
 
 	if err != nil {
 		err := fmt.Errorf("Failed to check the existence of the image " + content.Name + ".")
-		return model.TbImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 
 	content.Namespace = nsId
@@ -519,7 +519,7 @@ func RegisterImageWithInfo(nsId string, content *model.TbImageInfo, update bool)
 	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 
 	// "INSERT INTO `image`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
@@ -618,7 +618,7 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 	}
 
 	// Pre-allocate slice with known capacity to reduce memory allocations
-	tmpImageList := make([]model.TbImageInfo, 0, len(spiderImageList.Image))
+	tmpImageList := make([]model.ImageInfo, 0, len(spiderImageList.Image))
 
 	// Process images and clean up memory immediately
 	for i := range spiderImageList.Image {
@@ -1076,7 +1076,7 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 		return result, err
 	}
 
-	tmpImageList := []model.TbImageInfo{}
+	tmpImageList := []model.ImageInfo{}
 	var wait sync.WaitGroup
 	var mutex sync.Mutex
 
@@ -1086,7 +1086,7 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 	lenImages := len(rowsImg[1:])
 	for i, row := range rowsImg[1:] {
 
-		imageReqTmp := model.TbImageReq{}
+		imageReqTmp := model.ImageReq{}
 		// row0: ProviderName
 		// row1: regionName
 		// row2: cspResourceId
@@ -1210,7 +1210,7 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 }
 
 // SearchImage returns a list of images based on the search criteria
-func SearchImage(nsId string, req model.SearchImageRequest) ([]model.TbImageInfo, int, error) {
+func SearchImage(nsId string, req model.SearchImageRequest) ([]model.ImageInfo, int, error) {
 	err := common.CheckString(nsId)
 	cnt := 0
 	if err != nil {
@@ -1218,7 +1218,7 @@ func SearchImage(nsId string, req model.SearchImageRequest) ([]model.TbImageInfo
 		return nil, cnt, err
 	}
 
-	var specInfo *model.TbSpecInfo
+	var specInfo *model.SpecInfo
 	// If MatchedSpecId is provided, fetch spec information and apply to search criteria
 	if req.MatchedSpecId != "" {
 		spec, err := GetSpec(nsId, req.MatchedSpecId)
@@ -1246,7 +1246,7 @@ func SearchImage(nsId string, req model.SearchImageRequest) ([]model.TbImageInfo
 			req.MatchedSpecId, req.ProviderName, req.RegionName, req.OSArchitecture)
 	}
 
-	var images []model.TbImageInfo
+	var images []model.ImageInfo
 	sqlQuery := model.ORM.Where("namespace = ?", nsId)
 
 	if req.ProviderName != "" {
@@ -1381,14 +1381,14 @@ func SearchImage(nsId string, req model.SearchImageRequest) ([]model.TbImageInfo
 
 // filterDuplicateImagesByDate filters duplicate images keeping only the latest 2 versions
 // of images with same OSType, OSArchitecture, OSPlatform, and similar OSDistribution (excluding dates)
-func filterDuplicateImagesByDate(images []model.TbImageInfo, allowedDuplicationCount int) []model.TbImageInfo {
+func filterDuplicateImagesByDate(images []model.ImageInfo, allowedDuplicationCount int) []model.ImageInfo {
 
 	if allowedDuplicationCount < 1 {
 		return images
 	}
 
 	type ImageGroup struct {
-		Images []model.TbImageInfo
+		Images []model.ImageInfo
 		Key    string
 	}
 
@@ -1408,13 +1408,13 @@ func filterDuplicateImagesByDate(images []model.TbImageInfo, allowedDuplicationC
 			group.Images = append(group.Images, img)
 		} else {
 			imageGroups[key] = &ImageGroup{
-				Images: []model.TbImageInfo{img},
+				Images: []model.ImageInfo{img},
 				Key:    key,
 			}
 		}
 	}
 
-	var result []model.TbImageInfo
+	var result []model.ImageInfo
 
 	for _, group := range imageGroups {
 		if len(group.Images) <= allowedDuplicationCount {
@@ -1432,13 +1432,13 @@ func filterDuplicateImagesByDate(images []model.TbImageInfo, allowedDuplicationC
 }
 
 // filterDuplicateImagesByVersion keeps only the first (top) image for each group with same base distribution text
-func filterDuplicateImagesByVersion(images []model.TbImageInfo) []model.TbImageInfo {
+func filterDuplicateImagesByVersion(images []model.ImageInfo) []model.ImageInfo {
 	if len(images) == 0 {
 		return images
 	}
 
 	seen := make(map[string]bool)
-	var result []model.TbImageInfo
+	var result []model.ImageInfo
 
 	for _, img := range images {
 		// Create grouping key based on OSType, OSArchitecture, OSPlatform, and base distribution text
@@ -1499,7 +1499,7 @@ func normalizeDateInDistribution(distribution string) string {
 }
 
 // sortImagesByDateInDistribution sorts images by dates found in distribution strings (newest first)
-func sortImagesByDateInDistribution(images []model.TbImageInfo) []model.TbImageInfo {
+func sortImagesByDateInDistribution(images []model.ImageInfo) []model.ImageInfo {
 	sort.Slice(images, func(i, j int) bool {
 		dateI := extractLatestDateFromDistribution(images[i].OSDistribution)
 		dateJ := extractLatestDateFromDistribution(images[j].OSDistribution)
@@ -1593,7 +1593,7 @@ func SearchImageOptions() (model.SearchImageRequestOptions, error) {
 		Id           string `json:"id"`
 	}
 
-	if err := model.ORM.Model(&model.TbSpecInfo{}).
+	if err := model.ORM.Model(&model.SpecInfo{}).
 		Select("provider_name, id").
 		Where("namespace = ?", model.SystemCommonNs).
 		Order("provider_name, id").
@@ -1643,7 +1643,7 @@ func SearchImageOptions() (model.SearchImageRequestOptions, error) {
 	}
 
 	// Get distinct provider names
-	if err := model.ORM.Model(&model.TbImageInfo{}).
+	if err := model.ORM.Model(&model.ImageInfo{}).
 		Distinct("provider_name").
 		Order("provider_name").
 		Pluck("provider_name", &options.ProviderName).Error; err != nil {
@@ -1652,8 +1652,8 @@ func SearchImageOptions() (model.SearchImageRequestOptions, error) {
 	}
 
 	// Get regions (application-level processing)
-	var images []model.TbImageInfo
-	if err := model.ORM.Model(&model.TbImageInfo{}).
+	var images []model.ImageInfo
+	if err := model.ORM.Model(&model.ImageInfo{}).
 		Select("region_list").
 		Find(&images).Error; err != nil {
 		log.Error().Err(err).Msg("Failed to get region lists")
@@ -1676,7 +1676,7 @@ func SearchImageOptions() (model.SearchImageRequestOptions, error) {
 	sort.Strings(options.RegionName)
 
 	// Get distinct OS types (non-empty only)
-	if err := model.ORM.Model(&model.TbImageInfo{}).
+	if err := model.ORM.Model(&model.ImageInfo{}).
 		Where("os_type != ''").
 		Distinct("os_type").
 		Order("os_type").
@@ -1686,7 +1686,7 @@ func SearchImageOptions() (model.SearchImageRequestOptions, error) {
 	}
 
 	// Get distinct OS architectures (non-empty only)
-	if err := model.ORM.Model(&model.TbImageInfo{}).
+	if err := model.ORM.Model(&model.ImageInfo{}).
 		Where("os_architecture != ''").
 		Distinct("os_architecture").
 		Order("os_architecture").
@@ -1713,11 +1713,11 @@ func SearchImageOptions() (model.SearchImageRequestOptions, error) {
 
 // UpdateImage accepts to-be TB image objects,
 // updates and returns the updated TB image objects
-func UpdateImage(nsId string, imageId string, fieldsToUpdate model.TbImageInfo, RDBonly bool) (model.TbImageInfo, error) {
+func UpdateImage(nsId string, imageId string, fieldsToUpdate model.ImageInfo, RDBonly bool) (model.ImageInfo, error) {
 	if !RDBonly {
 
 		resourceType := model.StrImage
-		temp := model.TbImageInfo{}
+		temp := model.ImageInfo{}
 		err := common.CheckString(nsId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -1752,7 +1752,7 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate model.TbImageInfo, 
 			err := fmt.Errorf("Failed to get the image " + imageId + ".")
 			return temp, err
 		}
-		asIsImage := model.TbImageInfo{}
+		asIsImage := model.ImageInfo{}
 		err = common.CopySrcToDest(&tempInterface, &asIsImage)
 		if err != nil {
 			err := fmt.Errorf("Failed to CopySrcToDest() " + imageId + ".")
@@ -1774,7 +1774,7 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate model.TbImageInfo, 
 
 	}
 	// "UPDATE `image` SET `id`='" + imageId + "', ... WHERE `namespace`='" + nsId + "' AND `id`='" + imageId + "';"
-	result := model.ORM.Model(&model.TbImageInfo{}).Where("namespace = ? AND id = ?", nsId, imageId).Updates(fieldsToUpdate)
+	result := model.ORM.Model(&model.ImageInfo{}).Where("namespace = ? AND id = ?", nsId, imageId).Updates(fieldsToUpdate)
 	if result.Error != nil {
 		log.Error().Err(result.Error).Msg("")
 		return fieldsToUpdate, result.Error
@@ -1786,10 +1786,10 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate model.TbImageInfo, 
 }
 
 // GetImage accepts namespace Id and imageKey(CspImageName), and returns the TB image object
-func GetImage(nsId string, cspImageName string) (model.TbImageInfo, error) {
+func GetImage(nsId string, cspImageName string) (model.ImageInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
-		return model.TbImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 
 	log.Debug().Msg("[Get image] " + cspImageName)
@@ -1797,17 +1797,17 @@ func GetImage(nsId string, cspImageName string) (model.TbImageInfo, error) {
 	providerName, regionName, _, imageIdentifier, err := ResolveProviderRegionZoneResourceKey(cspImageName)
 	if err != nil {
 		// imageKey does not include information for providerName, regionName
-		image := model.TbImageInfo{Namespace: nsId, Id: cspImageName}
+		image := model.ImageInfo{Namespace: nsId, Id: cspImageName}
 
 		// 1) Check if the image is a custom image
 		// ex: custom-img-487zeit5
 		tempInterface, err := GetResource(nsId, model.StrCustomImage, cspImageName)
-		customImage := model.TbCustomImageInfo{}
+		customImage := model.CustomImageInfo{}
 		if err == nil {
 			err = common.CopySrcToDest(&tempInterface, &customImage)
 			if err != nil {
-				log.Error().Err(err).Msg("TbCustomImageInfo CopySrcToDest error")
-				return model.TbImageInfo{}, err
+				log.Error().Err(err).Msg("CustomImageInfo CopySrcToDest error")
+				return model.ImageInfo{}, err
 			}
 			image.CspImageName = customImage.CspResourceName
 			image.SystemLabel = model.StrCustomImage
@@ -1816,7 +1816,7 @@ func GetImage(nsId string, cspImageName string) (model.TbImageInfo, error) {
 
 		// 2) Check if the image is a registered image in the given namespace
 		// ex: img-487zeit5
-		image = model.TbImageInfo{Namespace: nsId, Id: cspImageName}
+		image = model.ImageInfo{Namespace: nsId, Id: cspImageName}
 		result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(id) = ?", nsId, cspImageName).First(&image)
 		if result.Error != nil {
 			log.Info().Err(result.Error).Msgf("Cannot get image %s by ID from %s", cspImageName, nsId)
@@ -1829,7 +1829,7 @@ func GetImage(nsId string, cspImageName string) (model.TbImageInfo, error) {
 
 		// 1) Check if the image is a registered image in the common namespace model.SystemCommonNs by ImageId
 		// ex: tencent+ap-jakarta+ubuntu22.04 or tencent+ap-jakarta+img-487zeit5
-		image := model.TbImageInfo{Namespace: model.SystemCommonNs, Id: cspImageName}
+		image := model.ImageInfo{Namespace: model.SystemCommonNs, Id: cspImageName}
 		result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(id) = ?", model.SystemCommonNs, cspImageName).First(&image)
 		if result.Error != nil {
 			log.Info().Err(result.Error).Msgf("Cannot get image %s by ID from %s", cspImageName, model.SystemCommonNs)
@@ -1870,14 +1870,14 @@ func GetImage(nsId string, cspImageName string) (model.TbImageInfo, error) {
 		}
 	}
 
-	return model.TbImageInfo{}, fmt.Errorf("The imageKey %s not found by any of ID, CspImageName, GuestOS", cspImageName)
+	return model.ImageInfo{}, fmt.Errorf("The imageKey %s not found by any of ID, CspImageName, GuestOS", cspImageName)
 }
 
 // GetImageByPrimaryKey retrieves image information based on namespace, provider, and CSP image name
-func GetImageByPrimaryKey(nsId string, provider string, cspImageName string) (model.TbImageInfo, error) {
+func GetImageByPrimaryKey(nsId string, provider string, cspImageName string) (model.ImageInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
-		return model.TbImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 
 	log.Debug().Msgf("[Get image] Namespace: %s, Provider: %s, CSP Image Name: %s", nsId, provider, cspImageName)
@@ -1888,18 +1888,18 @@ func GetImageByPrimaryKey(nsId string, provider string, cspImageName string) (mo
 	cspImageName = strings.ToLower(cspImageName)
 
 	// Query the database for the image
-	var image model.TbImageInfo
+	var image model.ImageInfo
 	result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(provider_name) = ? AND LOWER(csp_image_name) = ?", nsId, provider, cspImageName).First(&image)
 	if result.Error != nil {
 		log.Debug().Err(result.Error).Msgf("Failed to retrieve image for Namespace: %s, Provider: %s, CSP Image Name: %s", nsId, provider, cspImageName)
-		return model.TbImageInfo{}, result.Error
+		return model.ImageInfo{}, result.Error
 	}
 
 	return image, nil
 }
 
 // GetImagesByRegion retrieves images based on namespace, provider, and region
-func GetImagesByRegion(nsId string, provider string, region string) ([]model.TbImageInfo, error) {
+func GetImagesByRegion(nsId string, provider string, region string) ([]model.ImageInfo, error) {
 	if err := common.CheckString(nsId); err != nil {
 		log.Error().Err(err).Msg("Invalid namespace ID")
 		return nil, err
@@ -1913,7 +1913,7 @@ func GetImagesByRegion(nsId string, provider string, region string) ([]model.TbI
 	region = strings.ToLower(region)
 
 	// Query the database for the images
-	var images []model.TbImageInfo
+	var images []model.ImageInfo
 	result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(provider_name) = ? AND LOWER(region_list) LIKE ?", nsId, provider, "%"+region+"%").Find(&images)
 	if result.Error != nil {
 		log.Error().Err(result.Error).Msgf("Failed to retrieve images for Namespace: %s, Provider: %s, Region: %s", nsId, provider, region)
@@ -1924,7 +1924,7 @@ func GetImagesByRegion(nsId string, provider string, region string) ([]model.TbI
 }
 
 // applyCspSpecificImageFiltering applies CSP-specific filtering rules based on spec information
-func applyCspSpecificImageFiltering(images []model.TbImageInfo, specInfo model.TbSpecInfo) []model.TbImageInfo {
+func applyCspSpecificImageFiltering(images []model.ImageInfo, specInfo model.SpecInfo) []model.ImageInfo {
 	switch strings.ToLower(specInfo.ProviderName) {
 	case csp.NCP:
 		return filterImagesByCorrespondingIds(images, specInfo)
@@ -1940,7 +1940,7 @@ func applyCspSpecificImageFiltering(images []model.TbImageInfo, specInfo model.T
 }
 
 // filterImagesByCorrespondingIds filters images based on CorrespondingImageIds from spec details
-func filterImagesByCorrespondingIds(images []model.TbImageInfo, specInfo model.TbSpecInfo) []model.TbImageInfo {
+func filterImagesByCorrespondingIds(images []model.ImageInfo, specInfo model.SpecInfo) []model.ImageInfo {
 	// Find CorrespondingImageIds from spec details
 	correspondingIds := extractCorrespondingImageIds(specInfo.Details)
 	if len(correspondingIds) == 0 {
@@ -1955,7 +1955,7 @@ func filterImagesByCorrespondingIds(images []model.TbImageInfo, specInfo model.T
 	}
 
 	// Filter images based on cspImageName matching
-	var filteredImages []model.TbImageInfo
+	var filteredImages []model.ImageInfo
 	for _, image := range images {
 		if validImageIds[image.CspImageName] {
 			filteredImages = append(filteredImages, image)

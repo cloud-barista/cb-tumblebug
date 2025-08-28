@@ -1299,7 +1299,7 @@ func GenerateNewRandomString(n int) string {
 }
 
 // GetK8sClusterInfo is func to get all kubernetes cluster info from the asset
-func GetK8sClusterInfo() (model.K8sClusterInfo, error) {
+func GetK8sClusterInfo() (model.K8sClusterAssetInfo, error) {
 	return RuntimeK8sClusterInfo, nil
 }
 

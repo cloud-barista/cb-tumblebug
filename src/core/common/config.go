@@ -36,8 +36,8 @@ var RuntimeCredential = model.Credential{}
 // RuntimeNetworkInfo is global variable for model.NetworkInfo
 var RuntimeCloudNetworkInfo = model.CloudNetworkInfo{}
 
-// RuntimeK8sClusterInfo is global variable for model.K8sClusterInfo
-var RuntimeK8sClusterInfo = model.K8sClusterInfo{}
+// RuntimeK8sClusterInfo is global variable for model.K8sClusterAssetInfo
+var RuntimeK8sClusterInfo = model.K8sClusterAssetInfo{}
 
 // RuntimeExtractPatternsInfo is global variable for model.ExtractPatternsInfo
 var RuntimeExtractPatternsInfo = model.ExtractPatternsInfo{}

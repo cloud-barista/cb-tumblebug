@@ -14,8 +14,8 @@ limitations under the License.
 // Package model is to handle object of CB-Tumblebug
 package model
 
-// TbSubnetReq is a struct that represents TB subnet object.
-type TbSubnetReq struct { // Tumblebug
+// SubnetReq is a struct that represents TB subnet object.
+type SubnetReq struct { // Tumblebug
 	Name        string `json:"name" validate:"required" example:"subnet00"`
 	IPv4_CIDR   string `json:"ipv4_CIDR" validate:"required" example:"10.0.1.0/24"`
 	Zone        string `json:"zone,omitempty" default:""`
@@ -24,7 +24,7 @@ type TbSubnetReq struct { // Tumblebug
 	// TagList     []KeyValue `json:"tagList,omitempty"`
 }
 
-type TbRegisterSubnetReq struct {
+type RegisterSubnetReq struct {
 	ConnectionName string `json:"connectionName" validate:"required"`
 	CspResourceId  string `json:"cspResourceId" validate:"required"`
 	Name           string `json:"name" validate:"required"`
@@ -32,8 +32,8 @@ type TbRegisterSubnetReq struct {
 	Description    string `json:"description,omitempty"`
 }
 
-// TbSubnetInfo is a struct that represents TB subnet object.
-type TbSubnetInfo struct { // Tumblebug
+// SubnetInfo is a struct that represents TB subnet object.
+type SubnetInfo struct { // Tumblebug
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 

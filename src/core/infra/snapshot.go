@@ -27,7 +27,7 @@ import (
 )
 
 // CreateVmSnapshot is func to create VM snapshot
-func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName string) (model.TbCustomImageInfo, error) {
+func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName string) (model.CustomImageInfo, error) {
 	vmKey := common.GenMciKey(nsId, mciId, vmId)
 
 	// Check existence of the key. If no key, no update.
@@ -35,10 +35,10 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 
-	vm := model.TbVmInfo{}
+	vm := model.VmInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &vm)
 
 	if snapshotName == "" {
@@ -72,7 +72,7 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 	// if err != nil {
 	// 	err := fmt.Errorf("Failed to get current datadisks' info. \n")
 	// 	log.Error().Err(err).Msg("")
-	// 	return model.TbCustomImageInfo{}, err
+	// 	return model.CustomImageInfo{}, err
 	// }
 
 	// Create VM snapshot
@@ -86,12 +86,12 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 		err := fmt.Errorf(string(resp.Body()))
 		fmt.Println("body: ", string(resp.Body()))
 		log.Error().Err(err).Msg("")
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 
 	// create one customImage
 	tempSpiderMyImageInfo := resp.Result().(*model.SpiderMyImageInfo)
-	tempTbCustomImageInfo := model.TbCustomImageInfo{
+	tempCustomImageInfo := model.CustomImageInfo{
 		Namespace:            nsId,
 		Id:                   "", // This field will be assigned in RegisterCustomImageWithInfo()
 		Name:                 snapshotName,
@@ -109,11 +109,11 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 		SystemLabel:          "",
 	}
 
-	result, err := resource.RegisterCustomImageWithInfo(nsId, tempTbCustomImageInfo)
+	result, err := resource.RegisterCustomImageWithInfo(nsId, tempCustomImageInfo)
 	if err != nil {
 		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
-		return model.TbCustomImageInfo{}, err
+		return model.CustomImageInfo{}, err
 	}
 
 	// Inspect DataDisks after creating VM snapshot
@@ -123,20 +123,20 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 	// if err != nil {
 	// 	err := fmt.Errorf("Failed to get current datadisks' info. \n")
 	// 	log.Error().Err(err).Msg("")
-	// 	return model.TbCustomImageInfo{}, err
+	// 	return model.CustomImageInfo{}, err
 	// }
 
 	// difference_dataDisks := Difference_dataDisks(dataDisks_before_snapshot, dataDisks_after_snapshot)
 
 	// // create 'n' dataDisks
 	// for _, v := range difference_dataDisks {
-	// 	tempTbDataDiskReq := model.TbDataDiskReq{
+	// 	tempDataDiskReq := model.DataDiskReq{
 	// 		Name:           fmt.Sprintf("%s-%s", vm.Name, common.GenerateNewRandomString(5)),
 	// 		ConnectionName: vm.ConnectionName,
 	// 		CspResourceId:  v.CspResourceId,
 	// 	}
 
-	// 	_, err = resource.CreateDataDisk(nsId, &tempTbDataDiskReq, "register")
+	// 	_, err = resource.CreateDataDisk(nsId, &tempDataDiskReq, "register")
 	// 	if err != nil {
 	// 		err := fmt.Errorf("Failed to register the created dataDisk %s to TB. \n", v.CspResourceId)
 	// 		log.Error().Err(err).Msg("")

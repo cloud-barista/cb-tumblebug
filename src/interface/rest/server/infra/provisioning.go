@@ -63,8 +63,8 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID for resource isolation" default(default)
-// @Param mciReq body model.TbMciReq true "MCI creation request with VM specifications, networking, and deployment options"
-// @Success 200 {object} model.TbMciInfo "Created MCI information with VM details, status, and resource mapping"
+// @Param mciReq body model.MciReq true "MCI creation request with VM specifications, networking, and deployment options"
+// @Success 200 {object} model.MciInfo "Created MCI information with VM details, status, and resource mapping"
 // @Failure 400 {object} model.SimpleMsg "Invalid request parameters or missing required fields"
 // @Failure 404 {object} model.SimpleMsg "Namespace not found or specified resources unavailable"
 // @Failure 409 {object} model.SimpleMsg "MCI name already exists in namespace"
@@ -74,7 +74,7 @@ func RestPostMci(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	req := &model.TbMciReq{}
+	req := &model.MciReq{}
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -123,8 +123,8 @@ func RestPostMci(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID for organizing registered resources" default(default)
-// @Param mciReq body model.TbMciReq true "MCI registration request containing existing CSP VM IDs and connection details"
-// @Success 200 {object} model.TbMciInfo "Registered MCI information with imported VM details and current status"
+// @Param mciReq body model.MciReq true "MCI registration request containing existing CSP VM IDs and connection details"
+// @Success 200 {object} model.MciInfo "Registered MCI information with imported VM details and current status"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format or missing required CSP VM identifiers"
 // @Failure 404 {object} model.SimpleMsg "Specified VMs not found in target CSP or namespace doesn't exist"
 // @Failure 409 {object} model.SimpleMsg "VM already registered or MCI name conflicts"
@@ -134,7 +134,7 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	req := &model.TbMciReq{}
+	req := &model.MciReq{}
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -188,8 +188,8 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param option query string false "System MCI type: 'probe' for connectivity testing, 'monitor' for system monitoring" Enums(probe,monitor,test)
-// @Param mciReq body model.TbMciDynamicReq false "Optional MCI configuration. If not provided, system defaults will be used"
-// @Success 200 {object} model.TbMciInfo "Created system MCI with specialized configuration and status"
+// @Param mciReq body model.MciDynamicReq false "Optional MCI configuration. If not provided, system defaults will be used"
+// @Success 200 {object} model.MciInfo "Created system MCI with specialized configuration and status"
 // @Failure 400 {object} model.SimpleMsg "Invalid system option or malformed request"
 // @Failure 403 {object} model.SimpleMsg "Insufficient permissions for system MCI creation"
 // @Failure 500 {object} model.SimpleMsg "System MCI creation failed or CSP integration error"
@@ -198,7 +198,7 @@ func RestPostSystemMci(c echo.Context) error {
 
 	option := c.QueryParam("option")
 
-	req := &model.TbMciDynamicReq{}
+	req := &model.MciDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -284,10 +284,10 @@ func RestPostSystemMci(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID for resource organization and isolation" default(default)
-// @Param mciReq body model.TbMciDynamicReq true "Dynamic MCI request with common specifications. Must include specId and imageId for each VM group. See description for detailed example."
+// @Param mciReq body model.MciDynamicReq true "Dynamic MCI request with common specifications. Must include specId and imageId for each VM group. See description for detailed example."
 // @Param option query string false "Deployment option: 'hold' to create MCI without immediate VM provisioning" Enums(hold)
 // @Param x-request-id header string false "Custom request ID for tracking and correlation across API calls"
-// @Success 200 {object} model.TbMciInfo "Successfully created MCI with VM deployment status, resource mappings, and configuration details"
+// @Success 200 {object} model.MciInfo "Successfully created MCI with VM deployment status, resource mappings, and configuration details"
 // @Failure 400 {object} model.SimpleMsg "Invalid request format, missing required fields, or unsupported configuration"
 // @Failure 404 {object} model.SimpleMsg "Namespace not found, specified specs/images unavailable, or CSP resources inaccessible"
 // @Failure 409 {object} model.SimpleMsg "MCI name already exists or resource naming conflicts detected"
@@ -299,7 +299,7 @@ func RestPostMciDynamic(c echo.Context) error {
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
 
-	req := &model.TbMciDynamicReq{}
+	req := &model.MciDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		log.Warn().Err(err).Msg("invalid request")
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -342,7 +342,7 @@ func RestPostMciDynamic(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Param mciReq body model.TbMciDynamicReq true "Request body to review MCI dynamic provisioning. Must include specId and imageId info of each VM request. Same format as /mciDynamic endpoint. (ex: {name: mci01, vm: [{imageId: aws+ap-northeast-2+ubuntu22.04, specId: aws+ap-northeast-2+t2.small}]})"
+// @Param mciReq body model.MciDynamicReq true "Request body to review MCI dynamic provisioning. Must include specId and imageId info of each VM request. Same format as /mciDynamic endpoint. (ex: {name: mci01, vm: [{imageId: aws+ap-northeast-2+ubuntu22.04, specId: aws+ap-northeast-2+t2.small}]})"
 // @Param option query string false "Option for MCI creation review (same as actual creation)" Enums(hold)
 // @Param x-request-id header string false "Custom request ID for tracking"
 // @Success 200 {object} model.ReviewMciDynamicReqInfo "Comprehensive review result with validation status, cost estimation, and recommendations"
@@ -356,7 +356,7 @@ func RestPostMciDynamicReview(c echo.Context) error {
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
 
-	req := &model.TbMciDynamicReq{}
+	req := &model.MciDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		log.Warn().Err(err).Msg("invalid request for MCI dynamic review")
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -424,8 +424,8 @@ func RestPostMciDynamicReview(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID containing the target MCI" default(default)
 // @Param mciId path string true "MCI ID to which new VMs will be added" default(mci01)
-// @Param vmReq body model.TbCreateSubGroupDynamicReq true "SubGroup dynamic request specifying specId, imageId, and scaling parameters"
-// @Success 200 {object} model.TbMciInfo "Updated MCI information including newly added VMs and current status"
+// @Param vmReq body model.CreateSubGroupDynamicReq true "SubGroup dynamic request specifying specId, imageId, and scaling parameters"
+// @Success 200 {object} model.MciInfo "Updated MCI information including newly added VMs and current status"
 // @Failure 400 {object} model.SimpleMsg "Invalid VM request or incompatible configuration parameters"
 // @Failure 404 {object} model.SimpleMsg "Target MCI not found or specified resources unavailable"
 // @Failure 409 {object} model.SimpleMsg "Subgroup name conflicts or MCI in incompatible state"
@@ -436,7 +436,7 @@ func RestPostMciVmDynamic(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
-	req := &model.TbCreateSubGroupDynamicReq{}
+	req := &model.CreateSubGroupDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -572,8 +572,8 @@ func RestPostMciDynamicCheckRequest(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID containing the target MCI" default(default)
 // @Param mciId path string true "MCI ID to which the VM subgroup will be added" default(mci01)
-// @Param vmReq body model.TbCreateSubGroupReq true "Detailed VM subgroup specification including exact resource IDs, networking, and scaling parameters"
-// @Success 200 {object} model.TbMciInfo "Updated MCI information including newly created VM subgroup with individual VM details and status"
+// @Param vmReq body model.CreateSubGroupReq true "Detailed VM subgroup specification including exact resource IDs, networking, and scaling parameters"
+// @Success 200 {object} model.MciInfo "Updated MCI information including newly created VM subgroup with individual VM details and status"
 // @Failure 400 {object} model.SimpleMsg "Invalid VM request, missing required resources, or configuration conflicts"
 // @Failure 404 {object} model.SimpleMsg "Target MCI not found, specified resources unavailable, or namespace inaccessible"
 // @Failure 409 {object} model.SimpleMsg "SubGroup name conflicts, resource allocation conflicts, or MCI state incompatible with expansion"
@@ -584,7 +584,7 @@ func RestPostMciVm(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
-	vmInfoData := &model.TbCreateSubGroupReq{}
+	vmInfoData := &model.CreateSubGroupReq{}
 	if err := c.Bind(vmInfoData); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -657,8 +657,8 @@ func RestPostMciVm(c echo.Context) error {
 // @Param nsId path string true "Namespace ID containing the target MCI and subgroup" default(default)
 // @Param mciId path string true "MCI ID containing the subgroup to scale" default(mci01)
 // @Param subgroupId path string true "SubGroup ID to scale out (must exist and contain at least one VM)" default(g1)
-// @Param vmReq body model.TbScaleOutSubGroupReq true "Scale-out request specifying the number of additional VMs to create"
-// @Success 200 {object} model.TbMciInfo "Updated MCI information with scaled subgroup showing all VMs including newly added instances"
+// @Param vmReq body model.ScaleOutSubGroupReq true "Scale-out request specifying the number of additional VMs to create"
+// @Success 200 {object} model.MciInfo "Updated MCI information with scaled subgroup showing all VMs including newly added instances"
 // @Failure 400 {object} model.SimpleMsg "Invalid scale-out request, insufficient quotas, or invalid VM count"
 // @Failure 404 {object} model.SimpleMsg "Target MCI or subgroup not found, or namespace inaccessible"
 // @Failure 409 {object} model.SimpleMsg "SubGroup in incompatible state for scaling or resource conflicts detected"
@@ -670,7 +670,7 @@ func RestPostMciSubGroupScaleOut(c echo.Context) error {
 	mciId := c.Param("mciId")
 	subgroupId := c.Param("subgroupId")
 
-	scaleOutReq := &model.TbScaleOutSubGroupReq{}
+	scaleOutReq := &model.ScaleOutSubGroupReq{}
 	if err := c.Bind(scaleOutReq); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}

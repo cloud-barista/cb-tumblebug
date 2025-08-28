@@ -30,10 +30,10 @@ import (
 	validator "github.com/go-playground/validator/v10"
 )
 
-// TbDataDiskReqStructLevelValidation func is for Validation
-func TbDataDiskReqStructLevelValidation(sl validator.StructLevel) {
+// DataDiskReqStructLevelValidation func is for Validation
+func DataDiskReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(model.TbDataDiskReq)
+	u := sl.Current().Interface().(model.DataDiskReq)
 
 	err := common.CheckString(u.Name)
 	if err != nil {
@@ -43,14 +43,14 @@ func TbDataDiskReqStructLevelValidation(sl validator.StructLevel) {
 }
 
 // CreateDataDisk accepts DataDisk creation request, creates and returns an TB dataDisk object
-func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.TbDataDiskInfo, error) {
+func CreateDataDisk(nsId string, u *model.DataDiskReq, option string) (model.DataDiskInfo, error) {
 
 	resourceType := model.StrDataDisk
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
 	if option != "register" { // fields validation
@@ -58,10 +58,10 @@ func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.T
 		if err != nil {
 			if _, ok := err.(*validator.InvalidValidationError); ok {
 				log.Err(err).Msg("")
-				return model.TbDataDiskInfo{}, err
+				return model.DataDiskInfo{}, err
 			}
 
-			return model.TbDataDiskInfo{}, err
+			return model.DataDiskInfo{}, err
 		}
 	}
 
@@ -69,12 +69,12 @@ func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.T
 
 	if check {
 		err := fmt.Errorf("The dataDisk %s already exists.", u.Name)
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
 	if err != nil {
 		err := fmt.Errorf("Failed to check the existence of the dataDisk %s.", u.Name)
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
 	uid := common.GenUid()
@@ -118,7 +118,7 @@ func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.T
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
 	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
@@ -127,12 +127,12 @@ func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.T
 		err := fmt.Errorf(string(resp.Body()))
 		fmt.Println("body: ", string(resp.Body()))
 		log.Error().Err(err).Msg("")
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
 	tempSpiderDiskInfo = resp.Result().(*model.SpiderDiskInfo)
 
-	content := model.TbDataDiskInfo{
+	content := model.DataDiskInfo{
 		ResourceType:         resourceType,
 		Id:                   u.Name,
 		Name:                 u.Name,
@@ -197,63 +197,63 @@ func CreateDataDisk(nsId string, u *model.TbDataDiskReq, option string) (model.T
 	return content, nil
 }
 
-// TbDataDiskUpsizeReq is a struct to handle 'Upsize dataDisk' request toward CB-Tumblebug.
-type TbDataDiskUpsizeReq struct {
+// DataDiskUpsizeReq is a struct to handle 'Upsize dataDisk' request toward CB-Tumblebug.
+type DataDiskUpsizeReq struct {
 	DiskSize    string `json:"diskSize" validate:"required"`
 	Description string `json:"description"`
 }
 
 // UpsizeDataDisk accepts DataDisk upsize request, creates and returns an TB dataDisk object
-func UpsizeDataDisk(nsId string, resourceId string, u *model.TbDataDiskUpsizeReq) (model.TbDataDiskInfo, error) {
+func UpsizeDataDisk(nsId string, resourceId string, u *model.DataDiskUpsizeReq) (model.DataDiskInfo, error) {
 
 	resourceType := model.StrDataDisk
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
 	err = validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			log.Err(err).Msg("")
-			return model.TbDataDiskInfo{}, err
+			return model.DataDiskInfo{}, err
 		}
 
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
 	check, err := CheckResource(nsId, resourceType, resourceId)
 
 	if !check {
 		err := fmt.Errorf("The dataDisk %s does not exist.", resourceId)
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
 	if err != nil {
 		err := fmt.Errorf("Failed to check the existence of the dataDisk %s.", resourceId)
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
 	dataDiskInterface, err := GetResource(nsId, resourceType, resourceId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the dataDisk object %s.", resourceId)
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
-	dataDisk := dataDiskInterface.(model.TbDataDiskInfo)
+	dataDisk := dataDiskInterface.(model.DataDiskInfo)
 
 	diskSize_as_is, _ := strconv.Atoi(dataDisk.DiskSize)
 	diskSize_to_be, err := strconv.Atoi(u.DiskSize)
 	if err != nil {
 		err := fmt.Errorf("Failed to convert the desired disk size (%s) into int.", u.DiskSize)
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
 	if !(diskSize_as_is < diskSize_to_be) {
 		err := fmt.Errorf("Desired disk size (%s GB) should be > %s GB.", u.DiskSize, dataDisk.DiskSize)
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
 	requestBody := model.SpiderDiskUpsizeReqWrapper{
@@ -281,7 +281,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *model.TbDataDiskUpsizeReq
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
 	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
@@ -290,14 +290,14 @@ func UpsizeDataDisk(nsId string, resourceId string, u *model.TbDataDiskUpsizeReq
 		err := fmt.Errorf(string(resp.Body()))
 		fmt.Println("body: ", string(resp.Body()))
 		log.Error().Err(err).Msg("")
-		return model.TbDataDiskInfo{}, err
+		return model.DataDiskInfo{}, err
 	}
 
 	/*
 		isSuccessful := resp.Result().(bool)
 		if isSuccessful == false {
 			err := fmt.Errorf("Failed to upsize the dataDisk %s", resourceId)
-			return model.TbDataDiskInfo{}, err
+			return model.DataDiskInfo{}, err
 		}
 	*/
 

@@ -2067,7 +2067,7 @@ def _internal_review_mci_dynamic(
     hold: bool = False
 ) -> Dict:
     """Internal helper function to review MCI dynamic configuration"""
-    # Build request data according to model.TbMciDynamicReq spec
+    # Build request data according to model.MciDynamicReq spec
     data = {
         "name": name,
         "description": description,
@@ -3052,7 +3052,7 @@ if review_result.get("overallStatus") == "Ready":
         
         processed_vm_configs.append(vm_config)
     
-    # Build request data according to model.TbMciDynamicReq spec
+    # Build request data according to model.MciDynamicReq spec
     data = {
         "name": name,
         "subGroups": processed_vm_configs  # Use processed configs with auto-mapped images

@@ -28,8 +28,8 @@ const (
 	DiskError     DiskStatus = "Error"
 )
 
-// TbAttachDetachDataDiskReq is a wrapper struct to create JSON body of 'Attach/Detach disk request'
-type TbAttachDetachDataDiskReq struct {
+// AttachDetachDataDiskReq is a wrapper struct to create JSON body of 'Attach/Detach disk request'
+type AttachDetachDataDiskReq struct {
 	DataDiskId string `json:"dataDiskId" validate:"required"`
 }
 
@@ -81,8 +81,8 @@ type SpiderDiskInfo struct {
 	KeyValueList []KeyValue
 }
 
-// TbDataDiskReq is a struct to handle 'Register dataDisk' request toward CB-Tumblebug.
-type TbDataDiskReq struct {
+// DataDiskReq is a struct to handle 'Register dataDisk' request toward CB-Tumblebug.
+type DataDiskReq struct {
 	Name           string `json:"name" validate:"required" example:"aws-ap-southeast-1-datadisk"`
 	ConnectionName string `json:"connectionName" validate:"required" example:"aws-ap-southeast-1"`
 	DiskType       string `json:"diskType" example:"default"`
@@ -94,16 +94,16 @@ type TbDataDiskReq struct {
 	CspResourceId string `json:"cspResourceId"`
 }
 
-// TbDataDiskVmReq is a struct to handle 'Provisioning dataDisk to VM' request toward CB-Tumblebug.
-type TbDataDiskVmReq struct {
+// DataDiskVmReq is a struct to handle 'Provisioning dataDisk to VM' request toward CB-Tumblebug.
+type DataDiskVmReq struct {
 	Name        string `json:"name" validate:"required" example:"aws-ap-southeast-1-datadisk"`
 	DiskType    string `json:"diskType" example:"default"`
 	DiskSize    string `json:"diskSize" validate:"required" example:"77" default:"100"`
 	Description string `json:"description,omitempty"`
 }
 
-// TbDataDiskInfo is a struct that represents TB dataDisk object.
-type TbDataDiskInfo struct {
+// DataDiskInfo is a struct that represents TB dataDisk object.
+type DataDiskInfo struct {
 	// ResourceType is the type of the resource
 	ResourceType string `json:"resourceType"`
 
@@ -138,8 +138,8 @@ type TbDataDiskInfo struct {
 	SystemLabel string `json:"systemLabel,omitempty" example:"Managed by CB-Tumblebug" default:""`
 }
 
-// TbDataDiskUpsizeReq is a struct to handle 'Upsize dataDisk' request toward CB-Tumblebug.
-type TbDataDiskUpsizeReq struct {
+// DataDiskUpsizeReq is a struct to handle 'Upsize dataDisk' request toward CB-Tumblebug.
+type DataDiskUpsizeReq struct {
 	DiskSize    string `json:"diskSize" validate:"required"`
 	Description string `json:"description"`
 }

@@ -96,7 +96,7 @@ func applyRange(field reflect.Value, operator string, operand float32) error {
 }
 
 // RecommendSpec is func to recommend a VM
-func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecInfo, error) {
+func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, error) {
 	// Filtering and sorting with DB query
 
 	u := &model.FilterSpecsByRangeRequest{}
@@ -138,7 +138,7 @@ func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecInfo
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return []model.TbSpecInfo{}, err
+		return []model.SpecInfo{}, err
 	}
 	elapsedTime := time.Since(startTime)
 	log.Info().
@@ -147,7 +147,7 @@ func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecInfo
 		Msg("Filtering and sorting complete")
 
 	if len(filteredSpecs) == 0 {
-		return []model.TbSpecInfo{}, nil
+		return []model.SpecInfo{}, nil
 	}
 
 	return filteredSpecs, nil
@@ -184,7 +184,7 @@ func buildOrderByClause(policies []model.PriorityCondition) (string, error) {
 				orderParts = append(orderParts, locationOrderBy)
 			}
 		case "latency":
-			// Latency: build latency-based ORDER BY using TbLatencyInfo table
+			// Latency: build latency-based ORDER BY using LatencyInfo table
 			latencyOrderBy, err := BuildLatencyOrderByClause(&policy.Parameter)
 			if err != nil {
 				log.Warn().Err(err).Msg("Failed to build latency ORDER BY, falling back to cost")
@@ -206,9 +206,9 @@ func buildOrderByClause(policies []model.PriorityCondition) (string, error) {
 }
 
 // RecommendVmLatency func prioritize specs by latency based on given MCI (fair)
-func RecommendVmLatency(nsId string, specList *[]model.TbSpecInfo, param *[]model.ParameterKeyVal) ([]model.TbSpecInfo, error) {
+func RecommendVmLatency(nsId string, specList *[]model.SpecInfo, param *[]model.ParameterKeyVal) ([]model.SpecInfo, error) {
 
-	result := []model.TbSpecInfo{}
+	result := []model.SpecInfo{}
 
 	for _, v := range *param {
 
@@ -464,7 +464,7 @@ func BuildLatencyOrderByClause(param *[]model.ParameterKeyVal) (string, error) {
 			latencyParts := []string{}
 
 			for _, targetRegion := range v.Val {
-				// Create a subquery that joins with TbLatencyInfo table
+				// Create a subquery that joins with LatencyInfo table
 				// The source region is constructed as "provider_name+region_name"
 				latencySubquery := fmt.Sprintf(`
 					COALESCE((
@@ -494,7 +494,7 @@ func BuildLatencyOrderByClause(param *[]model.ParameterKeyVal) (string, error) {
 }
 
 // RecommendVmLocation func prioritize specs based on given location
-func RecommendVmLocation(nsId string, specList *[]model.TbSpecInfo, param *[]model.ParameterKeyVal) ([]model.TbSpecInfo, error) {
+func RecommendVmLocation(nsId string, specList *[]model.SpecInfo, param *[]model.ParameterKeyVal) ([]model.SpecInfo, error) {
 
 	for _, v := range *param {
 
@@ -507,12 +507,12 @@ func RecommendVmLocation(nsId string, specList *[]model.TbSpecInfo, param *[]mod
 			latitude, err := strconv.ParseFloat(strings.ReplaceAll(slice[0], " ", ""), 32)
 			if err != nil {
 				log.Error().Err(err).Msg("")
-				return []model.TbSpecInfo{}, err
+				return []model.SpecInfo{}, err
 			}
 			longitude, err := strconv.ParseFloat(strings.ReplaceAll(slice[1], " ", ""), 32)
 			if err != nil {
 				log.Error().Err(err).Msg("")
-				return []model.TbSpecInfo{}, err
+				return []model.SpecInfo{}, err
 			}
 
 			type distanceType struct {
@@ -558,7 +558,7 @@ func RecommendVmLocation(nsId string, specList *[]model.TbSpecInfo, param *[]mod
 
 			if globalErr != nil { // If there's an error from any goroutine, return it
 				// log.Error().Err(globalErr).Msg("")
-				// return []model.TbSpecInfo{}, globalErr
+				// return []model.SpecInfo{}, globalErr
 			}
 
 			sort.Slice(distances, func(i, j int) bool {
@@ -618,12 +618,12 @@ func RecommendVmLocation(nsId string, specList *[]model.TbSpecInfo, param *[]mod
 				latitudeEach, err := strconv.ParseFloat(strings.ReplaceAll(slice[0], " ", ""), 32)
 				if err != nil {
 					log.Error().Err(err).Msg("")
-					return []model.TbSpecInfo{}, err
+					return []model.SpecInfo{}, err
 				}
 				longitudeEach, err := strconv.ParseFloat(strings.ReplaceAll(slice[1], " ", ""), 32)
 				if err != nil {
 					log.Error().Err(err).Msg("")
-					return []model.TbSpecInfo{}, err
+					return []model.SpecInfo{}, err
 				}
 				latitudeSum += latitudeEach
 				longitudeSum += longitudeEach
@@ -674,7 +674,7 @@ func RecommendVmLocation(nsId string, specList *[]model.TbSpecInfo, param *[]mod
 			wg.Wait() // Wait for all goroutines to finish
 
 			if globalErr != nil { // If there's an error from any goroutine, return it
-				return []model.TbSpecInfo{}, globalErr
+				return []model.SpecInfo{}, globalErr
 			}
 
 			sort.Slice(distances, func(i, j int) bool {
@@ -720,7 +720,7 @@ func RecommendVmLocation(nsId string, specList *[]model.TbSpecInfo, param *[]mod
 
 	}
 
-	result := append([]model.TbSpecInfo{}, (*specList)...)
+	result := append([]model.SpecInfo{}, (*specList)...)
 
 	// Sorting result based on multiple criteria: OrderInFilteredResult, CostPerHour, VCPU, MemoryGiB
 	sort.Slice(result, func(i, j int) bool {
@@ -935,7 +935,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 
 	// Efficiently get distinct values from DB using ORM queries with fallback to default examples
 	// Get distinct provider names (non-empty only)
-	if err := model.ORM.Model(&model.TbSpecInfo{}).
+	if err := model.ORM.Model(&model.SpecInfo{}).
 		Where("namespace = ? AND provider_name != ''", nsId).
 		Distinct("provider_name").
 		Order("provider_name").
@@ -946,7 +946,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 	}
 
 	// Get distinct region names (non-empty only)
-	if err := model.ORM.Model(&model.TbSpecInfo{}).
+	if err := model.ORM.Model(&model.SpecInfo{}).
 		Where("namespace = ? AND region_name != ''", nsId).
 		Distinct("region_name").
 		Order("region_name").
@@ -960,7 +960,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 	}
 
 	// Get distinct architectures (non-empty only)
-	if err := model.ORM.Model(&model.TbSpecInfo{}).
+	if err := model.ORM.Model(&model.SpecInfo{}).
 		Where("namespace = ? AND architecture != ''", nsId).
 		Distinct("architecture").
 		Order("architecture").
@@ -972,7 +972,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 
 	// Get distinct infra types (non-empty only)
 	// Note: infraType is commented out in AvailableMetrics - uncomment when needed
-	// if err := model.ORM.Model(&model.TbSpecInfo{}).
+	// if err := model.ORM.Model(&model.SpecInfo{}).
 	// 	Where("namespace = ? AND infra_type != ''", nsId).
 	// 	Distinct("infra_type").
 	// 	Order("infra_type").
@@ -985,7 +985,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 	// // Get distinct connection names (non-empty only)
 	// This parameter is used to filter the available connection names for the user
 
-	// if err := model.ORM.Model(&model.TbSpecInfo{}).
+	// if err := model.ORM.Model(&model.SpecInfo{}).
 	// 	Where("namespace = ? AND connection_name != ''", nsId).
 	// 	Distinct("connection_name").
 	// 	Order("connection_name").
@@ -1003,7 +1003,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 		CspSpecName  string `json:"csp_spec_name"`
 	}
 
-	if err := model.ORM.Model(&model.TbSpecInfo{}).
+	if err := model.ORM.Model(&model.SpecInfo{}).
 		Select("provider_name, csp_spec_name").
 		Where("namespace = ? AND csp_spec_name != ''", nsId).
 		Order("provider_name, csp_spec_name").
@@ -1051,7 +1051,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 
 	// Get distinct OS types (non-empty only)
 	// Note: osType is commented out in AvailableMetrics - uncomment when needed
-	// if err := model.ORM.Model(&model.TbSpecInfo{}).
+	// if err := model.ORM.Model(&model.SpecInfo{}).
 	// 	Where("namespace = ? AND os_type != ''", nsId).
 	// 	Distinct("os_type").
 	// 	Order("os_type").
@@ -1062,7 +1062,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 	// }
 
 	// Get distinct accelerator models (non-empty only)
-	if err := model.ORM.Model(&model.TbSpecInfo{}).
+	if err := model.ORM.Model(&model.SpecInfo{}).
 		Where("namespace = ? AND accelerator_model != ''", nsId).
 		Distinct("accelerator_model").
 		Order("accelerator_model").
@@ -1075,7 +1075,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 	}
 
 	// Get distinct accelerator types (non-empty only)
-	if err := model.ORM.Model(&model.TbSpecInfo{}).
+	if err := model.ORM.Model(&model.SpecInfo{}).
 		Where("namespace = ? AND accelerator_type != ''", nsId).
 		Distinct("accelerator_type").
 		Order("accelerator_type").
@@ -1087,7 +1087,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 
 	// Get distinct evaluation statuses (non-empty only)
 	// Note: evaluationStatus is commented out in AvailableMetrics - uncomment when needed
-	// if err := model.ORM.Model(&model.TbSpecInfo{}).
+	// if err := model.ORM.Model(&model.SpecInfo{}).
 	// 	Where("namespace = ? AND evaluation_status != ''", nsId).
 	// 	Distinct("evaluation_status").
 	// 	Order("evaluation_status").
@@ -1169,9 +1169,9 @@ func getHaversineDistance(a1 float64, b1 float64, a2 float64, b2 float64) (dista
 }
 
 // RecommendVmRandom func prioritize specs randomly
-func RecommendVmRandom(nsId string, specList *[]model.TbSpecInfo) ([]model.TbSpecInfo, error) {
+func RecommendVmRandom(nsId string, specList *[]model.SpecInfo) ([]model.SpecInfo, error) {
 
-	result := append([]model.TbSpecInfo{}, (*specList)...)
+	result := append([]model.SpecInfo{}, (*specList)...)
 
 	rand.Shuffle(len(result), func(i, j int) { result[i], result[j] = result[j], result[i] })
 
@@ -1187,9 +1187,9 @@ func RecommendVmRandom(nsId string, specList *[]model.TbSpecInfo) ([]model.TbSpe
 }
 
 // RecommendVmCost func prioritize specs based on given Cost
-func RecommendVmCost(nsId string, specList *[]model.TbSpecInfo) ([]model.TbSpecInfo, error) {
+func RecommendVmCost(nsId string, specList *[]model.SpecInfo) ([]model.SpecInfo, error) {
 
-	result := append([]model.TbSpecInfo{}, (*specList)...)
+	result := append([]model.SpecInfo{}, (*specList)...)
 
 	sort.Slice(result, func(i, j int) bool {
 		// Handle negative cost values - positive values have higher priority
@@ -1213,9 +1213,9 @@ func RecommendVmCost(nsId string, specList *[]model.TbSpecInfo) ([]model.TbSpecI
 }
 
 // RecommendVmPerformance func prioritize specs based on given Performance condition
-func RecommendVmPerformance(nsId string, specList *[]model.TbSpecInfo) ([]model.TbSpecInfo, error) {
+func RecommendVmPerformance(nsId string, specList *[]model.SpecInfo) ([]model.SpecInfo, error) {
 
-	result := append([]model.TbSpecInfo{}, (*specList)...)
+	result := append([]model.SpecInfo{}, (*specList)...)
 
 	sort.Slice(result, func(i, j int) bool { return result[i].EvaluationScore01 > result[j].EvaluationScore01 })
 
@@ -1231,13 +1231,13 @@ func RecommendVmPerformance(nsId string, specList *[]model.TbSpecInfo) ([]model.
 }
 
 // RecommendK8sNode is func to recommend a node for K8sCluster
-func RecommendK8sNode(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecInfo, error) {
-	emptyObjList := []model.TbSpecInfo{}
+func RecommendK8sNode(nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, error) {
+	emptyObjList := []model.SpecInfo{}
 
 	limitOrig := plan.Limit
 	plan.Limit = strconv.Itoa(math.MaxInt)
 
-	tbSpecInfoListForVm, err := RecommendSpec(nsId, plan)
+	SpecInfoListForVm, err := RecommendSpec(nsId, plan)
 	if err != nil {
 		return emptyObjList, err
 	}
@@ -1247,12 +1247,12 @@ func RecommendK8sNode(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecI
 		limitNum = math.MaxInt
 	}
 
-	tbSpecInfoListForK8s := []model.TbSpecInfo{}
+	SpecInfoListForK8s := []model.SpecInfo{}
 	count := 0
-	for _, tbSpecInfo := range tbSpecInfoListForVm {
-		if strings.Contains(tbSpecInfo.InfraType, model.StrK8s) ||
-			strings.Contains(tbSpecInfo.InfraType, model.StrKubernetes) {
-			tbSpecInfoListForK8s = append(tbSpecInfoListForK8s, tbSpecInfo)
+	for _, SpecInfo := range SpecInfoListForVm {
+		if strings.Contains(SpecInfo.InfraType, model.StrK8s) ||
+			strings.Contains(SpecInfo.InfraType, model.StrKubernetes) {
+			SpecInfoListForK8s = append(SpecInfoListForK8s, SpecInfo)
 			count++
 			if count == limitNum {
 				break
@@ -1260,11 +1260,11 @@ func RecommendK8sNode(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecI
 		}
 	}
 
-	return tbSpecInfoListForK8s, nil
+	return SpecInfoListForK8s, nil
 }
 
 // // GetRecommendList is func to get recommendation list
-// func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize string) ([]TbVmPriority, error) {
+// func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize string) ([]VmPriority, error) {
 
 // 	log.Debug().Msg("GetRecommendList")
 
@@ -1280,31 +1280,31 @@ func RecommendK8sNode(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecI
 // 	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 // 	if err != nil {
 // 		log.Error().Err(err).Msg("")
-// 		return []TbVmPriority{}, err
+// 		return []VmPriority{}, err
 // 	}
 
-// 	var vmPriorityList []TbVmPriority
+// 	var vmPriorityList []VmPriority
 
 // 	for cnt, v := range keyValue {
 // 		log.Debug().Msg("getRecommendList1: " + v.Key)
 // 		err = json.Unmarshal([]byte(v.Value), &content)
 // 		if err != nil {
 // 			log.Error().Err(err).Msg("")
-// 			return []TbVmPriority{}, err
+// 			return []VmPriority{}, err
 // 		}
 
-// 		content2 := model.TbSpecInfo{}
+// 		content2 := model.SpecInfo{}
 // 		key2 := common.GenResourceKey(nsId, model.StrSpec, content.Id)
 
 // 		keyValue2, err := kvstore.GetKv(key2)
 // 		if err != nil {
 // 			log.Error().Err(err).Msg("")
-// 			return []TbVmPriority{}, err
+// 			return []VmPriority{}, err
 // 		}
 // 		json.Unmarshal([]byte(keyValue2.Value), &content2)
 // 		content2.Id = content.Id
 
-// 		vmPriorityTmp := TbVmPriority{}
+// 		vmPriorityTmp := VmPriority{}
 // 		vmPriorityTmp.Priority = strconv.Itoa(cnt)
 // 		vmPriorityTmp.VmSpec = content2
 // 		vmPriorityList = append(vmPriorityList, vmPriorityTmp)
@@ -1317,7 +1317,7 @@ func RecommendK8sNode(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecI
 // }
 
 // // CorePostMciRecommend is func to command to all VMs in MCI with SSH
-// func CorePostMciRecommend(nsId string, req *MciRecommendReq) ([]TbVmRecommendInfo, error) {
+// func CorePostMciRecommend(nsId string, req *MciRecommendReq) ([]VmRecommendInfo, error) {
 
 // 	err := common.CheckString(nsId)
 // 	if err != nil {
@@ -1327,8 +1327,8 @@ func RecommendK8sNode(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecI
 
 // 	/*
 // 		var content struct {
-// 			//VmReq          []TbVmRecommendReq    `json:"vmReq"`
-// 			VmRecommend    []infra.TbVmRecommendInfo `json:"vmRecommend"`
+// 			//VmReq          []VmRecommendReq    `json:"vmReq"`
+// 			VmRecommend    []infra.VmRecommendInfo `json:"vmRecommend"`
 // 			PlacementAlgo  string                   `json:"placementAlgo"`
 // 			PlacementParam []common.KeyValue        `json:"placementParam"`
 // 		}
@@ -1338,12 +1338,12 @@ func RecommendK8sNode(nsId string, plan model.RecommendSpecReq) ([]model.TbSpecI
 // 	//content.PlacementAlgo = req.PlacementAlgo
 // 	//content.PlacementParam = req.PlacementParam
 
-// 	VmRecommend := []TbVmRecommendInfo{}
+// 	VmRecommend := []VmRecommendInfo{}
 
 // 	vmList := req.VmReq
 
 // 	for i, v := range vmList {
-// 		vmTmp := TbVmRecommendInfo{}
+// 		vmTmp := VmRecommendInfo{}
 // 		//vmTmp.RequestName = v.RequestName
 // 		vmTmp.VmReq = req.VmReq[i]
 // 		vmTmp.PlacementAlgo = v.PlacementAlgo

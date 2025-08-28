@@ -119,11 +119,11 @@ func RestGetControlMciVm(c echo.Context) error {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param vmSnapshotReq body model.TbVmSnapshotReq true "Request body to create VM snapshot"
+// @Param vmSnapshotReq body model.VmSnapshotReq true "Request body to create VM snapshot"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
-// @Success 200 {object} model.TbCustomImageInfo
+// @Success 200 {object} model.CustomImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/snapshot [post]
@@ -133,7 +133,7 @@ func RestPostMciVmSnapshot(c echo.Context) error {
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
 
-	u := &model.TbVmSnapshotReq{}
+	u := &model.VmSnapshotReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}

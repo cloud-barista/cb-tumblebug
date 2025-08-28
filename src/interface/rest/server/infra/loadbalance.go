@@ -31,8 +31,8 @@ import (
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param option query string false "Option: [required params for register] connectionName, name, cspResourceId" Enums(register)
-// @Param nlbReq body model.TbNLBReq true "Details of the NLB object"
-// @Success 200 {object} model.TbNLBInfo
+// @Param nlbReq body model.NLBReq true "Details of the NLB object"
+// @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb [post]
@@ -43,7 +43,7 @@ func RestPostNLB(c echo.Context) error {
 
 	optionFlag := c.QueryParam("option")
 
-	u := &model.TbNLBReq{}
+	u := &model.NLBReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -61,7 +61,7 @@ func RestPostNLB(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
-// @Param nlbReq body model.TbNLBReq true "Details of the NLB object"
+// @Param nlbReq body model.NLBReq true "Details of the NLB object"
 // @Success 200 {object} model.McNlbInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -71,7 +71,7 @@ func RestPostMcNLB(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
 
-	u := &model.TbNLBReq{}
+	u := &model.NLBReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -93,8 +93,8 @@ func RestPostMcNLB(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param nlbId path string true "NLB ID" default(g1)
-// @Param nlbInfo body model.TbNLBInfo true "Details of the NLB object"
-// @Success 200 {object} model.TbNLBInfo
+// @Param nlbInfo body model.NLBInfo true "Details of the NLB object"
+// @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId} [put]
@@ -116,7 +116,7 @@ func RestPutNLB(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param nlbId path string true "NLB ID" default(g1)
-// @Success 200 {object} model.TbNLBInfo
+// @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId} [get]
@@ -132,7 +132,7 @@ func RestGetNLB(c echo.Context) error {
 
 // Response structure for RestGetAllNLB
 type RestGetAllNLBResponse struct {
-	NLB []model.TbNLBInfo `json:"nlb"`
+	NLB []model.NLBInfo `json:"nlb"`
 }
 
 // RestGetAllNLB godoc
@@ -173,10 +173,10 @@ func RestGetAllNLB(c echo.Context) error {
 		}
 
 		var content struct {
-			NLB []model.TbNLBInfo `json:"nlb"`
+			NLB []model.NLBInfo `json:"nlb"`
 		}
 
-		content.NLB = resourceList.([]model.TbNLBInfo) // type assertion (interface{} -> array)
+		content.NLB = resourceList.([]model.NLBInfo) // type assertion (interface{} -> array)
 		return clientManager.EndRequestWithLog(c, err, content)
 	}
 }
@@ -242,7 +242,7 @@ func RestDelAllNLB(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param nlbId path string true "NLB ID" default(g1)
-// @Success 200 {object} model.TbNLBInfo
+// @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/healthz [get]
@@ -268,8 +268,8 @@ func RestGetNLBHealth(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param nlbId path string true "NLB ID" default(g1)
-// @Param nlbAddRemoveVMReq body model.TbNLBAddRemoveVMReq true "VMs to add to NLB"
-// @Success 200 {object} model.TbNLBInfo
+// @Param nlbAddRemoveVMReq body model.NLBAddRemoveVMReq true "VMs to add to NLB"
+// @Success 200 {object} model.NLBInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/vm [post]
@@ -279,7 +279,7 @@ func RestAddNLBVMs(c echo.Context) error {
 	mciId := c.Param("mciId")
 	resourceId := c.Param("resourceId")
 
-	u := &model.TbNLBAddRemoveVMReq{}
+	u := &model.NLBAddRemoveVMReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -297,7 +297,7 @@ func RestAddNLBVMs(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param nlbId path string true "NLB ID" default(g1)
-// @Param nlbAddRemoveVMReq body model.TbNLBAddRemoveVMReq true "Select VMs to remove from NLB"
+// @Param nlbAddRemoveVMReq body model.NLBAddRemoveVMReq true "Select VMs to remove from NLB"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/nlb/{nlbId}/vm [delete]
@@ -307,7 +307,7 @@ func RestRemoveNLBVMs(c echo.Context) error {
 	mciId := c.Param("mciId")
 	resourceId := c.Param("resourceId")
 
-	u := &model.TbNLBAddRemoveVMReq{}
+	u := &model.NLBAddRemoveVMReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}

@@ -137,11 +137,11 @@ type GatewaySubnetDetail struct {
 }
 
 /*
- * K8sClusterInfo
+ * K8sClusterAssetInfo
  */
 
-// K8sClusterInfo is structure for kubernetes cluster information
-type K8sClusterInfo struct {
+// K8sClusterAssetInfo is structure for kubernetes cluster information
+type K8sClusterAssetInfo struct {
 	CSPs map[string]K8sClusterDetail `mapstructure:"k8scluster" json:"k8s_cluster"`
 }
 

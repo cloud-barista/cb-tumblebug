@@ -158,7 +158,7 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 		// Extract matching VM IDs only
 		filteredVmIds := make([]string, 0, len(matchedResources))
 		for _, resource := range matchedResources {
-			if vmInfo, ok := resource.(*model.TbVmInfo); ok {
+			if vmInfo, ok := resource.(*model.VmInfo); ok {
 				filteredVmIds = append(filteredVmIds, vmInfo.Id)
 			}
 		}
@@ -552,7 +552,7 @@ func UpdateVmSshKey(nsId string, mciId string, vmId string, verifiedUserName str
 	sshKey := common.GenResourceKey(nsId, model.StrSSHKey, content.SshKeyId)
 	keyValue, _ = kvstore.GetKv(sshKey)
 
-	tmpSshKeyInfo := model.TbSshKeyInfo{}
+	tmpSshKeyInfo := model.SshKeyInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &tmpSshKeyInfo)
 
 	tmpSshKeyInfo.VerifiedUsername = verifiedUserName
@@ -1078,7 +1078,7 @@ func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionVmId s
 		return "", err
 	}
 
-	tempVNetInfo, ok := res.(model.TbVNetInfo)
+	tempVNetInfo, ok := res.(model.VNetInfo)
 	if !ok {
 		log.Error().Err(err).Msg("")
 		return "", err
@@ -1133,7 +1133,7 @@ func RemoveBastionNodes(nsId string, mciId string, bastionVmId string) (string, 
 		log.Error().Err(err).Msg("")
 		return "", err
 	} else {
-		vNets := resourceListInNs.([]model.TbVNetInfo) // type assertion
+		vNets := resourceListInNs.([]model.VNetInfo) // type assertion
 		for _, vNet := range vNets {
 			removed := false
 			for i, subnet := range vNet.SubnetInfoList {
@@ -1171,7 +1171,7 @@ func GetBastionNodes(nsId string, mciId string, targetVmId string) ([]model.Bast
 	}
 
 	// Type assertion for VNet information
-	tempVNetInfo, ok := res.(model.TbVNetInfo)
+	tempVNetInfo, ok := res.(model.VNetInfo)
 	if !ok {
 		log.Error().Err(err).Msg("")
 		return returnValue, err
