@@ -935,7 +935,12 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	vmStartIndex := 1
 
 	// Get mci object
+	// Note: return 'an empty MCI object', 'nil' if MCI doesn't exist
 	mciTmp, err := GetMciObject(nsId, mciId)
+	log.Debug().Msgf("Fetched MCI object: %+v, error: %v", mciTmp, err)
+
+	// Note: check the existence
+	exists := (err == nil && mciTmp.Id != "")
 
 	if isReqFromDynamic {
 		// isReqFromDynamic. Do not create MCI object. Reuse the existing one.
@@ -949,7 +954,7 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		}
 	} else {
 		// fallback for manual mci create. not from isReqFromDynamic.
-		if err != nil {
+		if !exists {
 			log.Debug().Msgf("MCI '%s' does not exist, creating new one", mciId)
 			// Create MCI object first
 			if err := createMciObject(nsId, mciId, req, uid); err != nil {
@@ -958,6 +963,7 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		} else {
 			// Check MCI existence (skip for register option)
 			if option != "register" {
+				log.Debug().Msgf("MCI '%s' already exists in namespace '%s'", mciId, nsId)
 				return nil, fmt.Errorf("MCI '%s' already exists in namespace '%s'", mciId, nsId)
 			} else {
 				req.SystemLabel = "Registered from CSP"
