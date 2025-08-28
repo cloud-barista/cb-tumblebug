@@ -4586,7 +4586,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: vmSnapshotReq
-  /ns/{nsId}/mci/{mciId}/vmDynamic:
+  /ns/{nsId}/mci/{mciId}/subGroupDynamic:
     post:
       tags:
       - "[MC-Infra] MCI Provisioning and Management"
@@ -4638,7 +4638,7 @@ paths:
         - Can be individually managed or grouped with existing subgroups
         - Monitoring and logging are automatically configured
         - Application deployment and configuration management can proceed immediately
-      operationId: PostMciVmDynamic
+      operationId: PostMciSubGroupDynamic
       parameters:
       - name: nsId
         in: path
@@ -4690,6 +4690,97 @@ paths:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
           description: VM creation failed or network integration error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: vmReq
+  /ns/{nsId}/mci/{mciId}/subGroupDynamicReview:
+    post:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: Review VM Dynamic Addition Request for Existing MCI
+      description: |-
+        Review and validate a VM dynamic addition request for an existing MCI before actual provisioning.
+        This endpoint provides comprehensive validation for adding new VMs to existing MCIs without actually creating resources.
+        It checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.
+
+        **Key Features:**
+        - Validates VM specification and image against CSP availability
+        - Checks compatibility with existing MCI configuration
+        - Provides cost estimation for the new VM addition
+        - Identifies potential configuration issues and warnings
+        - Recommends optimization strategies
+        - Non-invasive validation (no resources are created)
+
+        **Review Status:**
+        - `Ready`: VM can be added successfully
+        - `Warning`: VM can be added but with configuration warnings
+        - `Error`: Critical errors prevent VM addition
+
+        **MCI Integration Validation:**
+        - Ensures target MCI exists and is in a compatible state
+        - Validates network integration possibilities
+        - Checks resource naming conflicts
+        - Verifies security group and SSH key compatibility
+
+        **Use Cases:**
+        - Pre-validation before expensive VM addition operations
+        - Cost estimation for scaling decisions
+        - Configuration optimization before deployment
+        - Risk assessment for VM addition to existing infrastructure
+      operationId: PostMciDynamicSubGroupVmReview
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID containing the target MCI
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID to which the VM will be added
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: "Request body to review VM dynamic addition. Must include specId\
+          \ and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small,\
+          \ imageId: aws+ap-northeast-2+ubuntu22.04, subGroupSize: 2})"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.CreateSubGroupDynamicReq'
+        required: true
+      responses:
+        "200":
+          description: "Comprehensive VM addition review result with validation status,\
+            \ cost estimation, and recommendations"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ReviewSubGroupDynamicReqInfo'
+        "400":
+          description: Invalid request format or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Target MCI not found or namespace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal server error during validation
           content:
             application/json:
               schema:
@@ -9913,7 +10004,7 @@ components:
             -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
           allOf:
           - $ref: '#/components/schemas/model.MciCmdReq'
-        vmDynamicReq:
+        subGroupDynamicReq:
           $ref: '#/components/schemas/model.CreateSubGroupDynamicReq'
     model.AutoCondition:
       type: object
@@ -10092,7 +10183,7 @@ components:
         reqCheck:
           type: array
           items:
-            $ref: '#/components/schemas/model.CheckVmDynamicReqInfo'
+            $ref: '#/components/schemas/model.CheckSubGroupDynamicReqInfo'
     model.CheckNodeDynamicReqInfo:
       type: object
       properties:
@@ -10113,7 +10204,7 @@ components:
           type: string
           description: Latest system message such as error message
           example: Failed because ...
-    model.CheckVmDynamicReqInfo:
+    model.CheckSubGroupDynamicReqInfo:
       type: object
       properties:
         connectionConfigCandidates:
@@ -13294,7 +13385,7 @@ components:
           type: array
           description: VM-level validation results
           items:
-            $ref: '#/components/schemas/model.ReviewVmDynamicReqInfo'
+            $ref: '#/components/schemas/model.ReviewSubGroupDynamicReqInfo'
     model.ReviewResourceSummary:
       type: object
       properties:
@@ -13348,7 +13439,7 @@ components:
         status:
           type: string
           example: Available/Unavailable/Unknown
-    model.ReviewVmDynamicReqInfo:
+    model.ReviewSubGroupDynamicReqInfo:
       type: object
       properties:
         canCreate:

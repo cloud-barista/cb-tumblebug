@@ -237,11 +237,11 @@ func OrchestrationController() {
 						labels := map[string]string{
 							model.LabelDeploymentType: model.StrAutoGen,
 						}
-						autoAction.VmDynamicReq.Label = labels
+						autoAction.SubGroupDynamicReq.Label = labels
 						// append uid to given vm name to avoid duplicated vm ID.
-						autoAction.VmDynamicReq.Name = common.ToLower(autoAction.VmDynamicReq.Name) + "-" + common.GenUid()
+						autoAction.SubGroupDynamicReq.Name = common.ToLower(autoAction.SubGroupDynamicReq.Name) + "-" + common.GenUid()
 						//vmReqTmp := autoAction.Vm
-						// autoAction.VmDynamicReq.SubGroupSize = "1"
+						// autoAction.SubGroupDynamicReq.SubGroupSize = "1"
 
 						if strings.EqualFold(autoAction.PlacementAlgo, "random") {
 							log.Debug().Msg("[autoAction.PlacementAlgo] " + autoAction.PlacementAlgo)
@@ -252,8 +252,8 @@ func OrchestrationController() {
 							// 	UpdateMciPolicyInfo(nsId, mciPolicyTmp)
 							// }
 
-							autoAction.VmDynamicReq.ImageId = "ubuntu18.04"                // temporal default value. will be changed
-							autoAction.VmDynamicReq.SpecId = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
+							autoAction.SubGroupDynamicReq.ImageId = "ubuntu18.04"                // temporal default value. will be changed
+							autoAction.SubGroupDynamicReq.SpecId = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
 
 							recommendSpecReq := model.RecommendSpecReq{}
 
@@ -265,19 +265,19 @@ func OrchestrationController() {
 							}
 							if len(specList) != 0 {
 								recommendedSpec := specList[0].Id
-								autoAction.VmDynamicReq.SpecId = recommendedSpec
+								autoAction.SubGroupDynamicReq.SpecId = recommendedSpec
 							}
 
-							// autoAction.VmDynamicReq.Name = autoAction.VmDynamicReq.Name + "-random"
-							// autoAction.VmDynamicReq.Label = model.LabelAutoGen
+							// autoAction.SubGroupDynamicReq.Name = autoAction.SubGroupDynamicReq.Name + "-random"
+							// autoAction.SubGroupDynamicReq.Label = model.LabelAutoGen
 						}
 
-						common.PrintJsonPretty(autoAction.VmDynamicReq)
+						common.PrintJsonPretty(autoAction.SubGroupDynamicReq)
 						log.Debug().Msg("[Action] " + autoAction.ActionType)
 
 						// ScaleOut MCI according to the VM requirement.
 						log.Debug().Msg("[Generating VM]")
-						result, vmCreateErr := CreateMciVmDynamic(nsId, mciPolicyTmp.Id, &autoAction.VmDynamicReq)
+						result, vmCreateErr := CreateMciSubGroupDynamic(nsId, mciPolicyTmp.Id, &autoAction.SubGroupDynamicReq)
 						if vmCreateErr != nil {
 							mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 							UpdateMciPolicyInfo(nsId, mciPolicyTmp)
@@ -287,7 +287,7 @@ func OrchestrationController() {
 						if len(autoAction.PostCommand.Command) != 0 {
 
 							log.Debug().Msgf("[Post Command to VM] %v", autoAction.PostCommand.Command)
-							_, cmdErr := RemoteCommandToMci(nsId, mciPolicyTmp.Id, common.ToLower(autoAction.VmDynamicReq.Name), "", "", &autoAction.PostCommand)
+							_, cmdErr := RemoteCommandToMci(nsId, mciPolicyTmp.Id, common.ToLower(autoAction.SubGroupDynamicReq.Name), "", "", &autoAction.PostCommand)
 							if cmdErr != nil {
 								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 								UpdateMciPolicyInfo(nsId, mciPolicyTmp)

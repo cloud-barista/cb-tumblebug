@@ -356,11 +356,11 @@ type MciConnectionConfigCandidatesReq struct {
 
 // CheckMciDynamicReqInfo is struct to check requirements to create a new MCI instance dynamically (with default resource option)
 type CheckMciDynamicReqInfo struct {
-	ReqCheck []CheckVmDynamicReqInfo `json:"reqCheck" validate:"required"`
+	ReqCheck []CheckSubGroupDynamicReqInfo `json:"reqCheck" validate:"required"`
 }
 
-// CheckVmDynamicReqInfo is struct to check requirements to create a new server instance dynamically (with default resource option)
-type CheckVmDynamicReqInfo struct {
+// CheckSubGroupDynamicReqInfo is struct to check requirements to create a new server instance dynamically (with default resource option)
+type CheckSubGroupDynamicReqInfo struct {
 
 	// ConnectionConfigCandidates will provide ConnectionConfig options
 	ConnectionConfigCandidates []string `json:"connectionConfigCandidates" default:""`
@@ -394,7 +394,7 @@ type ReviewMciDynamicReqInfo struct {
 	PolicyRecommendation   string `json:"policyRecommendation,omitempty" example:"Consider 'refine' policy for automatic cleanup of failed VMs"`
 
 	// VM-level validation results
-	VmReviews []ReviewVmDynamicReqInfo `json:"vmReviews"`
+	VmReviews []ReviewSubGroupDynamicReqInfo `json:"vmReviews"`
 
 	// Resource availability summary
 	ResourceSummary ReviewResourceSummary `json:"resourceSummary"`
@@ -403,8 +403,8 @@ type ReviewMciDynamicReqInfo struct {
 	Recommendations []string `json:"recommendations,omitempty"`
 }
 
-// ReviewVmDynamicReqInfo is struct for review result of individual VM in MCI dynamic request
-type ReviewVmDynamicReqInfo struct {
+// ReviewSubGroupDynamicReqInfo is struct for review result of individual VM in MCI dynamic request
+type ReviewSubGroupDynamicReqInfo struct {
 	// VM request information
 	VmName       string `json:"vmName"`
 	SubGroupSize string `json:"subGroupSize"`
@@ -872,8 +872,8 @@ type AutoCondition struct {
 
 // AutoAction is struct for MCI auto-control action.
 type AutoAction struct {
-	ActionType   string                   `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
-	VmDynamicReq CreateSubGroupDynamicReq `json:"vmDynamicReq"`
+	ActionType         string                   `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
+	SubGroupDynamicReq CreateSubGroupDynamicReq `json:"subGroupDynamicReq"`
 
 	// PostCommand is field for providing command to VMs after its creation. example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
 	PostCommand   MciCmdReq `json:"postCommand"`

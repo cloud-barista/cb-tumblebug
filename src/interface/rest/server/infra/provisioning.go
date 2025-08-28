@@ -370,8 +370,8 @@ func RestPostMciDynamicReview(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
-// RestPostMciVmDynamic godoc
-// @ID PostMciVmDynamic
+// RestPostMciSubGroupDynamic godoc
+// @ID PostMciSubGroupDynamic
 // @Summary Add VM Dynamically to Existing MCI
 // @Description Dynamically add new virtual machines to an existing MCI using common specifications and automated resource management.
 // @Description This endpoint provides elastic scaling capabilities for running MCIs:
@@ -430,8 +430,8 @@ func RestPostMciDynamicReview(c echo.Context) error {
 // @Failure 404 {object} model.SimpleMsg "Target MCI not found or specified resources unavailable"
 // @Failure 409 {object} model.SimpleMsg "Subgroup name conflicts or MCI in incompatible state"
 // @Failure 500 {object} model.SimpleMsg "VM creation failed or network integration error"
-// @Router /ns/{nsId}/mci/{mciId}/vmDynamic [post]
-func RestPostMciVmDynamic(c echo.Context) error {
+// @Router /ns/{nsId}/mci/{mciId}/subGroupDynamic [post]
+func RestPostMciSubGroupDynamic(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")
@@ -441,8 +441,78 @@ func RestPostMciVmDynamic(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.CreateMciVmDynamic(nsId, mciId, req)
+	result, err := infra.CreateMciSubGroupDynamic(nsId, mciId, req)
 	return clientManager.EndRequestWithLog(c, err, result)
+}
+
+// RestPostMciDynamicSubGroupVmReview godoc
+// @ID PostMciDynamicSubGroupVmReview
+// @Summary Review VM Dynamic Addition Request for Existing MCI
+// @Description Review and validate a VM dynamic addition request for an existing MCI before actual provisioning.
+// @Description This endpoint provides comprehensive validation for adding new VMs to existing MCIs without actually creating resources.
+// @Description It checks resource availability, validates specifications and images, estimates costs, and provides detailed recommendations.
+// @Description
+// @Description **Key Features:**
+// @Description - Validates VM specification and image against CSP availability
+// @Description - Checks compatibility with existing MCI configuration
+// @Description - Provides cost estimation for the new VM addition
+// @Description - Identifies potential configuration issues and warnings
+// @Description - Recommends optimization strategies
+// @Description - Non-invasive validation (no resources are created)
+// @Description
+// @Description **Review Status:**
+// @Description - `Ready`: VM can be added successfully
+// @Description - `Warning`: VM can be added but with configuration warnings
+// @Description - `Error`: Critical errors prevent VM addition
+// @Description
+// @Description **MCI Integration Validation:**
+// @Description - Ensures target MCI exists and is in a compatible state
+// @Description - Validates network integration possibilities
+// @Description - Checks resource naming conflicts
+// @Description - Verifies security group and SSH key compatibility
+// @Description
+// @Description **Use Cases:**
+// @Description - Pre-validation before expensive VM addition operations
+// @Description - Cost estimation for scaling decisions
+// @Description - Configuration optimization before deployment
+// @Description - Risk assessment for VM addition to existing infrastructure
+// @Tags [MC-Infra] MCI Provisioning and Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID containing the target MCI" default(default)
+// @Param mciId path string true "MCI ID to which the VM will be added" default(mci01)
+// @Param vmReq body model.CreateSubGroupDynamicReq true "Request body to review VM dynamic addition. Must include specId and imageId info. (ex: {name: web-servers, specId: aws+ap-northeast-2+t2.small, imageId: aws+ap-northeast-2+ubuntu22.04, subGroupSize: 2})"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Success 200 {object} model.ReviewSubGroupDynamicReqInfo "Comprehensive VM addition review result with validation status, cost estimation, and recommendations"
+// @Failure 400 {object} model.SimpleMsg "Invalid request format or parameters"
+// @Failure 404 {object} model.SimpleMsg "Target MCI not found or namespace not found"
+// @Failure 500 {object} model.SimpleMsg "Internal server error during validation"
+// @Router /ns/{nsId}/mci/{mciId}/subGroupDynamicReview [post]
+func RestPostMciDynamicSubGroupVmReview(c echo.Context) error {
+	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+
+	req := &model.CreateSubGroupDynamicReq{}
+	if err := c.Bind(req); err != nil {
+		log.Warn().Err(err).Msg("invalid request for VM dynamic addition review")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Validate that target MCI exists
+	_, err := infra.GetMciInfo(nsId, mciId)
+	if err != nil {
+		log.Error().Err(err).Msgf("target MCI not found: %s/%s", nsId, mciId)
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result, err := infra.ReviewSingleSubGroupDynamicReq(reqID, nsId, req)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to review VM dynamic addition request")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	return c.JSON(http.StatusOK, result)
 }
 
 // RestPostMciDynamicCheckRequest godoc

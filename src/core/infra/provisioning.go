@@ -1249,7 +1249,7 @@ func CheckMciDynamicReq(req *model.MciConnectionConfigCandidatesReq) (*model.Che
 	for _, k := range req.SpecIds {
 		errMessage := ""
 
-		vmReqInfo := model.CheckVmDynamicReqInfo{}
+		vmReqInfo := model.CheckSubGroupDynamicReqInfo{}
 
 		specInfo, err := resource.GetSpec(model.SystemCommonNs, k)
 		if err != nil {
@@ -1504,6 +1504,219 @@ func ValidateMciDynamicReq(reqID string, nsId string, req *model.MciDynamicReq, 
 	return ReviewMciDynamicReq(reqID, nsId, req, deployOption)
 }
 
+// reviewSingleSubGroupDynamicReq reviews and validates a single VM dynamic request
+func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynamicReq, deployOption string) (model.ReviewSubGroupDynamicReqInfo, *model.SpecInfo, bool, bool, float64) {
+	vmReview := model.ReviewSubGroupDynamicReqInfo{
+		VmName:       subGroupDynamicReq.Name,
+		SubGroupSize: subGroupDynamicReq.SubGroupSize,
+		CanCreate:    true,
+		Status:       "Ready",
+		Info:         make([]string, 0),
+		Warnings:     make([]string, 0),
+		Errors:       make([]string, 0),
+	}
+
+	viable := true
+	hasVmWarning := false
+	var specInfoPtr *model.SpecInfo
+	vmCost := 0.0
+
+	// Validate VM name
+	if subGroupDynamicReq.Name == "" {
+		vmReview.Warnings = append(vmReview.Warnings, "VM SubGroup name not specified, will be auto-generated")
+		hasVmWarning = true
+	}
+
+	// Validate SubGroupSize
+	if subGroupDynamicReq.SubGroupSize == "" {
+		subGroupDynamicReq.SubGroupSize = "1"
+		vmReview.Warnings = append(vmReview.Warnings, "SubGroupSize not specified, defaulting to 1")
+		hasVmWarning = true
+	}
+
+	// Validate SpecId
+	specInfo, err := resource.GetSpec(model.SystemCommonNs, subGroupDynamicReq.SpecId)
+	if err != nil {
+		vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Failed to get spec '%s': %v", subGroupDynamicReq.SpecId, err))
+		vmReview.SpecValidation = model.ReviewResourceValidation{
+			ResourceId:  subGroupDynamicReq.SpecId,
+			IsAvailable: false,
+			Status:      "Unavailable",
+			Message:     err.Error(),
+		}
+		vmReview.CanCreate = false
+		viable = false
+	} else {
+		specInfoPtr = &specInfo
+		vmReview.ConnectionName = specInfo.ConnectionName
+		vmReview.ProviderName = specInfo.ProviderName
+		vmReview.RegionName = specInfo.RegionName
+
+		// Check if spec is available in CSP
+		cspSpec, err := resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
+		if err != nil {
+			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %v", subGroupDynamicReq.SpecId, err))
+			vmReview.SpecValidation = model.ReviewResourceValidation{
+				ResourceId:    subGroupDynamicReq.SpecId,
+				ResourceName:  specInfo.CspSpecName,
+				IsAvailable:   false,
+				Status:        "Unavailable",
+				Message:       err.Error(),
+				CspResourceId: specInfo.CspSpecName,
+			}
+			vmReview.CanCreate = false
+			viable = false
+		} else {
+			vmReview.SpecValidation = model.ReviewResourceValidation{
+				ResourceId:    subGroupDynamicReq.SpecId,
+				ResourceName:  specInfo.CspSpecName,
+				IsAvailable:   true,
+				Status:        "Available",
+				CspResourceId: cspSpec.Name,
+			}
+
+			// Add cost estimation if available
+			if specInfo.CostPerHour > 0 {
+				vmReview.EstimatedCost = fmt.Sprintf("$%.4f/hour", float64(specInfo.CostPerHour))
+				vmCost = float64(specInfo.CostPerHour)
+			} else {
+				vmReview.EstimatedCost = "Cost estimation unavailable"
+			}
+		}
+	}
+
+	// Validate ImageId
+	if specInfoPtr != nil {
+		cspImage, err := resource.LookupImage(specInfoPtr.ConnectionName, subGroupDynamicReq.ImageId)
+		if err != nil {
+			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Image '%s' not available in CSP: %v", subGroupDynamicReq.ImageId, err))
+			vmReview.ImageValidation = model.ReviewResourceValidation{
+				ResourceId:    subGroupDynamicReq.ImageId,
+				IsAvailable:   false,
+				Status:        "Unavailable",
+				Message:       err.Error(),
+				CspResourceId: subGroupDynamicReq.ImageId,
+			}
+			vmReview.CanCreate = false
+			viable = false
+		} else {
+			vmReview.ImageValidation = model.ReviewResourceValidation{
+				ResourceId:    subGroupDynamicReq.ImageId,
+				ResourceName:  cspImage.Name,
+				IsAvailable:   true,
+				Status:        "Available",
+				CspResourceId: cspImage.IId.SystemId,
+			}
+		}
+	}
+
+	// Validate ConnectionName if specified
+	if subGroupDynamicReq.ConnectionName != "" {
+		_, err := common.GetConnConfig(subGroupDynamicReq.ConnectionName)
+		if err != nil {
+			vmReview.Warnings = append(vmReview.Warnings, fmt.Sprintf("Specified connection '%s' not found, will use default from spec", subGroupDynamicReq.ConnectionName))
+			hasVmWarning = true
+		} else {
+			vmReview.ConnectionName = subGroupDynamicReq.ConnectionName
+		}
+	}
+
+	// Validate RootDisk settings
+	if subGroupDynamicReq.RootDiskType != "" && subGroupDynamicReq.RootDiskType != "default" {
+		vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk type configured: %s, be sure it's supported by the provider", subGroupDynamicReq.RootDiskType))
+	}
+	if subGroupDynamicReq.RootDiskSize != "" && subGroupDynamicReq.RootDiskSize != "default" {
+		vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk size configured: %s GB, be sure it meets minimum requirements", subGroupDynamicReq.RootDiskSize))
+	}
+
+	// Check provisioning history and risk analysis
+	if specInfoPtr != nil {
+		riskLevel, riskMessage, err := AnalyzeProvisioningRisk(subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to analyze provisioning risk for VM: %s", subGroupDynamicReq.Name)
+			vmReview.Warnings = append(vmReview.Warnings, "Failed to analyze provisioning history")
+		} else {
+			switch riskLevel {
+			case "high":
+				vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("High provisioning failure risk: %s", riskMessage))
+				vmReview.CanCreate = false
+				viable = false
+				log.Debug().Msgf("High risk detected for spec %s with image %s: %s", subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId, riskMessage)
+			case "medium":
+				vmReview.Warnings = append(vmReview.Warnings, fmt.Sprintf("Moderate provisioning failure risk: %s", riskMessage))
+				hasVmWarning = true
+				log.Debug().Msgf("Medium risk detected for spec %s with image %s: %s", subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId, riskMessage)
+			case "low":
+				if riskMessage != "No previous provisioning history available" && riskMessage != "No provisioning attempts recorded" {
+					vmReview.Info = append(vmReview.Info, fmt.Sprintf("Provisioning history: %s", riskMessage))
+				}
+				log.Debug().Msgf("Low risk for spec %s with image %s: %s", subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId, riskMessage)
+			default:
+				log.Debug().Msgf("Unknown risk level for spec %s: %s", subGroupDynamicReq.SpecId, riskLevel)
+			}
+		}
+	}
+
+	// Check for provider-specific limitations
+	if specInfoPtr != nil {
+		providerName := specInfoPtr.ProviderName
+
+		// Check KT Cloud limitations
+		if providerName == csp.KT {
+			vmReview.Errors = append(vmReview.Errors, "KT Cloud provisioning is currently not available")
+			vmReview.CanCreate = false
+			viable = false
+			log.Debug().Msgf("KT Cloud provisioning blocked for VM: %s", subGroupDynamicReq.Name)
+		}
+
+		// // Check NHN Cloud limitations
+		// if providerName == csp.NHN {
+		// 	if deployOption != "hold" {
+		// 		vmReview.Errors = append(vmReview.Errors, "NHN Cloud can only be provisioned with deployOption 'hold' (manual deployment required)")
+		// 		vmReview.CanCreate = false
+		// 		viable = false
+		// 		log.Debug().Msgf("NHN Cloud requires 'hold' deployOption for VM: %s", subGroupDynamicReq.Name)
+		// 	} else {
+		// 		vmReview.Warnings = append(vmReview.Warnings, "NHN Cloud requires manual deployment completion after 'hold' - automatic provisioning is not fully supported")
+		// 		hasVmWarning = true
+		// 		log.Debug().Msgf("NHN Cloud 'hold' mode warning for VM: %s", subGroupDynamicReq.Name)
+		// 	}
+		// }
+	}
+
+	// Set VM review status
+	if len(vmReview.Errors) > 0 {
+		vmReview.Status = "Error"
+		vmReview.Message = fmt.Sprintf("VM has %d error(s) that prevent creation", len(vmReview.Errors))
+	} else if len(vmReview.Warnings) > 0 {
+		vmReview.Status = "Warning"
+		vmReview.Message = fmt.Sprintf("VM can be created but has %d warning(s)", len(vmReview.Warnings))
+	} else {
+		vmReview.Status = "Ready"
+		vmReview.Message = "VM can be created successfully"
+	}
+
+	log.Debug().Msgf("VM '%s' review completed: %s", subGroupDynamicReq.Name, vmReview.Status)
+	return vmReview, specInfoPtr, viable, hasVmWarning, vmCost
+}
+
+// ReviewSingleSubGroupDynamicReq reviews and validates a single VM dynamic request and returns comprehensive review information
+func ReviewSingleSubGroupDynamicReq(reqID string, nsId string, req *model.CreateSubGroupDynamicReq) (*model.ReviewSubGroupDynamicReqInfo, error) {
+	log.Debug().Msgf("Starting single VM dynamic request review for: %s", req.Name)
+
+	// Basic validation
+	err := common.CheckString(nsId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid namespace: %w", err)
+	}
+
+	// Use the common VM review function with empty deployOption
+	vmReview, _, _, _, _ := reviewSingleSubGroupDynamicReq(*req, "")
+
+	log.Debug().Msgf("Single VM review completed: %s - %s", vmReview.Status, vmReview.Message)
+	return &vmReview, nil
+}
+
 // ReviewMciDynamicReq is func to review and validate MCI dynamic request comprehensively
 func ReviewMciDynamicReq(reqID string, nsId string, req *model.MciDynamicReq, deployOption string) (*model.ReviewMciDynamicReqInfo, error) {
 
@@ -1512,7 +1725,7 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.MciDynamicReq, de
 	reviewResult := &model.ReviewMciDynamicReqInfo{
 		MciName:      req.Name,
 		TotalVmCount: len(req.SubGroups),
-		VmReviews:    make([]model.ReviewVmDynamicReqInfo, 0),
+		VmReviews:    make([]model.ReviewSubGroupDynamicReqInfo, 0),
 		ResourceSummary: model.ReviewResourceSummary{
 			UniqueSpecs:     make([]string, 0),
 			UniqueImages:    make([]string, 0),
@@ -1563,7 +1776,7 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.MciDynamicReq, de
 	// Channel to collect VM review results
 	vmReviewChan := make(chan struct {
 		index    int
-		vmReview model.ReviewVmDynamicReqInfo
+		vmReview model.ReviewSubGroupDynamicReqInfo
 		specInfo *model.SpecInfo
 		viable   bool
 		warning  bool
@@ -1583,200 +1796,13 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.MciDynamicReq, de
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
 
-			vmReview := model.ReviewVmDynamicReqInfo{
-				VmName:       subGroupDynamicReq.Name,
-				SubGroupSize: subGroupDynamicReq.SubGroupSize,
-				CanCreate:    true,
-				Status:       "Ready",
-				Info:         make([]string, 0),
-				Warnings:     make([]string, 0),
-				Errors:       make([]string, 0),
-			}
-
-			viable := true
-			hasVmWarning := false
-			var specInfoPtr *model.SpecInfo
-			vmCost := 0.0
-
-			// Validate VM name
-			if subGroupDynamicReq.Name == "" {
-				vmReview.Warnings = append(vmReview.Warnings, "VM SubGroup name not specified, will be auto-generated")
-				hasVmWarning = true
-			}
-
-			// Validate SubGroupSize
-			if subGroupDynamicReq.SubGroupSize == "" {
-				subGroupDynamicReq.SubGroupSize = "1"
-				vmReview.Warnings = append(vmReview.Warnings, "SubGroupSize not specified, defaulting to 1")
-				hasVmWarning = true
-			}
-
-			// Validate SpecId
-			specInfo, err := resource.GetSpec(model.SystemCommonNs, subGroupDynamicReq.SpecId)
-			if err != nil {
-				vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Failed to get spec '%s': %v", subGroupDynamicReq.SpecId, err))
-				vmReview.SpecValidation = model.ReviewResourceValidation{
-					ResourceId:  subGroupDynamicReq.SpecId,
-					IsAvailable: false,
-					Status:      "Unavailable",
-					Message:     err.Error(),
-				}
-				vmReview.CanCreate = false
-				viable = false
-			} else {
-				specInfoPtr = &specInfo
-				vmReview.ConnectionName = specInfo.ConnectionName
-				vmReview.ProviderName = specInfo.ProviderName
-				vmReview.RegionName = specInfo.RegionName
-
-				// Check if spec is available in CSP
-				cspSpec, err := resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
-				if err != nil {
-					vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %v", subGroupDynamicReq.SpecId, err))
-					vmReview.SpecValidation = model.ReviewResourceValidation{
-						ResourceId:    subGroupDynamicReq.SpecId,
-						ResourceName:  specInfo.CspSpecName,
-						IsAvailable:   false,
-						Status:        "Unavailable",
-						Message:       err.Error(),
-						CspResourceId: specInfo.CspSpecName,
-					}
-					vmReview.CanCreate = false
-					viable = false
-				} else {
-					vmReview.SpecValidation = model.ReviewResourceValidation{
-						ResourceId:    subGroupDynamicReq.SpecId,
-						ResourceName:  specInfo.CspSpecName,
-						IsAvailable:   true,
-						Status:        "Available",
-						CspResourceId: cspSpec.Name,
-					}
-
-					// Add cost estimation if available
-					if specInfo.CostPerHour > 0 {
-						vmReview.EstimatedCost = fmt.Sprintf("$%.4f/hour", specInfo.CostPerHour)
-						vmCost = float64(specInfo.CostPerHour)
-					} else {
-						vmReview.EstimatedCost = "Cost estimation unavailable"
-					}
-				}
-			}
-
-			// Validate ImageId
-			if specInfoPtr != nil {
-				cspImage, err := resource.LookupImage(specInfoPtr.ConnectionName, subGroupDynamicReq.ImageId)
-				if err != nil {
-					vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Image '%s' not available in CSP: %v", subGroupDynamicReq.ImageId, err))
-					vmReview.ImageValidation = model.ReviewResourceValidation{
-						ResourceId:    subGroupDynamicReq.ImageId,
-						IsAvailable:   false,
-						Status:        "Unavailable",
-						Message:       err.Error(),
-						CspResourceId: subGroupDynamicReq.ImageId,
-					}
-					vmReview.CanCreate = false
-					viable = false
-				} else {
-					vmReview.ImageValidation = model.ReviewResourceValidation{
-						ResourceId:    subGroupDynamicReq.ImageId,
-						ResourceName:  cspImage.Name,
-						IsAvailable:   true,
-						Status:        "Available",
-						CspResourceId: cspImage.IId.SystemId,
-					}
-				}
-			}
-
-			// Validate ConnectionName if specified
-			if subGroupDynamicReq.ConnectionName != "" {
-				_, err := common.GetConnConfig(subGroupDynamicReq.ConnectionName)
-				if err != nil {
-					vmReview.Warnings = append(vmReview.Warnings, fmt.Sprintf("Specified connection '%s' not found, will use default from spec", subGroupDynamicReq.ConnectionName))
-					hasVmWarning = true
-				} else {
-					vmReview.ConnectionName = subGroupDynamicReq.ConnectionName
-				}
-			}
-
-			// Validate RootDisk settings
-			if subGroupDynamicReq.RootDiskType != "" && subGroupDynamicReq.RootDiskType != "default" {
-				vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk type configured: %s, be sure it's supported by the provider", subGroupDynamicReq.RootDiskType))
-			}
-			if subGroupDynamicReq.RootDiskSize != "" && subGroupDynamicReq.RootDiskSize != "default" {
-				vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk size configured: %s GB, be sure it meets minimum requirements", subGroupDynamicReq.RootDiskSize))
-			}
-
-			// Check provisioning history and risk analysis
-			if specInfoPtr != nil {
-				riskLevel, riskMessage, err := AnalyzeProvisioningRisk(subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId)
-				if err != nil {
-					log.Warn().Err(err).Msgf("Failed to analyze provisioning risk for VM: %s", subGroupDynamicReq.Name)
-					vmReview.Warnings = append(vmReview.Warnings, "Failed to analyze provisioning history")
-				} else {
-					switch riskLevel {
-					case "high":
-						vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("High provisioning failure risk: %s", riskMessage))
-						vmReview.CanCreate = false
-						viable = false
-						log.Debug().Msgf("High risk detected for spec %s with image %s: %s", subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId, riskMessage)
-					case "medium":
-						vmReview.Warnings = append(vmReview.Warnings, fmt.Sprintf("Moderate provisioning failure risk: %s", riskMessage))
-						hasVmWarning = true
-						log.Debug().Msgf("Medium risk detected for spec %s with image %s: %s", subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId, riskMessage)
-					case "low":
-						if riskMessage != "No previous provisioning history available" && riskMessage != "No provisioning attempts recorded" {
-							vmReview.Info = append(vmReview.Info, fmt.Sprintf("Provisioning history: %s", riskMessage))
-						}
-						log.Debug().Msgf("Low risk for spec %s with image %s: %s", subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId, riskMessage)
-					default:
-						log.Debug().Msgf("Unknown risk level for spec %s: %s", subGroupDynamicReq.SpecId, riskLevel)
-					}
-				}
-			}
-
-			// Check for provider-specific limitations
-			if specInfoPtr != nil {
-				providerName := specInfoPtr.ProviderName
-
-				// Check KT Cloud limitations
-				if providerName == csp.KT {
-					vmReview.Errors = append(vmReview.Errors, "KT Cloud provisioning is currently not available")
-					vmReview.CanCreate = false
-					viable = false
-					log.Debug().Msgf("KT Cloud provisioning blocked for VM: %s", subGroupDynamicReq.Name)
-				}
-
-				// // Check NHN Cloud limitations
-				// if providerName == csp.NHN {
-				// 	if deployOption != "hold" {
-				// 		vmReview.Errors = append(vmReview.Errors, "NHN Cloud can only be provisioned with deployOption 'hold' (manual deployment required)")
-				// 		vmReview.CanCreate = false
-				// 		viable = false
-				// 		log.Debug().Msgf("NHN Cloud requires 'hold' deployOption for VM: %s", subGroupDynamicReq.Name)
-				// 	} else {
-				// 		vmReview.Warnings = append(vmReview.Warnings, "NHN Cloud requires manual deployment completion after 'hold' - automatic provisioning is not fully supported")
-				// 		hasVmWarning = true
-				// 		log.Debug().Msgf("NHN Cloud 'hold' mode warning for VM: %s", subGroupDynamicReq.Name)
-				// 	}
-				// }
-			}
-
-			// Set VM review status
-			if len(vmReview.Errors) > 0 {
-				vmReview.Status = "Error"
-				vmReview.Message = fmt.Sprintf("VM has %d error(s) that prevent creation", len(vmReview.Errors))
-			} else if len(vmReview.Warnings) > 0 {
-				vmReview.Status = "Warning"
-				vmReview.Message = fmt.Sprintf("VM can be created but has %d warning(s)", len(vmReview.Warnings))
-			} else {
-				vmReview.Status = "Ready"
-				vmReview.Message = "VM can be created successfully"
-			}
+			// Use the common VM review function
+			vmReview, specInfoPtr, viable, hasVmWarning, vmCost := reviewSingleSubGroupDynamicReq(subGroupDynamicReq, deployOption)
 
 			// Send result to channel
 			vmReviewChan <- struct {
 				index    int
-				vmReview model.ReviewVmDynamicReqInfo
+				vmReview model.ReviewSubGroupDynamicReqInfo
 				specInfo *model.SpecInfo
 				viable   bool
 				warning  bool
@@ -1801,7 +1827,7 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.MciDynamicReq, de
 	}()
 
 	// Collect results and maintain order
-	vmReviews := make([]model.ReviewVmDynamicReqInfo, len(req.SubGroups))
+	vmReviews := make([]model.ReviewSubGroupDynamicReqInfo, len(req.SubGroups))
 	allViable := true
 	hasWarnings := false
 	totalEstimatedCost := 0.0
@@ -2076,8 +2102,8 @@ func CreateSystemMciDynamic(option string) (*model.MciInfo, error) {
 	return CreateMciDynamic("", nsId, req, "")
 }
 
-// CreateMciVmDynamic is func to create requested VM in a dynamic way and add it to MCI
-func CreateMciVmDynamic(nsId string, mciId string, req *model.CreateSubGroupDynamicReq) (*model.MciInfo, error) {
+// CreateMciSubGroupDynamic is func to create requested VM in a dynamic way and add it to MCI
+func CreateMciSubGroupDynamic(nsId string, mciId string, req *model.CreateSubGroupDynamicReq) (*model.MciInfo, error) {
 
 	emptyMci := &model.MciInfo{}
 	subGroupId := req.Name
@@ -2106,7 +2132,7 @@ func CreateMciVmDynamic(nsId string, mciId string, req *model.CreateSubGroupDyna
 	return CreateMciGroupVm(nsId, mciId, vmReqResult.VmReq, true)
 }
 
-// checkCommonResAvailableForSubGroupDynamicReq is func to check common resources availability for VmDynamicReq
+// checkCommonResAvailableForSubGroupDynamicReq is func to check common resources availability for SubGroupDynamicReq
 func checkCommonResAvailableForSubGroupDynamicReq(req *model.CreateSubGroupDynamicReq, nsId string) error {
 
 	log.Debug().Msgf("Checking common resources for VM Dynamic Request: %+v", req)

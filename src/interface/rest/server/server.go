@@ -377,7 +377,8 @@ func RunServer() {
 
 	g.POST("/:nsId/mciDynamic", rest_infra.RestPostMciDynamic)
 	g.POST("/:nsId/mciDynamicReview", rest_infra.RestPostMciDynamicReview)
-	g.POST("/:nsId/mci/:mciId/vmDynamic", rest_infra.RestPostMciVmDynamic)
+	g.POST("/:nsId/mci/:mciId/subGroupDynamic", rest_infra.RestPostMciSubGroupDynamic)
+	g.POST("/:nsId/mci/:mciId/subGroupDynamicReview", rest_infra.RestPostMciDynamicSubGroupVmReview)
 
 	// Provisioning History and Analytics Routes
 	e.GET("/tumblebug/provisioning/log/:specId", rest_infra.RestGetProvisioningLog)
