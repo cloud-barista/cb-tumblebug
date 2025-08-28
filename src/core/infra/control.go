@@ -242,7 +242,7 @@ func HandleMciVmAction(nsId string, mciId string, vmId string, action string, fo
 // ControlMciAsync is func to control MCI async
 func ControlMciAsync(nsId string, mciId string, action string, force bool) error {
 
-	mci, err := GetMciObject(nsId, mciId)
+	mci, _, err := GetMciObject(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -325,7 +325,7 @@ func ControlMciAsync(nsId string, mciId string, action string, force bool) error
 	}()
 
 	// Update MCI TargetAction to None. Even if there are errors, we want to mark it as complete.
-	mci, err = GetMciObject(nsId, mciId)
+	mci, _, err = GetMciObject(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -365,9 +365,9 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 	key := common.GenMciKey(nsId, mciId, vmId)
 	log.Debug().Msg("[ControlVmAsync] " + key)
 
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 
-	if keyValue == (kvstore.KeyValue{}) || err != nil {
+	if !exists || err != nil {
 		callResult.Error = fmt.Errorf("kvstore.Get() Err in ControlVmAsync. key[" + key + "]")
 		log.Fatal().Err(callResult.Error).Msg("Error in ControlVmAsync")
 

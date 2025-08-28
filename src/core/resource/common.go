@@ -64,7 +64,7 @@ func getResourceConnectionName(nsId, resourceType, resourceId string) (string, e
 
 	// Fall back to KV store lookup if pattern extraction fails
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
 		// If KV lookup fails, use pattern-based fallback
 		if len(parts) >= 2 {
@@ -357,7 +357,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
-	keyValue, _ := kvstore.GetKv(key)
+	keyValue, _, _ := kvstore.GetKv(key)
 	// In CheckResource() above, calling 'kvstore.GetKv()' and checking err parts exist.
 	// So, in here, we don't need to check whether keyValue == nil or err != nil.
 
@@ -918,12 +918,12 @@ func GetAssociatedObjectCount(nsId string, resourceType string, resourceId strin
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return -1, err
 	}
-	if keyValue != (kvstore.KeyValue{}) {
+	if exists {
 		inUseCount := int(gjson.Get(keyValue.Value, "associatedObjectList.#").Int())
 		return inUseCount, nil
 	}
@@ -963,12 +963,12 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	if keyValue != (kvstore.KeyValue{}) {
+	if exists {
 
 		type stringList struct {
 			AssociatedObjectList []string `json:"associatedObjectList"`
@@ -1020,13 +1020,13 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	if keyValue != (kvstore.KeyValue{}) {
+	if exists {
 		objList, _ := GetAssociatedObjectList(nsId, resourceType, resourceId)
 		switch cmd {
 		case model.StrAdd:
@@ -1124,13 +1124,13 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	if keyValue != (kvstore.KeyValue{}) {
+	if exists {
 		switch resourceType {
 		case model.StrImage:
 			res := model.ImageInfo{}
@@ -1360,12 +1360,12 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
-	keyValue, err := kvstore.GetKv(key)
+	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	if keyValue != (kvstore.KeyValue{}) {
+	if exists {
 		return true, nil
 	}
 	return false, nil
@@ -1423,12 +1423,12 @@ func CheckChildResource(nsId string, resourceType string, parentResourceId strin
 	key := common.GenResourceKey(nsId, parentResourceType, parentResourceId)
 	key += "/" + resourceType + "/" + resourceId
 
-	keyValue, err := kvstore.GetKv(key)
+	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	if keyValue != (kvstore.KeyValue{}) {
+	if exists {
 		return true, nil
 	}
 	return false, nil
@@ -1789,8 +1789,8 @@ func UpdateResourceObject(nsId string, resourceType string, resourceObject inter
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err := kvstore.GetKv(key)
-	if keyValue == (kvstore.KeyValue{}) || err != nil {
+	keyValue, exists, err := kvstore.GetKv(key)
+	if !exists || err != nil {
 		return
 	}
 
@@ -1872,13 +1872,13 @@ func GetCspResourceName(nsId string, resourceType string, resourceId string) (st
 	if key == "/invalidKey" {
 		return "", fmt.Errorf("invalid nsId or resourceType or resourceId")
 	}
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
-	if keyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		//log.Error().Err(err).Msg("")
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
 		return "", fmt.Errorf("cannot find the key " + key)
@@ -1933,13 +1933,13 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	if key == "/invalidKey" {
 		return "", fmt.Errorf("invalid nsId or resourceType or resourceId")
 	}
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
-	if keyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		//log.Error().Err(err).Msg("")
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
 		return "", fmt.Errorf("cannot find the key " + key)

@@ -92,7 +92,7 @@ func CheckMci(nsId string, mciId string) (bool, error) {
 
 	key := common.GenMciKey(nsId, mciId, "")
 
-	keyValue, err := kvstore.GetKv(key)
+	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In CheckMci(); kvstore.GetKv() returned an error.")
@@ -100,7 +100,7 @@ func CheckMci(nsId string, mciId string) (bool, error) {
 		// return nil, err
 	}
 
-	if keyValue != (kvstore.KeyValue{}) {
+	if exists {
 		return true, nil
 	}
 	return false, nil
@@ -169,7 +169,7 @@ func CheckVm(nsId string, mciId string, vmId string) (bool, error) {
 
 	key := common.GenMciKey(nsId, mciId, vmId)
 
-	keyValue, err := kvstore.GetKv(key)
+	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In CheckVm(); kvstore.GetKv() returned an error.")
@@ -177,7 +177,7 @@ func CheckVm(nsId string, mciId string, vmId string) (bool, error) {
 		// return nil, err
 	}
 
-	if keyValue != (kvstore.KeyValue{}) {
+	if exists {
 		return true, nil
 	}
 	return false, nil
@@ -210,7 +210,7 @@ func CheckMciPolicy(nsId string, mciId string) (bool, error) {
 
 	key := common.GenMciPolicyKey(nsId, mciId, "")
 
-	keyValue, err := kvstore.GetKv(key)
+	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In CheckMciPolicy(); kvstore.GetKv() returned an error.")
@@ -218,7 +218,7 @@ func CheckMciPolicy(nsId string, mciId string) (bool, error) {
 		// return nil, err
 	}
 
-	if keyValue != (kvstore.KeyValue{}) {
+	if exists {
 		return true, nil
 	}
 	return false, nil
@@ -1031,7 +1031,7 @@ func FindTbVmByCspId(nsId string, mciId string, vmCspResourceId string) (model.V
 		return model.VmInfo{}, err
 	}
 
-	mci, err := GetMciObject(nsId, mciId)
+	mci, _, err := GetMciObject(nsId, mciId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the MCI " + mciId + ".")
 		return model.VmInfo{}, err

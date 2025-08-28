@@ -97,7 +97,7 @@ func ListVmId(nsId string, mciId string) ([]string, error) {
 	key := common.GenMciKey(nsId, mciId, "")
 	key += "/"
 
-	_, err = kvstore.GetKv(key)
+	_, _, err = kvstore.GetKv(key)
 	if err != nil {
 		log.Debug().Msg("[Not found] " + mciId)
 		log.Error().Err(err).Msg("")
@@ -227,7 +227,7 @@ func GetSubGroup(nsId string, mciId string, subGroupId string) (model.SubGroupIn
 	}
 
 	key := common.GenMciSubGroupKey(nsId, mciId, subGroupId)
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return subGroupInfo, err
@@ -302,7 +302,7 @@ func GetMciInfo(nsId string, mciId string) (*model.MciInfo, error) {
 		return temp, err
 	}
 
-	mciObj, err := GetMciObject(nsId, mciId)
+	mciObj, _, err := GetMciObject(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
@@ -600,7 +600,7 @@ func ListVmInfo(nsId string, mciId string, vmId string) (*model.VmInfo, error) {
 	key := common.GenMciKey(nsId, mciId, "")
 
 	vmKey := common.GenMciKey(nsId, mciId, vmId)
-	vmKeyValue, err := kvstore.GetKv(vmKey)
+	vmKeyValue, exists, err := kvstore.GetKv(vmKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("kvstore.GetKv() returned an error.")
@@ -608,7 +608,7 @@ func ListVmInfo(nsId string, mciId string, vmId string) (*model.VmInfo, error) {
 		// return nil, err
 	}
 
-	if vmKeyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		return nil, fmt.Errorf("Cannot find " + key)
 	}
 	vmTmp := model.VmInfo{}
@@ -629,45 +629,56 @@ func ListVmInfo(nsId string, mciId string, vmId string) (*model.VmInfo, error) {
 }
 
 // GetMciObject is func to retrieve MCI object from database (no current status update)
-func GetMciObject(nsId string, mciId string) (model.MciInfo, error) {
+func GetMciObject(nsId string, mciId string) (model.MciInfo, bool, error) {
 	//log.Debug().Msg("[GetMciObject]" + mciId)
 	key := common.GenMciKey(nsId, mciId, "")
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.MciInfo{}, err
+		return model.MciInfo{}, false, err
 	}
+	if !exists {
+		log.Warn().Msgf("no MCI found (ID: %s)", key)
+		return model.MciInfo{}, false, err
+	}
+
 	mciTmp := model.MciInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mciTmp)
 
 	vmList, err := ListVmId(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.MciInfo{}, err
+		return model.MciInfo{}, false, err
 	}
 
 	for _, vmID := range vmList {
 		vmtmp, err := GetVmObject(nsId, mciId, vmID)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			return model.MciInfo{}, err
+			return model.MciInfo{}, false, err
 		}
 		mciTmp.Vm = append(mciTmp.Vm, vmtmp)
 	}
 
-	return mciTmp, nil
+	return mciTmp, true, nil
 }
 
 // GetVmObject is func to get VM object
 func GetVmObject(nsId string, mciId string, vmId string) (model.VmInfo, error) {
+
+	vmTmp := model.VmInfo{}
 	key := common.GenMciKey(nsId, mciId, vmId)
-	keyValue, err := kvstore.GetKv(key)
-	if keyValue == (kvstore.KeyValue{}) || err != nil {
+	keyValue, exists, err := kvstore.GetKv(key)
+	if err != nil {
 		err = fmt.Errorf("failed to get GetVmObject (ID: %s)", key)
 		log.Error().Err(err).Msg("")
 		return model.VmInfo{}, err
 	}
-	vmTmp := model.VmInfo{}
+	if !exists {
+		log.Warn().Msgf("no VM found (ID: %s)", key)
+		return model.VmInfo{}, fmt.Errorf("no VM found (ID: %s)", key)
+	}
+
 	err = json.Unmarshal([]byte(keyValue.Value), &vmTmp)
 	if err != nil {
 		err = fmt.Errorf("failed to get GetVmObject (ID: %s), message: failed to unmarshal", key)
@@ -680,8 +691,8 @@ func GetVmObject(nsId string, mciId string, vmId string) (model.VmInfo, error) {
 // GetVmIdNameInDetail is func to get ID and Name details
 func GetVmIdNameInDetail(nsId string, mciId string, vmId string) (*model.IdNameInDetailInfo, error) {
 	key := common.GenMciKey(nsId, mciId, vmId)
-	keyValue, err := kvstore.GetKv(key)
-	if keyValue == (kvstore.KeyValue{}) || err != nil {
+	keyValue, _, err := kvstore.GetKv(key)
+	if err != nil {
 		log.Error().Err(err).Msg("")
 		return &model.IdNameInDetailInfo{}, err
 	}
@@ -754,12 +765,12 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 
 	key := common.GenMciKey(nsId, mciId, "")
 
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return &model.MciStatusInfo{}, err
 	}
-	if keyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("Not found [" + key + "]")
 		log.Error().Err(err).Msg("")
 		return &model.MciStatusInfo{}, err
@@ -1028,7 +1039,7 @@ func GetVmSpecId(nsId string, mciId string, vmId string) string {
 	log.Debug().Msg("[getVmSpecID]" + vmId)
 	key := common.GenMciKey(nsId, mciId, vmId)
 
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In GetVmSpecId(); kvstore.GetKv() returned an error.")
@@ -1322,8 +1333,8 @@ func UpdateMciInfo(nsId string, mciInfoData model.MciInfo) {
 	key := common.GenMciKey(nsId, mciInfoData.Id, "")
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err := kvstore.GetKv(key)
-	if keyValue == (kvstore.KeyValue{}) || err != nil {
+	keyValue, exists, err := kvstore.GetKv(key)
+	if !exists || err != nil {
 		return
 	}
 
@@ -1349,8 +1360,8 @@ func UpdateVmInfo(nsId string, mciId string, vmInfoData model.VmInfo) {
 	key := common.GenMciKey(nsId, mciId, vmInfoData.Id)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err := kvstore.GetKv(key)
-	if keyValue == (kvstore.KeyValue{}) || err != nil {
+	keyValue, exists, err := kvstore.GetKv(key)
+	if !exists || err != nil {
 		return
 	}
 
@@ -1369,7 +1380,7 @@ func UpdateVmInfo(nsId string, mciId string, vmInfoData model.VmInfo) {
 // GetMciAssociatedResources returns a list of associated resource IDs for given MCI info
 func GetMciAssociatedResources(nsId string, mciId string) (model.MciAssociatedResourceList, error) {
 
-	mciInfo, err := GetMciObject(nsId, mciId)
+	mciInfo, _, err := GetMciObject(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.MciAssociatedResourceList{}, err
@@ -1509,8 +1520,8 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	vmKey := common.GenMciKey(nsId, mciId, vmId)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err := kvstore.GetKv(vmKey)
-	if keyValue == (kvstore.KeyValue{}) || err != nil {
+	keyValue, exists, err := kvstore.GetKv(vmKey)
+	if !exists || err != nil {
 		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
 		return model.VmInfo{}, err
@@ -1533,8 +1544,8 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	dataDiskKey := common.GenResourceKey(nsId, model.StrDataDisk, dataDiskId)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err = kvstore.GetKv(dataDiskKey)
-	if keyValue == (kvstore.KeyValue{}) || err != nil {
+	keyValue, exists, err = kvstore.GetKv(dataDiskKey)
+	if !exists || err != nil {
 		return model.VmInfo{}, err
 	}
 
@@ -1687,8 +1698,8 @@ func GetAvailableDataDisks(nsId string, mciId string, vmId string, option string
 	vmKey := common.GenMciKey(nsId, mciId, vmId)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err := kvstore.GetKv(vmKey)
-	if keyValue == (kvstore.KeyValue{}) || err != nil {
+	keyValue, exists, err := kvstore.GetKv(vmKey)
+	if !exists || err != nil {
 		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
 		return nil, err

@@ -122,7 +122,7 @@ func UpdateNs(id string, u *model.NsReq) (model.NsInfo, error) {
 
 	if !check {
 		errString := "The namespace " + id + " does not exist."
-		err := fmt.Errorf(errString)
+		err := fmt.Errorf("%s", errString)
 		return emptyInfo, err
 	}
 
@@ -132,10 +132,14 @@ func UpdateNs(id string, u *model.NsReq) (model.NsInfo, error) {
 	}
 
 	key := "/ns/" + id
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyInfo, err
+	}
+	if !exists {
+		log.Debug().Msgf("no namespace found for '%s'", id)
+		return emptyInfo, nil
 	}
 
 	err = json.Unmarshal([]byte(keyValue.Value), &res)
@@ -160,11 +164,16 @@ func UpdateNs(id string, u *model.NsReq) (model.NsInfo, error) {
 		log.Error().Err(err).Msg("")
 		return emptyInfo, err
 	}
-	keyValue, err = kvstore.GetKv(key)
+	keyValue, exists, err = kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyInfo, err
 	}
+	if !exists {
+		log.Debug().Msgf("no namespace found for '%s'", id)
+		return emptyInfo, nil
+	}
+
 	err = json.Unmarshal([]byte(keyValue.Value), &res)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -189,7 +198,7 @@ func GetNs(id string) (model.NsInfo, error) {
 		errString := "The namespace " + id + " does not exist."
 		//mapA := map[string]string{"message": errString}
 		//mapB, _ := json.Marshal(mapA)
-		err := fmt.Errorf(errString)
+		err := fmt.Errorf("%s", errString)
 		return res, err
 	}
 
@@ -203,10 +212,14 @@ func GetNs(id string) (model.NsInfo, error) {
 	key := "/ns/" + id
 	log.Debug().Msg(key)
 
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return res, err
+	}
+	if !exists {
+		log.Debug().Msgf("no namespace found for '%s'", id)
+		return res, nil
 	}
 
 	err = json.Unmarshal([]byte(keyValue.Value), &res)
@@ -291,11 +304,9 @@ func ListNsId() ([]string, error) {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	if keyValue != nil {
-		for _, v := range keyValue {
-			trimmedString := strings.TrimPrefix(v.Key, "/ns/")
-			nsList = append(nsList, trimmedString)
-		}
+	for _, v := range keyValue {
+		trimmedString := strings.TrimPrefix(v.Key, "/ns/")
+		nsList = append(nsList, trimmedString)
 	}
 	// EOF of Implementation Option 2
 
@@ -349,7 +360,7 @@ func DelNs(id string) error {
 		//errString += " \n len(subnetList): " + strconv.Itoa(len(subnetList))
 		//errString += " \n len(vNicList): " + strconv.Itoa(len(vNicList))
 
-		err := fmt.Errorf(errString)
+		err := fmt.Errorf("%s", errString)
 		log.Error().Err(err).Msg("")
 		return err
 	}
@@ -392,7 +403,8 @@ func DelAllNs() error {
 func CheckNs(id string) (bool, error) {
 
 	if id == "" {
-		err := fmt.Errorf("CheckNs failed; nsId given is null.")
+		err := fmt.Errorf("%s", "CheckNs failed; nsId given is null.")
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -404,8 +416,12 @@ func CheckNs(id string) (bool, error) {
 
 	key := "/ns/" + id
 
-	keyValue, _ := kvstore.GetKv(key)
-	if keyValue != (kvstore.KeyValue{}) {
+	_, exists, err := kvstore.GetKv(key)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return false, err
+	}
+	if exists {
 		return true, nil
 	}
 	return false, nil

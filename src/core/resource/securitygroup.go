@@ -427,7 +427,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []model.Firewa
 	}
 
 	securityGroupKey := common.GenResourceKey(nsId, model.StrSecurityGroup, securityGroupId)
-	securityGroupKeyValue, _ := kvstore.GetKv(securityGroupKey)
+	securityGroupKeyValue, _, _ := kvstore.GetKv(securityGroupKey)
 	oldSecurityGroup := model.SecurityGroupInfo{}
 	err = json.Unmarshal([]byte(securityGroupKeyValue.Value), &oldSecurityGroup)
 	if err != nil {
@@ -572,7 +572,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.Firewa
 	}
 
 	securityGroupKey := common.GenResourceKey(nsId, model.StrSecurityGroup, securityGroupId)
-	securityGroupKeyValue, _ := kvstore.GetKv(securityGroupKey)
+	securityGroupKeyValue, _, _ := kvstore.GetKv(securityGroupKey)
 	oldSecurityGroup := model.SecurityGroupInfo{}
 	err = json.Unmarshal([]byte(securityGroupKeyValue.Value), &oldSecurityGroup)
 	if err != nil {

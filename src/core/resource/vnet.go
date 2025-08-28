@@ -765,12 +765,12 @@ func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
 	}
 
 	// Check if the vNet info is stored
-	vNetKv, err := kvstore.GetKv(vNetKey)
+	vNetKv, exists, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if vNetKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetInfo.Id)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -834,13 +834,13 @@ func GetVNet(nsId string, vNetId string) (model.VNetInfo, error) {
 	vNetKey := common.GenResourceKey(nsId, resourceType, vNetId)
 
 	// Read the stored vNet info
-	keyValue, err := kvstore.GetKv(vNetKey)
+	keyValue, exists, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
-	if keyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -997,12 +997,12 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 	}
 
 	// Read the stored vNet info, which includes the updated subnets
-	vNetKv, err := kvstore.GetKv(vNetKey)
+	vNetKv, exists, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if vNetKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1161,13 +1161,13 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	vNetKey := common.GenResourceKey(nsId, resourceType, vNetId)
 
 	// Read the stored vNet info
-	keyValue, err := kvstore.GetKv(vNetKey)
+	keyValue, exists, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
 
-	if keyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1294,12 +1294,12 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	}
 
 	// Get and check the subnet info still exists or not
-	vNetKv, err := kvstore.GetKv(vNetKey)
+	vNetKv, exists, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Warn().Err(err).Msg("")
 		// return emptyRet, err
 	}
-	if vNetKv != (kvstore.KeyValue{}) {
+	if exists {
 		err := fmt.Errorf("fail to refine the vNet info (%s)", vNetKv)
 		ret.Message = err.Error()
 		return ret, err
@@ -1550,9 +1550,9 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VN
 	}
 
 	// Check if the vNet info is stored
-	keyValue, err := kvstore.GetKv(vNetKey)
+	keyValue, exists, err := kvstore.GetKv(vNetKey)
 
-	if keyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetRegisterReq.Name)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1666,12 +1666,12 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 	}
 
 	// Read the stored vNet info
-	vNetKv, err := kvstore.GetKv(vNetKey)
+	vNetKv, exists, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if vNetKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err

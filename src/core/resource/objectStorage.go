@@ -167,7 +167,7 @@ func CreateObjectStorage(nsId string, objectStorageReq *model.RestPostObjectStor
 		}
 
 		// Read the stored Object Storage info
-		objectStorageKv, err := kvstore.GetKv(objectStorageKey)
+		objectStorageKv, _, err := kvstore.GetKv(objectStorageKey)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
@@ -490,12 +490,12 @@ func CreateObjectStorage(nsId string, objectStorageReq *model.RestPostObjectStor
 	}
 
 	// Check if the Object Storage info is stored
-	objectStorageKv, err := kvstore.GetKv(objectStorageKey)
+	objectStorageKv, exists, err := kvstore.GetKv(objectStorageKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if objectStorageKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, Object Storage: %s", objectStorageInfo.Id)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -577,7 +577,7 @@ func GetObjectStorage(nsId string, objectStorageId string, detail string) (model
 	}
 
 	// Read the stored Object Storage info
-	objectStorageKv, err := kvstore.GetKv(objectStorageKey)
+	objectStorageKv, _, err := kvstore.GetKv(objectStorageKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -677,12 +677,12 @@ func GetObjectStorage(nsId string, objectStorageId string, detail string) (model
 	}
 
 	// Check if the Object Storage info is stored
-	objectStorageKv, err = kvstore.GetKv(objectStorageKey)
+	objectStorageKv, exists, err = kvstore.GetKv(objectStorageKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if objectStorageKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, Object Storage: %s", objectStorageInfo.Id)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -738,7 +738,7 @@ func DeleteObjectStorage(nsId string, objectStorageId string) (model.SimpleMsg, 
 	}
 
 	// Read the stored Object Storage info
-	objectStorageKv, err := kvstore.GetKv(objectStorageKey)
+	objectStorageKv, _, err := kvstore.GetKv(objectStorageKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -936,7 +936,7 @@ func GetRequestStatusOfObjectStorage(nsId string, objectStorageId string, reqId 
 	}
 
 	// Read the stored Object Storage info
-	objectStorageKv, err := kvstore.GetKv(objectStorageKey)
+	objectStorageKv, _, err := kvstore.GetKv(objectStorageKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err

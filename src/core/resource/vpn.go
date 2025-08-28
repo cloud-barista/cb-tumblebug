@@ -285,7 +285,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 		}
 
 		// Read the stored VPN info
-		vpnKv, err := kvstore.GetKv(vpnKey)
+		vpnKv, _, err := kvstore.GetKv(vpnKey)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
@@ -547,12 +547,12 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 	}
 
 	// Check if the vpn info is stored
-	vpnKv, err := kvstore.GetKv(vpnKey)
+	vpnKv, exists, err := kvstore.GetKv(vpnKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if vpnKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, vpn: %s", vpnInfo.Id)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -765,7 +765,7 @@ func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string) (m
 	}
 
 	// Read the stored VPN info
-	vpnKv, err := kvstore.GetKv(vpnKey)
+	vpnKv, _, err := kvstore.GetKv(vpnKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -883,12 +883,12 @@ func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string) (m
 	}
 
 	// Check if the vpn info is stored
-	vpnKv, err = kvstore.GetKv(vpnKey)
+	vpnKv, exists, err = kvstore.GetKv(vpnKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if vpnKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, vpn: %s", vpnInfo.Id)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -949,7 +949,7 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 	}
 
 	// Read the stored VPN info
-	vpnKv, err := kvstore.GetKv(vpnKey)
+	vpnKv, exists, err := kvstore.GetKv(vpnKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1132,7 +1132,7 @@ func GetRequestStatusOfSiteToSiteVpn(nsId string, mciId string, vpnId string, re
 	}
 
 	// Read the stored VPN info
-	vpnKv, err := kvstore.GetKv(vpnKey)
+	vpnKv, _, err := kvstore.GetKv(vpnKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err

@@ -266,7 +266,7 @@ func GetConfig(id string) (model.ConfigInfo, error) {
 
 	key := "/config/" + id
 
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
 		err := fmt.Errorf("failed to retrieve config '%s' from key-value store: %v (path: %s)", id, err, key)
 		return res, err
@@ -370,8 +370,8 @@ func CheckConfig(id string) (bool, error) {
 
 	key := "/config/" + id
 
-	keyValue, _ := kvstore.GetKv(key)
-	if keyValue != (kvstore.KeyValue{}) {
+	_, exists, _ := kvstore.GetKv(key)
+	if exists {
 		return true, nil
 	}
 	return false, nil

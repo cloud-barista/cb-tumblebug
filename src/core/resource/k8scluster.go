@@ -103,13 +103,13 @@ func createK8sClusterInfo(nsId string, tbK8sCInfo model.K8sClusterInfo) error {
 
 	k8sClusterId := tbK8sCInfo.Id
 	k := common.GenK8sClusterKey(nsId, k8sClusterId)
-	kv, err := kvstore.GetKv(k)
+	_, exists, err := kvstore.GetKv(k)
 	if err != nil {
 		err := fmt.Errorf("failed to create K8sClusterInfo(%s): %v", k8sClusterId, err)
 		return err
 	}
 
-	if kv != (kvstore.KeyValue{}) {
+	if exists {
 		err := fmt.Errorf("failed to create K8sClusterInfo(%s): already exists", k8sClusterId)
 		return err
 	}
@@ -135,14 +135,14 @@ func getK8sClusterInfo(nsId, k8sClusterId string) (*model.K8sClusterInfo, error)
 	emptyObj := &model.K8sClusterInfo{}
 
 	k := common.GenK8sClusterKey(nsId, k8sClusterId)
-	kv, err := kvstore.GetKv(k)
+	kv, exists, err := kvstore.GetKv(k)
 	if err != nil {
 		err := fmt.Errorf("failed to get K8sClusterInfo(%s): %v", k8sClusterId, err)
 		return emptyObj, err
 	}
 
 	tbK8sCInfo := &model.K8sClusterInfo{}
-	if kv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("failed to get K8sClusterInfo(%s): empty keyvalue", k8sClusterId)
 		return emptyObj, err
 	}
@@ -164,8 +164,8 @@ func storeK8sClusterInfo(nsId string, newTbK8sCInfo *model.K8sClusterInfo) {
 	k := common.GenK8sClusterKey(nsId, k8sClusterId)
 
 	// Check existence of the key. If no key, no update.
-	kv, err := kvstore.GetKv(k)
-	if kv == (kvstore.KeyValue{}) || err != nil {
+	kv, exists, err := kvstore.GetKv(k)
+	if !exists || err != nil {
 		return
 	}
 
@@ -1068,12 +1068,12 @@ func CheckK8sCluster(nsId string, k8sClusterId string) (bool, error) {
 
 	key := common.GenK8sClusterKey(nsId, k8sClusterId)
 
-	keyValue, err := kvstore.GetKv(key)
+	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Err(err).Msg("Failed to Check K8sCluster")
 		return false, err
 	}
-	if keyValue != (kvstore.KeyValue{}) {
+	if exists {
 		return true, nil
 	}
 	return false, nil
@@ -1123,12 +1123,12 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{
 
 	for _, id := range k8sIdList {
 		k := common.GenK8sClusterKey(nsId, id)
-		kv, err := kvstore.GetKv(k)
+		kv, exists, err := kvstore.GetKv(k)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
 
-		if kv == (kvstore.KeyValue{}) {
+		if !exists {
 			err = fmt.Errorf("%s cannot be found", k)
 			log.Err(err).Msg("Failed to List K8sCluster")
 			return nil, err
