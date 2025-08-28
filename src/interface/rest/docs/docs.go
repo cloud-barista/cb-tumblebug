@@ -15054,8 +15054,10 @@ const docTemplate = `{
                 },
                 "systemMessage": {
                     "description": "Latest system message such as error message",
-                    "type": "string",
-                    "example": "Failed because ..."
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "targetAction": {
                     "type": "string"

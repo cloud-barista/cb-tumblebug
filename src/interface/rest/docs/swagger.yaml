@@ -12098,9 +12098,10 @@ components:
             can be used) for special System purpose
           example: Managed by CB-Tumblebug
         systemMessage:
-          type: string
+          type: array
           description: Latest system message such as error message
-          example: Failed because ...
+          items:
+            type: string
         targetAction:
           type: string
         targetStatus:

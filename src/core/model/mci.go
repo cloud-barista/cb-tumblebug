@@ -172,7 +172,7 @@ type MciInfo struct {
 	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
 
 	// Latest system message such as error message
-	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
+	SystemMessage []string `json:"systemMessage"` // systeam-given string message
 
 	PlacementAlgo string   `json:"placementAlgo,omitempty"`
 	Description   string   `json:"description"`
