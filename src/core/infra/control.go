@@ -324,6 +324,16 @@ func ControlMciAsync(nsId string, mciId string, action string, force bool) error
 		close(results)
 	}()
 
+	// Update MCI TargetAction to None. Even if there are errors, we want to mark it as complete.
+	mci, err = GetMciObject(nsId, mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	mci.TargetAction = model.ActionComplete
+	mci.TargetStatus = model.StatusComplete
+	UpdateMciInfo(nsId, mci)
+
 	checkErrFlag := ""
 	for result := range results {
 		fmt.Println("Result:", result)
@@ -335,13 +345,10 @@ func ControlMciAsync(nsId string, mciId string, action string, force bool) error
 	}
 
 	if checkErrFlag != "" {
-		return fmt.Errorf(checkErrFlag)
+		return errors.New(checkErrFlag)
 	}
 
 	return nil
-
-	//need to change status
-
 }
 
 // ControlVmAsync is func to control VM async

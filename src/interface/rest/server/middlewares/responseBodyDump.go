@@ -62,6 +62,12 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 				}
 				responseJsonLines := parts[:len(parts)-1]
 
+				// Check if responseJsonLines has any content
+				if len(responseJsonLines) == 0 {
+					log.Error().Msg("No valid response JSON lines found")
+					return
+				}
+
 				// Unmarshal the latest response body
 				latestResponse := responseJsonLines[len(responseJsonLines)-1]
 				var resData interface{}
