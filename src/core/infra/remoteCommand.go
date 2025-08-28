@@ -335,6 +335,27 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId s
 		return
 	}
 
+	// Check VM status before executing SSH command
+	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	if err != nil {
+		sshResultTmp.Err = fmt.Errorf("failed to get VM status: %v", err)
+		*returnResult = append(*returnResult, sshResultTmp)
+		return
+	}
+
+	// Validate VM status for SSH execution
+	if vmInfo.Status != model.StatusRunning {
+		var errorMsg string
+		if vmInfo.Status == model.StatusTerminated {
+			errorMsg = fmt.Sprintf("VM '%s' is in '%s' status. SSH connection is impossible for terminated VMs", vmId, vmInfo.Status)
+		} else {
+			errorMsg = fmt.Sprintf("VM '%s' is in '%s' status (not Running). Please change the VM status to Running and try again", vmId, vmInfo.Status)
+		}
+		sshResultTmp.Err = fmt.Errorf(errorMsg)
+		*returnResult = append(*returnResult, sshResultTmp)
+		return
+	}
+
 	// RunRemoteCommand
 	stdoutResults, stderrResults, err := RunRemoteCommand(nsId, mciId, vmId, givenUserName, cmd)
 
@@ -844,18 +865,7 @@ func TransferFileToMci(nsId string, mciId string, subGroupId string, vmId string
 			defer wg.Done()
 			log.Info().Msgf("Transferring file to VM: %s", vmId)
 
-			_, targetVmIP, targetSshPort, _ := GetVmIp(nsId, mciId, vmId)
-			targetUserName, targetPrivateKey, _ := VerifySshUserName(nsId, mciId, vmId, targetVmIP, targetSshPort, "")
-			// error will be handled in the next step
-
-			targetSshInfo := model.SshInfo{
-				EndPoint:   fmt.Sprintf("%s:%s", targetVmIP, targetSshPort),
-				UserName:   targetUserName,
-				PrivateKey: []byte(targetPrivateKey),
-			}
-
-			// Transfer file to the VM via bastion
-			err := transferFileToVmViaBastion(nsId, mciId, vmId, targetSshInfo, fileData, fileName, targetPath)
+			_, targetVmIP, targetSshPort, err := GetVmIp(nsId, mciId, vmId)
 
 			// Create the result for this VM
 			result := model.SshCmdResult{
@@ -866,6 +876,61 @@ func TransferFileToMci(nsId string, mciId string, subGroupId string, vmId string
 				Stdout:  map[int]string{},
 				Stderr:  map[int]string{},
 			}
+
+			if err != nil {
+				result.Err = err
+				result.Stderr[0] = fmt.Sprintf("Failed to get VM IP: %v", err)
+				resultMutex.Lock()
+				resultArray = append(resultArray, result)
+				resultMutex.Unlock()
+				return
+			}
+
+			// Check VM status before executing file transfer
+			vmInfo, err := GetVmObject(nsId, mciId, vmId)
+			if err != nil {
+				result.Err = fmt.Errorf("failed to get VM status: %v", err)
+				result.Stderr[0] = fmt.Sprintf("Failed to get VM status: %v", err)
+				resultMutex.Lock()
+				resultArray = append(resultArray, result)
+				resultMutex.Unlock()
+				return
+			}
+
+			// Validate VM status for file transfer
+			if vmInfo.Status != model.StatusRunning {
+				var errorMsg string
+				if vmInfo.Status == model.StatusTerminated {
+					errorMsg = fmt.Sprintf("VM '%s' is in '%s' status. File transfer is impossible for terminated VMs", vmId, vmInfo.Status)
+				} else {
+					errorMsg = fmt.Sprintf("VM '%s' is in '%s' status (not Running). Please change the VM status to Running and try again", vmId, vmInfo.Status)
+				}
+				result.Err = fmt.Errorf(errorMsg)
+				result.Stderr[0] = errorMsg
+				resultMutex.Lock()
+				resultArray = append(resultArray, result)
+				resultMutex.Unlock()
+				return
+			}
+
+			targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, mciId, vmId, targetVmIP, targetSshPort, "")
+			if err != nil {
+				result.Err = fmt.Errorf("failed to verify SSH username: %v", err)
+				result.Stderr[0] = fmt.Sprintf("Failed to verify SSH username: %v", err)
+				resultMutex.Lock()
+				resultArray = append(resultArray, result)
+				resultMutex.Unlock()
+				return
+			}
+
+			targetSshInfo := model.SshInfo{
+				EndPoint:   fmt.Sprintf("%s:%s", targetVmIP, targetSshPort),
+				UserName:   targetUserName,
+				PrivateKey: []byte(targetPrivateKey),
+			}
+
+			// Transfer file to the VM via bastion
+			err = transferFileToVmViaBastion(nsId, mciId, vmId, targetSshInfo, fileData, fileName, targetPath)
 
 			if err != nil {
 				result.Stderr[0] = fmt.Sprintf("Failed to transfer file: %v", err)

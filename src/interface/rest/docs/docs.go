@@ -2452,7 +2452,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.MciSshCmdResult"
+                            "$ref": "#/definitions/model.MciSshCmdResultForAPI"
                         }
                     },
                     "404": {
@@ -10430,7 +10430,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.MciSshCmdResult"
+                            "$ref": "#/definitions/model.MciSshCmdResultForAPI"
                         }
                     },
                     "400": {
@@ -15120,6 +15120,17 @@ const docTemplate = `{
                 }
             }
         },
+        "model.MciSshCmdResultForAPI": {
+            "type": "object",
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SshCmdResultForAPI"
+                    }
+                }
+            }
+        },
         "model.MciStatusInfo": {
             "type": "object",
             "properties": {
@@ -18096,6 +18107,42 @@ const docTemplate = `{
                     }
                 },
                 "err": {},
+                "mciId": {
+                    "type": "string"
+                },
+                "stderr": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "stdout": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "vmId": {
+                    "type": "string"
+                },
+                "vmIp": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SshCmdResultForAPI": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "error": {
+                    "description": "String representation of error for JSON serialization",
+                    "type": "string"
+                },
                 "mciId": {
                     "type": "string"
                 },

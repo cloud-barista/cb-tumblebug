@@ -1891,7 +1891,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.MciSshCmdResult'
+                $ref: '#/components/schemas/model.MciSshCmdResultForAPI'
         "404":
           description: Not Found
           content:
@@ -8465,7 +8465,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.MciSshCmdResult'
+                $ref: '#/components/schemas/model.MciSshCmdResultForAPI'
         "400":
           description: Invalid request
           content:
@@ -12113,6 +12113,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.SshCmdResult'
+    model.MciSshCmdResultForAPI:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.SshCmdResultForAPI'
     model.MciStatusInfo:
       type: object
       properties:
@@ -14297,6 +14304,30 @@ components:
             type: string
         err:
           type: object
+        mciId:
+          type: string
+        stderr:
+          type: object
+          additionalProperties:
+            type: string
+        stdout:
+          type: object
+          additionalProperties:
+            type: string
+        vmId:
+          type: string
+        vmIp:
+          type: string
+    model.SshCmdResultForAPI:
+      type: object
+      properties:
+        command:
+          type: object
+          additionalProperties:
+            type: string
+        error:
+          type: string
+          description: String representation of error for JSON serialization
         mciId:
           type: string
         stderr:

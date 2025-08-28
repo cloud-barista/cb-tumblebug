@@ -26,6 +26,33 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// convertSshCmdResultForAPI converts internal SshCmdResult to API-friendly format
+func convertSshCmdResultForAPI(internal []model.SshCmdResult) model.MciSshCmdResultForAPI {
+	apiResults := make([]model.SshCmdResultForAPI, len(internal))
+
+	for i, result := range internal {
+		apiResult := model.SshCmdResultForAPI{
+			MciId:   result.MciId,
+			VmId:    result.VmId,
+			VmIp:    result.VmIp,
+			Command: result.Command,
+			Stdout:  result.Stdout,
+			Stderr:  result.Stderr,
+		}
+
+		// Convert error to string for JSON serialization
+		if result.Err != nil {
+			apiResult.Error = result.Err.Error()
+		}
+
+		apiResults[i] = apiResult
+	}
+
+	return model.MciSshCmdResultForAPI{
+		Results: apiResults,
+	}
+}
+
 // RestPostCmdMci godoc
 // @ID PostCmdMci
 // @Summary Send a command to specified MCI
@@ -40,7 +67,7 @@ import (
 // @Param vmId query string false "vmId to apply the command only for a VM in MCI" default(g1-1)
 // @Param labelSelector query string false "Target VM Label selector query. Example: sys.id=g1-1,role=worker"
 // @Param x-request-id header string false "Custom request ID"
-// @Success 200 {object} model.MciSshCmdResult
+// @Success 200 {object} model.MciSshCmdResultForAPI
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/cmd/mci/{mciId} [post]
@@ -63,15 +90,12 @@ func RestPostCmdMci(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result := model.MciSshCmdResult{}
-
-	result.Results = append(result.Results, output...)
+	// Convert internal result to API-friendly format
+	result := convertSshCmdResultForAPI(output)
 
 	common.PrintJsonPretty(result)
 
 	return c.JSON(http.StatusOK, result)
-
-	// return clientManager.EndRequestWithLog(c, err, result)
 
 }
 
@@ -91,7 +115,7 @@ func RestPostCmdMci(c echo.Context) error {
 // @Param path formData string true "Target path where the file will be stored" default(/home/cb-user/)
 // @Param file formData file true "The file to be uploaded (Max 10MB)"
 // @Param x-request-id header string false "Custom request ID"
-// @Success 200 {object} model.MciSshCmdResult
+// @Success 200 {object} model.MciSshCmdResultForAPI
 // @Failure 400 {object} model.SimpleMsg "Invalid request"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
 // @Router /ns/{nsId}/transferFile/mci/{mciId} [post]
@@ -138,14 +162,17 @@ func RestPostFileToMci(c echo.Context) error {
 	}
 
 	// Call the TransferFileToMci function
-	result, err := infra.TransferFileToMci(nsId, mciId, subGroupId, vmId, fileBytes, file.Filename, targetPath)
+	output, err := infra.TransferFileToMci(nsId, mciId, subGroupId, vmId, fileBytes, file.Filename, targetPath)
 	if err != nil {
 		err = fmt.Errorf("failed to transfer file to mci %v", err)
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
+	// Convert internal result to API-friendly format
+	result := convertSshCmdResultForAPI(output)
+
 	// Return the result
-	return clientManager.EndRequestWithLog(c, err, result)
+	return clientManager.EndRequestWithLog(c, nil, result)
 }
 
 // RestSetBastionNodes godoc
