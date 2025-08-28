@@ -321,7 +321,7 @@ func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate model.SshKeyInfo)
 		return emptyObj, err
 	}
 
-	keyValue, err := kvstore.GetKv(Key)
+	keyValue, _, err := kvstore.GetKv(Key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In UpdateSshKey(); kvstore.GetKv() returned an error.")

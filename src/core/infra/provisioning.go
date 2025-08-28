@@ -493,7 +493,7 @@ func CreateMciVm(nsId string, mciId string, vmInfoData *model.VmInfo) (*model.Vm
 
 	// Install CB-Dragonfly monitoring agent
 
-	mciTmp, _ := GetMciObject(nsId, mciId)
+	mciTmp, _, _ := GetMciObject(nsId, mciId)
 
 	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mciId, mciTmp.InstallMonAgent)
 
@@ -612,7 +612,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 		return nil, err
 	}
 
-	mciTmp, err := GetMciObject(nsId, mciId)
+	mciTmp, _, err := GetMciObject(nsId, mciId)
 
 	if err != nil {
 		temp := &model.MciInfo{}
@@ -658,12 +658,12 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 		subGroupInfoData.SubGroupSize = vmRequest.SubGroupSize
 
 		key := common.GenMciSubGroupKey(nsId, mciId, vmRequest.Name)
-		keyValue, err := kvstore.GetKv(key)
+		keyValue, exists, err := kvstore.GetKv(key)
 		if err != nil {
 			err = fmt.Errorf("In CreateMciGroupVm(); kvstore.GetKv(): " + err.Error())
 			log.Error().Err(err).Msg("")
 		}
-		if keyValue != (kvstore.KeyValue{}) {
+		if exists {
 			if newSubGroup {
 				json.Unmarshal([]byte(keyValue.Value), &subGroupInfoData)
 				existingVmSize, err := strconv.Atoi(subGroupInfoData.SubGroupSize)
@@ -691,13 +691,12 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 			log.Error().Err(err).Msg("")
 		}
 		// check stored subGroup object
-		keyValue, err = kvstore.GetKv(key)
+		_, _, err = kvstore.GetKv(key)
 		if err != nil {
 			err = fmt.Errorf("In CreateMciGroupVm(); kvstore.GetKv(): " + err.Error())
 			log.Error().Err(err).Msg("")
 			// return nil, err
 		}
-
 	}
 
 	for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
@@ -787,7 +786,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 
 	//Update MCI status
 
-	mciTmp, err = GetMciObject(nsId, mciId)
+	mciTmp, _, err = GetMciObject(nsId, mciId)
 	if err != nil {
 		temp := &model.MciInfo{}
 		return temp, err
@@ -935,7 +934,9 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	vmStartIndex := 1
 
 	// Get mci object
-	mciTmp, err := GetMciObject(nsId, mciId)
+	// Note: return 'an empty MCI object', 'nil' if MCI doesn't exist
+	mciTmp, exists, err := GetMciObject(nsId, mciId)
+	log.Debug().Msgf("Fetched MCI object: %+v, error: %v", mciTmp, err)
 
 	if isReqFromDynamic {
 		// isReqFromDynamic. Do not create MCI object. Reuse the existing one.
@@ -949,7 +950,7 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		}
 	} else {
 		// fallback for manual mci create. not from isReqFromDynamic.
-		if err != nil {
+		if !exists {
 			log.Debug().Msgf("MCI '%s' does not exist, creating new one", mciId)
 			// Create MCI object first
 			if err := createMciObject(nsId, mciId, req, uid); err != nil {
@@ -958,6 +959,7 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		} else {
 			// Check MCI existence (skip for register option)
 			if option != "register" {
+				log.Debug().Msgf("MCI '%s' already exists in namespace '%s'", mciId, nsId)
 				return nil, fmt.Errorf("MCI '%s' already exists in namespace '%s'", mciId, nsId)
 			} else {
 				req.SystemLabel = "Registered from CSP"
@@ -1148,7 +1150,7 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	}
 
 	// Update MCI status
-	mciTmp, err = GetMciObject(nsId, mciId)
+	mciTmp, _, err = GetMciObject(nsId, mciId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get MCI object after VM creation: %w", err)
 	}
@@ -1231,7 +1233,7 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	}
 
 	// Update MCI status
-	mciTmp, err = GetMciObject(nsId, mciId)
+	mciTmp, _, err = GetMciObject(nsId, mciId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get MCI object after VM creation: %w", err)
 	}
@@ -1329,7 +1331,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 		return emptyMci, err
 	}
 	// Get MCI object
-	mciTmp, err := GetMciObject(nsId, mciId)
+	mciTmp, _, err := GetMciObject(nsId, mciId)
 	if err != nil {
 		return emptyMci, err
 	}
@@ -2474,12 +2476,12 @@ func CreateVmObject(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *m
 	defer wg.Done()
 
 	key := common.GenMciKey(nsId, mciId, "")
-	keyValue, err := kvstore.GetKv(key)
+	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Fatal().Err(err).Msg("AddVmToMci kvstore.GetKv() returned an error.")
 		return err
 	}
-	if keyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		return fmt.Errorf("AddVmToMci Cannot find mciId. Key: %s", key)
 	}
 
@@ -3432,16 +3434,15 @@ func GetProvisioningLog(specId string) (*model.ProvisioningLog, error) {
 	log.Debug().Msgf("Getting provisioning log for spec: %s", specId)
 
 	key := generateProvisioningLogKey(specId)
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
-		if err.Error() == "key not found" {
-			log.Debug().Msgf("No provisioning log found for spec: %s", specId)
-			return nil, nil // No log exists yet
-		}
 		log.Error().Err(err).Msgf("Failed to get provisioning log for spec: %s", specId)
 		return nil, fmt.Errorf("failed to get provisioning log: %w", err)
 	}
-
+	if !exists {
+		log.Debug().Msgf("No provisioning log found for spec: %s", specId)
+		return nil, nil // No log exists yet
+	}
 	// Check if the value is empty or invalid
 	if keyValue.Value == "" {
 		log.Debug().Msgf("Empty value found for provisioning log spec: %s, treating as no log exists", specId)
@@ -4001,7 +4002,7 @@ func CleanupCorruptedProvisioningLogs() error {
 
 	cleanupCount := 0
 	for _, key := range keys {
-		keyValue, err := kvstore.GetKv(key.Key)
+		keyValue, _, err := kvstore.GetKv(key.Key)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Failed to get value for key: %s", key.Key)
 			continue
@@ -4039,7 +4040,7 @@ func ValidateProvisioningLogIntegrity(specId string) error {
 	log.Debug().Msgf("Validating provisioning log integrity for spec: %s", specId)
 
 	key := generateProvisioningLogKey(specId)
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
 		if err.Error() == "key not found" {
 			log.Debug().Msgf("No provisioning log found for spec: %s", specId)

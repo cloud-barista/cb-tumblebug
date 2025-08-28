@@ -270,12 +270,12 @@ func GetConnConfig(ConnConfigName string) (model.ConnConfig, error) {
 	connConfig := model.ConnConfig{}
 
 	key := GenConnectionKey(ConnConfigName)
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.ConnConfig{}, err
 	}
-	if keyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		return model.ConnConfig{}, fmt.Errorf("Cannot find the model.ConnConfig " + key)
 	}
 	err = json.Unmarshal([]byte(keyValue.Value), &connConfig)
@@ -1228,12 +1228,12 @@ func GetObjectList(key string) []string {
 // GetObjectValue is func to return the object value
 func GetObjectValue(key string) (string, error) {
 
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
-	if keyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		return "", nil
 	}
 	return keyValue.Value, nil

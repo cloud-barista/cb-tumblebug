@@ -48,7 +48,7 @@ func OrchestrationController() {
 		for _, v := range mciPolicyList {
 
 			key := common.GenMciPolicyKey(nsId, v, "")
-			keyValue, err := kvstore.GetKv(key)
+			keyValue, exists, err := kvstore.GetKv(key)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				err = fmt.Errorf("In OrchestrationController(); kvstore.GetKv() returned an error.")
@@ -56,7 +56,7 @@ func OrchestrationController() {
 				// return nil, err
 			}
 
-			if keyValue == (kvstore.KeyValue{}) {
+			if !exists {
 				log.Debug().Msg("keyValue is nil")
 			}
 			mciPolicyTmp := model.MciPolicyInfo{}
@@ -414,7 +414,7 @@ func CreateMciPolicy(nsId string, mciId string, u *model.MciPolicyReq) (model.Mc
 		log.Error().Err(err).Msg("")
 		return obj, err
 	}
-	keyValue, err := kvstore.GetKv(Key)
+	keyValue, _, err := kvstore.GetKv(Key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In CreateMciPolicy(); kvstore.GetKv() returned an error.")
@@ -433,12 +433,12 @@ func GetMciPolicyObject(nsId string, mciId string) (model.MciPolicyInfo, error) 
 
 	key := common.GenMciPolicyKey(nsId, mciId, "")
 	log.Debug().Msgf("Key: %v", key)
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.MciPolicyInfo{}, err
 	}
-	if keyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		return model.MciPolicyInfo{}, err
 	}
 
@@ -463,7 +463,7 @@ func GetAllMciPolicyObject(nsId string) ([]model.MciPolicyInfo, error) {
 	for _, v := range mciList {
 
 		key := common.GenMciPolicyKey(nsId, v, "")
-		keyValue, err := kvstore.GetKv(key)
+		keyValue, exists, err := kvstore.GetKv(key)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			err = fmt.Errorf("In GetAllMciPolicyObject(); kvstore.GetKv() returned an error.")
@@ -471,7 +471,7 @@ func GetAllMciPolicyObject(nsId string) ([]model.MciPolicyInfo, error) {
 			// return nil, err
 		}
 
-		if keyValue == (kvstore.KeyValue{}) {
+		if !exists {
 			return nil, fmt.Errorf("Cannot find " + key)
 		}
 		mciTmp := model.MciPolicyInfo{}

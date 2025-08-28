@@ -126,13 +126,13 @@ func isCSPSyncEnabled(labelType string, connectionName string) bool {
 func getProviderNameFromConnectionName(connectionName string) (string, error) {
 	// Generate connection key
 	key := "/connection/" + connectionName
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
-	if keyValue == (kvstore.KeyValue{}) {
-		return "", fmt.Errorf("cannot find the connection config %s", key)
+	if !exists {
+		return "", fmt.Errorf("no connection config found for %s", key)
 	}
 
 	var connConfig model.ConnConfig
@@ -152,9 +152,12 @@ func CreateOrUpdateLabel(labelType, uid string, resourceKey string, labels map[s
 	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uid)
 
 	// Fetch the existing model.LabelInfo if it exists
-	labelData, err := kvstore.Get(labelKey)
+	labelData, exists, err := kvstore.Get(labelKey)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get label data from kvstore")
+	}
+	if !exists {
+		log.Warn().Msgf("No label found for '%s'", uid)
 	}
 
 	// log.Debug().Str("labelData", string(labelData)).Msg("Fetched label data")
@@ -239,10 +242,14 @@ func RemoveLabel(labelType, uid, key string) error {
 	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uid)
 
 	// Fetch the existing model.LabelInfo
-	labelData, err := kvstore.Get(labelKey)
+	labelData, exists, err := kvstore.Get(labelKey)
 	if err != nil {
 		log.Error().Err(err).Msgf("labelData: %v", labelData)
 		return err
+	}
+	if !exists {
+		log.Debug().Msgf("No label found for '%s'", uid)
+		return fmt.Errorf("no label found for '%s'", uid)
 	}
 
 	if labelData == "" {
@@ -290,11 +297,16 @@ func GetLabels(labelType, uid string) (label model.LabelInfo, err error) {
 	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uid)
 
 	// Fetch the existing model.LabelInfo
-	labelData, err := kvstore.Get(labelKey)
+	labelData, exists, err := kvstore.Get(labelKey)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get label data from kvstore")
 		return labelInfo, err
 	}
+	if !exists {
+		log.Warn().Msgf("No label found for '%s'", uid)
+		return labelInfo, nil
+	}
+
 	if len(labelData) == 0 {
 		//log.Debug().Msg("labelData is empty")
 		return labelInfo, nil
@@ -426,14 +438,18 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]interface{}
 			resource := resourceConstructor()
 
 			// Fetch the actual resource using the resourceKey
-			resourceData, err := kvstore.Get(labelInfo.ResourceKey)
+			resourceData, exists, err := kvstore.Get(labelInfo.ResourceKey)
 			if err != nil {
 				log.Error().Err(err).Str("resourceKey", labelInfo.ResourceKey).Msg("Failed to get resource data")
 				continue // Skip this entry and continue with the next one
 			}
+			if !exists {
+				log.Debug().Msgf("no resource found for '%s'", labelInfo.ResourceKey)
+				continue // Skip this entry and continue with the next one
+			}
 			if len(resourceData) == 0 {
 				log.Debug().Str("resourceKey", labelInfo.ResourceKey).Msg("Resource data is empty")
-				continue // Skip this entry and continue with the next
+				continue // Skip this entry and continue with the next one
 			}
 
 			//log.Debug().Str("resourceKey", labelInfo.ResourceKey).Str("resourceData", string(resourceData)).Msg("Fetched resource data")
@@ -521,9 +537,12 @@ func MergeCSPResourceLabel(labelType, uid string, resourceKey string) error {
 	labelKey := fmt.Sprintf("/label/%s/%s", labelType, uid)
 
 	// Fetch the existing model.LabelInfo if it exists
-	labelData, err := kvstore.Get(labelKey)
+	labelData, exists, err := kvstore.Get(labelKey)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get label data from kvstore")
+	}
+	if !exists {
+		log.Warn().Msgf("No label found for '%s'", uid)
 	}
 
 	// log.Debug().Str("labelData", string(labelData)).Msg("Fetched label data")

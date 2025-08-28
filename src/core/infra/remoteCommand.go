@@ -509,7 +509,7 @@ func GetVmSshKey(nsId string, mciId string, vmId string) (string, string, string
 
 	key := common.GenMciKey(nsId, mciId, vmId)
 
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("Cannot find the key from DB. key: " + key)
@@ -523,8 +523,8 @@ func GetVmSshKey(nsId string, mciId string, vmId string) (string, string, string
 	}
 
 	sshKey := common.GenResourceKey(nsId, model.StrSSHKey, content.SshKeyId)
-	keyValue, err = kvstore.GetKv(sshKey)
-	if err != nil || keyValue == (kvstore.KeyValue{}) {
+	keyValue, _, err = kvstore.GetKv(sshKey)
+	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", "", "", err
 	}
@@ -560,7 +560,7 @@ func UpdateVmSshKey(nsId string, mciId string, vmId string, verifiedUserName str
 	}
 
 	key := common.GenMciKey(nsId, mciId, vmId)
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In UpdateVmSshKey(); kvstore.GetKv() returned an error.")
@@ -571,7 +571,7 @@ func UpdateVmSshKey(nsId string, mciId string, vmId string, verifiedUserName str
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
 	sshKey := common.GenResourceKey(nsId, model.StrSSHKey, content.SshKeyId)
-	keyValue, _ = kvstore.GetKv(sshKey)
+	keyValue, _, _ = kvstore.GetKv(sshKey)
 
 	tmpSshKeyInfo := model.SshKeyInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &tmpSshKeyInfo)

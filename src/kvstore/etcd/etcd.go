@@ -73,26 +73,24 @@ func (s *EtcdStore) PutWith(ctx context.Context, key, value string) error {
 }
 
 // Get retrieves the value for a given key from etcd without using a context.
-func (s *EtcdStore) Get(key string) (string, error) {
+func (s *EtcdStore) Get(key string) (string, bool, error) {
 	return s.GetWith(s.ctx, key)
 }
 
 // GetWith retrieves the value for a given key from etcd using the provided context.
-func (s *EtcdStore) GetWith(ctx context.Context, key string) (string, error) {
+func (s *EtcdStore) GetWith(ctx context.Context, key string) (string, bool, error) {
 	resp, err := s.cli.Get(ctx, key)
 	if err != nil {
-		return "", fmt.Errorf("failed to get key: %w", err)
+		return "", false, fmt.Errorf("failed to get key: %w", err)
 	}
 
-	// Return the value of the first key-value pair found
-	value := ""
-	for _, kv := range resp.Kvs {
-		value = string(kv.Value)
-		return value, nil
+	if len(resp.Kvs) > 0 {
+		kv := resp.Kvs[0]
+		return string(kv.Value), true, nil
 	}
 
 	// Return an empty string if no key-value pair is found
-	return value, nil
+	return "", false, nil
 }
 
 // GetListWith retrieves multiple values for keys with the given keyPrefix from etcd.
@@ -119,26 +117,26 @@ func (s *EtcdStore) GetListWith(ctx context.Context, keyPrefix string) ([]string
 }
 
 // GetKv retrieves a key-value pair from etcd without using a context.
-func (s *EtcdStore) GetKv(key string) (kvstore.KeyValue, error) {
+func (s *EtcdStore) GetKv(key string) (kvstore.KeyValue, bool, error) {
 	return s.GetKvWith(s.ctx, key)
 }
 
 // GetKvWith retrieves a key-value pair from etcd using the provided context.
-func (s *EtcdStore) GetKvWith(ctx context.Context, key string) (kvstore.KeyValue, error) {
+func (s *EtcdStore) GetKvWith(ctx context.Context, key string) (kvstore.KeyValue, bool, error) {
 	resp, err := s.cli.Get(ctx, key)
 	if err != nil {
-		return kvstore.KeyValue{}, fmt.Errorf("failed to get key: %w", err)
+		return kvstore.KeyValue{}, false, fmt.Errorf("failed to get key: %w", err)
 	}
 
 	// Return the first key-value pair found
-	keyValue := kvstore.KeyValue{}
-	for _, kv := range resp.Kvs {
-		keyValue = kvstore.KeyValue{Key: string(kv.Key), Value: string(kv.Value)}
-		return keyValue, nil
+	if len(resp.Kvs) > 0 {
+		kv := resp.Kvs[0]
+		keyValue := kvstore.KeyValue{Key: string(kv.Key), Value: string(kv.Value)}
+		return keyValue, true, nil
 	}
 
 	// Return an empty key-value pair if no key-value pair is found
-	return keyValue, nil
+	return kvstore.KeyValue{}, false, nil
 }
 
 // GetKvList retrieves multiple key-value pairs with the given keyPrefix from etcd.

@@ -85,7 +85,7 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.NLBReq, option string) 
 	recommendSpecReq.Priority.Policy = append(recommendSpecReq.Priority.Policy, model.PriorityCondition{Metric: "latency"})
 	recommendSpecReq.Priority.Policy[0].Parameter = append(recommendSpecReq.Priority.Policy[0].Parameter, model.ParameterKeyVal{Key: "latencyMinimal"})
 
-	mci, err := GetMciObject(nsId, mciId)
+	mci, _, err := GetMciObject(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
@@ -404,7 +404,7 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 		return content, err
 	}
 
-	keyValue, err := kvstore.GetKv(Key)
+	keyValue, _, err := kvstore.GetKv(Key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In CreateNLB(); kvstore.GetKv() returned an error.")
@@ -459,7 +459,7 @@ func GetNLB(nsId string, mciId string, resourceId string) (model.NLBInfo, error)
 	// key := common.GenResourceKey(nsId, resourceType, resourceId)
 	key := GenNLBKey(nsId, mciId, resourceId)
 
-	keyValue, err := kvstore.GetKv(key)
+	keyValue, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
@@ -467,7 +467,7 @@ func GetNLB(nsId string, mciId string, resourceId string) (model.NLBInfo, error)
 
 	res := model.NLBInfo{}
 
-	if keyValue != (kvstore.KeyValue{}) {
+	if exists {
 		err = json.Unmarshal([]byte(keyValue.Value), &res)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -519,12 +519,12 @@ func CheckNLB(nsId string, mciId string, resourceId string) (bool, error) {
 	// key := common.GenResourceKey(nsId, resourceType, resourceId)
 	key := GenNLBKey(nsId, mciId, resourceId)
 
-	keyValue, err := kvstore.GetKv(key)
+	_, exists, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	if keyValue != (kvstore.KeyValue{}) {
+	if exists {
 		return true, nil
 	}
 	return false, nil
@@ -696,7 +696,7 @@ func DelNLB(nsId string, mciId string, resourceId string, forceFlag string) erro
 	key := GenNLBKey(nsId, mciId, resourceId)
 	fmt.Println("key: " + key)
 
-	keyValue, _ := kvstore.GetKv(key)
+	keyValue, _, _ := kvstore.GetKv(key)
 	// In CheckResource() above, calling 'kvstore.GetKv()' and checking err parts exist.
 	// So, in here, we don't need to check whether keyValue == nil or err != nil.
 
@@ -1135,7 +1135,7 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddRemo
 		return content, err
 	}
 
-	keyValue, err := kvstore.GetKv(Key)
+	keyValue, _, err := kvstore.GetKv(Key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In CreateNLB(); kvstore.GetKv() returned an error.")

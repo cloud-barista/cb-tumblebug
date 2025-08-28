@@ -253,12 +253,12 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.SubnetReq) (model
 	subnetKey := common.GenChildResourceKey(nsId, resourceType, vNetId, subnetInfo.Id)
 
 	// Read the saved vNet info
-	vNetKv, err := kvstore.GetKv(vNetKey)
+	vNetKv, exists, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if vNetKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -511,12 +511,12 @@ func GetSubnet(nsId string, vNetId string, subnetId string) (model.SubnetInfo, e
 	// }
 
 	// Read the stored subnet info
-	subnetKeyValue, err := kvstore.GetKv(subnetKey)
+	subnetKeyValue, exists, err := kvstore.GetKv(subnetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if subnetKeyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, subnet: %s", subnetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -663,12 +663,12 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 	subnetKey := common.GenChildResourceKey(nsId, resourceType, vNetId, subnetId)
 
 	// Read the stored vNet info
-	vNetKv, err := kvstore.GetKv(vNetKey)
+	vNetKv, exists, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if vNetKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -682,12 +682,12 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 	}
 
 	// Read the stored subnet info
-	subnetKeyValue, err := kvstore.GetKv(subnetKey)
+	subnetKeyValue, exists, err := kvstore.GetKv(subnetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if subnetKeyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, subnet: %s", subnetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -890,12 +890,12 @@ func RefineSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 	subnetKey := common.GenChildResourceKey(nsId, resourceType, vNetId, subnetId)
 
 	// Read the saved vNet info
-	vNetKv, err := kvstore.GetKv(vNetKey)
+	vNetKv, exists, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if vNetKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -908,12 +908,12 @@ func RefineSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 	}
 
 	// Read the stored subnet info
-	subnetKeyValue, err := kvstore.GetKv(subnetKey)
+	subnetKeyValue, exists, err := kvstore.GetKv(subnetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if subnetKeyValue == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, subnet: %s", subnetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1010,11 +1010,11 @@ func RefineSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 	}
 
 	// Get and check the subnet info still exists or not
-	subnetKv, err := kvstore.GetKv(subnetKey)
+	_, exists, err = kvstore.GetKv(subnetKey)
 	if err != nil {
 		log.Warn().Err(err).Msg("")
 	}
-	if subnetKv != (kvstore.KeyValue{}) {
+	if exists {
 		err := fmt.Errorf("fail to refine the subnet info (id: %s)", subnetId)
 		ret.Message = err.Error()
 		return ret, err
@@ -1088,12 +1088,12 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.RegisterSubnetR
 	subnetKey := common.GenChildResourceKey(nsId, resourceType, vNetId, subnetInfo.Id)
 
 	// Read the saved vNet info
-	vNetKv, err := kvstore.GetKv(vNetKey)
+	vNetKv, exists, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if vNetKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1306,12 +1306,12 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 	subnetKey := common.GenChildResourceKey(nsId, resourceType, vNetId, subnetId)
 
 	// Read the saved vNet info
-	vNetKv, err := kvstore.GetKv(vNetKey)
+	vNetKv, exists, err := kvstore.GetKv(vNetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if vNetKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, vNet: %s", vNetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1325,12 +1325,12 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 	}
 
 	// Read the stored subnet info
-	subnetKv, err := kvstore.GetKv(subnetKey)
+	subnetKv, exists, err := kvstore.GetKv(subnetKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if subnetKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, subnet: %s", subnetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err

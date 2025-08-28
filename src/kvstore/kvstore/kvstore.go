@@ -20,12 +20,12 @@ type Store interface {
 	NewLock(ctx context.Context, session *concurrency.Session, lockKey string) (*concurrency.Mutex, error)
 	Put(key, value string) error
 	PutWith(ctx context.Context, key, value string) error
-	Get(key string) (string, error)
-	GetWith(ctx context.Context, key string) (string, error)
+	Get(key string) (string, bool, error)
+	GetWith(ctx context.Context, key string) (string, bool, error)
 	GetList(keyPrefix string) ([]string, error)
 	GetListWith(ctx context.Context, keyPrefix string) ([]string, error)
-	GetKv(key string) (KeyValue, error)
-	GetKvWith(ctx context.Context, key string) (KeyValue, error)
+	GetKv(key string) (KeyValue, bool, error)
+	GetKvWith(ctx context.Context, key string) (KeyValue, bool, error)
 	GetKvList(keyPrefix string) ([]KeyValue, error)
 	GetKvListWith(ctx context.Context, keyPrefix string) ([]KeyValue, error)
 	GetSortedKvList(keyPrefix string, sortBy clientv3.SortTarget, order clientv3.SortOrder) ([]KeyValue, error)
@@ -116,19 +116,19 @@ func PutWith(ctx context.Context, key, value string) error {
 }
 
 // Get retrieves a value for a given key
-func Get(key string) (string, error) {
+func Get(key string) (string, bool, error) {
 	store, err := getStore()
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	return store.Get(key)
 }
 
 // GetWith retrieves a value for a given key with context
-func GetWith(ctx context.Context, key string) (string, error) {
+func GetWith(ctx context.Context, key string) (string, bool, error) {
 	store, err := getStore()
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	return store.GetWith(ctx, key)
 }
@@ -152,19 +152,19 @@ func GetListWith(ctx context.Context, keyPrefix string) ([]string, error) {
 }
 
 // GetKv retrieves a key-value pair
-func GetKv(key string) (KeyValue, error) {
+func GetKv(key string) (KeyValue, bool, error) {
 	store, err := getStore()
 	if err != nil {
-		return KeyValue{}, err
+		return KeyValue{}, false, err
 	}
 	return store.GetKv(key)
 }
 
 // GetKvWith retrieves a key-value pair with context
-func GetKvWith(ctx context.Context, key string) (KeyValue, error) {
+func GetKvWith(ctx context.Context, key string) (KeyValue, bool, error) {
 	store, err := getStore()
 	if err != nil {
-		return KeyValue{}, err
+		return KeyValue{}, false, err
 	}
 	return store.GetKvWith(ctx, key)
 }

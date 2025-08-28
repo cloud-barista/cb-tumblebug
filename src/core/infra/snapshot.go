@@ -31,9 +31,9 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotName strin
 	vmKey := common.GenMciKey(nsId, mciId, vmId)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err := kvstore.GetKv(vmKey)
-	if keyValue == (kvstore.KeyValue{}) || err != nil {
-		err := fmt.Errorf("Failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
+	keyValue, exists, err := kvstore.GetKv(vmKey)
+	if !exists || err != nil {
+		err := fmt.Errorf("failed to find 'ns/mci/vm': %s/%s/%s \n", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
 		return model.CustomImageInfo{}, err
 	}

@@ -184,7 +184,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 		}
 
 		// Read the stored SQL DB info
-		sqlDBKv, err := kvstore.GetKv(sqlDBKey)
+		sqlDBKv, _, err := kvstore.GetKv(sqlDBKey)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
@@ -528,12 +528,12 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 	}
 
 	// Check if the SQL DB info is stored
-	sqlDBKv, err := kvstore.GetKv(sqlDBKey)
+	sqlDBKv, exists, err := kvstore.GetKv(sqlDBKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if sqlDBKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, SQL DB: %s", sqlDBInfo.Id)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -615,7 +615,7 @@ func GetSqlDB(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 	}
 
 	// Read the stored SQL DB info
-	sqlDBKv, err := kvstore.GetKv(sqlDBKey)
+	sqlDBKv, _, err := kvstore.GetKv(sqlDBKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -715,12 +715,12 @@ func GetSqlDB(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 	}
 
 	// Check if the SQL DB info is stored
-	sqlDBKv, err = kvstore.GetKv(sqlDBKey)
+	sqlDBKv, exists, err = kvstore.GetKv(sqlDBKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
-	if sqlDBKv == (kvstore.KeyValue{}) {
+	if !exists {
 		err := fmt.Errorf("does not exist, SQL DB: %s", sqlDBInfo.Id)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -776,7 +776,7 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 	}
 
 	// Read the stored SQL DB info
-	sqlDBKv, err := kvstore.GetKv(sqlDbKey)
+	sqlDBKv, _, err := kvstore.GetKv(sqlDbKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -974,7 +974,7 @@ func GetRequestStatusOfSqlDB(nsId string, sqlDbId string, reqId string) (model.R
 	}
 
 	// Read the stored SQL DB info
-	sqlDBKv, err := kvstore.GetKv(sqlDBKey)
+	sqlDBKv, _, err := kvstore.GetKv(sqlDBKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
