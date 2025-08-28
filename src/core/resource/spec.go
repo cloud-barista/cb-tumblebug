@@ -238,15 +238,17 @@ func extractArchitecture(providerName string, details []model.KeyValue, cspSpecN
 
 	case csp.Azure:
 		// Azure doesn't provide architecture in details, use instance name patterns
-		// Check for ARM-specific patterns
-		patterns := []string{
-			"Ep", "Dp",
-		}
+		// ref: https://learn.microsoft.com/ko-kr/azure/virtual-machines/sizes/overview?tabs=breakdownseries%2Cgeneralsizelist%2Ccomputesizelist%2Cmemorysizelist%2Cstoragesizelist%2Cgpusizelist%2Cfpgasizelist%2Chpcsizelist#compute-optimized
+		// According to Azure naming convention: lowercase 'p' indicates ARM CPU (Microsoft Cobalt or Ampere Altra)
+		// Examples: Standard_B2pls_v2 (Ampere Altra), Standard_Dpsv6 (Microsoft Cobalt)
+		//
+		// Key insight: Azure uses ONLY lowercase 'p' for ARM architecture
+		// - lowercase 'p' = ARM64 (e.g., B2ps, D2ps, E2ps)
+		// - uppercase 'P' = x86-64 with different meaning (e.g., Promo, NP-series, PB-series)
 
-		for _, pattern := range patterns {
-			if strings.Contains(strings.ToLower(cspSpecName), strings.ToLower(pattern)) {
-				return string(model.ARM64)
-			}
+		// Simple and future-proof: check for lowercase 'p' in spec name
+		if strings.Contains(cspSpecName, "p") {
+			return string(model.ARM64)
 		}
 		return string(model.X86_64)
 

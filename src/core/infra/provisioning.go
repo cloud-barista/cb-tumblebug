@@ -1230,6 +1230,15 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		log.Error().Err(err).Msgf("Failed to record provisioning events for MCI '%s', but continuing", mciId)
 	}
 
+	// Update MCI status
+	mciTmp, err = GetMciObject(nsId, mciId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get MCI object after VM creation: %w", err)
+	}
+	mciTmp.TargetStatus = model.StatusComplete
+	mciTmp.TargetAction = model.ActionComplete
+	UpdateMciInfo(nsId, mciTmp)
+
 	return mciResult, nil
 }
 
@@ -1459,6 +1468,9 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 				}
 				errorMsg += "\n"
 			}
+
+			// Clean up MCI object on validation failure
+			DelMci(nsId, mciId, "force")
 
 			errorMsg += "Detailed errors:\n"
 			for _, detail := range errorDetails {

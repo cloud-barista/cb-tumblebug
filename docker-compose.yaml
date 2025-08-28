@@ -391,12 +391,7 @@ services:
   #   user: "0:0"
   #   logging:
   #     driver: "none"
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-  #     interval: 30s
-  #     timeout: 5s
-  #     retries: 3
-  #     start_period: 60s
+
 
   # # CB-Tumblebug pgAdmin Dashboard for PostgreSQL
   # # Enable this service to manage the PostgreSQL database of CB-Tumblebug.

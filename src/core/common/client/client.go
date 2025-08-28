@@ -151,6 +151,24 @@ func ExecuteHttpRequest[B any, T any](
 	cacheDuration time.Duration,
 ) error {
 
+	// Perform the HTTP request using Resty
+	setRestyDebug := false // Disable Resty debug, use custom logging instead
+
+	// Record request start time
+	requestStartTime := time.Now()
+
+	// Log the request in zerologger style
+	requestLogEvent := log.Debug().
+		Str("Method", method).
+		Str("URI", url)
+
+	if useBody && body != nil {
+		if bodyBytes, err := json.Marshal(body); err == nil {
+			requestLogEvent = requestLogEvent.RawJSON("requestBody", bodyBytes)
+		}
+	}
+	requestLogEvent.Msg("Internal Call Start")
+
 	// Generate cache key for GET method only
 	requestKey := ""
 	if method == "GET" {
@@ -226,7 +244,7 @@ func ExecuteHttpRequest[B any, T any](
 	}
 
 	// Perform the HTTP request using Resty
-	//client.SetDebug(true)
+	client.SetDebug(setRestyDebug)
 	// SetAllowGetMethodPayload should be set to true for GET method to allow payload
 	// NOTE: Need to removed when cb-spider api is stopped to use GET method with payload
 	client.SetAllowGetMethodPayload(true)
@@ -258,6 +276,16 @@ func ExecuteHttpRequest[B any, T any](
 	}
 
 	if err != nil {
+		// Log error response in zerologger style
+		duration := time.Since(requestStartTime)
+
+		log.Debug().
+			Str("Method", method).
+			Str("URI", url).
+			Dur("latency", duration).
+			Str("error", err.Error()).
+			Msg("Internal Call Failed")
+
 		if method == "GET" {
 			requestDone(requestKey)
 		}
@@ -267,6 +295,20 @@ func ExecuteHttpRequest[B any, T any](
 	}
 
 	if resp.IsError() {
+		// Log HTTP error response in zerologger style
+		duration := time.Since(requestStartTime)
+
+		errorLogEvent := log.Debug().
+			Str("Method", method).
+			Str("URI", url).
+			Dur("latency", duration).
+			Int("status", resp.StatusCode())
+
+		if len(resp.Body()) > 0 {
+			errorLogEvent = errorLogEvent.RawJSON("responseBody", resp.Body())
+		}
+		errorLogEvent.Msg("Internal Call Error")
+
 		if method == "GET" {
 			requestDone(requestKey)
 		}
@@ -274,6 +316,20 @@ func ExecuteHttpRequest[B any, T any](
 		cleanedURL := cleanURL(url)
 		return fmt.Errorf("%s (from %s (%s))", cleanedBody, cleanedURL, resp.Status())
 	}
+
+	// Log successful response in zerologger style
+	duration := time.Since(requestStartTime)
+
+	successLogEvent := log.Debug().
+		Str("Method", method).
+		Str("URI", url).
+		Dur("latency", duration).
+		Int("status", resp.StatusCode())
+
+	if len(resp.Body()) > 0 {
+		successLogEvent = successLogEvent.RawJSON("responseBody", resp.Body())
+	}
+	successLogEvent.Msg("Internal Call OK")
 
 	// Update the cache for GET method only
 	if method == "GET" {

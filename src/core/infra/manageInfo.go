@@ -895,8 +895,8 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 	if isDone {
 		mciStatus.TargetAction = model.ActionComplete
 		mciStatus.TargetStatus = model.StatusComplete
-		mciTmp.TargetAction = model.ActionComplete
-		mciTmp.TargetStatus = model.StatusComplete
+		// mciTmp.TargetAction = model.ActionComplete
+		// mciTmp.TargetStatus = model.StatusComplete
 		mciTmp.StatusCount = mciStatus.StatusCount
 		UpdateMciInfo(nsId, mciTmp)
 	}
