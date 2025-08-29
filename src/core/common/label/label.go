@@ -303,12 +303,12 @@ func GetLabels(labelType, uid string) (label model.LabelInfo, err error) {
 		return labelInfo, err
 	}
 	if !exists {
-		log.Warn().Msgf("No label found for '%s'", uid)
+		// log.Warn().Msgf("No label found for '%s'", uid)
 		return labelInfo, nil
 	}
 
 	if len(labelData) == 0 {
-		//log.Debug().Msg("labelData is empty")
+		// log.Debug().Msg("labelData is empty")
 		return labelInfo, nil
 	}
 

@@ -391,6 +391,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 			UpdateVmInfo(nsId, mciId, temp)
 			return
 		} else {
+			currentStatusBeforeUpdating := temp.Status
 
 			url := ""
 			method := ""
@@ -436,6 +437,15 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 				method = "GET"
 			default:
 				callResult.Error = fmt.Errorf(action + " is invalid actionType")
+				results <- callResult
+				return
+			}
+
+			// Check current VM status before making CB-Spider API call
+			// If VM is already in target status, skip the operation
+			if currentStatusBeforeUpdating == temp.TargetStatus {
+				log.Debug().Msgf("[ControlVmAsync] VM [%s] is already in target status [%s], skipping CB-Spider call", vmId, temp.TargetStatus)
+				callResult.Status = temp.Status
 				results <- callResult
 				return
 			}
