@@ -162,7 +162,7 @@ services:
 
   # CB-Spider
   cb-spider:
-    image: cloudbaristaorg/cb-spider:0.11.4
+    image: cloudbaristaorg/cb-spider:0.11.5
     container_name: cb-spider
     # build:
     #   context: ../cb-spider
@@ -196,7 +196,7 @@ services:
   # CB-MapUI
   # This is the Map-based client for CB-Tumblebug.
   cb-mapui:
-    image: cloudbaristaorg/cb-mapui:0.11.10
+    image: cloudbaristaorg/cb-mapui:0.11.12
     container_name: cb-mapui
     labels:
       # Explicitly tell Traefik to expose this container

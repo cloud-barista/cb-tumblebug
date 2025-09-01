@@ -114,6 +114,75 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /availableRegionZonesForSpec:
+    post:
+      tags:
+      - "[Infra Resource] Spec Management"
+      summary: Get available regions and zones for a specific spec
+      description: Query the availability of a specific spec across all regions/zones
+      operationId: GetAvailableRegionZonesForSpec
+      requestBody:
+        description: Spec availability request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.GetAvailableRegionZonesRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SpecAvailabilityInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: availabilityReq
+  /availableRegionZonesForSpecList:
+    post:
+      tags:
+      - "[Infra Resource] Spec Management"
+      summary: Get available regions and zones for multiple specs
+      description: Query the availability for multiple specs in parallel and return
+        batch results
+      operationId: GetAvailableRegionZonesForSpecList
+      requestBody:
+        description: Batch spec availability request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.GetAvailableRegionZonesListRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SpecAvailabilityBatchResult'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: batchAvailabilityReq
   /checkK8sNodeGroupsOnK8sCreation:
     get:
       tags:
@@ -8569,6 +8638,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/updateExistingSpecListByAvailableRegionZones:
+    post:
+      tags:
+      - "[Infra Resource] Spec Management"
+      summary: Clean up unavailable specs from database
+      description: "Query all specs for a specific provider across all regions, check\
+        \ their availability, and remove specs that are not available in their respective\
+        \ regions"
+      operationId: UpdateExistingSpecListByAvailableRegionZones
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: system
+      requestBody:
+        description: Spec cleanup request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.UpdateSpecListByAvailabilityRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SpecCleanupResult'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: cleanupReq
   /object:
     get:
       tags:
@@ -10977,6 +11090,34 @@ components:
           type: string
           example: "65530"
           default: "65530"
+    model.GetAvailableRegionZonesListRequest:
+      required:
+      - cspSpecNames
+      - provider
+      type: object
+      properties:
+        cspSpecNames:
+          type: array
+          example:
+          - ecs.t5.large
+          - ecs.t5.medium
+          items:
+            type: string
+        provider:
+          type: string
+          example: alibaba
+    model.GetAvailableRegionZonesRequest:
+      required:
+      - cspSpecName
+      - provider
+      type: object
+      properties:
+        cspSpecName:
+          type: string
+          example: ecs.t5.large
+        provider:
+          type: string
+          example: alibaba
     model.IID:
       required:
       - NameId
@@ -13870,6 +14011,91 @@ components:
           example: ns-01
         sites:
           $ref: '#/components/schemas/model.sites'
+    model.SpecAvailabilityBatchResult:
+      type: object
+      properties:
+        averageQueryMs:
+          type: integer
+          example: 1250
+        failedQueries:
+          type: integer
+          example: 2
+        fastestQueryMs:
+          type: integer
+          example: 850
+        provider:
+          type: string
+          example: alibaba
+        slowestQueryMs:
+          type: integer
+          example: 2100
+        specResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.SpecAvailabilityInfo'
+        successfulQueries:
+          type: integer
+          example: 8
+        totalDurationMs:
+          type: integer
+          example: 12500
+        totalSpecs:
+          type: integer
+          example: 10
+    model.SpecAvailabilityInfo:
+      type: object
+      properties:
+        availableRegions:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.SpecRegionZoneInfo'
+        cspSpecName:
+          type: string
+          example: ecs.t5.large
+        errorMessage:
+          type: string
+          example: Spec not available
+        provider:
+          type: string
+          example: alibaba
+        queryDurationMs:
+          type: integer
+          example: 1250
+        success:
+          type: boolean
+          example: true
+    model.SpecCleanupResult:
+      type: object
+      properties:
+        availabilityCheckMs:
+          type: integer
+          example: 12500
+        availabilityResults:
+          $ref: '#/components/schemas/model.SpecAvailabilityBatchResult'
+        cleanupDurationMs:
+          type: integer
+          example: 15000
+        failedDeletions:
+          type: array
+          example:
+          - ecs.t5.large
+          items:
+            type: string
+        provider:
+          type: string
+          example: alibaba
+        region:
+          type: string
+          example: ap-northeast-1
+        specsDeleted:
+          type: integer
+          example: 5
+        specsToDelete:
+          type: integer
+          example: 5
+        totalSpecsChecked:
+          type: integer
+          example: 50
     model.SpecFetchOption:
       type: object
       properties:
@@ -13995,6 +14221,19 @@ components:
           example: wef12awefadf1221edcf
         vCPU:
           type: integer
+    model.SpecRegionZoneInfo:
+      type: object
+      properties:
+        regionName:
+          type: string
+          example: ap-northeast-1
+        zones:
+          type: array
+          example:
+          - ap-northeast-1a
+          - ap-northeast-1b
+          items:
+            type: string
     model.SpecReq:
       required:
       - connectionName
@@ -14640,6 +14879,14 @@ components:
           type: object
           additionalProperties:
             type: string
+    model.UpdateSpecListByAvailabilityRequest:
+      required:
+      - provider
+      type: object
+      properties:
+        provider:
+          type: string
+          example: alibaba
     model.UpdateSummary:
       type: object
       properties:

@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"math"
 	"os"
 	"reflect"
 	"runtime"
@@ -1422,6 +1423,535 @@ func LookupPriceList(connConfig model.ConnConfig) (model.SpiderCloudPrice, error
 
 	temp := callResult
 	return temp, nil
+}
+
+// GetAvailableRegionZonesForSpec queries the availability of a specific spec across all regions/zones
+// Returns detailed availability information including regions, zones, and query performance metrics
+func GetAvailableRegionZonesForSpec(provider string, cspSpecName string) (model.SpecAvailabilityInfo, error) {
+	startTime := time.Now()
+
+	result := model.SpecAvailabilityInfo{
+		Provider:    provider,
+		CspSpecName: cspSpecName,
+		Success:     false,
+	}
+
+	// Currently only Alibaba Cloud is supported
+	if !strings.EqualFold(provider, csp.Alibaba) {
+		result.ErrorMessage = fmt.Sprintf("Provider %s is not supported yet. Currently only Alibaba Cloud is supported.", provider)
+		result.QueryDurationMs = time.Since(startTime).Milliseconds()
+		return result, fmt.Errorf(result.ErrorMessage)
+	}
+
+	// Get connection config for Alibaba Cloud (using ap-northeast-1 as default)
+	// TODO: Make this configurable or use a more generic approach
+	connectionName := "alibaba-ap-northeast-1"
+	connConfig, err := common.GetConnConfig(connectionName)
+	if err != nil {
+		result.ErrorMessage = fmt.Sprintf("Failed to get connection config for %s: %v", connectionName, err)
+		result.QueryDurationMs = time.Since(startTime).Milliseconds()
+		return result, err
+	}
+
+	// Prepare API call
+	client := resty.New()
+	client.SetTimeout(120 * time.Second)
+	url := model.SpiderRestUrl + "/anycall"
+	method := "POST"
+
+	requestBody := map[string]interface{}{
+		"ConnectionName": connConfig.ConfigName,
+		"ReqInfo": map[string]interface{}{
+			"FID": "GetInstanceTypeAvailableAllZones",
+			"IKeyValueList": []map[string]string{
+				{"Key": "InstanceType", "Value": cspSpecName},
+			},
+		},
+	}
+
+	// Make API call
+	var apiResponse map[string]interface{}
+	err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&apiResponse,
+		clientManager.MediumDuration,
+	)
+
+	if err != nil {
+		result.ErrorMessage = fmt.Sprintf("API call failed: %v", err)
+		result.QueryDurationMs = time.Since(startTime).Milliseconds()
+		return result, err
+	}
+
+	// Parse response
+	oKeyValueList, ok := apiResponse["OKeyValueList"].([]interface{})
+	if !ok {
+		result.ErrorMessage = "Invalid API response format: OKeyValueList not found"
+		result.QueryDurationMs = time.Since(startTime).Milliseconds()
+		return result, fmt.Errorf(result.ErrorMessage)
+	}
+
+	var availableZones string
+	var queryResult string
+
+	for _, item := range oKeyValueList {
+		if keyValue, ok := item.(map[string]interface{}); ok {
+			key, keyOk := keyValue["Key"].(string)
+			value, valueOk := keyValue["Value"].(string)
+
+			if keyOk && valueOk {
+				switch key {
+				case "AvailableAllZones":
+					availableZones = value
+				case "Result":
+					queryResult = value
+				}
+			}
+		}
+	}
+
+	// Check if the query was successful
+	if queryResult != "true" {
+		result.ErrorMessage = fmt.Sprintf("Spec %s is not available in any zone", cspSpecName)
+		result.QueryDurationMs = time.Since(startTime).Milliseconds()
+		return result, nil // Not an error, just not available
+	}
+
+	// Parse available zones
+	if availableZones == "" {
+		result.ErrorMessage = "No available zones returned"
+		result.QueryDurationMs = time.Since(startTime).Milliseconds()
+		return result, nil
+	}
+
+	// Parse region:zone pairs
+	// Format: "region1:zone1,region1:zone2,region2:zone1,..."
+	regionZoneMap := make(map[string][]string)
+
+	zonePairs := strings.Split(availableZones, ",")
+	for _, pair := range zonePairs {
+		parts := strings.Split(strings.TrimSpace(pair), ":")
+		if len(parts) == 2 {
+			region := strings.TrimSpace(parts[0])
+			zone := strings.TrimSpace(parts[1])
+
+			if region != "" && zone != "" {
+				regionZoneMap[region] = append(regionZoneMap[region], zone)
+			}
+		}
+	}
+
+	// Convert map to structured result
+	for region, zones := range regionZoneMap {
+		result.AvailableRegions = append(result.AvailableRegions, model.SpecRegionZoneInfo{
+			RegionName: region,
+			Zones:      zones,
+		})
+	}
+
+	// Sort regions for consistent output
+	sort.Slice(result.AvailableRegions, func(i, j int) bool {
+		return result.AvailableRegions[i].RegionName < result.AvailableRegions[j].RegionName
+	})
+
+	result.Success = true
+	result.QueryDurationMs = time.Since(startTime).Milliseconds()
+
+	log.Debug().
+		Str("provider", provider).
+		Str("cspSpecName", cspSpecName).
+		Int("regions", len(result.AvailableRegions)).
+		Int64("durationMs", result.QueryDurationMs).
+		Msg("Successfully queried spec availability")
+
+	return result, nil
+}
+
+// GetAvailableRegionZonesForSpecList queries availability for multiple specs in parallel
+// Returns batch results with performance metrics for all specs
+func GetAvailableRegionZonesForSpecList(provider string, cspSpecNames []string) (model.SpecAvailabilityBatchResult, error) {
+	startTime := time.Now()
+
+	result := model.SpecAvailabilityBatchResult{
+		Provider:       provider,
+		TotalSpecs:     len(cspSpecNames),
+		FastestQueryMs: math.MaxInt64,
+		SlowestQueryMs: 0,
+	}
+
+	if len(cspSpecNames) == 0 {
+		result.TotalDurationMs = time.Since(startTime).Milliseconds()
+		return result, nil
+	}
+
+	// Control concurrency - limit parallel queries to avoid overwhelming the API
+	maxConcurrent := 100
+	semaphore := make(chan struct{}, maxConcurrent)
+	var wg sync.WaitGroup
+	var mutex sync.Mutex
+
+	// Channel to collect results
+	resultChan := make(chan model.SpecAvailabilityInfo, len(cspSpecNames))
+
+	// Launch parallel queries
+	for _, specName := range cspSpecNames {
+		wg.Add(1)
+		go func(spec string) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
+			common.RandomSleep(0, 10)
+
+			// Query single spec
+			specResult, err := GetAvailableRegionZonesForSpec(provider, spec)
+			if err != nil {
+				// Even if there's an error, we want to include the result
+				log.Debug().Err(err).Str("spec", spec).Msg("Failed to query spec availability")
+			}
+
+			// Send result to channel
+			resultChan <- specResult
+
+			// Update performance metrics (thread-safe)
+			mutex.Lock()
+			if specResult.Success {
+				result.SuccessfulQueries++
+			} else {
+				result.FailedQueries++
+			}
+
+			// Update timing statistics
+			if specResult.QueryDurationMs < result.FastestQueryMs {
+				result.FastestQueryMs = specResult.QueryDurationMs
+			}
+			if specResult.QueryDurationMs > result.SlowestQueryMs {
+				result.SlowestQueryMs = specResult.QueryDurationMs
+			}
+			mutex.Unlock()
+		}(specName)
+	}
+
+	// Wait for all goroutines to complete
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	// Collect all results
+	for specResult := range resultChan {
+		result.SpecResults = append(result.SpecResults, specResult)
+	}
+
+	// Calculate final metrics
+	result.TotalDurationMs = time.Since(startTime).Milliseconds()
+
+	if result.SuccessfulQueries > 0 {
+		var totalDuration int64
+		for _, spec := range result.SpecResults {
+			totalDuration += spec.QueryDurationMs
+		}
+		result.AverageQueryMs = totalDuration / int64(len(result.SpecResults))
+	}
+
+	// Handle case where no queries were successful
+	if result.SuccessfulQueries == 0 {
+		result.FastestQueryMs = 0
+	}
+
+	// Sort results by spec name for consistent output
+	sort.Slice(result.SpecResults, func(i, j int) bool {
+		return result.SpecResults[i].CspSpecName < result.SpecResults[j].CspSpecName
+	})
+
+	log.Info().
+		Str("provider", provider).
+		Int("totalSpecs", result.TotalSpecs).
+		Int("successfulQueries", result.SuccessfulQueries).
+		Int("failedQueries", result.FailedQueries).
+		Int64("totalDurationMs", result.TotalDurationMs).
+		Int64("averageQueryMs", result.AverageQueryMs).
+		Msg("Completed batch spec availability query")
+
+	return result, nil
+}
+
+// UpdateExistingSpecListByAvailableRegionZones cleans up unavailable specs from the database
+// Queries all specs for a specific provider across all regions, checks their availability, and removes specs that are not available in their respective regions
+func UpdateExistingSpecListByAvailableRegionZones(nsId string, provider string) (model.SpecCleanupResult, error) {
+	startTime := time.Now()
+
+	result := model.SpecCleanupResult{
+		Provider: provider,
+		Region:   "all", // Indicates we're processing all regions
+	}
+
+	// Currently only Alibaba Cloud is supported
+	if !strings.EqualFold(provider, csp.Alibaba) {
+		return result, fmt.Errorf("Provider %s is not supported yet. Currently only Alibaba Cloud is supported.", provider)
+	}
+
+	log.Info().
+		Str("namespace", nsId).
+		Str("provider", provider).
+		Msg("Starting spec cleanup for all regions of provider")
+
+	// Step 1: Get unique CspSpecNames for the provider using efficient DB query
+	var uniqueSpecNames []string
+
+	// Build the ID pattern for the specific provider (all regions)
+	// Spec ID format: provider+region+cspSpecName (e.g., "alibaba+ap-northeast-1+ecs.t5.large")
+	idPattern := fmt.Sprintf("%s+%%", strings.ToLower(provider))
+
+	// Use DISTINCT to get unique CspSpecNames directly from DB
+	queryResult := model.ORM.Model(&model.SpecInfo{}).
+		Distinct("csp_spec_name").
+		Where("namespace = ? AND LOWER(id) LIKE ?", nsId, idPattern).
+		Pluck("csp_spec_name", &uniqueSpecNames)
+
+	if queryResult.Error != nil {
+		log.Error().Err(queryResult.Error).
+			Str("namespace", nsId).
+			Str("idPattern", idPattern).
+			Msg("Failed to execute DISTINCT query")
+		return result, fmt.Errorf("failed to query unique spec names from database: %v", queryResult.Error)
+	}
+
+	if len(uniqueSpecNames) == 0 {
+		log.Info().
+			Str("provider", provider).
+			Str("namespace", nsId).
+			Msg("No specs found for the given provider")
+		result.CleanupDurationMs = time.Since(startTime).Milliseconds()
+		return result, nil
+	}
+
+	log.Info().
+		Int("uniqueSpecNames", len(uniqueSpecNames)).
+		Str("provider", provider).
+		Msg("Found unique spec names for availability check")
+
+	// Step 2: Query availability for all unique spec names
+	availabilityStartTime := time.Now()
+	availabilityResult, err := GetAvailableRegionZonesForSpecList(provider, uniqueSpecNames)
+	if err != nil {
+		log.Error().Err(err).
+			Str("provider", provider).
+			Int("specCount", len(uniqueSpecNames)).
+			Msg("Failed to query spec availability")
+		return result, fmt.Errorf("failed to query spec availability: %v", err)
+	}
+	result.AvailabilityCheckMs = time.Since(availabilityStartTime).Milliseconds()
+	result.AvailabilityResults = availabilityResult
+
+	log.Info().
+		Int("totalSpecs", availabilityResult.TotalSpecs).
+		Int("successfulQueries", availabilityResult.SuccessfulQueries).
+		Int("failedQueries", availabilityResult.FailedQueries).
+		Int64("availabilityCheckMs", result.AvailabilityCheckMs).
+		Msg("Availability check completed")
+
+	// Step 3: Create availability map for quick lookup
+	// Map: specName -> set of available regions
+	specAvailabilityMap := make(map[string]map[string]bool)
+	var failedSpecs []string
+
+	for _, specResult := range availabilityResult.SpecResults {
+		if !specResult.Success {
+			// If the query failed or spec is not available anywhere, mark as unavailable everywhere
+			specAvailabilityMap[specResult.CspSpecName] = make(map[string]bool)
+			failedSpecs = append(failedSpecs, specResult.CspSpecName)
+			continue
+		}
+
+		availableRegions := make(map[string]bool)
+		for _, regionInfo := range specResult.AvailableRegions {
+			availableRegions[regionInfo.RegionName] = true
+		}
+		specAvailabilityMap[specResult.CspSpecName] = availableRegions
+	}
+
+	if len(failedSpecs) > 0 {
+		log.Warn().
+			Int("failedSpecsCount", len(failedSpecs)).
+			Strs("failedSpecs", failedSpecs).
+			Msg("Some specs marked as unavailable everywhere (query failed)")
+	}
+
+	// Step 4: Query specs to be deleted - only get specs that are NOT available in their regions
+	var specIdsToDelete []string
+	var processedSpecsCount int
+	var skippedSpecsCount int
+
+	// For each unique spec name, find specs in regions where it's not available
+	for _, specName := range uniqueSpecNames {
+		availableRegions, exists := specAvailabilityMap[specName]
+		if !exists {
+			// If availability check failed, delete all instances of this spec
+			var specsToDelete []model.SpecInfo
+			deleteQuery := model.ORM.Select("id").
+				Where("namespace = ? AND LOWER(id) LIKE ? AND csp_spec_name = ?",
+					nsId, idPattern, specName).
+				Find(&specsToDelete)
+
+			if deleteQuery.Error != nil {
+				log.Error().Err(deleteQuery.Error).
+					Str("specName", specName).
+					Msg("Failed to query specs for deletion")
+				skippedSpecsCount++
+				continue
+			}
+
+			for _, spec := range specsToDelete {
+				specIdsToDelete = append(specIdsToDelete, spec.Id)
+			}
+			processedSpecsCount++
+			continue
+		}
+
+		// For available spec, find instances in regions where it's NOT available
+		var specsInUnavailableRegions []model.SpecInfo
+
+		// Query all instances of this spec name for the provider
+		specQuery := model.ORM.Select("id").
+			Where("namespace = ? AND LOWER(id) LIKE ? AND csp_spec_name = ?",
+				nsId, idPattern, specName).
+			Find(&specsInUnavailableRegions)
+
+		if specQuery.Error != nil {
+			log.Error().Err(specQuery.Error).
+				Str("specName", specName).
+				Msg("Failed to query spec instances")
+			skippedSpecsCount++
+			continue
+		}
+
+		var instancesMarkedForDeletion int
+		// Check each spec instance and mark for deletion if not available in its region
+		for _, spec := range specsInUnavailableRegions {
+			// Extract region from spec ID (format: provider+region+cspSpecName)
+			parts := strings.Split(spec.Id, "+")
+			if len(parts) < 3 {
+				log.Warn().
+					Str("specId", spec.Id).
+					Msg("Invalid spec ID format - skipping")
+				continue
+			}
+			region := parts[1]
+
+			// Check if this spec is available in its region
+			if !availableRegions[region] {
+				// Spec is not available in its region, mark for deletion
+				specIdsToDelete = append(specIdsToDelete, spec.Id)
+				instancesMarkedForDeletion++
+			}
+		}
+
+		processedSpecsCount++
+	}
+
+	if skippedSpecsCount > 0 {
+		log.Warn().
+			Int("skippedSpecsCount", skippedSpecsCount).
+			Msg("Some specs were skipped due to query errors")
+	}
+
+	// Count total specs checked (for reporting)
+	var totalSpecCount int64
+	countQuery := model.ORM.Model(&model.SpecInfo{}).
+		Where("namespace = ? AND LOWER(id) LIKE ?", nsId, idPattern).
+		Count(&totalSpecCount)
+
+	if countQuery.Error != nil {
+		log.Warn().Err(countQuery.Error).
+			Msg("Failed to count total specs")
+		totalSpecCount = int64(len(specIdsToDelete)) // Fallback estimate
+	}
+
+	result.TotalSpecsChecked = int(totalSpecCount)
+	result.SpecsToDelete = len(specIdsToDelete)
+
+	log.Info().
+		Int("specIdsToDelete", len(specIdsToDelete)).
+		Int("totalSpecs", int(totalSpecCount)).
+		Float64("deletionPercentage", func() float64 {
+			if totalSpecCount > 0 {
+				return float64(len(specIdsToDelete)) / float64(totalSpecCount) * 100
+			}
+			return 0
+		}()).
+		Msg("Identified specs for deletion")
+
+	// Step 5: Delete unavailable specs from database
+	if len(specIdsToDelete) > 0 {
+		log.Info().
+			Int("specIdsToDeleteCount", len(specIdsToDelete)).
+			Msg("Starting database deletion")
+
+		deleteStartTime := time.Now()
+		deleteResult := model.ORM.Where("namespace = ? AND id IN ?", nsId, specIdsToDelete).Delete(&model.SpecInfo{})
+		deleteDuration := time.Since(deleteStartTime)
+
+		if deleteResult.Error != nil {
+			log.Error().Err(deleteResult.Error).
+				Int("requestedDeletions", len(specIdsToDelete)).
+				Int64("deleteDurationMs", deleteDuration.Milliseconds()).
+				Msg("Failed to delete specs from database")
+			// Record failed deletions
+			result.FailedDeletions = specIdsToDelete
+			return result, fmt.Errorf("failed to delete specs: %v", deleteResult.Error)
+		}
+
+		result.SpecsDeleted = int(deleteResult.RowsAffected)
+
+		if result.SpecsDeleted != len(specIdsToDelete) {
+			log.Warn().
+				Int("requestedDeletions", len(specIdsToDelete)).
+				Int("actualDeletions", result.SpecsDeleted).
+				Msg("Mismatch between requested and actual deletions")
+		}
+
+		log.Info().
+			Int("deletedCount", result.SpecsDeleted).
+			Int("requestedCount", len(specIdsToDelete)).
+			Msg("Successfully deleted unavailable specs")
+
+		// Log a few examples of deleted specs for reference
+		if len(specIdsToDelete) > 0 {
+			exampleCount := len(specIdsToDelete)
+			if exampleCount > 5 {
+				exampleCount = 5
+			}
+			log.Debug().
+				Strs("exampleDeletedSpecs", specIdsToDelete[:exampleCount]).
+				Msg("Examples of deleted specs")
+		}
+	} else {
+		log.Info().
+			Str("provider", provider).
+			Str("namespace", nsId).
+			Msg("No specs identified for deletion - all specs are available in their regions")
+	}
+
+	result.CleanupDurationMs = time.Since(startTime).Milliseconds()
+
+	log.Info().
+		Str("provider", provider).
+		Int("totalChecked", result.TotalSpecsChecked).
+		Int("toDelete", result.SpecsToDelete).
+		Int("deleted", result.SpecsDeleted).
+		Int64("totalDurationMs", result.CleanupDurationMs).
+		Int64("availabilityCheckMs", result.AvailabilityCheckMs).
+		Msg("Completed spec cleanup for all regions")
+
+	return result, nil
 }
 
 // RegisterSpecWithCspResourceId accepts spec creation request, creates and returns an TB spec object

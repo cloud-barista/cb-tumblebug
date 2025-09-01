@@ -550,6 +550,10 @@ func RunServer() {
 	g.PUT("/:nsId/resources/spec/:resourceId", rest_resource.RestPutSpec)
 	g.DELETE("/:nsId/resources/spec/:resourceId", rest_resource.RestDelResource)
 
+	e.POST("/tumblebug/availableRegionZonesForSpec", rest_resource.RestGetAvailableRegionZonesForSpec)
+	e.POST("/tumblebug/availableRegionZonesForSpecList", rest_resource.RestGetAvailableRegionZonesForSpecList)
+	g.POST("/:nsId/updateExistingSpecListByAvailableRegionZones", rest_resource.RestUpdateExistingSpecListByAvailableRegionZones)
+
 	e.POST("/tumblebug/fetchSpecs", rest_resource.RestFetchSpecs)
 	e.POST("/tumblebug/fetchPrice", rest_resource.RestFetchPrice)
 	g.POST("/:nsId/resources/filterSpecsByRange", rest_resource.RestFilterSpecsByRange)

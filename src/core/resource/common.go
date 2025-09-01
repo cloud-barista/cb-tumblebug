@@ -1530,8 +1530,12 @@ func LoadAssets() (*model.IdList, error) {
 	elapsedUpdateSpec := time.Since(startTime)
 	log.Info().Msgf("UpdateSpecsFromAsset. Elapsed [%s]", elapsedUpdateSpec)
 
-	startTime = time.Now()
+	// Skip spec cleanup for now (will examine later)
+	// TODO: Re-enable UpdateExistingSpecListByAvailableRegionZones after examination
+	log.Info().Msg("Skipping UpdateExistingSpecListByAvailableRegionZones for Alibaba (temporarily disabled for examination)")
 
+	// Start image fetching (keeping this part running)
+	startTime = time.Now()
 	reqBodyImageFetchOption := &model.ImageFetchOption{}
 	reqBodyImageFetchOption.ExcludedProviders = []string{csp.Azure}
 	reqBodyImageFetchOption.RegionAgnosticProviders = []string{csp.GCP, csp.Tencent}
@@ -1541,6 +1545,9 @@ func LoadAssets() (*model.IdList, error) {
 	}
 	elapsedFetchImg := time.Since(startTime)
 	log.Debug().Msgf("resultFetchImagesForAllConnConfigs.RegisteredImages: %+v elapsed: [%s]", resultFetchImagesForAllConnConfigs.RegisteredImages, elapsedFetchImg)
+
+	// Force garbage collection for large cleanup
+	runtime.GC()
 
 	startTime = time.Now()
 	resultUpdateImagesFromAsset, err := UpdateImagesFromAsset(model.SystemCommonNs)
@@ -1560,7 +1567,7 @@ func LoadAssets() (*model.IdList, error) {
 
 	log.Info().Msgf("Fetched Spec List. Elapsed [%s]", elapsedFetchSpec)
 	log.Info().Msgf("Updated Spec List. Elapsed [%s]", elapsedUpdateSpec)
-	log.Info().Msgf("Fetched Image List. Elapsed [%s]", elapsedFetchImg)
+	log.Info().Msgf("Image fetching completed. Elapsed [%s]", elapsedFetchImg)
 	log.Info().Msgf("Updated Image List. Elapsed [%s]", elapsedUpdateImg)
 
 	// FetchPriceForAllConnConfigs is called to update the prices of all specs

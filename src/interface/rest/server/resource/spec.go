@@ -292,3 +292,93 @@ func RestDelSpec(c echo.Context) error {
 	// This is a dummy function for Swagger.
 	return nil
 }
+
+// RestGetAvailableRegionZonesForSpec godoc
+// @ID GetAvailableRegionZonesForSpec
+// @Summary Get available regions and zones for a specific spec
+// @Description Query the availability of a specific spec across all regions/zones
+// @Tags [Infra Resource] Spec Management
+// @Accept  json
+// @Produce  json
+// @Param availabilityReq body model.GetAvailableRegionZonesRequest true "Spec availability request"
+// @Success 200 {object} model.SpecAvailabilityInfo
+// @Failure 400 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /availableRegionZonesForSpec [post]
+func RestGetAvailableRegionZonesForSpec(c echo.Context) error {
+	u := &model.GetAvailableRegionZonesRequest{}
+	if err := c.Bind(u); err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	if u.Provider == "" || u.CspSpecName == "" {
+		err := fmt.Errorf("provider and cspSpecName are required")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	log.Debug().Msgf("[Get Spec Availability] Provider: %s, CspSpecName: %s", u.Provider, u.CspSpecName)
+
+	content, err := resource.GetAvailableRegionZonesForSpec(u.Provider, u.CspSpecName)
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestGetAvailableRegionZonesForSpecList godoc
+// @ID GetAvailableRegionZonesForSpecList
+// @Summary Get available regions and zones for multiple specs
+// @Description Query the availability for multiple specs in parallel and return batch results
+// @Tags [Infra Resource] Spec Management
+// @Accept  json
+// @Produce  json
+// @Param batchAvailabilityReq body model.GetAvailableRegionZonesListRequest true "Batch spec availability request"
+// @Success 200 {object} model.SpecAvailabilityBatchResult
+// @Failure 400 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /availableRegionZonesForSpecList [post]
+func RestGetAvailableRegionZonesForSpecList(c echo.Context) error {
+	u := &model.GetAvailableRegionZonesListRequest{}
+	if err := c.Bind(u); err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	if u.Provider == "" || len(u.CspSpecNames) == 0 {
+		err := fmt.Errorf("provider and cspSpecNames are required")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	log.Debug().Msgf("[Get Batch Spec Availability] Provider: %s, Specs: %d", u.Provider, len(u.CspSpecNames))
+
+	content, err := resource.GetAvailableRegionZonesForSpecList(u.Provider, u.CspSpecNames)
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestUpdateExistingSpecListByAvailableRegionZones godoc
+// @ID UpdateExistingSpecListByAvailableRegionZones
+// @Summary Clean up unavailable specs from database
+// @Description Query all specs for a specific provider across all regions, check their availability, and remove specs that are not available in their respective regions
+// @Tags [Infra Resource] Spec Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(system)
+// @Param cleanupReq body model.UpdateSpecListByAvailabilityRequest true "Spec cleanup request"
+// @Success 200 {object} model.SpecCleanupResult
+// @Failure 400 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/updateExistingSpecListByAvailableRegionZones [post]
+func RestUpdateExistingSpecListByAvailableRegionZones(c echo.Context) error {
+	nsId := c.Param("nsId")
+
+	u := &model.UpdateSpecListByAvailabilityRequest{}
+	if err := c.Bind(u); err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	if u.Provider == "" {
+		err := fmt.Errorf("provider is required")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	log.Debug().Msgf("[Cleanup Specs] Namespace: %s, Provider: %s", nsId, u.Provider)
+
+	content, err := resource.UpdateExistingSpecListByAvailableRegionZones(nsId, u.Provider)
+	return clientManager.EndRequestWithLog(c, err, content)
+}
