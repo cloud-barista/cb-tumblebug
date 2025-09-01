@@ -162,6 +162,100 @@ const docTemplate = `{
                 }
             }
         },
+        "/availableRegionZonesForSpec": {
+            "post": {
+                "description": "Query the availability of a specific spec across all regions/zones",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Spec Management"
+                ],
+                "summary": "Get available regions and zones for a specific spec",
+                "operationId": "GetAvailableRegionZonesForSpec",
+                "parameters": [
+                    {
+                        "description": "Spec availability request",
+                        "name": "availabilityReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.GetAvailableRegionZonesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SpecAvailabilityInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/availableRegionZonesForSpecList": {
+            "post": {
+                "description": "Query the availability for multiple specs in parallel and return batch results",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Spec Management"
+                ],
+                "summary": "Get available regions and zones for multiple specs",
+                "operationId": "GetAvailableRegionZonesForSpecList",
+                "parameters": [
+                    {
+                        "description": "Batch spec availability request",
+                        "name": "batchAvailabilityReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.GetAvailableRegionZonesListRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SpecAvailabilityBatchResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/checkK8sNodeGroupsOnK8sCreation": {
             "get": {
                 "description": "Check whether nodegroups are required during the K8sCluster creation",
@@ -10523,6 +10617,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/updateExistingSpecListByAvailableRegionZones": {
+            "post": {
+                "description": "Query all specs for a specific provider across all regions, check their availability, and remove specs that are not available in their respective regions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Spec Management"
+                ],
+                "summary": "Clean up unavailable specs from database",
+                "operationId": "UpdateExistingSpecListByAvailableRegionZones",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "system",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Spec cleanup request",
+                        "name": "cleanupReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateSpecListByAvailabilityRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SpecCleanupResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/object": {
             "get": {
                 "description": "Get value of an object",
@@ -13579,6 +13728,46 @@ const docTemplate = `{
                     "type": "string",
                     "default": "65530",
                     "example": "65530"
+                }
+            }
+        },
+        "model.GetAvailableRegionZonesListRequest": {
+            "type": "object",
+            "required": [
+                "cspSpecNames",
+                "provider"
+            ],
+            "properties": {
+                "cspSpecNames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "ecs.t5.large",
+                        "ecs.t5.medium"
+                    ]
+                },
+                "provider": {
+                    "type": "string",
+                    "example": "alibaba"
+                }
+            }
+        },
+        "model.GetAvailableRegionZonesRequest": {
+            "type": "object",
+            "required": [
+                "cspSpecName",
+                "provider"
+            ],
+            "properties": {
+                "cspSpecName": {
+                    "type": "string",
+                    "example": "ecs.t5.large"
+                },
+                "provider": {
+                    "type": "string",
+                    "example": "alibaba"
                 }
             }
         },
@@ -17458,6 +17647,125 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SpecAvailabilityBatchResult": {
+            "type": "object",
+            "properties": {
+                "averageQueryMs": {
+                    "type": "integer",
+                    "example": 1250
+                },
+                "failedQueries": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "fastestQueryMs": {
+                    "type": "integer",
+                    "example": 850
+                },
+                "provider": {
+                    "type": "string",
+                    "example": "alibaba"
+                },
+                "slowestQueryMs": {
+                    "type": "integer",
+                    "example": 2100
+                },
+                "specResults": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SpecAvailabilityInfo"
+                    }
+                },
+                "successfulQueries": {
+                    "type": "integer",
+                    "example": 8
+                },
+                "totalDurationMs": {
+                    "type": "integer",
+                    "example": 12500
+                },
+                "totalSpecs": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "model.SpecAvailabilityInfo": {
+            "type": "object",
+            "properties": {
+                "availableRegions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SpecRegionZoneInfo"
+                    }
+                },
+                "cspSpecName": {
+                    "type": "string",
+                    "example": "ecs.t5.large"
+                },
+                "errorMessage": {
+                    "type": "string",
+                    "example": "Spec not available"
+                },
+                "provider": {
+                    "type": "string",
+                    "example": "alibaba"
+                },
+                "queryDurationMs": {
+                    "type": "integer",
+                    "example": 1250
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "model.SpecCleanupResult": {
+            "type": "object",
+            "properties": {
+                "availabilityCheckMs": {
+                    "type": "integer",
+                    "example": 12500
+                },
+                "availabilityResults": {
+                    "$ref": "#/definitions/model.SpecAvailabilityBatchResult"
+                },
+                "cleanupDurationMs": {
+                    "type": "integer",
+                    "example": 15000
+                },
+                "failedDeletions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "ecs.t5.large"
+                    ]
+                },
+                "provider": {
+                    "type": "string",
+                    "example": "alibaba"
+                },
+                "region": {
+                    "type": "string",
+                    "example": "ap-northeast-1"
+                },
+                "specsDeleted": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "specsToDelete": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "totalSpecsChecked": {
+                    "type": "integer",
+                    "example": 50
+                }
+            }
+        },
         "model.SpecFetchOption": {
             "type": "object",
             "properties": {
@@ -17631,6 +17939,25 @@ const docTemplate = `{
                 },
                 "vCPU": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.SpecRegionZoneInfo": {
+            "type": "object",
+            "properties": {
+                "regionName": {
+                    "type": "string",
+                    "example": "ap-northeast-1"
+                },
+                "zones": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "ap-northeast-1a",
+                        "ap-northeast-1b"
+                    ]
                 }
             }
         },
@@ -18519,6 +18846,18 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "model.UpdateSpecListByAvailabilityRequest": {
+            "type": "object",
+            "required": [
+                "provider"
+            ],
+            "properties": {
+                "provider": {
+                    "type": "string",
+                    "example": "alibaba"
                 }
             }
         },

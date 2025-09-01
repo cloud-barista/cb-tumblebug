@@ -157,17 +157,28 @@ func ExecuteHttpRequest[B any, T any](
 	// Record request start time
 	requestStartTime := time.Now()
 
-	// Log the request in zerologger style
-	requestLogEvent := log.Debug().
-		Str("Method", method).
-		Str("URI", url)
-
-	if useBody && body != nil {
-		if bodyBytes, err := json.Marshal(body); err == nil {
-			requestLogEvent = requestLogEvent.RawJSON("requestBody", bodyBytes)
+	// Log the request in zerologger style (use trace for GET, debug for others)
+	if method == "GET" {
+		requestLogEvent := log.Trace().
+			Str("Method", method).
+			Str("URI", url)
+		if useBody && body != nil {
+			if bodyBytes, err := json.Marshal(body); err == nil {
+				requestLogEvent = requestLogEvent.RawJSON("requestBody", bodyBytes)
+			}
 		}
+		requestLogEvent.Msg("Internal Call Start")
+	} else {
+		requestLogEvent := log.Debug().
+			Str("Method", method).
+			Str("URI", url)
+		if useBody && body != nil {
+			if bodyBytes, err := json.Marshal(body); err == nil {
+				requestLogEvent = requestLogEvent.RawJSON("requestBody", bodyBytes)
+			}
+		}
+		requestLogEvent.Msg("Internal Call Start")
 	}
-	requestLogEvent.Msg("Internal Call Start")
 
 	// Generate cache key for GET method only
 	requestKey := ""
@@ -196,7 +207,7 @@ func ExecuteHttpRequest[B any, T any](
 			}
 
 			if time.Now().Before(cachedItem.ExpiresAt) {
-				log.Trace().Msgf("Cache hit! Expires: %v", time.Now().Sub(cachedItem.ExpiresAt))
+				log.Trace().Msgf("Cache hit! Expires: %v", time.Since(cachedItem.ExpiresAt))
 				*result = cachedItem.Response
 				//val := reflect.ValueOf(result).Elem()
 				//cachedVal := reflect.ValueOf(cachedItem.Response)
@@ -276,15 +287,24 @@ func ExecuteHttpRequest[B any, T any](
 	}
 
 	if err != nil {
-		// Log error response in zerologger style
+		// Log error response in zerologger style (use trace for GET, debug for others)
 		duration := time.Since(requestStartTime)
 
-		log.Debug().
-			Str("Method", method).
-			Str("URI", url).
-			Dur("latency", duration).
-			Str("error", err.Error()).
-			Msg("Internal Call Failed")
+		if method == "GET" {
+			log.Trace().
+				Str("Method", method).
+				Str("URI", url).
+				Dur("latency", duration).
+				Str("error", err.Error()).
+				Msg("Internal Call Failed")
+		} else {
+			log.Debug().
+				Str("Method", method).
+				Str("URI", url).
+				Dur("latency", duration).
+				Str("error", err.Error()).
+				Msg("Internal Call Failed")
+		}
 
 		if method == "GET" {
 			requestDone(requestKey)
@@ -295,19 +315,32 @@ func ExecuteHttpRequest[B any, T any](
 	}
 
 	if resp.IsError() {
-		// Log HTTP error response in zerologger style
+		// Log HTTP error response in zerologger style (use trace for GET, debug for others)
 		duration := time.Since(requestStartTime)
 
-		errorLogEvent := log.Debug().
-			Str("Method", method).
-			Str("URI", url).
-			Dur("latency", duration).
-			Int("status", resp.StatusCode())
+		if method == "GET" {
+			errorLogEvent := log.Trace().
+				Str("Method", method).
+				Str("URI", url).
+				Dur("latency", duration).
+				Int("status", resp.StatusCode())
 
-		if len(resp.Body()) > 0 {
-			errorLogEvent = errorLogEvent.RawJSON("responseBody", resp.Body())
+			if len(resp.Body()) > 0 {
+				errorLogEvent = errorLogEvent.RawJSON("responseBody", resp.Body())
+			}
+			errorLogEvent.Msg("Internal Call Error")
+		} else {
+			errorLogEvent := log.Debug().
+				Str("Method", method).
+				Str("URI", url).
+				Dur("latency", duration).
+				Int("status", resp.StatusCode())
+
+			if len(resp.Body()) > 0 {
+				errorLogEvent = errorLogEvent.RawJSON("responseBody", resp.Body())
+			}
+			errorLogEvent.Msg("Internal Call Error")
 		}
-		errorLogEvent.Msg("Internal Call Error")
 
 		if method == "GET" {
 			requestDone(requestKey)
@@ -317,19 +350,32 @@ func ExecuteHttpRequest[B any, T any](
 		return fmt.Errorf("%s (from %s (%s))", cleanedBody, cleanedURL, resp.Status())
 	}
 
-	// Log successful response in zerologger style
+	// Log successful response in zerologger style (use trace for GET, debug for others)
 	duration := time.Since(requestStartTime)
 
-	successLogEvent := log.Debug().
-		Str("Method", method).
-		Str("URI", url).
-		Dur("latency", duration).
-		Int("status", resp.StatusCode())
+	if method == "GET" {
+		successLogEvent := log.Trace().
+			Str("Method", method).
+			Str("URI", url).
+			Dur("latency", duration).
+			Int("status", resp.StatusCode())
 
-	if len(resp.Body()) > 0 {
-		successLogEvent = successLogEvent.RawJSON("responseBody", resp.Body())
+		if len(resp.Body()) > 0 {
+			successLogEvent = successLogEvent.RawJSON("responseBody", resp.Body())
+		}
+		successLogEvent.Msg("Internal Call OK")
+	} else {
+		successLogEvent := log.Debug().
+			Str("Method", method).
+			Str("URI", url).
+			Dur("latency", duration).
+			Int("status", resp.StatusCode())
+
+		if len(resp.Body()) > 0 {
+			successLogEvent = successLogEvent.RawJSON("responseBody", resp.Body())
+		}
+		successLogEvent.Msg("Internal Call OK")
 	}
-	successLogEvent.Msg("Internal Call OK")
 
 	// Update the cache for GET method only
 	if method == "GET" {

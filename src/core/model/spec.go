@@ -424,3 +424,60 @@ func GetAllLatencyInfo() ([]LatencyInfo, error) {
 	result := ORM.Find(&latencyInfos)
 	return latencyInfos, result.Error
 }
+
+// SpecRegionZoneInfo represents the available zones for a specific region
+type SpecRegionZoneInfo struct {
+	RegionName string   `json:"regionName" example:"ap-northeast-1"`
+	Zones      []string `json:"zones" example:"ap-northeast-1a,ap-northeast-1b"`
+}
+
+// SpecAvailabilityInfo represents the availability information for a spec
+type SpecAvailabilityInfo struct {
+	Provider         string               `json:"provider" example:"alibaba"`
+	CspSpecName      string               `json:"cspSpecName" example:"ecs.t5.large"`
+	AvailableRegions []SpecRegionZoneInfo `json:"availableRegions"`
+	QueryDurationMs  int64                `json:"queryDurationMs" example:"1250"`
+	Success          bool                 `json:"success" example:"true"`
+	ErrorMessage     string               `json:"errorMessage,omitempty" example:"Spec not available"`
+}
+
+// SpecAvailabilityBatchResult represents the batch query result for multiple specs
+type SpecAvailabilityBatchResult struct {
+	Provider          string                 `json:"provider" example:"alibaba"`
+	SpecResults       []SpecAvailabilityInfo `json:"specResults"`
+	TotalSpecs        int                    `json:"totalSpecs" example:"10"`
+	SuccessfulQueries int                    `json:"successfulQueries" example:"8"`
+	FailedQueries     int                    `json:"failedQueries" example:"2"`
+	TotalDurationMs   int64                  `json:"totalDurationMs" example:"12500"`
+	FastestQueryMs    int64                  `json:"fastestQueryMs" example:"850"`
+	SlowestQueryMs    int64                  `json:"slowestQueryMs" example:"2100"`
+	AverageQueryMs    int64                  `json:"averageQueryMs" example:"1250"`
+}
+
+// SpecCleanupResult represents the result of cleaning up unavailable specs
+type SpecCleanupResult struct {
+	Provider            string                      `json:"provider" example:"alibaba"`
+	Region              string                      `json:"region" example:"ap-northeast-1"`
+	TotalSpecsChecked   int                         `json:"totalSpecsChecked" example:"50"`
+	SpecsToDelete       int                         `json:"specsToDelete" example:"5"`
+	SpecsDeleted        int                         `json:"specsDeleted" example:"5"`
+	CleanupDurationMs   int64                       `json:"cleanupDurationMs" example:"15000"`
+	AvailabilityCheckMs int64                       `json:"availabilityCheckMs" example:"12500"`
+	FailedDeletions     []string                    `json:"failedDeletions,omitempty" example:"ecs.t5.large"`
+	AvailabilityResults SpecAvailabilityBatchResult `json:"availabilityResults"`
+}
+
+// Availability request structures for API handlers
+type GetAvailableRegionZonesRequest struct {
+	Provider    string `json:"provider" validate:"required" example:"alibaba"`
+	CspSpecName string `json:"cspSpecName" validate:"required" example:"ecs.t5.large"`
+}
+
+type GetAvailableRegionZonesListRequest struct {
+	Provider     string   `json:"provider" validate:"required" example:"alibaba"`
+	CspSpecNames []string `json:"cspSpecNames" validate:"required" example:"ecs.t5.large,ecs.t5.medium"`
+}
+
+type UpdateSpecListByAvailabilityRequest struct {
+	Provider string `json:"provider" validate:"required" example:"alibaba"`
+}
