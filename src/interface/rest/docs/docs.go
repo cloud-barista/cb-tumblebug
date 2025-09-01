@@ -7992,7 +7992,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/resources/image/{imageId}": {
             "get": {
-                "description": "GetImage returns an image object if there are matched images for the given namespace and imageKey(Id, CspResourceName)",
+                "description": "GetImage returns an image object if there are matched images for the given namespace and imageKey(imageId)",
                 "consumes": [
                     "application/json"
                 ],
@@ -8015,7 +8015,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts vaious input types as Image Key: cspImageName",
+                        "description": "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts vaious input types as Image Key: 1) provider+imageId, 2) provider+region+imageId, 3) imageId",
                         "name": "imageId",
                         "in": "path",
                         "required": true
