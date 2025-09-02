@@ -59,6 +59,16 @@ const NoBody = "NOBODY"
 // MaxDebugBodyLength is the maximum length of response body for debug logs
 const MaxDebugBodyLength = 1000
 
+// shouldTruncateBody checks if the response body should be truncated for debug logging
+func shouldTruncateBody(body []byte) bool {
+	return len(body) > MaxDebugBodyLength
+}
+
+// createTruncationMessage creates a message indicating body was truncated
+func createTruncationMessage(bodyLength int) string {
+	return fmt.Sprintf(`{"message":"Response body too large (%d bytes). Set log level to TRACE to see full content."}`, bodyLength)
+}
+
 // cleanErrorMessage removes unwanted characters from error messages
 func cleanErrorMessage(message string) string {
 	// Remove escaped quotes, newlines, and other escape sequences
@@ -105,20 +115,6 @@ func cleanURL(url string) string {
 		return url[8:] // Remove "https://" (8 characters)
 	}
 	return url
-}
-
-// truncateResponseBody truncates response body for debug logs
-func truncateResponseBody(body []byte) []byte {
-	if len(body) <= MaxDebugBodyLength {
-		return body
-	}
-
-	// Truncate and add indicator
-	truncated := make([]byte, MaxDebugBodyLength+50)
-	copy(truncated, body[:MaxDebugBodyLength])
-	truncatedMsg := fmt.Sprintf("...[truncated %d more chars]", len(body)-MaxDebugBodyLength)
-	copy(truncated[MaxDebugBodyLength:], []byte(truncatedMsg))
-	return truncated[:MaxDebugBodyLength+len(truncatedMsg)]
 }
 
 // SetUseBody returns false if the given body is NoBody
@@ -354,9 +350,23 @@ func ExecuteHttpRequest[B any, T any](
 				Int("status", resp.StatusCode())
 
 			if len(resp.Body()) > 0 {
-				// Use truncated body for debug level
-				truncatedBody := truncateResponseBody(resp.Body())
-				errorLogEvent = errorLogEvent.RawJSON("responseBody", truncatedBody)
+				if shouldTruncateBody(resp.Body()) {
+					// Body is too large for debug level, show truncation message
+					truncationMsg := createTruncationMessage(len(resp.Body()))
+					errorLogEvent = errorLogEvent.RawJSON("responseBody", []byte(truncationMsg))
+
+					// Log full body at trace level
+					log.Trace().
+						Str("Method", method).
+						Str("URI", url).
+						Dur("latency", duration).
+						Int("status", resp.StatusCode()).
+						RawJSON("responseBody", resp.Body()).
+						Msg("Internal Call Error (Full Response)")
+				} else {
+					// Body is small enough for debug level
+					errorLogEvent = errorLogEvent.RawJSON("responseBody", resp.Body())
+				}
 			}
 			errorLogEvent.Msg("Internal Call Error")
 		}
@@ -391,9 +401,23 @@ func ExecuteHttpRequest[B any, T any](
 			Int("status", resp.StatusCode())
 
 		if len(resp.Body()) > 0 {
-			// Use truncated body for debug level
-			truncatedBody := truncateResponseBody(resp.Body())
-			successLogEvent = successLogEvent.RawJSON("responseBody", truncatedBody)
+			if shouldTruncateBody(resp.Body()) {
+				// Body is too large for debug level, show truncation message
+				truncationMsg := createTruncationMessage(len(resp.Body()))
+				successLogEvent = successLogEvent.RawJSON("responseBody", []byte(truncationMsg))
+
+				// Log full body at trace level
+				log.Trace().
+					Str("Method", method).
+					Str("URI", url).
+					Dur("latency", duration).
+					Int("status", resp.StatusCode()).
+					RawJSON("responseBody", resp.Body()).
+					Msg("Internal Call OK (Full Response)")
+			} else {
+				// Body is small enough for debug level
+				successLogEvent = successLogEvent.RawJSON("responseBody", resp.Body())
+			}
 		}
 		successLogEvent.Msg("Internal Call OK")
 	}

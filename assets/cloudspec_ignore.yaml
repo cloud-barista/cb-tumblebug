@@ -1,0 +1,382 @@
+# Cloud Spec Ignore Configuration
+# This file defines patterns for specs that should be ignored during spec fetching operations
+# to improve performance and avoid processing unnecessary or problematic spec types.
+
+# Global patterns that apply to all CSPs
+global:
+  patterns:
+    - "*test*"
+    - "*experimental*" 
+    - "*deprecated*"
+    - "*legacy*"
+    - "*preview*"
+    - "*beta*"
+    - "*alpha*"
+    - "*trial*"
+    - "*dev*"
+    - "*development*"
+    - "*staging*"
+    - "*temporary*"
+    - "*temp*"
+    - "*benchmark*"
+    - "*demo*"
+    - "*lab*"
+
+# CSP-specific ignore patterns
+csps:
+  alibaba:
+    description: "Alibaba Cloud spec ignore patterns - Updated based on real availability data (89.6% deletion rate - Sequential cleanup)"
+    global_patterns:
+      # === SEQUENTIAL CLEANUP RESULTS ===
+      # Phase 1: 80.6% deletion rate (original patterns)
+      # Phase 2: 89.6% deletion rate (additional VFX and video-trans cleanup)
+      # Final result: Only 7 viable t6 series specs remain
+      
+      # === NEWLY IDENTIFIED GLOBAL UNAVAILABLE FAMILIES ===
+      # Based on latest 2025-09-02 analysis: Complete unavailability across all regions
+      
+      # Visual effects/Graphics workstation instances (48 specs - all regions unavailable)
+      - "ecs.vfx-c1m1.*"    # VFX compute 1:1 ratio - 9 specs globally unavailable
+      - "ecs.vfx-c1m2.*"    # VFX compute 1:2 ratio - 13 specs globally unavailable  
+      - "ecs.vfx-c1m4.*"    # VFX compute 1:4 ratio - 13 specs globally unavailable
+      - "ecs.vfx-c1m8.*"    # VFX compute 1:8 ratio - 11 specs globally unavailable
+      - "ecs.vfx-c1m8-s.*"  # VFX compute 1:8 shared - 2 specs globally unavailable
+      
+      # Video transcoding instances (1 spec - all regions unavailable)
+      - "ecs.video-trans.*" # Video transcoding instances - completely unavailable globally
+      
+      # === ORIGINAL DELETION CATEGORIES (Maintained from Phase 1) ===
+      
+      # GPU/Graphics instances (249 deletions - highest volume)
+      - "ecs.g*"        # General purpose GPU (g5, g6, g7, g8, g9 families)
+      - "ecs.gn*"       # GPU compute (gn4, gn5, gn6, gn7, gn8 families) - 100 deletions
+      - "ecs.vgn*"      # Virtual GPU instances - 13 deletions
+      - "ecs.sgn*"      # Shared GPU instances - 15 deletions
+      - "ecs.ga*"       # GPU accelerated instances - 4 deletions
+      - "ecs.gp*"       # GPU compute premium - 5 deletions
+      
+      # Compute optimized instances (204 deletions - second highest)
+      - "ecs.c1*"       # 1st gen compute (completely obsolete)
+      - "ecs.c2*"       # 2nd gen compute (completely obsolete)  
+      - "ecs.c3*"       # 3rd gen compute (mostly obsolete)
+      - "ecs.c4*"       # 4th gen compute (legacy)
+      - "ecs.c5*"       # 5th gen compute (partial availability)
+      - "ecs.c6*"       # 6th gen compute (limited regions)
+      - "ecs.c7*"       # 7th gen compute (premium/limited)
+      - "ecs.c8*"       # 8th gen compute (latest/limited)
+      - "ecs.c9*"       # 9th gen compute (newest/very limited)
+      - "ecs.ce*"       # Compute enhanced - 2 deletions
+      - "ecs.cm*"       # Compute memory optimized - 5 deletions
+      - "ecs.cgn*"      # Compute GPU network optimized
+      
+      # Memory optimized instances (172 deletions - third highest)
+      - "ecs.r1*"       # 1st gen memory (obsolete)
+      - "ecs.r2*"       # 2nd gen memory (obsolete)
+      - "ecs.r3*"       # 3rd gen memory (obsolete)
+      - "ecs.r4*"       # 4th gen memory (legacy)
+      - "ecs.r5*"       # 5th gen memory (partial availability)
+      - "ecs.r6*"       # 6th gen memory (limited regions)
+      - "ecs.r7*"       # 7th gen memory (premium/limited)
+      - "ecs.r8*"       # 8th gen memory (latest/limited)
+      - "ecs.r9*"       # 9th gen memory (newest/very limited)
+      - "ecs.re*"       # Memory enhanced instances - 26 deletions
+      
+      # Storage optimized instances (69 deletions)
+      - "ecs.i1*"       # 1st gen storage intensive
+      - "ecs.i2*"       # 2nd gen storage intensive  
+      - "ecs.i3*"       # 3rd gen storage intensive
+      - "ecs.i4*"       # 4th gen storage intensive
+      - "ecs.ic*"       # Intensive compute storage - 16 deletions
+      - "ecs.d1*"       # Local storage instances
+      - "ecs.d2*"       # Enhanced local storage
+      - "ecs.d3*"       # 3rd gen local storage
+      
+      # Economic/Shared instances (60 deletions)
+      - "ecs.e-c*"      # Economic compute with specific ratios - 60 deletions
+      - "ecs.e1*"       # Economic 1st gen
+      - "ecs.e2*"       # Economic 2nd gen
+      - "ecs.e3*"       # Economic 3rd gen - 11 deletions
+      - "ecs.e4*"       # Economic 4th gen
+      
+      # Ultra high memory instances (44 deletions)
+      - "ecs.u*"        # Ultra memory instances (u0, u1 families)
+      - "ecs.v5-c*"     # Virtual 5th gen compute memory - 24 deletions
+      
+      # Network/Shared instances (36 deletions)
+      - "ecs.sn*"       # Shared network instances - 36 deletions
+      - "ecs.n1*"       # 1st gen network - 19 deletions
+      - "ecs.n2*"       # 2nd gen network - 19 deletions  
+      - "ecs.n3*"       # 3rd gen network
+      - "ecs.n4*"       # 4th gen network
+      
+      # Super computing instances (28 deletions)
+      - "ecs.sc*"       # Super computing instances - 28 deletions
+      - "ecs.hpc*"      # High performance computing - 12 deletions
+      
+      # Storage enhanced instances (19 deletions each)
+      - "ecs.se*"       # Storage enhanced instances - 19 deletions
+      - "ecs.sr*"       # Storage optimized instances - 18 deletions
+      - "ecs.sg*"       # Storage GPU instances - 18 deletions
+      
+      # Legacy shared instances (15 deletions)
+      - "ecs.s1*"       # 1st gen shared (completely obsolete)
+      - "ecs.s2*"       # 2nd gen shared (completely obsolete)
+      - "ecs.s3*"       # 3rd gen shared (obsolete)
+      - "ecs.s6*"       # 6th gen shared entry-level
+      
+      # Burstable instances (maintaining viable t6 series)
+      - "ecs.t1*"       # 1st gen burstable (obsolete)
+      - "ecs.t2*"       # 2nd gen burstable (obsolete)
+      - "ecs.t3*"       # 3rd gen burstable (legacy)
+      - "ecs.t4*"       # 4th gen burstable (limited)
+      - "ecs.t5*"       # 5th gen burstable (some regions)
+      # Note: ecs.t6* series are the ONLY viable specs - DO NOT ignore
+      
+      # FPGA instances (13 deletions)
+      - "ecs.f*"        # FPGA instances (all generations) - 13 deletions
+      
+      # Entry-level instances (6 deletions)
+      - "ecs.mn*"       # Entry-level memory instances - 6 deletions
+      - "ecs.xn*"       # Entry-level instances
+      
+      # Workstation instances (7 deletions)
+      - "ecs.w-c*"      # Workstation compute memory - 7 deletions
+      
+      # Legacy memory instances (4 deletions)
+      - "ecs.m1*"       # 1st gen memory (obsolete) - 4 deletions
+      - "ecs.m2*"       # 2nd gen memory (obsolete) - 4 deletions
+      - "ecs.m3*"       # 3rd gen memory (if exists)
+      
+      # Specialized/Premium instances (very limited availability)
+      - "ecs.ebm*"      # Bare metal instances
+      - "ecs.ens*"      # Enhanced network storage
+      - "ecs.hbm*"      # High bandwidth memory
+      - "ecs.hfc*"      # High frequency computing
+      - "ecs.hfg*"      # High frequency GPU
+      - "ecs.hfr*"      # High frequency memory
+      - "ecs.scc*"      # Super computing cluster
+      - "ecs.scch*"     # Super computing enhanced
+      - "ecs.sccg*"     # Super computing GPU
+      
+      # === FINAL VIABLE SPECS (DO NOT IGNORE) ===
+      # Only these 7 t6 specs are confirmed viable across 24+ regions:
+      # - ecs.t6-c1m1.large (2vCPU, 2GB) - Available in 24 regions
+      # - ecs.t6-c1m2.large (2vCPU, 4GB) - Available in 24 regions  
+      # - ecs.t6-c1m4.2xlarge (8vCPU, 32GB) - Available in 24 regions
+      # - ecs.t6-c1m4.large (2vCPU, 8GB) - Available in 24 regions
+      # - ecs.t6-c1m4.xlarge (4vCPU, 16GB) - Available in 24 regions
+      # - ecs.t6-c2m1.large (2vCPU, 1GB) - Available in 24 regions
+      # - ecs.t6-c4m1.large (2vCPU, 0.5GB) - Available in 24 regions
+    regions:
+      # === SIMPLIFIED REGIONAL PATTERNS (Post-Sequential Cleanup) ===
+      # After global VFX and video-trans elimination, only C6/C7 regional patterns remain relevant
+      # Based on sequential cleanup: Phase 1 (80.6%) + Phase 2 (89.6% total)
+      
+      # Note: VFX families and video-trans are now globally ignored above
+      # Regional patterns maintained for remaining C6/C7 series that may still need regional filtering
+      
+      # Asia Pacific regions
+      ap-northeast-1:
+        - "ecs.c6[er]*"    # C6e, C6r series unavailable - 13 types
+        - "ecs.c6t*"       # C6t series unavailable - 4 types
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series - 5 types
+      
+      ap-northeast-2:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      ap-southeast-1:
+        - "ecs.c6[er]*"    # C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      ap-southeast-3:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      ap-southeast-5:
+        - "ecs.c6[er]*"    # C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      ap-southeast-6:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      ap-southeast-7:
+        - "ecs.c6[er]*"    # C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      # European regions
+      eu-central-1:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      eu-west-1:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      # Middle East regions  
+      me-central-1:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      me-east-1:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      # America regions
+      na-south-1:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      us-east-1:
+        - "ecs.c6[er]*"    # C6e, C6r series unavailable (C6a available)
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      us-west-1:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      # China regions - different availability patterns
+      cn-beijing:
+        - "ecs.c6[ar]*"    # C6a, C6r unavailable (C6e available)
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series - specialized instances
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-shanghai:
+        - "ecs.c6[r]*"     # C6r unavailable (C6a, C6e available)
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-hangzhou:
+        - "ecs.c6[ar]*"    # C6a, C6r unavailable (C6e available)
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-guangzhou:
+        - "ecs.c6[ar]*"    # C6a, C6r some variations unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-shenzhen:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-chengdu:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-hongkong:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-qingdao:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-huhehaote:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-wulanchabu:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-zhangjiakou:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-nanjing:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-fuzhou:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-heyuan:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+      
+      cn-wuhan-lr:
+        - "ecs.c6[aer]*"   # C6a, C6e, C6r series unavailable
+        - "ecs.c6t*"       # C6t series unavailable
+        - "ecs.c7[ah]*"    # C7a, C7h series
+        - "ecs.c[1-2]*"    # Legacy C1, C2 series
+  
+  aws:
+    description: "AWS spec ignore patterns"
+    global_patterns:
+      # Spot instances (variable pricing)
+      # - "spot"
+      # Legacy instance types
+      # - "t1."
+      # - "m1."
+      # - "c1."
+      # - "cc1."
+      # - "cc2."
+      # High memory instances (specialized)
+      # - "x1e."
+      # - "x1."
+      # FPGA instances (specialized)
+      # - "f1."
+    regions: {}
+  
+  azure:
+    description: "Azure spec ignore patterns" 
+    global_patterns:
+      # Gen1 only VMs (legacy)
+      # - "Standard_A"
+      # - "Basic_A"
+      # Legacy series
+      # - "Standard_D1"
+      # High performance computing (specialized)
+      # - "Standard_H"
+    regions: {}
+  
+  gcp:
+    description: "GCP spec ignore patterns"
+    global_patterns:
+      # Legacy machine types
+      # - "f1-"
+      # - "g1-"
+      # Preemptible instances
+      # - "preemptible"
+    regions: {}
+

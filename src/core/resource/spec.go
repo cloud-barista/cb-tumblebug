@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"slices"
@@ -37,6 +38,7 @@ import (
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -389,18 +391,63 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 		return 0, nil
 	}
 
-	// Pre-allocate slice with known capacity to reduce memory allocations
-	tmpSpecList := make([]model.SpecInfo, 0, len(specsInConnection.Vmspec))
+	// Step 1: Pre-filter specs to ignore based on cloudspec_ignore.yaml
+	totalSpecs := len(specsInConnection.Vmspec)
+	filteredSpecs := make([]model.SpiderSpecInfo, 0, totalSpecs)
+	ignoredCount := 0
 
-	// Process specs and clean up memory immediately
+	log.Debug().
+		Str("connection", connConfigName).
+		Str("provider", connConfig.ProviderName).
+		Str("region", connConfig.RegionDetail.RegionName).
+		Int("totalSpecs", totalSpecs).
+		Msg("Starting spec filtering process")
+
+	// Filter out specs that should be ignored
 	for i := range specsInConnection.Vmspec {
 		spiderSpec := specsInConnection.Vmspec[i]
+
+		if shouldIgnoreSpec(spiderSpec.Name, connConfig.ProviderName, connConfig.RegionDetail.RegionName) {
+			log.Debug().
+				Str("spec", spiderSpec.Name).
+				Str("provider", connConfig.ProviderName).
+				Str("region", connConfig.RegionDetail.RegionName).
+				Msg("Ignoring Spec")
+			ignoredCount++
+			continue
+		}
+
+		filteredSpecs = append(filteredSpecs, spiderSpec)
+	}
+
+	// Clear original specs list to free memory
+	specsInConnection.Vmspec = nil
+	specsInConnection = model.SpiderSpecList{}
+
+	// Log filtering results
+	filteredCount := len(filteredSpecs)
+	log.Info().
+		Str("connection", connConfigName).
+		Str("provider", connConfig.ProviderName).
+		Str("region", connConfig.RegionDetail.RegionName).
+		Int("totalSpecs", totalSpecs).
+		Int("ignoredSpecs", ignoredCount).
+		Int("filteredSpecs", filteredCount).
+		Msgf("Spec filtering completed: %d/%d specs will be processed (%d ignored)",
+			filteredCount, totalSpecs, ignoredCount)
+
+	// Step 2: Process filtered specs and convert to Tumblebug format
+	tmpSpecList := make([]model.SpecInfo, 0, filteredCount)
+
+	// Process only the filtered specs
+	for i := range filteredSpecs {
+		spiderSpec := filteredSpecs[i]
 
 		tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(connConfig, spiderSpec)
 		if errConvert != nil {
 			log.Debug().Err(errConvert).Msgf("Skip ConvertSpiderSpecToTumblebugSpec for %s", spiderSpec.Name)
 			// Clear the processed item immediately
-			specsInConnection.Vmspec[i] = model.SpiderSpecInfo{}
+			filteredSpecs[i] = model.SpiderSpecInfo{}
 			continue
 		}
 
@@ -431,14 +478,24 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 		tmpSpecList = append(tmpSpecList, tumblebugSpec)
 
 		// Clear the processed spider spec immediately to free memory
-		specsInConnection.Vmspec[i] = model.SpiderSpecInfo{}
+		filteredSpecs[i] = model.SpiderSpecInfo{}
 	}
 
-	// Release the original spider spec list immediately after processing
-	specsInConnection.Vmspec = nil
-	specsInConnection = model.SpiderSpecList{}
+	// Release the filtered specs list immediately after processing
+	filteredSpecs = nil
 
 	specCount := uint(len(tmpSpecList))
+
+	// Log spec processing summary
+	log.Info().
+		Str("connection", connConfigName).
+		Str("provider", connConfig.ProviderName).
+		Str("region", connConfig.RegionDetail.RegionName).
+		Int("totalSpecs", totalSpecs).
+		Int("ignoredSpecs", ignoredCount).
+		Int("processedSpecs", int(specCount)).
+		Msgf("Spec processing completed: %d/%d specs processed (%d ignored)",
+			specCount, totalSpecs, ignoredCount)
 
 	// Perform bulk registration
 	if len(tmpSpecList) > 0 {
@@ -1609,7 +1666,7 @@ func GetAvailableRegionZonesForSpecList(provider string, cspSpecNames []string) 
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
 
-			common.RandomSleep(0, 10)
+			common.RandomSleep(0, 20)
 
 			// Query single spec
 			specResult, err := GetAvailableRegionZonesForSpec(provider, spec)
@@ -1791,6 +1848,15 @@ func UpdateExistingSpecListByAvailableRegionZones(nsId string, provider string) 
 	var processedSpecsCount int
 	var skippedSpecsCount int
 
+	// Collect deletion information for YAML file
+	specsToIgnore := make(map[string]map[string][]string) // provider -> region -> []specNames
+	globalIgnoreSpecs := make(map[string][]string)        // provider -> []specNames (specs to ignore in all regions)
+
+	// Initialize provider entry
+	if specsToIgnore[provider] == nil {
+		specsToIgnore[provider] = make(map[string][]string)
+	}
+
 	// For each unique spec name, find specs in regions where it's not available
 	for _, specName := range uniqueSpecNames {
 		availableRegions, exists := specAvailabilityMap[specName]
@@ -1813,6 +1879,10 @@ func UpdateExistingSpecListByAvailableRegionZones(nsId string, provider string) 
 			for _, spec := range specsToDelete {
 				specIdsToDelete = append(specIdsToDelete, spec.Id)
 			}
+
+			// Add to global ignore list (spec not available in any region)
+			globalIgnoreSpecs[provider] = append(globalIgnoreSpecs[provider], specName)
+
 			processedSpecsCount++
 			continue
 		}
@@ -1852,6 +1922,22 @@ func UpdateExistingSpecListByAvailableRegionZones(nsId string, provider string) 
 				// Spec is not available in its region, mark for deletion
 				specIdsToDelete = append(specIdsToDelete, spec.Id)
 				instancesMarkedForDeletion++
+
+				// Add to region-specific ignore list
+				if specsToIgnore[provider][region] == nil {
+					specsToIgnore[provider][region] = make([]string, 0)
+				}
+				// Check if spec is already in the list for this region
+				found := false
+				for _, existingSpec := range specsToIgnore[provider][region] {
+					if existingSpec == specName {
+						found = true
+						break
+					}
+				}
+				if !found {
+					specsToIgnore[provider][region] = append(specsToIgnore[provider][region], specName)
+				}
 			}
 		}
 
@@ -1941,6 +2027,40 @@ func UpdateExistingSpecListByAvailableRegionZones(nsId string, provider string) 
 			Msg("No specs identified for deletion - all specs are available in their regions")
 	}
 
+	// Step 6: Log deletion information in structured format and prepare API response
+	logSpecsToIgnoreInfo(provider, specsToIgnore, globalIgnoreSpecs)
+
+	// Prepare specs to ignore info for API response
+	specsToIgnoreData := &model.SpecsToIgnoreData{
+		LastUpdated:          time.Now(),
+		Description:          "Specs that should be ignored during availability checks. Global specs are unavailable in all regions, region-specific specs are unavailable only in specific regions.",
+		GlobalIgnoreSpecs:    make(map[string][]string),
+		RegionSpecificIgnore: make(map[string]map[string][]string),
+	}
+
+	// Populate global ignore specs for API response
+	for cspProvider, specs := range globalIgnoreSpecs {
+		if len(specs) > 0 {
+			sort.Strings(specs)
+			specsToIgnoreData.GlobalIgnoreSpecs[cspProvider] = specs
+		}
+	}
+
+	// Populate region-specific ignore specs for API response
+	for cspProvider, regions := range specsToIgnore {
+		if specsToIgnoreData.RegionSpecificIgnore[cspProvider] == nil {
+			specsToIgnoreData.RegionSpecificIgnore[cspProvider] = make(map[string][]string)
+		}
+
+		for region, specs := range regions {
+			if len(specs) > 0 {
+				sort.Strings(specs)
+				specsToIgnoreData.RegionSpecificIgnore[cspProvider][region] = specs
+			}
+		}
+	}
+
+	result.SpecsToIgnoreInfo = specsToIgnoreData
 	result.CleanupDurationMs = time.Since(startTime).Milliseconds()
 
 	log.Info().
@@ -2395,4 +2515,255 @@ func isAzureGen1OnlySpec(specName string) bool {
 	// All other families support Gen2 by default based on Microsoft documentation
 	// Gen2 supported families: B, E, F, L, M, NC, ND, NV, HB, HC, HX
 	return false
+}
+
+// logSpecsToIgnoreInfo logs the specs to ignore information in structured format
+// This is more suitable for containerized environments than creating files
+func logSpecsToIgnoreInfo(provider string, specsToIgnore map[string]map[string][]string, globalIgnoreSpecs map[string][]string) {
+	// Prepare structured data for logging
+	data := model.SpecsToIgnoreData{
+		LastUpdated:          time.Now(),
+		Description:          "Specs that should be ignored during availability checks. Global specs are unavailable in all regions, region-specific specs are unavailable only in specific regions.",
+		GlobalIgnoreSpecs:    make(map[string][]string),
+		RegionSpecificIgnore: make(map[string]map[string][]string),
+	}
+
+	// Prepare global ignore specs for logging
+	for cspProvider, specs := range globalIgnoreSpecs {
+		if len(specs) > 0 {
+			sort.Strings(specs)
+			data.GlobalIgnoreSpecs[cspProvider] = specs
+		}
+	}
+
+	// Prepare region-specific ignore specs for logging
+	for cspProvider, regions := range specsToIgnore {
+		if data.RegionSpecificIgnore[cspProvider] == nil {
+			data.RegionSpecificIgnore[cspProvider] = make(map[string][]string)
+		}
+
+		for region, specs := range regions {
+			if len(specs) > 0 {
+				sort.Strings(specs)
+				data.RegionSpecificIgnore[cspProvider][region] = specs
+			}
+		}
+	}
+
+	// Log the specs to ignore information in structured format
+	globalCount := 0
+	regionalCount := 0
+
+	// Count global specs
+	if globalSpecs, exists := data.GlobalIgnoreSpecs[provider]; exists {
+		globalCount = len(globalSpecs)
+	}
+
+	// Count regional specs
+	if regions, exists := data.RegionSpecificIgnore[provider]; exists {
+		for _, specs := range regions {
+			regionalCount += len(specs)
+		}
+	}
+
+	// Create detailed log entry with all specs information
+	logEvent := log.Info().
+		Str("provider", provider).
+		Int("globalIgnoreCount", globalCount).
+		Int("regionSpecificCount", regionalCount).
+		Time("timestamp", data.LastUpdated)
+
+	// Add global specs to log if any
+	if globalSpecs, exists := data.GlobalIgnoreSpecs[provider]; exists && len(globalSpecs) > 0 {
+		logEvent = logEvent.Strs("globalIgnoreSpecs", globalSpecs)
+	}
+
+	// Add regional specs to log if any
+	if regions, exists := data.RegionSpecificIgnore[provider]; exists && len(regions) > 0 {
+		for region, specs := range regions {
+			if len(specs) > 0 {
+				logEvent = logEvent.Strs(fmt.Sprintf("regionIgnoreSpecs_%s", region), specs)
+			}
+		}
+	}
+
+	// Log the complete information
+	logEvent.Msg("Specs to ignore information logged for container environment")
+
+	// Also log a summary for easy monitoring
+	log.Debug().
+		Str("provider", provider).
+		Interface("specsToIgnoreData", data).
+		Msg("Complete specs to ignore data structure")
+}
+
+// Global variable to cache the ignore config
+var (
+	ignoreConfig     *model.CloudSpecIgnoreConfig
+	ignoreConfigOnce sync.Once
+	ignoreConfigErr  error
+)
+
+// loadCloudSpecIgnoreConfig loads the cloudspec_ignore.yaml file using Viper
+func loadCloudSpecIgnoreConfig() (*model.CloudSpecIgnoreConfig, error) {
+	ignoreConfigOnce.Do(func() {
+		// Create a new Viper instance for the ignore config
+		ignoreViper := viper.New()
+
+		// Add possible config paths
+		ignoreViper.AddConfigPath(".")
+		ignoreViper.AddConfigPath("./assets/")
+		ignoreViper.AddConfigPath("../assets/")
+		ignoreViper.SetConfigName("cloudspec_ignore")
+		ignoreViper.SetConfigType("yaml")
+
+		// Try to read the config file
+		err := ignoreViper.ReadInConfig()
+		if err != nil {
+			log.Warn().Err(err).Msg("Could not load cloudspec_ignore.yaml, no spec filtering will be applied")
+			ignoreConfigErr = err
+			return
+		}
+
+		log.Debug().Str("path", ignoreViper.ConfigFileUsed()).Msg("Found cloudspec_ignore.yaml")
+
+		// Manual extraction to handle Viper's type conversion issues
+		var config model.CloudSpecIgnoreConfig
+
+		// Extract global patterns
+		if globalPatternsRaw := ignoreViper.Get("global.patterns"); globalPatternsRaw != nil {
+			if patterns, ok := globalPatternsRaw.([]interface{}); ok {
+				for _, pattern := range patterns {
+					if str, ok := pattern.(string); ok {
+						config.Global.Patterns = append(config.Global.Patterns, str)
+					}
+				}
+			}
+		}
+
+		// Extract CSP-specific patterns
+		config.CSPs = make(map[string]model.CSPIgnorePatterns)
+		if cspsRaw := ignoreViper.Get("csps"); cspsRaw != nil {
+			if cspsMap, ok := cspsRaw.(map[string]interface{}); ok {
+				for cspName, cspDataRaw := range cspsMap {
+					if cspData, ok := cspDataRaw.(map[string]interface{}); ok {
+						var cspConfig model.CSPIgnorePatterns
+
+						// Extract description
+						if desc, exists := cspData["description"]; exists {
+							if descStr, ok := desc.(string); ok {
+								cspConfig.Description = descStr
+							}
+						}
+
+						// Extract global_patterns with proper type handling
+						if globalPatternsRaw, exists := cspData["global_patterns"]; exists && globalPatternsRaw != nil {
+							if patterns, ok := globalPatternsRaw.([]interface{}); ok {
+								for _, pattern := range patterns {
+									if str, ok := pattern.(string); ok {
+										cspConfig.GlobalPatterns = append(cspConfig.GlobalPatterns, str)
+									}
+								}
+							}
+						}
+
+						// Extract regions
+						if regionsRaw, exists := cspData["regions"]; exists && regionsRaw != nil {
+							if regionsMap, ok := regionsRaw.(map[string]interface{}); ok {
+								cspConfig.Regions = make(map[string]model.RegionIgnorePatterns)
+								for regionName, regionDataRaw := range regionsMap {
+									var regionConfig model.RegionIgnorePatterns
+
+									// New format: direct array under region name
+									if regionPatterns, ok := regionDataRaw.([]interface{}); ok {
+										for _, pattern := range regionPatterns {
+											if str, ok := pattern.(string); ok {
+												regionConfig.Patterns = append(regionConfig.Patterns, str)
+											}
+										}
+									}
+
+									cspConfig.Regions[regionName] = regionConfig
+								}
+							}
+						}
+
+						config.CSPs[cspName] = cspConfig
+					}
+				}
+			}
+		}
+
+		ignoreConfig = &config
+		log.Info().Msg("Successfully loaded cloudspec_ignore.yaml")
+
+		// Debug: Print loaded config structure
+		log.Debug().
+			Int("globalPatterns", len(config.Global.Patterns)).
+			Interface("globalPatterns", config.Global.Patterns).
+			Msg("Loaded global patterns")
+
+	})
+
+	return ignoreConfig, ignoreConfigErr
+}
+
+// shouldIgnoreSpec checks if a spec should be ignored based on the ignore configuration
+func shouldIgnoreSpec(specName, providerName, regionName string) bool {
+	config, err := loadCloudSpecIgnoreConfig()
+	if err != nil || config == nil {
+		// If config can't be loaded, don't ignore any specs
+		return false
+	}
+
+	// Check global patterns first
+	for _, pattern := range config.Global.Patterns {
+		if matchesPattern(specName, pattern) {
+			return true
+		}
+	}
+
+	// Get CSP-specific patterns from the CSPs map
+	cspPatterns, exists := config.CSPs[strings.ToLower(providerName)]
+	if !exists {
+		return false
+	}
+
+	// Check CSP global patterns
+	for _, pattern := range cspPatterns.GlobalPatterns {
+		if matchesPattern(specName, pattern) {
+			return true
+		}
+	}
+
+	// Check region-specific patterns
+	if regionPatterns, regionExists := cspPatterns.Regions[regionName]; regionExists {
+		// Check direct patterns array
+		for _, pattern := range regionPatterns.Patterns {
+			if matchesPattern(specName, pattern) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// matchesPattern checks if a spec name matches a given pattern
+// Supports basic wildcard matching with * and ?
+func matchesPattern(specName, pattern string) bool {
+	// Simple wildcard matching implementation
+	// * matches any sequence of characters
+	// ? matches any single character
+
+	matched, err := filepath.Match(pattern, specName)
+	if err != nil {
+		log.Debug().Err(err).
+			Str("spec", specName).
+			Str("pattern", pattern).
+			Msg("Error matching pattern, assuming no match")
+		return false
+	}
+
+	return matched
 }

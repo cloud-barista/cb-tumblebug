@@ -14094,6 +14094,11 @@ components:
         specsToDelete:
           type: integer
           example: 5
+        specsToIgnoreInfo:
+          type: object
+          description: Detailed information about specs that were identified for deletion
+          allOf:
+          - $ref: '#/components/schemas/model.SpecsToIgnoreData'
         totalSpecsChecked:
           type: integer
           example: 50
@@ -14280,6 +14285,27 @@ components:
         totalSuccesses:
           type: integer
           description: TotalSuccesses is the total number of successes for this spec
+    model.SpecsToIgnoreData:
+      type: object
+      properties:
+        description:
+          type: string
+        global_ignore_specs:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        last_updated:
+          type: string
+        region_specific_ignore:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                type: string
     model.SpiderAccessInfo:
       type: object
       properties:
