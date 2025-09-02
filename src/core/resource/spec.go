@@ -2673,7 +2673,7 @@ func loadCloudSpecIgnoreConfig() (*model.CloudSpecIgnoreConfig, error) {
 								cspConfig.Regions = make(map[string]model.RegionIgnorePatterns)
 								for regionName, regionDataRaw := range regionsMap {
 									var regionConfig model.RegionIgnorePatterns
-									
+
 									// New format: direct array under region name
 									if regionPatterns, ok := regionDataRaw.([]interface{}); ok {
 										for _, pattern := range regionPatterns {
@@ -2682,7 +2682,7 @@ func loadCloudSpecIgnoreConfig() (*model.CloudSpecIgnoreConfig, error) {
 											}
 										}
 									}
-									
+
 									cspConfig.Regions[regionName] = regionConfig
 								}
 							}
@@ -2696,21 +2696,13 @@ func loadCloudSpecIgnoreConfig() (*model.CloudSpecIgnoreConfig, error) {
 
 		ignoreConfig = &config
 		log.Info().Msg("Successfully loaded cloudspec_ignore.yaml")
-		
+
 		// Debug: Print loaded config structure
 		log.Debug().
 			Int("globalPatterns", len(config.Global.Patterns)).
 			Interface("globalPatterns", config.Global.Patterns).
 			Msg("Loaded global patterns")
-		
-		if alibabaConfig, exists := config.CSPs["alibaba"]; exists {
-			log.Debug().
-				Int("alibabaGlobalPatterns", len(alibabaConfig.GlobalPatterns)).
-				Interface("alibabaGlobalPatterns", alibabaConfig.GlobalPatterns).
-				Msg("Loaded alibaba patterns")
-		} else {
-			log.Debug().Msg("Alibaba config not found in CSPs map")
-		}
+
 	})
 
 	return ignoreConfig, ignoreConfigErr
@@ -2724,25 +2716,9 @@ func shouldIgnoreSpec(specName, providerName, regionName string) bool {
 		return false
 	}
 
-	// // Debug logging for troubleshooting (temporarily enabled)
-	// if strings.ToLower(providerName) == "alibaba" {
-	// 	log.Debug().
-	// 		Str("spec", specName).
-	// 		Str("provider", providerName).
-	// 		Str("providerLower", strings.ToLower(providerName)).
-	// 		Str("region", regionName).
-	// 		Msg("Checking spec ignore patterns for alibaba")
-	// }
-
 	// Check global patterns first
 	for _, pattern := range config.Global.Patterns {
 		if matchesPattern(specName, pattern) {
-			// if strings.ToLower(providerName) == "alibaba" {
-			// 	log.Debug().
-			// 		Str("spec", specName).
-			// 		Str("pattern", pattern).
-			// 		Msg("Spec matched global ignore pattern")
-			// }
 			return true
 		}
 	}
@@ -2750,60 +2726,21 @@ func shouldIgnoreSpec(specName, providerName, regionName string) bool {
 	// Get CSP-specific patterns from the CSPs map
 	cspPatterns, exists := config.CSPs[strings.ToLower(providerName)]
 	if !exists {
-		// // Unknown provider, no specific patterns
-		// if strings.ToLower(providerName) == "alibaba" {
-		// 	log.Debug().
-		// 		Str("provider", providerName).
-		// 		Str("providerLower", strings.ToLower(providerName)).
-		// 		Msg("Provider not found in CSP ignore patterns")
-
-		// 	// List available CSPs for debugging
-		// 	var availableCSPs []string
-		// 	for csp := range config.CSPs {
-		// 		availableCSPs = append(availableCSPs, csp)
-		// 	}
-		// 	log.Debug().
-		// 		Interface("availableCSPs", availableCSPs).
-		// 		Msg("Available CSPs in ignore configuration")
-		// }
 		return false
-	}
-
-	if strings.ToLower(providerName) == "alibaba" {
-		log.Debug().
-			Str("provider", providerName).
-			Int("globalPatterns", len(cspPatterns.GlobalPatterns)).
-			Interface("globalPatterns", cspPatterns.GlobalPatterns).
-			Msg("Found CSP-specific patterns for alibaba")
 	}
 
 	// Check CSP global patterns
 	for _, pattern := range cspPatterns.GlobalPatterns {
 		if matchesPattern(specName, pattern) {
-			if strings.ToLower(providerName) == "alibaba" {
-				log.Debug().
-					Str("spec", specName).
-					Str("pattern", pattern).
-					Str("provider", providerName).
-					Msg("Spec matched CSP global ignore pattern")
-			}
 			return true
 		}
 	}
 
-	// Check region-specific patterns  
+	// Check region-specific patterns
 	if regionPatterns, regionExists := cspPatterns.Regions[regionName]; regionExists {
 		// Check direct patterns array
 		for _, pattern := range regionPatterns.Patterns {
 			if matchesPattern(specName, pattern) {
-				if strings.ToLower(providerName) == "alibaba" {
-					log.Debug().
-						Str("spec", specName).
-						Str("pattern", pattern).
-						Str("provider", providerName).
-						Str("region", regionName).
-						Msg("Spec matched region-specific ignore pattern")
-				}
 				return true
 			}
 		}
