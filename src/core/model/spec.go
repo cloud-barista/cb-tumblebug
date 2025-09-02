@@ -512,5 +512,5 @@ type CSPIgnorePatterns struct {
 
 // RegionIgnorePatterns represents ignore patterns for a specific region within a CSP
 type RegionIgnorePatterns struct {
-	AdditionalPatterns []string `yaml:"additional_patterns,omitempty"`
+	Patterns []string `yaml:",flow,omitempty"` // Direct array patterns for simplified YAML structure
 }
