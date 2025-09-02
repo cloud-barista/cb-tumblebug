@@ -1,0 +1,90 @@
+# Cloud Spec Ignore Configuration
+# This file defines patterns for specs that should be ignored during spec fetching operations
+# to improve performance and avoid processing unnecessary or problematic spec types.
+
+# Global patterns that apply to all CSPs
+global:
+  patterns:
+    - "test"
+    - "experimental" 
+    - "deprecated"
+    - "legacy"
+    - "preview"
+    - "beta"
+
+# CSP-specific ignore patterns
+csps:
+  alibaba:
+    description: "Alibaba Cloud spec ignore patterns"
+    global_patterns:
+      # Test pattern - specific spec that should exist
+      - "ecs.t5-lc1m2.large"
+      # Test pattern - this should match many specs
+      - "ecs.t"
+      # Bare Metal instances (high cost, specialized)
+      - "ecs.ebm"
+      # VFX workstations (specialized, high cost)
+      - "ecs.vfx-"
+      # POC/Test instances (not for production)
+      - "ecs.poc-test."
+      # Video transcoding instances (specialized)
+      - "ecs.video-trans."
+      # High bandwidth memory instances (specialized)
+      - "ecs.hbm-"
+      # High frequency computing (specialized)
+      - "ecs.hfc"
+      - "ecs.hfg"
+      - "ecs.hfr"
+      # Super Computing Cluster (specialized)
+      - "ecs.scc"
+      # Legacy/deprecated instances
+      - "ecs.t1."
+      - "ecs.s1."
+    regions:
+      ap-northeast-1:
+        additional_patterns:
+          - "ecs.local-"
+      ap-southeast-1:
+        additional_patterns:
+          - "ecs.regional-"
+  
+  aws:
+    description: "AWS spec ignore patterns"
+    global_patterns:
+      # # Spot instances (variable pricing)
+      # - "spot"
+      # # Legacy instance types
+      # - "t1."
+      # - "m1."
+      # - "c1."
+      # - "cc1."
+      # - "cc2."
+      # # High memory instances (specialized)
+      # - "x1e."
+      # - "x1."
+      # # FPGA instances (specialized)
+      # - "f1."
+    regions: {}
+  
+  azure:
+    description: "Azure spec ignore patterns" 
+    global_patterns:
+      # # Gen1 only VMs (legacy)
+      # - "Standard_A"
+      # - "Basic_A"
+      # # Legacy series
+      # - "Standard_D1"
+      # # High performance computing (specialized)
+      # - "Standard_H"
+    regions: {}
+  
+  gcp:
+    description: "GCP spec ignore patterns"
+    global_patterns:
+      # # Legacy machine types
+      # - "f1-"
+      # - "g1-"
+      # # Preemptible instances
+      # - "preemptible"
+    regions: {}
+

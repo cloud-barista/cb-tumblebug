@@ -143,8 +143,9 @@ services:
     restart: always
     networks:
       - internal_network
-      # # Enable external network for outbound access (not ideal for security)
-      # - external_network
+      # Enable external network for outbound access (not ideal for security)
+      # In production, comment this out to disable external access
+      - external_network
     ports:
       - 5432:5432
     volumes:
@@ -353,44 +354,44 @@ services:
   #     retries: 3
   #     start_period: 10s
 
-  # # CB-Tumblebug Metabase Dashboard for PostgreSQL
-  # # Enable this service to manage the PostgreSQL database of CB-Tumblebug.
-  # cb-tumblebug-metabase:
-  #   image: metabase/metabase:latest
-  #   container_name: cb-tumblebug-metabase
-  #   restart: always
-  #   networks:
-  #     - internal_network
-  #     - external_network
-  #   ports:
-  #     - 3000:3000
-  #   environment:
-  #     # - MB_DB_TYPE=postgres
-  #     # - MB_DB_DBNAME=cb_tumblebug
-  #     # - MB_DB_PORT=5432
-  #     # - MB_DB_USER=cb_tumblebug
-  #     # - MB_DB_PASS=cb_tumblebug
-  #     # - MB_DB_HOST=cb-tumblebug-postgres
-  #     - MB_ADMIN_EMAIL=admin@cloud-barista.org
-  #     - MB_ADMIN_PASSWORD=cb_tumblebug11
-  #     - MB_ADMIN_FIRST_NAME=Cloud
-  #     - MB_ADMIN_LAST_NAME=Barista
-  #     - MB_SITE_NAME=CB-Tumblebug Analytics
-  #     - MB_SITE_LOCALE=en
-  #     - JAVA_TIMEZONE=Asia/Seoul
-  #     - MB_JETTY_REQUEST_LOGS_ENABLED=false
-  #     - MB_JETTY_ALLOWED_HOSTS=localhost
-  #     - MB_LOGGER_LEVEL=OFF
-  #     - MB_LOGGING_LEVEL=OFF
-  #     - MB_EMOJI_IN_LOGS=false
-  #   volumes:
-  #     - ./container-volume/cb-tumblebug-container/meta_db/metabase-data:/metabase-data
-  #   depends_on:
-  #     cb-tumblebug-postgres:
-  #       condition: service_healthy
-  #   user: "0:0"
-  #   logging:
-  #     driver: "none"
+  # CB-Tumblebug Metabase Dashboard for PostgreSQL
+  # Enable this service to manage the PostgreSQL database of CB-Tumblebug.
+  cb-tumblebug-metabase:
+    image: metabase/metabase:latest
+    container_name: cb-tumblebug-metabase
+    restart: always
+    networks:
+      - internal_network
+      - external_network
+    ports:
+      - 3000:3000
+    environment:
+      # - MB_DB_TYPE=postgres
+      # - MB_DB_DBNAME=cb_tumblebug
+      # - MB_DB_PORT=5432
+      # - MB_DB_USER=cb_tumblebug
+      # - MB_DB_PASS=cb_tumblebug
+      # - MB_DB_HOST=cb-tumblebug-postgres
+      - MB_ADMIN_EMAIL=admin@cloud-barista.org
+      - MB_ADMIN_PASSWORD=cb_tumblebug11
+      - MB_ADMIN_FIRST_NAME=Cloud
+      - MB_ADMIN_LAST_NAME=Barista
+      - MB_SITE_NAME=CB-Tumblebug Analytics
+      - MB_SITE_LOCALE=en
+      - JAVA_TIMEZONE=Asia/Seoul
+      - MB_JETTY_REQUEST_LOGS_ENABLED=false
+      - MB_JETTY_ALLOWED_HOSTS=localhost
+      - MB_LOGGER_LEVEL=OFF
+      - MB_LOGGING_LEVEL=OFF
+      - MB_EMOJI_IN_LOGS=false
+    volumes:
+      - ./container-volume/cb-tumblebug-container/meta_db/metabase-data:/metabase-data
+    depends_on:
+      cb-tumblebug-postgres:
+        condition: service_healthy
+    user: "0:0"
+    logging:
+      driver: "none"
 
 
   # # CB-Tumblebug pgAdmin Dashboard for PostgreSQL

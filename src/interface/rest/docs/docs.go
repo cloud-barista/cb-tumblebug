@@ -17760,6 +17760,14 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 5
                 },
+                "specsToIgnoreInfo": {
+                    "description": "Detailed information about specs that were identified for deletion",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.SpecsToIgnoreData"
+                        }
+                    ]
+                },
                 "totalSpecsChecked": {
                     "type": "integer",
                     "example": 50
@@ -18015,6 +18023,38 @@ const docTemplate = `{
                 "totalSuccesses": {
                     "description": "TotalSuccesses is the total number of successes for this spec",
                     "type": "integer"
+                }
+            }
+        },
+        "model.SpecsToIgnoreData": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "global_ignore_specs": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "last_updated": {
+                    "type": "string"
+                },
+                "region_specific_ignore": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
                 }
             }
         },

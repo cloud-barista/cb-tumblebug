@@ -465,6 +465,16 @@ type SpecCleanupResult struct {
 	AvailabilityCheckMs int64                       `json:"availabilityCheckMs" example:"12500"`
 	FailedDeletions     []string                    `json:"failedDeletions,omitempty" example:"ecs.t5.large"`
 	AvailabilityResults SpecAvailabilityBatchResult `json:"availabilityResults"`
+	// Detailed information about specs that were identified for deletion
+	SpecsToIgnoreInfo *SpecsToIgnoreData `json:"specsToIgnoreInfo,omitempty"`
+}
+
+// SpecsToIgnoreData represents the structure for specs that should be ignored during availability checks
+type SpecsToIgnoreData struct {
+	LastUpdated          time.Time                      `json:"last_updated"`
+	Description          string                         `json:"description"`
+	GlobalIgnoreSpecs    map[string][]string            `json:"global_ignore_specs"`
+	RegionSpecificIgnore map[string]map[string][]string `json:"region_specific_ignore"`
 }
 
 // Availability request structures for API handlers
@@ -480,4 +490,27 @@ type GetAvailableRegionZonesListRequest struct {
 
 type UpdateSpecListByAvailabilityRequest struct {
 	Provider string `json:"provider" validate:"required" example:"alibaba"`
+}
+
+// CloudSpecIgnoreConfig represents the structure of cloudspec_ignore.yaml
+type CloudSpecIgnoreConfig struct {
+	Global GlobalIgnorePatterns         `yaml:"global"`
+	CSPs   map[string]CSPIgnorePatterns `yaml:"csps,omitempty"`
+}
+
+// GlobalIgnorePatterns represents global ignore patterns that apply to all CSPs
+type GlobalIgnorePatterns struct {
+	Patterns []string `yaml:"patterns"`
+}
+
+// CSPIgnorePatterns represents ignore patterns for a specific CSP
+type CSPIgnorePatterns struct {
+	Description    string                          `yaml:"description,omitempty"`
+	GlobalPatterns []string                        `yaml:"global_patterns,omitempty"`
+	Regions        map[string]RegionIgnorePatterns `yaml:"regions,omitempty"`
+}
+
+// RegionIgnorePatterns represents ignore patterns for a specific region within a CSP
+type RegionIgnorePatterns struct {
+	AdditionalPatterns []string `yaml:"additional_patterns,omitempty"`
 }

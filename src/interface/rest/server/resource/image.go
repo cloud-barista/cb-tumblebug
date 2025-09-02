@@ -291,17 +291,15 @@ func RestUpdateImagesFromAsset(c echo.Context) error {
 func RestGetImage(c echo.Context) error {
 	nsId := c.Param("nsId")
 	imageKey := c.Param("imageId")
-	log.Debug().Msgf("[Get Image] (nsId: %s, imageKey: %s)", nsId, imageKey)
+
 	imageKey = strings.ReplaceAll(imageKey, " ", "+")
 
 	// Use Go's built-in URL decoding to handle all URL-encoded characters
 	decodedImageKey, err := url.QueryUnescape(imageKey)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Failed to URL decode imageKey: %s, using original", imageKey)
-	} else {
-		imageKey = decodedImageKey
 	}
-	log.Debug().Msgf("[Get Image] (nsId: %s, Refined imageKey: %s)", nsId, imageKey)
+	imageKey = decodedImageKey
 
 	// If the imageKey is an ID, it should be in the format of {providerName}+{regionName}+{cspImageName}
 
