@@ -1794,6 +1794,9 @@ func GetImage(nsId string, cspImageName string) (model.ImageInfo, error) {
 
 	log.Debug().Msg("[Get image] " + cspImageName)
 
+	// Normalize the image name to lower case for searching
+	cspImageName = strings.ToLower(cspImageName)
+
 	providerName, regionName, _, imageIdentifier, err := ResolveProviderRegionZoneResourceKey(cspImageName)
 	if err != nil {
 		// imageKey does not include information for providerName, regionName

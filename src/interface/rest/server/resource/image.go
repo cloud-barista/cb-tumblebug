@@ -16,6 +16,7 @@ package resource
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -277,12 +278,12 @@ func RestUpdateImagesFromAsset(c echo.Context) error {
 // RestGetImage godoc
 // @ID GetImage
 // @Summary Get image
-// @Description GetImage returns an image object if there are matched images for the given namespace and imageKey(Id, CspResourceName)
+// @Description GetImage returns an image object if there are matched images for the given namespace and imageKey(imageId)
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param imageId path string true "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts vaious input types as Image Key: cspImageName"
+// @Param imageId path string true "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts several input forms: 1) provider+imageId, 2) provider+region+imageId, 3) imageId. For exact matching, use provider+imageId form."
 // @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -290,8 +291,19 @@ func RestUpdateImagesFromAsset(c echo.Context) error {
 func RestGetImage(c echo.Context) error {
 	nsId := c.Param("nsId")
 	imageKey := c.Param("imageId")
+	log.Debug().Msgf("[Get Image] (nsId: %s, imageKey: %s)", nsId, imageKey)
 	imageKey = strings.ReplaceAll(imageKey, " ", "+")
-	imageKey = strings.ReplaceAll(imageKey, "%2B", "+")
+
+	// Use Go's built-in URL decoding to handle all URL-encoded characters
+	decodedImageKey, err := url.QueryUnescape(imageKey)
+	if err != nil {
+		log.Warn().Err(err).Msgf("Failed to URL decode imageKey: %s, using original", imageKey)
+	} else {
+		imageKey = decodedImageKey
+	}
+	log.Debug().Msgf("[Get Image] (nsId: %s, Refined imageKey: %s)", nsId, imageKey)
+
+	// If the imageKey is an ID, it should be in the format of {providerName}+{regionName}+{cspImageName}
 
 	content, err := resource.GetImage(nsId, imageKey)
 	return clientManager.EndRequestWithLog(c, err, content)

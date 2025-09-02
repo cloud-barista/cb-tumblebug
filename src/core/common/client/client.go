@@ -56,6 +56,9 @@ const (
 // NoBody is a constant for empty body
 const NoBody = "NOBODY"
 
+// MaxDebugBodyLength is the maximum length of response body for debug logs
+const MaxDebugBodyLength = 1000
+
 // cleanErrorMessage removes unwanted characters from error messages
 func cleanErrorMessage(message string) string {
 	// Remove escaped quotes, newlines, and other escape sequences
@@ -102,6 +105,20 @@ func cleanURL(url string) string {
 		return url[8:] // Remove "https://" (8 characters)
 	}
 	return url
+}
+
+// truncateResponseBody truncates response body for debug logs
+func truncateResponseBody(body []byte) []byte {
+	if len(body) <= MaxDebugBodyLength {
+		return body
+	}
+
+	// Truncate and add indicator
+	truncated := make([]byte, MaxDebugBodyLength+50)
+	copy(truncated, body[:MaxDebugBodyLength])
+	truncatedMsg := fmt.Sprintf("...[truncated %d more chars]", len(body)-MaxDebugBodyLength)
+	copy(truncated[MaxDebugBodyLength:], []byte(truncatedMsg))
+	return truncated[:MaxDebugBodyLength+len(truncatedMsg)]
 }
 
 // SetUseBody returns false if the given body is NoBody
@@ -337,7 +354,9 @@ func ExecuteHttpRequest[B any, T any](
 				Int("status", resp.StatusCode())
 
 			if len(resp.Body()) > 0 {
-				errorLogEvent = errorLogEvent.RawJSON("responseBody", resp.Body())
+				// Use truncated body for debug level
+				truncatedBody := truncateResponseBody(resp.Body())
+				errorLogEvent = errorLogEvent.RawJSON("responseBody", truncatedBody)
 			}
 			errorLogEvent.Msg("Internal Call Error")
 		}
@@ -372,7 +391,9 @@ func ExecuteHttpRequest[B any, T any](
 			Int("status", resp.StatusCode())
 
 		if len(resp.Body()) > 0 {
-			successLogEvent = successLogEvent.RawJSON("responseBody", resp.Body())
+			// Use truncated body for debug level
+			truncatedBody := truncateResponseBody(resp.Body())
+			successLogEvent = successLogEvent.RawJSON("responseBody", truncatedBody)
 		}
 		successLogEvent.Msg("Internal Call OK")
 	}
