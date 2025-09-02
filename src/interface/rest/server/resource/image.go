@@ -283,7 +283,7 @@ func RestUpdateImagesFromAsset(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
-// @Param imageId path string true "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts vaious input types as Image Key: 1) provider+imageId, 2) provider+region+imageId, 3) imageId"
+// @Param imageId path string true "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts several input forms: 1) provider+imageId, 2) provider+region+imageId, 3) imageId. For exact matching, use provider+imageId form."
 // @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
@@ -298,30 +298,6 @@ func RestGetImage(c echo.Context) error {
 	decodedImageKey, err := url.QueryUnescape(imageKey)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Failed to URL decode imageKey: %s, using original", imageKey)
-		// Fall back to manual decoding for common characters
-		imageKey = strings.ReplaceAll(imageKey, "%2B", "+")  // +
-		imageKey = strings.ReplaceAll(imageKey, "%3A", ":")  // :
-		imageKey = strings.ReplaceAll(imageKey, "%2F", "/")  // /
-		imageKey = strings.ReplaceAll(imageKey, "%3F", "?")  // ?
-		imageKey = strings.ReplaceAll(imageKey, "%23", "#")  // #
-		imageKey = strings.ReplaceAll(imageKey, "%26", "&")  // &
-		imageKey = strings.ReplaceAll(imageKey, "%3D", "=")  // =
-		imageKey = strings.ReplaceAll(imageKey, "%25", "%")  // % (handle this last to avoid double decoding)
-		imageKey = strings.ReplaceAll(imageKey, "%40", "@")  // @
-		imageKey = strings.ReplaceAll(imageKey, "%21", "!")  // !
-		imageKey = strings.ReplaceAll(imageKey, "%2A", "*")  // *
-		imageKey = strings.ReplaceAll(imageKey, "%28", "(")  // (
-		imageKey = strings.ReplaceAll(imageKey, "%29", ")")  // )
-		imageKey = strings.ReplaceAll(imageKey, "%5B", "[")  // [
-		imageKey = strings.ReplaceAll(imageKey, "%5D", "]")  // ]
-		imageKey = strings.ReplaceAll(imageKey, "%7B", "{")  // {
-		imageKey = strings.ReplaceAll(imageKey, "%7D", "}")  // }
-		imageKey = strings.ReplaceAll(imageKey, "%7C", "|")  // |
-		imageKey = strings.ReplaceAll(imageKey, "%5C", "\\") // \
-		imageKey = strings.ReplaceAll(imageKey, "%5E", "^")  // ^
-		imageKey = strings.ReplaceAll(imageKey, "%7E", "~")  // ~
-		imageKey = strings.ReplaceAll(imageKey, "%60", "`")  // `
-		imageKey = strings.ReplaceAll(imageKey, "%20", " ")  // space
 	} else {
 		imageKey = decodedImageKey
 	}

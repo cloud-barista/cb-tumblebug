@@ -8015,7 +8015,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts vaious input types as Image Key: 1) provider+imageId, 2) provider+region+imageId, 3) imageId",
+                        "description": "(Note: imageId param will be refined in next release, enabled for temporal support) This param accepts several input forms: 1) provider+imageId, 2) provider+region+imageId, 3) imageId. For exact matching, use provider+imageId form.",
                         "name": "imageId",
                         "in": "path",
                         "required": true

@@ -6566,8 +6566,9 @@ paths:
       - name: imageId
         in: path
         description: "(Note: imageId param will be refined in next release, enabled\
-          \ for temporal support) This param accepts vaious input types as Image Key:\
-          \ 1) provider+imageId, 2) provider+region+imageId, 3) imageId"
+          \ for temporal support) This param accepts several input forms: 1) provider+imageId,\
+          \ 2) provider+region+imageId, 3) imageId. For exact matching, use provider+imageId\
+          \ form."
         required: true
         schema:
           type: string

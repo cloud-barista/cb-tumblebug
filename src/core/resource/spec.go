@@ -1282,12 +1282,13 @@ func FetchPriceForConnConfig(config model.ConnConfig) error {
 		return err
 	}
 
-	if strings.EqualFold(csp.GCP, config.ProviderName) {
-		log.Info().Msgf("GCP price %v", priceInConnection)
-	}
+	// To check GCP prices since it frequently shows unexpected results
+	// if strings.EqualFold(csp.GCP, config.ProviderName) {
+	// 	log.Debug().Msgf("GCP price %v", priceInConnection)
+	// }
 
 	if len(priceInConnection.PriceList) == 0 {
-		log.Info().Msgf("No prices found for connection %s",
+		log.Warn().Msgf("No prices found for connection %s",
 			config.ConfigName)
 		return nil
 	}
