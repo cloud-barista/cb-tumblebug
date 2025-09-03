@@ -78,6 +78,7 @@ func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec mo
 
 	// For Azure, filter out Gen1-only VM families
 	if providerName == string(csp.Azure) {
+		// TODO: needs to be merged with a general ignore filtering method
 		if isAzureGen1OnlySpec(tumblebugSpec.CspSpecName) {
 			err := fmt.Errorf("skipping Azure Gen1-only VM family spec: %s", tumblebugSpec.CspSpecName)
 			emptyTumblebugSpec := model.SpecInfo{}
@@ -396,23 +397,23 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 	filteredSpecs := make([]model.SpiderSpecInfo, 0, totalSpecs)
 	ignoredCount := 0
 
-	log.Debug().
-		Str("connection", connConfigName).
-		Str("provider", connConfig.ProviderName).
-		Str("region", connConfig.RegionDetail.RegionName).
-		Int("totalSpecs", totalSpecs).
-		Msg("Starting spec filtering process")
+	// log.Debug().
+	// 	Str("connection", connConfigName).
+	// 	Str("provider", connConfig.ProviderName).
+	// 	Str("region", connConfig.RegionDetail.RegionName).
+	// 	Int("totalSpecs", totalSpecs).
+	// 	Msg("Starting spec filtering process")
 
 	// Filter out specs that should be ignored
 	for i := range specsInConnection.Vmspec {
 		spiderSpec := specsInConnection.Vmspec[i]
 
 		if shouldIgnoreSpec(spiderSpec.Name, connConfig.ProviderName, connConfig.RegionDetail.RegionName) {
-			log.Debug().
-				Str("spec", spiderSpec.Name).
-				Str("provider", connConfig.ProviderName).
-				Str("region", connConfig.RegionDetail.RegionName).
-				Msg("Ignoring Spec")
+			// log.Debug().
+			// 	Str("spec", spiderSpec.Name).
+			// 	Str("provider", connConfig.ProviderName).
+			// 	Str("region", connConfig.RegionDetail.RegionName).
+			// 	Msg("Ignoring Spec")
 			ignoredCount++
 			continue
 		}
@@ -426,15 +427,15 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 
 	// Log filtering results
 	filteredCount := len(filteredSpecs)
-	log.Info().
-		Str("connection", connConfigName).
-		Str("provider", connConfig.ProviderName).
-		Str("region", connConfig.RegionDetail.RegionName).
-		Int("totalSpecs", totalSpecs).
-		Int("ignoredSpecs", ignoredCount).
-		Int("filteredSpecs", filteredCount).
-		Msgf("Spec filtering completed: %d/%d specs will be processed (%d ignored)",
-			filteredCount, totalSpecs, ignoredCount)
+	// log.Info().
+	// 	Str("connection", connConfigName).
+	// 	Str("provider", connConfig.ProviderName).
+	// 	Str("region", connConfig.RegionDetail.RegionName).
+	// 	Int("totalSpecs", totalSpecs).
+	// 	Int("ignoredSpecs", ignoredCount).
+	// 	Int("filteredSpecs", filteredCount).
+	// 	Msgf("Spec filtering completed: %d/%d specs will be processed (%d ignored)",
+	// 		filteredCount, totalSpecs, ignoredCount)
 
 	// Step 2: Process filtered specs and convert to Tumblebug format
 	tmpSpecList := make([]model.SpecInfo, 0, filteredCount)
@@ -445,7 +446,7 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 
 		tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(connConfig, spiderSpec)
 		if errConvert != nil {
-			log.Debug().Err(errConvert).Msgf("Skip ConvertSpiderSpecToTumblebugSpec for %s", spiderSpec.Name)
+			// log.Debug().Err(errConvert).Msgf("Skip ConvertSpiderSpecToTumblebugSpec for %s", spiderSpec.Name)
 			// Clear the processed item immediately
 			filteredSpecs[i] = model.SpiderSpecInfo{}
 			continue
@@ -494,7 +495,7 @@ func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
 		Int("totalSpecs", totalSpecs).
 		Int("ignoredSpecs", ignoredCount).
 		Int("processedSpecs", int(specCount)).
-		Msgf("Spec processing completed: %d/%d specs processed (%d ignored)",
+		Msgf("Spec processing completed: %d/%d (%d ignored)",
 			specCount, totalSpecs, ignoredCount)
 
 	// Perform bulk registration

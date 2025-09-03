@@ -128,7 +128,7 @@ func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, 
 		return nil, err
 	}
 
-	log.Info().Msgf("Using ORDER BY: %s", orderBy)
+	log.Debug().Msgf("Using ORDER BY: %s", orderBy)
 
 	// Filtering and sorting in one DB query
 	log.Debug().Msg("[Filtering and sorting specs with DB query]")
@@ -341,7 +341,7 @@ func BuildLocationOrderByClause(param *[]model.ParameterKeyVal) (string, error) 
 			}
 
 			// Generate distance-based priority with cost as secondary sort
-			// Use distance bands: 0-100km, 100-500km, 500-1000km, 1000km+
+			// Use distance bands: 0-50km, 50-300km, 300-1000km, 1000km+
 			// Within each band, sort by cost (cheaper first)
 			orderBy := fmt.Sprintf(`
 				CASE 
@@ -349,12 +349,12 @@ func BuildLocationOrderByClause(param *[]model.ParameterKeyVal) (string, error) 
 						cos(radians(%f)) * cos(radians(region_latitude)) * 
 						cos(radians(region_longitude) - radians(%f)) + 
 						sin(radians(%f)) * sin(radians(region_latitude))
-					)) <= 100 THEN 1
+					)) <= 50 THEN 1
 					WHEN (6371 * acos(
 						cos(radians(%f)) * cos(radians(region_latitude)) * 
 						cos(radians(region_longitude) - radians(%f)) + 
 						sin(radians(%f)) * sin(radians(region_latitude))
-					)) <= 500 THEN 2
+					)) <= 300 THEN 2
 					WHEN (6371 * acos(
 						cos(radians(%f)) * cos(radians(region_latitude)) * 
 						cos(radians(region_longitude) - radians(%f)) + 

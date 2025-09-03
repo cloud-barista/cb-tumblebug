@@ -463,7 +463,7 @@ func RegisterCloudInfo(providerName string) error {
 		return err
 	}
 
-	for regionName, _ := range RuntimeCloudInfo.CSPs[providerName].Regions {
+	for regionName := range RuntimeCloudInfo.CSPs[providerName].Regions {
 		err := RegisterRegionZone(providerName, regionName)
 		if err != nil {
 			log.Error().Err(err).Msg("")
