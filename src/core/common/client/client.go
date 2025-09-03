@@ -57,7 +57,7 @@ const (
 const NoBody = "NOBODY"
 
 // MaxDebugBodyLength is the maximum length of response body for debug logs
-const MaxDebugBodyLength = 1000
+const MaxDebugBodyLength = 50000
 
 // shouldTruncateBody checks if the response body should be truncated for debug logging
 func shouldTruncateBody(body []byte) bool {
@@ -66,7 +66,12 @@ func shouldTruncateBody(body []byte) bool {
 
 // createTruncationMessage creates a message indicating body was truncated
 func createTruncationMessage(bodyLength int) string {
-	return fmt.Sprintf(`{"message":"Response body too large (%d bytes). Set log level to TRACE to see full content."}`, bodyLength)
+	// Fast integer approximation: ~7 bytes per word in JSON
+	bodyWords := bodyLength / 7
+	limitWords := MaxDebugBodyLength / 7
+
+	return fmt.Sprintf(`{"message":"Response body %d words (%d bytes) exceeds limit %d words (%d bytes). Use TRACE level to log and check content."}`,
+		bodyWords, bodyLength, limitWords, MaxDebugBodyLength)
 }
 
 // cleanErrorMessage removes unwanted characters from error messages
