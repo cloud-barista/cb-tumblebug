@@ -534,7 +534,7 @@ func CheckAllowedTransition(nsId string, mciId string, vmId model.OptionalParame
 	}
 
 	if vmId.Set {
-		vm, err := GetMciVmStatus(nsId, mciId, vmId.Value)
+		vm, err := GetMciVmStatus(nsId, mciId, vmId.Value, false)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return err

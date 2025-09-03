@@ -174,14 +174,16 @@ func ListVmByFilter(nsId string, mciId string, filterKey string, filterVal strin
 		return vmList, nil
 	}
 
+	// Use existing ListMciVmInfo function instead of individual GetVmObject calls
+	vmInfoList, err := ListMciVmInfo(nsId, mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
 	var groupVmList []string
 
-	for _, v := range vmList {
-		vmObj, vmErr := GetVmObject(nsId, mciId, v)
-		if vmErr != nil {
-			log.Error().Err(err).Msg("")
-			return nil, vmErr
-		}
+	for _, vmObj := range vmInfoList {
 		vmObjReflect := reflect.ValueOf(&vmObj)
 		elements := vmObjReflect.Elem()
 		for i := 0; i < elements.NumField(); i++ {
@@ -564,68 +566,76 @@ func ListMciInfo(nsId string, option string) ([]model.MciInfo, error) {
 	return Mci, nil
 }
 
-// ListVmInfo is func to Get MciVm Info
-func ListVmInfo(nsId string, mciId string, vmId string) (*model.VmInfo, error) {
+// ListMciVmInfo is func to Get all VM Info objects in MCI
+func ListMciVmInfo(nsId string, mciId string) ([]model.VmInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := &model.VmInfo{}
 		log.Error().Err(err).Msg("")
-		return temp, err
+		return nil, err
 	}
 
 	err = common.CheckString(mciId)
 	if err != nil {
-		temp := &model.VmInfo{}
 		log.Error().Err(err).Msg("")
-		return temp, err
+		return nil, err
 	}
 
-	err = common.CheckString(vmId)
+	// Check if MCI exists
+	check, err := CheckMci(nsId, mciId)
 	if err != nil {
-		temp := &model.VmInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
+		log.Error().Err(err).Msgf("Cannot check MCI %s exist", mciId)
+		return nil, err
 	}
-	check, _ := CheckVm(nsId, mciId, vmId)
-
 	if !check {
-		temp := &model.VmInfo{}
-		err := fmt.Errorf("The vm " + vmId + " does not exist.")
-		return temp, err
+		err := fmt.Errorf("MCI %s does not exist", mciId)
+		return nil, err
 	}
 
-	log.Debug().Msg("[Get MCI-VM info for id]" + vmId)
-
-	key := common.GenMciKey(nsId, mciId, "")
-
-	vmKey := common.GenMciKey(nsId, mciId, vmId)
-	vmKeyValue, exists, err := kvstore.GetKv(vmKey)
+	// Get VM ID list using existing function
+	vmIdList, err := ListVmId(nsId, mciId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("kvstore.GetKv() returned an error.")
-		log.Error().Err(err).Msg("")
-		// return nil, err
+		log.Error().Err(err).Msgf("Failed to list VM IDs for MCI %s", mciId)
+		return nil, err
 	}
 
-	if !exists {
-		return nil, fmt.Errorf("Cannot find " + key)
-	}
-	vmTmp := model.VmInfo{}
-	json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
-	vmTmp.Id = vmId
-
-	//get current vm status
-	vmStatusInfoTmp, err := FetchVmStatus(nsId, mciId, vmId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
+	if len(vmIdList) == 0 {
+		return []model.VmInfo{}, nil
 	}
 
-	vmTmp.Status = vmStatusInfoTmp.Status
-	vmTmp.TargetStatus = vmStatusInfoTmp.TargetStatus
-	vmTmp.TargetAction = vmStatusInfoTmp.TargetAction
+	// Use parallel processing for better performance when dealing with multiple VMs
+	var wg sync.WaitGroup
+	chanResults := make(chan model.VmInfo, len(vmIdList))
 
-	return &vmTmp, nil
+	// Process each VM in parallel
+	for _, vmId := range vmIdList {
+		wg.Add(1)
+		go func(vmId string) {
+			defer wg.Done()
+
+			vmInfo, err := GetVmObject(nsId, mciId, vmId)
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed to get VM object for vmId: %s", vmId)
+				return // Skip this VM
+			}
+
+			chanResults <- vmInfo
+		}(vmId)
+	}
+
+	// Wait for all goroutines to complete and close the channel
+	go func() {
+		wg.Wait()
+		close(chanResults)
+	}()
+
+	// Collect results from the channel
+	var vmInfoList []model.VmInfo
+	for vmInfo := range chanResults {
+		vmInfoList = append(vmInfoList, vmInfo)
+	}
+
+	return vmInfoList, nil
 }
 
 // GetMciObject is func to retrieve MCI object from database (no current status update)
@@ -645,20 +655,14 @@ func GetMciObject(nsId string, mciId string) (model.MciInfo, bool, error) {
 	mciTmp := model.MciInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mciTmp)
 
-	vmList, err := ListVmId(nsId, mciId)
+	// Use existing ListMciVmInfo function instead of manually iterating through VMs
+	vmInfoList, err := ListMciVmInfo(nsId, mciId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return model.MciInfo{}, false, err
 	}
 
-	for _, vmID := range vmList {
-		vmtmp, err := GetVmObject(nsId, mciId, vmID)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return model.MciInfo{}, false, err
-		}
-		mciTmp.Vm = append(mciTmp.Vm, vmtmp)
-	}
+	mciTmp.Vm = vmInfoList
 
 	return mciTmp, true, nil
 }
@@ -1279,8 +1283,8 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 	return vmStatusTmp, nil
 }
 
-// GetMciVmStatus is func to Get MciVm Status
-func GetMciVmStatus(nsId string, mciId string, vmId string) (*model.VmStatusInfo, error) {
+// GetMciVmStatus is func to Get MciVm Status with option to control CSP API fetch
+func GetMciVmStatus(nsId string, mciId string, vmId string, fetchFromCSP bool) (*model.VmStatusInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1311,14 +1315,48 @@ func GetMciVmStatus(nsId string, mciId string, vmId string) (*model.VmStatusInfo
 		return temp, err
 	}
 
-	vmStatusResponse, err := FetchVmStatus(nsId, mciId, vmId)
+	var vmStatusResponse model.VmStatusInfo
 
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
+	if fetchFromCSP {
+		// Fetch current status from CSP API
+		vmStatusResponse, err = FetchVmStatus(nsId, mciId, vmId)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return nil, err
+		}
+	} else {
+		// Use cached status from database (faster response)
+		vmObject, err := GetVmObject(nsId, mciId, vmId)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return nil, err
+		}
+
+		// Convert VmInfo to VmStatusInfo
+		vmStatusResponse = model.VmStatusInfo{
+			Id:              vmObject.Id,
+			Name:            vmObject.Name,
+			CspResourceName: vmObject.CspResourceName,
+			Status:          vmObject.Status,
+			TargetStatus:    vmObject.TargetStatus,
+			TargetAction:    vmObject.TargetAction,
+			PublicIp:        vmObject.PublicIP,
+			PrivateIp:       vmObject.PrivateIP,
+			SSHPort:         vmObject.SSHPort,
+			Location:        vmObject.Location,
+			MonAgentStatus:  vmObject.MonAgentStatus,
+			CreatedTime:     vmObject.CreatedTime,
+			SystemMessage:   vmObject.SystemMessage,
+		}
 	}
 
 	return &vmStatusResponse, nil
+}
+
+// GetMciVmCurrentStatus is func to Get MciVm Current Status from CSP API (real-time)
+func GetMciVmCurrentStatus(nsId string, mciId string, vmId string) (*model.VmStatusInfo, error) {
+	// Simply delegate to GetMciVmStatus with fetchFromCSP=true
+	return GetMciVmStatus(nsId, mciId, vmId, true)
 }
 
 // [Update MCI and VM object]

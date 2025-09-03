@@ -232,7 +232,7 @@ func DeleteLabelObject(labelType, uid string) error {
 		return fmt.Errorf("failed to delete label object: %w", err)
 	}
 
-	log.Info().Str("labelKey", labelKey).Msg("Label object successfully deleted from kvstore")
+	log.Trace().Str("labelKey", labelKey).Msg("Label object successfully deleted from kvstore")
 	return nil
 }
 
