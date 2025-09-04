@@ -1659,7 +1659,10 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 				// ref IBM VPC Network structure: https://cloud.ibm.com/docs/vpc?topic=vpc-about-networking-for-vpc&locale=en
 				// IBM VPC Network requires Address Prefix setup for each zone. (but there is limitation in CB-Spider implementation.)
 				// So, we will create 2 subnets in a zone within the limited address space.
-				if provider == csp.IBM {
+				// ref NCP AZ issue: https://github.com/cloud-barista/cb-tumblebug/issues/2136
+				// NCP K8s cluster requires all subnets (including LB subnets) to be within the same AZ.
+				// So, we will create all subnets in the same zone.
+				if provider == csp.IBM || provider == csp.NCP {
 					subnet.Zone = zones[0]
 				}
 			}
