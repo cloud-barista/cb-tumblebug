@@ -22,6 +22,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
@@ -570,7 +571,7 @@ func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 		go func(k model.ConnConfig) {
 			defer wait.Done()
 
-			common.RandomSleep(0, 60)
+			common.RandomSleep(0, 60*1000)
 			temp := model.InspectResourceResult{}
 			temp.ConnectionName = k.ConfigName
 			startTimeForConnection := time.Now()
@@ -585,7 +586,7 @@ func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 			maxTrials := 5
 			if strings.Contains(temp.SystemMessage, rateLimitMessage) {
 				for i := 0; i < maxTrials; i++ {
-					common.RandomSleep(40, 80)
+					common.RandomSleep(40*1000, 80*1000)
 					inspectResult, err = InspectResources(k.ConfigName, model.StrVNet)
 					if err != nil {
 						log.Error().Err(err).Msg("")
@@ -713,17 +714,17 @@ func RegisterCspNativeResourcesAll(nsId string, mciId string, option string, mci
 			// This code is temporal, CB-Spider needs to be enhnaced for locking mechanism.
 			// CB-SP v0.5.9 will not help with rate limit issue.
 			if option != "onlyVm" {
-				if strings.Contains(k.ConfigName, "alibaba") {
-					common.RandomSleep(100, 200)
-				} else if strings.Contains(k.ConfigName, "aws") {
-					common.RandomSleep(300, 500)
-				} else if strings.Contains(k.ConfigName, "gcp") {
-					common.RandomSleep(700, 900)
+				if strings.Contains(k.ConfigName, csp.Alibaba) {
+					common.RandomSleep(100*1000, 200*1000)
+				} else if strings.Contains(k.ConfigName, csp.AWS) {
+					common.RandomSleep(300*1000, 500*1000)
+				} else if strings.Contains(k.ConfigName, csp.GCP) {
+					common.RandomSleep(700*1000, 900*1000)
 				} else {
 				}
 			}
 
-			common.RandomSleep(0, 50)
+			common.RandomSleep(0, 50*1000)
 
 			registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mciNameForRegister, option, mciFlag)
 			if err != nil {

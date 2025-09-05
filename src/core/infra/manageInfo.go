@@ -31,6 +31,7 @@ import (
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/go-resty/resty/v2"
@@ -387,6 +388,22 @@ func GetMciAccessInfo(nsId string, mciId string, option string) (*model.MciAcces
 		return temp, err
 	}
 
+	// Get MCI information to check if it's being terminated
+	mciInfo, err := GetMciInfo(nsId, mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get MCI info")
+		return temp, err
+	}
+
+	// Check if MCI is being terminated or terminate action
+	if strings.EqualFold(mciInfo.Status, model.StatusTerminated) ||
+		mciInfo.TargetAction == model.ActionTerminate {
+		err := fmt.Errorf("MCI %s is currently being terminated or in terminate action (Status: %s, TargetAction: %s)",
+			mciId, mciInfo.Status, mciInfo.TargetAction)
+		log.Info().Msg(err.Error())
+		return temp, err
+	}
+
 	output.MciId = mciId
 
 	mcNlbAccess, err := GetMcNlbAccess(nsId, mciId)
@@ -417,10 +434,23 @@ func GetMciAccessInfo(nsId string, mciId string, option string) (*model.MciAcces
 		chanResults := make(chan model.MciVmAccessInfo)
 
 		for _, vmId := range vmList {
+			// Check if VM is terminated before processing
+			vmObject, err := GetVmObject(nsId, mciId, vmId)
+			if err != nil {
+				log.Debug().Err(err).Msgf("Failed to get VM object for %s, skipping", vmId)
+				continue
+			}
+
+			// Skip terminated VMs as they don't have meaningful access info
+			if strings.EqualFold(vmObject.Status, model.StatusTerminated) {
+				log.Debug().Msgf("VM %s is terminated, skipping access info collection", vmId)
+				continue
+			}
+
 			wg.Add(1)
 			go func(nsId string, mciId string, vmId string, option string, chanResults chan model.MciVmAccessInfo) {
 				defer wg.Done()
-				common.RandomSleep(0, len(vmList)/2)
+				common.RandomSleep(0, len(vmList)/2*1000)
 				vmInfo, err := GetVmCurrentPublicIp(nsId, mciId, vmId)
 
 				vmAccessInfo := model.MciVmAccessInfo{}
@@ -607,15 +637,26 @@ func ListMciVmInfo(nsId string, mciId string) ([]model.VmInfo, error) {
 	var wg sync.WaitGroup
 	chanResults := make(chan model.VmInfo, len(vmIdList))
 
-	// Process each VM in parallel
+	// Process each VM in parallel, with existence validation
 	for _, vmId := range vmIdList {
 		wg.Add(1)
 		go func(vmId string) {
 			defer wg.Done()
 
+			// Check if VM exists first to avoid race conditions during deletion
+			vmKey := common.GenMciKey(nsId, mciId, vmId)
+			_, exists, err := kvstore.GetKv(vmKey)
+			if err != nil || !exists {
+				// VM might be deleted by concurrent operations (e.g., DelMci)
+				// This is normal during MCI deletion process, so use Debug level
+				log.Debug().Msgf("VM object not found for vmId: %s (possibly deleted concurrently)", vmId)
+				return // Skip this VM
+			}
+
 			vmInfo, err := GetVmObject(nsId, mciId, vmId)
 			if err != nil {
-				log.Error().Err(err).Msgf("Failed to get VM object for vmId: %s", vmId)
+				// Secondary check - VM might have been deleted between existence check and retrieval
+				log.Debug().Err(err).Msgf("VM object retrieval failed for vmId: %s (possibly deleted concurrently)", vmId)
 				return // Skip this VM
 			}
 
@@ -690,6 +731,95 @@ func GetVmObject(nsId string, mciId string, vmId string) (model.VmInfo, error) {
 		return model.VmInfo{}, err
 	}
 	return vmTmp, nil
+}
+
+// ConvertVmInfoToVmStatusInfo converts VmInfo to VmStatusInfo for MCI status operations
+func ConvertVmInfoToVmStatusInfo(vmInfo model.VmInfo) model.VmStatusInfo {
+	return model.VmStatusInfo{
+		Id:              vmInfo.Id,
+		Uid:             vmInfo.Uid,
+		CspResourceName: vmInfo.CspResourceName,
+		CspResourceId:   vmInfo.CspResourceId,
+		Name:            vmInfo.Name,
+		Status:          vmInfo.Status,
+		TargetStatus:    vmInfo.TargetStatus,
+		TargetAction:    vmInfo.TargetAction,
+		NativeStatus:    "", // VmInfo doesn't have NativeStatus, will be updated by status fetch
+		MonAgentStatus:  vmInfo.MonAgentStatus,
+		SystemMessage:   vmInfo.SystemMessage,
+		CreatedTime:     vmInfo.CreatedTime,
+		PublicIp:        vmInfo.PublicIP,
+		PrivateIp:       vmInfo.PrivateIP,
+		SSHPort:         vmInfo.SSHPort,
+		Location:        vmInfo.Location,
+	}
+}
+
+// ConvertVmInfoListToVmStatusInfoList converts a slice of VmInfo to VmStatusInfo for MCI status operations
+func ConvertVmInfoListToVmStatusInfoList(vmInfoList []model.VmInfo) []model.VmStatusInfo {
+	vmStatusInfoList := make([]model.VmStatusInfo, len(vmInfoList))
+	for i, vmInfo := range vmInfoList {
+		vmStatusInfoList[i] = ConvertVmInfoToVmStatusInfo(vmInfo)
+	}
+	return vmStatusInfoList
+}
+
+// ensureVmStatusInfoComplete ensures all VMs from VmInfo are represented in MciStatus.Vm
+// This handles cases where VM status fetch might have failed or VM is newly created
+// ConvertMciInfoToMciStatusInfo converts MciInfo to MciStatusInfo (partial conversion for basic fields)
+func ConvertMciInfoToMciStatusInfo(mciInfo model.MciInfo) model.MciStatusInfo {
+	return model.MciStatusInfo{
+		Id:              mciInfo.Id,
+		Name:            mciInfo.Name,
+		Status:          mciInfo.Status,
+		StatusCount:     mciInfo.StatusCount,
+		TargetStatus:    mciInfo.TargetStatus,
+		TargetAction:    mciInfo.TargetAction,
+		InstallMonAgent: mciInfo.InstallMonAgent,
+		Label:           mciInfo.Label,
+		SystemLabel:     mciInfo.SystemLabel,
+		Vm:              ConvertVmInfoListToVmStatusInfoList(mciInfo.Vm),
+		// MasterVmId, MasterIp, MasterSSHPort will be set by status determination logic
+	}
+}
+
+// ConvertVmInfoFieldsToVmStatusInfo converts VmInfo fields into existing VmStatusInfo
+// VmInfo is considered the trusted source, so all relevant fields are converted
+func ConvertVmInfoFieldsToVmStatusInfo(vmStatus *model.VmStatusInfo, vmInfo model.VmInfo) {
+	// Always convert from VmInfo as it's the trusted source
+	vmStatus.CreatedTime = vmInfo.CreatedTime
+	vmStatus.SystemMessage = vmInfo.SystemMessage
+	vmStatus.MonAgentStatus = vmInfo.MonAgentStatus
+	vmStatus.TargetStatus = vmInfo.TargetStatus
+	vmStatus.TargetAction = vmInfo.TargetAction
+
+	// Convert network information - VmInfo is authoritative
+	vmStatus.PublicIp = vmInfo.PublicIP
+	vmStatus.PrivateIp = vmInfo.PrivateIP
+	vmStatus.SSHPort = vmInfo.SSHPort
+
+	// Convert Status only if vmStatus doesn't have real-time CSP status
+	// Keep NativeStatus from CSP calls, but convert Status from VmInfo if no real-time data
+	if vmStatus.NativeStatus == "" {
+		vmStatus.Status = vmInfo.Status
+	}
+	// If we have real-time CSP status (NativeStatus), keep the current Status
+}
+
+// ConvertVmInfoFieldsToVmStatusInfoList converts VmInfo fields into corresponding VmStatusInfo list
+func ConvertVmInfoFieldsToVmStatusInfoList(vmStatusList []model.VmStatusInfo, vmInfoList []model.VmInfo) {
+	// Create a map for efficient lookup
+	vmInfoMap := make(map[string]model.VmInfo)
+	for _, vmInfo := range vmInfoList {
+		vmInfoMap[vmInfo.Id] = vmInfo
+	}
+
+	// Convert each VM status if corresponding VmInfo exists
+	for i := range vmStatusList {
+		if vmInfo, exists := vmInfoMap[vmStatusList[i].Id]; exists {
+			ConvertVmInfoFieldsToVmStatusInfo(&vmStatusList[i], vmInfo)
+		}
+	}
 }
 
 // GetVmIdNameInDetail is func to get ID and Name details
@@ -795,24 +925,34 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 		return &mciStatus, nil
 	}
 
-	//goroutin sync wg
-	var wg sync.WaitGroup
-	for _, v := range vmList {
-		wg.Add(1)
-		go FetchVmStatusAsync(&wg, nsId, mciId, v, &mciStatus)
+	// Fetch VM statuses with rate limiting by CSP and region
+	vmStatusList, err := fetchVmStatusesWithRateLimiting(nsId, mciId, vmList)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return &model.MciStatusInfo{}, err
 	}
-	wg.Wait() //goroutine sync wg
 
-	for _, v := range vmList {
-		// set master IP of MCI (Default rule: select 1st Running VM as master)
-		vmtmp, err := GetVmObject(nsId, mciId, v)
-		if err == nil {
-			if strings.EqualFold(vmtmp.Status, model.StatusRunning) {
-				mciStatus.MasterVmId = vmtmp.Id
-				mciStatus.MasterIp = vmtmp.PublicIP
-				mciStatus.MasterSSHPort = vmtmp.SSHPort
-				break
-			}
+	// Copy results to mciStatus
+	mciStatus.Vm = vmStatusList
+
+	vmInfos, err := ListMciVmInfo(nsId, mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return &model.MciStatusInfo{}, err
+	}
+
+	// If VM status fetch didn't populate all VMs, use VmInfo as fallback
+	if len(mciStatus.Vm) == 0 && len(vmInfos) > 0 {
+		log.Debug().Msgf("No VM status info found, converting from VmInfo for MCI: %s", mciId)
+		mciStatus.Vm = ConvertVmInfoListToVmStatusInfoList(vmInfos)
+	}
+
+	for _, v := range vmInfos {
+		if strings.EqualFold(v.Status, model.StatusRunning) {
+			mciStatus.MasterVmId = v.Id
+			mciStatus.MasterIp = v.PublicIP
+			mciStatus.MasterSSHPort = v.SSHPort
+			break
 		}
 	}
 
@@ -845,6 +985,7 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 			statusFlag[8]++
 		default:
 			statusFlag[9]++
+			log.Warn().Msgf("Undefined status (%s) found in VM %s of MCI %s", v.Status, v.Id, mciId)
 		}
 	}
 
@@ -857,7 +998,67 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 		}
 	}
 
-	numVm := len(mciStatus.Vm)
+	// Use the maximum of actual VM count and status VM count to handle race conditions during creation
+	// During MCI creation, len(vmList) might be smaller than len(mciStatus.Vm) due to timing issues
+	actualVmCount := len(vmList)
+	statusVmCount := len(mciStatus.Vm)
+	vmInfoCount := len(vmInfos)
+
+	// Check if MCI is still being created to use more stable VM count calculation
+	isCreating := strings.Contains(mciTmp.Status, model.StatusCreating) ||
+		strings.Contains(mciTmp.TargetAction, model.ActionCreate) ||
+		strings.Contains(mciTmp.TargetStatus, model.StatusRunning)
+
+	// Check if MCI is in a stable state (all VMs have same stable status)
+	isStableState := tmpMax == statusVmCount && tmpMax > 0
+	stableStatusName := ""
+	if isStableState && tmpMaxIndex < len(statusFlagStr) {
+		stableStatusName = statusFlagStr[tmpMaxIndex]
+	}
+
+	var numVm int
+	if isCreating {
+		// During creation, use the larger of the two counts to avoid showing decreasing VM counts
+		numVm = actualVmCount
+		if statusVmCount > actualVmCount {
+			numVm = statusVmCount
+		}
+		// Additionally, ensure we don't show a VM count smaller than the previous maximum
+		if numVm < mciStatus.StatusCount.CountTotal && mciStatus.StatusCount.CountTotal > 0 {
+			numVm = mciStatus.StatusCount.CountTotal
+		}
+
+		// If we still have inconsistent counts, use the MCI's stored VM information as fallback
+		if len(mciTmp.Vm) > numVm {
+			numVm = len(mciTmp.Vm)
+		}
+
+		log.Debug().Msgf("MCI %s is creating: using stable VM count (%d) - actual: %d, status: %d, previous: %d, stored: %d",
+			mciId, numVm, actualVmCount, statusVmCount, mciStatus.StatusCount.CountTotal, len(mciTmp.Vm))
+	} else if isStableState {
+		// For stable MCI states (all VMs in same state), use the most reliable source to avoid count fluctuation
+		// This applies to Terminated, Suspended, Failed, Running, etc.
+		// Use the maximum of available counts, prioritizing vmInfos as they are stored persistently
+		numVm = vmInfoCount
+		if actualVmCount > numVm {
+			numVm = actualVmCount
+		}
+		if len(mciTmp.Vm) > numVm {
+			numVm = len(mciTmp.Vm)
+		}
+		// Ensure we don't show a count smaller than the actual VMs found in dominant status
+		if tmpMax > numVm {
+			numVm = tmpMax
+		}
+
+		log.Debug().Msgf("MCI %s is in stable state (%s): using stable VM count (%d) - actual: %d, status: %d, vmInfos: %d, stored: %d, dominant: %d",
+			mciId, stableStatusName, numVm, actualVmCount, statusVmCount, vmInfoCount, len(mciTmp.Vm), tmpMax)
+	} else {
+		// MCI creation completed, use actual VM count from status
+		numVm = statusVmCount
+		// log.Debug().Msgf("MCI %s creation completed: using status VM count (%d)", mciId, numVm)
+	}
+
 	//numUnNormalStatus := statusFlag[0] + statusFlag[9]
 	//numNormalStatus := numVm - numUnNormalStatus
 	runningStatus := statusFlag[2]
@@ -898,22 +1099,99 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 	mciStatus.StatusCount.CountTerminating = statusFlag[8]
 	mciStatus.StatusCount.CountUndefined = statusFlag[9]
 
-	// additional handling is required for TargetAction in under the Termination action
+	// Recovery/fallback handling for TargetAction completion
+	// Primary completion should happen in actual control actions (control.go, provisioning.go)
+	// This serves as a safety net for cases where the primary completion was missed
 	isDone := true
-	for _, v := range mciStatus.Vm {
-		if v.TargetStatus != model.StatusComplete {
-			if v.Status != model.StatusTerminated {
-				isDone = false
+	pendingVmsCount := 0
+
+	// Check MCI target action to determine completion criteria
+	mciTargetAction := mciTmp.TargetAction
+
+	// Only perform recovery completion if TargetAction is not already Complete
+	if mciTargetAction != model.ActionComplete && mciTargetAction != "" {
+		for _, v := range mciStatus.Vm {
+			// Check completion based on action type
+			switch mciTargetAction {
+			case model.ActionCreate:
+				// For Create action, completion means all VMs reach final states (Running/Failed/Terminated/Suspended)
+				// VM is considered pending if it's still in transitional states (Creating/Undefined/empty)
+				// Failed state is considered a final state - provisioning attempt was completed even if unsuccessful
+				if v.Status == model.StatusCreating || v.Status == model.StatusUndefined || v.Status == "" {
+					isDone = false
+					pendingVmsCount++
+				}
+				// All other states (Running, Failed, Terminated, Suspended) are considered final states
+
+			case model.ActionTerminate:
+				// For Terminate action, completion means all VMs reach Terminated state or non-recoverable states
+				// Failed, Undefined, empty states are also considered "complete" as they can't proceed further
+				if v.Status != model.StatusTerminated && v.Status != model.StatusFailed &&
+					v.Status != model.StatusUndefined && v.Status != "" {
+					isDone = false
+					pendingVmsCount++
+				}
+
+			case model.ActionSuspend:
+				// For Suspend action, completion means all VMs reach Suspended state or non-recoverable states
+				// Failed, Terminated, Undefined, empty states are considered "complete"
+				if v.Status != model.StatusSuspended && v.Status != model.StatusFailed &&
+					v.Status != model.StatusTerminated && v.Status != model.StatusUndefined && v.Status != "" {
+					isDone = false
+					pendingVmsCount++
+				}
+
+			case model.ActionResume:
+				// For Resume action, completion means all VMs reach Running state or non-recoverable states
+				// Failed, Terminated, Undefined, empty states are considered "complete"
+				if v.Status != model.StatusRunning && v.Status != model.StatusFailed &&
+					v.Status != model.StatusTerminated && v.Status != model.StatusUndefined && v.Status != "" {
+					isDone = false
+					pendingVmsCount++
+				}
+
+			case model.ActionReboot:
+				// For Reboot action, completion means all VMs reach Running state or non-recoverable states
+				// Failed, Terminated, Undefined, empty states are considered "complete"
+				if v.Status != model.StatusRunning && v.Status != model.StatusFailed &&
+					v.Status != model.StatusTerminated && v.Status != model.StatusUndefined && v.Status != "" {
+					isDone = false
+					pendingVmsCount++
+				}
+
+			default:
+				// For unknown actions, use the existing logic
+				if v.TargetStatus != model.StatusComplete {
+					if v.Status != model.StatusTerminated {
+						isDone = false
+						pendingVmsCount++
+					}
+				}
 			}
 		}
-	}
-	if isDone {
-		mciStatus.TargetAction = model.ActionComplete
-		mciStatus.TargetStatus = model.StatusComplete
-		// mciTmp.TargetAction = model.ActionComplete
-		// mciTmp.TargetStatus = model.StatusComplete
-		mciTmp.StatusCount = mciStatus.StatusCount
-		UpdateMciInfo(nsId, mciTmp)
+
+		// Log completion status for debugging
+		log.Debug().Msgf("MCI %s %s recovery completion check: %d VMs total, %d pending, isDone=%t",
+			mciId, mciTargetAction, len(mciStatus.Vm), pendingVmsCount, isDone)
+
+		if isDone {
+			log.Warn().Msgf("MCI %s action %s completed via RECOVERY PATH (primary completion in control.go/provisioning.go was missed) - VM states: %d total, %d pending",
+				mciId, mciTargetAction, len(mciStatus.Vm), pendingVmsCount)
+
+			// Add more detailed logging for debugging
+			statusBreakdown := make(map[string]int)
+			for _, v := range mciStatus.Vm {
+				statusBreakdown[v.Status]++
+			}
+			log.Debug().Msgf("MCI %s recovery completion - VM status breakdown: %+v", mciId, statusBreakdown)
+
+			mciStatus.TargetAction = model.ActionComplete
+			mciStatus.TargetStatus = model.StatusComplete
+			mciTmp.TargetAction = model.ActionComplete
+			mciTmp.TargetStatus = model.StatusComplete
+			mciTmp.StatusCount = mciStatus.StatusCount
+			UpdateMciInfo(nsId, mciTmp)
+		}
 	}
 
 	return &mciStatus, nil
@@ -1058,55 +1336,269 @@ func GetVmSpecId(nsId string, mciId string, vmId string) string {
 	return content.SpecId
 }
 
-// FetchVmStatusAsync is func to get VM status async
-func FetchVmStatusAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, results *model.MciStatusInfo) error {
-	defer wg.Done() //goroutine sync done
+// Rate limiting constants for different levels
+const (
+	defaultMaxConcurrentRegionsPerCSP = 10 // Default maximum concurrent regions per CSP
+	defaultMaxConcurrentVMsPerRegion  = 30 // Default maximum concurrent VMs per region
+)
 
-	if nsId != "" && mciId != "" && vmId != "" {
-		vmStatusTmp, err := FetchVmStatus(nsId, mciId, vmId)
+// CSP-specific rate limiting configurations
+var cspRateLimits = map[string]struct {
+	maxRegions      int
+	maxVMsPerRegion int
+}{
+	csp.AWS:       {maxRegions: 10, maxVMsPerRegion: 30},
+	csp.Azure:     {maxRegions: 8, maxVMsPerRegion: 25},
+	csp.GCP:       {maxRegions: 12, maxVMsPerRegion: 35},
+	csp.Alibaba:   {maxRegions: 6, maxVMsPerRegion: 20},
+	csp.Tencent:   {maxRegions: 6, maxVMsPerRegion: 20},
+	csp.NCP:       {maxRegions: 3, maxVMsPerRegion: 15}, // NCP has stricter limits
+	csp.NHN:       {maxRegions: 5, maxVMsPerRegion: 20},
+	csp.OpenStack: {maxRegions: 5, maxVMsPerRegion: 15},
+}
+
+// getRateLimitsForCSP returns rate limiting configuration for a specific CSP
+func getRateLimitsForCSP(cspName string) (int, int) {
+	// Normalize CSP name to lowercase for lookup
+	normalizedCSP := strings.ToLower(cspName)
+
+	if limits, exists := cspRateLimits[normalizedCSP]; exists {
+		return limits.maxRegions, limits.maxVMsPerRegion
+	}
+
+	// Return default values for unknown CSPs
+	return defaultMaxConcurrentRegionsPerCSP, defaultMaxConcurrentVMsPerRegion
+}
+
+// VmGroupInfo represents VM grouping information for rate limiting
+type VmGroupInfo struct {
+	VmId         string
+	ProviderName string
+	RegionName   string
+}
+
+// fetchVmStatusesWithRateLimiting fetches VM statuses with hierarchical rate limiting
+// Level 1: CSPs are processed in parallel
+// Level 2: Within each CSP, regions are processed with semaphore (maxConcurrentRegionsPerCSP)
+// Level 3: Within each region, VMs are processed with semaphore (maxConcurrentVMsPerRegion)
+func fetchVmStatusesWithRateLimiting(nsId, mciId string, vmList []string) ([]model.VmStatusInfo, error) {
+	if len(vmList) == 0 {
+		return []model.VmStatusInfo{}, nil
+	}
+
+	// Step 1: Group VMs by CSP and region
+	vmGroups := make(map[string]map[string][]string) // CSP -> Region -> VmIds
+	vmGroupInfos := make(map[string]VmGroupInfo)     // VmId -> GroupInfo
+
+	for _, vmId := range vmList {
+		vmInfo, err := GetVmObject(nsId, mciId, vmId)
 		if err != nil {
-			log.Error().Err(err).Msg("")
-			vmStatusTmp.Status = model.StatusFailed
-			vmStatusTmp.SystemMessage = err.Error()
+			log.Warn().Err(err).Msgf("Failed to get VM object for %s, skipping", vmId)
+			continue
 		}
-		if vmStatusTmp != (model.VmStatusInfo{}) {
-			results.Vm = append(results.Vm, vmStatusTmp)
+
+		providerName := vmInfo.ConnectionConfig.ProviderName
+		regionName := vmInfo.Region.Region
+
+		// Initialize CSP map if not exists
+		if vmGroups[providerName] == nil {
+			vmGroups[providerName] = make(map[string][]string)
+		}
+
+		// Add VM to the appropriate group
+		vmGroups[providerName][regionName] = append(vmGroups[providerName][regionName], vmId)
+		vmGroupInfos[vmId] = VmGroupInfo{
+			VmId:         vmId,
+			ProviderName: providerName,
+			RegionName:   regionName,
 		}
 	}
-	return nil
+
+	// Step 2: Process CSPs in parallel
+	var wg sync.WaitGroup
+	var mutex sync.Mutex
+	var allVmStatuses []model.VmStatusInfo
+
+	for csp, regions := range vmGroups {
+		wg.Add(1)
+		go func(providerName string, regionMap map[string][]string) {
+			defer wg.Done()
+
+			// Get rate limits for this specific CSP
+			maxRegionsForCSP, maxVMsForRegion := getRateLimitsForCSP(providerName)
+
+			// log.Debug().Msgf("Processing CSP: %s with %d regions (limits: %d regions, %d VMs/region)",
+			// 	providerName, len(regionMap), maxRegionsForCSP, maxVMsForRegion)
+
+			// Step 3: Process regions within CSP with rate limiting
+			regionSemaphore := make(chan struct{}, maxRegionsForCSP)
+			var regionWg sync.WaitGroup
+			var regionMutex sync.Mutex
+			var cspVmStatuses []model.VmStatusInfo
+
+			for region, vmIds := range regionMap {
+				regionWg.Add(1)
+				go func(regionName string, vmIdList []string) {
+					defer regionWg.Done()
+
+					// Acquire region semaphore
+					regionSemaphore <- struct{}{}
+					defer func() { <-regionSemaphore }()
+
+					// log.Debug().Msgf("Processing region: %s/%s with %d VMs (in parallel: %d VMs/region)",
+					// 	providerName, regionName, len(vmIdList), maxVMsForRegion)
+
+					// Step 4: Process VMs within region with rate limiting
+					vmSemaphore := make(chan struct{}, maxVMsForRegion)
+					var vmWg sync.WaitGroup
+					var vmMutex sync.Mutex
+					var regionVmStatuses []model.VmStatusInfo
+
+					for _, vmId := range vmIdList {
+						vmWg.Add(1)
+						go func(vmId string) {
+							defer vmWg.Done()
+
+							// Acquire VM semaphore
+							vmSemaphore <- struct{}{}
+							defer func() { <-vmSemaphore }()
+
+							// Fetch VM status
+							vmStatusTmp, err := FetchVmStatus(nsId, mciId, vmId)
+							if err != nil {
+								log.Error().Err(err).Msgf("Failed to fetch status for VM %s", vmId)
+								vmStatusTmp.Status = model.StatusFailed
+								vmStatusTmp.SystemMessage = err.Error()
+							}
+
+							if vmStatusTmp != (model.VmStatusInfo{}) {
+								vmMutex.Lock()
+								regionVmStatuses = append(regionVmStatuses, vmStatusTmp)
+								vmMutex.Unlock()
+							}
+						}(vmId)
+					}
+					vmWg.Wait()
+
+					// Merge region results to CSP results
+					regionMutex.Lock()
+					cspVmStatuses = append(cspVmStatuses, regionVmStatuses...)
+					regionMutex.Unlock()
+
+				}(region, vmIds)
+			}
+			regionWg.Wait()
+
+			// Merge CSP results to global results
+			mutex.Lock()
+			allVmStatuses = append(allVmStatuses, cspVmStatuses...)
+			mutex.Unlock()
+
+			// log.Debug().Msgf("Completed CSP: %s, processed %d VMs", providerName, len(cspVmStatuses))
+
+		}(csp, regions)
+	}
+
+	wg.Wait()
+
+	// Summary logging
+	cspCount := len(vmGroups)
+	totalRegions := 0
+	for _, regions := range vmGroups {
+		totalRegions += len(regions)
+	}
+
+	log.Debug().Msgf("Rate-limited VM status fetch completed: %d CSPs, %d regions, %d VMs processed",
+		cspCount, totalRegions, len(allVmStatuses))
+	return allVmStatuses, nil
+}
+
+// // FetchVmStatusAsync is func to get VM status async
+// func FetchVmStatusAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, results *model.MciStatusInfo) error {
+// 	defer wg.Done() //goroutine sync done
+
+// 	if nsId != "" && mciId != "" && vmId != "" {
+// 		vmStatusTmp, err := FetchVmStatus(nsId, mciId, vmId)
+// 		if err != nil {
+// 			log.Error().Err(err).Msg("")
+// 			vmStatusTmp.Status = model.StatusFailed
+// 			vmStatusTmp.SystemMessage = err.Error()
+// 		}
+// 		if vmStatusTmp != (model.VmStatusInfo{}) {
+// 			results.Vm = append(results.Vm, vmStatusTmp)
+// 		}
+// 	}
+// 	return nil
+// }
+
+// populateVmStatusInfoFromVmInfo fills VmStatusInfo with data from VmInfo
+// This is a helper function to avoid code duplication in FetchVmStatus
+func populateVmStatusInfoFromVmInfo(statusInfo *model.VmStatusInfo, vmInfo model.VmInfo) {
+	statusInfo.Id = vmInfo.Id
+	statusInfo.Name = vmInfo.Name
+	statusInfo.CspResourceName = vmInfo.CspResourceName
+	statusInfo.PublicIp = vmInfo.PublicIP
+	statusInfo.SSHPort = vmInfo.SSHPort
+	statusInfo.PrivateIp = vmInfo.PrivateIP
+	statusInfo.Status = vmInfo.Status
+	statusInfo.TargetAction = vmInfo.TargetAction
+	statusInfo.TargetStatus = vmInfo.TargetStatus
+	statusInfo.Location = vmInfo.Location
+	statusInfo.MonAgentStatus = vmInfo.MonAgentStatus
+	statusInfo.CreatedTime = vmInfo.CreatedTime
+	statusInfo.SystemMessage = vmInfo.SystemMessage
 }
 
 // FetchVmStatus is func to fetch VM status (call to CSPs)
 func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, error) {
 
-	errorInfo := model.VmStatusInfo{}
+	statusInfo := model.VmStatusInfo{}
 
-	temp, err := GetVmObject(nsId, mciId, vmId)
+	vmInfo, err := GetVmObject(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return errorInfo, err
+		return statusInfo, err
 	}
 
-	errorInfo.Id = temp.Id
-	errorInfo.Name = temp.Name
-	errorInfo.CspResourceName = temp.CspResourceName
-	errorInfo.PublicIp = temp.PublicIP
-	errorInfo.SSHPort = temp.SSHPort
-	errorInfo.PrivateIp = temp.PrivateIP
-	errorInfo.NativeStatus = model.StatusUndefined
-	errorInfo.TargetAction = temp.TargetAction
-	errorInfo.TargetStatus = temp.TargetStatus
-	errorInfo.Location = temp.Location
-	errorInfo.MonAgentStatus = temp.MonAgentStatus
-	errorInfo.CreatedTime = temp.CreatedTime
-	errorInfo.SystemMessage = "Error in FetchVmStatus"
+	// Check if we should skip CSP API call based on VM state
+	// Skip API calls for stable final states or when CSP resource doesn't exist
+	shouldSkipCSPCall := false
 
-	cspResourceName := temp.CspResourceName
+	// Define stable states that don't require frequent CSP API calls
+	// These states are relatively stable and don't change frequently
+	stableStates := map[string]bool{
+		model.StatusTerminated: true,
+		model.StatusFailed:     true,
+		model.StatusSuspended:  true, // Suspended VMs are stable until explicitly resumed
+	}
 
-	if (temp.TargetAction != model.ActionCreate && temp.TargetAction != model.ActionTerminate) && cspResourceName == "" {
+	// Skip CSP API call for stable states
+	if stableStates[vmInfo.Status] {
+		shouldSkipCSPCall = true
+	}
+
+	// Skip CSP API call if cspResourceName is empty (VM not properly created)
+	if vmInfo.CspResourceName == "" && vmInfo.TargetAction != model.ActionCreate {
+		shouldSkipCSPCall = true
+	}
+
+	if shouldSkipCSPCall {
+		// log.Debug().Msgf("VM %s: %s, skipping CSP status fetch", vmId, skipReason)
+		// Return complete status info using stored VM info
+		populateVmStatusInfoFromVmInfo(&statusInfo, vmInfo)
+		statusInfo.NativeStatus = vmInfo.Status
+		return statusInfo, nil
+	}
+
+	populateVmStatusInfoFromVmInfo(&statusInfo, vmInfo)
+	statusInfo.NativeStatus = model.StatusUndefined
+
+	cspResourceName := vmInfo.CspResourceName
+
+	if (vmInfo.TargetAction != model.ActionCreate && vmInfo.TargetAction != model.ActionTerminate) && cspResourceName == "" {
 		err = fmt.Errorf("cspResourceName is empty (VmId: %s)", vmId)
 		log.Error().Err(err).Msg("")
-		return errorInfo, err
+		return statusInfo, err
 	}
 
 	type statusResponse struct {
@@ -1115,7 +1607,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 	callResult := statusResponse{}
 	callResult.Status = ""
 
-	if temp.Status != model.StatusTerminated && cspResourceName != "" {
+	if vmInfo.Status != model.StatusTerminated && cspResourceName != "" {
 		client := resty.New()
 		url := model.SpiderRestUrl + "/vmstatus/" + cspResourceName
 		method := "GET"
@@ -1125,12 +1617,12 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 			ConnectionName string
 		}
 		requestBody := VMStatusReqInfo{}
-		requestBody.ConnectionName = temp.ConnectionName
+		requestBody.ConnectionName = vmInfo.ConnectionName
 
 		// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
 		retrycheck := 2
 		for i := 0; i < retrycheck; i++ {
-			errorInfo.Status = model.StatusFailed
+			statusInfo.Status = model.StatusFailed
 			err := clientManager.ExecuteHttpRequest(
 				client,
 				method,
@@ -1142,8 +1634,16 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 				clientManager.MediumDuration,
 			)
 			if err != nil {
-				errorInfo.SystemMessage = err.Error()
-				callResult.Status = model.StatusUndefined
+				statusInfo.SystemMessage = err.Error()
+
+				// check if VM is already Terminated
+				if vmInfo.Status == model.StatusTerminated {
+					// VM was already terminated, maintain the status instead of marking as Undefined
+					log.Debug().Msgf("VM %s does not exist in CSP but is already Terminated, maintaining status", vmId)
+					callResult.Status = model.StatusTerminated
+				} else {
+					callResult.Status = model.StatusUndefined
+				}
 				break
 			}
 			if callResult.Status != "" {
@@ -1177,31 +1677,31 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 		callResult.Status = model.StatusUndefined
 	}
 
-	temp, err = GetVmObject(nsId, mciId, vmId)
+	vmInfo, err = GetVmObject(nsId, mciId, vmId)
 	if err != nil {
 		log.Err(err).Msg("")
-		return errorInfo, err
+		return statusInfo, err
 	}
 	vmStatusTmp := model.VmStatusInfo{}
-	vmStatusTmp.Id = temp.Id
-	vmStatusTmp.Name = temp.Name
-	vmStatusTmp.CspResourceName = temp.CspResourceName
-
-	vmStatusTmp.PrivateIp = temp.PrivateIP
+	vmStatusTmp.Id = vmInfo.Id
+	vmStatusTmp.Name = vmInfo.Name
+	vmStatusTmp.CspResourceName = vmInfo.CspResourceName
+	vmStatusTmp.Status = vmInfo.Status // Set the current status first
+	vmStatusTmp.PrivateIp = vmInfo.PrivateIP
 	vmStatusTmp.NativeStatus = nativeStatus
-	vmStatusTmp.TargetAction = temp.TargetAction
-	vmStatusTmp.TargetStatus = temp.TargetStatus
-	vmStatusTmp.Location = temp.Location
-	vmStatusTmp.MonAgentStatus = temp.MonAgentStatus
-	vmStatusTmp.CreatedTime = temp.CreatedTime
-	vmStatusTmp.SystemMessage = temp.SystemMessage
+	vmStatusTmp.TargetAction = vmInfo.TargetAction
+	vmStatusTmp.TargetStatus = vmInfo.TargetStatus
+	vmStatusTmp.Location = vmInfo.Location
+	vmStatusTmp.MonAgentStatus = vmInfo.MonAgentStatus
+	vmStatusTmp.CreatedTime = vmInfo.CreatedTime
+	vmStatusTmp.SystemMessage = vmInfo.SystemMessage
 
 	//Correct undefined status using TargetAction
 	if strings.EqualFold(vmStatusTmp.TargetAction, model.ActionCreate) {
 		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
 			callResult.Status = model.StatusCreating
 		}
-		if strings.EqualFold(temp.Status, model.StatusFailed) {
+		if strings.EqualFold(vmInfo.Status, model.StatusFailed) {
 			callResult.Status = model.StatusFailed
 		}
 	}
@@ -1248,14 +1748,14 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 			vmStatusTmp.TargetAction = model.ActionComplete
 
 			//Get current public IP when status has been changed.
-			vmInfoTmp, err := GetVmCurrentPublicIp(nsId, mciId, temp.Id)
+			vmInfoTmp, err := GetVmCurrentPublicIp(nsId, mciId, vmInfo.Id)
 			if err != nil {
 				log.Error().Err(err).Msg("")
-				errorInfo.SystemMessage = err.Error()
-				return errorInfo, err
+				statusInfo.SystemMessage = err.Error()
+				return statusInfo, err
 			}
-			temp.PublicIP = vmInfoTmp.PublicIp
-			temp.SSHPort = vmInfoTmp.SSHPort
+			vmInfo.PublicIP = vmInfoTmp.PublicIp
+			vmInfo.SSHPort = vmInfoTmp.SSHPort
 
 		} else {
 			// Don't init TargetStatus if the TargetStatus is model.StatusTerminated. It is to finalize VM lifecycle if model.StatusTerminated.
@@ -1266,18 +1766,24 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 		}
 	}
 
-	vmStatusTmp.PublicIp = temp.PublicIP
-	vmStatusTmp.SSHPort = temp.SSHPort
+	vmStatusTmp.PublicIp = vmInfo.PublicIP
+	vmStatusTmp.SSHPort = vmInfo.SSHPort
 
-	// Apply current status to vmInfo
-	temp.Status = vmStatusTmp.Status
-	temp.TargetAction = vmStatusTmp.TargetAction
-	temp.TargetStatus = vmStatusTmp.TargetStatus
-	temp.SystemMessage = vmStatusTmp.SystemMessage
+	// Apply current status to vmInfo only if VM is not already terminated
+	// Prevent overwriting Terminated status with empty or other states
+	originalVmInfo, _ := GetVmObject(nsId, mciId, vmId)
+	if originalVmInfo.Status != model.StatusTerminated {
+		vmInfo.Status = vmStatusTmp.Status
+		vmInfo.TargetAction = vmStatusTmp.TargetAction
+		vmInfo.TargetStatus = vmStatusTmp.TargetStatus
+		vmInfo.SystemMessage = vmStatusTmp.SystemMessage
 
-	if cspResourceName != "" {
-		// don't update VM info, if cspResourceName is empty
-		UpdateVmInfo(nsId, mciId, temp)
+		if cspResourceName != "" {
+			// don't update VM info, if cspResourceName is empty
+			UpdateVmInfo(nsId, mciId, vmInfo)
+		}
+	} else {
+		log.Debug().Msgf("VM %s is already terminated, skipping status update", vmId)
 	}
 
 	return vmStatusTmp, nil
@@ -2013,22 +2519,14 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 	// skip termination if option is force
 	if option != "force" {
 		// ControlVm first
-		var wg sync.WaitGroup
-		results := make(chan model.ControlVmResult, 1)
-		wg.Add(1)
-		go ControlVmAsync(&wg, nsId, mciId, vmId, model.ActionTerminate, results)
-		checkErr := <-results
-		wg.Wait()
-		close(results)
-		if checkErr.Error != nil {
-			log.Info().Msg(checkErr.Error.Error())
-			if option != "force" {
-				return checkErr.Error
-			}
+		_, err := HandleMciVmAction(nsId, mciId, vmId, model.ActionTerminate, false)
+		if err != nil {
+			log.Info().Msg(err.Error())
+			return err
 		}
 		// for deletion, need to wait until termination is finished
 		// Sleep for 5 seconds
-		fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe VM termination.\n\n")
+		log.Info().Msg("Wait for VM termination in 5 seconds")
 		time.Sleep(5 * time.Second)
 
 	}

@@ -122,7 +122,7 @@ const (
 	StrContainer             string = "container"
 	StrNamespace             string = "ns"
 	StrCommon                string = "common"
-	StrEmpty                 string = "empty"
+	StrEmpty                 string = ""
 	StrSharedResourceName    string = "-shared-"
 	// StrFirewallRule               string = "firewallRule"
 

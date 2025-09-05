@@ -23,6 +23,7 @@ import (
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	terrariumModel "github.com/cloud-barista/mc-terrarium/pkg/api/rest/model"
 	"github.com/go-resty/resty/v2"
@@ -66,13 +67,13 @@ const (
 type SqlDBAction string
 
 var validCspForSqlDB = map[string]bool{
-	"aws":   true,
-	"azure": true,
-	"gcp":   true,
-	"ncp":   true,
-	// "alibaba": true,
-	// "nhn":     true,
-	// "kt":      true,
+	csp.AWS:   true,
+	csp.Azure: true,
+	csp.GCP:   true,
+	csp.NCP:   true,
+	// csp.Alibaba: true,
+	// csp.NHN:     true,
+	// csp.KT:      true,
 
 	// Add more CSPs here
 }

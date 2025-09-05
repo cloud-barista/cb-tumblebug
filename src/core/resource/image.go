@@ -1118,7 +1118,7 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 				defer wait.Done()
 
 				// RandomSleep for safe parallel executions
-				common.RandomSleep(0, lenImages/8)
+				common.RandomSleep(0, lenImages/8*1000)
 				log.Info().Msgf("Failed to get existing image, Provider: %s, Region: %s, CspImageName: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err.Error())
 
 				if strings.EqualFold(regionName, model.StrCommon) {

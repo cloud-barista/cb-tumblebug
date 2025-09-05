@@ -1135,6 +1135,9 @@ type RiskAnalysis struct {
 
 	// Recommendations provides actionable guidance for users
 	Recommendations []string `json:"recommendations"`
+
+	// RecentFailureMessages contains recent failure messages for context (up to 5 most recent, unique messages)
+	RecentFailureMessages []string `json:"recentFailureMessages,omitempty"`
 }
 
 // SpecRiskInfo represents risk analysis specific to the VM specification

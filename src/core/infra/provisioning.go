@@ -36,6 +36,34 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// CSP-specific rate limiting configurations for VM creation
+var vmCreateRateLimits = map[string]struct {
+	maxRegions      int
+	maxVMsPerRegion int
+}{
+	// csp.Azure:     {maxRegions: 8, maxVMsPerRegion: 25},
+	// csp.AWS:       {maxRegions: 10, maxVMsPerRegion: 30},
+	// csp.GCP:       {maxRegions: 12, maxVMsPerRegion: 35},
+	// csp.Alibaba:   {maxRegions: 6, maxVMsPerRegion: 20},
+	// csp.Tencent:   {maxRegions: 6, maxVMsPerRegion: 20},
+	csp.NCP: {maxRegions: 5, maxVMsPerRegion: 15}, // NCP has stricter limits
+	// csp.NHN:       {maxRegions: 5, maxVMsPerRegion: 20},
+	// csp.OpenStack: {maxRegions: 5, maxVMsPerRegion: 15},
+}
+
+// getVmCreateRateLimitsForCSP returns rate limiting configuration for VM creation
+func getVmCreateRateLimitsForCSP(cspName string) (int, int) {
+	// Normalize CSP name to lowercase for lookup
+	normalizedCSP := strings.ToLower(cspName)
+
+	if limits, exists := vmCreateRateLimits[normalizedCSP]; exists {
+		return limits.maxRegions, limits.maxVMsPerRegion
+	}
+
+	// Return default values for unknown CSPs
+	return 30, 20 // defaultMaxConcurrentRegionsPerCSP, defaultMaxConcurrentVMsPerRegion
+}
+
 // MciReqStructLevelValidation is func to validate fields in MciReqStruct
 func MciReqStructLevelValidation(sl validator.StructLevel) {
 
@@ -69,14 +97,14 @@ func createVmObjectSafe(nsId, mciId string, vmInfoData *model.VmInfo) error {
 	return CreateVmObject(&wg, nsId, mciId, vmInfoData)
 }
 
-// createVmSafe creates VM without WaitGroup management
-func createVmSafe(nsId, mciId string, vmInfoData *model.VmInfo, option string) error {
-	var wg sync.WaitGroup
-	wg.Add(1)
-	err := CreateVm(&wg, nsId, mciId, vmInfoData, option)
-	wg.Wait()
-	return err
-}
+// // createVmSafe creates VM without WaitGroup management
+// func createVmSafe(nsId, mciId string, vmInfoData *model.VmInfo, option string) error {
+// 	var wg sync.WaitGroup
+// 	wg.Add(1)
+// 	err := CreateVm(&wg, nsId, mciId, vmInfoData, option)
+// 	wg.Wait()
+// 	return err
+// }
 
 // Helper functions for CreateMci
 
@@ -434,96 +462,6 @@ func rollbackCreatedResources(nsId string, createdResources []CreatedResource) e
 
 // MCI and VM Provisioning
 
-// CreateMciVm is func to post (create) MciVm
-func CreateMciVm(nsId string, mciId string, vmInfoData *model.VmInfo) (*model.VmInfo, error) {
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		temp := &model.VmInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
-
-	err = common.CheckString(mciId)
-	if err != nil {
-		temp := &model.VmInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
-	err = common.CheckString(vmInfoData.Name)
-	if err != nil {
-		temp := &model.VmInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
-	check, _ := CheckVm(nsId, mciId, vmInfoData.Name)
-
-	if check {
-		temp := &model.VmInfo{}
-		err := fmt.Errorf("The vm " + vmInfoData.Name + " already exists.")
-		return temp, err
-	}
-
-	vmInfoData.Id = vmInfoData.Name
-	vmInfoData.PublicIP = "empty"
-	vmInfoData.PublicDNS = "empty"
-	vmInfoData.TargetAction = model.ActionCreate
-	vmInfoData.TargetStatus = model.StatusRunning
-	vmInfoData.Status = model.StatusCreating
-
-	//goroutin
-	var wg sync.WaitGroup
-	wg.Add(1)
-	option := "create"
-	go CreateVmObject(&wg, nsId, mciId, vmInfoData)
-	wg.Wait()
-
-	wg.Add(1)
-	go CreateVm(&wg, nsId, mciId, vmInfoData, option)
-	wg.Wait()
-
-	vmStatus, err := FetchVmStatus(nsId, mciId, vmInfoData.Id)
-	if err != nil {
-		return nil, fmt.Errorf("Cannot find " + common.GenMciKey(nsId, mciId, vmInfoData.Id))
-	}
-
-	vmInfoData.Status = vmStatus.Status
-	vmInfoData.TargetStatus = vmStatus.TargetStatus
-	vmInfoData.TargetAction = vmStatus.TargetAction
-
-	// Install CB-Dragonfly monitoring agent
-
-	mciTmp, _, _ := GetMciObject(nsId, mciId)
-
-	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mciId, mciTmp.InstallMonAgent)
-
-	if strings.Contains(mciTmp.InstallMonAgent, "yes") {
-
-		// Sleep for 20 seconds for a safe DF agent installation.
-		fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe CB-Dragonfly Agent installation.\n\n")
-		time.Sleep(20 * time.Second)
-
-		check := CheckDragonflyEndpoint()
-		if check != nil {
-			fmt.Printf("\n\n[Warning] CB-Dragonfly is not available\n\n")
-		} else {
-			reqToMon := &model.MciCmdReq{}
-			reqToMon.UserName = "cb-user" // this MCI user name is temporal code. Need to improve.
-
-			fmt.Printf("\n[InstallMonitorAgentToMci]\n\n")
-			content, err := InstallMonitorAgentToMci(nsId, mciId, model.StrMCI, reqToMon)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				//mciTmp.InstallMonAgent = "no"
-			}
-			common.PrintJsonPretty(content)
-			//mciTmp.InstallMonAgent = "yes"
-		}
-	}
-
-	return vmInfoData, nil
-}
-
 // ScaleOutMciSubGroup is func to create MCI groupVM
 func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToAdd string) (*model.MciInfo, error) {
 	vmIdList, err := ListVmBySubGroup(nsId, mciId, subGroupId)
@@ -718,8 +656,8 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 		vmInfoData.Id = vmInfoData.Name
 		vmInfoData.Uid = common.GenUid()
 
-		vmInfoData.PublicIP = "empty"
-		vmInfoData.PublicDNS = "empty"
+		vmInfoData.PublicIP = ""
+		vmInfoData.PublicDNS = ""
 
 		vmInfoData.Status = model.StatusCreating
 		vmInfoData.TargetAction = targetAction
@@ -756,6 +694,8 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 
 	option := "create"
 
+	// Collect all VM info for rate-limited parallel processing
+	var vmInfoList []*model.VmInfo
 	for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
 		vmInfoData := model.VmInfo{}
 
@@ -770,19 +710,21 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 		}
 		vmInfoData.Id = vmInfoData.Name
 		vmId := vmInfoData.Id
-		vmInfoData, err := GetVmObject(nsId, mciId, vmId)
+		vmInfo, err := GetVmObject(nsId, mciId, vmId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
 		}
-
-		// Avoid concurrent requests to CSP.
-		time.Sleep(time.Millisecond * 1000)
-
-		wg.Add(1)
-		go CreateVm(&wg, nsId, mciId, &vmInfoData, option)
+		vmInfoList = append(vmInfoList, &vmInfo)
 	}
-	wg.Wait()
+
+	// Create VMs with hierarchical rate limiting
+	log.Info().Msgf("Creating %d VMs with rate limiting", len(vmInfoList))
+	err = CreateVmsInParallel(nsId, mciId, vmInfoList, option)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create VMs in parallel")
+		return nil, err
+	}
 
 	//Update MCI status
 
@@ -796,9 +738,57 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 
 	mciTmp.Status = mciStatusTmp.Status
 
-	if mciTmp.TargetStatus == mciTmp.Status {
+	// More robust completion check for Create action
+	isCreateCompleted := false
+	if mciTmp.TargetAction == model.ActionCreate {
+		// For Create action, check if all VMs are in final states (including Failed)
+		// Final states: Running, Failed, Terminated, Suspended
+		// Transitional states: Creating, Undefined, empty string
+		allVmsInFinalState := true
+		pendingCount := 0
+		runningCount := 0
+		failedCount := 0
+		totalVmCount := len(mciStatusTmp.Vm)
+
+		for _, vm := range mciStatusTmp.Vm {
+			// Check if VM is still in transitional/pending state
+			if vm.Status == model.StatusCreating || vm.Status == model.StatusUndefined || vm.Status == "" {
+				allVmsInFinalState = false
+				pendingCount++
+			} else {
+				// VM is in final state, count by type for logging
+				switch vm.Status {
+				case model.StatusRunning:
+					runningCount++
+				case model.StatusFailed:
+					failedCount++
+					// Other final states (Terminated, Suspended) are also acceptable
+				}
+			}
+		}
+
+		if allVmsInFinalState && totalVmCount > 0 {
+			isCreateCompleted = true
+			if failedCount > 0 {
+				log.Info().Msgf("MCI %s Create action completed with partial success: %d running, %d failed, %d total VMs",
+					mciId, runningCount, failedCount, totalVmCount)
+			} else {
+				log.Info().Msgf("MCI %s Create action completed successfully: all %d VMs reached final state",
+					mciId, totalVmCount)
+			}
+		} else {
+			log.Debug().Msgf("MCI %s Create action pending: %d/%d VMs still in transitional state",
+				mciId, pendingCount, totalVmCount)
+		}
+	} else {
+		// For other actions, use the original simple check
+		isCreateCompleted = (mciTmp.TargetStatus == mciTmp.Status)
+	}
+
+	if isCreateCompleted {
 		mciTmp.TargetStatus = model.StatusComplete
 		mciTmp.TargetAction = model.ActionComplete
+		log.Info().Msgf("MCI %s action completed, setting TargetAction/TargetStatus to Complete", mciId)
 	}
 	UpdateMciInfo(nsId, mciTmp)
 
@@ -877,16 +867,6 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		} else {
 			totalVmCount += 1
 		}
-	}
-
-	// Helper function to add VM creation error (mutex-free version for when already locked)
-	addVmErrorUnsafe := func(errors *[]model.VmCreationError, vmName, errorMsg, phase string) {
-		*errors = append(*errors, model.VmCreationError{
-			VmName:    vmName,
-			Error:     errorMsg,
-			Phase:     phase,
-			Timestamp: time.Now().Format(time.RFC3339),
-		})
 	}
 
 	// Helper function to add VM creation error (with mutex for standalone use)
@@ -1002,8 +982,8 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 			vmInfo := model.VmInfo{
 				ResourceType:     model.StrVM,
 				Uid:              common.GenUid(),
-				PublicIP:         "empty",
-				PublicDNS:        "empty",
+				PublicIP:         "",
+				PublicDNS:        "",
 				Status:           model.StatusCreating,
 				TargetAction:     model.ActionCreate,
 				TargetStatus:     model.StatusRunning,
@@ -1078,21 +1058,21 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 			// Add VM object creation error summary
 			errorSummary := fmt.Sprintf("VM object creation failed for %d out of %d VMs", len(createErrors), len(vmConfigs))
 			mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorSummary)
-			
+
 			// Add each VM object creation error
 			for _, vmError := range vmObjectErrors {
 				errorDetail := fmt.Sprintf("VM '%s' object creation failed: %s", vmError.VmName, vmError.Error)
 				mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorDetail)
 			}
-			
+
 			// Add policy information
 			policyMsg := fmt.Sprintf("Failure handling policy: %s", req.PolicyOnPartialFailure)
 			mciTmp.SystemMessage = append(mciTmp.SystemMessage, policyMsg)
-			
+
 			UpdateMciInfo(nsId, mciTmp)
 			log.Info().Msgf("Added %d VM object creation errors to MCI SystemMessage", len(createErrors)+2)
 		}
-		
+
 		switch req.PolicyOnPartialFailure {
 		case model.PolicyRollback:
 			log.Warn().Msgf("VM object creation failed for %d VMs, rolling back entire MCI due to policy=rollback", len(createErrors))
@@ -1113,37 +1093,29 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		}
 	}
 
-	// Create actual VMs with intelligent delay and error handling
-	log.Info().Msgf("Creating %d VMs", len(vmConfigs))
+	// Create actual VMs with hierarchical rate limiting
+	log.Info().Msgf("Creating %d VMs with rate limiting", len(vmConfigs))
 	createErrors = createErrors[:0] // Reset error slice
 
-	for i, config := range vmConfigs {
-		// Apply intelligent delay to avoid CSP rate limiting
-		if i > 0 {
-			delay := time.Duration(200*i) * time.Millisecond
-			if delay > 5*time.Second {
-				delay = 5 * time.Second
-			}
-			time.Sleep(delay)
-		}
-
+	// Collect all VM info for rate-limited parallel processing
+	var vmInfoList []*model.VmInfo
+	for _, config := range vmConfigs {
 		vmInfoData, err := GetVmObject(nsId, mciId, config.vmInfo.Id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get VM object '%s': %w", config.vmInfo.Id, err)
 		}
-
-		wg.Add(1)
-		go func(vmData model.VmInfo, vmName string) {
-			defer wg.Done()
-			if err := createVmSafe(nsId, mciId, &vmData, option); err != nil {
-				errorMu.Lock()
-				createErrors = append(createErrors, fmt.Errorf("VM creation failed for '%s': %w", vmName, err))
-				addVmErrorUnsafe(&vmCreateErrors, vmName, err.Error(), "vm_creation")
-				errorMu.Unlock()
-			}
-		}(vmInfoData, config.vmInfo.Id)
+		vmInfoList = append(vmInfoList, &vmInfoData)
 	}
-	wg.Wait()
+
+	// Create VMs with hierarchical rate limiting
+	err = CreateVmsInParallel(nsId, mciId, vmInfoList, option)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create VMs in parallel")
+		errorMu.Lock()
+		createErrors = append(createErrors, fmt.Errorf("bulk VM creation failed: %w", err))
+		// Add individual VM error tracking would require modification to CreateVmsInParallel to return detailed errors
+		errorMu.Unlock()
+	}
 
 	// Check for VM creation errors
 	if len(createErrors) > 0 {
@@ -1153,21 +1125,21 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 			// Add VM creation error summary
 			errorSummary := fmt.Sprintf("VM creation failed for %d out of %d VMs", len(createErrors), len(vmConfigs))
 			mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorSummary)
-			
+
 			// Add each VM creation error
 			for _, vmError := range vmCreateErrors {
 				errorDetail := fmt.Sprintf("VM '%s' creation failed: %s", vmError.VmName, vmError.Error)
 				mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorDetail)
 			}
-			
+
 			// Add policy information
 			policyMsg := fmt.Sprintf("Failure handling policy: %s", req.PolicyOnPartialFailure)
 			mciTmp.SystemMessage = append(mciTmp.SystemMessage, policyMsg)
-			
+
 			UpdateMciInfo(nsId, mciTmp)
 			log.Info().Msgf("Added %d VM creation errors to MCI SystemMessage", len(createErrors)+2)
 		}
-		
+
 		switch req.PolicyOnPartialFailure {
 		case model.PolicyRollback:
 			log.Error().Msgf("VM creation failed for %d VMs, rolling back entire MCI due to policy=rollback", len(createErrors))
@@ -1288,15 +1260,14 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		log.Error().Err(err).Msgf("Failed to record provisioning events for MCI '%s', but continuing", mciId)
 	}
 
-	// Update MCI status
-	mciTmp, _, err = GetMciObject(nsId, mciId)
+	// Update DB for the final status of MCI
+	mciResult.TargetStatus = model.StatusComplete
+	mciResult.TargetAction = model.ActionComplete
+	UpdateMciInfo(nsId, *mciResult)
+	*mciResult, _, err = GetMciObject(nsId, mciId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get MCI object after VM creation: %w", err)
 	}
-	mciTmp.TargetStatus = model.StatusComplete
-	mciTmp.TargetAction = model.ActionComplete
-	UpdateMciInfo(nsId, mciTmp)
-
 	return mciResult, nil
 }
 
@@ -1457,7 +1428,7 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 
 		// Group subGroupReqs by connectionName for sequential processing
 		connectionGroups := make(map[string][]model.CreateSubGroupDynamicReq)
-		
+
 		// First, determine the connection name for each subGroup
 		for _, subGroupReq := range subGroupReqs {
 			// Get spec info to determine connection
@@ -1466,16 +1437,16 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 				log.Error().Err(err).Msgf("Failed to get spec info for grouping: %s", subGroupReq.SpecId)
 				continue
 			}
-			
+
 			connectionName := specInfo.ConnectionName
 			if subGroupReq.ConnectionName != "" {
 				connectionName = subGroupReq.ConnectionName
 			}
-			
+
 			// Group by connection name
 			connectionGroups[connectionName] = append(connectionGroups[connectionName], subGroupReq)
 		}
-		
+
 		log.Info().Msgf("Grouped %d SubGroups into %d connection groups", len(subGroupReqs), len(connectionGroups))
 
 		// Process each connection group in parallel, but VMs within each group sequentially
@@ -1483,23 +1454,23 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 			wg.Add(1)
 			go func(connName string, subGroups []model.CreateSubGroupDynamicReq) {
 				defer wg.Done()
-				
+
 				log.Info().Msgf("Processing %d SubGroups for connection '%s' sequentially", len(subGroups), connName)
-				
+
 				// Process SubGroups in this connection sequentially
 				for i, subGroupDynamicReq := range subGroups {
-					log.Debug().Msgf("[%s][%d/%d] Processing SubGroup '%s' sequentially", 
+					log.Debug().Msgf("[%s][%d/%d] Processing SubGroup '%s' sequentially",
 						connName, i+1, len(subGroups), subGroupDynamicReq.Name)
-					
+
 					// Add small delay between sequential requests to avoid rate limiting
 					if i > 0 {
 						time.Sleep(2 * time.Second)
 					}
-					
+
 					result, err := getSubGroupReqFromDynamicReq(reqID, nsId, &subGroupDynamicReq)
 					resultChan <- vmResult{result: result, err: err}
 				}
-				
+
 				log.Info().Msgf("Completed processing SubGroups for connection '%s'", connName)
 			}(connectionName, subGroupsInConnection)
 		}
@@ -1544,15 +1515,15 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 				// Add general error summary
 				errorSummary := fmt.Sprintf("Resource preparation failed for %d VM(s) out of %d total VMs", len(failedVMs), len(failedVMs)+len(successfulVMs))
 				mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorSummary)
-				
+
 				// Add detailed error messages for each failed VM
 				for _, detail := range errorDetails {
 					mciTmp.SystemMessage = append(mciTmp.SystemMessage, detail)
 				}
-				
+
 				UpdateMciInfo(nsId, mciTmp)
 			}
-			
+
 			// // Count resources by type for detailed rollback info
 			// resourceSummary := make(map[string]int)
 			// for _, resource := range allCreatedResources {
@@ -1706,8 +1677,14 @@ func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynam
 
 			// Add cost estimation if available
 			if specInfo.CostPerHour > 0 {
-				vmReview.EstimatedCost = fmt.Sprintf("$%.4f/hour", float64(specInfo.CostPerHour))
-				vmCost = float64(specInfo.CostPerHour)
+				subGroupSizeInt := 1
+				if subGroupDynamicReq.SubGroupSize != "" {
+					if parsed, err := strconv.Atoi(subGroupDynamicReq.SubGroupSize); err == nil {
+						subGroupSizeInt = parsed
+					}
+				}
+				vmReview.EstimatedCost = fmt.Sprintf("$%.4f/hour", float64(specInfo.CostPerHour)*float64(subGroupSizeInt))
+				vmCost = float64(specInfo.CostPerHour) * float64(subGroupSizeInt)
 			} else {
 				vmReview.EstimatedCost = "Cost estimation unavailable"
 			}
@@ -1760,19 +1737,31 @@ func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynam
 
 	// Check provisioning history and risk analysis
 	if specInfoPtr != nil {
-		riskLevel, riskMessage, err := AnalyzeProvisioningRisk(subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId)
+		riskAnalysis, err := AnalyzeProvisioningRiskDetailed(subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Failed to analyze provisioning risk for VM: %s", subGroupDynamicReq.Name)
 			vmReview.Warnings = append(vmReview.Warnings, "Failed to analyze provisioning history")
 		} else {
+			riskLevel := riskAnalysis.OverallRisk.Level
+			riskMessage := riskAnalysis.OverallRisk.Message
+
+			// Include recent failure messages if available
+			var fullRiskMessage string
+			if len(riskAnalysis.RecentFailureMessages) > 0 {
+				fullRiskMessage = fmt.Sprintf("%s. Recent failure examples: %s",
+					riskMessage, strings.Join(riskAnalysis.RecentFailureMessages, "; "))
+			} else {
+				fullRiskMessage = riskMessage
+			}
+
 			switch riskLevel {
 			case "high":
-				vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("High provisioning failure risk: %s", riskMessage))
+				vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("High provisioning failure risk: %s", fullRiskMessage))
 				vmReview.CanCreate = false
 				viable = false
 				log.Debug().Msgf("High risk detected for spec %s with image %s: %s", subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId, riskMessage)
 			case "medium":
-				vmReview.Warnings = append(vmReview.Warnings, fmt.Sprintf("Moderate provisioning failure risk: %s", riskMessage))
+				vmReview.Warnings = append(vmReview.Warnings, fmt.Sprintf("Moderate provisioning failure risk: %s", fullRiskMessage))
 				hasVmWarning = true
 				log.Debug().Msgf("Medium risk detected for spec %s with image %s: %s", subGroupDynamicReq.SpecId, subGroupDynamicReq.ImageId, riskMessage)
 			case "low":
@@ -2619,6 +2608,152 @@ func CreateVmObject(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *m
 	return nil
 }
 
+// VmCreateInfo represents VM creation information with grouping details
+type VmCreateInfo struct {
+	VmInfo       *model.VmInfo
+	ProviderName string
+	RegionName   string
+}
+
+// CreateVmsInParallel creates VMs with hierarchical rate limiting
+// Level 1: CSPs are processed in parallel
+// Level 2: Within each CSP, regions are processed with semaphore (maxConcurrentRegionsPerCSP)
+// Level 3: Within each region, VMs are processed with semaphore (maxConcurrentVMsPerRegion)
+func CreateVmsInParallel(nsId, mciId string, vmInfoList []*model.VmInfo, option string) error {
+	if len(vmInfoList) == 0 {
+		return nil
+	}
+
+	// Step 1: Group VMs by CSP and region
+	vmGroups := make(map[string]map[string][]*model.VmInfo) // CSP -> Region -> VmInfos
+	vmGroupInfos := make(map[string]VmCreateInfo)           // VmId -> CreateInfo
+
+	for _, vmInfo := range vmInfoList {
+		providerName := vmInfo.ConnectionConfig.ProviderName
+		regionName := vmInfo.Region.Region
+
+		// Initialize CSP map if not exists
+		if vmGroups[providerName] == nil {
+			vmGroups[providerName] = make(map[string][]*model.VmInfo)
+		}
+
+		// Add VM to the appropriate group
+		vmGroups[providerName][regionName] = append(vmGroups[providerName][regionName], vmInfo)
+		vmGroupInfos[vmInfo.Id] = VmCreateInfo{
+			VmInfo:       vmInfo,
+			ProviderName: providerName,
+			RegionName:   regionName,
+		}
+	}
+
+	// Step 2: Process CSPs in parallel
+	var wg sync.WaitGroup
+	var mutex sync.Mutex
+	var allErrors []error
+
+	for csp, regions := range vmGroups {
+		wg.Add(1)
+		go func(providerName string, regionMap map[string][]*model.VmInfo) {
+			defer wg.Done()
+
+			// Get rate limits for this specific CSP
+			maxRegionsForCSP, maxVMsForRegion := getVmCreateRateLimitsForCSP(providerName)
+
+			log.Debug().Msgf("Creating VMs for CSP: %s with %d regions (limits: %d regions, %d VMs/region)",
+				providerName, len(regionMap), maxRegionsForCSP, maxVMsForRegion)
+
+			// Step 3: Process regions within CSP with rate limiting
+			regionSemaphore := make(chan struct{}, maxRegionsForCSP)
+			var regionWg sync.WaitGroup
+			var regionMutex sync.Mutex
+			var cspErrors []error
+
+			for region, vmInfos := range regionMap {
+				regionWg.Add(1)
+				go func(regionName string, vmInfoList []*model.VmInfo) {
+					defer regionWg.Done()
+
+					// Acquire region semaphore
+					regionSemaphore <- struct{}{}
+					defer func() { <-regionSemaphore }()
+
+					log.Debug().Msgf("Creating VMs in region: %s/%s with %d VMs (limit: %d VMs/region)",
+						providerName, regionName, len(vmInfoList), maxVMsForRegion)
+
+					// Step 4: Process VMs within region with rate limiting
+					vmSemaphore := make(chan struct{}, maxVMsForRegion)
+					var vmWg sync.WaitGroup
+					var vmMutex sync.Mutex
+					var regionErrors []error
+
+					for _, vmInfo := range vmInfoList {
+						vmWg.Add(1)
+						go func(vmInfo *model.VmInfo) {
+							defer vmWg.Done()
+
+							// Acquire VM semaphore
+							vmSemaphore <- struct{}{}
+							defer func() { <-vmSemaphore }()
+
+							// Create VM using the existing CreateVm function
+							var createWg sync.WaitGroup
+							createWg.Add(1)
+							err := CreateVm(&createWg, nsId, mciId, vmInfo, option)
+							if err != nil {
+								log.Error().Err(err).Msgf("Failed to create VM %s", vmInfo.Name)
+								vmMutex.Lock()
+								regionErrors = append(regionErrors, fmt.Errorf("VM %s: %w", vmInfo.Name, err))
+								vmMutex.Unlock()
+							}
+
+						}(vmInfo)
+					}
+					vmWg.Wait()
+
+					// Merge region errors to CSP errors
+					if len(regionErrors) > 0 {
+						regionMutex.Lock()
+						cspErrors = append(cspErrors, regionErrors...)
+						regionMutex.Unlock()
+					}
+
+				}(region, vmInfos)
+			}
+			regionWg.Wait()
+
+			// Merge CSP errors to global errors
+			if len(cspErrors) > 0 {
+				mutex.Lock()
+				allErrors = append(allErrors, cspErrors...)
+				mutex.Unlock()
+			}
+
+			log.Debug().Msgf("Completed VM creation for CSP: %s", providerName)
+
+		}(csp, regions)
+	}
+
+	wg.Wait()
+
+	// Summary logging
+	cspCount := len(vmGroups)
+	totalRegions := 0
+	for _, regions := range vmGroups {
+		totalRegions += len(regions)
+	}
+
+	if len(allErrors) > 0 {
+		log.Warn().Msgf("Rate-limited VM creation completed with errors: %d CSPs, %d regions, %d VMs total, %d errors",
+			cspCount, totalRegions, len(vmInfoList), len(allErrors))
+		// Return first error for compatibility
+		return allErrors[0]
+	}
+
+	log.Debug().Msgf("Rate-limited VM creation completed successfully: %d CSPs, %d regions, %d VMs processed",
+		cspCount, totalRegions, len(vmInfoList))
+	return nil
+}
+
 // CreateVm is func to create VM (option = "register" for register existing VM)
 func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.VmInfo, option string) error {
 	log.Info().Msgf("Start to create VM: %s", vmInfoData.Name)
@@ -2797,11 +2932,10 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 		}
 	}
 
+	common.RandomSleep(0, 5*1000)
 	log.Info().Msg("VM request body to CB-Spider")
 	common.PrintJsonPretty(requestBody)
 
-	// Randomly sleep within 20 Secs to avoid rateLimit from CSP
-	common.RandomSleep(0, 20)
 	client := resty.New()
 	method := "POST"
 	client.SetTimeout(20 * time.Minute)
@@ -3897,11 +4031,15 @@ func AnalyzeProvisioningRiskDetailed(specId string, cspImageName string) (*model
 	// Generate recommendations
 	recommendations := generateRecommendations(specRisk, imageRisk, overallRisk)
 
+	// Get recent unique failure messages for context
+	recentFailureMessages := getRecentUniqueFailureMessages(provisioningLog, 5)
+
 	return &model.RiskAnalysis{
-		SpecRisk:        specRisk,
-		ImageRisk:       imageRisk,
-		OverallRisk:     overallRisk,
-		Recommendations: recommendations,
+		SpecRisk:              specRisk,
+		ImageRisk:             imageRisk,
+		OverallRisk:           overallRisk,
+		Recommendations:       recommendations,
+		RecentFailureMessages: recentFailureMessages,
 	}, nil
 }
 
@@ -4196,4 +4334,40 @@ func ValidateProvisioningLogIntegrity(specId string) error {
 
 	log.Debug().Msgf("Provisioning log integrity validated for spec: %s", specId)
 	return nil
+}
+
+// getRecentUniqueFailureMessages extracts recent, unique failure messages from provisioning log
+// Returns up to maxMessages most recent unique failure messages
+func getRecentUniqueFailureMessages(provisioningLog *model.ProvisioningLog, maxMessages int) []string {
+	if provisioningLog == nil || len(provisioningLog.FailureMessages) == 0 {
+		return []string{}
+	}
+
+	// Use a map to track unique messages and a slice to maintain order
+	uniqueMessages := make(map[string]bool)
+	var recentMessages []string
+
+	// Process messages from most recent to oldest (assuming they are stored in chronological order)
+	// We'll take the last entries as the most recent ones
+	messages := provisioningLog.FailureMessages
+	startIdx := len(messages) - maxMessages*2 // Look at more messages to find unique ones
+	if startIdx < 0 {
+		startIdx = 0
+	}
+
+	// Process from the end (most recent) backwards
+	for i := len(messages) - 1; i >= startIdx && len(recentMessages) < maxMessages; i-- {
+		message := strings.TrimSpace(messages[i])
+		if message != "" && !uniqueMessages[message] {
+			uniqueMessages[message] = true
+			recentMessages = append(recentMessages, message)
+		}
+	}
+
+	// Reverse the slice to have most recent first
+	for i, j := 0, len(recentMessages)-1; i < j; i, j = i+1, j-1 {
+		recentMessages[i], recentMessages[j] = recentMessages[j], recentMessages[i]
+	}
+
+	return recentMessages
 }
