@@ -1234,7 +1234,7 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 			}
 
 			// Random sleep before retry
-			common.RandomSleep(2, 5)
+			common.RandomSleep(2*1000, 5*1000)
 			err = FetchPriceForConnConfig(config)
 		}
 
@@ -1266,7 +1266,7 @@ func FetchPriceForAllConnConfigs() (connConfigCount uint, priceCount uint, err e
 			defer func() { <-semaphore }() // Release semaphore slot when done
 
 			// Simulate random sleep to avoid overwhelming the API
-			common.RandomSleep(0, 10)
+			common.RandomSleep(0, 10*1000)
 
 			// Fetch with retry
 			err := fetchPricesWithRetry(config)
@@ -1667,7 +1667,7 @@ func GetAvailableRegionZonesForSpecList(provider string, cspSpecNames []string) 
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
 
-			common.RandomSleep(0, 20)
+			common.RandomSleep(0, 20*1000)
 
 			// Query single spec
 			specResult, err := GetAvailableRegionZonesForSpec(provider, spec)
@@ -2369,13 +2369,13 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest, ord
 	// Apply ORDER BY if specified
 	if orderBy != "" {
 		query = query.Order(orderBy)
-		log.Info().Msgf("Applying ORDER BY: %s", orderBy)
+		// log.Debug().Msgf("Applying ORDER BY: %s", orderBy)
 	}
 
 	// Apply limit if specified and greater than 0
 	if filter.Limit > 0 {
 		query = query.Limit(filter.Limit)
-		log.Info().Msgf("Applying LIMIT: %d", filter.Limit)
+		// log.Debug().Msgf("Applying LIMIT: %d", filter.Limit)
 	}
 
 	// Check the query before executing (only in debug mode to avoid performance impact)

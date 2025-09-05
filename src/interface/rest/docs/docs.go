@@ -17207,6 +17207,13 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "recentFailureMessages": {
+                    "description": "RecentFailureMessages contains recent failure messages for context (up to 5 most recent, unique messages)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "recommendations": {
                     "description": "Recommendations provides actionable guidance for users",
                     "type": "array",

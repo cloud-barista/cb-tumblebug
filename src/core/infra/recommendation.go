@@ -128,7 +128,7 @@ func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, 
 		return nil, err
 	}
 
-	log.Debug().Msgf("Using ORDER BY: %s", orderBy)
+	// log.Debug().Msgf("Using ORDER BY: %s", orderBy)
 
 	// Filtering and sorting in one DB query
 	log.Debug().Msg("[Filtering and sorting specs with DB query]")
@@ -815,7 +815,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 					Metric:      "providerName",
 					Description: "Filter specs from specific provider",
 					Condition: []model.OperationExample{
-						{Operator: "=", Operand: "aws"},
+						{Operator: "=", Operand: csp.AWS},
 					},
 				},
 				{
@@ -1100,7 +1100,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 	// Apply fallback logic: if DB returns empty results, use default examples
 	if len(options.Filter.AvailableValues.ProviderName) == 0 {
 		log.Info().Msg("No provider names found in DB, using default examples")
-		options.Filter.AvailableValues.ProviderName = []string{"aws", "azure", "gcp", "ncp", "alibaba", "tencent"}
+		options.Filter.AvailableValues.ProviderName = []string{csp.AWS, csp.Azure, csp.GCP, csp.NCP, csp.Alibaba, csp.Tencent}
 	}
 
 	if len(options.Filter.AvailableValues.RegionName) == 0 {

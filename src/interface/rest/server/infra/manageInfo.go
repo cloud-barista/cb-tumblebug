@@ -254,7 +254,7 @@ func RestGetMciVm(c echo.Context) error {
 
 	switch option {
 	case "status":
-		result, err := infra.GetMciVmStatus(nsId, mciId, vmId)
+		result, err := infra.GetMciVmStatus(nsId, mciId, vmId, false)
 		return clientManager.EndRequestWithLog(c, err, result)
 
 	case "idsInDetail":
@@ -266,7 +266,7 @@ func RestGetMciVm(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, result)
 
 	default:
-		result, err := infra.ListVmInfo(nsId, mciId, vmId)
+		result, err := infra.GetVmObject(nsId, mciId, vmId)
 		return clientManager.EndRequestWithLog(c, err, result)
 	}
 }

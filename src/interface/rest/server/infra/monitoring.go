@@ -75,7 +75,7 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.ListVmInfo(nsId, mciId, vmId)
+	result, err := infra.GetVmObject(nsId, mciId, vmId)
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 

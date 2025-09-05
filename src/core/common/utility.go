@@ -80,7 +80,7 @@ func GenRandomPassword(length int) string {
 	return pw
 }
 
-// RandomSleep is func to make a caller waits for during random time seconds (random value within x~y)
+// RandomSleep is func to make a caller waits for during random Milliseconds (from ms, to ms)
 func RandomSleep(from, to int) {
 	const minSleepTime = 1
 
@@ -96,7 +96,7 @@ func RandomSleep(from, to int) {
 		t = minSleepTime
 	}
 
-	n := rand.Intn(t*1000) + from*1000
+	n := rand.Intn(t) + from
 	time.Sleep(time.Duration(n) * time.Millisecond)
 }
 
@@ -771,7 +771,7 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 			wg.Add(1)
 			go func(connConfig model.ConnConfig) {
 				defer wg.Done()
-				RandomSleep(0, 30)
+				RandomSleep(0, 30*1000)
 				verified, err := CheckConnConfigAvailable(connConfig.ConfigName)
 				if err != nil {
 					log.Error().Err(err).Msgf("Cannot check model.ConnConfig %s is available", connConfig.ConfigName)

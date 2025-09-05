@@ -2144,7 +2144,7 @@ def _internal_review_mci_dynamic(
         if high_risk_count > 0:
             if "issues" not in result:
                 result["issues"] = []
-            result["issues"].append(f"⚠️ {high_risk_count} VM(s) have HIGH provisioning failure risk based on historical data")
+            result["issues"].append(f"{high_risk_count} VM(s) have HIGH provisioning failure risk based on historical data")
             
             if "recommendations" not in result:
                 result["recommendations"] = []
