@@ -4286,6 +4286,66 @@
                 }
             }
         },
+        "/ns/{nsId}/mci/{mciId}/handlingCount": {
+            "get": {
+                "description": "Get the number of commands currently in 'Handling' status for all VMs in an MCI. Returns per-VM counts and total count.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command Status"
+                ],
+                "summary": "Get count of currently handling commands for all VMs in MCI",
+                "operationId": "GetMciHandlingCommandCount",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MciHandlingCommandCountResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mci/{mciId}/mcSwNlb": {
             "post": {
                 "description": "Create a special purpose MCI for NLB and depoly and setting SW NLB",
@@ -5660,6 +5720,478 @@
                 }
             }
         },
+        "/ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus": {
+            "get": {
+                "description": "List command status records for a VM with various filtering options",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command Status"
+                ],
+                "summary": "List command status records for a VM with filtering",
+                "operationId": "ListVmCommandStatus",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "enum": [
+                                "Queued",
+                                "Handling",
+                                "Completed",
+                                "Failed",
+                                "Timeout"
+                            ],
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Filter by command execution status (can specify multiple)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by X-Request-ID",
+                        "name": "xRequestId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter commands containing this text",
+                        "name": "commandContains",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter commands started from this time (RFC3339 format)",
+                        "name": "startTimeFrom",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter commands started until this time (RFC3339 format)",
+                        "name": "startTimeTo",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter commands from this index (inclusive)",
+                        "name": "indexFrom",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter commands to this index (inclusive)",
+                        "name": "indexTo",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "Limit the number of results returned",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Number of results to skip",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.CommandStatusListResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete multiple command status records for a VM based on filtering criteria",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command Status"
+                ],
+                "summary": "Delete multiple command status records by criteria for a VM",
+                "operationId": "DeleteVmCommandStatusByCriteria",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "enum": [
+                                "Queued",
+                                "Handling",
+                                "Completed",
+                                "Failed",
+                                "Timeout"
+                            ],
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Filter by command execution status (can specify multiple)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by X-Request-ID",
+                        "name": "xRequestId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter commands containing this text",
+                        "name": "commandContains",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter commands started from this time (RFC3339 format)",
+                        "name": "startTimeFrom",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter commands started until this time (RFC3339 format)",
+                        "name": "startTimeTo",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter commands from this index (inclusive)",
+                        "name": "indexFrom",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter commands to this index (inclusive)",
+                        "name": "indexTo",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/clear": {
+            "delete": {
+                "description": "Delete all command status records for a VM",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command Status"
+                ],
+                "summary": "Clear all command status records for a VM",
+                "operationId": "ClearAllVmCommandStatus",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/{index}": {
+            "get": {
+                "description": "Get a specific command status record by index for a VM",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command Status"
+                ],
+                "summary": "Get a specific command status by index for a VM",
+                "operationId": "GetVmCommandStatus",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Command Index",
+                        "name": "index",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.CommandStatusInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific command status record by index for a VM",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command Status"
+                ],
+                "summary": "Delete a specific command status by index for a VM",
+                "operationId": "DeleteVmCommandStatus",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Command Index",
+                        "name": "index",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk": {
             "get": {
                 "description": "Get available dataDisks for a VM",
@@ -5882,6 +6414,74 @@
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mci/{mciId}/vm/{vmId}/handlingCount": {
+            "get": {
+                "description": "Get the number of commands currently in 'Handling' status for a specific VM. Optimized for frequent polling.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command Status"
+                ],
+                "summary": "Get count of currently handling commands for a VM",
+                "operationId": "GetVmHandlingCommandCount",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.HandlingCommandCountResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -12730,6 +13330,119 @@
                 }
             }
         },
+        "model.CommandExecutionStatus": {
+            "type": "string",
+            "enum": [
+                "Queued",
+                "Handling",
+                "Completed",
+                "Failed",
+                "Timeout"
+            ],
+            "x-enum-varnames": [
+                "CommandStatusQueued",
+                "CommandStatusHandling",
+                "CommandStatusCompleted",
+                "CommandStatusFailed",
+                "CommandStatusTimeout"
+            ]
+        },
+        "model.CommandStatusInfo": {
+            "type": "object",
+            "properties": {
+                "commandExecuted": {
+                    "description": "CommandExecuted is the actual SSH command executed on the VM (may be adjusted)",
+                    "type": "string",
+                    "example": "ls -la"
+                },
+                "commandRequested": {
+                    "description": "CommandRequested is the original command as requested by the user",
+                    "type": "string",
+                    "example": "ls -la"
+                },
+                "completedTime": {
+                    "description": "CompletedTime is when the command execution completed (success or failure)",
+                    "type": "string",
+                    "example": "2024-01-15 10:30:05"
+                },
+                "elapsedTime": {
+                    "description": "ElapsedTime is the duration of command execution in milliseconds",
+                    "type": "integer",
+                    "example": 5000
+                },
+                "errorMessage": {
+                    "description": "ErrorMessage contains error details if the execution failed",
+                    "type": "string",
+                    "example": "SSH connection failed"
+                },
+                "index": {
+                    "description": "Index is sequential identifier for this command execution (1, 2, 3, ...)",
+                    "type": "integer",
+                    "example": 1
+                },
+                "resultSummary": {
+                    "description": "ResultSummary provides a brief summary of the execution result",
+                    "type": "string",
+                    "example": "Command executed successfully"
+                },
+                "startedTime": {
+                    "description": "StartedTime is when the command execution started",
+                    "type": "string",
+                    "example": "2024-01-15 10:30:00"
+                },
+                "status": {
+                    "description": "Status represents the current status of the command execution",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.CommandExecutionStatus"
+                        }
+                    ],
+                    "example": "Completed"
+                },
+                "stderr": {
+                    "description": "Stderr contains the standard error from command execution (truncated for history)",
+                    "type": "string",
+                    "example": ""
+                },
+                "stdout": {
+                    "description": "Stdout contains the standard output from command execution (truncated for history)",
+                    "type": "string",
+                    "example": "total 8\ndrwxr-xr-x 2 user user 4096 Jan 15 10:30 ."
+                },
+                "xRequestId": {
+                    "description": "XRequestId is the request ID from X-Request-ID header when the command was executed",
+                    "type": "string",
+                    "example": "req-12345678-abcd-1234-efgh-123456789012"
+                }
+            }
+        },
+        "model.CommandStatusListResponse": {
+            "type": "object",
+            "properties": {
+                "commands": {
+                    "description": "Commands is the list of command status info matching the filter criteria",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CommandStatusInfo"
+                    }
+                },
+                "limit": {
+                    "description": "Limit is the limit applied to the query",
+                    "type": "integer",
+                    "example": 50
+                },
+                "offset": {
+                    "description": "Offset is the offset applied to the query",
+                    "type": "integer",
+                    "example": 0
+                },
+                "total": {
+                    "description": "Total is the total number of commands matching the criteria (before limit/offset)",
+                    "type": "integer",
+                    "example": 25
+                }
+            }
+        },
         "model.ConfigInfo": {
             "type": "object",
             "properties": {
@@ -13761,6 +14474,21 @@
                 "provider": {
                     "type": "string",
                     "example": "alibaba"
+                }
+            }
+        },
+        "model.HandlingCommandCountResponse": {
+            "type": "object",
+            "properties": {
+                "handlingCount": {
+                    "description": "HandlingCount is the number of commands currently in 'Handling' status",
+                    "type": "integer",
+                    "example": 3
+                },
+                "vmId": {
+                    "description": "VmId is the VM identifier",
+                    "type": "string",
+                    "example": "g1-1"
                 }
             }
         },
@@ -15139,6 +15867,28 @@
                     "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": ""
+                }
+            }
+        },
+        "model.MciHandlingCommandCountResponse": {
+            "type": "object",
+            "properties": {
+                "mciId": {
+                    "description": "MciId is the MCI identifier",
+                    "type": "string",
+                    "example": "mci01"
+                },
+                "totalHandlingCount": {
+                    "description": "TotalHandlingCount is the total number of handling commands across all VMs in the MCI",
+                    "type": "integer",
+                    "example": 3
+                },
+                "vmHandlingCounts": {
+                    "description": "VmHandlingCounts is a map of VM ID to handling command count",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
                 }
             }
         },
@@ -19075,6 +19825,13 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.KeyValue"
+                    }
+                },
+                "commandStatus": {
+                    "description": "CommandStatus stores the status and history of remote commands executed on this VM",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CommandStatusInfo"
                     }
                 },
                 "connectionConfig": {

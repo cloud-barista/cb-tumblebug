@@ -427,6 +427,18 @@ func RunServer() {
 
 	g.POST("/:nsId/cmd/mci/:mciId", rest_infra.RestPostCmdMci)
 	g.POST("/:nsId/transferFile/mci/:mciId", rest_infra.RestPostFileToMci)
+	
+	// Command Status Management for VMs
+	g.GET("/:nsId/mci/:mciId/vm/:vmId/commandStatus/:index", rest_infra.RestGetVmCommandStatus)
+	g.GET("/:nsId/mci/:mciId/vm/:vmId/commandStatus", rest_infra.RestListVmCommandStatus)
+	g.DELETE("/:nsId/mci/:mciId/vm/:vmId/commandStatus/:index", rest_infra.RestDeleteVmCommandStatus)
+	g.DELETE("/:nsId/mci/:mciId/vm/:vmId/commandStatus", rest_infra.RestDeleteVmCommandStatusByCriteria)
+	g.DELETE("/:nsId/mci/:mciId/vm/:vmId/commandStatus/clear", rest_infra.RestClearAllVmCommandStatus)
+	
+	// Handling Command Count for monitoring (optimized for frequent polling)
+	g.GET("/:nsId/mci/:mciId/vm/:vmId/handlingCount", rest_infra.RestGetVmHandlingCommandCount)
+	g.GET("/:nsId/mci/:mciId/handlingCount", rest_infra.RestGetMciHandlingCommandCount)
+	
 	g.PUT("/:nsId/mci/:mciId/vm/:targetVmId/bastion/:bastionVmId", rest_infra.RestSetBastionNodes)
 	g.DELETE("/:nsId/mci/:mciId/bastion/:bastionVmId", rest_infra.RestRemoveBastionNodes)
 	g.GET("/:nsId/mci/:mciId/vm/:targetVmId/bastion", rest_infra.RestGetBastionNodes)

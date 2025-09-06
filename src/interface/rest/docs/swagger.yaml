@@ -3359,6 +3359,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/mci/{mciId}/handlingCount:
+    get:
+      tags:
+      - "[MC-Infra] MCI Remote Command Status"
+      summary: Get count of currently handling commands for all VMs in MCI
+      description: Get the number of commands currently in 'Handling' status for all
+        VMs in an MCI. Returns per-VM counts and total count.
+      operationId: GetMciHandlingCommandCount
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.MciHandlingCommandCountResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/mci/{mciId}/mcSwNlb:
     post:
       tags:
@@ -4623,6 +4670,386 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus:
+    get:
+      tags:
+      - "[MC-Infra] MCI Remote Command Status"
+      summary: List command status records for a VM with filtering
+      description: List command status records for a VM with various filtering options
+      operationId: ListVmCommandStatus
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vmId
+        in: path
+        description: VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: status
+        in: query
+        description: Filter by command execution status (can specify multiple)
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - Queued
+            - Handling
+            - Completed
+            - Failed
+            - Timeout
+      - name: xRequestId
+        in: query
+        description: Filter by X-Request-ID
+        schema:
+          type: string
+      - name: commandContains
+        in: query
+        description: Filter commands containing this text
+        schema:
+          type: string
+      - name: startTimeFrom
+        in: query
+        description: Filter commands started from this time (RFC3339 format)
+        schema:
+          type: string
+      - name: startTimeTo
+        in: query
+        description: Filter commands started until this time (RFC3339 format)
+        schema:
+          type: string
+      - name: indexFrom
+        in: query
+        description: Filter commands from this index (inclusive)
+        schema:
+          type: integer
+      - name: indexTo
+        in: query
+        description: Filter commands to this index (inclusive)
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        description: Limit the number of results returned
+        schema:
+          type: integer
+          default: 50
+      - name: offset
+        in: query
+        description: Number of results to skip
+        schema:
+          type: integer
+          default: 0
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.CommandStatusListResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    delete:
+      tags:
+      - "[MC-Infra] MCI Remote Command Status"
+      summary: Delete multiple command status records by criteria for a VM
+      description: Delete multiple command status records for a VM based on filtering
+        criteria
+      operationId: DeleteVmCommandStatusByCriteria
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vmId
+        in: path
+        description: VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: status
+        in: query
+        description: Filter by command execution status (can specify multiple)
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - Queued
+            - Handling
+            - Completed
+            - Failed
+            - Timeout
+      - name: xRequestId
+        in: query
+        description: Filter by X-Request-ID
+        schema:
+          type: string
+      - name: commandContains
+        in: query
+        description: Filter commands containing this text
+        schema:
+          type: string
+      - name: startTimeFrom
+        in: query
+        description: Filter commands started from this time (RFC3339 format)
+        schema:
+          type: string
+      - name: startTimeTo
+        in: query
+        description: Filter commands started until this time (RFC3339 format)
+        schema:
+          type: string
+      - name: indexFrom
+        in: query
+        description: Filter commands from this index (inclusive)
+        schema:
+          type: integer
+      - name: indexTo
+        in: query
+        description: Filter commands to this index (inclusive)
+        schema:
+          type: integer
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/{index}:
+    get:
+      tags:
+      - "[MC-Infra] MCI Remote Command Status"
+      summary: Get a specific command status by index for a VM
+      description: Get a specific command status record by index for a VM
+      operationId: GetVmCommandStatus
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vmId
+        in: path
+        description: VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: index
+        in: path
+        description: Command Index
+        required: true
+        schema:
+          type: integer
+          default: 1
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.CommandStatusInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    delete:
+      tags:
+      - "[MC-Infra] MCI Remote Command Status"
+      summary: Delete a specific command status by index for a VM
+      description: Delete a specific command status record by index for a VM
+      operationId: DeleteVmCommandStatus
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vmId
+        in: path
+        description: VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: index
+        in: path
+        description: Command Index
+        required: true
+        schema:
+          type: integer
+          default: 1
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/clear:
+    delete:
+      tags:
+      - "[MC-Infra] MCI Remote Command Status"
+      summary: Clear all command status records for a VM
+      description: Delete all command status records for a VM
+      operationId: ClearAllVmCommandStatus
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vmId
+        in: path
+        description: VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/mci/{mciId}/vm/{vmId}/dataDisk:
     get:
       tags:
@@ -4799,6 +5226,60 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: dataDiskInfo
+  /ns/{nsId}/mci/{mciId}/vm/{vmId}/handlingCount:
+    get:
+      tags:
+      - "[MC-Infra] MCI Remote Command Status"
+      summary: Get count of currently handling commands for a VM
+      description: Get the number of commands currently in 'Handling' status for a
+        specific VM. Optimized for frequent polling.
+      operationId: GetVmHandlingCommandCount
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vmId
+        in: path
+        description: VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.HandlingCommandCountResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/mci/{mciId}/vm/{vmId}/snapshot:
     post:
       tags:
@@ -10345,6 +10826,104 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/model.CSPDetail'
+    model.CommandExecutionStatus:
+      type: string
+      enum:
+      - Queued
+      - Handling
+      - Completed
+      - Failed
+      - Timeout
+      x-enum-varnames:
+      - CommandStatusQueued
+      - CommandStatusHandling
+      - CommandStatusCompleted
+      - CommandStatusFailed
+      - CommandStatusTimeout
+    model.CommandStatusInfo:
+      type: object
+      properties:
+        commandExecuted:
+          type: string
+          description: CommandExecuted is the actual SSH command executed on the VM
+            (may be adjusted)
+          example: ls -la
+        commandRequested:
+          type: string
+          description: CommandRequested is the original command as requested by the
+            user
+          example: ls -la
+        completedTime:
+          type: string
+          description: CompletedTime is when the command execution completed (success
+            or failure)
+          example: 2024-01-15 10:30:05
+        elapsedTime:
+          type: integer
+          description: ElapsedTime is the duration of command execution in milliseconds
+          example: 5000
+        errorMessage:
+          type: string
+          description: ErrorMessage contains error details if the execution failed
+          example: SSH connection failed
+        index:
+          type: integer
+          description: "Index is sequential identifier for this command execution\
+            \ (1, 2, 3, ...)"
+          example: 1
+        resultSummary:
+          type: string
+          description: ResultSummary provides a brief summary of the execution result
+          example: Command executed successfully
+        startedTime:
+          type: string
+          description: StartedTime is when the command execution started
+          example: 2024-01-15 10:30:00
+        status:
+          type: object
+          description: Status represents the current status of the command execution
+          example: Completed
+          allOf:
+          - $ref: '#/components/schemas/model.CommandExecutionStatus'
+        stderr:
+          type: string
+          description: Stderr contains the standard error from command execution (truncated
+            for history)
+          example: ""
+        stdout:
+          type: string
+          description: Stdout contains the standard output from command execution
+            (truncated for history)
+          example: |-
+            total 8
+            drwxr-xr-x 2 user user 4096 Jan 15 10:30 .
+        xRequestId:
+          type: string
+          description: XRequestId is the request ID from X-Request-ID header when
+            the command was executed
+          example: req-12345678-abcd-1234-efgh-123456789012
+    model.CommandStatusListResponse:
+      type: object
+      properties:
+        commands:
+          type: array
+          description: Commands is the list of command status info matching the filter
+            criteria
+          items:
+            $ref: '#/components/schemas/model.CommandStatusInfo'
+        limit:
+          type: integer
+          description: Limit is the limit applied to the query
+          example: 50
+        offset:
+          type: integer
+          description: Offset is the offset applied to the query
+          example: 0
+        total:
+          type: integer
+          description: Total is the total number of commands matching the criteria
+            (before limit/offset)
+          example: 25
     model.ConfigInfo:
       type: object
       properties:
@@ -11119,6 +11698,18 @@ components:
         provider:
           type: string
           example: alibaba
+    model.HandlingCommandCountResponse:
+      type: object
+      properties:
+        handlingCount:
+          type: integer
+          description: HandlingCount is the number of commands currently in 'Handling'
+            status
+          example: 3
+        vmId:
+          type: string
+          description: VmId is the VM identifier
+          example: g1-1
     model.IID:
       required:
       - NameId
@@ -12166,6 +12757,23 @@ components:
           description: SystemLabel is for describing the mci in a keyword (any string
             can be used) for special System purpose
           example: ""
+    model.MciHandlingCommandCountResponse:
+      type: object
+      properties:
+        mciId:
+          type: string
+          description: MciId is the MCI identifier
+          example: mci01
+        totalHandlingCount:
+          type: integer
+          description: TotalHandlingCount is the total number of handling commands
+            across all VMs in the MCI
+          example: 3
+        vmHandlingCounts:
+          type: object
+          additionalProperties:
+            type: integer
+          description: VmHandlingCounts is a map of VM ID to handling command count
     model.MciInfo:
       type: object
       properties:
@@ -15047,6 +15655,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.KeyValue'
+        commandStatus:
+          type: array
+          description: CommandStatus stores the status and history of remote commands
+            executed on this VM
+          items:
+            $ref: '#/components/schemas/model.CommandStatusInfo'
         connectionConfig:
           $ref: '#/components/schemas/model.ConnConfig'
         connectionName:

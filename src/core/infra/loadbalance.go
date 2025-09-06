@@ -142,7 +142,7 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.NLBReq, option string) 
 
 	cmd = common.RuntimeConf.Nlbsw.CommandNlbApplyConfig
 	cmds = append(cmds, cmd)
-	output, err := RemoteCommandToMci(nsId, nlbMciId, "", "", "", &model.MciCmdReq{Command: cmds})
+	output, err := RemoteCommandToMci(nsId, nlbMciId, "", "", "", &model.MciCmdReq{Command: cmds}, "")
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err

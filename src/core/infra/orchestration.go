@@ -287,7 +287,7 @@ func OrchestrationController() {
 						if len(autoAction.PostCommand.Command) != 0 {
 
 							log.Debug().Msgf("[Post Command to VM] %v", autoAction.PostCommand.Command)
-							_, cmdErr := RemoteCommandToMci(nsId, mciPolicyTmp.Id, common.ToLower(autoAction.SubGroupDynamicReq.Name), "", "", &autoAction.PostCommand)
+							_, cmdErr := RemoteCommandToMci(nsId, mciPolicyTmp.Id, common.ToLower(autoAction.SubGroupDynamicReq.Name), "", "", &autoAction.PostCommand, "")
 							if cmdErr != nil {
 								mciPolicyTmp.Policy[policyIndex].Status = model.AutoStatusError
 								UpdateMciPolicyInfo(nsId, mciPolicyTmp)
