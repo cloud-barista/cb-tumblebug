@@ -294,7 +294,7 @@ func handlePostCommands(nsId, mciId string, mciTmp model.MciInfo) error {
 	time.Sleep(5 * time.Second)
 
 	log.Info().Msgf("Executing commands: %+v", mciTmp.PostCommand)
-	output, err := RemoteCommandToMci(nsId, mciId, "", "", "", &mciTmp.PostCommand)
+	output, err := RemoteCommandToMci(nsId, mciId, "", "", "", &mciTmp.PostCommand, "")
 	if err != nil {
 		return fmt.Errorf("failed to execute post-deployment commands: %w", err)
 	}
@@ -1113,7 +1113,21 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		log.Error().Err(err).Msg("Failed to create VMs in parallel")
 		errorMu.Lock()
 		createErrors = append(createErrors, fmt.Errorf("bulk VM creation failed: %w", err))
-		// Add individual VM error tracking would require modification to CreateVmsInParallel to return detailed errors
+
+		// Check individual VM statuses and add to vmCreateErrors for failed VMs
+		for _, vmInfo := range vmInfoList {
+			updatedVmInfo, getErr := GetVmObject(nsId, mciId, vmInfo.Id)
+			if getErr != nil {
+				addVmError(&vmCreateErrors, vmInfo.Name, fmt.Sprintf("Failed to get VM status: %s", getErr.Error()), "status_check")
+			} else if updatedVmInfo.Status == "Failed" || updatedVmInfo.Status == "Terminated" {
+				// Use the VM's SystemMessage if available, otherwise use a generic message
+				errorMsg := "VM creation failed"
+				if updatedVmInfo.SystemMessage != "" {
+					errorMsg = updatedVmInfo.SystemMessage
+				}
+				addVmError(&vmCreateErrors, vmInfo.Name, errorMsg, "vm_creation")
+			}
+		}
 		errorMu.Unlock()
 	}
 
@@ -1126,8 +1140,12 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 			errorSummary := fmt.Sprintf("VM creation failed for %d out of %d VMs", len(createErrors), len(vmConfigs))
 			mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorSummary)
 
-			// Add each VM creation error
-			for _, vmError := range vmCreateErrors {
+			// Add each VM creation error - use vmObjectErrors if vmCreateErrors is empty
+			errorList := vmCreateErrors
+			if len(errorList) == 0 {
+				errorList = vmObjectErrors
+			}
+			for _, vmError := range errorList {
 				errorDetail := fmt.Sprintf("VM '%s' creation failed: %s", vmError.VmName, vmError.Error)
 				mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorDetail)
 			}

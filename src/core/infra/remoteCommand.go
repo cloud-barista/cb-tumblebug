@@ -23,6 +23,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"reflect"
 	"regexp"
 	"strings"
 	"sync"
@@ -51,7 +52,7 @@ func TbMciCmdReqStructLevelValidation(sl validator.StructLevel) {
 }
 
 // RemoteCommandToMci is func to command to all VMs in MCI by SSH
-func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId string, labelSelector string, req *model.MciCmdReq) ([]model.SshCmdResult, error) {
+func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId string, labelSelector string, req *model.MciCmdReq, xRequestId string) ([]model.SshCmdResult, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -77,21 +78,6 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 			temp := []model.SshCmdResult{}
 			return temp, err
 		}
-
-		// for _, err := range err.(validator.ValidationErrors) {
-
-		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
-		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
-		// 	fmt.Println(err.StructNamespace())
-		// 	fmt.Println(err.StructField())
-		// 	fmt.Println(err.Tag())
-		// 	fmt.Println(err.ActualTag())
-		// 	fmt.Println(err.Kind())
-		// 	fmt.Println(err.Type())
-		// 	fmt.Println(err.Value())
-		// 	fmt.Println(err.Param())
-		// 	fmt.Println()
-		// }
 
 		temp := []model.SshCmdResult{}
 		return temp, err
@@ -177,24 +163,38 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 
 	var resultArray []model.SshCmdResult
 
-	// Preprocess commands for each VM
+	// Preprocess commands for each VM and add command status info
 	vmCommands := make(map[string][]string)
-	for i, vmId := range vmList {
+	vmCommandIndices := make(map[string]int) // Track command index for each VM
+
+	for i, targetVmId := range vmList {
 		processedCommands := make([]string, len(req.Command))
 		for j, cmd := range req.Command {
-			processedCmd, err := processCommand(cmd, nsId, mciId, vmId, i)
+			processedCmd, err := processCommand(cmd, nsId, mciId, targetVmId, i)
 			if err != nil {
 				return nil, err
 			}
 			processedCommands[j] = processedCmd
 		}
-		vmCommands[vmId] = processedCommands
+		vmCommands[targetVmId] = processedCommands
+
+		// Add command status info for this VM
+		combinedCommand := strings.Join(req.Command, " && ")
+		combinedProcessedCommand := strings.Join(processedCommands, " && ")
+
+		cmdIndex, err := AddCommandStatusInfo(nsId, mciId, targetVmId, xRequestId, combinedCommand, combinedProcessedCommand)
+		if err != nil {
+			log.Error().Err(err).Str("vmId", targetVmId).Msg("Failed to add command status info")
+			// Continue with execution even if status tracking fails
+		} else {
+			vmCommandIndices[targetVmId] = cmdIndex
+		}
 	}
 
 	// Execute commands in parallel using goroutines
-	for vmId, commands := range vmCommands {
+	for targetVmId, commands := range vmCommands {
 		wg.Add(1)
-		go RunRemoteCommandAsync(&wg, nsId, mciId, vmId, req.UserName, commands, &resultArray)
+		go RunRemoteCommandAsyncWithStatus(&wg, nsId, mciId, targetVmId, req.UserName, commands, vmCommandIndices[targetVmId], &resultArray)
 	}
 	wg.Wait() // goroutine sync wg
 
@@ -246,6 +246,14 @@ func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName stri
 	}
 
 	bastionNode := bastionNodes[0]
+
+	// Validate bastion node has valid VM ID
+	if bastionNode.VmId == "" {
+		err = fmt.Errorf("bastion node has empty VM ID")
+		log.Error().Err(err).Msg("")
+		return map[int]string{}, map[int]string{}, err
+	}
+
 	// use public IP of the bastion VM
 	bastionIp, _, bastionSshPort, err := GetVmIp(nsId, bastionNode.MciId, bastionNode.VmId)
 	if err != nil {
@@ -375,6 +383,160 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId s
 	sshResultTmp.Stderr = stderrResults
 	sshResultTmp.Err = nil
 	*returnResult = append(*returnResult, sshResultTmp)
+}
+
+// RunRemoteCommandAsyncWithStatus is func to execute a SSH command to a VM (async call) with command status tracking
+func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, mciId string, vmId string, givenUserName string, cmd []string, cmdIndex int, returnResult *[]model.SshCmdResult) {
+
+	defer wg.Done() //goroutine sync done
+
+	vmIP, _, _, err := GetVmIp(nsId, mciId, vmId)
+
+	sshResultTmp := model.SshCmdResult{}
+	sshResultTmp.MciId = mciId
+	sshResultTmp.VmId = vmId
+	sshResultTmp.VmIp = vmIP
+	sshResultTmp.Command = make(map[int]string)
+	for i, c := range cmd {
+		sshResultTmp.Command[i] = c
+	}
+
+	// Update status to Handling
+	if cmdIndex > 0 {
+		err := UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusHandling, "", "", "", "")
+		if err != nil {
+			log.Error().Err(err).Int("cmdIndex", cmdIndex).Msg("Failed to update command status to Handling")
+		}
+	}
+
+	if err != nil {
+		sshResultTmp.Err = err
+		// Update status to Failed
+		if cmdIndex > 0 {
+			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "Failed to get VM IP", err.Error(), "", "")
+		}
+		*returnResult = append(*returnResult, sshResultTmp)
+		return
+	}
+
+	// Check VM status before executing SSH command
+	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	if err != nil {
+		sshResultTmp.Err = fmt.Errorf("failed to get VM status: %v", err)
+		// Update status to Failed
+		if cmdIndex > 0 {
+			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "Failed to get VM status", err.Error(), "", "")
+		}
+		*returnResult = append(*returnResult, sshResultTmp)
+		return
+	}
+
+	// Validate VM status for SSH execution
+	if vmInfo.Status != model.StatusRunning {
+		var errorMsg string
+		if vmInfo.Status == model.StatusTerminated {
+			errorMsg = fmt.Sprintf("VM '%s' is in '%s' status. SSH connection is impossible for terminated VMs", vmId, vmInfo.Status)
+		} else {
+			errorMsg = fmt.Sprintf("VM '%s' is in '%s' status (not Running). Please change the VM status to Running and try again", vmId, vmInfo.Status)
+		}
+		sshResultTmp.Err = fmt.Errorf(errorMsg)
+		// Update status to Failed
+		if cmdIndex > 0 {
+			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "VM not in running status", errorMsg, "", "")
+		}
+		*returnResult = append(*returnResult, sshResultTmp)
+		return
+	}
+
+	// Create context with timeout for long-running commands
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute) // 30 minute timeout
+	defer cancel()
+
+	// Channel to receive command execution results
+	resultChan := make(chan struct {
+		stdout map[int]string
+		stderr map[int]string
+		err    error
+	}, 1)
+
+	// Execute command in a separate goroutine
+	go func() {
+		stdout, stderr, err := RunRemoteCommand(nsId, mciId, vmId, givenUserName, cmd)
+		resultChan <- struct {
+			stdout map[int]string
+			stderr map[int]string
+			err    error
+		}{stdout, stderr, err}
+	}()
+
+	// Wait for either completion or timeout
+	select {
+	case result := <-resultChan:
+		// Command completed
+		if result.err != nil {
+			sshResultTmp.Stdout = result.stdout
+			sshResultTmp.Stderr = result.stderr
+			sshResultTmp.Err = result.err
+
+			// Update status to Failed
+			if cmdIndex > 0 {
+				// Convert map to string for storage
+				stdoutStr := ""
+				stderrStr := ""
+				for _, v := range result.stdout {
+					stdoutStr += v + "\n"
+				}
+				for _, v := range result.stderr {
+					stderrStr += v + "\n"
+				}
+				UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "Command execution failed", result.err.Error(), stdoutStr, stderrStr)
+			}
+			*returnResult = append(*returnResult, sshResultTmp)
+			return
+		}
+
+		log.Debug().Msg("[Begin] SSH Output")
+		fmt.Println(result.stdout)
+		log.Debug().Msg("[End] SSH Output")
+
+		sshResultTmp.Stdout = result.stdout
+		sshResultTmp.Stderr = result.stderr
+		sshResultTmp.Err = nil
+
+		// Update status to Completed
+		if cmdIndex > 0 {
+			// Convert map to string for storage
+			stdoutStr := ""
+			stderrStr := ""
+			for _, v := range result.stdout {
+				stdoutStr += v + "\n"
+			}
+			for _, v := range result.stderr {
+				stderrStr += v + "\n"
+			}
+			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusCompleted, "Command executed successfully", "", stdoutStr, stderrStr)
+		}
+		*returnResult = append(*returnResult, sshResultTmp)
+
+	case <-ctx.Done():
+		// Command timed out
+		timeoutErr := fmt.Errorf("command execution timed out after 30 minutes")
+		sshResultTmp.Err = timeoutErr
+
+		// Update status to Timeout
+		if cmdIndex > 0 {
+			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusTimeout, "Command execution timed out", timeoutErr.Error(), "", "")
+		}
+
+		log.Error().
+			Str("nsId", nsId).
+			Str("mciId", mciId).
+			Str("vmId", vmId).
+			Int("cmdIndex", cmdIndex).
+			Msg("Command execution timed out")
+
+		*returnResult = append(*returnResult, sshResultTmp)
+	}
 }
 
 // VerifySshUserName is func to verify SSH username
@@ -1157,16 +1319,26 @@ func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionVmId s
 				vmIdsInSubnet, err := ListVmByFilter(nsId, mciId, "SubnetId", subnetInfo.Id)
 				if err != nil {
 					log.Error().Err(err).Msg("")
+					return "", fmt.Errorf("failed to list VMs in subnet (ID: %s): %w", subnetInfo.Id, err)
 				}
+
+				// Find a VM with public IP to use as bastion
 				for _, v := range vmIdsInSubnet {
 					tmpPublicIp, _, _, err := GetVmIp(nsId, mciId, v)
 					if err != nil {
-						log.Error().Err(err).Msg("")
+						log.Error().Err(err).Msgf("failed to get IP for VM %s", v)
+						continue
 					}
 					if tmpPublicIp != "" {
 						bastionVmId = v
+						log.Info().Msgf("Selected VM %s as bastion (public IP: %s)", v, tmpPublicIp)
 						break
 					}
+				}
+
+				// If no suitable bastion VM found, return error
+				if bastionVmId == "" {
+					return "", fmt.Errorf("no VM with public IP found in subnet (ID: %s) to use as bastion", subnetInfo.Id)
 				}
 			} else {
 				for _, existingId := range subnetInfo.BastionNodes {
@@ -1175,6 +1347,11 @@ func SetBastionNodes(nsId string, mciId string, targetVmId string, bastionVmId s
 							bastionVmId, subnetInfo.Id, vmObj.VNetId), nil
 					}
 				}
+			}
+
+			// Validate that we have a valid bastion VM ID before creating the node
+			if bastionVmId == "" {
+				return "", fmt.Errorf("failed to find a suitable bastion VM in subnet (ID: %s)", subnetInfo.Id)
 			}
 
 			bastionCandidate := model.BastionNode{MciId: mciId, VmId: bastionVmId}
@@ -1549,4 +1726,635 @@ func replaceWithPrivateIPs(nsId, mciId, separator, prefix, postfix string) (stri
 // replaceWithId function to replace string with the prefix and postfix
 func replaceWithId(id, prefix, postfix string) string {
 	return prefix + id + postfix
+}
+
+// Command Status Management Functions
+
+// updateVmCommandStatusSafe safely updates only CommandStatus field of VM with proper locking
+func updateVmCommandStatusSafe(nsId, mciId, vmId string, updateFunc func(*[]model.CommandStatusInfo) error) error {
+	// Use the same mutex as UpdateVmInfo for consistency
+	key := common.GenMciKey(nsId, mciId, vmId)
+
+	// Retry mechanism for concurrent access
+	maxRetries := 3
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		// Get current VM info
+		keyValue, exists, err := kvstore.GetKv(key)
+		if !exists || err != nil {
+			return fmt.Errorf("failed to get VM info: %v", err)
+		}
+
+		vmInfo := model.VmInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &vmInfo)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal VM info: %v", err)
+		}
+
+		// Apply the update function to CommandStatus
+		originalCommandStatus := make([]model.CommandStatusInfo, len(vmInfo.CommandStatus))
+		copy(originalCommandStatus, vmInfo.CommandStatus)
+
+		err = updateFunc(&vmInfo.CommandStatus)
+		if err != nil {
+			return err
+		}
+
+		// Only update if CommandStatus actually changed
+		if reflect.DeepEqual(originalCommandStatus, vmInfo.CommandStatus) {
+			return nil // No change needed
+		}
+
+		// Atomic update
+		vmJson, err := json.Marshal(vmInfo)
+		if err != nil {
+			return fmt.Errorf("failed to marshal VM info: %v", err)
+		}
+
+		err = kvstore.Put(key, string(vmJson))
+		if err != nil {
+			if attempt < maxRetries-1 {
+				// Retry on failure (might be concurrent update)
+				time.Sleep(time.Millisecond * 100 * time.Duration(attempt+1))
+				continue
+			}
+			return fmt.Errorf("failed to update VM info after %d attempts: %v", maxRetries, err)
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("failed to update VM CommandStatus after %d retries", maxRetries)
+}
+
+// Helper function to get next command index
+func getNextCommandIndex(commandStatus []model.CommandStatusInfo) int {
+	nextIndex := 1
+	if len(commandStatus) > 0 {
+		// Find the maximum index and increment
+		maxIndex := 0
+		for _, cmd := range commandStatus {
+			if cmd.Index > maxIndex {
+				maxIndex = cmd.Index
+			}
+		}
+		nextIndex = maxIndex + 1
+	}
+	return nextIndex
+}
+
+// Helper function to find command by index
+func findCommandByIndex(commandStatus []model.CommandStatusInfo, index int) (*model.CommandStatusInfo, int) {
+	for i := range commandStatus {
+		if commandStatus[i].Index == index {
+			return &commandStatus[i], i
+		}
+	}
+	return nil, -1
+}
+
+// Helper function to filter commands based on criteria
+func filterCommands(commandStatus []model.CommandStatusInfo, filter *model.CommandStatusFilter) []model.CommandStatusInfo {
+	if filter == nil {
+		return commandStatus
+	}
+
+	var filtered []model.CommandStatusInfo
+
+	for _, cmd := range commandStatus {
+		// Apply status filter - check if command status is in the allowed list
+		if len(filter.Status) > 0 {
+			found := false
+			for _, status := range filter.Status {
+				if cmd.Status == status {
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
+
+		if filter.XRequestId != "" && cmd.XRequestId != filter.XRequestId {
+			continue
+		}
+		if filter.CommandContains != "" && !strings.Contains(cmd.CommandRequested, filter.CommandContains) {
+			continue
+		}
+		if filter.StartTimeFrom != "" {
+			startTime, err := time.Parse(time.RFC3339, cmd.StartedTime)
+			if err != nil {
+				continue
+			}
+			filterTime, err := time.Parse(time.RFC3339, filter.StartTimeFrom)
+			if err != nil {
+				continue
+			}
+			if startTime.Before(filterTime) {
+				continue
+			}
+		}
+		if filter.StartTimeTo != "" {
+			startTime, err := time.Parse(time.RFC3339, cmd.StartedTime)
+			if err != nil {
+				continue
+			}
+			filterTime, err := time.Parse(time.RFC3339, filter.StartTimeTo)
+			if err != nil {
+				continue
+			}
+			if startTime.After(filterTime) {
+				continue
+			}
+		}
+
+		// Apply index range filters
+		if filter.IndexFrom > 0 && cmd.Index < filter.IndexFrom {
+			continue
+		}
+		if filter.IndexTo > 0 && cmd.Index > filter.IndexTo {
+			continue
+		}
+
+		filtered = append(filtered, cmd)
+	}
+
+	return filtered
+}
+
+// Helper function to apply pagination
+func applyPagination(commandStatus []model.CommandStatusInfo, offset, limit int) []model.CommandStatusInfo {
+	if offset >= len(commandStatus) {
+		return []model.CommandStatusInfo{}
+	}
+
+	end := offset + limit
+	if end > len(commandStatus) {
+		end = len(commandStatus)
+	}
+
+	return commandStatus[offset:end]
+}
+
+// AddCommandStatusInfo adds a new command status record to VM's command history
+func AddCommandStatusInfo(nsId, mciId, vmId, xRequestId, commandRequested, commandExecuted string) (int, error) {
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+	err = common.CheckString(mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+	err = common.CheckString(vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+
+	var nextIndex int
+
+	err = updateVmCommandStatusSafe(nsId, mciId, vmId, func(commandStatus *[]model.CommandStatusInfo) error {
+		// Generate next index using helper function
+		nextIndex = getNextCommandIndex(*commandStatus)
+
+		// Create new command status info
+		newCommandStatus := model.CommandStatusInfo{
+			Index:            nextIndex,
+			XRequestId:       xRequestId,
+			CommandRequested: commandRequested,
+			CommandExecuted:  commandExecuted,
+			Status:           model.CommandStatusQueued,
+			StartedTime:      time.Now().Format(time.RFC3339),
+		}
+
+		// Add to command status list
+		*commandStatus = append(*commandStatus, newCommandStatus)
+		return nil
+	})
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+
+	log.Info().
+		Str("nsId", nsId).
+		Str("mciId", mciId).
+		Str("vmId", vmId).
+		Int("index", nextIndex).
+		Str("xRequestId", xRequestId).
+		Msg("Command status added")
+
+	return nextIndex, nil
+}
+
+// UpdateCommandStatusInfo updates an existing command status record
+func UpdateCommandStatusInfo(nsId, mciId, vmId string, index int, status model.CommandExecutionStatus, resultSummary, errorMessage, stdout, stderr string) error {
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	err = common.CheckString(mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	err = common.CheckString(vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	err = updateVmCommandStatusSafe(nsId, mciId, vmId, func(commandStatus *[]model.CommandStatusInfo) error {
+		// Find the command status by index using helper function
+		cmdStatus, cmdIndex := findCommandByIndex(*commandStatus, index)
+		if cmdStatus == nil {
+			return fmt.Errorf("command with index %d not found for VM (ID: %s)", index, vmId)
+		}
+
+		// Update status and completion time
+		startTime, _ := time.Parse(time.RFC3339, cmdStatus.StartedTime)
+		currentTime := time.Now()
+
+		(*commandStatus)[cmdIndex].Status = status
+
+		// Only set CompletedTime for final states (Completed, Failed, Timeout)
+		if status == model.CommandStatusCompleted ||
+			status == model.CommandStatusFailed ||
+			status == model.CommandStatusTimeout {
+			(*commandStatus)[cmdIndex].CompletedTime = currentTime.Format(time.RFC3339)
+		}
+
+		// Calculate elapsed time in seconds (not milliseconds)
+		(*commandStatus)[cmdIndex].ElapsedTime = int64(currentTime.Sub(startTime).Seconds())
+		(*commandStatus)[cmdIndex].ResultSummary = resultSummary
+		(*commandStatus)[cmdIndex].ErrorMessage = errorMessage
+
+		// Truncate output if too long (limit to 1000 characters for history)
+		if len(stdout) > 1000 {
+			(*commandStatus)[cmdIndex].Stdout = stdout[:1000] + "...(truncated)"
+		} else {
+			(*commandStatus)[cmdIndex].Stdout = stdout
+		}
+
+		if len(stderr) > 1000 {
+			(*commandStatus)[cmdIndex].Stderr = stderr[:1000] + "...(truncated)"
+		} else {
+			(*commandStatus)[cmdIndex].Stderr = stderr
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	log.Info().
+		Str("nsId", nsId).
+		Str("mciId", mciId).
+		Str("vmId", vmId).
+		Int("index", index).
+		Str("status", string(status)).
+		Msg("Command status updated")
+
+	return nil
+}
+
+// GetCommandStatusInfo retrieves a specific command status record
+func GetCommandStatusInfo(nsId, mciId, vmId string, index int) (*model.CommandStatusInfo, error) {
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+	err = common.CheckString(mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+	err = common.CheckString(vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	// Use existing GetVmObject function instead of direct kvstore access
+	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	// Find the command status by index using helper function
+	cmdStatus, _ := findCommandByIndex(vmInfo.CommandStatus, index)
+	if cmdStatus == nil {
+		return nil, fmt.Errorf("command with index %d not found for VM (ID: %s)", index, vmId)
+	}
+
+	// For "Handling" status, calculate real-time elapsed time
+	if cmdStatus.Status == model.CommandStatusHandling && cmdStatus.StartedTime != "" {
+		if startTime, err := time.Parse(time.RFC3339, cmdStatus.StartedTime); err == nil {
+			// Create a copy of the command status to avoid modifying the original
+			realtimeCmdStatus := *cmdStatus
+			realtimeCmdStatus.ElapsedTime = int64(time.Since(startTime).Seconds())
+			return &realtimeCmdStatus, nil
+		}
+	}
+
+	return cmdStatus, nil
+}
+
+// ListCommandStatusInfo retrieves command status records with filtering
+func ListCommandStatusInfo(nsId, mciId, vmId string, filter *model.CommandStatusFilter) (*model.CommandStatusListResponse, error) {
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+	err = common.CheckString(mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+	err = common.CheckString(vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	// Use existing GetVmObject function instead of direct kvstore access
+	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	// Apply filters using helper function
+	filteredCommands := filterCommands(vmInfo.CommandStatus, filter)
+	total := len(filteredCommands)
+
+	// Apply pagination using helper function
+	offset := 0
+	limit := 50 // Default limit
+	if filter != nil {
+		if filter.Offset > 0 {
+			offset = filter.Offset
+		}
+		if filter.Limit > 0 {
+			limit = filter.Limit
+		}
+	}
+
+	paginatedCommands := applyPagination(filteredCommands, offset, limit)
+
+	// Apply real-time elapsed time calculation for "Handling" status commands
+	for i := range paginatedCommands {
+		if paginatedCommands[i].Status == model.CommandStatusHandling && paginatedCommands[i].StartedTime != "" {
+			if startTime, err := time.Parse(time.RFC3339, paginatedCommands[i].StartedTime); err == nil {
+				paginatedCommands[i].ElapsedTime = int64(time.Since(startTime).Seconds())
+			}
+		}
+	}
+
+	response := &model.CommandStatusListResponse{
+		Commands: paginatedCommands,
+		Total:    total,
+		Offset:   offset,
+		Limit:    limit,
+	}
+
+	return response, nil
+}
+
+// DeleteCommandStatusInfo deletes a specific command status record
+func DeleteCommandStatusInfo(nsId, mciId, vmId string, index int) error {
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	err = common.CheckString(mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	err = common.CheckString(vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	err = updateVmCommandStatusSafe(nsId, mciId, vmId, func(commandStatus *[]model.CommandStatusInfo) error {
+		// Find and remove the command status by index
+		_, cmdIndex := findCommandByIndex(*commandStatus, index)
+		if cmdIndex == -1 {
+			return fmt.Errorf("command with index %d not found for VM (ID: %s)", index, vmId)
+		}
+
+		// Remove the command from slice
+		*commandStatus = append((*commandStatus)[:cmdIndex], (*commandStatus)[cmdIndex+1:]...)
+		return nil
+	})
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	log.Info().
+		Str("nsId", nsId).
+		Str("mciId", mciId).
+		Str("vmId", vmId).
+		Int("index", index).
+		Msg("Command status deleted")
+
+	return nil
+}
+
+// DeleteCommandStatusInfoByCriteria deletes multiple command status records by criteria
+func DeleteCommandStatusInfoByCriteria(nsId, mciId, vmId string, filter *model.CommandStatusFilter) (int, error) {
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+	err = common.CheckString(mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+	err = common.CheckString(vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+
+	var deleteCount int
+
+	err = updateVmCommandStatusSafe(nsId, mciId, vmId, func(commandStatus *[]model.CommandStatusInfo) error {
+		// Find matching commands to delete using helper function
+		commandsToDelete := filterCommands(*commandStatus, filter)
+		deleteCount = len(commandsToDelete)
+
+		if deleteCount == 0 {
+			return nil // No commands to delete
+		}
+
+		// Create a new slice without the matching commands
+		var remainingCommands []model.CommandStatusInfo
+		for _, cmd := range *commandStatus {
+			shouldDelete := false
+			for _, delCmd := range commandsToDelete {
+				if cmd.Index == delCmd.Index {
+					shouldDelete = true
+					break
+				}
+			}
+			if !shouldDelete {
+				remainingCommands = append(remainingCommands, cmd)
+			}
+		}
+
+		*commandStatus = remainingCommands
+		return nil
+	})
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+
+	log.Info().
+		Str("nsId", nsId).
+		Str("mciId", mciId).
+		Str("vmId", vmId).
+		Int("deleteCount", deleteCount).
+		Msg("Command statuses deleted by criteria")
+
+	return deleteCount, nil
+}
+
+// ClearAllCommandStatusInfo deletes all command status records for a VM
+func ClearAllCommandStatusInfo(nsId, mciId, vmId string) (int, error) {
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+	err = common.CheckString(mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+	err = common.CheckString(vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+
+	var clearCount int
+
+	err = updateVmCommandStatusSafe(nsId, mciId, vmId, func(commandStatus *[]model.CommandStatusInfo) error {
+		// Count and clear all command statuses
+		clearCount = len(*commandStatus)
+		*commandStatus = []model.CommandStatusInfo{}
+		return nil
+	})
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+
+	log.Info().
+		Str("nsId", nsId).
+		Str("mciId", mciId).
+		Str("vmId", vmId).
+		Int("clearCount", clearCount).
+		Msg("All command statuses cleared")
+
+	return clearCount, nil
+}
+
+// GetHandlingCommandCount returns the count of currently handling commands for a VM
+// This function is optimized for frequent polling and avoids unnecessary processing
+func GetHandlingCommandCount(nsId, mciId, vmId string) (int, error) {
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+	err = common.CheckString(mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+	err = common.CheckString(vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return 0, err
+	}
+
+	// Use existing GetVmObject function - optimized for performance
+	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	if err != nil {
+		// Don't log errors for frequent polling calls to reduce noise
+		return 0, err
+	}
+
+	// Count handling commands efficiently
+	handlingCount := 0
+	for _, cmdStatus := range vmInfo.CommandStatus {
+		if cmdStatus.Status == model.CommandStatusHandling {
+			handlingCount++
+		}
+	}
+
+	return handlingCount, nil
+}
+
+// GetMciHandlingCommandCount returns the count of currently handling commands across all VMs in an MCI
+// This function is optimized for MCI-level monitoring
+func GetMciHandlingCommandCount(nsId, mciId string) (map[string]int, int, error) {
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, 0, err
+	}
+	err = common.CheckString(mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, 0, err
+	}
+
+	// Get VM list
+	vmList, err := ListVmId(nsId, mciId)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	vmHandlingCounts := make(map[string]int)
+	totalHandlingCount := 0
+
+	// Process each VM's handling commands
+	for _, vmId := range vmList {
+		handlingCount, err := GetHandlingCommandCount(nsId, mciId, vmId)
+		if err != nil {
+			// Continue processing other VMs even if one fails
+			log.Debug().Err(err).Msgf("Failed to get handling count for VM %s", vmId)
+			vmHandlingCounts[vmId] = 0
+			continue
+		}
+		
+		vmHandlingCounts[vmId] = handlingCount
+		totalHandlingCount += handlingCount
+	}
+
+	return vmHandlingCounts, totalHandlingCount, nil
 }

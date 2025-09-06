@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
@@ -80,12 +81,21 @@ func RestPostCmdMci(c echo.Context) error {
 	//Label selector query. Example: env=production,tier=backend
 	labelSelector := c.QueryParam("labelSelector")
 
+	// Get X-Request-ID header
+	xRequestId := c.Request().Header.Get("X-Request-Id")
+	if xRequestId == "" {
+		xRequestId = c.Request().Header.Get("x-request-id") // fallback for lowercase
+	}
+	if xRequestId == "" {
+		xRequestId = common.GenUid() // Generate if not provided
+	}
+
 	req := &model.MciCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	output, err := infra.RemoteCommandToMci(nsId, mciId, subGroupId, vmId, labelSelector, req)
+	output, err := infra.RemoteCommandToMci(nsId, mciId, subGroupId, vmId, labelSelector, req, xRequestId)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
@@ -247,4 +257,306 @@ func RestRemoveBastionNodes(c echo.Context) error {
 
 	content, err := infra.RemoveBastionNodes(nsId, mciId, bastionVmId)
 	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestGetVmCommandStatus godoc
+// @ID GetVmCommandStatus
+// @Summary Get a specific command status by index for a VM
+// @Description Get a specific command status record by index for a VM
+// @Tags [MC-Infra] MCI Remote Command Status
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param vmId path string true "VM ID" default(g1-1)
+// @Param index path int true "Command Index" default(1)
+// @Param x-request-id header string false "Custom request ID"
+// @Success 200 {object} model.CommandStatusInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/{index} [get]
+func RestGetVmCommandStatus(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	vmId := c.Param("vmId")
+
+	indexStr := c.Param("index")
+	index, err := strconv.Atoi(indexStr)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, fmt.Errorf("invalid index parameter: %s", indexStr), nil)
+	}
+
+	commandStatus, err := infra.GetCommandStatusInfo(nsId, mciId, vmId, index)
+	return clientManager.EndRequestWithLog(c, err, commandStatus)
+}
+
+// RestListVmCommandStatus godoc
+// @ID ListVmCommandStatus
+// @Summary List command status records for a VM with filtering
+// @Description List command status records for a VM with various filtering options
+// @Tags [MC-Infra] MCI Remote Command Status
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param vmId path string true "VM ID" default(g1-1)
+// @Param status query []string false "Filter by command execution status (can specify multiple)" Enums(Queued,Handling,Completed,Failed,Timeout)
+// @Param xRequestId query string false "Filter by X-Request-ID"
+// @Param commandContains query string false "Filter commands containing this text"
+// @Param startTimeFrom query string false "Filter commands started from this time (RFC3339 format)"
+// @Param startTimeTo query string false "Filter commands started until this time (RFC3339 format)"
+// @Param indexFrom query int false "Filter commands from this index (inclusive)"
+// @Param indexTo query int false "Filter commands to this index (inclusive)"
+// @Param limit query int false "Limit the number of results returned" default(50)
+// @Param offset query int false "Number of results to skip" default(0)
+// @Param x-request-id header string false "Custom request ID"
+// @Success 200 {object} model.CommandStatusListResponse
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus [get]
+func RestListVmCommandStatus(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	vmId := c.Param("vmId")
+
+	// Parse query parameters for filtering
+	filter := &model.CommandStatusFilter{}
+
+	// Parse status array
+	statusParams := c.QueryParams()["status"]
+	if len(statusParams) > 0 {
+		var statuses []model.CommandExecutionStatus
+		for _, s := range statusParams {
+			statuses = append(statuses, model.CommandExecutionStatus(s))
+		}
+		filter.Status = statuses
+	}
+
+	filter.XRequestId = c.QueryParam("xRequestId")
+	filter.CommandContains = c.QueryParam("commandContains")
+	filter.StartTimeFrom = c.QueryParam("startTimeFrom")
+	filter.StartTimeTo = c.QueryParam("startTimeTo")
+
+	if indexFromStr := c.QueryParam("indexFrom"); indexFromStr != "" {
+		if indexFrom, err := strconv.Atoi(indexFromStr); err == nil {
+			filter.IndexFrom = indexFrom
+		}
+	}
+
+	if indexToStr := c.QueryParam("indexTo"); indexToStr != "" {
+		if indexTo, err := strconv.Atoi(indexToStr); err == nil {
+			filter.IndexTo = indexTo
+		}
+	}
+
+	if limitStr := c.QueryParam("limit"); limitStr != "" {
+		if limit, err := strconv.Atoi(limitStr); err == nil {
+			filter.Limit = limit
+		}
+	} else {
+		filter.Limit = 50 // Default limit
+	}
+
+	if offsetStr := c.QueryParam("offset"); offsetStr != "" {
+		if offset, err := strconv.Atoi(offsetStr); err == nil {
+			filter.Offset = offset
+		}
+	}
+
+	result, err := infra.ListCommandStatusInfo(nsId, mciId, vmId, filter)
+	return clientManager.EndRequestWithLog(c, err, result)
+}
+
+// RestDeleteVmCommandStatus godoc
+// @ID DeleteVmCommandStatus
+// @Summary Delete a specific command status by index for a VM
+// @Description Delete a specific command status record by index for a VM
+// @Tags [MC-Infra] MCI Remote Command Status
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param vmId path string true "VM ID" default(g1-1)
+// @Param index path int true "Command Index" default(1)
+// @Param x-request-id header string false "Custom request ID"
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/{index} [delete]
+func RestDeleteVmCommandStatus(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	vmId := c.Param("vmId")
+
+	indexStr := c.Param("index")
+	index, err := strconv.Atoi(indexStr)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, fmt.Errorf("invalid index parameter: %s", indexStr), nil)
+	}
+
+	err = infra.DeleteCommandStatusInfo(nsId, mciId, vmId, index)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result := model.SimpleMsg{Message: fmt.Sprintf("Command status with index %d deleted successfully", index)}
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestDeleteVmCommandStatusByCriteria godoc
+// @ID DeleteVmCommandStatusByCriteria
+// @Summary Delete multiple command status records by criteria for a VM
+// @Description Delete multiple command status records for a VM based on filtering criteria
+// @Tags [MC-Infra] MCI Remote Command Status
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param vmId path string true "VM ID" default(g1-1)
+// @Param status query []string false "Filter by command execution status (can specify multiple)" Enums(Queued,Handling,Completed,Failed,Timeout)
+// @Param xRequestId query string false "Filter by X-Request-ID"
+// @Param commandContains query string false "Filter commands containing this text"
+// @Param startTimeFrom query string false "Filter commands started from this time (RFC3339 format)"
+// @Param startTimeTo query string false "Filter commands started until this time (RFC3339 format)"
+// @Param indexFrom query int false "Filter commands from this index (inclusive)"
+// @Param indexTo query int false "Filter commands to this index (inclusive)"
+// @Param x-request-id header string false "Custom request ID"
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus [delete]
+func RestDeleteVmCommandStatusByCriteria(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	vmId := c.Param("vmId")
+
+	// Parse query parameters for filtering
+	filter := &model.CommandStatusFilter{}
+
+	// Parse status array
+	statusParams := c.QueryParams()["status"]
+	if len(statusParams) > 0 {
+		var statuses []model.CommandExecutionStatus
+		for _, s := range statusParams {
+			statuses = append(statuses, model.CommandExecutionStatus(s))
+		}
+		filter.Status = statuses
+	}
+
+	filter.XRequestId = c.QueryParam("xRequestId")
+	filter.CommandContains = c.QueryParam("commandContains")
+	filter.StartTimeFrom = c.QueryParam("startTimeFrom")
+	filter.StartTimeTo = c.QueryParam("startTimeTo")
+
+	if indexFromStr := c.QueryParam("indexFrom"); indexFromStr != "" {
+		if indexFrom, err := strconv.Atoi(indexFromStr); err == nil {
+			filter.IndexFrom = indexFrom
+		}
+	}
+
+	if indexToStr := c.QueryParam("indexTo"); indexToStr != "" {
+		if indexTo, err := strconv.Atoi(indexToStr); err == nil {
+			filter.IndexTo = indexTo
+		}
+	}
+
+	deletedCount, err := infra.DeleteCommandStatusInfoByCriteria(nsId, mciId, vmId, filter)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result := model.SimpleMsg{Message: fmt.Sprintf("Deleted %d command status records", deletedCount)}
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestClearAllVmCommandStatus godoc
+// @ID ClearAllVmCommandStatus
+// @Summary Clear all command status records for a VM
+// @Description Delete all command status records for a VM
+// @Tags [MC-Infra] MCI Remote Command Status
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param vmId path string true "VM ID" default(g1-1)
+// @Param x-request-id header string false "Custom request ID"
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/clear [delete]
+func RestClearAllVmCommandStatus(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	vmId := c.Param("vmId")
+
+	deletedCount, err := infra.ClearAllCommandStatusInfo(nsId, mciId, vmId)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result := model.SimpleMsg{Message: fmt.Sprintf("Cleared %d command status records", deletedCount)}
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestGetVmHandlingCommandCount godoc
+// @ID GetVmHandlingCommandCount
+// @Summary Get count of currently handling commands for a VM
+// @Description Get the number of commands currently in 'Handling' status for a specific VM. Optimized for frequent polling.
+// @Tags [MC-Infra] MCI Remote Command Status
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param vmId path string true "VM ID" default(g1-1)
+// @Param x-request-id header string false "Custom request ID"
+// @Success 200 {object} model.HandlingCommandCountResponse
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/handlingCount [get]
+func RestGetVmHandlingCommandCount(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	vmId := c.Param("vmId")
+
+	handlingCount, err := infra.GetHandlingCommandCount(nsId, mciId, vmId)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result := model.HandlingCommandCountResponse{
+		VmId:          vmId,
+		HandlingCount: handlingCount,
+	}
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestGetMciHandlingCommandCount godoc
+// @ID GetMciHandlingCommandCount
+// @Summary Get count of currently handling commands for all VMs in MCI
+// @Description Get the number of commands currently in 'Handling' status for all VMs in an MCI. Returns per-VM counts and total count.
+// @Tags [MC-Infra] MCI Remote Command Status
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param x-request-id header string false "Custom request ID"
+// @Success 200 {object} model.MciHandlingCommandCountResponse
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/handlingCount [get]
+func RestGetMciHandlingCommandCount(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+
+	vmHandlingCounts, totalHandlingCount, err := infra.GetMciHandlingCommandCount(nsId, mciId)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result := model.MciHandlingCommandCountResponse{
+		MciId:              mciId,
+		VmHandlingCounts:   vmHandlingCounts,
+		TotalHandlingCount: totalHandlingCount,
+	}
+	return clientManager.EndRequestWithLog(c, nil, result)
 }

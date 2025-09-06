@@ -638,6 +638,9 @@ type VmInfo struct {
 	VmUserName       string     `json:"vmUserName,omitempty"`
 	VmUserPassword   string     `json:"vmUserPassword,omitempty"`
 
+	// CommandStatus stores the status and history of remote commands executed on this VM
+	CommandStatus []CommandStatusInfo `json:"commandStatus,omitempty"`
+
 	AddtionalDetails []KeyValue `json:"addtionalDetails,omitempty"`
 }
 
@@ -910,6 +913,131 @@ var SshDefaultUserName = []string{"cb-user", "ubuntu", "root", "ec2-user"}
 type MciCmdReq struct {
 	UserName string   `json:"userName" example:"cb-user" default:""`
 	Command  []string `json:"command" validate:"required" example:"client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"`
+}
+
+// CommandExecutionStatus represents the status of command execution
+type CommandExecutionStatus string
+
+const (
+	// CommandStatusQueued indicates the command has been requested but not started
+	CommandStatusQueued CommandExecutionStatus = "Queued"
+
+	// CommandStatusHandling indicates the command is currently being processed
+	CommandStatusHandling CommandExecutionStatus = "Handling"
+
+	// CommandStatusCompleted indicates the command execution completed successfully
+	CommandStatusCompleted CommandExecutionStatus = "Completed"
+
+	// CommandStatusFailed indicates the command execution failed
+	CommandStatusFailed CommandExecutionStatus = "Failed"
+
+	// CommandStatusTimeout indicates the command execution timed out
+	CommandStatusTimeout CommandExecutionStatus = "Timeout"
+)
+
+// CommandStatusInfo represents a single remote command execution record
+type CommandStatusInfo struct {
+	// Index is sequential identifier for this command execution (1, 2, 3, ...)
+	Index int `json:"index" example:"1"`
+
+	// XRequestId is the request ID from X-Request-ID header when the command was executed
+	XRequestId string `json:"xRequestId,omitempty" example:"req-12345678-abcd-1234-efgh-123456789012"`
+
+	// CommandRequested is the original command as requested by the user
+	CommandRequested string `json:"commandRequested" example:"ls -la"`
+
+	// CommandExecuted is the actual SSH command executed on the VM (may be adjusted)
+	CommandExecuted string `json:"commandExecuted" example:"ls -la"`
+
+	// Status represents the current status of the command execution
+	Status CommandExecutionStatus `json:"status" example:"Completed"`
+
+	// StartedTime is when the command execution started
+	StartedTime string `json:"startedTime" example:"2024-01-15 10:30:00" default:""`
+
+	// CompletedTime is when the command execution completed (success or failure)
+	CompletedTime string `json:"completedTime,omitempty" example:"2024-01-15 10:30:05"`
+
+	// ElapsedTime is the duration of command execution in milliseconds
+	ElapsedTime int64 `json:"elapsedTime,omitempty" example:"5000"`
+
+	// ResultSummary provides a brief summary of the execution result
+	ResultSummary string `json:"resultSummary,omitempty" example:"Command executed successfully"`
+
+	// ErrorMessage contains error details if the execution failed
+	ErrorMessage string `json:"errorMessage,omitempty" example:"SSH connection failed"`
+
+	// Stdout contains the standard output from command execution (truncated for history)
+	Stdout string `json:"stdout,omitempty" example:"total 8\ndrwxr-xr-x 2 user user 4096 Jan 15 10:30 ."`
+
+	// Stderr contains the standard error from command execution (truncated for history)
+	Stderr string `json:"stderr,omitempty" example:""`
+}
+
+// CommandStatusFilter represents filtering criteria for command status queries
+type CommandStatusFilter struct {
+	// Status filters by command execution status
+	Status []CommandExecutionStatus `json:"status,omitempty" example:"[\"Completed\",\"Failed\"]"`
+
+	// XRequestId filters by specific request ID
+	XRequestId string `json:"xRequestId,omitempty" example:"req-12345678-abcd-1234-efgh-123456789012"`
+
+	// CommandContains filters commands containing this text
+	CommandContains string `json:"commandContains,omitempty" example:"ls"`
+
+	// StartTimeFrom filters commands started from this time (RFC3339 format)
+	StartTimeFrom string `json:"startTimeFrom,omitempty" example:"2024-01-15T10:00:00Z"`
+
+	// StartTimeTo filters commands started until this time (RFC3339 format)
+	StartTimeTo string `json:"startTimeTo,omitempty" example:"2024-01-15T11:00:00Z"`
+
+	// IndexFrom filters commands from this index (inclusive)
+	IndexFrom int `json:"indexFrom,omitempty" example:"1"`
+
+	// IndexTo filters commands to this index (inclusive)
+	IndexTo int `json:"indexTo,omitempty" example:"10"`
+
+	// Limit limits the number of results returned
+	Limit int `json:"limit,omitempty" example:"50"`
+
+	// Offset specifies the number of results to skip
+	Offset int `json:"offset,omitempty" example:"0"`
+}
+
+// CommandStatusListResponse represents the response for command status list queries
+type CommandStatusListResponse struct {
+	// Commands is the list of command status info matching the filter criteria
+	Commands []CommandStatusInfo `json:"commands"`
+
+	// Total is the total number of commands matching the criteria (before limit/offset)
+	Total int `json:"total" example:"25"`
+
+	// Limit is the limit applied to the query
+	Limit int `json:"limit" example:"50"`
+
+	// Offset is the offset applied to the query
+	Offset int `json:"offset" example:"0"`
+}
+
+// HandlingCommandCountResponse represents the response for VM handling command count queries
+type HandlingCommandCountResponse struct {
+	// VmId is the VM identifier
+	VmId string `json:"vmId" example:"g1-1"`
+
+	// HandlingCount is the number of commands currently in 'Handling' status
+	HandlingCount int `json:"handlingCount" example:"3"`
+}
+
+// MciHandlingCommandCountResponse represents the response for MCI handling command count queries
+type MciHandlingCommandCountResponse struct {
+	// MciId is the MCI identifier
+	MciId string `json:"mciId" example:"mci01"`
+
+	// VmHandlingCounts is a map of VM ID to handling command count
+	VmHandlingCounts map[string]int `json:"vmHandlingCounts"`
+
+	// TotalHandlingCount is the total number of handling commands across all VMs in the MCI
+	TotalHandlingCount int `json:"totalHandlingCount" example:"3"`
 }
 
 // SshCmdResult is struct for SshCmd Result
