@@ -340,32 +340,22 @@ func BuildLocationOrderByClause(param *[]model.ParameterKeyVal) (string, error) 
 				return "", fmt.Errorf("invalid longitude: %v", err)
 			}
 
-			// Generate distance-based priority with cost as secondary sort
-			// Use distance bands: 0-50km, 50-300km, 300-1000km, 1000km+
-			// Within each band, sort by cost (cheaper first)
+			// Generate distance-based sorting with 50km grouping and cost as secondary sort
+			// Primary: 50km distance groups (0-49km, 50-99km, 100-149km, etc.)
+			// Secondary: Cost within same distance group
+			// Tertiary: Exact distance for tie-breaking
+			// Use calculated distance to avoid duplication
+			haversineDistance := fmt.Sprintf(`(6371 * acos(
+				cos(radians(%f)) * cos(radians(region_latitude)) * 
+				cos(radians(region_longitude) - radians(%f)) + 
+				sin(radians(%f)) * sin(radians(region_latitude))
+			))`, latitude, longitude, latitude)
+
 			orderBy := fmt.Sprintf(`
-				CASE 
-					WHEN (6371 * acos(
-						cos(radians(%f)) * cos(radians(region_latitude)) * 
-						cos(radians(region_longitude) - radians(%f)) + 
-						sin(radians(%f)) * sin(radians(region_latitude))
-					)) <= 50 THEN 1
-					WHEN (6371 * acos(
-						cos(radians(%f)) * cos(radians(region_latitude)) * 
-						cos(radians(region_longitude) - radians(%f)) + 
-						sin(radians(%f)) * sin(radians(region_latitude))
-					)) <= 300 THEN 2
-					WHEN (6371 * acos(
-						cos(radians(%f)) * cos(radians(region_latitude)) * 
-						cos(radians(region_longitude) - radians(%f)) + 
-						sin(radians(%f)) * sin(radians(region_latitude))
-					)) <= 1000 THEN 3
-					ELSE 4
-				END ASC,
-				CASE WHEN cost_per_hour > 0 THEN cost_per_hour ELSE 999999 END ASC`,
-				latitude, longitude, latitude,
-				latitude, longitude, latitude,
-				latitude, longitude, latitude)
+                ROUND(%s / 50) * 50 ASC,
+                CASE WHEN cost_per_hour > 0 THEN cost_per_hour ELSE 999999 END ASC,
+                %s ASC`,
+				haversineDistance, haversineDistance)
 
 			return orderBy, nil
 
@@ -659,7 +649,7 @@ func RecommendVmLocation(nsId string, specList *[]model.SpecInfo, param *[]model
 
 						once.Do(func() {
 							// If an error occurs, stop all operations (this block is executed only once)
-							return
+							distance = 99999999 // Set a very large value to avoid using this value in the calculation
 						})
 					}
 
