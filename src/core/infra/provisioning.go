@@ -1129,6 +1129,9 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 			}
 		}
 		errorMu.Unlock()
+
+		// Do NOT return error here - continue with partial MCI creation
+		log.Info().Msg("Continuing MCI creation despite VM creation failures")
 	}
 
 	// Check for VM creation errors
@@ -1181,23 +1184,32 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		log.Info().Msg("Continuing with partial MCI provisioning")
 	}
 
-	// Update MCI status
+	// Update MCI status - ensure completion status is set regardless of VM failures
 	mciTmp, _, err = GetMciObject(nsId, mciId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get MCI object after VM creation: %w", err)
 	}
 
+	// Set completion status first to prevent infinite status loops
+	mciTmp.TargetStatus = model.StatusComplete
+	mciTmp.TargetAction = model.ActionComplete
+	UpdateMciInfo(nsId, mciTmp)
+
+	// Then get current status from CSP
+	// Note: GetMciStatus internally updates MCI info via UpdateMciInfo
 	mciStatusTmp, err := GetMciStatus(nsId, mciId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get MCI status: %w", err)
+		log.Error().Err(err).Msg("Failed to get MCI status, but continuing with MCI creation completion")
+		// GetMciStatus failed, but mciTmp still has the completion status we set above
+		// No need to manually update status since GetMciStatus failure means CSP status is unknown
+		// The completion status (TargetAction=Complete, TargetStatus=Complete) remains valid
+	} else {
+		// GetMciStatus succeeded and already updated MCI info internally
+		// Update our local copy with the latest status from CSP
+		mciTmp.Status = mciStatusTmp.Status
+		// Final update to ensure our local changes are persisted
+		UpdateMciInfo(nsId, mciTmp)
 	}
-
-	mciTmp.Status = mciStatusTmp.Status
-	if mciTmp.TargetStatus == mciTmp.Status {
-		mciTmp.TargetStatus = model.StatusComplete
-		mciTmp.TargetAction = model.ActionComplete
-	}
-	UpdateMciInfo(nsId, mciTmp)
 
 	log.Info().Msgf("MCI '%s' has been successfully created with %d VMs", mciId, len(vmConfigs))
 
@@ -2763,8 +2775,13 @@ func CreateVmsInParallel(nsId, mciId string, vmInfoList []*model.VmInfo, option 
 	if len(allErrors) > 0 {
 		log.Warn().Msgf("Rate-limited VM creation completed with errors: %d CSPs, %d regions, %d VMs total, %d errors",
 			cspCount, totalRegions, len(vmInfoList), len(allErrors))
-		// Return first error for compatibility
-		return allErrors[0]
+		// Don't return error for partial failures - let the caller handle individual VM status checks
+		// Return first error for compatibility only if ALL VMs failed
+		if len(allErrors) >= len(vmInfoList) {
+			return allErrors[0]
+		}
+		log.Info().Msgf("Partial VM creation success: %d out of %d VMs may have failed, but continuing",
+			len(allErrors), len(vmInfoList))
 	}
 
 	log.Debug().Msgf("Rate-limited VM creation completed successfully: %d CSPs, %d regions, %d VMs processed",
