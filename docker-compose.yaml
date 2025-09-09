@@ -59,9 +59,9 @@ services:
       # - TB_ETCD_USERNAME=default
       # - TB_ETCD_PASSWORD=default
       - TB_POSTGRES_ENDPOINT=cb-tumblebug-postgres:5432
-      - TB_POSTGRES_DATABASE=cb_tumblebug
-      - TB_POSTGRES_USER=cb_tumblebug
-      - TB_POSTGRES_PASSWORD=cb_tumblebug
+      - TB_POSTGRES_DATABASE=tumblebug
+      - TB_POSTGRES_USER=tumblebug
+      - TB_POSTGRES_PASSWORD=tumblebug
       # - TB_TERRARIUM_API_USERNAME=default
       # - TB_TERRARIUM_API_PASSWORD=default
       # - TB_ALLOW_ORIGINS=*
@@ -151,11 +151,11 @@ services:
     volumes:
       - ./container-volume/cb-tumblebug-container/meta_db/postgres:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=cb_tumblebug
-      - POSTGRES_PASSWORD=cb_tumblebug
-      - POSTGRES_DB=cb_tumblebug
+      - POSTGRES_USER=tumblebug
+      - POSTGRES_PASSWORD=tumblebug
+      - POSTGRES_DB=tumblebug
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cb_tumblebug"]
+      test: ["CMD-SHELL", "pg_isready -U tumblebug"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -367,13 +367,13 @@ services:
       - 3000:3000
     environment:
       # - MB_DB_TYPE=postgres
-      # - MB_DB_DBNAME=cb_tumblebug
+      # - MB_DB_DBNAME=tumblebug
       # - MB_DB_PORT=5432
-      # - MB_DB_USER=cb_tumblebug
-      # - MB_DB_PASS=cb_tumblebug
+      # - MB_DB_USER=tumblebug
+      # - MB_DB_PASS=tumblebug
       # - MB_DB_HOST=cb-tumblebug-postgres
-      - MB_ADMIN_EMAIL=admin@cloud-barista.org
-      - MB_ADMIN_PASSWORD=cb_tumblebug11
+      - MB_ADMIN_EMAIL=admin1@your.org
+      - MB_ADMIN_PASSWORD=admin1@your.org
       - MB_ADMIN_FIRST_NAME=Cloud
       - MB_ADMIN_LAST_NAME=Barista
       - MB_SITE_NAME=CB-Tumblebug Analytics
@@ -384,6 +384,13 @@ services:
       - MB_LOGGER_LEVEL=OFF
       - MB_LOGGING_LEVEL=OFF
       - MB_EMOJI_IN_LOGS=false
+      # Query result limits for large datasets (400k+ records)
+      - MB_UNAGGREGATED_QUERY_ROW_LIMIT=10000
+      - MB_AGGREGATED_QUERY_ROW_LIMIT=10000
+      # Performance optimization for large datasets
+      - JAVA_OPTS=-Xmx2g -Xms1g -XX:+UseG1GC
+      - MB_ASYNC_QUERY_THREAD_POOL_SIZE=50
+      - MB_QUERY_CACHING_ENABLED=true
     volumes:
       - ./container-volume/cb-tumblebug-container/meta_db/metabase-data:/metabase-data
     depends_on:
@@ -392,6 +399,48 @@ services:
     user: "0:0"
     logging:
       driver: "none"
+
+  # Metabase Auto-Configuration Service
+  cb-tumblebug-metabase-init:
+    image: alpine:latest
+    container_name: cb-tumblebug-metabase-init
+    networks:
+      - internal_network
+      - external_network
+    depends_on:
+      cb-tumblebug-metabase:
+        condition: service_started
+    volumes:
+      - ./init/initMetabase.sh:/scripts/initMetabase.sh:ro
+      - ./container-volume/cb-tumblebug-container/meta_db/metabase-init-marker:/marker
+    environment:
+      - METABASE_URL=http://cb-tumblebug-metabase:3000
+      - POSTGRES_HOST=cb-tumblebug-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=tumblebug
+      - POSTGRES_DATABASE=tumblebug
+      - POSTGRES_USER=tumblebug
+      - POSTGRES_PASSWORD=tumblebug
+      - ADMIN_EMAIL=admin1@your.org
+      - ADMIN_PASSWORD=admin1@your.org
+    command: |
+      sh -c "
+        apk add --no-cache curl jq
+        if [ -f /marker/init-completed ]; then
+          echo 'Metabase initialization already completed (marker found)'
+          echo 'Skipping initialization to prevent duplicate databases...'
+          exit 0
+        fi
+        cat /scripts/initMetabase.sh | sh
+        if [ \$? -eq 0 ]; then
+          mkdir -p /marker
+          touch /marker/init-completed
+          echo 'Metabase initialization completed, marker created'
+        fi
+      "
+    restart: "no"
+    # To re-init metabase, remove the marker and metabase data
+    # sudo rm -rf container-volume/cb-tumblebug-container/meta_db/metabase-*
 
 
   # # CB-Tumblebug pgAdmin Dashboard for PostgreSQL
@@ -408,8 +457,8 @@ services:
   #   volumes:
   #     - ./container-volume/cb-tumblebug-container/meta_db/pgadmin:/var/lib/pgadmin
   #   environment:
-  #     - PGADMIN_DEFAULT_EMAIL=admin@cloud-barista.org
-  #     - PGADMIN_DEFAULT_PASSWORD=cb_tumblebug
+  #     - PGADMIN_DEFAULT_EMAIL=admin1@your.org
+  #     - PGADMIN_DEFAULT_PASSWORD=tumblebug
   #     - PGADMIN_CONFIG_SERVER_MODE=True
   #     - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
   #     - PGADMIN_CONFIG_CONSOLE_LOG_LEVEL=40
@@ -419,7 +468,7 @@ services:
   #     - PGADMIN_CONFIG_ENABLE_PSQL=False
   #     - PGADMIN_CONFIG_ENABLE_CONSOLE_LOGGING=False
   #     - PGADMIN_CONFIG_ENABLE_FILE_LOGGING=False
-  #     - PGADMIN_SERVER_JSON={"Servers":{"1":{"Name":"CB-Tumblebug PostgreSQL","Group":"Cloud-Barista","Host":"cb-tumblebug-postgres","Port":5432,"MaintenanceDB":"cb_tumblebug","Username":"cb_tumblebug","SSLMode":"prefer","Password":"cb_tumblebug"}}}
+  #     - PGADMIN_SERVER_JSON={"Servers":{"1":{"Name":"CB-Tumblebug PostgreSQL","Group":"Cloud-Barista","Host":"cb-tumblebug-postgres","Port":5432,"MaintenanceDB":"tumblebug","Username":"tumblebug","SSLMode":"prefer","Password":"tumblebug"}}}
   #   user: "0:0"
   #   depends_on:
   #     - cb-tumblebug-postgres
