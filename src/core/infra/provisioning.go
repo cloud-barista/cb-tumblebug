@@ -1353,6 +1353,15 @@ func CheckMciDynamicReq(req *model.MciConnectionConfigCandidatesReq) (*model.Che
 // CreateMciDynamic is func to create MCI obeject and deploy requested VMs in a dynamic way
 func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deployOption string) (*model.MciInfo, error) {
 
+	// Initialize comprehensive error tracking
+	var errorHistory []string
+
+	// Helper function to add errors to history
+	addErrorToHistory := func(phase, details string) {
+		timestamp := time.Now().Format("15:04:05")
+		errorHistory = append(errorHistory, fmt.Sprintf("[%s] %s: %s", timestamp, phase, details))
+	}
+
 	mciReq := model.MciReq{}
 	mciReq.Name = req.Name
 	mciReq.Label = req.Label
@@ -1367,16 +1376,19 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 	if err != nil {
 		err := fmt.Errorf("invalid namespace. %w", err)
 		log.Error().Err(err).Msg("")
+		addErrorToHistory("Namespace Validation", err.Error())
 		return emptyMci, err
 	}
 	check, err := CheckMci(nsId, req.Name)
 	if err != nil {
 		err := fmt.Errorf("invalid mci name. %w", err)
 		log.Error().Err(err).Msg("")
+		addErrorToHistory("MCI Name Validation", err.Error())
 		return emptyMci, err
 	}
 	if check {
 		err := fmt.Errorf("The mci " + req.Name + " already exists.")
+		addErrorToHistory("MCI Existence Check", err.Error())
 		return emptyMci, err
 	}
 
@@ -1385,11 +1397,13 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 	mciId := req.Name
 
 	if err := createMciObject(nsId, mciId, &mciReq, uid); err != nil {
+		addErrorToHistory("MCI Object Creation", err.Error())
 		return emptyMci, err
 	}
 	// Get MCI object
 	mciTmp, _, err := GetMciObject(nsId, mciId)
 	if err != nil {
+		addErrorToHistory("MCI Object Retrieval", err.Error())
 		return emptyMci, err
 	}
 	// start mci provisioning with StatusPreparing
@@ -1424,6 +1438,10 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 				mutex.Lock()
 				validationErrors = append(validationErrors, fmt.Sprintf("SubGroup[%d] '%s': %s",
 					index+1, subGroupReq.Name, err.Error()))
+				// Add to error history with more context
+				addErrorToHistory("Resource Validation",
+					fmt.Sprintf("SubGroup '%s' (Index: %d) failed validation: %s",
+						subGroupReq.Name, index+1, err.Error()))
 				mutex.Unlock()
 			}
 		}(i, k)
@@ -1435,11 +1453,24 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 		// Clean up MCI object on validation failure
 		DelMci(nsId, mciId, "force")
 
-		errorMsg := fmt.Sprintf("MCI '%s' validation failed due to resource availability errors:\n", req.Name)
-		for _, errStr := range validationErrors {
-			errorMsg += fmt.Sprintf("  • %s\n", errStr)
+		// Build comprehensive error message with history
+		errorMsg := fmt.Sprintf("MCI '%s' validation failed due to resource availability errors.\n\n", req.Name)
+
+		// Add error history if available
+		if len(errorHistory) > 0 {
+			errorMsg += "Error Timeline:\n"
+			for i, errEntry := range errorHistory {
+				errorMsg += fmt.Sprintf(" %d. %s\n", i+1, errEntry)
+			}
+			errorMsg += "\n"
 		}
-		errorMsg += fmt.Sprintf("Total failed SubGroups: %d out of %d", len(validationErrors), len(subGroupReqs))
+
+		// Add validation error details
+		errorMsg += "Resource Validation Failures:\n"
+		for _, errStr := range validationErrors {
+			errorMsg += fmt.Sprintf(" • %s\n", errStr)
+		}
+		errorMsg += fmt.Sprintf("\nSummary: %d out of %d SubGroups failed validation", len(validationErrors), len(subGroupReqs))
 
 		return emptyMci, errors.New(errorMsg)
 	}
@@ -1465,6 +1496,11 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 			specInfo, err := resource.GetSpec(model.SystemCommonNs, subGroupReq.SpecId)
 			if err != nil {
 				log.Error().Err(err).Msgf("Failed to get spec info for grouping: %s", subGroupReq.SpecId)
+				// Add error to result channel instead of continuing
+				resultChan <- vmResult{
+					result: nil,
+					err:    fmt.Errorf("failed to get spec info for SubGroup '%s': %w", subGroupReq.Name, err),
+				}
 				continue
 			}
 
@@ -1511,109 +1547,137 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 
 		// Collect results and check for errors
 		var hasError bool
-		var failedVMs []string
+		var failedSubGroups []string
 		var errorDetails []string
-		var successfulVMs []string
+		var successfulSubGroups []string
 
 		for vmRes := range resultChan {
 			if vmRes.err != nil {
 				log.Error().Err(vmRes.err).Msg("Failed to prepare resources for dynamic MCI creation")
 				hasError = true
 
-				// Extract VM details from error context
-				vmName := "unknown"
+				// Extract SubGroup details from error context
+				subGroupName := "unknown"
 				if vmRes.result != nil && vmRes.result.VmReq != nil {
-					vmName = vmRes.result.VmReq.Name
+					subGroupName = vmRes.result.VmReq.Name
 				}
-				failedVMs = append(failedVMs, vmName)
-				errorDetails = append(errorDetails, fmt.Sprintf("VM '%s': %s", vmName, vmRes.err.Error()))
+				failedSubGroups = append(failedSubGroups, subGroupName)
+				errorDetails = append(errorDetails, fmt.Sprintf("SubGroup '%s': %s", subGroupName, vmRes.err.Error()))
+
+				// Add to error history
+				addErrorToHistory("SubGroup Resource Preparation",
+					fmt.Sprintf("Failed to prepare resources for SubGroup '%s': %s", subGroupName, vmRes.err.Error()))
 			} else {
-				// Safely append to the shared mciReq.Vm slice
+				// Safely append to the shared mciReq.SubGroups slice
 				mutex.Lock()
 				mciReq.SubGroups = append(mciReq.SubGroups, *vmRes.result.VmReq)
 				allCreatedResources = append(allCreatedResources, vmRes.result.CreatedResources...)
-				successfulVMs = append(successfulVMs, vmRes.result.VmReq.Name)
+				successfulSubGroups = append(successfulSubGroups, vmRes.result.VmReq.Name)
 				mutex.Unlock()
 			}
 		}
 
-		// If there were any errors, add error messages to MCI SystemMessage
+		// Handle resource preparation failures
 		if hasError {
-			// Add error messages to MCI SystemMessage
+			// Get updated MCI object
 			mciTmp, _, err := GetMciObject(nsId, mciId)
 			if err == nil {
-				// Add general error summary
-				errorSummary := fmt.Sprintf("Resource preparation failed for %d VM(s) out of %d total VMs", len(failedVMs), len(failedVMs)+len(successfulVMs))
+				// Add general error summary to both SystemMessage and error history
+				errorSummary := fmt.Sprintf("Resource preparation failed for %d SubGroup(s) out of %d total SubGroups", len(failedSubGroups), len(failedSubGroups)+len(successfulSubGroups))
 				mciTmp.SystemMessage = append(mciTmp.SystemMessage, errorSummary)
+				addErrorToHistory("Resource Preparation Summary", errorSummary)
 
-				// Add detailed error messages for each failed VM
+				// Add detailed error messages for each failed SubGroup to both SystemMessage and error history
 				for _, detail := range errorDetails {
 					mciTmp.SystemMessage = append(mciTmp.SystemMessage, detail)
+					addErrorToHistory("SubGroup Resource Failure", detail)
 				}
 
+				// Check if ALL SubGroups failed - if so, set status to Failed and return immediately
+				if len(successfulSubGroups) == 0 {
+					addErrorToHistory("MCI Status Decision", "All SubGroups failed resource preparation - marking MCI as Failed")
+					mciTmp.SystemMessage = append(mciTmp.SystemMessage, "MCI creation aborted: All SubGroups failed resource preparation")
+					mciTmp.Status = model.StatusFailed
+					UpdateMciInfo(nsId, mciTmp)
+
+					// Build comprehensive error message with complete history
+					errorMsg := fmt.Sprintf("MCI '%s' creation failed - all SubGroups failed resource preparation.\n\n", req.Name)
+
+					// Add full error history
+					if len(errorHistory) > 0 {
+						errorMsg += "Complete Error Timeline:\n"
+						for i, errEntry := range errorHistory {
+							errorMsg += fmt.Sprintf("  %d. %s\n", i+1, errEntry)
+						}
+						errorMsg += "\n"
+					}
+
+					errorMsg += "Summary: All SubGroups failed during resource preparation phase.\n"
+					errorMsg += "Common causes: VPC/subnet limits, insufficient permissions, region capacity issues, or network configuration problems.\n"
+					errorMsg += "Check the error timeline above for specific failure details."
+
+					return emptyMci, fmt.Errorf("%s", errorMsg)
+				}
+
+				// If some SubGroups succeeded, update MCI and continue
+				addErrorToHistory("MCI Status Decision",
+					fmt.Sprintf("Partial success: %d SubGroups succeeded, %d failed - continuing with partial MCI creation",
+						len(successfulSubGroups), len(failedSubGroups)))
 				UpdateMciInfo(nsId, mciTmp)
 			}
-
-			// // Count resources by type for detailed rollback info
-			// resourceSummary := make(map[string]int)
-			// for _, resource := range allCreatedResources {
-			// 	resourceSummary[resource.Type]++
-			// }
-
-			// log.Info().Msgf("Resource preparation failed for %d VM(s): %v", len(failedVMs), failedVMs)
-			// log.Info().Msgf("Successfully prepared %d VM(s): %v", len(successfulVMs), successfulVMs)
-			// log.Info().Msgf("Rolling back %d created resources: %+v", len(allCreatedResources), resourceSummary)
-
-			// time.Sleep(5 * time.Second)
-			// rollbackErr := rollbackCreatedResources(nsId, allCreatedResources)
-
-			// // Build comprehensive error message
-			// errorMsg := fmt.Sprintf("MCI '%s' creation failed due to resource preparation errors:\n", req.Name)
-			// errorMsg += fmt.Sprintf("- Failed VMs (%d): %v\n", len(failedVMs), failedVMs)
-			// if len(successfulVMs) > 0 {
-			// 	errorMsg += fmt.Sprintf("- Successfully prepared VMs (%d): %v\n", len(successfulVMs), successfulVMs)
-			// }
-
-			// if len(allCreatedResources) > 0 {
-			// 	errorMsg += fmt.Sprintf("- Rollback attempted for %d resources: ", len(allCreatedResources))
-			// 	for resType, count := range resourceSummary {
-			// 		errorMsg += fmt.Sprintf("%s(%d) ", resType, count)
-			// 	}
-			// 	errorMsg += "\n"
-			// }
-
-			// // Clean up MCI object on validation failure
-			// DelMci(nsId, mciId, "force")
-
-			// errorMsg += "Detailed errors:\n"
-			// for _, detail := range errorDetails {
-			// 	errorMsg += fmt.Sprintf("  • %s\n", detail)
-			// }
-
-			// if rollbackErr != nil {
-			// 	errorMsg += fmt.Sprintf("CRITICAL: Rollback operation failed: %s\n", rollbackErr.Error())
-			// 	errorMsg += "Manual cleanup may be required for created resources."
-			// 	return emptyMci, fmt.Errorf("%s", errorMsg)
-			// } else {
-			// 	errorMsg += "All created resources have been successfully rolled back."
-			// 	return emptyMci, fmt.Errorf("%s", errorMsg)
-			// }
-
-			// cancel is also one of the options
-			// // Return error but keep MCI object so user can see the error messages
-			// errorMsg := fmt.Sprintf("MCI '%s' resource preparation failed. Check MCI SystemMessage for detailed error information.", req.Name)
-			// return emptyMci, fmt.Errorf("%s", errorMsg)
 		}
+
+		// After processing all SubGroups, check final state
+		// Get updated MCI object for final status determination
+		mciTmp, _, err := GetMciObject(nsId, mciId)
+		if err != nil {
+			addErrorToHistory("MCI Object Retrieval for Final Status Check", err.Error())
+			return emptyMci, err
+		}
+
+		// Final check: if no SubGroups were successfully prepared, mark as Failed
+		if len(mciReq.SubGroups) == 0 {
+			addErrorToHistory("Final Status Decision", "No SubGroups were successfully prepared - marking MCI as Failed")
+			mciTmp.SystemMessage = append(mciTmp.SystemMessage, "MCI creation failed: No SubGroups were successfully prepared")
+			mciTmp.Status = model.StatusFailed
+			UpdateMciInfo(nsId, mciTmp)
+
+			// Build comprehensive error message
+			errorMsg := fmt.Sprintf("MCI '%s' creation failed - no SubGroups were successfully prepared.\n\n", req.Name)
+
+			// Add full error history
+			if len(errorHistory) > 0 {
+				errorMsg += "Complete Error Timeline:\n"
+				for i, errEntry := range errorHistory {
+					errorMsg += fmt.Sprintf("  %d. %s\n", i+1, errEntry)
+				}
+				errorMsg += "\n"
+			}
+
+			errorMsg += "Summary: All SubGroups failed during resource preparation phase.\n"
+			errorMsg += "This indicates that no VM SubGroups could be prepared for provisioning.\n"
+			errorMsg += "Check the error timeline above for specific failure details."
+
+			return emptyMci, fmt.Errorf("%s", errorMsg)
+		}
+	}
+
+	// Only proceed to StatusPrepared if we have successful SubGroups
+	mciTmp, _, err = GetMciObject(nsId, mciId)
+	if err != nil {
+		addErrorToHistory("MCI Object Retrieval for Status Update", err.Error())
+		return emptyMci, err
 	}
 
 	// marking the mci is in StatusPrepared
 	mciTmp.Status = model.StatusPrepared
+	addErrorToHistory("MCI Status Update", fmt.Sprintf("MCI marked as Prepared with %d successful SubGroups", len(mciReq.SubGroups)))
 	UpdateMciInfo(nsId, mciTmp)
 
 	// Log the prepared MCI request and update the progress
 	common.PrintJsonPretty(mciReq)
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{
-		Title: "Prepared all resources for provisioning MCI: " + mciReq.Name,
+		Title: fmt.Sprintf("Prepared %d resources for provisioning MCI: %s", len(mciReq.SubGroups), mciReq.Name),
 		Info:  mciReq, Time: time.Now(),
 	})
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{
@@ -1626,6 +1690,35 @@ func CreateMciDynamic(reqID string, nsId string, req *model.MciDynamicReq, deplo
 		option = "hold"
 	}
 	result, err := CreateMci(nsId, &mciReq, option, true)
+
+	// If CreateMci fails, build comprehensive error message with history
+	if err != nil {
+		addErrorToHistory("MCI Creation", err.Error())
+
+		// Build comprehensive error message
+		errorMsg := fmt.Sprintf("MCI '%s' creation failed in final provisioning stage.\n\n", req.Name)
+
+		// Add full error history
+		if len(errorHistory) > 0 {
+			errorMsg += "Complete Error Timeline:\n"
+			for i, errEntry := range errorHistory {
+				errorMsg += fmt.Sprintf("  %d. %s\n", i+1, errEntry)
+			}
+			errorMsg += "\n"
+		}
+
+		errorMsg += fmt.Sprintf("Final Error: %s\n", err.Error())
+
+		// Check if SubGroups is empty (which causes the validation error in CreateMci)
+		if len(mciReq.SubGroups) == 0 {
+			errorMsg += "\nRoot Cause: No VM SubGroups were successfully prepared for provisioning.\n"
+			errorMsg += "This typically indicates that all VM resource preparation failed during the earlier stages.\n"
+			errorMsg += "Please check the error timeline above for specific resource creation failures (e.g., VPC limits, permissions, etc.)."
+		}
+
+		return result, fmt.Errorf("%s", errorMsg)
+	}
+
 	return result, err
 }
 
