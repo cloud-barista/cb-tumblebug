@@ -218,13 +218,13 @@ func InitConfig(id string) error {
 		model.DBUrl = NVL(os.Getenv("TB_POSTGRES_ENDPOINT"), "localhost:3306")
 		log.Debug().Msg("<TB_POSTGRES_ENDPOINT> " + model.DBUrl)
 	case model.StrDBDatabase:
-		model.DBDatabase = NVL(os.Getenv("TB_POSTGRES_DATABASE"), "cb_tumblebug")
+		model.DBDatabase = NVL(os.Getenv("TB_POSTGRES_DATABASE"), "tumblebug")
 		log.Debug().Msg("<TB_POSTGRES_DATABASE> " + model.DBDatabase)
 	case model.StrDBUser:
-		model.DBUser = NVL(os.Getenv("TB_POSTGRES_USER"), "cb_tumblebug")
+		model.DBUser = NVL(os.Getenv("TB_POSTGRES_USER"), "tumblebug")
 		log.Debug().Msg("<TB_POSTGRES_USER> " + model.DBUser)
 	case model.StrDBPassword:
-		model.DBPassword = NVL(os.Getenv("TB_POSTGRES_PASSWORD"), "cb_tumblebug")
+		model.DBPassword = NVL(os.Getenv("TB_POSTGRES_PASSWORD"), "tumblebug")
 		log.Debug().Msg("<TB_POSTGRES_PASSWORD> " + model.DBPassword)
 	case model.StrAutocontrolDurationMs:
 		model.AutocontrolDurationMs = NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
