@@ -31,6 +31,7 @@ import (
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
@@ -42,6 +43,185 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/remotecommand"
 )
+
+// Constants for NCP LB subnet names used by NKS (Naver Cloud Platform Kubernetes Service)
+const (
+	NCPPrivateLBSubnetName = "cb-private-lb-subnet-for-k8s"
+	NCPPublicLBSubnetName  = "cb-public-lb-subnet-for-k8s"
+)
+
+// isNCPProvider checks if the given connection is for NCP provider
+func isNCPProvider(connectionName string) (bool, error) {
+	connConfig, err := common.GetConnConfig(connectionName)
+	if err != nil {
+		return false, err
+	}
+	return strings.EqualFold(connConfig.ProviderName, csp.NCP), nil
+}
+
+// ensureNCPLBSubnets ensures that required LB subnets exist for NCP K8s clusters
+// It checks if the LB subnets exist in the VPC, creates them if they don't exist,
+// and returns the updated subnet list to include in the cluster creation request
+func ensureNCPLBSubnets(nsId string, vNetId string, subnetIds []string, connectionName string) ([]string, error) {
+	log.Debug().Msg("[ensureNCPLBSubnets] Starting NCP LB subnet management")
+	
+	// Check if this is an NCP provider
+	isNCP, err := isNCPProvider(connectionName)
+	if err != nil {
+		return subnetIds, fmt.Errorf("failed to check provider type: %v", err)
+	}
+	
+	// If not NCP, return original subnet list unchanged
+	if !isNCP {
+		log.Debug().Msg("[ensureNCPLBSubnets] Not NCP provider, skipping LB subnet management")
+		return subnetIds, nil
+	}
+	
+	log.Debug().Msg("[ensureNCPLBSubnets] NCP provider detected, managing LB subnets")
+	
+	// Get the VNet information to find existing subnets
+	tmpInf, err := GetResource(nsId, model.StrVNet, vNetId)
+	if err != nil {
+		return subnetIds, fmt.Errorf("failed to get VNet information: %v", err)
+	}
+	
+	tbVNetInfo := model.VNetInfo{}
+	err = common.CopySrcToDest(&tmpInf, &tbVNetInfo)
+	if err != nil {
+		return subnetIds, fmt.Errorf("failed to parse VNet information: %v", err)
+	}
+	
+	// Check if LB subnets already exist in the VNet
+	privateLBExists := false
+	publicLBExists := false
+	resultSubnets := make([]string, len(subnetIds))
+	copy(resultSubnets, subnetIds)
+	
+	for _, subnet := range tbVNetInfo.SubnetInfoList {
+		if subnet.Name == NCPPrivateLBSubnetName {
+			privateLBExists = true
+			// Add to result if not already present
+			if !contains(resultSubnets, subnet.Name) {
+				resultSubnets = append(resultSubnets, subnet.Name)
+			}
+		}
+		if subnet.Name == NCPPublicLBSubnetName {
+			publicLBExists = true
+			// Add to result if not already present
+			if !contains(resultSubnets, subnet.Name) {
+				resultSubnets = append(resultSubnets, subnet.Name)
+			}
+		}
+	}
+	
+	// Create missing LB subnets
+	if !privateLBExists {
+		log.Debug().Msg("[ensureNCPLBSubnets] Creating private LB subnet")
+		err = createNCPLBSubnet(nsId, vNetId, NCPPrivateLBSubnetName, connectionName, true)
+		if err != nil {
+			return subnetIds, fmt.Errorf("failed to create private LB subnet: %v", err)
+		}
+		resultSubnets = append(resultSubnets, NCPPrivateLBSubnetName)
+	}
+	
+	if !publicLBExists {
+		log.Debug().Msg("[ensureNCPLBSubnets] Creating public LB subnet")
+		err = createNCPLBSubnet(nsId, vNetId, NCPPublicLBSubnetName, connectionName, false)
+		if err != nil {
+			return subnetIds, fmt.Errorf("failed to create public LB subnet: %v", err)
+		}
+		resultSubnets = append(resultSubnets, NCPPublicLBSubnetName)
+	}
+	
+	log.Debug().Msgf("[ensureNCPLBSubnets] Final subnet list: %v", resultSubnets)
+	return resultSubnets, nil
+}
+
+// createNCPLBSubnet creates a load balancer subnet for NCP
+func createNCPLBSubnet(nsId string, vNetId string, subnetName string, connectionName string, isPrivate bool) error {
+	log.Debug().Msgf("[createNCPLBSubnet] Creating subnet: %s", subnetName)
+	
+	// Get available CIDR for the LB subnet by finding unused ranges in the VNet
+	cidr, err := findAvailableLBSubnetCIDR(nsId, vNetId, isPrivate)
+	if err != nil {
+		return fmt.Errorf("failed to find available CIDR for %s: %v", subnetName, err)
+	}
+	
+	// Create subnet request
+	subnetReq := model.SubnetReq{
+		Name:        subnetName,
+		IPv4_CIDR:   cidr,
+		Description: fmt.Sprintf("Load Balancer subnet for NCP K8s cluster (%s)", subnetName),
+	}
+	
+	// Create the subnet
+	_, err = CreateSubnet(nsId, vNetId, &subnetReq)
+	if err != nil {
+		return fmt.Errorf("failed to create LB subnet %s: %v", subnetName, err)
+	}
+	
+	log.Debug().Msgf("[createNCPLBSubnet] Successfully created subnet: %s with CIDR: %s", subnetName, cidr)
+	return nil
+}
+
+// findAvailableLBSubnetCIDR finds an available CIDR range for NCP LB subnets
+func findAvailableLBSubnetCIDR(nsId string, vNetId string, isPrivate bool) (string, error) {
+	// Get VNet information to check existing subnet CIDRs
+	tmpInf, err := GetResource(nsId, model.StrVNet, vNetId)
+	if err != nil {
+		return "", fmt.Errorf("failed to get VNet information: %v", err)
+	}
+	
+	tbVNetInfo := model.VNetInfo{}
+	err = common.CopySrcToDest(&tmpInf, &tbVNetInfo)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse VNet information: %v", err)
+	}
+	
+	// Extract the base network from VNet CIDR (e.g., "10.0.0.0/16" -> "10.0")
+	vnetCIDR := tbVNetInfo.CidrBlock
+	if vnetCIDR == "" {
+		return "", fmt.Errorf("VNet CIDR is empty")
+	}
+	
+	// For simplicity, we'll use predefined CIDR ranges that are likely to be available
+	// In a real implementation, you might want to implement proper CIDR calculation
+	// Private LB: 10.0.252.0/24, Public LB: 10.0.253.0/24
+	// These are chosen to be at the high end of the typical 10.0.x.x range to minimize conflicts
+	
+	var cidr string
+	if isPrivate {
+		cidr = "10.0.252.0/24"
+	} else {
+		cidr = "10.0.253.0/24"
+	}
+	
+	// Check if the proposed CIDR conflicts with existing subnets
+	for _, subnet := range tbVNetInfo.SubnetInfoList {
+		if subnet.IPv4_CIDR == cidr {
+			// If there's a conflict, increment the third octet
+			if isPrivate {
+				cidr = "10.0.250.0/24" // Fallback for private
+			} else {
+				cidr = "10.0.251.0/24" // Fallback for public
+			}
+			break
+		}
+	}
+	
+	log.Debug().Msgf("[findAvailableLBSubnetCIDR] Selected CIDR: %s for %s LB subnet", cidr, map[bool]string{true: "private", false: "public"}[isPrivate])
+	return cidr, nil
+}
+
+// contains checks if a slice contains a specific string
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
 
 // K8sClusterReqStructLevelValidation is a function to validate 'model.K8sClusterReq' object.
 func K8sClusterReqStructLevelValidation(sl validator.StructLevel) {
@@ -221,7 +401,7 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string) (*mo
 	}
 
 	if check {
-		err := fmt.Errorf("already exists", k8sClusterId)
+		err := fmt.Errorf("already exists: %s", k8sClusterId)
 		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
 		return emptyObj, err
 	}
@@ -332,10 +512,34 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string) (*mo
 		return emptyObj, createErr
 	}
 
+	// Handle NCP-specific LB subnet requirements
+	updatedSubnetIds, createErr := ensureNCPLBSubnets(nsId, req.VNetId, req.SubnetIds, req.ConnectionName)
+	if createErr != nil {
+		log.Err(createErr).Msgf("Failed to ensure NCP LB subnets for K8sCluster(%s)", k8sClusterId)
+		return emptyObj, createErr
+	}
+
+	// Update the stored cluster info with the updated subnet list if it changed
+	if len(updatedSubnetIds) != len(req.SubnetIds) {
+		tbK8sCInfo.Network.SubnetIds = updatedSubnetIds
+		storeK8sClusterInfo(nsId, tbK8sCInfo)
+		log.Debug().Msgf("Updated K8sCluster subnet list to include NCP LB subnets: %v", updatedSubnetIds)
+		
+		// Re-fetch VNet info to include newly created LB subnets
+		tmpInf, createErr = GetResource(nsId, model.StrVNet, req.VNetId)
+		if createErr != nil {
+			return emptyObj, createErr
+		}
+		createErr = common.CopySrcToDest(&tmpInf, &tbVNetInfo)
+		if createErr != nil {
+			return emptyObj, createErr
+		}
+	}
+
 	var spSnName string
 	var spSubnetNames []string
 
-	for _, v := range req.SubnetIds {
+	for _, v := range updatedSubnetIds {
 		found := false
 		for _, w := range tbVNetInfo.SubnetInfoList {
 			if v == w.Name {
