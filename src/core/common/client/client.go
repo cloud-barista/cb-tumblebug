@@ -42,6 +42,22 @@ var clientCache = sync.Map{}
 // clientRequestCounter is a map for request counters of intenal calls
 var clientRequestCounter = sync.Map{}
 
+// CircuitBreakerState represents the state of a circuit breaker for a specific request
+type CircuitBreakerState struct {
+	FailureCount int
+	LastFailure  time.Time
+	IsOpen       bool
+}
+
+// clientCircuitBreakers tracks circuit breaker states for different request keys
+var clientCircuitBreakers = sync.Map{}
+
+const (
+	// Circuit breaker thresholds
+	circuitBreakerFailureThreshold = 5                // Number of failures before opening circuit
+	circuitBreakerOpenDuration     = 30 * time.Second // How long to keep circuit open
+)
+
 const (
 	// VeryShortDuration is a duration for very short-term cache
 	VeryShortDuration = 1 * time.Second
@@ -128,6 +144,62 @@ func SetUseBody(requestBody interface{}) bool {
 		return str != NoBody
 	}
 	return true
+}
+
+// checkCircuitBreaker checks if the circuit breaker is open for a given request key
+func checkCircuitBreaker(requestKey string) bool {
+	if item, found := clientCircuitBreakers.Load(requestKey); found {
+		if breaker, ok := item.(CircuitBreakerState); ok {
+			if breaker.IsOpen {
+				// Check if enough time has passed to reset the circuit breaker
+				if time.Since(breaker.LastFailure) > circuitBreakerOpenDuration {
+					// Reset circuit breaker
+					breaker.IsOpen = false
+					breaker.FailureCount = 0
+					clientCircuitBreakers.Store(requestKey, breaker)
+					log.Debug().Msgf("API protection reset, service resumed: %s", requestKey)
+					return false
+				}
+				log.Debug().Msgf("API protection is active: %s", requestKey)
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// recordCircuitBreakerFailure records a failure for circuit breaker
+func recordCircuitBreakerFailure(requestKey string) {
+	var breaker CircuitBreakerState
+	if item, found := clientCircuitBreakers.Load(requestKey); found {
+		if existing, ok := item.(CircuitBreakerState); ok {
+			breaker = existing
+		}
+	}
+
+	breaker.FailureCount++
+	breaker.LastFailure = time.Now()
+
+	if breaker.FailureCount >= circuitBreakerFailureThreshold {
+		breaker.IsOpen = true
+		log.Warn().Msgf("API protection activated due to consecutive failures: %s (failures: %d, blocked for 30 seconds)", requestKey, breaker.FailureCount)
+	}
+
+	clientCircuitBreakers.Store(requestKey, breaker)
+}
+
+// recordCircuitBreakerSuccess resets failure count on successful request
+func recordCircuitBreakerSuccess(requestKey string) {
+	if item, found := clientCircuitBreakers.Load(requestKey); found {
+		if breaker, ok := item.(CircuitBreakerState); ok {
+			if breaker.FailureCount > 0 {
+				breaker.FailureCount = 0
+				breaker.IsOpen = false
+				clientCircuitBreakers.Store(requestKey, breaker)
+				log.Debug().Msgf("API failure counter reset due to successful response: %s", requestKey)
+			}
+		}
+	}
 }
 
 // limitConcurrentRequests limits the number of Concurrent requests to the given limit
@@ -238,16 +310,21 @@ func ExecuteHttpRequest[B any, T any](
 			}
 		}
 
+		// Check circuit breaker before making actual requests
+		if checkCircuitBreaker(requestKey) {
+			return fmt.Errorf("API call temporarily blocked due to circuit breaker protection (repeated failures detected), please try again later (API: %s)", requestKey)
+		}
+
 		// Limit the number of concurrent requests
-		concurrencyLimit := 10
-		retryWait := 5 * time.Second
-		retryLimit := 3
+		concurrencyLimit := 20       // Increased from 10 to 20 for better throughput
+		retryWait := 2 * time.Second // Reduced from 5 to 2 seconds for faster retries
+		retryLimit := 8              // Increased from 3 to 8 for more resilience
 		retryCount := 0
 		// try to wait for the upcoming cached result when sending queue is full
 		for {
 			if !limitConcurrentRequests(requestKey, concurrencyLimit) {
 				if retryCount >= retryLimit {
-					log.Debug().Msgf("too many same requests: %s", requestKey)
+					log.Debug().Msgf("too many same requests after %d retries: %s", retryLimit, requestKey)
 					return fmt.Errorf("too many same requests: %s", requestKey)
 				}
 				time.Sleep(retryWait)
@@ -326,6 +403,8 @@ func ExecuteHttpRequest[B any, T any](
 
 		if method == "GET" {
 			requestDone(requestKey)
+			// Record circuit breaker failure for GET requests
+			recordCircuitBreakerFailure(requestKey)
 		}
 		cleanedError := cleanErrorMessage(err.Error())
 		cleanedURL := cleanURL(url)
@@ -378,6 +457,8 @@ func ExecuteHttpRequest[B any, T any](
 
 		if method == "GET" {
 			requestDone(requestKey)
+			// Record circuit breaker failure for GET requests
+			recordCircuitBreakerFailure(requestKey)
 		}
 		cleanedBody := cleanErrorMessage(string(resp.Body()))
 		cleanedURL := cleanURL(url)
@@ -436,9 +517,12 @@ func ExecuteHttpRequest[B any, T any](
 		// release the request count for parallel requests limit
 		requestDone(requestKey)
 
+		// Record circuit breaker success for GET requests
+		recordCircuitBreakerSuccess(requestKey)
+
 		// Check if result is nil
 		if result == nil {
-			log.Trace().Msg("Fesult is nil, not caching")
+			log.Trace().Msg("Result is nil, not caching")
 		} else {
 			clientCache.Store(requestKey, CacheItem[T]{Response: *result, ExpiresAt: time.Now().Add(cacheDuration)})
 			//log.Trace().Msg("Cached successfully!")

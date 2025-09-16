@@ -20518,7 +20518,7 @@ const docTemplate = `{
         "resource.RestGetAllK8sClusterResponse": {
             "type": "object",
             "properties": {
-                "cluster": {
+                "K8sClusterInfo": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.K8sClusterInfo"

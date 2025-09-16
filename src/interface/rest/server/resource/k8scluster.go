@@ -388,7 +388,7 @@ func RestGetK8sCluster(c echo.Context) error {
 
 // Response structure for RestGetAllK8sCluster
 type RestGetAllK8sClusterResponse struct {
-	K8sCluster []model.K8sClusterInfo `json:"cluster"`
+	K8sCluster []model.K8sClusterInfo `json:"K8sClusterInfo"`
 }
 
 // RestGetAllK8sCluster godoc
@@ -432,12 +432,10 @@ func RestGetAllK8sCluster(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, &mapA)
 		}
 
-		var content struct {
-			K8sCluster []model.K8sClusterInfo `json:"K8sClusterInfo"`
-		}
+		restGetAllK8sClusterResponse := RestGetAllK8sClusterResponse{}
 
-		content.K8sCluster = resourceList.([]model.K8sClusterInfo) // type assertion (interface{} -> array)
-		return c.JSON(http.StatusOK, &content)
+		restGetAllK8sClusterResponse.K8sCluster = resourceList.([]model.K8sClusterInfo) // type assertion (interface{} -> array)
+		return c.JSON(http.StatusOK, &restGetAllK8sClusterResponse)
 	}
 }
 

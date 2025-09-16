@@ -657,10 +657,21 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.K8sNodeGroupReq)
 		return emptyObj, err
 	}
 
-	// Update K8sClusterInfo.K8NodeGroupList
+	// Update K8sClusterInfo.K8NodeGroupList - Add new nodegroup to existing list
 	var tbK8sNGReqList []model.K8sNodeGroupReq
 	tbK8sNGReqList = append(tbK8sNGReqList, *u)
-	fillK8sNodeGroupInfoListFromK8sNodeGroupReqList(&tbK8sCInfo.K8sNodeGroupList, &tbK8sNGReqList)
+
+	// Create new nodegroup info and append to existing list
+	var newK8sNodeGroupInfoList []model.K8sNodeGroupInfo
+	newK8sNodeGroupInfoList = append(newK8sNodeGroupInfoList, tbK8sCInfo.K8sNodeGroupList...)
+
+	// Add the new nodegroup
+	tbK8sNGInfo := model.K8sNodeGroupInfo{}
+	fillK8sNodeGroupInfoFromK8sNodeGroupReq(&tbK8sNGInfo, u)
+	newK8sNodeGroupInfoList = append(newK8sNodeGroupInfoList, tbK8sNGInfo)
+
+	// Update the cluster's nodegroup list
+	tbK8sCInfo.K8sNodeGroupList = newK8sNodeGroupInfoList
 
 	requestBody := model.SpiderNodeGroupReq{
 		ConnectionName: tbK8sCInfo.ConnectionName,
@@ -778,6 +789,11 @@ func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bo
 		if mapRes, ok := ifRes.(map[string]interface{}); ok {
 			result := mapRes["Result"]
 			if result == "true" {
+				// Successfully removed from CSP, now update local cluster info
+				err = removeNodeGroupFromLocalClusterInfo(nsId, k8sClusterId, k8sNodeGroupName)
+				if err != nil {
+					log.Warn().Err(err).Msgf("NodeGroup removed from CSP but failed to update local cluster info")
+				}
 				return true, nil
 			}
 		}
@@ -1010,7 +1026,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (*model.K8sClusterInfo, err
 		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&spClusterRes,
-		clientManager.MediumDuration,
+		clientManager.LongDuration, // Changed from MediumDuration to LongDuration to reduce API calls
 	)
 
 	if err != nil {
@@ -1152,7 +1168,17 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{
 
 		tbK8sCInfo, err := GetK8sCluster(nsId, storedTbK8sCInfo.Id)
 		if err != nil {
-			log.Err(err).Msg("Failed to List K8sCluster")
+			// If circuit breaker is active or too many requests error, use stored info with warning
+			if strings.Contains(err.Error(), "API call temporarily blocked") || strings.Contains(err.Error(), "circuit breaker") || strings.Contains(err.Error(), "too many same requests") {
+				log.Warn().Err(err).Msgf("Using stored cluster info due to API limitation for K8sCluster(%s)", storedTbK8sCInfo.Id)
+				// Add label info to stored cluster info
+				if labelInfo, labelErr := label.GetLabels(model.StrK8s, storedTbK8sCInfo.Uid); labelErr == nil {
+					storedTbK8sCInfo.Label = labelInfo.Labels
+				}
+				tbK8sCInfoList = append(tbK8sCInfoList, storedTbK8sCInfo)
+			} else {
+				log.Err(err).Msgf("Failed to get K8sCluster(%s) in list", storedTbK8sCInfo.Id)
+			}
 			continue
 		}
 
@@ -1769,6 +1795,21 @@ func updateK8sClusterNetworkInfoFromSpiderNetworkInfo(tbK8sCNInfo *model.K8sClus
 }
 
 func updateK8sNodeGroupInfoFromSpiderNodeGroupInfo(tbK8sNGInfo *model.K8sNodeGroupInfo, spNGInfo *model.SpiderNodeGroupInfo) {
+	// Update basic identification info from Spider response
+	tbK8sNGInfo.Id = spNGInfo.IId.NameId
+	tbK8sNGInfo.Name = spNGInfo.IId.NameId
+
+	// Keep existing ImageId and SpecId if they are set, otherwise try to get from Spider
+	if tbK8sNGInfo.ImageId == "" {
+		tbK8sNGInfo.ImageId = spNGInfo.ImageIID.NameId
+	}
+	if tbK8sNGInfo.SpecId == "" {
+		tbK8sNGInfo.SpecId = spNGInfo.VMSpecName
+	}
+	if tbK8sNGInfo.SshKeyId == "" {
+		tbK8sNGInfo.SshKeyId = spNGInfo.KeyPairIID.NameId
+	}
+
 	tbK8sNGInfo.RootDiskType = spNGInfo.RootDiskType
 	tbK8sNGInfo.RootDiskSize = spNGInfo.RootDiskSize
 	tbK8sNGInfo.OnAutoScaling = spNGInfo.OnAutoScaling
@@ -1802,6 +1843,40 @@ func updateK8sAddonsInfoFromSpiderAddonsInfo(tbK8sAddInfo *model.K8sAddonsInfo, 
 	tbK8sAddInfo.KeyValueList = convertSpiderKeyValueListToTbKeyValueList(spAddInfo.KeyValueList)
 }
 
+// removeNodeGroupFromLocalClusterInfo removes a node group from local cluster info after successful CSP deletion
+func removeNodeGroupFromLocalClusterInfo(nsId, k8sClusterId, k8sNodeGroupName string) error {
+	// Get current cluster info
+	tbK8sCInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
+	if err != nil {
+		return fmt.Errorf("failed to get cluster info: %w", err)
+	}
+
+	// Find and remove the node group
+	var updatedNodeGroups []model.K8sNodeGroupInfo
+	found := false
+	for _, ng := range tbK8sCInfo.K8sNodeGroupList {
+		if ng.Name != k8sNodeGroupName {
+			updatedNodeGroups = append(updatedNodeGroups, ng)
+		} else {
+			found = true
+		}
+	}
+
+	if !found {
+		log.Debug().Msgf("NodeGroup %s not found in local cluster info, might be already removed", k8sNodeGroupName)
+		return nil
+	}
+
+	// Update the cluster info with the new node group list
+	tbK8sCInfo.K8sNodeGroupList = updatedNodeGroups
+
+	// Store the updated cluster info
+	storeK8sClusterInfo(nsId, tbK8sCInfo)
+
+	log.Info().Msgf("Successfully removed NodeGroup %s from local cluster info", k8sNodeGroupName)
+	return nil
+}
+
 func convertSpiderKeyValueListToTbKeyValueList(spKeyValueList []model.KeyValue) []model.KeyValue {
 	var tbKeyValueList []model.KeyValue
 	for _, v := range spKeyValueList {
@@ -1833,10 +1908,34 @@ func fillK8sNodeGroupInfoFromK8sNodeGroupReq(tbK8sNGInfo *model.K8sNodeGroupInfo
 	tbK8sNGInfo.RootDiskSize = tbK8sNGReq.RootDiskSize
 	tbK8sNGInfo.SshKeyId = tbK8sNGReq.SshKeyId
 
-	tbK8sNGInfo.OnAutoScaling = func() bool { on, _ := strconv.ParseBool(tbK8sNGReq.OnAutoScaling); return on }()
-	tbK8sNGInfo.DesiredNodeSize = func() int { size, _ := strconv.Atoi(tbK8sNGReq.DesiredNodeSize); return size }()
-	tbK8sNGInfo.MinNodeSize = func() int { size, _ := strconv.Atoi(tbK8sNGReq.MinNodeSize); return size }()
-	tbK8sNGInfo.MaxNodeSize = func() int { size, _ := strconv.Atoi(tbK8sNGReq.MaxNodeSize); return size }()
+	// Convert string to appropriate types with better error handling
+	if on, err := strconv.ParseBool(tbK8sNGReq.OnAutoScaling); err == nil {
+		tbK8sNGInfo.OnAutoScaling = on
+	} else {
+		log.Warn().Msgf("Failed to parse OnAutoScaling '%s', defaulting to true", tbK8sNGReq.OnAutoScaling)
+		tbK8sNGInfo.OnAutoScaling = true
+	}
+
+	if size, err := strconv.Atoi(tbK8sNGReq.DesiredNodeSize); err == nil {
+		tbK8sNGInfo.DesiredNodeSize = size
+	} else {
+		log.Warn().Msgf("Failed to parse DesiredNodeSize '%s', defaulting to 1", tbK8sNGReq.DesiredNodeSize)
+		tbK8sNGInfo.DesiredNodeSize = 1
+	}
+
+	if size, err := strconv.Atoi(tbK8sNGReq.MinNodeSize); err == nil {
+		tbK8sNGInfo.MinNodeSize = size
+	} else {
+		log.Warn().Msgf("Failed to parse MinNodeSize '%s', defaulting to 1", tbK8sNGReq.MinNodeSize)
+		tbK8sNGInfo.MinNodeSize = 1
+	}
+
+	if size, err := strconv.Atoi(tbK8sNGReq.MaxNodeSize); err == nil {
+		tbK8sNGInfo.MaxNodeSize = size
+	} else {
+		log.Warn().Msgf("Failed to parse MaxNodeSize '%s', defaulting to 2", tbK8sNGReq.MaxNodeSize)
+		tbK8sNGInfo.MaxNodeSize = 2
+	}
 }
 
 func fillK8sNodeGroupInfoListFromK8sNodeGroupReqList(tbK8sNGInfoList *[]model.K8sNodeGroupInfo, tbK8sNGReqList *[]model.K8sNodeGroupReq) {

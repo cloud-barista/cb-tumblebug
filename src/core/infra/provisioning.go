@@ -3400,7 +3400,7 @@ func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.K8sClusterDynami
 	} else {
 
 		// check if the image is available in the CSP
-		_, err = resource.LookupImage(dReq.ConnectionName, dReq.ImageId)
+		_, err = resource.LookupImage(connName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return err
@@ -3475,7 +3475,7 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.K8sCl
 	} else {
 
 		// check if the image is available in the CSP
-		_, err = resource.LookupImage(dReq.ConnectionName, dReq.ImageId)
+		_, err = resource.LookupImage(k8sReq.ConnectionName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return emptyK8sReq, err
