@@ -663,9 +663,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.K8sNodeGroupReq)
 
 	// Create new nodegroup info and append to existing list
 	var newK8sNodeGroupInfoList []model.K8sNodeGroupInfo
-	for _, existingNG := range tbK8sCInfo.K8sNodeGroupList {
-		newK8sNodeGroupInfoList = append(newK8sNodeGroupInfoList, existingNG)
-	}
+	newK8sNodeGroupInfoList = append(newK8sNodeGroupInfoList, tbK8sCInfo.K8sNodeGroupList...)
 
 	// Add the new nodegroup
 	tbK8sNGInfo := model.K8sNodeGroupInfo{}
