@@ -45,6 +45,7 @@ import (
 )
 
 // Constants for NCP LB subnet names used by NKS (Naver Cloud Platform Kubernetes Service)
+// These subnets are required by NCP for load balancer functionality in K8s clusters
 const (
 	NCPPrivateLBSubnetName = "cb-private-lb-subnet-for-k8s"
 	NCPPublicLBSubnetName  = "cb-public-lb-subnet-for-k8s"
@@ -79,6 +80,11 @@ func ensureNCPLBSubnets(nsId string, vNetId string, subnetIds []string, connecti
 	
 	log.Debug().Msg("[ensureNCPLBSubnets] NCP provider detected, managing LB subnets")
 	
+	// Validate inputs
+	if nsId == "" || vNetId == "" {
+		return subnetIds, fmt.Errorf("nsId and vNetId cannot be empty")
+	}
+	
 	// Get the VNet information to find existing subnets
 	tmpInf, err := GetResource(nsId, model.StrVNet, vNetId)
 	if err != nil {
@@ -103,6 +109,7 @@ func ensureNCPLBSubnets(nsId string, vNetId string, subnetIds []string, connecti
 			// Add to result if not already present
 			if !contains(resultSubnets, subnet.Name) {
 				resultSubnets = append(resultSubnets, subnet.Name)
+				log.Debug().Msgf("[ensureNCPLBSubnets] Found existing private LB subnet: %s", subnet.Name)
 			}
 		}
 		if subnet.Name == NCPPublicLBSubnetName {
@@ -110,6 +117,7 @@ func ensureNCPLBSubnets(nsId string, vNetId string, subnetIds []string, connecti
 			// Add to result if not already present
 			if !contains(resultSubnets, subnet.Name) {
 				resultSubnets = append(resultSubnets, subnet.Name)
+				log.Debug().Msgf("[ensureNCPLBSubnets] Found existing public LB subnet: %s", subnet.Name)
 			}
 		}
 	}
