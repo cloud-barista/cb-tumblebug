@@ -284,19 +284,6 @@ func ListSubGroupId(nsId string, mciId string) ([]string, error) {
 // GetMciInfo is func to return MCI information with the current status update
 func GetMciInfo(nsId string, mciId string) (*model.MciInfo, error) {
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		temp := &model.MciInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
-
-	err = common.CheckString(mciId)
-	if err != nil {
-		temp := &model.MciInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
 	check, _ := CheckMci(nsId, mciId)
 
 	if !check {

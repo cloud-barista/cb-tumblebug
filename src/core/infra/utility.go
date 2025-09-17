@@ -72,22 +72,10 @@ func CheckMci(nsId string, mciId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
-		err := fmt.Errorf("CheckMci failed; nsId given is null.")
+		err := fmt.Errorf("CheckMci failed; nsId given is empty.")
 		return false, err
 	} else if mciId == "" {
-		err := fmt.Errorf("CheckMci failed; mciId given is null.")
-		return false, err
-	}
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return false, err
-	}
-
-	err = common.CheckString(mciId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
+		err := fmt.Errorf("CheckMci failed; mciId given is empty.")
 		return false, err
 	}
 
