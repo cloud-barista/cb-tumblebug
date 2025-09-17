@@ -805,7 +805,7 @@ func RecommendSpecOptions(nsId string) (*model.RecommendSpecRequestOptions, erro
 					Metric:      "providerName",
 					Description: "Filter specs from specific provider",
 					Condition: []model.OperationExample{
-						{Operator: "=", Operand: csp.AWS},
+						{Operator: "=", Operand: csp.AWS}, {Operator: "=", Operand: csp.AWS + "," + csp.GCP},
 					},
 				},
 				{

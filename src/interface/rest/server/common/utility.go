@@ -312,7 +312,7 @@ func RestGetCloudInfo(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-// RestGetK8sClusterInfo func is a rest api wrapper for K8sClsuterInfo.
+// RestGetK8sClusterInfo func is a rest api wrapper for K8sClusterAssetInfo
 // RestGetK8sClusterInfo godoc
 // @ID GetK8sClusterInfo
 // @Summary Get kubernetes cluster information
@@ -320,7 +320,7 @@ func RestGetCloudInfo(c echo.Context) error {
 // @Tags [Kubernetes] Cluster Management
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} model.K8sClusterInfo
+// @Success 200 {object} model.K8sClusterAssetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /k8sClusterInfo [get]
