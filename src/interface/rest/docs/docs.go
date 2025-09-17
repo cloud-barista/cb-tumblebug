@@ -1206,7 +1206,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.K8sClusterInfo"
+                            "$ref": "#/definitions/model.K8sClusterAssetInfo"
                         }
                     },
                     "404": {
@@ -14862,6 +14862,17 @@ const docTemplate = `{
                 }
             }
         },
+        "model.K8sClusterAssetInfo": {
+            "type": "object",
+            "properties": {
+                "k8s_cluster": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/model.K8sClusterDetail"
+                    }
+                }
+            }
+        },
         "model.K8sClusterConnectionConfigCandidatesReq": {
             "type": "object",
             "required": [
@@ -14919,6 +14930,41 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.K8sClusterContainerCmdResult"
+                    }
+                }
+            }
+        },
+        "model.K8sClusterDetail": {
+            "type": "object",
+            "properties": {
+                "node_image_designation": {
+                    "type": "boolean"
+                },
+                "node_images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterNodeImageDetail"
+                    }
+                },
+                "nodegroup_naming_rule": {
+                    "type": "string"
+                },
+                "nodegroups_on_creation": {
+                    "type": "boolean"
+                },
+                "required_subnet_count": {
+                    "type": "integer"
+                },
+                "root_disks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterRootDiskDetail"
+                    }
+                },
+                "versions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterVersionDetail"
                     }
                 }
             }
@@ -15172,6 +15218,23 @@ const docTemplate = `{
                 }
             }
         },
+        "model.K8sClusterNodeImageDetail": {
+            "type": "object",
+            "properties": {
+                "availables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterNodeImageDetailAvailable"
+                    }
+                },
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "model.K8sClusterNodeImageDetailAvailable": {
             "type": "object",
             "properties": {
@@ -15269,6 +15332,48 @@ const docTemplate = `{
                 }
             }
         },
+        "model.K8sClusterRootDiskDetail": {
+            "type": "object",
+            "properties": {
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "size": {
+                    "$ref": "#/definitions/model.K8sClusterRootDiskDetailSize"
+                },
+                "type": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterRootDiskDetailType"
+                    }
+                }
+            }
+        },
+        "model.K8sClusterRootDiskDetailSize": {
+            "type": "object",
+            "properties": {
+                "max": {
+                    "type": "integer"
+                },
+                "min": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.K8sClusterRootDiskDetailType": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "model.K8sClusterStatus": {
             "type": "string",
             "enum": [
@@ -15285,6 +15390,23 @@ const docTemplate = `{
                 "K8sClusterUpdating",
                 "K8sClusterDeleting"
             ]
+        },
+        "model.K8sClusterVersionDetail": {
+            "type": "object",
+            "properties": {
+                "availables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterVersionDetailAvailable"
+                    }
+                },
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
         },
         "model.K8sClusterVersionDetailAvailable": {
             "type": "object",

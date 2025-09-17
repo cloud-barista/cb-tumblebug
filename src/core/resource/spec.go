@@ -2351,12 +2351,32 @@ func FilterSpecsByRange(nsId string, filter model.FilterSpecsByRangeRequest, ord
 				useLikeSearch := slices.Contains(likeSearchFields, modelFieldName)
 
 				if useLikeSearch {
+					// For LIKE search, use the original single value (don't support multiple values for LIKE)
 					query = query.Where("LOWER("+dbFieldName+") LIKE ?", "%"+cleanValue+"%")
 					log.Info().Msgf("Filtering by %s (LIKE): %s", dbFieldName, cleanValue)
 				} else {
-					// Try exact match first (for normalized data)
-					query = query.Where(dbFieldName+" = ?", cleanValue)
-					log.Info().Msgf("Filtering by %s (EXACT NORMALIZED): %s", dbFieldName, cleanValue)
+					// Check if the value contains multiple items separated by comma or space
+					var values []string
+					for _, item := range strings.FieldsFunc(cleanValue, func(c rune) bool {
+						return c == ',' || c == ' '
+					}) {
+						if trimmed := strings.TrimSpace(item); trimmed != "" {
+							values = append(values, trimmed)
+						}
+					}
+
+					// For exact match fields, support multiple values
+					if len(values) == 1 {
+						// Single value - use exact match
+						query = query.Where("LOWER("+dbFieldName+") = ?", values[0])
+						log.Info().Msgf("Filtering by %s (SINGLE): %s", dbFieldName, values[0])
+					} else if len(values) > 1 {
+						// Multiple values - use IN clause
+						query = query.Where("LOWER("+dbFieldName+") IN ?", values)
+						log.Info().Msgf("Filtering by %s (MULTIPLE): %v", dbFieldName, values)
+					}
+					// Note: if len(values) == 0 (empty after parsing), no filter is applied for this field
+					// This allows filtering to be skipped when only whitespace/separators are provided
 				}
 			}
 		}
