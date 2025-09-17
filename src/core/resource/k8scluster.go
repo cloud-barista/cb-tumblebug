@@ -767,6 +767,7 @@ func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bo
 		url += "?force=true"
 	}
 	method := "DELETE"
+	client.SetTimeout(10 * time.Minute)
 
 	var ifRes interface{}
 	err = clientManager.ExecuteHttpRequest(
@@ -1026,7 +1027,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (*model.K8sClusterInfo, err
 		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&spClusterRes,
-		clientManager.LongDuration, // Changed from MediumDuration to LongDuration to reduce API calls
+		clientManager.MediumDuration,
 	)
 
 	if err != nil {
@@ -1226,6 +1227,7 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 		url += "?force=true"
 	}
 	method := "DELETE"
+	client.SetTimeout(20 * time.Minute)
 
 	var ifRes interface{}
 	err = clientManager.ExecuteHttpRequest(
@@ -1370,6 +1372,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.UpgradeK8sClus
 	client := resty.New()
 	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspResourceName + "/upgrade"
 	method := "PUT"
+	client.SetTimeout(10 * time.Minute)
 
 	var spClusterRes model.SpiderClusterRes
 	err = clientManager.ExecuteHttpRequest(
@@ -1801,7 +1804,7 @@ func updateK8sNodeGroupInfoFromSpiderNodeGroupInfo(tbK8sNGInfo *model.K8sNodeGro
 
 	// Keep existing ImageId and SpecId if they are set, otherwise try to get from Spider
 	if tbK8sNGInfo.ImageId == "" {
-		tbK8sNGInfo.ImageId = spNGInfo.ImageIID.NameId
+		tbK8sNGInfo.ImageId = spNGInfo.ImageIID.SystemId
 	}
 	if tbK8sNGInfo.SpecId == "" {
 		tbK8sNGInfo.SpecId = spNGInfo.VMSpecName
