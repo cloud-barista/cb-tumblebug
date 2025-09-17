@@ -112,7 +112,7 @@ func GetFuncName() string {
 func CheckString(name string) error {
 
 	if name == "" {
-		err := fmt.Errorf("empty string")
+		err := fmt.Errorf("CheckString - empty string")
 		return err
 	}
 

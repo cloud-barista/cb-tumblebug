@@ -118,9 +118,9 @@ k8scluster:
       - region: [common] 
         available:
           - name: "1.33"
-            id: "1.33.1-aliyun.1"
+            id: "1.33.3-aliyun.1"
           - name: "1.32"
-            id: "1.32.1-aliyun.1"
+            id: "1.32.7-aliyun.1"
           - name: "1.31"
             id: "1.31.9-aliyun.1"
     rootDisk:
