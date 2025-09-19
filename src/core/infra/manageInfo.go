@@ -586,18 +586,6 @@ func ListMciInfo(nsId string, option string) ([]model.MciInfo, error) {
 // ListMciVmInfo is func to Get all VM Info objects in MCI
 func ListMciVmInfo(nsId string, mciId string) ([]model.VmInfo, error) {
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
-
-	err = common.CheckString(mciId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
-
 	// Check if MCI exists
 	check, err := CheckMci(nsId, mciId)
 	if err != nil {
