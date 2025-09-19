@@ -75,7 +75,8 @@ type SpiderPrice struct {
 // ProductInfo represents the product details.
 type SpiderProductInfo struct {
 	// ProductId  string         `json:"ProductId" validate:"required" example:"prod-123"`                           // ID of the product
-	VMSpecInfo SpiderSpecInfoForNameOnly `json:"VMSpecInfo" validate:"required" description:"Information about the VM spec"` // Information about the VM spec
+	// VMSpecInfo SpiderSpecInfoForNameOnly `json:"VMSpecInfo" description:"Information about the VM spec"` // Information about the VM spec
+	VMSpecName string `json:"VMSpecName" example:"t2.micro"` // Name of the VM spec
 	// Description string         `json:"Description,omitempty" example:"General purpose instance"`                   // Description of the product
 	// CSPProductInfo interface{}    `json:"CSPProductInfo" validate:"required" description:"Additional product info"`   // Additional product information specific to CSP
 }
