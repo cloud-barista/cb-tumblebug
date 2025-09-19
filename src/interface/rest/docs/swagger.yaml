@@ -7152,216 +7152,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/resources/objectStorage:
-    get:
-      tags:
-      - "[Infra Resource] Object Storage Management (under development)"
-      summary: Get all Object Storages (TBD)
-      description: Get all Object Storages (TBD)
-      operationId: GetAllObjectStorage
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: option
-        in: query
-        description: Option
-        schema:
-          type: string
-          default: IdList
-          enum:
-          - InfoList
-          - IdList
-      responses:
-        "200":
-          description: OK" /////////////
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.VpnIdList'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-    post:
-      tags:
-      - "[Infra Resource] Object Storage Management (under development)"
-      summary: Create a Object Storages
-      description: |
-        Create a Object Storages
-
-        Supported CSPs: AWS, Azure
-        - Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral
-
-        - Note - Please check the `requiredCSPResource` property which includes CSP specific values.
-
-        - Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/117
-      operationId: PostObjectStorage
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: action
-        in: query
-        description: Action
-        schema:
-          type: string
-          enum:
-          - retry
-      requestBody:
-        description: Request body to create a Object Storage
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/model.RestPostObjectStorageRequest'
-        required: true
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.ObjectStorageInfo'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-      x-codegen-request-body-name: objectStorageReq
-  /ns/{nsId}/resources/objectStorage/{objectStorageId}:
-    get:
-      tags:
-      - "[Infra Resource] Object Storage Management (under development)"
-      summary: Get resource info of a Object Storage
-      description: Get resource info of a Object Storage
-      operationId: GetObjectStorage
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: objectStorageId
-        in: path
-        description: Object Storage ID
-        required: true
-        schema:
-          type: string
-          default: objectstorage01
-      - name: detail
-        in: query
-        description: "Resource info by detail (refined, raw)"
-        schema:
-          type: string
-          default: refined
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.ObjectStorageInfo'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-    delete:
-      tags:
-      - "[Infra Resource] Object Storage Management (under development)"
-      summary: Delete a Object Storage
-      description: Delete a Object Storage
-      operationId: DeleteObjectStorage
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: objectStorageId
-        in: path
-        description: Object Storage ID
-        required: true
-        schema:
-          type: string
-          default: objectstorage01
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "503":
-          description: Service Unavailable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/searchImage:
     post:
       tags:
@@ -10070,6 +9860,942 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /resources/objectStorage:
+    get:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: List object storages (buckets)
+      description: |-
+        Get the list of all object storages (buckets)
+
+        **Important Notes:**
+        - The actual response will be XML format with root element `ListAllMyBucketsResult`
+        - The response includes xmlns attribute: `xmlns="http://s3.amazonaws.com/doc/2006-03-01/"`
+        - Swagger UI may show `resource.ListAllMyBucketsResult` due to rendering limitations
+
+        **Actual XML Response Example:**
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <ListAllMyBucketsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+        <Owner>
+        <ID>aws-ap-northeast-2</ID>
+        <DisplayName>aws-ap-northeast-2</DisplayName>
+        </Owner>
+        <Buckets>
+        </Buckets>
+        </ListAllMyBucketsResult>
+        ```
+      operationId: ListObjectStorages
+      parameters:
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      responses:
+        "200":
+          description: OK
+          content:
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/resource.ListAllMyBucketsResult'
+  /resources/objectStorage/{objectStorageName}:
+    get:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Get details of an object storage (bucket)
+      description: |-
+        Get details of an object storage (bucket)
+
+        **Important Notes:**
+        - The actual response will be XML format with root element `ListBucketResult`
+
+        **Actual XML Response Example:**
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+        <Name>spider-test-bucket</Name>
+        <Prefix></Prefix>
+        <Marker></Marker>
+        <MaxKeys>1000</MaxKeys>
+        <IsTruncated>false</IsTruncated>
+        </ListBucketResult>
+        ```
+      operationId: GetObjectStorage
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      responses:
+        "200":
+          description: OK
+          content:
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/resource.ListBucketResult'
+    put:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Create an object storage (bucket)
+      description: |-
+        Create an object storage (bucket)
+
+        **Important Notes:**
+        - The `objectStorageName` must be globally unique across all existing buckets in the S3 compatible storage.
+        - The bucket namespace is shared by all users of the system.
+      operationId: CreateObjectStorage
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      responses:
+        "200":
+          description: OK
+          content: {}
+    post:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: '**Delete** multiple objects from a bucket'
+      description: |-
+        `Delete` multiple objects from a bucket
+
+        **Important Notes:**
+        - The request body must contain the list of objects to delete in XML format
+        - The `delete` query parameter must be set to `true`
+
+        **Request Body Example:**
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Delete xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+        <Object>
+        <Key>test-object1.txt</Key>
+        </Object>
+        <Object>
+        <Key>test-object2.txt</Key>
+        </Object>
+        </Delete>
+        ```
+
+        **Actual XML Response Example:**
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <DeleteResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+        <Deleted>
+        <Key>test-object1.txt</Key>
+        </Deleted>
+        <Deleted>
+        <Key>test-object2.txt</Key>
+        </Deleted>
+        </DeleteResult>
+        ```
+      operationId: DeleteMultipleDataObjects
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: delete
+        in: query
+        description: Delete
+        required: true
+        schema:
+          type: boolean
+          default: true
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      requestBody:
+        description: List of objects to delete
+        content:
+          text/xml:
+            schema:
+              $ref: '#/components/schemas/resource.Delete'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/resource.DeleteResult'
+      x-codegen-request-body-name: reqBody
+    delete:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Delete an object storage (bucket)
+      description: Delete an object storage (bucket)
+      operationId: DeleteObjectStorage
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      responses:
+        "204":
+          description: No Content
+          content: {}
+    head:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Check existence of an object storage (bucket)
+      description: Check existence of an object storage (bucket)
+      operationId: ExistObjectStorage
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      responses:
+        "200":
+          description: OK
+          content: {}
+        "404":
+          description: Not Found
+          content: {}
+  /resources/objectStorage/{objectStorageName}/{objectKey}:
+    delete:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Delete an object from a bucket
+      description: Delete an object from a bucket
+      operationId: DeleteDataObject
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: objectKey
+        in: path
+        description: Object Name
+        required: true
+        schema:
+          type: string
+          default: test-object.txt
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      responses:
+        "204":
+          description: No Content
+          content: {}
+    head:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Get an object info from a bucket
+      description: |-
+        Get an object info from a bucket
+
+        **Important Notes:**
+        - The generated `Download file` link in Swagger UI may not work because this API get the object metadata only.
+      operationId: GetObjectInfoGetDataObjectInfo
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: objectKey
+        in: path
+        description: Object Name
+        required: true
+        schema:
+          type: string
+          default: test-object.txt
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      responses:
+        "200":
+          description: OK
+          content: {}
+  /resources/objectStorage/{objectStorageName}/cors:
+    get:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Get CORS configuration of an object storage (bucket)
+      description: |-
+        Get CORS configuration of an object storage (bucket)
+
+        **Important Notes:**
+        - The actual response will be XML format with root element `CORSConfiguration`
+
+        **Actual XML Response Example:**
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+        <CORSRule>
+        <AllowedOrigin>*</AllowedOrigin>
+        <AllowedMethod>GET</AllowedMethod>
+        <AllowedMethod>PUT</AllowedMethod>
+        <AllowedMethod>POST</AllowedMethod>
+        <AllowedMethod>DELETE</AllowedMethod>
+        <AllowedHeader>*</AllowedHeader>
+        <ExposeHeader>ETag</ExposeHeader>
+        <ExposeHeader>x-amz-server-side-encryption</ExposeHeader>
+        <ExposeHeader>x-amz-request-id</ExposeHeader>
+        <ExposeHeader>x-amz-id-2</ExposeHeader>
+        <MaxAgeSeconds>3000</MaxAgeSeconds>
+        </CORSRule>
+        </CORSConfiguration>
+        ```
+
+        **Error Response Example (if CORS not configured):**
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Error>
+        <Code>NoSuchCORSConfiguration</Code>
+        <Message>The CORS configuration does not exist</Message>
+        <Resource>/example-bucket</Resource>
+        <RequestId>656c76696e6727732072657175657374</RequestId>
+        </Error>
+        ```
+      operationId: GetObjectStorageCORS
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      responses:
+        "200":
+          description: OK
+          content:
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/resource.CORSConfiguration'
+        "404":
+          description: Not Found
+          content:
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/resource.Error'
+    put:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Set CORS configuration of an object storage (bucket)
+      description: |-
+        Set CORS configuration of an object storage (bucket)
+
+        **Important Notes:**
+        - The CORS configuration must be provided in the request body in XML format.
+        - The actual request body should have root element `CORSConfiguration`
+
+        **Actual XML Request Body Example:**
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <CORSConfiguration>
+        <CORSRule>
+        <AllowedOrigin>https://example.com</AllowedOrigin>
+        <AllowedOrigin>https://app.example.com</AllowedOrigin>
+        <AllowedMethod>GET</AllowedMethod>
+        <AllowedMethod>PUT</AllowedMethod>
+        <AllowedHeader>Content-Type</AllowedHeader>
+        <AllowedHeader>Authorization</AllowedHeader>
+        <ExposeHeader>ETag</ExposeHeader>
+        <MaxAgeSeconds>1800</MaxAgeSeconds>
+        </CORSRule>
+        <CORSRule>
+        <AllowedOrigin>*</AllowedOrigin>
+        <AllowedMethod>GET</AllowedMethod>
+        <MaxAgeSeconds>300</MaxAgeSeconds>
+        </CORSRule>
+        </CORSConfiguration>
+        ```
+      operationId: SetObjectStorageCORS
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      requestBody:
+        description: CORS Configuration in XML format
+        content:
+          text/xml:
+            schema:
+              $ref: '#/components/schemas/resource.CORSConfiguration'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content: {}
+      x-codegen-request-body-name: reqBody
+    delete:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Delete CORS configuration of an object storage (bucket)
+      description: Delete CORS configuration of an object storage (bucket)
+      operationId: DeleteObjectStorageCORS
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      responses:
+        "204":
+          description: No Content
+          content: {}
+  /resources/objectStorage/{objectStorageName}/location:
+    get:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Get the location of an object storage (bucket)
+      description: |-
+        Get the location of an object storage (bucket)
+
+        **Important Notes:**
+        - The actual response will be XML format with root element `LocationConstraint`
+
+        **Actual XML Response Example:**
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">ap-northeast-2</LocationConstraint>
+        ```
+      operationId: GetObjectStorageLocation
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      responses:
+        "200":
+          description: OK
+          content:
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/resource.LocationConstraint'
+  /resources/objectStorage/{objectStorageName}/versioning:
+    get:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Get versioning status of an object storage (bucket)
+      description: |-
+        Get versioning status of an object storage (bucket)
+
+        **Important Notes:**
+        - The actual response will be XML format with root element `VersioningConfiguration`
+
+        **Actual XML Response Example:**
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+        <Status>Enabled</Status>
+        </VersioningConfiguration>
+        ```
+      operationId: GetObjectStorageVersioning
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      responses:
+        "200":
+          description: OK
+          content:
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/resource.VersioningConfiguration'
+    put:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Set versioning status of an object storage (bucket)
+      description: |-
+        Set versioning status of an object storage (bucket)
+
+        **Important Notes:**
+        - The request body must be XML format with root element `VersioningConfiguration`
+        - The `Status` field can be either `Enabled` or `Suspended`
+
+        **Request Body Example:**
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+        <Status>Enabled</Status>
+        </VersioningConfiguration>
+        ```
+      operationId: SetObjectStorageVersioning
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      requestBody:
+        description: Versioning Configuration
+        content:
+          text/xml:
+            schema:
+              $ref: '#/components/schemas/resource.VersioningConfiguration'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content: {}
+      x-codegen-request-body-name: reqBody
+  /resources/objectStorage/{objectStorageName}/versions:
+    get:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: List object versions in an object storage (bucket)
+      description: |-
+        List object versions in an object storage (bucket)
+
+        **Important Notes:**
+        - The actual response will be XML format with root element `ListVersionsResult`
+
+        **Actual XML Response Example:**
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <ListVersionsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+        <Name>spider-test-bucket</Name>
+        <Prefix></Prefix>
+        <KeyMarker></KeyMarker>
+        <VersionIdMarker></VersionIdMarker>
+        <NextKeyMarker></NextKeyMarker>
+        <NextVersionIdMarker></NextVersionIdMarker>
+        <MaxKeys>1000</MaxKeys>
+        <IsTruncated>false</IsTruncated>
+        <Version>
+        <Key>test-file.txt</Key>
+        <VersionId>yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ</VersionId>
+        <IsLatest>true</IsLatest>
+        <LastModified>2025-09-04T04:24:12Z</LastModified>
+        <ETag>23228a38faecd0591107818c7281cece</ETag>
+        <Size>23</Size>
+        <StorageClass>STANDARD</StorageClass>
+        <Owner>
+        <ID>aws-config01</ID>
+        <DisplayName>aws-config01</DisplayName>
+        </Owner>
+        </Version>
+        </ListVersionsResult>
+        ```
+      operationId: ListObjectVersions
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      responses:
+        "200":
+          description: OK
+          content:
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/resource.ListVersionsResult'
+  /resources/objectStorage/{objectStorageName}/versions/{objectKey}:
+    delete:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Delete a specific version of an object in an object storage (bucket)
+      description: Delete a specific version of an object in an object storage (bucket)
+      operationId: DeleteVersionedObject
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: objectKey
+        in: path
+        description: Object Key
+        required: true
+        schema:
+          type: string
+          default: test-file.txt
+      - name: versionId
+        in: query
+        description: Version ID
+        required: true
+        schema:
+          type: string
+          default: yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      responses:
+        "204":
+          description: No Content
+          content: {}
+  /resources/objectStorage/presigned/download/{objectStorageName}/{objectKey}:
+    get:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Generate a presigned URL for downloading an object from a bucket
+      description: |-
+        Generate a presigned URL for downloading an object from a bucket
+
+        **Important Notes:**
+        - The actual response will be XML format with root element `PresignedURLResult`
+        - The `expires` query parameter specifies the expiration time in seconds for the presigned URL (default: 3600 seconds)
+        - The generated presigned URL can be used to download the object directly without further authentication
+
+        **Actual XML Response Example:**
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <PresignedURLResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+        <PresignedURL>https://globally-unique-bucket-hctdx3.s3.dualstack.ap-southeast-2.amazonaws.com/test-file.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA***EXAMPLE%2F20250904%2Fap-southeast-2%2Fs3%2Faws4_request&X-Amz-Date=20250904T061448Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=***-signature</PresignedURL>
+        <Expires>3600</Expires>
+        <Method>GET</Method>
+        </PresignedURLResult>
+        ```
+      operationId: GeneratePresignedDownloadURL
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: objectKey
+        in: path
+        description: Object Name
+        required: true
+        schema:
+          type: string
+          default: test-object.txt
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      - name: expires
+        in: query
+        description: Expiration time in seconds for the presigned URL
+        schema:
+          type: integer
+          default: 3600
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resource.PresignedURLResult'
+  /resources/objectStorage/presigned/upload/{objectStorageName}/{objectKey}:
+    get:
+      tags:
+      - "[Resource] Object Storage Management"
+      summary: Generate a presigned URL for uploading an object to a bucket
+      description: |-
+        Generate a presigned URL for uploading an object to a bucket
+
+        **Important Notes:**
+        - The actual response will be XML format with root element `PresignedURLResult`
+        - The `expires` query parameter specifies the expiration time in seconds for the presigned URL (default: 3600 seconds)
+        - The generated presigned URL can be used to upload the object directly without further authentication
+
+        **Actual XML Response Example:**
+        ```xml
+        <?xml version="1.0" encoding="UTF-8"?>
+        <PresignedURLResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+        <PresignedURL>https://globally-unique-bucket-hctdx3.s3.dualstack.ap-southeast-2.amazonaws.com/test-file.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA***EXAMPLE%2F20250904%2Fap-southeast-2%2Fs3%2Faws4_request&X-Amz-Date=20250904T061448Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=***-signature</PresignedURL>
+        <Expires>3600</Expires>
+        <Method>PUT</Method>
+        </PresignedURLResult>
+        ```
+      operationId: GeneratePresignedUploadURL
+      parameters:
+      - name: objectStorageName
+        in: path
+        description: Object Storage Name
+        required: true
+        schema:
+          type: string
+          default: globally-unique-bucket-hctdx3
+      - name: objectKey
+        in: path
+        description: Object Name
+        required: true
+        schema:
+          type: string
+          default: test-object.txt
+      - name: provider
+        in: query
+        description: Provider
+        required: true
+        schema:
+          type: string
+          default: aws
+      - name: region
+        in: query
+        description: Region
+        required: true
+        schema:
+          type: string
+          default: ap-northeast-2
+      - name: expires
+        in: query
+        description: Expiration time in seconds for the presigned URL
+        schema:
+          type: integer
+          default: 3600
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resource.PresignedURLResult'
   /systemMci:
     post:
       tags:
@@ -13431,44 +14157,6 @@ components:
       - Linux_UNIX
       - Windows
       - PlatformNA
-    model.ObjectStorageInfo:
-      type: object
-      properties:
-        connectionConfig:
-          $ref: '#/components/schemas/model.ConnConfig'
-        connectionName:
-          type: string
-        cspResourceId:
-          type: string
-          description: CspResourceId is resource identifier managed by CSP
-          example: csp-06eb41e14121c550a
-        cspResourceName:
-          type: string
-          description: CspResourceName is name assigned to the CSP resource. This
-            name is internally used to handle the resource.
-          example: we12fawefadf1221edcf
-        description:
-          type: string
-        details:
-          type: object
-        id:
-          type: string
-          description: Id is unique identifier for the object
-          example: sqldb01
-        name:
-          type: string
-          description: Name is human-readable string to represent the object
-          example: sqldb01
-        resourceType:
-          type: string
-          description: ResourceType is the type of the resource
-        status:
-          type: string
-        uid:
-          type: string
-          description: "Uid is universally unique identifier for the object, used\
-            \ for labelSelector"
-          example: wef12awefadf1221edcf
     model.Operation:
       type: object
       properties:
@@ -13924,27 +14612,12 @@ components:
         vNetID:
           type: string
           example: vpc-xxxxx
-    model.RequiredAzureResourceForObjectStorage:
-      type: object
-      properties:
-        resourceGroup:
-          type: string
-          example: koreacentral
     model.RequiredAzureResourceForSqlDB:
       type: object
       properties:
         resourceGroup:
           type: string
           example: koreacentral
-    model.RequiredCSPResourceForObjectStorage:
-      type: object
-      properties:
-        azure:
-          type: object
-          description: "AWS   RequiredAWSResourceForObjectStorage   `json:\"aws,omitempty\"\
-            `"
-          allOf:
-          - $ref: '#/components/schemas/model.RequiredAzureResourceForObjectStorage'
     model.RequiredCSPResourceForSqlDB:
       type: object
       properties:
@@ -14076,28 +14749,6 @@ components:
         success:
           type: boolean
           example: true
-    model.RestPostObjectStorageRequest:
-      required:
-      - connectionName
-      - csp
-      - name
-      - region
-      type: object
-      properties:
-        connectionName:
-          type: string
-          example: aws-ap-northeast-2
-        csp:
-          type: string
-          example: aws
-        name:
-          type: string
-          example: objectstorage01
-        region:
-          type: string
-          example: ap-northeast-2
-        requiredCSPResource:
-          $ref: '#/components/schemas/model.RequiredCSPResourceForObjectStorage'
     model.RestPostSqlDBRequest:
       required:
       - connectionName
@@ -16092,6 +16743,62 @@ components:
       x-enum-varnames:
       - SubnettingRuleTypeMinSubnets
       - SubnettingRuleTypeMinHosts
+    resource.Bucket:
+      type: object
+      properties:
+        creationDate:
+          type: string
+          example: 2025-09-04T04:18:06Z
+        name:
+          type: string
+          example: spider-test-bucket
+    resource.Buckets:
+      type: object
+      properties:
+        bucket:
+          type: array
+          items:
+            $ref: '#/components/schemas/resource.Bucket'
+    resource.CORSConfiguration:
+      type: object
+      properties:
+        corsRule:
+          type: array
+          description: |-
+            The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
+            Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
+          items:
+            $ref: '#/components/schemas/resource.CORSRule'
+    resource.CORSRule:
+      type: object
+      properties:
+        allowedHeader:
+          type: array
+          example:
+          - '*'
+          items:
+            type: string
+        allowedMethod:
+          type: array
+          example:
+          - GET
+          items:
+            type: string
+        allowedOrigin:
+          type: array
+          example:
+          - '*'
+          items:
+            type: string
+        exposeHeader:
+          type: array
+          example:
+          - ETag
+          items:
+            type: string
+        maxAgeSeconds:
+          type: integer
+          example: 3000
     resource.ConnectionImageResult:
       type: object
       properties:
@@ -16130,6 +16837,38 @@ components:
           type: string
         success:
           type: boolean
+    resource.Delete:
+      type: object
+      properties:
+        object:
+          type: array
+          items:
+            $ref: '#/components/schemas/resource.Object'
+    resource.DeleteResult:
+      type: object
+      properties:
+        deleted:
+          type: array
+          description: |-
+            The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
+            Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
+          items:
+            $ref: '#/components/schemas/resource.Object'
+    resource.Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: NoSuchCORSConfiguration
+        message:
+          type: string
+          example: The CORS configuration does not exist
+        requestId:
+          type: string
+          example: 656c76696e6727732072657175657374
+        resource:
+          type: string
+          example: /example-bucket
     resource.FetchImagesAsyncResult:
       type: object
       properties:
@@ -16182,6 +16921,104 @@ components:
           type: integer
     resource.JSONResult:
       type: object
+    resource.ListAllMyBucketsResult:
+      type: object
+      properties:
+        buckets:
+          type: object
+          description: Collection of buckets
+          allOf:
+          - $ref: '#/components/schemas/resource.Buckets'
+        owner:
+          type: object
+          description: |-
+            The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
+            Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
+            Owner information for the S3 account
+          allOf:
+          - $ref: '#/components/schemas/resource.Owner'
+    resource.ListBucketResult:
+      type: object
+      properties:
+        isTruncated:
+          type: boolean
+          example: false
+        marker:
+          type: string
+          example: ""
+        maxKeys:
+          type: integer
+          example: 1000
+        name:
+          type: string
+          description: |-
+            The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
+            Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
+          example: spider-test-bucket
+        prefix:
+          type: string
+          example: ""
+    resource.ListVersionsResult:
+      type: object
+      properties:
+        isTruncated:
+          type: boolean
+          example: false
+        keyMarker:
+          type: string
+          example: ""
+        maxKeys:
+          type: integer
+          example: 1000
+        name:
+          type: string
+          description: |-
+            The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
+            Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
+          example: spider-test-bucket
+        nextKeyMarker:
+          type: string
+          example: ""
+        nextVersionIdMarker:
+          type: string
+          example: ""
+        prefix:
+          type: string
+          example: ""
+        version:
+          $ref: '#/components/schemas/resource.Version'
+        versionIdMarker:
+          type: string
+          example: ""
+    resource.LocationConstraint:
+      type: object
+    resource.Object:
+      type: object
+      properties:
+        key:
+          type: string
+          example: test-object.txt
+    resource.Owner:
+      type: object
+      properties:
+        displayName:
+          type: string
+          example: aws-ap-northeast-2
+        id:
+          type: string
+          example: aws-ap-northeast-2
+    resource.PresignedURLResult:
+      type: object
+      properties:
+        expires:
+          type: integer
+          example: 3600
+        method:
+          type: string
+          example: GET
+        presignedURL:
+          type: string
+          example: '>https://globally-unique-bucket-hctdx3.s3.dualstack.ap-southeast-2.amazonaws.com/test-file.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA***EXAMPLE%2F20250904%2Fap-southeast-2%2Fs3%2Faws4_request&X-Amz-Date=20250904T061448Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=***-signature'
     resource.RestFilterSpecsResponse:
       type: object
       properties:
@@ -16252,6 +17089,41 @@ components:
           type: string
         cspResourceId:
           type: string
+    resource.Version:
+      type: object
+      properties:
+        etag:
+          type: string
+          example: 23228a38faecd0591107818c7281cece
+        isLatest:
+          type: boolean
+          example: true
+        key:
+          type: string
+          example: test-file.txt
+        lastModified:
+          type: string
+          example: 2025-09-04T04:24:12Z
+        owner:
+          $ref: '#/components/schemas/resource.Owner'
+        size:
+          type: integer
+          example: 23
+        storageClass:
+          type: string
+          example: STANDARD
+        versionId:
+          type: string
+          example: yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ
+    resource.VersioningConfiguration:
+      type: object
+      properties:
+        status:
+          type: string
+          description: |-
+            The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
+            Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
+          example: Enabled
   securitySchemes:
     BasicAuth:
       type: http
