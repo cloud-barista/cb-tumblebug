@@ -1361,10 +1361,8 @@ func FetchPriceForConnConfig(config model.ConnConfig) error {
 		priceFloat, err := strconv.ParseFloat(price.PriceInfo.OnDemand.Price, 32)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Failed to parse price '%s' for spec '%s', skipping.",
-				price.PriceInfo.OnDemand.Price, price.ProductInfo.VMSpecInfo.Name)
+				price.PriceInfo.OnDemand.Price, price.ProductInfo.VMSpecName)
 
-			// Early memory cleanup for failed items
-			priceInConnection.PriceList[i].ProductInfo.VMSpecInfo = model.SpiderSpecInfoForNameOnly{}
 			continue
 		}
 
@@ -1376,14 +1374,12 @@ func FetchPriceForConnConfig(config model.ConnConfig) error {
 			config.ProviderName,
 			config.RegionDetail.RegionName,
 			"",
-			price.ProductInfo.VMSpecInfo.Name)
+			price.ProductInfo.VMSpecName)
 
 		// Add to batch instead of individual update
 		batchUpdates[specKey] = float32(priceFloat)
 		processedCount++
 
-		// Immediate memory cleanup after processing each item
-		priceInConnection.PriceList[i].ProductInfo.VMSpecInfo = model.SpiderSpecInfoForNameOnly{}
 	}
 
 	// Release the original data slice immediately
@@ -1458,7 +1454,7 @@ func LookupPriceList(connConfig model.ConnConfig) (model.SpiderCloudPrice, error
 	var callResult model.SpiderCloudPrice
 	client := resty.New()
 	client.SetTimeout(10 * time.Minute)
-	url := model.SpiderRestUrl + "/priceinfo/vm/" + connConfig.RegionZoneInfo.AssignedRegion
+	url := model.SpiderRestUrl + "/priceinfo/vm/" + connConfig.RegionZoneInfo.AssignedRegion + "?simple=true"
 	method := "POST"
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = connConfig.ConfigName
