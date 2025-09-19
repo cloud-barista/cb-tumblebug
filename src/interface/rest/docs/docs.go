@@ -8748,262 +8748,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/resources/objectStorage": {
-            "get": {
-                "description": "Get all Object Storages (TBD)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Object Storage Management (under development)"
-                ],
-                "summary": "Get all Object Storages (TBD)",
-                "operationId": "GetAllObjectStorage",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "enum": [
-                            "InfoList",
-                            "IdList"
-                        ],
-                        "type": "string",
-                        "default": "IdList",
-                        "description": "Option",
-                        "name": "option",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK\" /////////////",
-                        "schema": {
-                            "$ref": "#/definitions/model.VpnIdList"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a Object Storages\n\nSupported CSPs: AWS, Azure\n- Note - ` + "`" + `connectionName` + "`" + ` example: aws-ap-northeast-2, azure-koreacentral\n\n- Note - Please check the ` + "`" + `requiredCSPResource` + "`" + ` property which includes CSP specific values.\n\n- Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/117\n",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Object Storage Management (under development)"
-                ],
-                "summary": "Create a Object Storages",
-                "operationId": "PostObjectStorage",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Request body to create a Object Storage",
-                        "name": "objectStorageReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.RestPostObjectStorageRequest"
-                        }
-                    },
-                    {
-                        "enum": [
-                            "retry"
-                        ],
-                        "type": "string",
-                        "description": "Action",
-                        "name": "action",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.ObjectStorageInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/resources/objectStorage/{objectStorageId}": {
-            "get": {
-                "description": "Get resource info of a Object Storage",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Object Storage Management (under development)"
-                ],
-                "summary": "Get resource info of a Object Storage",
-                "operationId": "GetObjectStorage",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "objectstorage01",
-                        "description": "Object Storage ID",
-                        "name": "objectStorageId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "refined",
-                        "description": "Resource info by detail (refined, raw)",
-                        "name": "detail",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.ObjectStorageInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a Object Storage",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra Resource] Object Storage Management (under development)"
-                ],
-                "summary": "Delete a Object Storage",
-                "operationId": "DeleteObjectStorage",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "objectstorage01",
-                        "description": "Object Storage ID",
-                        "name": "objectStorageId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/ns/{nsId}/resources/searchImage": {
             "post": {
                 "description": "Search image",
@@ -12291,6 +12035,961 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
+                    }
+                }
+            }
+        },
+        "/resources/objectStorage": {
+            "get": {
+                "description": "Get the list of all object storages (buckets)\n\n**Important Notes:**\n- The actual response will be XML format with root element ` + "`" + `ListAllMyBucketsResult` + "`" + `\n- The response includes xmlns attribute: ` + "`" + `xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"` + "`" + `\n- Swagger UI may show ` + "`" + `resource.ListAllMyBucketsResult` + "`" + ` due to rendering limitations\n\n**Actual XML Response Example:**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cListAllMyBucketsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"\u003e\n\u003cOwner\u003e\n\u003cID\u003eaws-ap-northeast-2\u003c/ID\u003e\n\u003cDisplayName\u003eaws-ap-northeast-2\u003c/DisplayName\u003e\n\u003c/Owner\u003e\n\u003cBuckets\u003e\n\u003c/Buckets\u003e\n\u003c/ListAllMyBucketsResult\u003e\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "List object storages (buckets)",
+                "operationId": "ListObjectStorages",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resource.ListAllMyBucketsResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources/objectStorage/presigned/download/{objectStorageName}/{objectKey}": {
+            "get": {
+                "description": "Generate a presigned URL for downloading an object from a bucket\n\n**Important Notes:**\n- The actual response will be XML format with root element ` + "`" + `PresignedURLResult` + "`" + `\n- The ` + "`" + `expires` + "`" + ` query parameter specifies the expiration time in seconds for the presigned URL (default: 3600 seconds)\n- The generated presigned URL can be used to download the object directly without further authentication\n\n**Actual XML Response Example:**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cPresignedURLResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"\u003e\n\u003cPresignedURL\u003ehttps://globally-unique-bucket-hctdx3.s3.dualstack.ap-southeast-2.amazonaws.com/test-file.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256\u0026X-Amz-Credential=AKIA***EXAMPLE%2F20250904%2Fap-southeast-2%2Fs3%2Faws4_request\u0026X-Amz-Date=20250904T061448Z\u0026X-Amz-Expires=3600\u0026X-Amz-SignedHeaders=host\u0026X-Amz-Signature=***-signature\u003c/PresignedURL\u003e\n\u003cExpires\u003e3600\u003c/Expires\u003e\n\u003cMethod\u003eGET\u003c/Method\u003e\n\u003c/PresignedURLResult\u003e\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Generate a presigned URL for downloading an object from a bucket",
+                "operationId": "GeneratePresignedDownloadURL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "test-object.txt",
+                        "description": "Object Name",
+                        "name": "objectKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 3600,
+                        "description": "Expiration time in seconds for the presigned URL",
+                        "name": "expires",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resource.PresignedURLResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources/objectStorage/presigned/upload/{objectStorageName}/{objectKey}": {
+            "get": {
+                "description": "Generate a presigned URL for uploading an object to a bucket\n\n**Important Notes:**\n- The actual response will be XML format with root element ` + "`" + `PresignedURLResult` + "`" + `\n- The ` + "`" + `expires` + "`" + ` query parameter specifies the expiration time in seconds for the presigned URL (default: 3600 seconds)\n- The generated presigned URL can be used to upload the object directly without further authentication\n\n**Actual XML Response Example:**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cPresignedURLResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"\u003e\n\u003cPresignedURL\u003ehttps://globally-unique-bucket-hctdx3.s3.dualstack.ap-southeast-2.amazonaws.com/test-file.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256\u0026X-Amz-Credential=AKIA***EXAMPLE%2F20250904%2Fap-southeast-2%2Fs3%2Faws4_request\u0026X-Amz-Date=20250904T061448Z\u0026X-Amz-Expires=3600\u0026X-Amz-SignedHeaders=host\u0026X-Amz-Signature=***-signature\u003c/PresignedURL\u003e\n\u003cExpires\u003e3600\u003c/Expires\u003e\n\u003cMethod\u003ePUT\u003c/Method\u003e\n\u003c/PresignedURLResult\u003e\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Generate a presigned URL for uploading an object to a bucket",
+                "operationId": "GeneratePresignedUploadURL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "test-object.txt",
+                        "description": "Object Name",
+                        "name": "objectKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 3600,
+                        "description": "Expiration time in seconds for the presigned URL",
+                        "name": "expires",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resource.PresignedURLResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources/objectStorage/{objectStorageName}": {
+            "get": {
+                "description": "Get details of an object storage (bucket)\n\n**Important Notes:**\n- The actual response will be XML format with root element ` + "`" + `ListBucketResult` + "`" + `\n\n**Actual XML Response Example:**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"\u003e\n\u003cName\u003espider-test-bucket\u003c/Name\u003e\n\u003cPrefix\u003e\u003c/Prefix\u003e\n\u003cMarker\u003e\u003c/Marker\u003e\n\u003cMaxKeys\u003e1000\u003c/MaxKeys\u003e\n\u003cIsTruncated\u003efalse\u003c/IsTruncated\u003e\n\u003c/ListBucketResult\u003e\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Get details of an object storage (bucket)",
+                "operationId": "GetObjectStorage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resource.ListBucketResult"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Create an object storage (bucket)\n\n**Important Notes:**\n- The ` + "`" + `objectStorageName` + "`" + ` must be globally unique across all existing buckets in the S3 compatible storage.\n- The bucket namespace is shared by all users of the system.",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Create an object storage (bucket)",
+                "operationId": "CreateObjectStorage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "post": {
+                "description": "` + "`" + `Delete` + "`" + ` multiple objects from a bucket\n\n**Important Notes:**\n- The request body must contain the list of objects to delete in XML format\n- The ` + "`" + `delete` + "`" + ` query parameter must be set to ` + "`" + `true` + "`" + `\n\n**Request Body Example:**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cDelete xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"\u003e\n\u003cObject\u003e\n\u003cKey\u003etest-object1.txt\u003c/Key\u003e\n\u003c/Object\u003e\n\u003cObject\u003e\n\u003cKey\u003etest-object2.txt\u003c/Key\u003e\n\u003c/Object\u003e\n\u003c/Delete\u003e\n` + "`" + `` + "`" + `` + "`" + `\n\n**Actual XML Response Example:**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cDeleteResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"\u003e\n\u003cDeleted\u003e\n\u003cKey\u003etest-object1.txt\u003c/Key\u003e\n\u003c/Deleted\u003e\n\u003cDeleted\u003e\n\u003cKey\u003etest-object2.txt\u003c/Key\u003e\n\u003c/Deleted\u003e\n\u003c/DeleteResult\u003e\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "**Delete** multiple objects from a bucket",
+                "operationId": "DeleteMultipleDataObjects",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Delete",
+                        "name": "delete",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "List of objects to delete",
+                        "name": "reqBody",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/resource.Delete"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resource.DeleteResult"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an object storage (bucket)",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Delete an object storage (bucket)",
+                "operationId": "DeleteObjectStorage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "head": {
+                "description": "Check existence of an object storage (bucket)",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Check existence of an object storage (bucket)",
+                "operationId": "ExistObjectStorage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/resources/objectStorage/{objectStorageName}/cors": {
+            "get": {
+                "description": "Get CORS configuration of an object storage (bucket)\n\n**Important Notes:**\n- The actual response will be XML format with root element ` + "`" + `CORSConfiguration` + "`" + `\n\n**Actual XML Response Example:**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cCORSConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"\u003e\n\u003cCORSRule\u003e\n\u003cAllowedOrigin\u003e*\u003c/AllowedOrigin\u003e\n\u003cAllowedMethod\u003eGET\u003c/AllowedMethod\u003e\n\u003cAllowedMethod\u003ePUT\u003c/AllowedMethod\u003e\n\u003cAllowedMethod\u003ePOST\u003c/AllowedMethod\u003e\n\u003cAllowedMethod\u003eDELETE\u003c/AllowedMethod\u003e\n\u003cAllowedHeader\u003e*\u003c/AllowedHeader\u003e\n\u003cExposeHeader\u003eETag\u003c/ExposeHeader\u003e\n\u003cExposeHeader\u003ex-amz-server-side-encryption\u003c/ExposeHeader\u003e\n\u003cExposeHeader\u003ex-amz-request-id\u003c/ExposeHeader\u003e\n\u003cExposeHeader\u003ex-amz-id-2\u003c/ExposeHeader\u003e\n\u003cMaxAgeSeconds\u003e3000\u003c/MaxAgeSeconds\u003e\n\u003c/CORSRule\u003e\n\u003c/CORSConfiguration\u003e\n` + "`" + `` + "`" + `` + "`" + `\n\n**Error Response Example (if CORS not configured):**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cError\u003e\n\u003cCode\u003eNoSuchCORSConfiguration\u003c/Code\u003e\n\u003cMessage\u003eThe CORS configuration does not exist\u003c/Message\u003e\n\u003cResource\u003e/example-bucket\u003c/Resource\u003e\n\u003cRequestId\u003e656c76696e6727732072657175657374\u003c/RequestId\u003e\n\u003c/Error\u003e\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Get CORS configuration of an object storage (bucket)",
+                "operationId": "GetObjectStorageCORS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resource.CORSConfiguration"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/resource.Error"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Set CORS configuration of an object storage (bucket)\n\n**Important Notes:**\n- The CORS configuration must be provided in the request body in XML format.\n- The actual request body should have root element ` + "`" + `CORSConfiguration` + "`" + `\n\n**Actual XML Request Body Example:**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cCORSConfiguration\u003e\n\u003cCORSRule\u003e\n\u003cAllowedOrigin\u003ehttps://example.com\u003c/AllowedOrigin\u003e\n\u003cAllowedOrigin\u003ehttps://app.example.com\u003c/AllowedOrigin\u003e\n\u003cAllowedMethod\u003eGET\u003c/AllowedMethod\u003e\n\u003cAllowedMethod\u003ePUT\u003c/AllowedMethod\u003e\n\u003cAllowedHeader\u003eContent-Type\u003c/AllowedHeader\u003e\n\u003cAllowedHeader\u003eAuthorization\u003c/AllowedHeader\u003e\n\u003cExposeHeader\u003eETag\u003c/ExposeHeader\u003e\n\u003cMaxAgeSeconds\u003e1800\u003c/MaxAgeSeconds\u003e\n\u003c/CORSRule\u003e\n\u003cCORSRule\u003e\n\u003cAllowedOrigin\u003e*\u003c/AllowedOrigin\u003e\n\u003cAllowedMethod\u003eGET\u003c/AllowedMethod\u003e\n\u003cMaxAgeSeconds\u003e300\u003c/MaxAgeSeconds\u003e\n\u003c/CORSRule\u003e\n\u003c/CORSConfiguration\u003e\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Set CORS configuration of an object storage (bucket)",
+                "operationId": "SetObjectStorageCORS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "CORS Configuration in XML format",
+                        "name": "reqBody",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/resource.CORSConfiguration"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete CORS configuration of an object storage (bucket)",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Delete CORS configuration of an object storage (bucket)",
+                "operationId": "DeleteObjectStorageCORS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/resources/objectStorage/{objectStorageName}/location": {
+            "get": {
+                "description": "Get the location of an object storage (bucket)\n\n**Important Notes:**\n- The actual response will be XML format with root element ` + "`" + `LocationConstraint` + "`" + `\n\n**Actual XML Response Example:**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cLocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"\u003eap-northeast-2\u003c/LocationConstraint\u003e\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Get the location of an object storage (bucket)",
+                "operationId": "GetObjectStorageLocation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resource.LocationConstraint"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources/objectStorage/{objectStorageName}/versioning": {
+            "get": {
+                "description": "Get versioning status of an object storage (bucket)\n\n**Important Notes:**\n- The actual response will be XML format with root element ` + "`" + `VersioningConfiguration` + "`" + `\n\n**Actual XML Response Example:**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cVersioningConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"\u003e\n\u003cStatus\u003eEnabled\u003c/Status\u003e\n\u003c/VersioningConfiguration\u003e\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Get versioning status of an object storage (bucket)",
+                "operationId": "GetObjectStorageVersioning",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resource.VersioningConfiguration"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Set versioning status of an object storage (bucket)\n\n**Important Notes:**\n- The request body must be XML format with root element ` + "`" + `VersioningConfiguration` + "`" + `\n- The ` + "`" + `Status` + "`" + ` field can be either ` + "`" + `Enabled` + "`" + ` or ` + "`" + `Suspended` + "`" + `\n\n**Request Body Example:**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cVersioningConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"\u003e\n\u003cStatus\u003eEnabled\u003c/Status\u003e\n\u003c/VersioningConfiguration\u003e\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Set versioning status of an object storage (bucket)",
+                "operationId": "SetObjectStorageVersioning",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "Versioning Configuration",
+                        "name": "reqBody",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/resource.VersioningConfiguration"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/resources/objectStorage/{objectStorageName}/versions": {
+            "get": {
+                "description": "List object versions in an object storage (bucket)\n\n**Important Notes:**\n- The actual response will be XML format with root element ` + "`" + `ListVersionsResult` + "`" + `\n\n**Actual XML Response Example:**\n` + "`" + `` + "`" + `` + "`" + `xml\n\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cListVersionsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"\u003e\n\u003cName\u003espider-test-bucket\u003c/Name\u003e\n\u003cPrefix\u003e\u003c/Prefix\u003e\n\u003cKeyMarker\u003e\u003c/KeyMarker\u003e\n\u003cVersionIdMarker\u003e\u003c/VersionIdMarker\u003e\n\u003cNextKeyMarker\u003e\u003c/NextKeyMarker\u003e\n\u003cNextVersionIdMarker\u003e\u003c/NextVersionIdMarker\u003e\n\u003cMaxKeys\u003e1000\u003c/MaxKeys\u003e\n\u003cIsTruncated\u003efalse\u003c/IsTruncated\u003e\n\u003cVersion\u003e\n\u003cKey\u003etest-file.txt\u003c/Key\u003e\n\u003cVersionId\u003eyb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ\u003c/VersionId\u003e\n\u003cIsLatest\u003etrue\u003c/IsLatest\u003e\n\u003cLastModified\u003e2025-09-04T04:24:12Z\u003c/LastModified\u003e\n\u003cETag\u003e23228a38faecd0591107818c7281cece\u003c/ETag\u003e\n\u003cSize\u003e23\u003c/Size\u003e\n\u003cStorageClass\u003eSTANDARD\u003c/StorageClass\u003e\n\u003cOwner\u003e\n\u003cID\u003eaws-config01\u003c/ID\u003e\n\u003cDisplayName\u003eaws-config01\u003c/DisplayName\u003e\n\u003c/Owner\u003e\n\u003c/Version\u003e\n\u003c/ListVersionsResult\u003e\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "List object versions in an object storage (bucket)",
+                "operationId": "ListObjectVersions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resource.ListVersionsResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources/objectStorage/{objectStorageName}/versions/{objectKey}": {
+            "delete": {
+                "description": "Delete a specific version of an object in an object storage (bucket)",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Delete a specific version of an object in an object storage (bucket)",
+                "operationId": "DeleteVersionedObject",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "test-file.txt",
+                        "description": "Object Key",
+                        "name": "objectKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ",
+                        "description": "Version ID",
+                        "name": "versionId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/resources/objectStorage/{objectStorageName}/{objectKey}": {
+            "delete": {
+                "description": "Delete an object from a bucket",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "text/xml"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Delete an object from a bucket",
+                "operationId": "DeleteDataObject",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "test-object.txt",
+                        "description": "Object Name",
+                        "name": "objectKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "head": {
+                "description": "Get an object info from a bucket\n\n**Important Notes:**\n- The generated ` + "`" + `Download file` + "`" + ` link in Swagger UI may not work because this API get the object metadata only.",
+                "consumes": [
+                    "text/xml"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "[Resource] Object Storage Management"
+                ],
+                "summary": "Get an object info from a bucket",
+                "operationId": "GetObjectInfoGetDataObjectInfo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "globally-unique-bucket-hctdx3",
+                        "description": "Object Storage Name",
+                        "name": "objectStorageName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "test-object.txt",
+                        "description": "Object Name",
+                        "name": "objectKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws",
+                        "description": "Provider",
+                        "name": "provider",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "ap-northeast-2",
+                        "description": "Region",
+                        "name": "region",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     }
                 }
             }
@@ -16800,53 +17499,6 @@ const docTemplate = `{
                 "PlatformNA"
             ]
         },
-        "model.ObjectStorageInfo": {
-            "type": "object",
-            "properties": {
-                "connectionConfig": {
-                    "$ref": "#/definitions/model.ConnConfig"
-                },
-                "connectionName": {
-                    "type": "string"
-                },
-                "cspResourceId": {
-                    "description": "CspResourceId is resource identifier managed by CSP",
-                    "type": "string",
-                    "example": "csp-06eb41e14121c550a"
-                },
-                "cspResourceName": {
-                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "details": {},
-                "id": {
-                    "description": "Id is unique identifier for the object",
-                    "type": "string",
-                    "example": "sqldb01"
-                },
-                "name": {
-                    "description": "Name is human-readable string to represent the object",
-                    "type": "string",
-                    "example": "sqldb01"
-                },
-                "resourceType": {
-                    "description": "ResourceType is the type of the resource",
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "uid": {
-                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
-                    "type": "string",
-                    "example": "wef12awefadf1221edcf"
-                }
-            }
-        },
         "model.Operation": {
             "type": "object",
             "properties": {
@@ -17496,34 +18148,12 @@ const docTemplate = `{
                 }
             }
         },
-        "model.RequiredAzureResourceForObjectStorage": {
-            "type": "object",
-            "properties": {
-                "resourceGroup": {
-                    "type": "string",
-                    "example": "koreacentral"
-                }
-            }
-        },
         "model.RequiredAzureResourceForSqlDB": {
             "type": "object",
             "properties": {
                 "resourceGroup": {
                     "type": "string",
                     "example": "koreacentral"
-                }
-            }
-        },
-        "model.RequiredCSPResourceForObjectStorage": {
-            "type": "object",
-            "properties": {
-                "azure": {
-                    "description": "AWS   RequiredAWSResourceForObjectStorage   ` + "`" + `json:\"aws,omitempty\"` + "`" + `",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.RequiredAzureResourceForObjectStorage"
-                        }
-                    ]
                 }
             }
         },
@@ -17715,36 +18345,6 @@ const docTemplate = `{
                 "success": {
                     "type": "boolean",
                     "example": true
-                }
-            }
-        },
-        "model.RestPostObjectStorageRequest": {
-            "type": "object",
-            "required": [
-                "connectionName",
-                "csp",
-                "name",
-                "region"
-            ],
-            "properties": {
-                "connectionName": {
-                    "type": "string",
-                    "example": "aws-ap-northeast-2"
-                },
-                "csp": {
-                    "type": "string",
-                    "example": "aws"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "objectstorage01"
-                },
-                "region": {
-                    "type": "string",
-                    "example": "ap-northeast-2"
-                },
-                "requiredCSPResource": {
-                    "$ref": "#/definitions/model.RequiredCSPResourceForObjectStorage"
                 }
             }
         },
@@ -20467,6 +21067,87 @@ const docTemplate = `{
                 "SubnettingRuleTypeMinHosts"
             ]
         },
+        "resource.Bucket": {
+            "type": "object",
+            "properties": {
+                "creationDate": {
+                    "type": "string",
+                    "example": "2025-09-04T04:18:06Z"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "spider-test-bucket"
+                }
+            }
+        },
+        "resource.Buckets": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.Bucket"
+                    }
+                }
+            }
+        },
+        "resource.CORSConfiguration": {
+            "type": "object",
+            "properties": {
+                "corsRule": {
+                    "description": "The xmlns attribute will be set to \"http://s3.amazonaws.com/doc/2006-03-01/\"\nXmlns string ` + "`" + `xml:\"xmlns,attr\" json:\"-\" example:\"http://s3.amazonaws.com/doc/2006-03-01/\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.CORSRule"
+                    }
+                }
+            }
+        },
+        "resource.CORSRule": {
+            "type": "object",
+            "properties": {
+                "allowedHeader": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "*"
+                    ]
+                },
+                "allowedMethod": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "GET"
+                    ]
+                },
+                "allowedOrigin": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "*"
+                    ]
+                },
+                "exposeHeader": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "ETag"
+                    ]
+                },
+                "maxAgeSeconds": {
+                    "type": "integer",
+                    "example": 3000
+                }
+            }
+        },
         "resource.ConnectionImageResult": {
             "type": "object",
             "properties": {
@@ -20522,6 +21203,50 @@ const docTemplate = `{
                 },
                 "success": {
                     "type": "boolean"
+                }
+            }
+        },
+        "resource.Delete": {
+            "type": "object",
+            "properties": {
+                "object": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.Object"
+                    }
+                }
+            }
+        },
+        "resource.DeleteResult": {
+            "type": "object",
+            "properties": {
+                "deleted": {
+                    "description": "The xmlns attribute will be set to \"http://s3.amazonaws.com/doc/2006-03-01/\"\nXmlns string ` + "`" + `xml:\"xmlns,attr\" json:\"-\" example:\"http://s3.amazonaws.com/doc/2006-03-01/\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resource.Object"
+                    }
+                }
+            }
+        },
+        "resource.Error": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "NoSuchCORSConfiguration"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "The CORS configuration does not exist"
+                },
+                "requestId": {
+                    "type": "string",
+                    "example": "656c76696e6727732072657175657374"
+                },
+                "resource": {
+                    "type": "string",
+                    "example": "/example-bucket"
                 }
             }
         },
@@ -20603,6 +21328,136 @@ const docTemplate = `{
         },
         "resource.JSONResult": {
             "type": "object"
+        },
+        "resource.ListAllMyBucketsResult": {
+            "type": "object",
+            "properties": {
+                "buckets": {
+                    "description": "Collection of buckets",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/resource.Buckets"
+                        }
+                    ]
+                },
+                "owner": {
+                    "description": "The xmlns attribute will be set to \"http://s3.amazonaws.com/doc/2006-03-01/\"\nXmlns string ` + "`" + `xml:\"xmlns,attr\" json:\"-\" example:\"http://s3.amazonaws.com/doc/2006-03-01/\"` + "`" + `\nOwner information for the S3 account",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/resource.Owner"
+                        }
+                    ]
+                }
+            }
+        },
+        "resource.ListBucketResult": {
+            "type": "object",
+            "properties": {
+                "isTruncated": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "marker": {
+                    "type": "string",
+                    "example": ""
+                },
+                "maxKeys": {
+                    "type": "integer",
+                    "example": 1000
+                },
+                "name": {
+                    "description": "The xmlns attribute will be set to \"http://s3.amazonaws.com/doc/2006-03-01/\"\nXmlns string ` + "`" + `xml:\"xmlns,attr\" json:\"-\" example:\"http://s3.amazonaws.com/doc/2006-03-01/\"` + "`" + `",
+                    "type": "string",
+                    "example": "spider-test-bucket"
+                },
+                "prefix": {
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "resource.ListVersionsResult": {
+            "type": "object",
+            "properties": {
+                "isTruncated": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "keyMarker": {
+                    "type": "string",
+                    "example": ""
+                },
+                "maxKeys": {
+                    "type": "integer",
+                    "example": 1000
+                },
+                "name": {
+                    "description": "The xmlns attribute will be set to \"http://s3.amazonaws.com/doc/2006-03-01/\"\nXmlns string ` + "`" + `xml:\"xmlns,attr\" json:\"-\" example:\"http://s3.amazonaws.com/doc/2006-03-01/\"` + "`" + `",
+                    "type": "string",
+                    "example": "spider-test-bucket"
+                },
+                "nextKeyMarker": {
+                    "type": "string",
+                    "example": ""
+                },
+                "nextVersionIdMarker": {
+                    "type": "string",
+                    "example": ""
+                },
+                "prefix": {
+                    "type": "string",
+                    "example": ""
+                },
+                "version": {
+                    "$ref": "#/definitions/resource.Version"
+                },
+                "versionIdMarker": {
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "resource.LocationConstraint": {
+            "type": "object"
+        },
+        "resource.Object": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string",
+                    "example": "test-object.txt"
+                }
+            }
+        },
+        "resource.Owner": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                }
+            }
+        },
+        "resource.PresignedURLResult": {
+            "type": "object",
+            "properties": {
+                "expires": {
+                    "type": "integer",
+                    "example": 3600
+                },
+                "method": {
+                    "type": "string",
+                    "example": "GET"
+                },
+                "presignedURL": {
+                    "type": "string",
+                    "example": "\u003ehttps://globally-unique-bucket-hctdx3.s3.dualstack.ap-southeast-2.amazonaws.com/test-file.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256\u0026X-Amz-Credential=AKIA***EXAMPLE%2F20250904%2Fap-southeast-2%2Fs3%2Faws4_request\u0026X-Amz-Date=20250904T061448Z\u0026X-Amz-Expires=3600\u0026X-Amz-SignedHeaders=host\u0026X-Amz-Signature=***-signature"
+                }
+            }
         },
         "resource.RestFilterSpecsResponse": {
             "type": "object",
@@ -20711,6 +21566,52 @@ const docTemplate = `{
                 },
                 "cspResourceId": {
                     "type": "string"
+                }
+            }
+        },
+        "resource.Version": {
+            "type": "object",
+            "properties": {
+                "etag": {
+                    "type": "string",
+                    "example": "23228a38faecd0591107818c7281cece"
+                },
+                "isLatest": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "key": {
+                    "type": "string",
+                    "example": "test-file.txt"
+                },
+                "lastModified": {
+                    "type": "string",
+                    "example": "2025-09-04T04:24:12Z"
+                },
+                "owner": {
+                    "$ref": "#/definitions/resource.Owner"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 23
+                },
+                "storageClass": {
+                    "type": "string",
+                    "example": "STANDARD"
+                },
+                "versionId": {
+                    "type": "string",
+                    "example": "yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ"
+                }
+            }
+        },
+        "resource.VersioningConfiguration": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "description": "The xmlns attribute will be set to \"http://s3.amazonaws.com/doc/2006-03-01/\"\nXmlns string ` + "`" + `xml:\"xmlns,attr\" json:\"-\" example:\"http://s3.amazonaws.com/doc/2006-03-01/\"` + "`" + `",
+                    "type": "string",
+                    "example": "Enabled"
                 }
             }
         }

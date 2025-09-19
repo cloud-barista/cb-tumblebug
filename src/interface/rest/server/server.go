@@ -620,16 +620,41 @@ func RunServer() {
 	// sqlDbGroup.GET("/:sqlDbId/request/:requestId", rest_resource.RestGetRequestStatusOfSqlDB)
 	// sqlDbGroup.PUT("//:sqlDbId", rest_resource.RestPutSqlDB)
 
-	// Object Storage management
-	// g.GET("/:nsId/resources/objectStorage", rest_resource.)
-	objectStorageGroup := g.Group("/:nsId/resources/objectStorage")
-	terrariumURL = model.TerrariumRestUrl + "/readyz"
-	objectStorageGroup.Use(middlewares.CheckReadiness(terrariumURL, trApiUser, trApiPass))
-	objectStorageGroup.POST("", rest_resource.RestPostObjectStorage)
-	objectStorageGroup.GET("/:objectStorageId", rest_resource.RestGetObjectStorage)
-	objectStorageGroup.DELETE("/:objectStorageId", rest_resource.RestDeleteObjectStorage)
-	// objectStorageGroup.GET("/:objectStorageId/request/:requestId", rest_resource.RestGetRequestStatusOfObjectStorage)
-	// objectStorageGroup.PUT("//:objectStorageId", rest_resource.RestPutObjectStorage)
+	// Object Storage management by terrarium (Deprecated)
+	// objectStorageGroup := g.Group("/:nsId/resources/objectStorage")
+	// terrariumURL = model.TerrariumRestUrl + "/readyz"
+	// objectStorageGroup.Use(middlewares.CheckReadiness(terrariumURL, trApiUser, trApiPass))
+	// objectStorageGroup.POST("", rest_resource.RestPostObjectStorage)
+	// objectStorageGroup.GET("/:objectStorageId", rest_resource.RestGetObjectStorage)
+	// objectStorageGroup.DELETE("/:objectStorageId", rest_resource.RestDeleteObjectStorage)
+
+	// Route for Resource subgroup
+	objectStorageGroup := e.Group("/tumblebug")
+	// Object Storage (bucket) Operations
+	objectStorageGroup.GET("/resources/objectStorage", rest_resource.ListObjectStorages)
+	objectStorageGroup.PUT("/resources/objectStorage/:objectStorageName", rest_resource.CreateObjectStorage)
+	objectStorageGroup.GET("/resources/objectStorage/:objectStorageName", rest_resource.GetObjectStorage)
+	objectStorageGroup.HEAD("/resources/objectStorage/:objectStorageName", rest_resource.ExistObjectStorage)
+	objectStorageGroup.GET("/resources/objectStorage/:objectStorageName/location", rest_resource.GetObjectStorageLocation)
+	objectStorageGroup.DELETE("/resources/objectStorage/:objectStorageName", rest_resource.DeleteObjectStorage)
+
+	// Object Storage (bucket) Operations - Verioning
+	objectStorageGroup.GET("/resources/objectStorage/:objectStorageName/versioning", rest_resource.GetObjectStorageVersioning)
+	objectStorageGroup.PUT("/resources/objectStorage/:objectStorageName/versioning", rest_resource.SetObjectStorageVersioning)
+	objectStorageGroup.GET("/resources/objectStorage/:objectStorageName/versions", rest_resource.ListObjectVersions)
+	objectStorageGroup.DELETE("/resources/objectStorage/:objectStorageName/versions/:objectKey", rest_resource.DeleteVersionedObject)
+
+	// Object Storage (bucket) Operations - CORS
+	objectStorageGroup.GET("/resources/objectStorage/:objectStorageName/cors", rest_resource.GetObjectStorageCORS)
+	objectStorageGroup.PUT("/resources/objectStorage/:objectStorageName/cors", rest_resource.SetObjectStorageCORS)
+	objectStorageGroup.DELETE("/resources/objectStorage/:objectStorageName/cors", rest_resource.DeleteObjectStorageCORS)
+
+	// Object (file) Operations
+	objectStorageGroup.HEAD("/resources/objectStorage/:objectStorageName/:objectKey", rest_resource.GetDataObjectInfo)
+	objectStorageGroup.DELETE("/resources/objectStorage/:objectStorageName/:objectKey", rest_resource.DeleteDataObject)
+	objectStorageGroup.POST("/resources/objectStorage/:objectStorageName", rest_resource.DeleteMultipleDataObjects)
+	objectStorageGroup.GET("/resources/objectStorage/presigned/download/:objectStorageName/:objectKey", rest_resource.GeneratePresignedDownloadURL)
+	objectStorageGroup.GET("/resources/objectStorage/presigned/upload/:objectStorageName/:objectKey", rest_resource.GeneratePresignedUploadURL)
 
 	/*
 		g.POST("/:nsId/resources/publicIp", resource.RestPostPublicIp)
