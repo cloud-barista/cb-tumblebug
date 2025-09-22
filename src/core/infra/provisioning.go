@@ -1111,30 +1111,51 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	err = CreateVmsInParallel(nsId, mciId, vmInfoList, option)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create VMs in parallel")
-		errorMu.Lock()
-		createErrors = append(createErrors, fmt.Errorf("bulk VM creation failed: %w", err))
 
-		// Check individual VM statuses and add to vmCreateErrors for failed VMs
+		// CRITICAL: If CreateVmsInParallel returns error, it means ALL VMs failed
+		// Check total VM count and immediately terminate if all failed
+		totalVmsInParallel := len(vmInfoList)
+
+		log.Error().Msgf("EARLY TERMINATION: CreateVmsInParallel returned error - all %d VMs failed", totalVmsInParallel)
+
+		// Force update all VM statuses to Failed since CreateVmsInParallel failed completely
+		log.Debug().Msg("Force updating all VM statuses to Failed since no VMs were actually created")
 		for _, vmInfo := range vmInfoList {
-			updatedVmInfo, getErr := GetVmObject(nsId, mciId, vmInfo.Id)
-			if getErr != nil {
-				addVmError(&vmCreateErrors, vmInfo.Name, fmt.Sprintf("Failed to get VM status: %s", getErr.Error()), "status_check")
-			} else if updatedVmInfo.Status == "Failed" || updatedVmInfo.Status == "Terminated" {
-				// Use the VM's SystemMessage if available, otherwise use a generic message
-				errorMsg := "VM creation failed"
-				if updatedVmInfo.SystemMessage != "" {
-					errorMsg = updatedVmInfo.SystemMessage
-				}
-				addVmError(&vmCreateErrors, vmInfo.Name, errorMsg, "vm_creation")
+			vmInfo.Status = model.StatusFailed
+			if vmInfo.SystemMessage == "" {
+				vmInfo.SystemMessage = fmt.Sprintf("VM creation failed: %s", err.Error())
 			}
-		}
-		errorMu.Unlock()
 
-		// Do NOT return error here - continue with partial MCI creation
-		log.Info().Msg("Continuing MCI creation despite VM creation failures")
+			UpdateVmInfo(nsId, mciId, *vmInfo)
+			log.Debug().Msgf("Force updated VM %s to Failed status (no actual CSP VM created)", vmInfo.Name)
+		}
+
+		// Get MCI info and mark as failed immediately
+		mciResult, mciErr := GetMciInfo(nsId, mciId)
+		if mciErr != nil {
+			return nil, fmt.Errorf("failed to get MCI info after all VMs failed: %w", mciErr)
+		}
+
+		// Mark MCI as Failed with complete finalization
+		mciResult.Status = model.StatusFailed
+		mciResult.TargetStatus = model.StatusComplete
+		mciResult.TargetAction = model.ActionComplete
+		UpdateMciInfo(nsId, *mciResult)
+
+		log.Error().Msgf("MCI %s marked as Failed - all VM and MCI status updates completed", mciId)
+
+		// Return detailed error message
+		errorMsg := fmt.Sprintf("MCI '%s' creation failed: all %d VMs failed to create.\n\nError: %s",
+			mciId, totalVmsInParallel, err.Error())
+
+		return mciResult, fmt.Errorf("%s", errorMsg)
 	}
 
-	// Check for VM creation errors
+	// Continue with normal processing for successful or partial VM creation
+	// Note: If CreateVmsInParallel returns error, we already handled it above and returned early
+	// This code block is only reached when VM creation was successful or partially successful
+
+	// Check for VM creation errors (this applies to partial failures only)
 	if len(createErrors) > 0 {
 		// Add VM creation errors to MCI SystemMessage
 		mciTmp, _, err := GetMciObject(nsId, mciId)
@@ -1254,6 +1275,9 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 	if err != nil {
 		return nil, fmt.Errorf("failed to get final MCI information: %w", err)
 	}
+
+	// Note: All VM failure case is already handled earlier when CreateVmsInParallel returns error
+	// This section only handles partial failures or successful cases
 
 	// Add creation error information if there were any failures
 	if len(vmObjectErrors) > 0 || len(vmCreateErrors) > 0 {

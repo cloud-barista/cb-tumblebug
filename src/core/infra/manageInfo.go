@@ -1160,10 +1160,36 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 			}
 			log.Debug().Msgf("MCI %s recovery completion - VM status breakdown: %+v", mciId, statusBreakdown)
 
-			mciStatus.TargetAction = model.ActionComplete
-			mciStatus.TargetStatus = model.StatusComplete
-			mciTmp.TargetAction = model.ActionComplete
-			mciTmp.TargetStatus = model.StatusComplete
+			// Check if all VMs are in failed state
+			// If there are no VMs, consider it as all VMs failed for creation context
+			allVmsFailed := len(mciStatus.Vm) == 0
+			if len(mciStatus.Vm) > 0 {
+				allVmsFailed = true
+				for _, v := range mciStatus.Vm {
+					if v.Status != model.StatusFailed && v.Status != model.StatusTerminated {
+						allVmsFailed = false
+						break
+					}
+				}
+			}
+
+			if allVmsFailed && mciTargetAction == model.ActionCreate {
+				// All VMs failed during creation - mark MCI as Failed
+				log.Error().Msgf("MCI %s: All VMs failed during creation - setting MCI status to Failed", mciId)
+				mciStatus.TargetAction = model.ActionComplete
+				mciStatus.TargetStatus = model.StatusComplete // Target was to complete the creation process
+				mciStatus.Status = model.StatusFailed         // Actual status is Failed due to VM failures
+				mciTmp.TargetAction = model.ActionComplete
+				mciTmp.TargetStatus = model.StatusComplete // Target was to complete the creation process
+				mciTmp.Status = model.StatusFailed         // Actual status is Failed due to VM failures
+			} else {
+				// Normal completion
+				mciStatus.TargetAction = model.ActionComplete
+				mciStatus.TargetStatus = model.StatusComplete
+				mciTmp.TargetAction = model.ActionComplete
+				mciTmp.TargetStatus = model.StatusComplete
+			}
+
 			mciTmp.StatusCount = mciStatus.StatusCount
 			UpdateMciInfo(nsId, mciTmp)
 		}
