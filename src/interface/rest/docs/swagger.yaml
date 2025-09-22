@@ -4997,7 +4997,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/clear:
+  /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatusAll:
     delete:
       tags:
       - "[MC-Infra] MCI Remote Command Status"

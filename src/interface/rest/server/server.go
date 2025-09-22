@@ -433,7 +433,7 @@ func RunServer() {
 	g.GET("/:nsId/mci/:mciId/vm/:vmId/commandStatus", rest_infra.RestListVmCommandStatus)
 	g.DELETE("/:nsId/mci/:mciId/vm/:vmId/commandStatus/:index", rest_infra.RestDeleteVmCommandStatus)
 	g.DELETE("/:nsId/mci/:mciId/vm/:vmId/commandStatus", rest_infra.RestDeleteVmCommandStatusByCriteria)
-	g.DELETE("/:nsId/mci/:mciId/vm/:vmId/commandStatus/clear", rest_infra.RestClearAllVmCommandStatus)
+	g.DELETE("/:nsId/mci/:mciId/vm/:vmId/commandStatusAll", rest_infra.RestClearAllVmCommandStatus)
 
 	// Handling Command Count for monitoring (optimized for frequent polling)
 	g.GET("/:nsId/mci/:mciId/vm/:vmId/handlingCount", rest_infra.RestGetVmHandlingCommandCount)
