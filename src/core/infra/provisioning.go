@@ -1923,31 +1923,31 @@ func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynam
 	}
 
 	// Check for provider-specific limitations
-	if specInfoPtr != nil {
-		providerName := specInfoPtr.ProviderName
+	// if specInfoPtr != nil {
+	// 	providerName := specInfoPtr.ProviderName
 
-		// Check KT Cloud limitations
-		if providerName == csp.KT {
-			vmReview.Errors = append(vmReview.Errors, "KT Cloud provisioning is currently not available")
-			vmReview.CanCreate = false
-			viable = false
-			log.Debug().Msgf("KT Cloud provisioning blocked for VM: %s", subGroupDynamicReq.Name)
-		}
+	// 	// // Check KT Cloud limitations
+	// 	// if providerName == csp.KT {
+	// 	// 	vmReview.Errors = append(vmReview.Errors, "KT Cloud provisioning is currently not available")
+	// 	// 	vmReview.CanCreate = false
+	// 	// 	viable = false
+	// 	// 	log.Debug().Msgf("KT Cloud provisioning blocked for VM: %s", subGroupDynamicReq.Name)
+	// 	// }
 
-		// // Check NHN Cloud limitations
-		// if providerName == csp.NHN {
-		// 	if deployOption != "hold" {
-		// 		vmReview.Errors = append(vmReview.Errors, "NHN Cloud can only be provisioned with deployOption 'hold' (manual deployment required)")
-		// 		vmReview.CanCreate = false
-		// 		viable = false
-		// 		log.Debug().Msgf("NHN Cloud requires 'hold' deployOption for VM: %s", subGroupDynamicReq.Name)
-		// 	} else {
-		// 		vmReview.Warnings = append(vmReview.Warnings, "NHN Cloud requires manual deployment completion after 'hold' - automatic provisioning is not fully supported")
-		// 		hasVmWarning = true
-		// 		log.Debug().Msgf("NHN Cloud 'hold' mode warning for VM: %s", subGroupDynamicReq.Name)
-		// 	}
-		// }
-	}
+	// 	// // Check NHN Cloud limitations
+	// 	// if providerName == csp.NHN {
+	// 	// 	if deployOption != "hold" {
+	// 	// 		vmReview.Errors = append(vmReview.Errors, "NHN Cloud can only be provisioned with deployOption 'hold' (manual deployment required)")
+	// 	// 		vmReview.CanCreate = false
+	// 	// 		viable = false
+	// 	// 		log.Debug().Msgf("NHN Cloud requires 'hold' deployOption for VM: %s", subGroupDynamicReq.Name)
+	// 	// 	} else {
+	// 	// 		vmReview.Warnings = append(vmReview.Warnings, "NHN Cloud requires manual deployment completion after 'hold' - automatic provisioning is not fully supported")
+	// 	// 		hasVmWarning = true
+	// 	// 		log.Debug().Msgf("NHN Cloud 'hold' mode warning for VM: %s", subGroupDynamicReq.Name)
+	// 	// 	}
+	// 	// }
+	// }
 
 	// Set VM review status
 	if len(vmReview.Errors) > 0 {
@@ -2278,22 +2278,22 @@ func ReviewMciDynamicReq(reqID string, nsId string, req *model.MciDynamicReq, de
 			fmt.Sprintf("DEPLOYMENT HOLD: MCI creation will be held for review. Failure policy '%s' will apply when deployment is resumed with control continue.", policy))
 	}
 
-	// Add provider-specific global recommendations
-	for _, providerName := range reviewResult.ResourceSummary.ProviderNames {
-		switch providerName {
-		case csp.KT:
-			reviewResult.Recommendations = append(reviewResult.Recommendations,
-				"CRITICAL: KT Cloud provisioning is currently unavailable - all KT Cloud VMs will fail to deploy")
-		case csp.NHN:
-			if deployOption != "hold" {
-				reviewResult.Recommendations = append(reviewResult.Recommendations,
-					"CRITICAL: NHN Cloud requires deployOption 'hold' for manual deployment - automatic provisioning will fail")
-			} else {
-				reviewResult.Recommendations = append(reviewResult.Recommendations,
-					"INFO: NHN Cloud deployment will be held for manual completion - automatic provisioning is not fully supported")
-			}
-		}
-	}
+	// // Add provider-specific global recommendations
+	// for _, providerName := range reviewResult.ResourceSummary.ProviderNames {
+	// 	switch providerName {
+	// 	case csp.KT:
+	// 		reviewResult.Recommendations = append(reviewResult.Recommendations,
+	// 			"CRITICAL: KT Cloud provisioning is currently unavailable - all KT Cloud VMs will fail to deploy")
+	// 	case csp.NHN:
+	// 		if deployOption != "hold" {
+	// 			reviewResult.Recommendations = append(reviewResult.Recommendations,
+	// 				"CRITICAL: NHN Cloud requires deployOption 'hold' for manual deployment - automatic provisioning will fail")
+	// 		} else {
+	// 			reviewResult.Recommendations = append(reviewResult.Recommendations,
+	// 				"INFO: NHN Cloud deployment will be held for manual completion - automatic provisioning is not fully supported")
+	// 		}
+	// 	}
+	// }
 
 	log.Debug().Msgf("MCI review completed: %s - %s (Policy: %s)", reviewResult.OverallStatus, reviewResult.OverallMessage, policy)
 	return reviewResult, nil
