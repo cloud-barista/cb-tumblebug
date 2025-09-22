@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -1640,8 +1641,15 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 			// set isolated private address space for each cloud region (10.i.0.0/16)
 			reqTmp.CidrBlock = "10." + strconv.Itoa(sliceIndex) + ".0.0/16"
 
-			// Consist 2 subnets (10.i.0.0/18, 10.i.64.0/18)
-			// Reserve spaces for tentative 2 subnets (10.i.128.0/18, 10.i.192.0/18)
+			// Create subnets based on provider limitations
+			// CSPs with single subnet requirement due to network architecture limitations
+			// IBM: Single subnet to avoid Address Prefix conflicts caused by CB-Spider implementation constraints
+			// ref IBM VPC Network structure: https://cloud.ibm.com/docs/vpc?topic=vpc-about-networking-for-vpc&locale=en
+			// IBM VPC requires zone-specific Address Prefix setup, but CB-Spider uses same CIDR for all zones causing conflicts.
+			// This limitation exists in CB-Spider's IBM VPC driver implementation (VPCHandler.go line 108).
+			singleSubnetProviders := []string{csp.IBM}
+
+			// Others: Create 2 subnets (10.i.0.0/18, 10.i.64.0/18) with tentative space for 2 more (10.i.128.0/18, 10.i.192.0/18)
 			zones, length, _ := GetFirstNZones(connectionName, 2)
 			subnetName := reqTmp.Name
 			subnetCidr := "10." + strconv.Itoa(sliceIndex) + ".0.0/18"
@@ -1651,22 +1659,24 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 			}
 			reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
 
-			subnetName = reqTmp.Name + "-01"
-			subnetCidr = "10." + strconv.Itoa(sliceIndex) + ".64.0/18"
-			subnet = model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
-			if length > 1 {
+			// Check if provider requires only single subnet
+			requiresSingleSubnet := slices.Contains(singleSubnetProviders, provider)
+
+			// Create second subnet only if provider supports multiple subnets
+			if !requiresSingleSubnet && length > 1 {
+				subnetName = reqTmp.Name + "-01"
+				subnetCidr = "10." + strconv.Itoa(sliceIndex) + ".64.0/18"
+				subnet = model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
 				subnet.Zone = zones[1]
-				// ref IBM VPC Network structure: https://cloud.ibm.com/docs/vpc?topic=vpc-about-networking-for-vpc&locale=en
-				// IBM VPC Network requires Address Prefix setup for each zone. (but there is limitation in CB-Spider implementation.)
-				// So, we will create 2 subnets in a zone within the limited address space.
+
 				// ref NCP AZ issue: https://github.com/cloud-barista/cb-tumblebug/issues/2136
 				// NCP K8s cluster requires all subnets (including LB subnets) to be within the same AZ.
 				// So, we will create all subnets in the same zone.
-				if provider == csp.IBM || provider == csp.NCP {
+				if provider == csp.NCP {
 					subnet.Zone = zones[0]
 				}
+				reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
 			}
-			reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
 
 			common.PrintJsonPretty(reqTmp)
 
