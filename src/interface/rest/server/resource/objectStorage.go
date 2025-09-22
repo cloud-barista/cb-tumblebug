@@ -100,9 +100,9 @@ func validate(provider, region string) error {
 		}
 	}
 	if !found {
-		errMsg := fmt.Errorf("invalid provider: %s", provider)
-		log.Error().Err(errMsg).Msg("Invalid provider")
-		return errMsg
+		err := fmt.Errorf("invalid provider: %s", provider)
+		log.Error().Err(err).Msg("Invalid provider")
+		return err
 	}
 
 	// Validate region
@@ -263,9 +263,9 @@ func CreateObjectStorage(c echo.Context) error {
 
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Err(err).Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	// Source path pattern with * to capture objectStorageName, provider, and region
@@ -320,9 +320,9 @@ func GetObjectStorage(c echo.Context) error {
 
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -360,9 +360,9 @@ func ExistObjectStorage(c echo.Context) error {
 
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -414,9 +414,9 @@ type LocationConstraint struct {
 func GetObjectStorageLocation(c echo.Context) error {
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -452,9 +452,9 @@ func DeleteObjectStorage(c echo.Context) error {
 
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -519,9 +519,9 @@ type VersioningConfiguration struct {
 func GetObjectStorageVersioning(c echo.Context) error {
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -570,9 +570,9 @@ func GetObjectStorageVersioning(c echo.Context) error {
 func SetObjectStorageVersioning(c echo.Context) error {
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -692,9 +692,9 @@ type Version struct {
 func ListObjectVersions(c echo.Context) error {
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -732,22 +732,22 @@ func ListObjectVersions(c echo.Context) error {
 func DeleteVersionedObject(c echo.Context) error {
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	objectKey := c.Param("objectKey")
 	if objectKey == "" {
-		errMsg := "objectKey is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectKey is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 	versionId := c.QueryParam("versionId")
 	if versionId == "" {
-		errMsg := "versionId is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "versionId is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -863,9 +863,9 @@ type Error struct {
 func GetObjectStorageCORS(c echo.Context) error {
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -928,9 +928,9 @@ func GetObjectStorageCORS(c echo.Context) error {
 func SetObjectStorageCORS(c echo.Context) error {
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -966,9 +966,9 @@ func SetObjectStorageCORS(c echo.Context) error {
 func DeleteObjectStorageCORS(c echo.Context) error {
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -1012,16 +1012,16 @@ func DeleteObjectStorageCORS(c echo.Context) error {
 func GetDataObjectInfo(c echo.Context) error {
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	objectKey := c.Param("objectKey")
 	if objectKey == "" {
-		errMsg := "objectKey is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectKey is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -1058,16 +1058,16 @@ func GetDataObjectInfo(c echo.Context) error {
 func DeleteDataObject(c echo.Context) error {
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	objectKey := c.Param("objectKey")
 	if objectKey == "" {
-		errMsg := "objectKey is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectKey is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -1148,16 +1148,16 @@ type DeleteResult struct {
 func DeleteMultipleDataObjects(c echo.Context) error {
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	deleteParam := c.QueryParam("delete")
 	if deleteParam != "true" {
-		errMsg := "delete query parameter must be true"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "delete query parameter must be true")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -1219,16 +1219,16 @@ type PresignedURLResult struct {
 func GeneratePresignedDownloadURL(c echo.Context) error {
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	objectKey := c.Param("objectKey")
 	if objectKey == "" {
-		errMsg := "objectKey is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectKey is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
@@ -1281,16 +1281,16 @@ func GeneratePresignedDownloadURL(c echo.Context) error {
 func GeneratePresignedUploadURL(c echo.Context) error {
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
-		errMsg := "objectStorageName is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectStorageName is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	objectKey := c.Param("objectKey")
 	if objectKey == "" {
-		errMsg := "objectKey is required"
-		log.Error().Msg(errMsg)
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+		err := fmt.Errorf("%s", "objectKey is required")
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	provider := c.QueryParam("provider")
