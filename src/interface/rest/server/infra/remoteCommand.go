@@ -483,7 +483,7 @@ func RestDeleteVmCommandStatusByCriteria(c echo.Context) error {
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/clear [delete]
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatusAll [delete]
 func RestClearAllVmCommandStatus(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mciId := c.Param("mciId")

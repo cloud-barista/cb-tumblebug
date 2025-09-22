@@ -5974,74 +5974,6 @@
                 }
             }
         },
-        "/ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/clear": {
-            "delete": {
-                "description": "Delete all command status records for a VM",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] MCI Remote Command Status"
-                ],
-                "summary": "Clear all command status records for a VM",
-                "operationId": "ClearAllVmCommandStatus",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mci01",
-                        "description": "MCI ID",
-                        "name": "mciId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Custom request ID",
-                        "name": "x-request-id",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/{index}": {
             "get": {
                 "description": "Get a specific command status record by index for a VM",
@@ -6160,6 +6092,74 @@
                         "default": 1,
                         "description": "Command Index",
                         "name": "index",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatusAll": {
+            "delete": {
+                "description": "Delete all command status records for a VM",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command Status"
+                ],
+                "summary": "Clear all command status records for a VM",
+                "operationId": "ClearAllVmCommandStatus",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "VM ID",
+                        "name": "vmId",
                         "in": "path",
                         "required": true
                     },
