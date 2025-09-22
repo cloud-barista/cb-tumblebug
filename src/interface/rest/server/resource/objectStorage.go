@@ -15,608 +15,1298 @@ limitations under the License.
 package resource
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net/http"
-	"strings"
+	"net/url"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
-	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
+	"github.com/cloud-barista/cb-tumblebug/src/interface/rest/server/middlewares"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
 
-// // RestGetSitesInMci godoc
-// // @ID GetSitesInMci
-// // @Summary Get sites in MCI
-// // @Description Get sites in MCI
-// // @Tags [Infra Resource] Object Storage Management (under development)
-// // @Accept  json
-// // @Produce  json
-// // @Param nsId path string true "Namespace ID" default(default)
-// // @Param mciId path string true "MCI ID" default(mci01)
-// // @Success 200 {object} model.SitesInfo "OK"
-// // @Failure 400 {object} model.SimpleMsg "Bad Request"
-// // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// // @Router /ns/{nsId}/mci/{mciId}/site [get]
-// func RestGetSitesInMci(c echo.Context) error {
+// createSpiderProxyHandler creates a handler function that proxies requests to Spider API
+// sourcePattern: the source URL pattern with wildcards (*)
+// targetPattern: the target URL pattern with wildcards ($1, $2, etc.)
+func createSpiderProxyHandler(sourcePattern string, targetPattern string) echo.HandlerFunc {
 
-// 	nsId := c.Param("nsId")
-// 	err := common.CheckString(nsId)
-// 	if err != nil {
-// 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-// 		log.Warn().Err(err).Msgf(errMsg.Error())
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-// 	}
-
-// 	mciId := c.Param("mciId")
-// 	err = common.CheckString(mciId)
-// 	if err != nil {
-// 		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
-// 		log.Warn().Err(err).Msgf(errMsg.Error())
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-// 	}
-
-// 	SitesInfo, err := ExtractSitesInfoFromMciInfo(nsId, mciId)
-// 	if err != nil {
-// 		log.Err(err).Msg("")
-// 		res := model.SimpleMsg{
-// 			Message: err.Error(),
-// 		}
-// 		return c.JSON(http.StatusInternalServerError, res)
-// 	}
-
-// 	return c.JSON(http.StatusOK, SitesInfo)
-// }
-
-// func ExtractSitesInfoFromMciInfo(nsId, mciId string) (*model.SitesInfo, error) {
-// 	// Get MCI info
-// 	mciInfo, err := infra.GetMciInfo(nsId, mciId)
-// 	if err != nil {
-// 		log.Err(err).Msg("")
-// 		return nil, err
-// 	}
-
-// 	// A map to check if the VPC (site) is already extracted and added or not.
-// 	checkedVpcs := make(map[string]bool)
-
-// 	// Newly create the SitesInfo structure
-// 	sitesInfo := model.NewSiteInfo(nsId, mciId)
-
-// 	sitesInAws := []model.SiteDetail{}
-// 	sitesInAzure := []model.SiteDetail{}
-// 	sitesInGcp := []model.SiteDetail{}
-
-// 	for _, vm := range mciInfo.Vm {
-
-// 		vNetId := vm.VNetId
-// 		if vNetId == "" {
-// 			log.Warn().Msgf("VNet ID is empty for VM ID: %s", vm.Id)
-// 			continue
-// 		}
-
-// 		if _, exists := checkedVpcs[vNetId]; exists {
-// 			continue
-// 		}
-// 		checkedVpcs[vNetId] = true
-
-// 		providerName := vm.ConnectionConfig.ProviderName
-// 		if providerName == "" {
-// 			log.Warn().Msgf("Provider name is empty for VM ID: %s", vm.Id)
-// 			continue
-// 		}
-
-// 		// Create and set a site details
-// 		var site = model.SiteDetail{}
-// 		site.CSP = vm.ConnectionConfig.ProviderName
-// 		site.Region = vm.Region.Region
-
-// 		// Lowercase the provider name
-// 		providerName = strings.ToLower(providerName)
-
-// 		switch providerName {
-// 		case "aws":
-
-// 			// Get vNet info
-// 			resourceType := "vNet"
-// 			resourceId := vm.VNetId
-// 			result, err := resource.GetResource(nsId, resourceType, resourceId)
-// 			if err != nil {
-// 				log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
-// 				continue
-// 			}
-// 			vNetInfo := result.(model.VNetInfo)
-
-// 			// Get the last subnet
-// 			subnetCount := len(vNetInfo.SubnetInfoList)
-// 			if subnetCount == 0 {
-// 				log.Warn().Msgf("No subnets found for VNet ID: %s", vNetId)
-// 				continue
-// 			}
-// 			lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
-
-// 			// Set VNet and the last subnet IDs
-// 			site.VNet = vm.CspVNetId
-// 			site.Subnet = lastSubnet.CspResourceId
-
-// 			// Set connection name
-// 			site.ConnectionName = vm.ConnectionName
-
-// 			sitesInAws = append(sitesInAws, site)
-
-// 		case "azure":
-// 			// Parse vNet and resource group names
-// 			parts := strings.Split(vm.CspVNetId, "/")
-// 			log.Debug().Msgf("parts: %+v", parts)
-// 			if len(parts) < 9 {
-// 				log.Warn().Msgf("Invalid VNet ID format for Azure VM ID: %s", vm.Id)
-// 				continue
-// 			}
-// 			parsedResourceGroupName := parts[4]
-// 			parsedVirtualNetworkName := parts[8]
-
-// 			// Set VNet and resource group names
-// 			site.VNet = parsedVirtualNetworkName
-// 			site.ResourceGroup = parsedResourceGroupName
-
-// 			// Get vNet info
-// 			resourceType := "vNet"
-// 			resourceId := vm.VNetId
-// 			result, err := resource.GetResource(nsId, resourceType, resourceId)
-// 			if err != nil {
-// 				log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
-// 				continue
-// 			}
-// 			vNetInfo := result.(model.VNetInfo)
-
-// 			// Get the last subnet CIDR block
-// 			subnetCount := len(vNetInfo.SubnetInfoList)
-// 			if subnetCount == 0 {
-// 				log.Warn().Msgf("No subnets found for VNet ID: %s", vNetId)
-// 				continue
-// 			}
-// 			lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
-// 			lastSubnetCidr := lastSubnet.IPv4_CIDR
-
-// 			// (Currently unsafe) Calculate the next subnet CIDR block
-// 			nextCidr, err := netutil.NextSubnet(lastSubnetCidr, vNetInfo.CidrBlock)
-// 			if err != nil {
-// 				log.Warn().Msgf("Failed to get the next subnet CIDR")
-// 			}
-
-// 			// Set the site detail
-// 			site.GatewaySubnetCidr = nextCidr
-
-// 			// Set connection name
-// 			site.ConnectionName = vm.ConnectionName
-
-// 			sitesInAzure = append(sitesInAzure, site)
-
-// 		case "gcp":
-// 			// Set vNet ID
-// 			site.VNet = vm.CspVNetId
-
-// 			// Set connection name
-// 			site.ConnectionName = vm.ConnectionName
-
-// 			sitesInGcp = append(sitesInGcp, site)
-
-// 		default:
-// 			log.Warn().Msgf("Unsupported provider name: %s", providerName)
-// 		}
-
-// 		sitesInfo.Count++
-// 	}
-
-// 	sitesInfo.Sites.Aws = sitesInAws
-// 	sitesInfo.Sites.Azure = sitesInAzure
-// 	sitesInfo.Sites.Gcp = sitesInGcp
-
-// 	return sitesInfo, nil
-// }
-
-// RestGetAllObjectStorage godoc
-// @ID GetAllObjectStorage
-// @Summary Get all Object Storages (TBD)
-// @Description Get all Object Storages (TBD)
-// @Tags [Infra Resource] Object Storage Management (under development)
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param option query string false "Option" Enums(InfoList, IdList) default(IdList)
-// @Success 200 {object} model.VpnInfoList "OK" /////////////
-// @Success 200 {object} model.VpnIdList "OK" /////////////
-// @Failure 400 {object} model.SimpleMsg "Bad Request"
-// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/resources/objectStorage [get]
-func RestGetAllObjectStorage(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-	err := common.CheckString(nsId)
+	// Parse Spider endpoint URL
+	spURL, err := url.Parse(model.SpiderRestUrl)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+		log.Error().Err(err).Msg("Failed to parse Spider endpoint URL")
+		return func(c echo.Context) error {
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"error": "Server configuration error",
+			})
+		}
 	}
 
-	// mciId := c.Param("mciId")
-	// err = common.CheckString(mciId)
-	// if err != nil {
-	// 	errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
-	// 	log.Warn().Err(err).Msgf(errMsg.Error())
-	// 	return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	// }
+	// Return a handler that processes the request and forwards it to Tumblebug
+	return func(c echo.Context) error {
+		// Create the rewrite rule based on the source and target patterns
+		rewriteRules := map[string]string{
+			sourcePattern: targetPattern,
+		}
 
-	option := c.QueryParam("option")
-	if option != "InfoList" && option != "IdList" && option != "" {
-		errMsg := fmt.Errorf("invalid option (%s)", option)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+		log.Debug().Msgf("Incoming request: %s %s", c.Request().Method, c.Request().URL.String())
+		log.Debug().Msgf("[Proxy] Request to %s with rewrite rule: %s -> %s", spURL.String(), sourcePattern, targetPattern)
+		// log.Debug().Msgf("Proxying with rewrite rule: %s -> %s", sourcePattern, targetPattern)
+
+		// Use the existing Proxy middleware
+		proxyMiddleware := middlewares.Proxy(middlewares.ProxyConfig{
+			URL:     spURL,
+			Rewrite: rewriteRules,
+			ModifyResponse: func(res *http.Response) error {
+				resBytes, err := io.ReadAll(res.Body)
+				if err != nil {
+					return err
+				}
+
+				log.Debug().Msgf("[Proxy] Response from %s", res.Request.URL)
+				log.Trace().Msgf("[Proxy] Response body: %s", string(resBytes))
+
+				res.Body = io.NopCloser(bytes.NewReader(resBytes))
+				return nil
+			},
+		})
+
+		// Create a handler that will be wrapped by the proxy middleware
+		handler := echo.HandlerFunc(func(c echo.Context) error {
+			return nil // This will never be called because the proxy middleware will handle the request
+		})
+
+		// Apply the proxy middleware to the handler
+		return proxyMiddleware(handler)(c)
 	}
-
-	// switch option {
-	// case "InfoList":
-	// 	vpnInfoList, err := resource.GetAllSiteToSiteVPN(nsId, mciId)
-	// 	if err != nil {
-	// 		log.Err(err).Msg("")
-	// 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
-	// 	}
-	// 	return c.JSON(http.StatusOK, vpnInfoList)
-	// case "IdList":
-	// 	vpnIdList, err := resource.GetAllIDsOfSiteToSiteVPN(nsId, mciId)
-	// 	if err != nil {
-	// 		log.Err(err).Msg("")
-	// 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
-	// 	}
-	// 	return c.JSON(http.StatusOK, vpnIdList)
-	// default:
-	// 	errMsg := fmt.Errorf("invalid option (%s)", option)
-	// 	log.Warn().Err(err).Msgf(errMsg.Error())
-	// 	return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-	// }
-
-	return c.JSON(http.StatusOK, model.VpnInfoList{})
 }
 
-// RestPostObjectStorage godoc
-// @ID PostObjectStorage
-// @Summary Create a Object Storages
-// @Description Create a Object Storages
-// @Description
-// @Description Supported CSPs: AWS, Azure
-// @Description - Note - `connectionName` example: aws-ap-northeast-2, azure-koreacentral
-// @Description
-// @Description - Note - Please check the `requiredCSPResource` property which includes CSP specific values.
-// @Description
-// @Description - Note - You can find the API usage examples on this link, https://github.com/cloud-barista/mc-terrarium/discussions/117
-// @Description
-// @Tags [Infra Resource] Object Storage Management (under development)
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param objectStorageReq body model.RestPostObjectStorageRequest true "Request body to create a Object Storage"
-// @Param action query string false "Action" Enums(retry)
-// @Success 200 {object} model.ObjectStorageInfo "OK"
-// @Failure 400 {object} model.SimpleMsg "Bad Request"
-// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/resources/objectStorage [post]
-func RestPostObjectStorage(c echo.Context) error {
+func validate(provider, region string) error {
 
-	nsId := c.Param("nsId")
-	err := common.CheckString(nsId)
+	providers, err := common.GetProviderList()
 	if err != nil {
-		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+		log.Error().Err(err).Msg("Failed to get provider list")
+		return err
 	}
 
-	action := c.QueryParam("action")
-	if action != "retry" && action != "" {
-		errMsg := fmt.Errorf("invalid action (%s)", action)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	found := false
+	for _, p := range providers.IdList {
+		if p == provider {
+			// Valid provider found, break the loop
+			found = true
+			break
+		}
+	}
+	if !found {
+		errMsg := fmt.Errorf("invalid provider: %s", provider)
+		log.Error().Err(errMsg).Msg("Invalid provider")
+		return errMsg
 	}
 
-	// Bind the request body to RestPostObjectStorageRequest struct
-	objectStorageReq := new(model.RestPostObjectStorageRequest)
-	if err := c.Bind(objectStorageReq); err != nil {
-		log.Warn().Err(err).Msgf("")
+	// Validate region
+	log.Debug().Msgf("Requested region: %s", region)
+	_, err = common.GetRegion(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get region info")
+		return fmt.Errorf("invalid region: %s", region)
+	}
+
+	// Validate connection config existence
+	connectionName := fmt.Sprintf("%s-%s", provider, region)
+	_, err = common.GetConnConfig(connectionName)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get connection config")
+		return fmt.Errorf("invalid connection config: %s", connectionName)
+	}
+
+	return nil
+}
+
+// ========== Resource APIs: Object Storage ==========
+// Owner represents the owner information in S3 bucket list response
+type Owner struct {
+	ID          string `xml:"ID" json:"id" example:"aws-ap-northeast-2"`
+	DisplayName string `xml:"DisplayName" json:"displayName" example:"aws-ap-northeast-2"`
+}
+
+// Bucket represents a single bucket in S3 bucket list response
+type Bucket struct {
+	Name         string `xml:"Name" json:"name" example:"spider-test-bucket"`
+	CreationDate string `xml:"CreationDate" json:"creationDate" example:"2025-09-04T04:18:06Z"`
+}
+
+// Buckets represents the collection of buckets in S3 bucket list response
+type Buckets struct {
+	Bucket []Bucket `xml:"Bucket" json:"bucket"`
+}
+
+type Object struct {
+	Key string `xml:"Key" json:"key" example:"test-object.txt"`
+}
+
+/*
+ * Object Storage Operations
+ */
+
+// ListAllMyBucketsResult represents the response structure for S3 ListAllMyBuckets operation
+//
+// The actual XML response will have the following structure:
+// - Root element: ListAllMyBucketsResult
+// - Namespace: xmlns="http://s3.amazonaws.com/doc/2006-03-01/"
+// - Contains Owner and Buckets elements
+//
+// Example XML response:
+// ```xml
+// <?xml version="1.0" encoding="UTF-8"?>
+// <ListAllMyBucketsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+//
+//	<Owner>
+//	  <ID>aws-ap-northeast-2</ID>
+//	  <DisplayName>aws-ap-northeast-2</DisplayName>
+//	</Owner>
+//	<Buckets>
+//	</Buckets>
+//
+// </ListAllMyBucketsResult>
+// ```
+//
+// Note: The xmlns attribute and root element name may not be accurately
+// represented in Swagger UI due to XML rendering limitations.
+type ListAllMyBucketsResult struct {
+	// The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
+	// Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
+	// Owner information for the S3 account
+	Owner Owner `xml:"Owner" json:"owner"`
+	// Collection of buckets
+	Buckets Buckets `xml:"Buckets" json:"buckets"`
+}
+
+// RestListObjectStorages godoc
+// @ID ListObjectStorages
+// @Summary List object storages (buckets)
+// @Description Get the list of all object storages (buckets)
+// @Description
+// @Description **Important Notes:**
+// @Description - The actual response will be XML format with root element `ListAllMyBucketsResult`
+// @Description - The response includes xmlns attribute: `xmlns="http://s3.amazonaws.com/doc/2006-03-01/"`
+// @Description - Swagger UI may show `resource.ListAllMyBucketsResult` due to rendering limitations
+// @Description
+// @Description **Actual XML Response Example:**
+// @Description ```xml
+// @Description <?xml version="1.0" encoding="UTF-8"?>
+// @Description <ListAllMyBucketsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+// @Description   <Owner>
+// @Description     <ID>aws-ap-northeast-2</ID>
+// @Description     <DisplayName>aws-ap-northeast-2</DisplayName>
+// @Description   </Owner>
+// @Description   <Buckets>
+// @Description   </Buckets>
+// @Description </ListAllMyBucketsResult>
+// @Description ```
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Success 200 {object} ListAllMyBucketsResult "OK"
+// @Router /resources/objectStorage [get]
+func ListObjectStorages(c echo.Context) error {
+
+	// Validate provider
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Validate the CSP is supported
-	objectStorageReq.CSP = strings.ToLower(objectStorageReq.CSP)
-	ok, err := resource.IsValidCspForObjectStorage(objectStorageReq.CSP)
-	if !ok {
-		log.Warn().Err(err).Msg("")
-		res := model.SimpleMsg{
-			Message: err.Error(),
-		}
-		return c.JSON(http.StatusBadRequest, res)
-	}
+	// Source path pattern with * to capture provider and region
+	sourcePattern := "/resources/objectStorage?provider=*&region=*"
+	// Target path pattern using $1 for captured provider and $2 for captured region
+	targetPattern := "/s3?ConnectionName=$1-$2"
 
-	err = common.CheckString(objectStorageReq.Name)
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
+
+// RestCreateObjectStorage godoc
+// @ID CreateObjectStorage
+// @Summary Create an object storage (bucket)
+// @Description Create an object storage (bucket)
+// @Description
+// @Description **Important Notes:**
+// @Description - The `objectStorageName` must be globally unique across all existing buckets in the S3 compatible storage.
+// @Description - The bucket namespace is shared by all users of the system.
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Success 200 "OK"
+// @Router /resources/objectStorage/{objectStorageName} [put]
+func CreateObjectStorage(c echo.Context) error {
+
+	// Validate provider
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid objectStorageName (%s)", objectStorageReq.Name)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	var resp model.ObjectStorageInfo
-	resp, err = resource.CreateObjectStorage(nsId, objectStorageReq, action)
-	if err != nil {
-		log.Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Err(err).Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
 	}
 
-	return c.JSON(http.StatusOK, resp)
+	// Source path pattern with * to capture objectStorageName, provider, and region
+	sourcePattern := "/resources/objectStorage/*?provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
+	targetPattern := "/s3/$1?ConnectionName=$2-$3"
 
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
+
+// Note: The xmlns attribute and root element name may not be accurately
+// represented in Swagger UI due to XML rendering limitations.
+type ListBucketResult struct {
+	// The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
+	// Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
+	Name        string `xml:"Name" json:"name" example:"spider-test-bucket"`
+	Prefix      string `xml:"Prefix" json:"prefix" example:""`
+	Marker      string `xml:"Marker" json:"marker" example:""`
+	MaxKeys     int    `xml:"MaxKeys" json:"maxKeys" example:"1000"`
+	IsTruncated bool   `xml:"IsTruncated" json:"isTruncated" example:"false"`
 }
 
 // RestGetObjectStorage godoc
 // @ID GetObjectStorage
-// @Summary Get resource info of a Object Storage
-// @Description Get resource info of a Object Storage
-// @Tags [Infra Resource] Object Storage Management (under development)
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param objectStorageId path string true "Object Storage ID" default(objectstorage01)
-// @Param detail query string false "Resource info by detail (refined, raw)" default(refined)
-// @Success 200 {object} model.ObjectStorageInfo "OK"
-// @Failure 400 {object} model.SimpleMsg "Bad Request"
-// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/resources/objectStorage/{objectStorageId} [get]
-func RestGetObjectStorage(c echo.Context) error {
+// @Summary Get details of an object storage (bucket)
+// @Description Get details of an object storage (bucket)
+// @Description
+// @Description **Important Notes:**
+// @Description - The actual response will be XML format with root element `ListBucketResult`
+// @Description
+// @Description **Actual XML Response Example:**
+// @Description ```xml
+// @Description <?xml version="1.0" encoding="UTF-8"?>
+// @Description <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+// @Description   <Name>spider-test-bucket</Name>
+// @Description   <Prefix></Prefix>
+// @Description   <Marker></Marker>
+// @Description   <MaxKeys>1000</MaxKeys>
+// @Description   <IsTruncated>false</IsTruncated>
+// @Description </ListBucketResult>
+// @Description ```
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Success 200 {object} ListBucketResult "OK"
+// @Router /resources/objectStorage/{objectStorageName} [get]
+func GetObjectStorage(c echo.Context) error {
 
-	nsId := c.Param("nsId")
-	err := common.CheckString(nsId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
 	}
 
-	objectStorageId := c.Param("objectStorageId")
-	err = common.CheckString(objectStorageId)
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid objectStorageId (%s)", objectStorageId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// // Use this struct like the enum
-	// var DetailOptions = struct {
-	// 	Refined string
-	// 	Raw     string
-	// }{
-	// 	Refined: "refined",
-	// 	Raw:     "raw",
-	// }
+	// Source path pattern with * to capture objectStorageName, provider, and region
+	sourcePattern := "/resources/objectStorage/*?provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
+	targetPattern := "/s3/$1?ConnectionName=$2-$3"
 
-	// // valid detail options
-	// validDetailOptions := map[string]bool{
-	// 	DetailOptions.Refined: true,
-	// 	DetailOptions.Raw:     true,
-	// }
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
 
-	// detail := c.QueryParam("detail")
-	// detail = strings.ToLower(detail)
+// RestExistObjectStorage godoc
+// @ID ExistObjectStorage
+// @Summary Check existence of an object storage (bucket)
+// @Description Check existence of an object storage (bucket)
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Success 200 "OK"
+// @Failure 404 "Not Found"
+// @Router /resources/objectStorage/{objectStorageName} [head]
+func ExistObjectStorage(c echo.Context) error {
 
-	// if detail == "" || !validDetailOptions[detail] {
-	// 	err := fmt.Errorf("invalid detail (%s), use the default (%s)", detail, DetailOptions.Refined)
-	// 	log.Warn().Msg(err.Error())
-	// 	detail = DetailOptions.Refined
-	// }
-
-	var resp model.ObjectStorageInfo
-	// currently, only support detail=refined
-	detail := "refined"
-	resp, err = resource.GetObjectStorage(nsId, objectStorageId, detail)
-	if err != nil {
-		log.Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
 	}
 
-	return c.JSON(http.StatusOK, resp)
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// Source path pattern with * to capture objectStorageName, provider, and region
+	sourcePattern := "/resources/objectStorage/*?provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
+	targetPattern := "/s3/$1?ConnectionName=$2-$3"
+
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
+
+// Note: The xmlns attribute and root element name may not be accurately
+// represented in Swagger UI due to XML rendering limitations.
+
+type LocationConstraint struct {
+	// The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
+	// Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
+}
+
+// RestGetObjectStorageLocation godoc
+// @ID GetObjectStorageLocation
+// @Summary Get the location of an object storage (bucket)
+// @Description Get the location of an object storage (bucket)
+// @Description
+// @Description **Important Notes:**
+// @Description - The actual response will be XML format with root element `LocationConstraint`
+// @Description
+// @Description **Actual XML Response Example:**
+// @Description ```xml
+// @Description <?xml version="1.0" encoding="UTF-8"?>
+// @Description <LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">ap-northeast-2</LocationConstraint>
+// @Description ```
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Success 200 {object} LocationConstraint "OK"
+// @Router /resources/objectStorage/{objectStorageName}/location [get]
+func GetObjectStorageLocation(c echo.Context) error {
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// Source path pattern with * to capture objectStorageName, provider, and region
+	sourcePattern := "/resources/objectStorage/*/location?provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
+	targetPattern := "/s3/$1?location&ConnectionName=$2-$3"
+
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
 }
 
 // RestDeleteObjectStorage godoc
 // @ID DeleteObjectStorage
-// @Summary Delete a Object Storage
-// @Description Delete a Object Storage
-// @Tags [Infra Resource] Object Storage Management (under development)
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(default)
-// @Param objectStorageId path string true "Object Storage ID" default(objectstorage01)
-// @Success 200 {object} model.SimpleMsg "OK"
-// @Failure 400 {object} model.SimpleMsg "Bad Request"
-// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/resources/objectStorage/{objectStorageId} [delete]
-func RestDeleteObjectStorage(c echo.Context) error {
+// @Summary Delete an object storage (bucket)
+// @Description Delete an object storage (bucket)
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Success 204 "No Content"
+// @Router /resources/objectStorage/{objectStorageName} [delete]
+func DeleteObjectStorage(c echo.Context) error {
 
-	nsId := c.Param("nsId")
-	err := common.CheckString(nsId)
-	if err != nil {
-		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
 	}
 
-	objectStorageId := c.Param("objectStorageId")
-	err = common.CheckString(objectStorageId)
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
 	if err != nil {
-		errMsg := fmt.Errorf("invalid objectStorageId (%s)", objectStorageId)
-		log.Warn().Err(err).Msgf(errMsg.Error())
-		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	resp, err := resource.DeleteObjectStorage(nsId, objectStorageId)
-	if err != nil {
-		log.Err(err).Msg("")
-		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
-	}
+	// Source path pattern with * to capture objectStorageName, provider, and region
+	sourcePattern := "/resources/objectStorage/*?provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
+	targetPattern := "/s3/$1?ConnectionName=$2-$3"
 
-	return c.JSON(http.StatusOK, resp)
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
 }
 
-// // RestPutObjectStorage godoc
-// // @ID PutObjectStorage
-// // @Summary (To be provided) Update the Object Storage
-// // @Description (To be provided) Update the Object Storage
-// // @Tags [Infra Resource] Object Storage Management (under development)
-// // @Accept  json
-// // @Produce  json-stream
-// // @Param nsId path string true "Namespace ID" default(default)
-//// // @Param mciId path string true "MCI ID" default(mci01)
-// // @Param vpnId path string true "Object Storage ID" default(objectstorage01)
-// // @Param vpnReq body model.RestPostVpnRequest true "Resources info for VPN tunnel configuration between GCP and AWS"
-// // @Success 200 {object} model.SimpleMsg "OK"
-// // @Failure 400 {object} model.SimpleMsg "Bad Request"
-// // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// // @Router /ns/{nsId}/resources/qqlDb/{ObjectStorageId} [put]
-// func RestPutObjectStorage(c echo.Context) error {
+/*
+ * Object Storage Operations - Versioning
+ */
 
-// 	nsId := c.Param("nsId")
-// 	err := common.CheckString(nsId)
-// 	if err != nil {
-// 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-// 		log.Warn().Err(err).Msgf(errMsg.Error())
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-// 	}
+// Note: The xmlns attribute and root element name may not be accurately
+// represented in Swagger UI due to XML rendering limitations.
 
-// 	mciId := c.Param("mciId")
-// 	err = common.CheckString(mciId)
-// 	if err != nil {
-// 		errMsg := fmt.Errorf("invalid mciId (%s)", mciId)
-// 		log.Warn().Err(err).Msgf(errMsg.Error())
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-// 	}
+// <?xml version="1.0" encoding="UTF-8"?>
+// <VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+//   <Status>Enabled</Status>
+// </VersioningConfiguration>
 
-// 	vpnId := c.Param("vpnId")
-// 	err = common.CheckString(vpnId)
-// 	if err != nil {
-// 		errMsg := fmt.Errorf("invalid vpnId (%s)", vpnId)
-// 		log.Warn().Err(err).Msgf(errMsg.Error())
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-// 	}
+type VersioningConfiguration struct {
+	// The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
+	// Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
+	Status string `xml:"Status" json:"status" example:"Enabled"`
+}
 
-// 	// Prepare for streaming response
-// 	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-// 	c.Response().WriteHeader(http.StatusOK)
-// 	enc := json.NewEncoder(c.Response())
+// RestGetObjectStorageVersioning godoc
+// @ID GetObjectStorageVersioning
+// @Summary Get versioning status of an object storage (bucket)
+// @Description Get versioning status of an object storage (bucket)
+// @Description
+// @Description **Important Notes:**
+// @Description - The actual response will be XML format with root element `VersioningConfiguration`
+// @Description
+// @Description **Actual XML Response Example:**
+// @Description ```xml
+// @Description <?xml version="1.0" encoding="UTF-8"?>
+// @Description <VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+// @Description   <Status>Enabled</Status>
+// @Description </VersioningConfiguration>
+// @Description ```
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Success 200 {object} VersioningConfiguration "OK"
+// @Router /resources/objectStorage/{objectStorageName}/versioning [get]
+func GetObjectStorageVersioning(c echo.Context) error {
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
 
-// 	// Flush a response
-// 	res := model.SimpleMsg{
-// 		Message: "note - API to be provided",
-// 	}
-// 	if err := enc.Encode(res); err != nil {
-// 		return err
-// 	}
-// 	c.Response().Flush()
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
 
-// 	return nil
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	// Initialize resty client with basic auth
-// 	// client := resty.New()
-// 	// apiUser := os.Getenv("TB_API_USERNAME")
-// 	// apiPass := os.Getenv("TB_API_PASSWORD")
-// 	// client.SetBasicAuth(apiUser, apiPass)
+	// Source path pattern with * to capture objectStorageName, provider, and region
+	sourcePattern := "/resources/objectStorage/*/versioning?provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
+	targetPattern := "/s3/$1?versioning&ConnectionName=$2-$3"
 
-// 	// epTerrarium := "http://localhost:8055/terrarium"
-// 	// trId := fmt.Sprintf("%s-%s-%s", nsId, mciId, vpnId)
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
 
-// 	// // check readyz
-// 	// method := "GET"
-// 	// url := fmt.Sprintf("%s/readyz", epTerrarium)
-// 	// requestBody := common.NoBody
-// 	// resReadyz := new(model.Response)
+// RestSetObjectStorageVersioning godoc
+// @ID SetObjectStorageVersioning
+// @Summary Set versioning status of an object storage (bucket)
+// @Description Set versioning status of an object storage (bucket)
+// @Description
+// @Description **Important Notes:**
+// @Description - The request body must be XML format with root element `VersioningConfiguration`
+// @Description - The `Status` field can be either `Enabled` or `Suspended`
+// @Description
+// @Description **Request Body Example:**
+// @Description ```xml
+// @Description <?xml version="1.0" encoding="UTF-8"?>
+// @Description <VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+// @Description   <Status>Enabled</Status>
+// @Description </VersioningConfiguration>
+// @Description ```
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Param reqBody body VersioningConfiguration true "Versioning Configuration"
+// @Success 200 "OK"
+// @Router /resources/objectStorage/{objectStorageName}/versioning [put]
+func SetObjectStorageVersioning(c echo.Context) error {
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
 
-// 	// err := common.ExecuteHttpRequest(
-// 	// 	client,
-// 	// 	method,
-// 	// 	url,
-// 	// 	nil,
-// 	// 	common.SetUseBody(requestBody),
-// 	// 	&requestBody,
-// 	// 	resReadyz,
-// 	// 	common.VeryShortDuration,
-// 	// )
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
 
-// 	// if err != nil {
-// 	// 	log.Err(err).Msg("")
-// 	// 	res := model.SimpleMsg{
-// 	// 		Message: err.Error(),
-// 	// 	}
-// 	// 	return c.JSON(http.StatusServiceUnavailable, res)
-// 	// }
-// 	// log.Debug().Msgf("resReadyz: %+v", resReadyz)
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	// // Flush a response
-// 	// res := model.SimpleMsg{
-// 	// 	Message: resReadyz.Message,
-// 	// }
-// 	// if err := enc.Encode(res); err != nil {
-// 	// 	return err
-// 	// }
-// 	// c.Response().Flush()
+	// Source path pattern with * to capture objectStorageName, provider, and region
+	sourcePattern := "/resources/objectStorage/*/versioning?provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
+	targetPattern := "/s3/$1?versioning&ConnectionName=$2-$3"
 
-// 	// return nil
-// }
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
 
-// // RestGetRequestStatusOfObjectStorage godoc
-// // @ID GetRequestStatusOfObjectStorage
-// // @Summary Check the status of a specific request by its ID
-// // @Description Check the status of a specific request by its ID
-// // @Tags [Infra Resource] Object Storage Management (under development)
-// // @Accept  json
-// // @Produce  json
-// // @Param nsId path string true "Namespace ID" default(default)
-// // @Param objectStorageId path string true "Object Storage ID" default(objectstorage01)
-// // @Param requestId path string true "Request ID"
-// // @Success 200 {object} model.Response "OK"
-// // @Failure 400 {object} model.SimpleMsg "Bad Request"
-// // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// // @Failure 503 {object} model.SimpleMsg "Service Unavailable"
-// // @Router /ns/{nsId}/resources/objectStorage/{objectStorageId}/request/{requestId} [get]
-// func RestGetRequestStatusOfObjectStorage(c echo.Context) error {
+// Note: The xmlns attribute and root element name may not be accurately
+// represented in Swagger UI due to XML rendering limitations.
 
-// 	nsId := c.Param("nsId")
-// 	err := common.CheckString(nsId)
-// 	if err != nil {
-// 		errMsg := fmt.Errorf("invalid nsId (%s)", nsId)
-// 		log.Warn().Err(err).Msgf(errMsg.Error())
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-// 	}
+// <?xml version="1.0" encoding="UTF-8"?>
+// <ListVersionsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+//   <Name>spider-test-bucket</Name>
+//   <Prefix></Prefix>
+//   <KeyMarker></KeyMarker>
+//   <VersionIdMarker></VersionIdMarker>
+//   <NextKeyMarker></NextKeyMarker>
+//   <NextVersionIdMarker></NextVersionIdMarker>
+//   <MaxKeys>1000</MaxKeys>
+//   <IsTruncated>false</IsTruncated>
+//   <Version>
+//     <Key>test-file.txt</Key>
+//     <VersionId>yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ</VersionId>
+//     <IsLatest>true</IsLatest>
+//     <LastModified>2025-09-04T04:24:12Z</LastModified>
+//     <ETag>23228a38faecd0591107818c7281cece</ETag>
+//     <Size>23</Size>
+//     <StorageClass>STANDARD</StorageClass>
+//     <Owner>
+//       <ID>aws-config01</ID>
+//       <DisplayName>aws-config01</DisplayName>
+//     </Owner>
+//   </Version>
+// </ListVersionsResult>
 
-// 	objectStorageId := c.Param("objectStorageId")
-// 	err = common.CheckString(objectStorageId)
-// 	if err != nil {
-// 		errMsg := fmt.Errorf("invalid objectStorageId (%s)", objectStorageId)
-// 		log.Warn().Err(err).Msgf(errMsg.Error())
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-// 	}
-// 	reqId := c.Param("requestId")
-// 	if reqId == "" {
-// 		errMsg := fmt.Errorf("invalid reqId (%s)", reqId)
-// 		log.Warn().Err(err).Msgf(errMsg.Error())
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg.Error()})
-// 	}
-// 	reqId = strings.TrimSpace(reqId)
+type ListVersionsResult struct {
+	// The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
+	// Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
+	Name                string  `xml:"Name" json:"name" example:"spider-test-bucket"`
+	Prefix              string  `xml:"Prefix" json:"prefix" example:""`
+	KeyMarker           string  `xml:"KeyMarker" json:"keyMarker" example:""`
+	VersionIdMarker     string  `xml:"VersionIdMarker" json:"versionIdMarker" example:""`
+	NextKeyMarker       string  `xml:"NextKeyMarker" json:"nextKeyMarker" example:""`
+	NextVersionIdMarker string  `xml:"NextVersionIdMarker" json:"nextVersionIdMarker" example:""`
+	MaxKeys             int     `xml:"MaxKeys" json:"maxKeys" example:"1000"`
+	IsTruncated         bool    `xml:"IsTruncated" json:"isTruncated" example:"false"`
+	Version             Version `xml:"Version" json:"version"`
+}
 
-// 	var resp model.Response
-// 	resp, err = resource.GetRequestStatusOfObjectStorage(nsId, objectStorageId, reqId)
-// 	if err != nil {
-// 		log.Err(err).Msg("")
-// 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
-// 	}
+type Version struct {
+	Key          string `xml:"Key" json:"key" example:"test-file.txt"`
+	VersionId    string `xml:"VersionId" json:"versionId" example:"yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ"`
+	IsLatest     bool   `xml:"IsLatest" json:"isLatest" example:"true"`
+	LastModified string `xml:"LastModified" json:"lastModified" example:"2025-09-04T04:24:12Z"`
+	ETag         string `xml:"ETag" json:"etag" example:"23228a38faecd0591107818c7281cece"`
+	Size         int    `xml:"Size" json:"size" example:"23"`
+	StorageClass string `xml:"StorageClass" json:"storageClass" example:"STANDARD"`
+	Owner        Owner  `xml:"Owner" json:"owner"`
+}
 
-// 	return c.JSON(http.StatusOK, resp)
-// }
+// RestListObjectVersions godoc
+// @ID ListObjectVersions
+// @Summary List object versions in an object storage (bucket)
+// @Description List object versions in an object storage (bucket)
+// @Description
+// @Description **Important Notes:**
+// @Description - The actual response will be XML format with root element `ListVersionsResult`
+// @Description
+// @Description **Actual XML Response Example:**
+// @Description ```xml
+// @Description <?xml version="1.0" encoding="UTF-8"?>
+// @Description <ListVersionsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+// @Description   <Name>spider-test-bucket</Name>
+// @Description   <Prefix></Prefix>
+// @Description   <KeyMarker></KeyMarker>
+// @Description   <VersionIdMarker></VersionIdMarker>
+// @Description   <NextKeyMarker></NextKeyMarker>
+// @Description   <NextVersionIdMarker></NextVersionIdMarker>
+// @Description   <MaxKeys>1000</MaxKeys>
+// @Description   <IsTruncated>false</IsTruncated>
+// @Description   <Version>
+// @Description     <Key>test-file.txt</Key>
+// @Description     <VersionId>yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ</VersionId>
+// @Description     <IsLatest>true</IsLatest>
+// @Description     <LastModified>2025-09-04T04:24:12Z</LastModified>
+// @Description     <ETag>23228a38faecd0591107818c7281cece</ETag>
+// @Description     <Size>23</Size>
+// @Description     <StorageClass>STANDARD</StorageClass>
+// @Description     <Owner>
+// @Description       <ID>aws-config01</ID>
+// @Description       <DisplayName>aws-config01</DisplayName>
+// @Description     </Owner>
+// @Description   </Version>
+// @Description </ListVersionsResult>
+// @Description ```
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Success 200 {object} ListVersionsResult "OK"
+// @Router /resources/objectStorage/{objectStorageName}/versions [get]
+func ListObjectVersions(c echo.Context) error {
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// Source path pattern with * to capture objectStorageName, provider, and region
+	sourcePattern := "/resources/objectStorage/*/versions?provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
+	targetPattern := "/s3/$1?versions&ConnectionName=$2-$3"
+
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
+
+// RestDeleteVersionedObject godoc
+// @ID DeleteVersionedObject
+// @Summary Delete a specific version of an object in an object storage (bucket)
+// @Description Delete a specific version of an object in an object storage (bucket)
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param objectKey path string true "Object Key" default(test-file.txt)
+// @Param versionId query string true "Version ID" default(yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Success 204 "No Content"
+// @Router /resources/objectStorage/{objectStorageName}/versions/{objectKey} [delete]
+func DeleteVersionedObject(c echo.Context) error {
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	objectKey := c.Param("objectKey")
+	if objectKey == "" {
+		errMsg := "objectKey is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+	versionId := c.QueryParam("versionId")
+	if versionId == "" {
+		errMsg := "versionId is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// Source path pattern with * to capture objectStorageName, objectKey, provider, and region
+	sourcePattern := "/resources/objectStorage/*/versions/*?versionId=*&provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, $3 for versionId, $4 for provider, and $5 for region
+	targetPattern := "/s3/$1/$2?versionId=$3&ConnectionName=$4-$5"
+
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
+
+/*
+ * Object Storage Operations - CORS
+ */
+
+// Note: The xmlns attribute and root element name may not be accurately
+// represented in Swagger UI due to XML rendering limitations.
+
+// <?xml version="1.0" encoding="UTF-8"?>
+// <CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+//   <CORSRule>
+//     <AllowedOrigin>*</AllowedOrigin>
+//     <AllowedMethod>GET</AllowedMethod>
+//     <AllowedMethod>PUT</AllowedMethod>
+//     <AllowedMethod>POST</AllowedMethod>
+//     <AllowedMethod>DELETE</AllowedMethod>
+//     <AllowedHeader>*</AllowedHeader>
+//     <ExposeHeader>ETag</ExposeHeader>
+//     <ExposeHeader>x-amz-server-side-encryption</ExposeHeader>
+//     <ExposeHeader>x-amz-request-id</ExposeHeader>
+//     <ExposeHeader>x-amz-id-2</ExposeHeader>
+//     <MaxAgeSeconds>3000</MaxAgeSeconds>
+//   </CORSRule>
+// </CORSConfiguration>
+
+type CORSRule struct {
+	AllowedOrigin []string `xml:"AllowedOrigin" json:"allowedOrigin" example:"*"`
+	AllowedMethod []string `xml:"AllowedMethod" json:"allowedMethod" example:"GET"`
+	AllowedHeader []string `xml:"AllowedHeader" json:"allowedHeader" example:"*"`
+	ExposeHeader  []string `xml:"ExposeHeader" json:"exposeHeader" example:"ETag"`
+	MaxAgeSeconds int      `xml:"MaxAgeSeconds" json:"maxAgeSeconds" example:"3000"`
+}
+
+type CORSConfiguration struct {
+	// The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
+	// Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
+	CORSRule []CORSRule `xml:"CORSRule" json:"corsRule"`
+}
+
+type Error struct {
+	Code      string `xml:"Code" json:"code" example:"NoSuchCORSConfiguration"`
+	Message   string `xml:"Message" json:"message" example:"The CORS configuration does not exist"`
+	Resource  string `xml:"Resource" json:"resource" example:"/example-bucket"`
+	RequestId string `xml:"RequestId" json:"requestId" example:"656c76696e6727732072657175657374"`
+}
+
+// RestGetObjectStorageCORS
+// @ID GetObjectStorageCORS
+// @Summary Get CORS configuration of an object storage (bucket)
+// @Description Get CORS configuration of an object storage (bucket)
+// @Description
+// @Description **Important Notes:**
+// @Description - The actual response will be XML format with root element `CORSConfiguration`
+// @Description
+// @Description **Actual XML Response Example:**
+// @Description ```xml
+// @Description <?xml version="1.0" encoding="UTF-8"?>
+// @Description <CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+// @Description   <CORSRule>
+// @Description     <AllowedOrigin>*</AllowedOrigin>
+// @Description     <AllowedMethod>GET</AllowedMethod>
+// @Description     <AllowedMethod>PUT</AllowedMethod>
+// @Description     <AllowedMethod>POST</AllowedMethod>
+// @Description     <AllowedMethod>DELETE</AllowedMethod>
+// @Description     <AllowedHeader>*</AllowedHeader>
+// @Description     <ExposeHeader>ETag</ExposeHeader>
+// @Description     <ExposeHeader>x-amz-server-side-encryption</ExposeHeader>
+// @Description     <ExposeHeader>x-amz-request-id</ExposeHeader>
+// @Description     <ExposeHeader>x-amz-id-2</ExposeHeader>
+// @Description     <MaxAgeSeconds>3000</MaxAgeSeconds>
+// @Description   </CORSRule>
+// @Description </CORSConfiguration>
+// @Description ```
+// @Description
+// @Description **Error Response Example (if CORS not configured):**
+// @Description ```xml
+// @Description <?xml version="1.0" encoding="UTF-8"?>
+// @Description <Error>
+// @Description   <Code>NoSuchCORSConfiguration</Code>
+// @Description   <Message>The CORS configuration does not exist</Message>
+// @Description   <Resource>/example-bucket</Resource>
+// @Description   <RequestId>656c76696e6727732072657175657374</RequestId>
+// @Description </Error>
+// @Description ```
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Success 200 {object} CORSConfiguration "OK"
+// @Failure 404 {object} Error "Not Found"
+// @Router /resources/objectStorage/{objectStorageName}/cors [get]
+func GetObjectStorageCORS(c echo.Context) error {
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// Source path pattern with * to capture objectStorageName, provider, and region
+	sourcePattern := "/resources/objectStorage/*/cors?provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
+	targetPattern := "/s3/$1?cors&ConnectionName=$2-$3"
+
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
+
+// RestSetObjectStorageCORS godoc
+// @ID SetObjectStorageCORS
+// @Summary Set CORS configuration of an object storage (bucket)
+// @Description Set CORS configuration of an object storage (bucket)
+// @Description
+// @Description **Important Notes:**
+// @Description - The CORS configuration must be provided in the request body in XML format.
+// @Description - The actual request body should have root element `CORSConfiguration`
+// @Description
+// @Description **Actual XML Request Body Example:**
+// @Description ```xml
+// @Description <?xml version="1.0" encoding="UTF-8"?>
+// @Description <CORSConfiguration>
+// @Description   <CORSRule>
+// @Description     <AllowedOrigin>https://example.com</AllowedOrigin>
+// @Description     <AllowedOrigin>https://app.example.com</AllowedOrigin>
+// @Description     <AllowedMethod>GET</AllowedMethod>
+// @Description     <AllowedMethod>PUT</AllowedMethod>
+// @Description     <AllowedHeader>Content-Type</AllowedHeader>
+// @Description     <AllowedHeader>Authorization</AllowedHeader>
+// @Description     <ExposeHeader>ETag</ExposeHeader>
+// @Description     <MaxAgeSeconds>1800</MaxAgeSeconds>
+// @Description   </CORSRule>
+// @Description   <CORSRule>
+// @Description     <AllowedOrigin>*</AllowedOrigin>
+// @Description     <AllowedMethod>GET</AllowedMethod>
+// @Description     <MaxAgeSeconds>300</MaxAgeSeconds>
+// @Description   </CORSRule>
+// @Description </CORSConfiguration>
+// @Description ```
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Param reqBody body CORSConfiguration true "CORS Configuration in XML format"
+// @Success 200 "OK"
+// @Router /resources/objectStorage/{objectStorageName}/cors [put]
+func SetObjectStorageCORS(c echo.Context) error {
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// Source path pattern with * to capture objectStorageName, provider, and region
+	sourcePattern := "/resources/objectStorage/*/cors?provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
+	targetPattern := "/s3/$1?cors&ConnectionName=$2-$3"
+
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
+
+// RestDeleteObjectStorageCORS godoc
+// @ID DeleteObjectStorageCORS
+// @Summary Delete CORS configuration of an object storage (bucket)
+// @Description Delete CORS configuration of an object storage (bucket)
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Success 204 "No Content"
+// @Router /resources/objectStorage/{objectStorageName}/cors [delete]
+func DeleteObjectStorageCORS(c echo.Context) error {
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// Source path pattern with * to capture objectStorageName, provider, and region
+	sourcePattern := "/resources/objectStorage/*/cors?provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
+	targetPattern := "/s3/$1?cors&ConnectionName=$2-$3"
+
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
+
+/*
+ * Object operations
+ */
+
+// RestGetDataObjectInfo godoc
+// @ID GetObjectInfoGetDataObjectInfo
+// @Summary Get an object info from a bucket
+// @Description Get an object info from a bucket
+// @Description
+// @Description **Important Notes:**
+// @Description - The generated `Download file` link in Swagger UI may not work because this API get the object metadata only.
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce octet-stream
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param objectKey path string true "Object Name" default(test-object.txt)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Success 200 "OK"
+// @Router /resources/objectStorage/{objectStorageName}/{objectKey} [head]
+func GetDataObjectInfo(c echo.Context) error {
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	objectKey := c.Param("objectKey")
+	if objectKey == "" {
+		errMsg := "objectKey is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// Source path pattern with * to capture objectStorageName, objectKey, provider, and region
+	sourcePattern := "/resources/objectStorage/*/*?provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, $3 for provider, and $4 for region
+	targetPattern := "/s3/$1/$2?ConnectionName=$3-$4"
+
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
+
+// RestDeleteDataObject godoc
+// @ID DeleteDataObject
+// @Summary Delete an object from a bucket
+// @Description Delete an object from a bucket
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param objectKey path string true "Object Name" default(test-object.txt)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Success 204 "No Content"
+// @Router /resources/objectStorage/{objectStorageName}/{objectKey} [delete]
+func DeleteDataObject(c echo.Context) error {
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	objectKey := c.Param("objectKey")
+	if objectKey == "" {
+		errMsg := "objectKey is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// Source path pattern with * to capture objectStorageName, objectKey, provider, and region
+	sourcePattern := "/resources/objectStorage/*/*?provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, $3 for provider, and $4 for region
+	targetPattern := "/s3/$1/$2?ConnectionName=$3-$4"
+
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
+
+// Note: The xmlns attribute and root element name may not be accurately
+// represented in Swagger UI due to XML rendering limitations.
+
+type Delete struct {
+	Object []Object `xml:"Object" json:"object"`
+}
+
+type DeleteResult struct {
+	// The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
+	// Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
+	Deleted []Object `xml:"Deleted" json:"deleted"`
+}
+
+// RestDeleteMultipleDataObjects godoc
+// @ID DeleteMultipleDataObjects
+// @Summary **Delete** multiple objects from a bucket
+// @Description `Delete` multiple objects from a bucket
+// @Description
+// @Description **Important Notes:**
+// @Description - The request body must contain the list of objects to delete in XML format
+// @Description - The `delete` query parameter must be set to `true`
+// @Description
+// @Description **Request Body Example:**
+// @Description ```xml
+// @Description <?xml version="1.0" encoding="UTF-8"?>
+// @Description <Delete xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+// @Description   <Object>
+// @Description     <Key>test-object1.txt</Key>
+// @Description   </Object>
+// @Description   <Object>
+// @Description     <Key>test-object2.txt</Key>
+// @Description   </Object>
+// @Description </Delete>
+// @Description ```
+// @Description
+// @Description **Actual XML Response Example:**
+// @Description ```xml
+// @Description <?xml version="1.0" encoding="UTF-8"?>
+// @Description <DeleteResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+// @Description   <Deleted>
+// @Description     <Key>test-object1.txt</Key>
+// @Description   </Deleted>
+// @Description   <Deleted>
+// @Description     <Key>test-object2.txt</Key>
+// @Description   </Deleted>
+// @Description </DeleteResult>
+// @Description ```
+// @Tags [Resource] Object Storage Management
+// @Accept xml
+// @Produce xml
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param delete query boolean true "Delete" default(true) enum(true)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Param reqBody body Delete true "List of objects to delete"
+// @Success 200 {object} DeleteResult "OK"
+// @Router /resources/objectStorage/{objectStorageName} [post]
+func DeleteMultipleDataObjects(c echo.Context) error {
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	deleteParam := c.QueryParam("delete")
+	if deleteParam != "true" {
+		errMsg := "delete query parameter must be true"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// Source path pattern with * to capture objectStorageName, provider, and region
+	sourcePattern := "/resources/objectStorage/*?delete=true&provider=*&region=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
+	targetPattern := "/s3/$1?delete&ConnectionName=$2-$3"
+
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
+
+// Note: The xmlns attribute and root element name may not be accurately
+// represented in Swagger UI due to XML rendering limitations.
+
+type PresignedURLResult struct {
+	PresignedURL string `xml:"PresignedURL" json:"presignedURL" example:">https://globally-unique-bucket-hctdx3.s3.dualstack.ap-southeast-2.amazonaws.com/test-file.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA***EXAMPLE%2F20250904%2Fap-southeast-2%2Fs3%2Faws4_request&X-Amz-Date=20250904T061448Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=***-signature"`
+	Expires      int    `xml:"Expires" json:"expires" example:"3600"`
+	Method       string `xml:"Method" json:"method" example:"GET"`
+}
+
+// RestGeneratePresignedDownloadURL godoc
+// @ID GeneratePresignedDownloadURL
+// @Summary Generate a presigned URL for downloading an object from a bucket
+// @Description Generate a presigned URL for downloading an object from a bucket
+// @Description
+// @Description **Important Notes:**
+// @Description - The actual response will be XML format with root element `PresignedURLResult`
+// @Description - The `expires` query parameter specifies the expiration time in seconds for the presigned URL (default: 3600 seconds)
+// @Description - The generated presigned URL can be used to download the object directly without further authentication
+// @Description
+// @Description **Actual XML Response Example:**
+// @Description ```xml
+// @Description <?xml version="1.0" encoding="UTF-8"?>
+// @Description <PresignedURLResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+// @Description   <PresignedURL>https://globally-unique-bucket-hctdx3.s3.dualstack.ap-southeast-2.amazonaws.com/test-file.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA***EXAMPLE%2F20250904%2Fap-southeast-2%2Fs3%2Faws4_request&X-Amz-Date=20250904T061448Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=***-signature</PresignedURL>
+// @Description   <Expires>3600</Expires>
+// @Description   <Method>GET</Method>
+// @Description </PresignedURLResult>
+// @Description ```
+// @Tags [Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param objectKey path string true "Object Name" default(test-object.txt)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Param expires query int false "Expiration time in seconds for the presigned URL" default(3600)
+// @Success 200 {object} PresignedURLResult "OK"
+// @Router /resources/objectStorage/presigned/download/{objectStorageName}/{objectKey} [get]
+func GeneratePresignedDownloadURL(c echo.Context) error {
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	objectKey := c.Param("objectKey")
+	if objectKey == "" {
+		errMsg := "objectKey is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// Source path pattern with * to capture objectStorageName, objectKey, provider, and region
+	sourcePattern := "/resources/objectStorage/presigned/download/*/*?provider=*&region=*&expires=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, $3 for provider, and $4 for region
+	targetPattern := "/s3/presigned/download/$1/$2?ConnectionName=$3-$4&expires=$5"
+
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
+
+// RestGeneratePresignedUploadURL godoc
+// @ID GeneratePresignedUploadURL
+// @Summary Generate a presigned URL for uploading an object to a bucket
+// @Description Generate a presigned URL for uploading an object to a bucket
+// @Description
+// @Description **Important Notes:**
+// @Description - The actual response will be XML format with root element `PresignedURLResult`
+// @Description - The `expires` query parameter specifies the expiration time in seconds for the presigned URL (default: 3600 seconds)
+// @Description - The generated presigned URL can be used to upload the object directly without further authentication
+// @Description
+// @Description **Actual XML Response Example:**
+// @Description ```xml
+// @Description <?xml version="1.0" encoding="UTF-8"?>
+// @Description <PresignedURLResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+// @Description   <PresignedURL>https://globally-unique-bucket-hctdx3.s3.dualstack.ap-southeast-2.amazonaws.com/test-file.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA***EXAMPLE%2F20250904%2Fap-southeast-2%2Fs3%2Faws4_request&X-Amz-Date=20250904T061448Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=***-signature</PresignedURL>
+// @Description   <Expires>3600</Expires>
+// @Description   <Method>PUT</Method>
+// @Description </PresignedURLResult>
+// @Description ```
+// @Tags [Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
+// @Param objectKey path string true "Object Name" default(test-object.txt)
+// @Param provider query string true "Provider" default(aws)
+// @Param region query string true "Region" default(ap-northeast-2)
+// @Param expires query int false "Expiration time in seconds for the presigned URL" default(3600)
+// @Success 200 {object} PresignedURLResult "OK"
+// @Router /resources/objectStorage/presigned/upload/{objectStorageName}/{objectKey} [get]
+func GeneratePresignedUploadURL(c echo.Context) error {
+	objectStorageName := c.Param("objectStorageName")
+	if objectStorageName == "" {
+		errMsg := "objectStorageName is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	objectKey := c.Param("objectKey")
+	if objectKey == "" {
+		errMsg := "objectKey is required"
+		log.Error().Msg(errMsg)
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: errMsg})
+	}
+
+	provider := c.QueryParam("provider")
+	region := c.QueryParam("region")
+
+	err := validate(provider, region)
+	if err != nil {
+		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// Source path pattern with * to capture objectStorageName, objectKey, provider, and region
+	sourcePattern := "/resources/objectStorage/presigned/upload/*/*?provider=*&region=*&expires=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, $3 for provider, and $4 for region
+	targetPattern := "/s3/presigned/upload/$1/$2?ConnectionName=$3-$4&expires=$5"
+
+	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
+	return proxyHandler(c)
+}
