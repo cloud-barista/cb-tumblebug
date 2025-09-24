@@ -237,6 +237,9 @@ func TrimIP(sshAccessPoint string) (string, error) {
 // InspectResources returns the state list of TB Resource objects of given connConfig and resourceType
 func InspectResources(connConfig string, resourceType string) (model.InspectResource, error) {
 
+	// get providerName from connection
+	providerName, err := common.GetProviderNameFromConnConfig(connConfig)
+
 	nsList, err := common.ListNsId()
 	nullObj := model.InspectResource{}
 	if err != nil {
@@ -521,6 +524,12 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 
 	for _, v := range cspResourceStatus.AllList.OnlyCSPList {
 		tmpResourceOnCsp.CspResourceId = v.SystemId
+		// Azure has different ID for NameId and SystemId
+		if providerName == csp.Azure {
+			if resourceType != model.StrDataDisk {
+				tmpResourceOnCsp.CspResourceId = v.NameId
+			}
+		}
 		tmpResourceOnCsp.RefNameOrId = v.NameId
 
 		result.Resources.OnCspTotal.Info = append(result.Resources.OnCspTotal.Info, tmpResourceOnCsp)
