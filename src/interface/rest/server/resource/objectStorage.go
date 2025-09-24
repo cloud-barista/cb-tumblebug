@@ -46,6 +46,15 @@ func createSpiderProxyHandler(sourcePattern string, targetPattern string) echo.H
 
 	// Return a handler that processes the request and forwards it to Tumblebug
 	return func(c echo.Context) error {
+
+		// Get 'credential' from header
+		credentialHeader := c.Request().Header.Get("credential")
+
+		// Set 'Authorization' header for AWS4-HMAC-SHA256 authentication
+		authorizationHeader := fmt.Sprintf("AWS4-HMAC-SHA256 Credential=%s", credentialHeader)
+		c.Request().Header.Set("Authorization", authorizationHeader)
+		c.Request().Header.Del("credential") // Remove the original credential header
+
 		// Create the rewrite rule based on the source and target patterns
 		rewriteRules := map[string]string{
 			sourcePattern: targetPattern,
@@ -83,42 +92,19 @@ func createSpiderProxyHandler(sourcePattern string, targetPattern string) echo.H
 	}
 }
 
-func validate(provider, region string) error {
+func validateCredential(credentialHeader string) error {
 
-	providers, err := common.GetProviderList()
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get provider list")
+	if credentialHeader == "" {
+		err := fmt.Errorf("missing credential header")
+		log.Error().Err(err).Msg("Missing Credential header")
 		return err
-	}
-
-	found := false
-	for _, p := range providers.IdList {
-		if p == provider {
-			// Valid provider found, break the loop
-			found = true
-			break
-		}
-	}
-	if !found {
-		err := fmt.Errorf("invalid provider: %s", provider)
-		log.Error().Err(err).Msg("Invalid provider")
-		return err
-	}
-
-	// Validate region
-	log.Debug().Msgf("Requested region: %s", region)
-	_, err = common.GetRegion(provider, region)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get region info")
-		return fmt.Errorf("invalid region: %s", region)
 	}
 
 	// Validate connection config existence
-	connectionName := fmt.Sprintf("%s-%s", provider, region)
-	_, err = common.GetConnConfig(connectionName)
+	_, err := common.GetConnConfig(credentialHeader)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get connection config")
-		return fmt.Errorf("invalid connection config: %s", connectionName)
+		return fmt.Errorf("invalid connection config: %s", credentialHeader)
 	}
 
 	return nil
@@ -208,26 +194,23 @@ type ListAllMyBucketsResult struct {
 // @Tags [Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 {object} ListAllMyBucketsResult "OK"
 // @Router /resources/objectStorage [get]
 func ListObjectStorages(c echo.Context) error {
 
-	// Validate provider
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
 	// Source path pattern with * to capture provider and region
-	sourcePattern := "/resources/objectStorage?provider=*&region=*"
+	sourcePattern := "/resources/objectStorage"
 	// Target path pattern using $1 for captured provider and $2 for captured region
-	targetPattern := "/s3?ConnectionName=$1-$2"
+	targetPattern := "/s3"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -245,19 +228,16 @@ func ListObjectStorages(c echo.Context) error {
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 "OK"
 // @Router /resources/objectStorage/{objectStorageName} [put]
 func CreateObjectStorage(c echo.Context) error {
 
-	// Validate provider
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
@@ -268,10 +248,10 @@ func CreateObjectStorage(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, provider, and region
-	sourcePattern := "/resources/objectStorage/*?provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
-	targetPattern := "/s3/$1?ConnectionName=$2-$3"
+	// Source path pattern with * to capture objectStorageName
+	sourcePattern := "/resources/objectStorage/*"
+	// Target path pattern using $1 for captured objectStorageName
+	targetPattern := "/s3/$1"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -312,8 +292,7 @@ type ListBucketResult struct {
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 {object} ListBucketResult "OK"
 // @Router /resources/objectStorage/{objectStorageName} [get]
 func GetObjectStorage(c echo.Context) error {
@@ -325,19 +304,18 @@ func GetObjectStorage(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, provider, and region
-	sourcePattern := "/resources/objectStorage/*?provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
-	targetPattern := "/s3/$1?ConnectionName=$2-$3"
+	// Source path pattern with * to capture objectStorageName
+	sourcePattern := "/resources/objectStorage/*"
+	// Target path pattern using $1 for captured objectStorageName
+	targetPattern := "/s3/$1"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -351,8 +329,7 @@ func GetObjectStorage(c echo.Context) error {
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 "OK"
 // @Failure 404 "Not Found"
 // @Router /resources/objectStorage/{objectStorageName} [head]
@@ -365,18 +342,18 @@ func ExistObjectStorage(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, provider, and region
-	sourcePattern := "/resources/objectStorage/*?provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
-	targetPattern := "/s3/$1?ConnectionName=$2-$3"
+	// Source path pattern with * to capture objectStorageName
+	sourcePattern := "/resources/objectStorage/*"
+	// Target path pattern using $1 for captured objectStorageName
+	targetPattern := "/s3/$1"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -407,11 +384,11 @@ type LocationConstraint struct {
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 {object} LocationConstraint "OK"
 // @Router /resources/objectStorage/{objectStorageName}/location [get]
 func GetObjectStorageLocation(c echo.Context) error {
+
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
 		err := fmt.Errorf("%s", "objectStorageName is required")
@@ -419,18 +396,18 @@ func GetObjectStorageLocation(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, provider, and region
-	sourcePattern := "/resources/objectStorage/*/location?provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
-	targetPattern := "/s3/$1?location&ConnectionName=$2-$3"
+	// Source path pattern with * to capture objectStorageName
+	sourcePattern := "/resources/objectStorage/*/location"
+	// Target path pattern using $1 for captured objectStorageName
+	targetPattern := "/s3/$1?location"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -444,8 +421,7 @@ func GetObjectStorageLocation(c echo.Context) error {
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 204 "No Content"
 // @Router /resources/objectStorage/{objectStorageName} [delete]
 func DeleteObjectStorage(c echo.Context) error {
@@ -457,19 +433,18 @@ func DeleteObjectStorage(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, provider, and region
-	sourcePattern := "/resources/objectStorage/*?provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
-	targetPattern := "/s3/$1?ConnectionName=$2-$3"
+	// Source path pattern with * to capture objectStorageName
+	sourcePattern := "/resources/objectStorage/*"
+	// Target path pattern using $1 for captured objectStorageName
+	targetPattern := "/s3/$1"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -512,11 +487,12 @@ type VersioningConfiguration struct {
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 {object} VersioningConfiguration "OK"
 // @Router /resources/objectStorage/{objectStorageName}/versioning [get]
 func GetObjectStorageVersioning(c echo.Context) error {
+
+	// Validate objectStorageName parameter
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
 		err := fmt.Errorf("%s", "objectStorageName is required")
@@ -524,19 +500,18 @@ func GetObjectStorageVersioning(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, provider, and region
-	sourcePattern := "/resources/objectStorage/*/versioning?provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
-	targetPattern := "/s3/$1?versioning&ConnectionName=$2-$3"
+	// Source path pattern with * to capture objectStorageName
+	sourcePattern := "/resources/objectStorage/*/versioning"
+	// Target path pattern using $1 for captured objectStorageName
+	targetPattern := "/s3/$1?versioning"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -562,12 +537,13 @@ func GetObjectStorageVersioning(c echo.Context) error {
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Param reqBody body VersioningConfiguration true "Versioning Configuration"
 // @Success 200 "OK"
 // @Router /resources/objectStorage/{objectStorageName}/versioning [put]
 func SetObjectStorageVersioning(c echo.Context) error {
+
+	// Validate objectStorageName parameter
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
 		err := fmt.Errorf("%s", "objectStorageName is required")
@@ -575,19 +551,17 @@ func SetObjectStorageVersioning(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
-
-	// Source path pattern with * to capture objectStorageName, provider, and region
-	sourcePattern := "/resources/objectStorage/*/versioning?provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
-	targetPattern := "/s3/$1?versioning&ConnectionName=$2-$3"
+	// Source path pattern with * to capture objectStorageName
+	sourcePattern := "/resources/objectStorage/*/versioning"
+	// Target path pattern using $1 for captured objectStorageName
+	targetPattern := "/s3/$1?versioning"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -685,11 +659,12 @@ type Version struct {
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 {object} ListVersionsResult "OK"
 // @Router /resources/objectStorage/{objectStorageName}/versions [get]
 func ListObjectVersions(c echo.Context) error {
+
+	// Validate objectStorageName parameter
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
 		err := fmt.Errorf("%s", "objectStorageName is required")
@@ -697,19 +672,18 @@ func ListObjectVersions(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, provider, and region
-	sourcePattern := "/resources/objectStorage/*/versions?provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
-	targetPattern := "/s3/$1?versions&ConnectionName=$2-$3"
+	// Source path pattern with * to capture objectStorageName
+	sourcePattern := "/resources/objectStorage/*/versions"
+	// Target path pattern using $1 for captured objectStorageName
+	targetPattern := "/s3/$1?versions"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -725,24 +699,26 @@ func ListObjectVersions(c echo.Context) error {
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
 // @Param objectKey path string true "Object Key" default(test-file.txt)
 // @Param versionId query string true "Version ID" default(yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 204 "No Content"
 // @Router /resources/objectStorage/{objectStorageName}/versions/{objectKey} [delete]
 func DeleteVersionedObject(c echo.Context) error {
+
+	// Validate objectStorageName parameter
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
 		err := fmt.Errorf("%s", "objectStorageName is required")
 		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
-
+	// Validate objectKey parameter
 	objectKey := c.Param("objectKey")
 	if objectKey == "" {
 		err := fmt.Errorf("%s", "objectKey is required")
 		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
+	// Validate versionId parameter
 	versionId := c.QueryParam("versionId")
 	if versionId == "" {
 		err := fmt.Errorf("%s", "versionId is required")
@@ -750,19 +726,18 @@ func DeleteVersionedObject(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, objectKey, provider, and region
-	sourcePattern := "/resources/objectStorage/*/versions/*?versionId=*&provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, $3 for versionId, $4 for provider, and $5 for region
-	targetPattern := "/s3/$1/$2?versionId=$3&ConnectionName=$4-$5"
+	// Source path pattern with * to capture objectStorageName and objectKey
+	sourcePattern := "/resources/objectStorage/*/versions/*?versionId=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, and $3 for versionId
+	targetPattern := "/s3/$1/$2?versionId=$3"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -855,12 +830,13 @@ type Error struct {
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 {object} CORSConfiguration "OK"
 // @Failure 404 {object} Error "Not Found"
 // @Router /resources/objectStorage/{objectStorageName}/cors [get]
 func GetObjectStorageCORS(c echo.Context) error {
+
+	// Validate objectStorageName parameter
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
 		err := fmt.Errorf("%s", "objectStorageName is required")
@@ -868,19 +844,18 @@ func GetObjectStorageCORS(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, provider, and region
-	sourcePattern := "/resources/objectStorage/*/cors?provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
-	targetPattern := "/s3/$1?cors&ConnectionName=$2-$3"
+	// Source path pattern with * to capture objectStorageName
+	sourcePattern := "/resources/objectStorage/*/cors"
+	// Target path pattern using $1 for captured objectStorageName
+	targetPattern := "/s3/$1?cors"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -920,12 +895,13 @@ func GetObjectStorageCORS(c echo.Context) error {
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Param reqBody body CORSConfiguration true "CORS Configuration in XML format"
 // @Success 200 "OK"
 // @Router /resources/objectStorage/{objectStorageName}/cors [put]
 func SetObjectStorageCORS(c echo.Context) error {
+
+	// Validate objectStorageName parameter
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
 		err := fmt.Errorf("%s", "objectStorageName is required")
@@ -933,19 +909,18 @@ func SetObjectStorageCORS(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, provider, and region
-	sourcePattern := "/resources/objectStorage/*/cors?provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
-	targetPattern := "/s3/$1?cors&ConnectionName=$2-$3"
+	// Source path pattern with * to capture objectStorageName
+	sourcePattern := "/resources/objectStorage/*/cors"
+	// Target path pattern using $1 for captured objectStorageName
+	targetPattern := "/s3/$1?cors"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -959,11 +934,12 @@ func SetObjectStorageCORS(c echo.Context) error {
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 204 "No Content"
 // @Router /resources/objectStorage/{objectStorageName}/cors [delete]
 func DeleteObjectStorageCORS(c echo.Context) error {
+
+	// Validate objectStorageName parameter
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
 		err := fmt.Errorf("%s", "objectStorageName is required")
@@ -971,19 +947,18 @@ func DeleteObjectStorageCORS(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, provider, and region
-	sourcePattern := "/resources/objectStorage/*/cors?provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
-	targetPattern := "/s3/$1?cors&ConnectionName=$2-$3"
+	// Source path pattern with * to capture objectStorageName
+	sourcePattern := "/resources/objectStorage/*/cors"
+	// Target path pattern using $1 for captured objectStorageName
+	targetPattern := "/s3/$1?cors"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -1005,18 +980,19 @@ func DeleteObjectStorageCORS(c echo.Context) error {
 // @Produce octet-stream
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
 // @Param objectKey path string true "Object Name" default(test-object.txt)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 200 "OK"
 // @Router /resources/objectStorage/{objectStorageName}/{objectKey} [head]
 func GetDataObjectInfo(c echo.Context) error {
+
+	// Validate objectStorageName parameter
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
 		err := fmt.Errorf("%s", "objectStorageName is required")
 		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
-
+	// Validate objectKey parameter
 	objectKey := c.Param("objectKey")
 	if objectKey == "" {
 		err := fmt.Errorf("%s", "objectKey is required")
@@ -1024,19 +1000,18 @@ func GetDataObjectInfo(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, objectKey, provider, and region
-	sourcePattern := "/resources/objectStorage/*/*?provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, $3 for provider, and $4 for region
-	targetPattern := "/s3/$1/$2?ConnectionName=$3-$4"
+	// Source path pattern with * to capture objectStorageName and objectKey
+	sourcePattern := "/resources/objectStorage/*/*"
+	// Target path pattern using $1 for captured objectStorageName and $2 for objectKey
+	targetPattern := "/s3/$1/$2"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -1051,18 +1026,19 @@ func GetDataObjectInfo(c echo.Context) error {
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
 // @Param objectKey path string true "Object Name" default(test-object.txt)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Success 204 "No Content"
 // @Router /resources/objectStorage/{objectStorageName}/{objectKey} [delete]
 func DeleteDataObject(c echo.Context) error {
+
+	// Validate objectStorageName parameter
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
 		err := fmt.Errorf("%s", "objectStorageName is required")
 		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
-
+	// Validate objectKey parameter
 	objectKey := c.Param("objectKey")
 	if objectKey == "" {
 		err := fmt.Errorf("%s", "objectKey is required")
@@ -1070,19 +1046,18 @@ func DeleteDataObject(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, objectKey, provider, and region
-	sourcePattern := "/resources/objectStorage/*/*?provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, $3 for provider, and $4 for region
-	targetPattern := "/s3/$1/$2?ConnectionName=$3-$4"
+	// Source path pattern with * to capture objectStorageName and objectKey
+	sourcePattern := "/resources/objectStorage/*/*"
+	// Target path pattern using $1 for captured objectStorageName and $2 for objectKey
+	targetPattern := "/s3/$1/$2"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -1140,19 +1115,20 @@ type DeleteResult struct {
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
 // @Param delete query boolean true "Delete" default(true) enum(true)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Param reqBody body Delete true "List of objects to delete"
 // @Success 200 {object} DeleteResult "OK"
 // @Router /resources/objectStorage/{objectStorageName} [post]
 func DeleteMultipleDataObjects(c echo.Context) error {
+
+	// Validate objectStorageName parameter
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
 		err := fmt.Errorf("%s", "objectStorageName is required")
 		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
-
+	// Validate delete query parameter
 	deleteParam := c.QueryParam("delete")
 	if deleteParam != "true" {
 		err := fmt.Errorf("%s", "delete query parameter must be true")
@@ -1160,19 +1136,18 @@ func DeleteMultipleDataObjects(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, provider, and region
-	sourcePattern := "/resources/objectStorage/*?delete=true&provider=*&region=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for provider, and $3 for region
-	targetPattern := "/s3/$1?delete&ConnectionName=$2-$3"
+	// Source path pattern with * to capture objectStorageName
+	sourcePattern := "/resources/objectStorage/*?delete=true"
+	// Target path pattern using $1 for captured objectStorageName
+	targetPattern := "/s3/$1?delete"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -1211,19 +1186,20 @@ type PresignedURLResult struct {
 // @Produce json
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
 // @Param objectKey path string true "Object Name" default(test-object.txt)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Param expires query int false "Expiration time in seconds for the presigned URL" default(3600)
 // @Success 200 {object} PresignedURLResult "OK"
 // @Router /resources/objectStorage/presigned/download/{objectStorageName}/{objectKey} [get]
 func GeneratePresignedDownloadURL(c echo.Context) error {
+
+	// Validate objectStorageName parameter
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
 		err := fmt.Errorf("%s", "objectStorageName is required")
 		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
-
+	// Validate objectKey parameter
 	objectKey := c.Param("objectKey")
 	if objectKey == "" {
 		err := fmt.Errorf("%s", "objectKey is required")
@@ -1231,19 +1207,18 @@ func GeneratePresignedDownloadURL(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, objectKey, provider, and region
-	sourcePattern := "/resources/objectStorage/presigned/download/*/*?provider=*&region=*&expires=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, $3 for provider, and $4 for region
-	targetPattern := "/s3/presigned/download/$1/$2?ConnectionName=$3-$4&expires=$5"
+	// Source path pattern with * to capture objectStorageName and objectKey
+	sourcePattern := "/resources/objectStorage/presigned/download/*/*?expires=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, and $3 for expires
+	targetPattern := "/s3/presigned/download/$1/$2?expires=$3"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)
@@ -1273,19 +1248,20 @@ func GeneratePresignedDownloadURL(c echo.Context) error {
 // @Produce json
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
 // @Param objectKey path string true "Object Name" default(test-object.txt)
-// @Param provider query string true "Provider" default(aws)
-// @Param region query string true "Region" default(ap-northeast-2)
+// @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
 // @Param expires query int false "Expiration time in seconds for the presigned URL" default(3600)
 // @Success 200 {object} PresignedURLResult "OK"
 // @Router /resources/objectStorage/presigned/upload/{objectStorageName}/{objectKey} [get]
 func GeneratePresignedUploadURL(c echo.Context) error {
+
+	// Validate objectStorageName parameter
 	objectStorageName := c.Param("objectStorageName")
 	if objectStorageName == "" {
 		err := fmt.Errorf("%s", "objectStorageName is required")
 		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
-
+	// Validate objectKey parameter
 	objectKey := c.Param("objectKey")
 	if objectKey == "" {
 		err := fmt.Errorf("%s", "objectKey is required")
@@ -1293,19 +1269,18 @@ func GeneratePresignedUploadURL(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	provider := c.QueryParam("provider")
-	region := c.QueryParam("region")
-
-	err := validate(provider, region)
+	// Validate credential header
+	credentialHeader := c.Request().Header.Get("credential")
+	err := validateCredential(credentialHeader)
 	if err != nil {
-		log.Error().Err(err).Msg("invalid provider, region, or connection name")
+		log.Error().Err(err).Msg("invalid credential header")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Source path pattern with * to capture objectStorageName, objectKey, provider, and region
-	sourcePattern := "/resources/objectStorage/presigned/upload/*/*?provider=*&region=*&expires=*"
-	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, $3 for provider, and $4 for region
-	targetPattern := "/s3/presigned/upload/$1/$2?ConnectionName=$3-$4&expires=$5"
+	// Source path pattern with * to capture objectStorageName and objectKey
+	sourcePattern := "/resources/objectStorage/presigned/upload/*/*?expires=*"
+	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, and $3 for expires
+	targetPattern := "/s3/presigned/upload/$1/$2?expires=$3"
 
 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
 	return proxyHandler(c)

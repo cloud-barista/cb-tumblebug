@@ -9887,20 +9887,14 @@ paths:
         ```
       operationId: ListObjectStorages
       parameters:
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       responses:
         "200":
           description: OK
@@ -9939,20 +9933,14 @@ paths:
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       responses:
         "200":
           description: OK
@@ -9979,20 +9967,14 @@ paths:
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       responses:
         "200":
           description: OK
@@ -10049,20 +10031,14 @@ paths:
         schema:
           type: boolean
           default: true
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       requestBody:
         description: List of objects to delete
         content:
@@ -10092,20 +10068,14 @@ paths:
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       responses:
         "204":
           description: No Content
@@ -10124,20 +10094,14 @@ paths:
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       responses:
         "200":
           description: OK
@@ -10167,20 +10131,14 @@ paths:
         schema:
           type: string
           default: test-object.txt
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       responses:
         "204":
           description: No Content
@@ -10210,20 +10168,14 @@ paths:
         schema:
           type: string
           default: test-object.txt
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       responses:
         "200":
           description: OK
@@ -10278,20 +10230,14 @@ paths:
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       responses:
         "200":
           description: OK
@@ -10346,20 +10292,14 @@ paths:
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       requestBody:
         description: CORS Configuration in XML format
         content:
@@ -10386,20 +10326,14 @@ paths:
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       responses:
         "204":
           description: No Content
@@ -10429,20 +10363,14 @@ paths:
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       responses:
         "200":
           description: OK
@@ -10477,20 +10405,14 @@ paths:
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       responses:
         "200":
           description: OK
@@ -10525,20 +10447,14 @@ paths:
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       requestBody:
         description: Versioning Configuration
         content:
@@ -10598,20 +10514,14 @@ paths:
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       responses:
         "200":
           description: OK
@@ -10648,20 +10558,14 @@ paths:
         schema:
           type: string
           default: yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       responses:
         "204":
           description: No Content
@@ -10704,20 +10608,14 @@ paths:
         schema:
           type: string
           default: test-object.txt
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       - name: expires
         in: query
         description: Expiration time in seconds for the presigned URL
@@ -10769,20 +10667,14 @@ paths:
         schema:
           type: string
           default: test-object.txt
-      - name: provider
-        in: query
-        description: Provider
+      - name: credential
+        in: header
+        description: "This represents a credential or an access key ID. The required\
+          \ format is `{csp-region}` (i.e., the connection name)."
         required: true
         schema:
           type: string
-          default: aws
-      - name: region
-        in: query
-        description: Region
-        required: true
-        schema:
-          type: string
-          default: ap-northeast-2
+          default: aws-ap-northeast-2
       - name: expires
         in: query
         description: Expiration time in seconds for the presigned URL

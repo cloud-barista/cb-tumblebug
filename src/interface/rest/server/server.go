@@ -230,12 +230,23 @@ func RunServer() {
 	if authEnabled {
 		switch authMode {
 		case "basic":
+			log.Debug().Msg("Auth mode: Basic")
 			// Setup Basic Auth Middleware
 			basicAuthMw = middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
 				Skipper: func(c echo.Context) bool {
 					if c.Path() == "/tumblebug/readyz" ||
 						c.Path() == "/tumblebug/httpVersion" {
 						return true
+					}
+
+					// Skip Object Storage APIs that use AWS4-HMAC-SHA256 authentication
+					path := c.Path()
+					if strings.HasPrefix(path, "/tumblebug/resources/objectStorage") {
+						// Check if Authorization header contains AWS4-HMAC-SHA256
+						authHeader := c.Request().Header.Get("Authorization")
+						if strings.HasPrefix(authHeader, "AWS4-HMAC-SHA256") {
+							return true // Skip Basic Auth for AWS4-HMAC-SHA256
+						}
 					}
 					return false
 				},
@@ -254,6 +265,7 @@ func RunServer() {
 			})
 			log.Info().Msg("Basic Auth Middleware is initialized successfully")
 		case "jwt":
+			log.Debug().Msg("Auth mode: JWT")
 			// Setup JWT Auth Middleware
 			err := authmw.InitJwtAuthMw(os.Getenv("TB_IAM_MANAGER_REST_URL"), "/api/auth/certs")
 			if err != nil {
