@@ -12056,18 +12056,10 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -12114,18 +12106,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     },
                     {
@@ -12179,18 +12163,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     },
                     {
@@ -12236,18 +12212,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -12284,18 +12252,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -12337,18 +12297,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     },
                     {
@@ -12394,18 +12346,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -12439,18 +12383,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -12489,18 +12425,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -12543,18 +12471,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     },
                     {
@@ -12597,18 +12517,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -12644,18 +12556,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -12694,18 +12598,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -12742,18 +12638,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     },
                     {
@@ -12798,18 +12686,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -12864,18 +12744,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -12919,18 +12791,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -12972,18 +12836,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "aws",
-                        "description": "Provider",
-                        "name": "provider",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "ap-northeast-2",
-                        "description": "Region",
-                        "name": "region",
-                        "in": "query",
+                        "default": "aws-ap-northeast-2",
+                        "description": "This represents a credential or an access key ID. The required format is ` + "`" + `{csp-region}` + "`" + ` (i.e., the connection name).",
+                        "name": "credential",
+                        "in": "header",
                         "required": true
                     }
                 ],
