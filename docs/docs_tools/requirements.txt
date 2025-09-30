@@ -1,0 +1,6 @@
+# This script uses only Python standard library modules
+# No external dependencies required for basic functionality
+
+# Optional dependencies (only needed for specific features):
+# requests==2.32.4  # Only needed if GitHub fallback is required when local git fails
+

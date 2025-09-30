@@ -140,19 +140,33 @@ curl -X DELETE "/ns/default/mci/my-mci/vm/vm-001/commandStatus/clear"
 
 **New API Endpoints:**
 ```http
+# Bucket Management
 GET    /resources/objectStorage                                          # List all buckets
 GET    /resources/objectStorage/{objectStorageName}                      # Get bucket details
-POST   /resources/objectStorage/{objectStorageName}                      # Create bucket
+PUT    /resources/objectStorage/{objectStorageName}                      # Create bucket
 DELETE /resources/objectStorage/{objectStorageName}                      # Delete bucket
+GET    /resources/objectStorage/{objectStorageName}/location             # Get bucket location
+
+# Bucket Configuration
 PUT    /resources/objectStorage/{objectStorageName}/versioning           # Set versioning
 GET    /resources/objectStorage/{objectStorageName}/versioning           # Get versioning status
 PUT    /resources/objectStorage/{objectStorageName}/cors                 # Set CORS policy
 GET    /resources/objectStorage/{objectStorageName}/cors                 # Get CORS policy
 DELETE /resources/objectStorage/{objectStorageName}/cors                 # Delete CORS policy
-GET    /resources/objectStorage/{objectStorageName}/objects              # List objects
-GET    /resources/objectStorage/{objectStorageName}/objects/{objectKey}  # Get object details
-PUT    /resources/objectStorage/{objectStorageName}/objects/{objectKey}  # Upload object
-DELETE /resources/objectStorage/{objectStorageName}/objects/{objectKey}  # Delete object
+
+# Object Management
+GET    /resources/objectStorage/presigned/download/{objectStorageName}/{objectKey}  # Generate download URL
+GET    /resources/objectStorage/presigned/upload/{objectStorageName}/{objectKey}    # Generate upload URL
+DELETE /resources/objectStorage/{objectStorageName}/{objectKey}          # Delete object
+POST   /resources/objectStorage/{objectStorageName}                      # Delete multiple objects
+GET    /resources/objectStorage/{objectStorageName}/versions             # List object versions
+DELETE /resources/objectStorage/{objectStorageName}/versions/{objectKey} # Delete specific version
+```
+
+**🔑 Authentication Requirements:**
+All Object Storage APIs require a `credential` header:
+```http
+credential: {csp-region}  # e.g., "aws-ap-northeast-2"
 ```
 
 **Key Features:**
@@ -176,14 +190,32 @@ DELETE /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus        # Delete command st
 GET    /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/{index} # Get specific command status
 DELETE /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/{index} # Delete specific command status
 DELETE /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatusAll     # Clear all command status
+GET    /ns/{nsId}/mci/{mciId}/vm/{vmId}/handlingCount        # Get command handling count
+```
+
+**🆕 Enhanced Filtering Options:**
+The command status API now supports advanced filtering:
+```bash
+# Filter by multiple status values
+GET /ns/default/mci/my-mci/vm/vm-001/commandStatus?status=Completed&status=Failed
+
+# Filter by time range
+GET /ns/default/mci/my-mci/vm/vm-001/commandStatus?startTimeFrom=2024-01-01T00:00:00Z&startTimeTo=2024-12-31T23:59:59Z
+
+# Filter by request ID
+GET /ns/default/mci/my-mci/vm/vm-001/commandStatus?requestId=req-123
+
+# Pagination support
+GET /ns/default/mci/my-mci/vm/vm-001/commandStatus?page=1&size=10
 ```
 
 **Key Features:**
 - **Command History Tracking**: Track execution history of remote commands
 - **Status Monitoring**: Real-time command execution status
-- **Filtering Support**: Filter commands by status, time, request ID
+- **Advanced Filtering**: Filter commands by status, time, request ID, and more
 - **Batch Operations**: Delete multiple command records by criteria
 - **Performance Optimization**: Efficient queries for command count monitoring
+- **Pagination Support**: Handle large command history datasets efficiently
 
 ### 3. 🎯 **MCI Review and Validation System (v0.11.9)**
 
@@ -191,15 +223,28 @@ DELETE /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatusAll     # Clear all command
 
 **New API Endpoints:**
 ```http
-POST /ns/{nsId}/mci/dynamic/review          # Review MCI configuration
-POST /ns/{nsId}/mci/{mciId}/subGroupDynamicReview  # Review SubGroup configuration
+POST /mciDynamicCheckRequest                                  # Check MCI configuration
+POST /ns/{nsId}/mciDynamicReview                             # Review MCI configuration  
+POST /ns/{nsId}/mci/{mciId}/subGroupDynamicReview            # Review SubGroup configuration
+POST /ns/{nsId}/mciDynamic                                   # Create MCI dynamically (enhanced)
+POST /ns/{nsId}/mci/{mciId}/vmDynamic                        # Add VM dynamically (enhanced)
+```
+
+**🔄 Important API Path Changes:**
+```diff
+# Updated MCI Dynamic API structure
+- POST /ns/{nsId}/mci/dynamic/review          # Old incorrect path
++ POST /ns/{nsId}/mciDynamicReview            # Correct path for MCI review
++ POST /mciDynamicCheckRequest                # New configuration check endpoint  
++ POST /ns/{nsId}/mciDynamic                  # MCI creation endpoint
 ```
 
 **Key Features:**
-- **Risk Assessment**: Analyze potential provisioning failures
+- **Risk Assessment**: Analyze potential provisioning failures before creation
 - **Cost Estimation**: Provide estimated infrastructure costs
 - **Validation**: Verify resource availability and configuration
 - **Recommendation Engine**: Suggest optimal configurations
+- **Enhanced VM Addition**: Improved dynamic VM addition with validation
 
 ### 4. 📊 **Enhanced Spec Availability Management (v0.11.9)**
 
@@ -230,22 +275,29 @@ POST /ns/{nsId}/updateExistingSpecListByAvailableRegionZones  # Update spec avai
 
 ### 6. 🔧 **Advanced Provisioning Analytics (v0.11.12)**
 
-**Description:** Comprehensive provisioning failure analysis and risk assessment.
+**Description:** Comprehensive provisioning failure analysis and risk assessment system.
 
 **New API Endpoints:**
 ```http
-GET    /provisioning/log/{specId}           # Get provisioning logs
-DELETE /provisioning/log/{specId}           # Delete provisioning logs
-GET    /provisioning/risk/{specId}          # Analyze provisioning risk
-GET    /provisioning/risk/detailed          # Detailed risk analysis
-POST   /provisioning/event                  # Record provisioning events
+GET    /provisioning/log/{specId}                    # Get provisioning history logs
+DELETE /provisioning/log/{specId}                    # Delete provisioning logs
+GET    /provisioning/risk/{specId}                   # Analyze provisioning risk
+GET    /tumblebug/provisioning/risk/detailed         # Detailed risk analysis with breakdown
+POST   /provisioning/event                           # Record manual provisioning events
 ```
 
 **Key Features:**
-- **Historical Analysis**: Track provisioning success/failure patterns
-- **Risk Scoring**: Intelligent risk assessment for spec+image combinations
-- **Failure Pattern Recognition**: Identify common failure causes
+- **Historical Analysis**: Track provisioning success/failure patterns for VM specifications
+- **Risk Scoring**: Intelligent risk assessment for spec+image combinations with levels (high/medium/low/unknown)
+- **Failure Pattern Recognition**: Identify common failure causes and CSP-specific error patterns
+- **Image Compatibility Tracking**: Monitor which images work best with specific specs
 - **Proactive Recommendations**: Suggest alternative configurations for high-risk scenarios
+- **External Event Recording**: Import provisioning data from other systems for comprehensive analysis
+
+**Risk Assessment Integration:**
+- Automatically integrated into MCI review process for deployment validation
+- Provides actionable recommendations based on historical data
+- Supports capacity planning and resource selection optimization
 
 ## API Changes
 
@@ -270,27 +322,36 @@ POST   /provisioning/event                  # Record provisioning events
 #### **Bucket Operations:**
 ```bash
 # List all buckets
-curl -X GET "http://localhost:1323/ns/default/resources/objectStorage"
+curl -X GET "http://localhost:1323/resources/objectStorage" \
+  -H "credential: aws-ap-northeast-2"
 
 # Create bucket
-curl -X POST "http://localhost:1323/ns/default/resources/objectStorage/my-bucket"
+curl -X PUT "http://localhost:1323/resources/objectStorage/my-bucket" \
+  -H "credential: aws-ap-northeast-2"
 
 # Configure bucket versioning
-curl -X PUT "http://localhost:1323/ns/default/resources/objectStorage/my-bucket/versioning" \
+curl -X PUT "http://localhost:1323/resources/objectStorage/my-bucket/versioning" \
+  -H "credential: aws-ap-northeast-2" \
   -d '{"versioningConfiguration": {"status": "Enabled"}}'
 ```
 
 #### **Object Operations:**
 ```bash
-# Upload object
-curl -X PUT "http://localhost:1323/ns/default/resources/objectStorage/my-bucket/objects/file.txt" \
-  --data-binary @file.txt
+# Generate presigned upload URL
+curl -X GET "http://localhost:1323/resources/objectStorage/presigned/upload/my-bucket/file.txt" \
+  -H "credential: aws-ap-northeast-2"
 
-# Download object
-curl -X GET "http://localhost:1323/ns/default/resources/objectStorage/my-bucket/objects/file.txt"
+# Generate presigned download URL  
+curl -X GET "http://localhost:1323/resources/objectStorage/presigned/download/my-bucket/file.txt" \
+  -H "credential: aws-ap-northeast-2"
 
-# List objects
-curl -X GET "http://localhost:1323/ns/default/resources/objectStorage/my-bucket/objects"
+# Delete object
+curl -X DELETE "http://localhost:1323/resources/objectStorage/my-bucket/file.txt" \
+  -H "credential: aws-ap-northeast-2"
+
+# List object versions
+curl -X GET "http://localhost:1323/resources/objectStorage/my-bucket/versions" \
+  -H "credential: aws-ap-northeast-2"
 ```
 
 ### 3. 🔄 **Enhanced Command Status APIs (v0.11.12)**
@@ -569,9 +630,100 @@ curl -X DELETE "/ns/default/mci/my-mci/vm/vm-001/commandStatus/clear"
 curl -X DELETE "/ns/default/mci/my-mci/vm/vm-001/commandStatusAll"
 ```
 
+#### **Update any code that uses the clear command status endpoint:**
+
+```bash
+# OLD - Deprecated endpoint
+curl -X DELETE "/ns/default/mci/my-mci/vm/vm-001/commandStatus/clear"
+
+# NEW - Updated endpoint (v0.11.12+)
+curl -X DELETE "/ns/default/mci/my-mci/vm/vm-001/commandStatusAll"
+```
+
 #### **Update Client Code:**
 ```go
 // OLD
+err := client.ClearVmCommandStatus(nsId, mciId, vmId)
+
+// NEW
+err := client.DeleteAllVmCommandStatus(nsId, mciId, vmId)
+```
+
+### Step 3: 🔧 **Update Image API Parameter Handling (v0.11.13)**
+
+**Enhanced Image ID parameter support with multiple input formats:**
+
+```bash
+# OLD - Limited image ID support
+curl -X GET "/ns/default/resources/image/ubuntu-22.04-lts"
+
+# NEW - Multiple input formats supported (v0.11.13+)
+# Format 1: provider+imageId
+curl -X GET "/ns/default/resources/image/aws+ami-0c02fb55956c7d316"
+
+# Format 2: provider+region+imageId  
+curl -X GET "/ns/default/resources/image/aws+ap-northeast-2+ami-0c02fb55956c7d316"
+
+# Format 3: imageId only (for backward compatibility)
+curl -X GET "/ns/default/resources/image/ami-0c02fb55956c7d316"
+```
+
+**⚠️ Migration Recommendation**: Use `provider+imageId` format for exact matching and better performance.
+
+### Step 4: 🔧 **Update Kubernetes API Model References (v0.11.13)**
+
+**Critical Kubernetes model structure updates removing 'Tb' prefix:**
+
+```go
+// OLD - These will fail in v0.11.13+
+type TbChangeK8sNodeGroupAutoscaleSizeReq struct {
+    // ... fields
+}
+type TbSetK8sNodeGroupAutoscalingReq struct {
+    // ... fields  
+}
+type TbUpgradeK8sClusterReq struct {
+    // ... fields
+}
+
+// NEW - Required for v0.11.13+
+type ChangeK8sNodeGroupAutoscaleSizeReq struct {
+    // ... fields
+}
+type SetK8sNodeGroupAutoscalingReq struct {
+    // ... fields
+}
+type UpgradeK8sClusterReq struct {
+    // ... fields
+}
+```
+
+**⚠️ Migration Required**: Update all Kubernetes-related API calls to use new structure names.
+
+### Step 5: 🔧 **Update Spec Filtering API (v0.11.13)**
+
+**Enhanced range filtering with limit control and geographical coordinates:**
+
+```bash
+# OLD - Basic range filtering
+curl -X POST "/ns/default/resources/filterSpecsByRange" \
+  -d '{"minvCPU": 2, "maxvCPU": 8}'
+
+# NEW - Enhanced filtering with limit and coordinates (v0.11.13+)
+curl -X POST "/ns/default/resources/filterSpecsByRange" \
+  -d '{
+    "minvCPU": 2,
+    "maxvCPU": 8,
+    "limit": 10,                    # NEW: Control result count (0 = all results)
+    "regionLatitude": 37.5665,      # NEW: Geographic filtering
+    "regionLongitude": 126.9780     # NEW: Geographic filtering
+  }'
+```
+
+**🆕 New Field Descriptions:**
+- `limit`: Set to 0 for all results, >0 for limited results
+- `regionLatitude`/`regionLongitude`: Enable geographic-based filtering
+
 clearURL := fmt.Sprintf("/ns/%s/mci/%s/vm/%s/commandStatus/clear", nsId, mciId, vmId)
 
 // NEW
@@ -585,15 +737,15 @@ clearURL := fmt.Sprintf("/ns/%s/mci/%s/vm/%s/commandStatusAll", nsId, mciId, vmI
 #### **3.1 Add Pre-Creation Validation:**
 ```bash
 # NEW: Review MCI configuration before creation
-curl -X POST "http://localhost:1323/ns/default/mci/dynamic/review" \
+curl -X POST "http://localhost:1323/ns/default/mciDynamicReview" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "test-mci",
-    "subGroups": [
+    "vm": [
       {
-        "name": "test-sg", 
+        "name": "test-vm",
         "specId": "aws+ap-northeast-2+t3.medium",
-        "imageId": "ami-0c02fb55956c7d316"
+        "imageId": "aws+ap-northeast-2+ubuntu22.04"
       }
     ]
   }'
@@ -618,22 +770,62 @@ if reviewResp.CreationViable && reviewResp.OverallStatus != "Error" {
 }
 ```
 
-### Step 4: 🆕 **Implement Object Storage Management (v0.11.12)**
+### Step 4: 🆕 **Implement Enhanced Spec Management (v0.11.13)**
+
+**NEW:** Utilize enhanced spec management capabilities with geographical coordinates.
+
+#### **4.1 Update Spec Information Handling:**
+```go
+// NEW fields in SpecInfo structure
+type SpecInfo struct {
+    // ... existing fields
+    RegionLatitude  float64 `json:"regionLatitude"`   // Geographic latitude
+    RegionLongitude float64 `json:"regionLongitude"`  // Geographic longitude
+}
+
+// Update spec creation/update calls
+specInfo := SpecInfo{
+    Name:            "my-spec",
+    CspSpecName:     "t3.medium",
+    RegionLatitude:  37.5665,     // Seoul latitude
+    RegionLongitude: 126.9780,    // Seoul longitude
+    // ... other fields
+}
+```
+
+#### **4.2 Utilize New Spec Management APIs:**
+```bash
+# Get recommendation options for better spec filtering
+curl -X GET "http://localhost:1323/recommendSpecOptions"
+
+# Clean up unavailable specs to improve performance
+curl -X POST "http://localhost:1323/ns/default/updateExistingSpecListByAvailableRegionZones" \
+  -d '{"providerName": "aws", "regionName": "ap-northeast-2"}'
+
+# Check spec availability across regions
+curl -X POST "http://localhost:1323/availableRegionZonesForSpecList" \
+  -d '{"specIds": ["aws+ap-northeast-2+t3.medium", "aws+us-east-1+t3.large"]}'
+```
+
+### Step 5: 🆕 **Implement Object Storage Management (v0.11.12)**
 
 **NEW:** Add Object Storage capabilities to your applications.
 
 #### **4.1 Bucket Management:**
 ```bash
 # Create a bucket
-curl -X POST "http://localhost:1323/ns/default/resources/objectStorage/my-app-bucket"
+curl -X PUT "http://localhost:1323/resources/objectStorage/my-app-bucket" \
+  -H "credential: aws-ap-northeast-2"
 
 # Enable versioning
-curl -X PUT "http://localhost:1323/ns/default/resources/objectStorage/my-app-bucket/versioning" \
+curl -X PUT "http://localhost:1323/resources/objectStorage/my-app-bucket/versioning" \
+  -H "credential: aws-ap-northeast-2" \
   -H "Content-Type: application/json" \
   -d '{"versioningConfiguration": {"status": "Enabled"}}'
 
 # Configure CORS for web applications
-curl -X PUT "http://localhost:1323/ns/default/resources/objectStorage/my-app-bucket/cors" \
+curl -X PUT "http://localhost:1323/resources/objectStorage/my-app-bucket/cors" \
+  -H "credential: aws-ap-northeast-2" \
   -H "Content-Type: application/json" \
   -d '{
     "corsConfiguration": {
@@ -649,15 +841,18 @@ curl -X PUT "http://localhost:1323/ns/default/resources/objectStorage/my-app-buc
 #### **4.2 Object Operations:**
 ```bash
 # Upload a file
-curl -X PUT "http://localhost:1323/ns/default/resources/objectStorage/my-app-bucket/objects/config.json" \
+curl -X PUT "http://localhost:1323/resources/objectStorage/my-app-bucket/objects/config.json" \
+  -H "credential: aws-ap-northeast-2" \
   --data-binary @config.json \
   -H "Content-Type: application/json"
 
 # List objects
-curl -X GET "http://localhost:1323/ns/default/resources/objectStorage/my-app-bucket/objects"
+curl -X GET "http://localhost:1323/resources/objectStorage/my-app-bucket/objects" \
+  -H "credential: aws-ap-northeast-2"
 
 # Download a file
-curl -X GET "http://localhost:1323/ns/default/resources/objectStorage/my-app-bucket/objects/config.json" \
+curl -X GET "http://localhost:1323/resources/objectStorage/my-app-bucket/objects/config.json" \
+  -H "credential: aws-ap-northeast-2" \
   -o downloaded-config.json
 ```
 
@@ -734,15 +929,15 @@ alibaba:
 #### **8.1 Test MCI Dynamic Review Feature:**
 ```bash
 # Test the review endpoint
-curl -X POST "http://localhost:1323/ns/default/mci/dynamic/review" \
+curl -X POST "http://localhost:1323/ns/default/mciDynamicReview" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "test-mci",
-    "subGroups": [
+    "vm": [
       {
-        "name": "test-sg",
-        "specId": "aws+ap-northeast-2+t3.medium",
-        "imageId": "ami-0c02fb55956c7d316"
+        "name": "test-vm",
+        "specId": "aws+ap-northeast-2+t3.medium", 
+        "imageId": "aws+ap-northeast-2+ubuntu22.04"
       }
     ]
   }'
@@ -769,13 +964,17 @@ curl -X POST "http://localhost:1323/availableRegionZonesForSpecList" \
 #### **8.3 Test Object Storage APIs:**
 ```bash
 # Test bucket operations
-curl -X GET "http://localhost:1323/ns/default/resources/objectStorage"
-curl -X POST "http://localhost:1323/ns/default/resources/objectStorage/test-bucket"
+curl -X GET "http://localhost:1323/resources/objectStorage" \
+  -H "credential: aws-ap-northeast-2"
+curl -X PUT "http://localhost:1323/resources/objectStorage/test-bucket" \
+  -H "credential: aws-ap-northeast-2"
 
 # Test object operations  
-curl -X PUT "http://localhost:1323/ns/default/resources/objectStorage/test-bucket/objects/test.txt" \
+curl -X PUT "http://localhost:1323/resources/objectStorage/test-bucket/objects/test.txt" \
+  -H "credential: aws-ap-northeast-2" \
   --data "Hello World"
-curl -X GET "http://localhost:1323/ns/default/resources/objectStorage/test-bucket/objects/test.txt"
+curl -X GET "http://localhost:1323/resources/objectStorage/test-bucket/objects/test.txt" \
+  -H "credential: aws-ap-northeast-2"
 ```
 
 #### **8.4 Test Enhanced Command Status APIs:**
@@ -930,13 +1129,15 @@ CB-Tumblebug v0.11.12 introduces significant **BREAKING CHANGES** and **MAJOR NE
 ### ⚠️ **Breaking Change Impact:**
 
 **ALL** applications using CB-Tumblebug APIs will require code updates for:
-1. Data structure name changes (v0.11.9)
-2. Command status API endpoint changes (v0.11.13+)
-3. New API endpoints and response formats (v0.11.13+)
+1. **Data structure name changes (v0.11.9)**: Removal of 'Tb' prefixes from all model structures
+2. **Command status API endpoint changes (v0.11.13+)**: Routing conflict resolution and enhanced functionality  
+3. **New API endpoints and response formats (v0.11.13+)**: 25+ new endpoints with enhanced capabilities
+4. **Kubernetes model updates (v0.11.13)**: Additional 'Tb' prefix removals for K8s-specific structures
+5. **Enhanced parameter handling**: New input formats and geographic coordinate support
 
-The JSON payloads remain largely identical, but Go struct names and some API endpoints have changed significantly.
-
-### 📞 **Support:**
-
-For support or questions regarding this migration, please refer to the CB-Tumblebug GitHub repository or contact the development team.
-
+**📊 API Changes Summary (v0.11.8 → v0.11.13):**
+- **New Endpoints**: 25 (including Object Storage, Command Status, Spec Management)
+- **Modified Endpoints**: 8 (parameter enhancements, description updates)
+- **Endpoint Changes**: 4 (path/method/content changes)
+- **Removed Endpoints**: 1 (consolidated into new Object Storage API)
+- **Breaking Changes**: 5 critical changes requiring immediate attention
