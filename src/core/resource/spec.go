@@ -2510,23 +2510,21 @@ func isAzureGen1OnlySpec(specName string) bool {
 		}
 		return true // Original A-series are Gen1-only
 	case "d":
-		// Most D-series support Gen2, but check for very old D-series v1
-		// Examples that are Gen1-only: Standard_D1, Standard_D2, Standard_D3, Standard_D4
-		// Gen2 supported: Standard_D2s_v3, Standard_D4s_v4, etc.
-		if strings.Contains(lowerSpecName, "_v2") || strings.Contains(lowerSpecName, "_v3") ||
-			strings.Contains(lowerSpecName, "_v4") || strings.Contains(lowerSpecName, "_v5") ||
-			strings.Contains(lowerSpecName, "s_") {
-			return false // Gen2 supported
+		// D-family: Simple rule based on storage optimization indicator
+		// Pattern: Standard_D{number}s_{version} → Gen2 supported
+		// Pattern: Standard_D{number}_{version} → Gen1 only
+
+		// Check for digit+s pattern (e.g., "2s", "4s", "8s", "16s")
+		// This covers: Standard_D2s_v3, Standard_D4s_v3, Standard_D8s_v3, etc.
+		for i := 0; i < len(lowerSpecName)-1; i++ {
+			if lowerSpecName[i] >= '0' && lowerSpecName[i] <= '9' && lowerSpecName[i+1] == 's' {
+				return false // Found digit+s pattern = Gen2 supported
+			}
 		}
-		// Check for original D-series (D1-D14) which are Gen1-only
-		// Pattern: standard_d[1-4] without version suffix
-		if (strings.HasPrefix(lowerSpecName, "standard_d1") && !strings.Contains(lowerSpecName, "v")) ||
-			(strings.HasPrefix(lowerSpecName, "standard_d2") && !strings.Contains(lowerSpecName, "v")) ||
-			(strings.HasPrefix(lowerSpecName, "standard_d3") && !strings.Contains(lowerSpecName, "v")) ||
-			(strings.HasPrefix(lowerSpecName, "standard_d4") && !strings.Contains(lowerSpecName, "v")) {
-			return true
-		}
-		return false
+
+		// All other D-family specs without digit+s pattern are Gen1-only
+		// (includes all Dv2, Dv3, Dv4, Dv5, etc.)
+		return true
 	}
 
 	// All other families support Gen2 by default based on Microsoft documentation
