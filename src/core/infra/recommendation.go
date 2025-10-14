@@ -1222,48 +1222,39 @@ func RecommendVmPerformance(nsId string, specList *[]model.SpecInfo) ([]model.Sp
 
 // RecommendK8sNode is func to recommend a node for K8sCluster
 func RecommendK8sNode(nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, error) {
-	emptyObjList := []model.SpecInfo{}
-
 	// K8s node minimum requirements
 	const minVCPU = 2
 	const minMemoryGiB = 4.0
 
-	limitOrig := plan.Limit
-	plan.Limit = strconv.Itoa(math.MaxInt)
-
-	SpecInfoListForVm, err := RecommendSpec(nsId, plan)
-	if err != nil {
-		return emptyObjList, err
+	// Add K8s minimum requirements to the filter policy
+	vCPUCondition := model.FilterCondition{
+		Metric: "vCPU",
+		Condition: []model.Operation{
+			{
+				Operand:  strconv.Itoa(minVCPU),
+				Operator: ">=",
+			},
+		},
 	}
 
-	limitNum, err := strconv.Atoi(limitOrig)
-	if err != nil {
-		limitNum = math.MaxInt
+	memoryCondition := model.FilterCondition{
+		Metric: "memoryGiB",
+		Condition: []model.Operation{
+			{
+				Operand:  strconv.FormatFloat(minMemoryGiB, 'f', 1, 64),
+				Operator: ">=",
+			},
+		},
 	}
 
-	SpecInfoListForK8s := []model.SpecInfo{}
-	count := 0
-	for _, SpecInfo := range SpecInfoListForVm {
-		// K8s node minimum hardware requirements: 2+ vCPU, 4+ GB RAM
-		log.Debug().Msgf("Checking spec: %s (vCPU: %d, Memory: %.2fGB)",
-			SpecInfo.Id, SpecInfo.VCPU, SpecInfo.MemoryGiB)
-
-		if SpecInfo.VCPU >= minVCPU && SpecInfo.MemoryGiB >= minMemoryGiB {
-			SpecInfoListForK8s = append(SpecInfoListForK8s, SpecInfo)
-			count++
-			if count == limitNum {
-				break
-			}
-		} else {
-			log.Debug().Msgf("Spec %s does not meet K8s minimum requirements (need: vCPU>=%d, RAM>=%.1fGB)",
-				SpecInfo.Id, minVCPU, minMemoryGiB)
-		}
+	// Initialize filter policy if not exists
+	if plan.Filter.Policy == nil {
+		plan.Filter.Policy = []model.FilterCondition{}
 	}
 
-	log.Info().Msgf("K8s node recommendation complete: %d specs found (from %d total specs)",
-		len(SpecInfoListForK8s), len(SpecInfoListForVm))
+	plan.Filter.Policy = append(plan.Filter.Policy, vCPUCondition, memoryCondition)
 
-	return SpecInfoListForK8s, nil
+	return RecommendSpec(nsId, plan)
 }
 
 // // GetRecommendList is func to get recommendation list
