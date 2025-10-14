@@ -90,13 +90,11 @@ k8scluster:
         # gcloud container get-server-config --region=asia-northeast3 --format=json | jq '{validMasterVersions, channels: [.channels[] | {channel, defaultVersion, validVersions}]}'
         available: # stable channel
           - name: "1.33"
-            id: "1.33.3-gke.1136000"
-          - name: "1.32"      # STABLE default
-            id: "1.32.6-gke.1060000"
+            id: "1.33.4-gke.1172000"
+          - name: "1.32"      
+            id: "1.32.8-gke.1134000"
           - name: "1.31"
             id: "1.31.11-gke.1036000"
-          - name: "1.30"
-            id: "1.30.14-gke.1036000"
       - region: [africa-south1]
         # addnodegroup unavailble
     rootDisk:
