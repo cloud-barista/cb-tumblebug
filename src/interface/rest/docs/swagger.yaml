@@ -1786,6 +1786,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/buildAgnosticImage:
+    post:
+      tags:
+      - "[Infra Resource] Image Management"
+      summary: "Build agnostic custom images by creating MCI, executing commands,\
+        \ and taking snapshots"
+      description: "Creates an MCI infrastructure, executes post-deployment commands,\
+        \ creates snapshots from each subgroup, and optionally cleans up the MCI.\
+        \ This is a complete workflow for building CSP-agnostic custom images."
+      operationId: PostBuildAgnosticImage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      requestBody:
+        description: Request body to build agnostic images
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.BuildAgnosticImageReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.BuildAgnosticImageResult'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: buildReq
   /ns/{nsId}/checkResource/{resourceType}/{resourceId}:
     get:
       tags:
@@ -11354,6 +11399,55 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.BenchmarkInfo'
+    model.BuildAgnosticImageReq:
+      required:
+      - snapshotReq
+      - sourceMciReq
+      type: object
+      properties:
+        cleanupMciAfterSnapshot:
+          type: boolean
+          description: Whether to cleanup (terminate) MCI after snapshot creation
+          example: true
+          default: true
+        snapshotReq:
+          type: object
+          description: Snapshot configuration for creating custom images
+          allOf:
+          - $ref: '#/components/schemas/model.SnapshotReq'
+        sourceMciReq:
+          type: object
+          description: MCI configuration for creating the infrastructure
+          allOf:
+          - $ref: '#/components/schemas/model.MciDynamicReq'
+    model.BuildAgnosticImageResult:
+      type: object
+      properties:
+        mciCleanedUp:
+          type: boolean
+          example: true
+        mciId:
+          type: string
+          description: MCI information
+          example: mci01
+        mciStatus:
+          type: string
+          example: Running
+        message:
+          type: string
+          example: Successfully created 3 custom images from MCI
+        namespace:
+          type: string
+          example: default
+        snapshotResult:
+          type: object
+          description: Snapshot results
+          allOf:
+          - $ref: '#/components/schemas/model.MciSnapshotResult'
+        totalDuration:
+          type: string
+          description: Overall summary
+          example: 15m30s
     model.CSPDetail:
       type: object
       properties:

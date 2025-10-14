@@ -536,6 +536,8 @@ func RunServer() {
 	g.POST("/:nsId/mci/:mciId/vm/:vmId/snapshot", rest_infra.RestPostMciVmSnapshot)
 	// MCI snapshot -> creates snapshots for first running VM in each subgroup (parallel)
 	g.POST("/:nsId/mci/:mciId/snapshot", rest_infra.RestPostMciSnapshot)
+	// Build agnostic image -> create MCI, execute commands, take snapshots, and cleanup
+	g.POST("/:nsId/buildAgnosticImage", rest_infra.RestPostBuildAgnosticImage)
 
 	// These REST APIs are for dev/test only
 	g.POST("/:nsId/mci/:mciId/nlb/:resourceId/vm", rest_infra.RestAddNLBVMs)

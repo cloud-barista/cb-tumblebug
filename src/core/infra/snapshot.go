@@ -175,7 +175,6 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 
 	result, err := resource.RegisterCustomImageWithInfo(nsId, tempImageInfo)
 	if err != nil {
-		err := fmt.Errorf("failed to find 'ns/mci/vm': %s/%s/%s", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
 		return model.ImageInfo{}, err
 	}
@@ -358,6 +357,178 @@ func CreateMciSnapshot(nsId string, mciId string, snapshotReq model.SnapshotReq)
 	log.Info().Msgf("MCI snapshot completed: %d success, %d failed out of %d total",
 		result.SuccessCount, result.FailCount, len(tasks))
 
+	return result, nil
+}
+
+// BuildAgnosticImage creates an MCI, executes post commands, creates snapshots, and optionally cleans up
+// This is a complete workflow for building agnostic (CSP-independent) custom images
+func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.BuildAgnosticImageResult, error) {
+	startTime := time.Now()
+
+	result := model.BuildAgnosticImageResult{
+		Namespace: nsId,
+	}
+
+	// Step 1: Set PolicyOnPartialFailure to "refine" for better error handling
+	req.SourceMciReq.PolicyOnPartialFailure = "refine"
+
+	log.Info().Msgf("Starting BuildAgnosticImage workflow for MCI: %s", req.SourceMciReq.Name)
+
+	// Step 2: Create MCI with dynamic provisioning
+	log.Info().Msg("Step 1/4: Creating MCI infrastructure...")
+	reqId := common.GenUid() // Generate unique request ID
+	mciInfo, err := CreateMciDynamic(reqId, nsId, &req.SourceMciReq, "")
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create MCI")
+		return result, fmt.Errorf("failed to create MCI: %w", err)
+	}
+
+	result.MciId = mciInfo.Id
+	result.MciStatus = string(mciInfo.Status)
+	log.Info().Msgf("MCI created successfully: %s (Status: %s)", mciInfo.Id, mciInfo.Status)
+
+	// Step 3: Wait for MCI to be fully running
+	// Check if there are any failed VMs after "refine" policy
+	log.Info().Msg("Step 2/4: Verifying MCI status...")
+
+	// Get updated MCI status
+	mciStatus, err := GetMciStatus(nsId, mciInfo.Id)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get MCI status")
+		// Don't fail here, try to continue with snapshot creation
+	} else {
+		log.Info().Msgf("MCI status - Total VMs: %d, Running: %d, Failed: %d",
+			mciStatus.StatusCount.CountTotal,
+			mciStatus.StatusCount.CountRunning,
+			mciStatus.StatusCount.CountFailed)
+	}
+
+	// Check if we have any running VMs
+	if mciStatus != nil && mciStatus.StatusCount.CountRunning == 0 {
+		err := fmt.Errorf("no running VMs found in MCI after provisioning")
+		log.Error().Err(err).Msg("")
+		return result, err
+	}
+
+	// Step 4: Create snapshots from the MCI (one per subgroup)
+	log.Info().Msg("Step 3/4: Creating snapshots from running VMs...")
+	snapshotResult, err := CreateMciSnapshot(nsId, mciInfo.Id, req.SnapshotReq)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create MCI snapshots")
+		// Even if snapshot fails, we should still cleanup if requested
+		if req.CleanupMciAfterSnapshot {
+			log.Info().Msg("Attempting to cleanup MCI despite snapshot failure...")
+			_, cleanupErr := DelMci(nsId, mciInfo.Id, model.ActionTerminate)
+			if cleanupErr != nil {
+				log.Error().Err(cleanupErr).Msg("Failed to cleanup MCI")
+			} else {
+				result.MciCleanedUp = true
+			}
+		}
+		return result, fmt.Errorf("failed to create snapshots: %w", err)
+	}
+
+	result.SnapshotResult = snapshotResult
+	log.Info().Msgf("Snapshots created: %d success, %d failed",
+		snapshotResult.SuccessCount, snapshotResult.FailCount)
+
+	// Step 5: Wait for custom images to become Available before cleanup
+	if req.CleanupMciAfterSnapshot && snapshotResult.SuccessCount > 0 {
+		log.Info().Msg("Step 4a/5: Waiting for custom images to become Available...")
+		// Wait a short moment before starting checks
+		initiatingInterval := 15 * time.Second
+		time.Sleep(initiatingInterval)
+
+		// Collect all successfully created image IDs
+		imageIds := make([]string, 0, snapshotResult.SuccessCount)
+		for _, vmResult := range snapshotResult.Results {
+			if vmResult.Status == "Success" && vmResult.ImageId != "" {
+				imageIds = append(imageIds, vmResult.ImageId)
+			}
+		}
+
+		// Wait for all images to become Available
+		maxWaitTime := 10 * time.Minute   // Maximum wait time
+		checkInterval := 10 * time.Second // Check every 10 seconds
+		startWait := time.Now()
+
+		allAvailable := false
+		for time.Since(startWait) < maxWaitTime {
+			allAvailable = true
+			unavailableImages := []string{}
+
+			for _, imageId := range imageIds {
+				image, err := resource.GetImage(nsId, imageId)
+				if err != nil {
+					log.Warn().Err(err).Msgf("Failed to get image status for %s", imageId)
+					unavailableImages = append(unavailableImages, imageId)
+					allAvailable = false
+					continue
+				}
+
+				if image.ImageStatus != model.ImageAvailable {
+					log.Debug().Msgf("Image %s status: %s (waiting for Available)", imageId, image.ImageStatus)
+					unavailableImages = append(unavailableImages, imageId)
+					allAvailable = false
+				}
+			}
+
+			if allAvailable {
+				log.Info().Msgf("All %d custom images are now Available", len(imageIds))
+				break
+			}
+
+			log.Debug().Msgf("Waiting for %d images to become Available... (elapsed: %s)",
+				len(unavailableImages), time.Since(startWait).Round(time.Second))
+			time.Sleep(checkInterval)
+		}
+
+		if !allAvailable {
+			log.Warn().Msgf("Timeout waiting for images to become Available after %s", maxWaitTime)
+			result.Message = fmt.Sprintf("Warning: Some images may not be Available yet after %s wait time", maxWaitTime)
+		}
+	}
+
+	// Step 6: Cleanup MCI if requested
+	if req.CleanupMciAfterSnapshot {
+		log.Info().Msg("Step 5/5: Cleaning up MCI after snapshot creation...")
+		// Use DelMci with "terminate" option (refine → terminate → delete)
+		// This is the proper way instead of using "force" option
+		_, err := DelMci(nsId, mciInfo.Id, model.ActionTerminate)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to cleanup MCI")
+			// Don't fail the entire operation if cleanup fails
+			if result.Message == "" {
+				result.Message = fmt.Sprintf("Successfully created %d custom images, but MCI cleanup failed: %v",
+					snapshotResult.SuccessCount, err)
+			} else {
+				result.Message += fmt.Sprintf(" and MCI cleanup failed: %v", err)
+			}
+		} else {
+			result.MciCleanedUp = true
+			result.MciStatus = "Terminated"
+			log.Info().Msg("MCI cleaned up successfully")
+		}
+	} else {
+		log.Info().Msg("Step 5/5: Skipping MCI cleanup (CleanupMciAfterSnapshot=false)")
+	}
+
+	// Calculate total duration
+	duration := time.Since(startTime)
+	result.TotalDuration = duration.Round(time.Second).String()
+
+	// Set final message
+	if result.Message == "" {
+		if req.CleanupMciAfterSnapshot {
+			result.Message = fmt.Sprintf("Successfully created %d custom images from MCI %s and cleaned up infrastructure",
+				snapshotResult.SuccessCount, mciInfo.Id)
+		} else {
+			result.Message = fmt.Sprintf("Successfully created %d custom images from MCI %s (infrastructure preserved)",
+				snapshotResult.SuccessCount, mciInfo.Id)
+		}
+	}
+
+	log.Info().Msgf("BuildAgnosticImage workflow completed in %s", result.TotalDuration)
 	return result, nil
 }
 
