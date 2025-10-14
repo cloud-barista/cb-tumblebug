@@ -1185,8 +1185,13 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 
 		// For CustomImage, update status from Spider
 		if resourceType == model.StrCustomImage {
-			url := fmt.Sprintf("%s/myimage/%s", model.SpiderRestUrl, res.CspImageName)
+			log.Debug().Msgf("Updating status for custom image ID:%s CspImageName:%s CspImageId:%s", res.Id, res.CspImageName, res.CspImageId)
 
+			url := fmt.Sprintf("%s/myimage/%s", model.SpiderRestUrl, res.CspImageName)
+			// Note: CB-Spider has internal error. Log not useful error message like below:
+			// Not effective to CB-TB logic, but need to be aware of it. since cb-spider log may confuse operator.
+			// cb-tumblebug| 4:13PM DBG src/core/resource/common.go:1188 > Updating status for custom image ID:custom-image-g1 CspImageName:custom-image-g1 CspImageId:ami-09e8eaf264b0f76ab
+			// cb-spider| [CB-SPIDER].[ERROR]: 2025-10-14 16:13:19 MyImageManager.go:471, github.com/cloud-barista/cb-spider/api-runtime/common-runtime.GetMyImage() - aws-ap-northeast-2, i-0c4405a99cb146221: does not exist!
 			client := resty.New().SetCloseConnection(true)
 			client.SetAllowGetMethodPayload(true)
 
@@ -1251,14 +1256,6 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 		switch resourceType {
 		case model.StrSecurityGroup:
 			res := model.SecurityGroupInfo{}
-			err = json.Unmarshal([]byte(keyValue.Value), &res)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return nil, err
-			}
-			return res, nil
-		case model.StrSpec:
-			res := model.SpecInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
 				log.Error().Err(err).Msg("")

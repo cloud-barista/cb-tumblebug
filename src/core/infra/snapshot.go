@@ -175,7 +175,6 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 
 	result, err := resource.RegisterCustomImageWithInfo(nsId, tempImageInfo)
 	if err != nil {
-		err := fmt.Errorf("failed to find 'ns/mci/vm': %s/%s/%s", nsId, mciId, vmId)
 		log.Error().Err(err).Msg("")
 		return model.ImageInfo{}, err
 	}
