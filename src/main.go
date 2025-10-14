@@ -131,7 +131,6 @@ func init() {
 	err = model.ORM.AutoMigrate(
 		&model.SpecInfo{},
 		&model.ImageInfo{},
-		&model.CustomImageInfo{},
 		&model.LatencyInfo{},
 	)
 

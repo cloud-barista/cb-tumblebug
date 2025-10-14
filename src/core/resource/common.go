@@ -42,6 +42,7 @@ import (
 	"reflect"
 
 	validator "github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 
 	"github.com/rs/zerolog/log"
 )
@@ -63,7 +64,43 @@ func getResourceConnectionName(nsId, resourceType, resourceId string) (string, e
 		}
 	}
 
-	// Fall back to KV store lookup if pattern extraction fails
+	// For Image, CustomImage, and Spec, use PostgreSQL (GORM)
+	switch resourceType {
+	case model.StrImage, model.StrCustomImage:
+		var resource model.ImageInfo
+		var result *gorm.DB
+
+		if resourceType == model.StrImage {
+			result = model.ORM.Select("connection_name").Where("namespace = ? AND id = ? AND (resource_type = ? OR resource_type IS NULL OR resource_type = '')",
+				nsId, resourceId, model.StrImage).First(&resource)
+		} else {
+			result = model.ORM.Select("connection_name").Where("namespace = ? AND id = ? AND resource_type = ?",
+				nsId, resourceId, model.StrCustomImage).First(&resource)
+		}
+
+		if result.Error == nil {
+			return resource.ConnectionName, nil
+		}
+		// If DB lookup fails, use pattern-based fallback
+		if len(parts) >= 2 {
+			return parts[0], nil
+		}
+		return "unknown", result.Error
+
+	case model.StrSpec:
+		var resource model.SpecInfo
+		result := model.ORM.Select("connection_name").Where("namespace = ? AND id = ?", nsId, resourceId).First(&resource)
+		if result.Error == nil {
+			return resource.ConnectionName, nil
+		}
+		// If DB lookup fails, use pattern-based fallback
+		if len(parts) >= 2 {
+			return parts[0], nil
+		}
+		return "unknown", result.Error
+	}
+
+	// For other resources, fall back to KV store lookup
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 	keyValue, _, err := kvstore.GetKv(key)
 	if err != nil {
@@ -76,29 +113,6 @@ func getResourceConnectionName(nsId, resourceType, resourceId string) (string, e
 
 	// Parse the JSON value to extract connection name
 	switch resourceType {
-	case model.StrSpec:
-		var resource model.SpecInfo
-		err = json.Unmarshal([]byte(keyValue.Value), &resource)
-		if err != nil {
-			return "unknown", err
-		}
-		return resource.ConnectionName, nil
-
-	case model.StrImage:
-		var resource model.ImageInfo
-		err = json.Unmarshal([]byte(keyValue.Value), &resource)
-		if err != nil {
-			return "unknown", err
-		}
-		return resource.ConnectionName, nil
-
-	case model.StrCustomImage:
-		var resource model.CustomImageInfo
-		err = json.Unmarshal([]byte(keyValue.Value), &resource)
-		if err != nil {
-			return "unknown", err
-		}
-		return resource.ConnectionName, nil
 
 	case model.StrSSHKey:
 		var resource model.SshKeyInfo
@@ -389,51 +403,30 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	switch resourceType {
 	case model.StrImage:
-		// delete image info
-		err := kvstore.Delete(key)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return err
-		}
-
-		// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-		result := model.ORM.Delete(&model.ImageInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
+		// Delete image from database
+		result := model.ORM.Delete(&model.ImageInfo{}, "namespace = ? AND id = ? AND (resource_type = ? OR resource_type IS NULL OR resource_type = '')",
+			model.SystemCommonNs, resourceId, model.StrImage)
 		if result.Error != nil {
 			fmt.Println(result.Error.Error())
+			return result.Error
 		} else {
-			log.Debug().Msg("Data deleted successfully..")
+			log.Debug().Msg("Image deleted successfully from database")
 		}
-
 		return nil
+
 	case model.StrCustomImage:
-		temp := model.CustomImageInfo{}
-		err = json.Unmarshal([]byte(keyValue.Value), &temp)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return err
+		// Get custom image info from database
+		var temp model.ImageInfo
+		result := model.ORM.Where("namespace = ? AND id = ? AND resource_type = ?",
+			nsId, resourceId, model.StrCustomImage).First(&temp)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("")
+			return result.Error
 		}
+
 		requestBody.ConnectionName = temp.ConnectionName
-		url = model.SpiderRestUrl + "/myimage/" + temp.CspResourceName
+		url = model.SpiderRestUrl + "/myimage/" + temp.CspImageName
 		uid = temp.Uid
-
-		/*
-			// delete image info
-			err := kvstore.Delete(key)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return err
-			}
-
-			// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-			_, err = model.ORM.Delete(&CustomImageInfo{Namespace: nsId, Id: resourceId})
-			if err != nil {
-				fmt.Println(err.Error())
-			} else {
-				log.Debug().Msg("Data deleted successfully..")
-			}
-
-			return nil
-		*/
 	case model.StrSpec:
 		// delete spec info
 
@@ -453,7 +446,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		// }
 
 		// "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
-		result := model.ORM.Delete(&model.CustomImageInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
+		result := model.ORM.Delete(&model.SpecInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
 		if result.Error != nil {
 			fmt.Println(result.Error.Error())
 		} else {
@@ -572,19 +565,25 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		}
 	} else if strings.EqualFold(resourceType, model.StrCustomImage) {
-		// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-		result := model.ORM.Delete(&model.SpecInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
+		// Delete custom image from database
+		result := model.ORM.Delete(&model.ImageInfo{}, "namespace = ? AND id = ? AND resource_type = ?",
+			nsId, resourceId, model.StrCustomImage)
 		if result.Error != nil {
 			fmt.Println(result.Error.Error())
 		} else {
-			log.Debug().Msg("Data deleted successfully..")
+			log.Debug().Msg("Custom image deleted successfully from database")
 		}
 	}
 
-	err = kvstore.Delete(key)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
+	// Delete from kvstore for backward compatibility (only for non-DB resources)
+	if !strings.EqualFold(resourceType, model.StrImage) &&
+		!strings.EqualFold(resourceType, model.StrCustomImage) &&
+		!strings.EqualFold(resourceType, model.StrSpec) {
+		err = kvstore.Delete(key)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
 	}
 
 	err = label.DeleteLabelObject(resourceType, uid)
@@ -630,6 +629,49 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 		return nil, err
 	}
 
+	// Handle Image, CustomImage, and Spec using PostgreSQL (GORM)
+	var resourceList []string
+	switch resourceType {
+	case model.StrImage:
+		var images []model.ImageInfo
+		result := model.ORM.Select("id").Where("namespace = ? AND (resource_type = ? OR resource_type IS NULL OR resource_type = '')",
+			nsId, model.StrImage).Find(&images)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("Failed to list image IDs from database")
+			return nil, result.Error
+		}
+		for _, img := range images {
+			resourceList = append(resourceList, img.Id)
+		}
+		return resourceList, nil
+
+	case model.StrCustomImage:
+		var images []model.ImageInfo
+		result := model.ORM.Select("id").Where("namespace = ? AND resource_type = ?",
+			nsId, model.StrCustomImage).Find(&images)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("Failed to list custom image IDs from database")
+			return nil, result.Error
+		}
+		for _, img := range images {
+			resourceList = append(resourceList, img.Id)
+		}
+		return resourceList, nil
+
+	case model.StrSpec:
+		var specs []model.SpecInfo
+		result := model.ORM.Select("id").Where("namespace = ?", nsId).Find(&specs)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("Failed to list spec IDs from database")
+			return nil, result.Error
+		}
+		for _, spec := range specs {
+			resourceList = append(resourceList, spec.Id)
+		}
+		return resourceList, nil
+	}
+
+	// For other resource types, use kvstore (existing code)
 	key := "/ns/" + nsId + "/resources/"
 	keyValue, err := kvstore.GetKvList(key)
 
@@ -646,7 +688,6 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 	}
 	*/
 
-	var resourceList []string
 	for _, v := range keyValue {
 		trimmedString := strings.TrimPrefix(v.Key, (key + resourceType + "/"))
 		// prevent malformed key (if key for resource id includes '/', the key does not represent resource ID)
@@ -683,6 +724,75 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 	}
 
 	//log.Debug().Msg("[Get] " + resourceType + " list")
+
+	// Handle Image, CustomImage, and Spec using PostgreSQL (GORM)
+	switch resourceType {
+	case model.StrImage:
+		var res []model.ImageInfo
+		query := model.ORM.Where("namespace = ? AND (resource_type = ? OR resource_type IS NULL OR resource_type = '')",
+			nsId, model.StrImage)
+
+		// Apply filter if provided
+		if filterKey != "" && filterVal != "" {
+			// Use GORM's ability to filter by JSON/struct fields
+			query = query.Where(filterKey+" LIKE ?", "%"+filterVal+"%")
+		}
+
+		result := query.Find(&res)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("")
+			return nil, result.Error
+		}
+		return res, nil
+
+	case model.StrCustomImage:
+		var res []model.ImageInfo
+		query := model.ORM.Where("namespace = ? AND resource_type = ?", nsId, model.StrCustomImage)
+
+		// Apply filter if provided
+		if filterKey != "" && filterVal != "" {
+			query = query.Where(filterKey+" LIKE ?", "%"+filterVal+"%")
+		}
+
+		result := query.Find(&res)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("")
+			return nil, result.Error
+		}
+
+		// Update status for each custom image
+		// log.Debug().Msg("Updating status for custom images...")
+		for i := range res {
+			newObj, err := GetResource(nsId, model.StrCustomImage, res[i].Id)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				res[i].Description = err.Error()
+				res[i].ImageStatus = "Error"
+			} else if newObj != nil {
+				res[i] = newObj.(model.ImageInfo)
+			}
+			// log.Debug().Msgf("Custom Image %s status: %s", res[i].Id, res[i].ImageStatus)
+		}
+		return res, nil
+
+	case model.StrSpec:
+		var res []model.SpecInfo
+		query := model.ORM.Where("namespace = ?", nsId)
+
+		// Apply filter if provided
+		if filterKey != "" && filterVal != "" {
+			query = query.Where(filterKey+" LIKE ?", "%"+filterVal+"%")
+		}
+
+		result := query.Find(&res)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("")
+			return nil, result.Error
+		}
+		return res, nil
+	}
+
+	// For other resource types, use kvstore (existing code)
 	key := "/ns/" + nsId + "/resources/" + resourceType
 	//log.Debug().Msg(key)
 
@@ -695,64 +805,6 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 	}
 	if keyValue != nil {
 		switch resourceType {
-		case model.StrImage:
-			res := []model.ImageInfo{}
-			for _, v := range keyValue {
-
-				tempObj := model.ImageInfo{}
-				err = json.Unmarshal([]byte(v.Value), &tempObj)
-				if err != nil {
-					log.Error().Err(err).Msg("")
-					return nil, err
-				}
-				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
-				if filterKey != "" {
-					// If not inclues both, do not append current item to the list result.
-					itemValueForCompare := strings.ToLower(v.Value)
-					if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) && strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
-						continue
-					}
-				}
-				res = append(res, tempObj)
-			}
-			return res, nil
-		case model.StrCustomImage:
-			res := []model.CustomImageInfo{}
-			for _, v := range keyValue {
-
-				tempObj := model.CustomImageInfo{}
-				err = json.Unmarshal([]byte(v.Value), &tempObj)
-				if err != nil {
-					log.Error().Err(err).Msg("")
-					return nil, err
-				}
-
-				// Update TB CustomImage object's 'status' field
-				// Just calling GetResource(customImage) once will update TB CustomImage object's 'status' field
-				newObj, err := GetResource(nsId, model.StrCustomImage, tempObj.Id)
-				// do not return here to gather whole list. leave error message in the return body.
-				if newObj != nil {
-					tempObj = newObj.(model.CustomImageInfo)
-				} else {
-					tempObj.Id = tempObj.Id
-				}
-				if err != nil {
-					log.Error().Err(err).Msg("")
-					tempObj.Description = err.Error()
-					tempObj.Status = "Error"
-				}
-
-				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
-				if filterKey != "" {
-					// If not inclues both, do not append current item to the list result.
-					itemValueForCompare := strings.ToLower(v.Value)
-					if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) && strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
-						continue
-					}
-				}
-				res = append(res, tempObj)
-			}
-			return res, nil
 		case model.StrSecurityGroup:
 			res := []model.SecurityGroupInfo{}
 			for _, v := range keyValue {
@@ -773,26 +825,26 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				res = append(res, tempObj)
 			}
 			return res, nil
-		case model.StrSpec:
-			res := []model.SpecInfo{}
-			for _, v := range keyValue {
-				tempObj := model.SpecInfo{}
-				err = json.Unmarshal([]byte(v.Value), &tempObj)
-				if err != nil {
-					log.Error().Err(err).Msg("")
-					return nil, err
-				}
-				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
-				if filterKey != "" {
-					// If not inclues both, do not append current item to the list result.
-					itemValueForCompare := strings.ToLower(v.Value)
-					if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) && strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
-						continue
-					}
-				}
-				res = append(res, tempObj)
-			}
-			return res, nil
+		// case model.StrSpec:
+		// 	res := []model.SpecInfo{}
+		// 	for _, v := range keyValue {
+		// 		tempObj := model.SpecInfo{}
+		// 		err = json.Unmarshal([]byte(v.Value), &tempObj)
+		// 		if err != nil {
+		// 			log.Error().Err(err).Msg("")
+		// 			return nil, err
+		// 		}
+		// 		// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
+		// 		if filterKey != "" {
+		// 			// If not inclues both, do not append current item to the list result.
+		// 			itemValueForCompare := strings.ToLower(v.Value)
+		// 			if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) && strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
+		// 				continue
+		// 			}
+		// 		}
+		// 		res = append(res, tempObj)
+		// 	}
+		// 	return res, nil
 		case model.StrSSHKey:
 			res := []model.SshKeyInfo{}
 			for _, v := range keyValue {
@@ -872,7 +924,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 		case model.StrImage:
 			return []model.ImageInfo{}, nil
 		case model.StrCustomImage:
-			return []model.CustomImageInfo{}, nil
+			return []model.ImageInfo{}, nil
 		case model.StrSecurityGroup:
 			return []model.SecurityGroupInfo{}, nil
 		case model.StrSpec:
@@ -1104,53 +1156,36 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 		return nil, err
 	}
 
-	// err = common.CheckString(resourceId)
-	// if err != nil {
-	// 	log.Error().Err(err).Msg("")
-	// 	return nil, err
-	// }
-	check, err := CheckResource(nsId, resourceType, resourceId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
-
-	if !check {
-		errString := fmt.Sprintf("The %s %s does not exist.", resourceType, resourceId)
-		err := fmt.Errorf(errString)
-		return nil, err
-	}
-
 	log.Trace().Msg("[Get resource] " + resourceType + ", " + resourceId)
 
-	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	// Handle Image, CustomImage, and Spec using PostgreSQL (GORM)
+	switch resourceType {
+	case model.StrImage, model.StrCustomImage:
+		var res model.ImageInfo
+		var result *gorm.DB
 
-	keyValue, exists, err := kvstore.GetKv(key)
+		if resourceType == model.StrCustomImage {
+			// Get custom image (resource_type = customImage)
+			result = model.ORM.Where("namespace = ? AND id = ? AND resource_type = ?",
+				nsId, resourceId, model.StrCustomImage).First(&res)
+		} else {
+			// Get regular image (resource_type != customImage, namespace = system-common-ns)
+			result = model.ORM.Where("namespace = ? AND id = ? AND resource_type != ?",
+				model.SystemCommonNs, resourceId, model.StrCustomImage).First(&res)
+		}
 
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
-	if exists {
-		switch resourceType {
-		case model.StrImage:
-			res := model.ImageInfo{}
-			err = json.Unmarshal([]byte(keyValue.Value), &res)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return nil, err
+		if result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				errString := fmt.Sprintf("The %s %s does not exist.", resourceType, resourceId)
+				return nil, fmt.Errorf(errString)
 			}
-			return res, nil
-		case model.StrCustomImage:
-			res := model.CustomImageInfo{}
-			err = json.Unmarshal([]byte(keyValue.Value), &res)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return nil, err
-			}
+			log.Error().Err(result.Error).Msg("")
+			return nil, result.Error
+		}
 
-			// Update TB CustomImage object's 'status' field
-			url := fmt.Sprintf("%s/myimage/%s", model.SpiderRestUrl, res.CspResourceName)
+		// For CustomImage, update status from Spider
+		if resourceType == model.StrCustomImage {
+			url := fmt.Sprintf("%s/myimage/%s", model.SpiderRestUrl, res.CspImageName)
 
 			client := resty.New().SetCloseConnection(true)
 			client.SetAllowGetMethodPayload(true)
@@ -1162,8 +1197,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			req := client.R().
 				SetHeader("Content-Type", "application/json").
 				SetBody(connectionName).
-				SetResult(&model.SpiderMyImageInfo{}) // or SetResult(AuthSuccess{}).
-				//SetError(&AuthError{}).       // or SetError(AuthError{}).
+				SetResult(&model.SpiderMyImageInfo{})
 
 			resp, err := req.Get(url)
 			if err != nil {
@@ -1179,10 +1213,42 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			}
 
 			updatedSpiderMyImage := resp.Result().(*model.SpiderMyImageInfo)
-			res.Status = updatedSpiderMyImage.Status
-			UpdateResourceObject(nsId, model.StrCustomImage, res)
+			res.ImageStatus = model.ImageStatus(updatedSpiderMyImage.Status)
 
-			return res, nil
+			// Update the database with new status
+			model.ORM.Model(&res).Where("namespace = ? AND id = ?", nsId, resourceId).
+				Update("image_status", res.ImageStatus)
+		}
+
+		return res, nil
+
+	case model.StrSpec:
+		var res model.SpecInfo
+		// Spec is always in system-common-ns
+		result := model.ORM.Where("namespace = ? AND id = ?", model.SystemCommonNs, resourceId).First(&res)
+
+		if result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				errString := fmt.Sprintf("The %s %s does not exist.", resourceType, resourceId)
+				return nil, fmt.Errorf(errString)
+			}
+			log.Error().Err(result.Error).Msg("")
+			return nil, result.Error
+		}
+
+		return res, nil
+	}
+
+	// For other resource types, use kvstore (existing code)
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	keyValue, exists, err := kvstore.GetKv(key)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nil, err
+	}
+	if exists {
+		switch resourceType {
 		case model.StrSecurityGroup:
 			res := model.SecurityGroupInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
@@ -1353,12 +1419,40 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 		return false, err
 	}
 
-	// err = common.CheckString(resourceId)
-	// if err != nil {
-	// 	log.Error().Err(err).Msg("")
-	// 	return false, err
-	// }
+	// Handle Image, CustomImage, and Spec using PostgreSQL (GORM)
+	switch resourceType {
+	case model.StrImage:
+		var count int64
+		result := model.ORM.Model(&model.ImageInfo{}).Where("namespace = ? AND id = ? AND (resource_type = ? OR resource_type IS NULL OR resource_type = '')",
+			nsId, resourceId, model.StrImage).Count(&count)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("")
+			return false, result.Error
+		}
+		return count > 0, nil
 
+	case model.StrCustomImage:
+		var count int64
+		result := model.ORM.Model(&model.ImageInfo{}).Where("namespace = ? AND id = ? AND resource_type = ?",
+			nsId, resourceId, model.StrCustomImage).Count(&count)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("")
+			return false, result.Error
+		}
+		return count > 0, nil
+
+	case model.StrSpec:
+		var count int64
+		result := model.ORM.Model(&model.SpecInfo{}).Where("namespace = ? AND id = ?",
+			nsId, resourceId).Count(&count)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("")
+			return false, result.Error
+		}
+		return count > 0, nil
+	}
+
+	// For other resource types, use kvstore (existing code)
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
 	_, exists, err := kvstore.GetKv(key)
@@ -1806,6 +1900,43 @@ func UpdateResourceObject(nsId string, resourceType string, resourceObject inter
 		return
 	}
 
+	// Handle Image, CustomImage, and Spec using PostgreSQL (GORM)
+	switch resourceType {
+	case model.StrImage, model.StrCustomImage:
+		imageInfo, ok := resourceObject.(model.ImageInfo)
+		if !ok {
+			log.Debug().Msgf("Failed to convert resourceObject to ImageInfo")
+			return
+		}
+
+		var whereClause string
+		if resourceType == model.StrImage {
+			whereClause = "namespace = ? AND id = ? AND (resource_type = ? OR resource_type IS NULL OR resource_type = '')"
+		} else {
+			whereClause = "namespace = ? AND id = ? AND resource_type = ?"
+		}
+
+		result := model.ORM.Model(&model.ImageInfo{}).Where(whereClause, nsId, resourceId, resourceType).Updates(&imageInfo)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msgf("Failed to update %s in database", resourceType)
+		}
+		return
+
+	case model.StrSpec:
+		specInfo, ok := resourceObject.(model.SpecInfo)
+		if !ok {
+			log.Debug().Msgf("Failed to convert resourceObject to SpecInfo")
+			return
+		}
+
+		result := model.ORM.Model(&model.SpecInfo{}).Where("namespace = ? AND id = ?", nsId, resourceId).Updates(&specInfo)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("Failed to update spec in database")
+		}
+		return
+	}
+
+	// For other resource types, use kvstore (existing code)
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
 	// Check existence of the key. If no key, no update.
@@ -1813,27 +1944,6 @@ func UpdateResourceObject(nsId string, resourceType string, resourceObject inter
 	if !exists || err != nil {
 		return
 	}
-
-	/*
-		// Implementation 1
-		oldJSON := keyValue.Value
-		newJSON, err := json.Marshal(resourceObject)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
-
-		isEqualJSON, err := AreEqualJSON(oldJSON, string(newJSON))
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
-
-		if !isEqualJSON {
-			err = kvstore.Put(key, string(newJSON))
-			if err != nil {
-				log.Error().Err(err).Msg("")
-			}
-		}
-	*/
 
 	// Implementation 2
 	var oldObject interface{}
@@ -1941,12 +2051,15 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 		}
 		return specInfo.CspSpecName, nil // For Spec, name and id are the same
 	}
-	if strings.EqualFold(resourceType, model.StrImage) {
+	if strings.EqualFold(resourceType, model.StrImage) || strings.EqualFold(resourceType, model.StrCustomImage) {
 		imageInfo, err := GetImage(nsId, resourceId)
 		if err != nil {
 			return "", err
 		}
-		return imageInfo.CspImageName, nil // For Image, name and id are the same
+		if imageInfo.ResourceType == model.StrCustomImage {
+			return imageInfo.CspImageId, nil // For CustomImage, CspImageId should be used
+		}
+		return imageInfo.CspImageName, nil // For Image, CspImageName should be used
 	}
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)

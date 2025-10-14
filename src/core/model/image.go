@@ -78,6 +78,10 @@ type ImageReq struct {
 
 // ImageInfo is a struct that represents TB image object.
 type ImageInfo struct {
+
+	// ResourceType is the type of the resource
+	ResourceType string `json:"resourceType"`
+
 	// Composite primary key
 	Namespace    string `json:"namespace" example:"default" gorm:"primaryKey"`
 	ProviderName string `json:"providerName" gorm:"primaryKey"`
@@ -86,21 +90,28 @@ type ImageInfo struct {
 	// Array field for supporting multiple regions
 	RegionList []string `json:"regionList" gorm:"type:text;serializer:json"`
 
-	Id  string `json:"id" example:"aws-ap-southeast-1"`
-	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	Id   string `json:"id" example:"aws-ap-southeast-1"`
+	Uid  string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	Name string `json:"name" example:"aws-ap-southeast-1"`
 
-	Name           string `json:"name" example:"aws-ap-southeast-1"`
-	ConnectionName string `json:"connectionName,omitempty"`
-	InfraType      string `json:"infraType,omitempty"` // vm|k8s|kubernetes|container, etc.
+	// CspImageId is resource identifier managed by CSP
+	CspImageId string `json:"cspImageId,omitempty" example:"ami-0d399fba46a30a310"`
+	// SourceVmUid is the UID of the source VM from which this image was created
+	SourceVmUid string `json:"sourceVmUid" example:"wef12awefadf1221edcf"`
+	// SourceCspImageName is the name of the source CSP image from which this image was created
+	SourceCspImageName string `json:"sourceCspImageName" example:"csp-06eb41e14121c550a"`
 
-	FetchedTime  string `json:"fetchedTime,omitempty"`
-	CreationDate string `json:"creationDate,omitempty"`
+	ConnectionName string `json:"connectionName"`
+	InfraType      string `json:"infraType"` // vm|k8s|kubernetes|container, etc.
 
-	IsGPUImage        bool `json:"isGPUImage,omitempty" gorm:"column:is_gpu_image" enum:"true|false" default:"false" description:"Whether the image is GPU-enabled or not."`
-	IsKubernetesImage bool `json:"isKubernetesImage,omitempty" gorm:"column:is_kubernetes_image" enum:"true|false" default:"false" description:"Whether the image is Kubernetes-enabled or not."`
-	IsBasicImage      bool `json:"isBasicImage,omitempty" gorm:"column:is_basic_image" enum:"true|false" default:"false" description:"Whether the image is a basic OS image or not."`
+	FetchedTime  string `json:"fetchedTime"`
+	CreationDate string `json:"creationDate"`
 
-	OSType string `json:"osType,omitempty" gorm:"column:os_type" example:"ubuntu 22.04" description:"Simplified OS name and version string"`
+	IsGPUImage        bool `json:"isGPUImage" gorm:"column:is_gpu_image" enum:"true|false" default:"false" description:"Whether the image is GPU-enabled or not."`
+	IsKubernetesImage bool `json:"isKubernetesImage" gorm:"column:is_kubernetes_image" enum:"true|false" default:"false" description:"Whether the image is Kubernetes-enabled or not."`
+	IsBasicImage      bool `json:"isBasicImage" gorm:"column:is_basic_image" enum:"true|false" default:"false" description:"Whether the image is a basic OS image or not."`
+
+	OSType string `json:"osType" gorm:"column:os_type" example:"ubuntu 22.04" description:"Simplified OS name and version string"`
 
 	OSArchitecture OSArchitecture `json:"osArchitecture" gorm:"column:os_architecture" example:"x86_64" description:"The architecture of the operating system of the image."`        // arm64, x86_64 etc.
 	OSPlatform     OSPlatform     `json:"osPlatform" gorm:"column:os_platform" example:"Linux/UNIX" description:"The platform of the operating system of the image."`                // Linux/UNIX, Windows, NA
@@ -110,8 +121,19 @@ type ImageInfo struct {
 	ImageStatus    ImageStatus    `json:"imageStatus" example:"Available" description:"The status of the image, e.g., Available, Deprecated, NA."`                                   // Available, Deprecated, NA
 
 	Details     []KeyValue `json:"details" gorm:"type:text;serializer:json"`
-	SystemLabel string     `json:"systemLabel,omitempty" example:"Managed by CB-Tumblebug" default:""`
-	Description string     `json:"description,omitempty"`
+	SystemLabel string     `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
+	Description string     `json:"description"`
+
+	// CommandHistory stores the status and history of remote commands executed on this VM
+	CommandHistory []ImageSourceCommandHistory `json:"commandHistory" gorm:"type:text;serializer:json"`
+}
+
+// ImageSourceCommandHistory represents a single remote command execution record
+type ImageSourceCommandHistory struct {
+	// Index is sequential identifier for this command execution (1, 2, 3, ...)
+	Index int `json:"index" example:"1"`
+	// CommandExecuted is the actual SSH command executed on the VM (may be adjusted)
+	CommandExecuted string `json:"commandExecuted" example:"ls -la"`
 }
 
 // ImageFetchOption is struct for Image Fetch Options

@@ -5000,6 +5000,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/mci/{mciId}/snapshot": {
+            "post": {
+                "description": "Create snapshots for the first running VM in each subgroup of an MCI in parallel",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Image Management"
+                ],
+                "summary": "Create snapshots for all subgroups in MCI (one VM per subgroup in parallel)",
+                "operationId": "PostMciSnapshot",
+                "parameters": [
+                    {
+                        "description": "Request body to create MCI snapshots",
+                        "name": "snapshotReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SnapshotReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MciSnapshotResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mci/{mciId}/subGroupDynamic": {
             "post": {
                 "description": "Dynamically add new virtual machines to an existing MCI using common specifications and automated resource management.\nThis endpoint provides elastic scaling capabilities for running MCIs:\n\n**Dynamic VM Addition Process:**\n1. **MCI Validation**: Verifies target MCI exists and is in a valid state for expansion\n2. **Resource Discovery**: Resolves common spec and image to provider-specific resources\n3. **Network Integration**: Automatically configures new VMs to use existing MCI network resources\n4. **Subgroup Management**: Creates new subgroups or expands existing ones based on configuration\n5. **Status Synchronization**: Updates MCI status and metadata to reflect new VM additions\n\n**Integration with Existing Infrastructure:**\n- **Network Reuse**: New VMs automatically join existing VNets and security groups\n- **SSH Key Sharing**: Uses existing SSH keys for consistent access management\n- **Monitoring Integration**: New VMs inherit monitoring configuration from parent MCI\n- **Label Propagation**: Applies MCI-level labels and policies to new VMs\n- **Resource Consistency**: Maintains naming conventions and resource organization\n\n**Scaling Scenarios:**\n- **Horizontal Scaling**: Add more instances to handle increased workload\n- **Multi-Region Expansion**: Deploy VMs in new regions while maintaining MCI cohesion\n- **Provider Diversification**: Add VMs from different cloud providers for redundancy\n- **Workload Specialization**: Deploy VMs with different specifications for specific tasks\n\n**Configuration Requirements:**\n- ` + "`" + `specId` + "`" + `: Must specify valid VM specification from system namespace\n- ` + "`" + `imageId` + "`" + `: Must specify valid image compatible with target provider/region\n- ` + "`" + `name` + "`" + `: Becomes subgroup name; VMs will be named with sequential suffixes\n- ` + "`" + `subGroupSize` + "`" + `: Number of identical VMs to create (default: 1)\n\n**Network and Security:**\n- New VMs automatically inherit security group rules from existing MCI\n- Network connectivity to existing VMs is established automatically\n- Firewall rules and access policies are applied consistently\n- SSH access is configured using existing key pairs\n\n**Example Use Cases:**\n- Scale out web tier during traffic spikes\n- Add GPU instances for machine learning workloads\n- Deploy edge nodes in additional geographic regions\n- Add specialized storage or database nodes to existing application stack\n\n**Post-Addition Operations:**\n- New VMs are immediately available for standard MCI operations\n- Can be individually managed or grouped with existing subgroups\n- Monitoring and logging are automatically configured\n- Application deployment and configuration management can proceed immediately",
@@ -6513,11 +6576,11 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "description": "Request body to create VM snapshot",
-                        "name": "vmSnapshotReq",
+                        "name": "snapshotReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.VmSnapshotReq"
+                            "$ref": "#/definitions/model.SnapshotReq"
                         }
                     },
                     {
@@ -6549,7 +6612,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.CustomImageInfo"
+                            "$ref": "#/definitions/model.ImageInfo"
                         }
                     },
                     "404": {
@@ -7823,7 +7886,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.CustomImageInfo"
+                            "$ref": "#/definitions/model.ImageInfo"
                         }
                     },
                     "404": {
@@ -7921,7 +7984,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.CustomImageInfo"
+                            "$ref": "#/definitions/model.ImageInfo"
                         }
                     },
                     "404": {
@@ -8770,6 +8833,13 @@ const docTemplate = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Search custom images (snapshots) only",
+                        "name": "customImage",
+                        "in": "query"
                     },
                     {
                         "description": "condition",
@@ -14309,95 +14379,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.CustomImageInfo": {
-            "type": "object",
-            "properties": {
-                "associatedObjectList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "connectionConfig": {
-                    "$ref": "#/definitions/model.ConnConfig"
-                },
-                "connectionName": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1"
-                },
-                "creationDate": {
-                    "type": "string",
-                    "example": "2022-10-18T08:12:48Z"
-                },
-                "cspResourceId": {
-                    "description": "CspResourceId is resource identifier managed by CSP",
-                    "type": "string",
-                    "example": "csp-06eb41e14121c550a"
-                },
-                "cspResourceName": {
-                    "description": "CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.",
-                    "type": "string",
-                    "example": "we12fawefadf1221edcf"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "guestOS": {
-                    "description": "Windows7, Ubuntu etc.",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "Id is unique identifier for the object",
-                    "type": "string",
-                    "example": "aws-ap-southeast-1"
-                },
-                "isAutoGenerated": {
-                    "type": "boolean"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.KeyValue"
-                    }
-                },
-                "name": {
-                    "description": "Name is human-readable string to represent the object",
-                    "type": "string",
-                    "example": "aws-ap-southeast-1"
-                },
-                "namespace": {
-                    "description": "required to save in RDB",
-                    "type": "string",
-                    "example": "default"
-                },
-                "resourceType": {
-                    "description": "ResourceType is the type of the resource",
-                    "type": "string"
-                },
-                "sourceVmId": {
-                    "type": "string",
-                    "example": "aws-ap-southeast-1-1"
-                },
-                "status": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.CustomImageStatus"
-                        }
-                    ],
-                    "example": "Available"
-                },
-                "systemLabel": {
-                    "description": "SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": "Managed by CB-Tumblebug"
-                },
-                "uid": {
-                    "description": "Uid is universally unique identifier for the object, used for labelSelector",
-                    "type": "string",
-                    "example": "wef12awefadf1221edcf"
-                }
-            }
-        },
         "model.CustomImageReq": {
             "type": "object",
             "required": [
@@ -14421,17 +14402,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "model.CustomImageStatus": {
-            "type": "string",
-            "enum": [
-                "Available",
-                "Unavailable"
-            ],
-            "x-enum-varnames": [
-                "MyImageAvailable",
-                "MyImageUnavailable"
-            ]
         },
         "model.DataDiskInfo": {
             "type": "object",
@@ -15128,11 +15098,23 @@ const docTemplate = `{
         "model.ImageInfo": {
             "type": "object",
             "properties": {
+                "commandHistory": {
+                    "description": "CommandHistory stores the status and history of remote commands executed on this VM",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ImageSourceCommandHistory"
+                    }
+                },
                 "connectionName": {
                     "type": "string"
                 },
                 "creationDate": {
                     "type": "string"
+                },
+                "cspImageId": {
+                    "description": "CspImageId is resource identifier managed by CSP",
+                    "type": "string",
+                    "example": "ami-0d399fba46a30a310"
                 },
                 "cspImageName": {
                     "type": "string",
@@ -15235,6 +15217,20 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "resourceType": {
+                    "description": "ResourceType is the type of the resource",
+                    "type": "string"
+                },
+                "sourceCspImageName": {
+                    "description": "SourceCspImageName is the name of the source CSP image from which this image was created",
+                    "type": "string",
+                    "example": "csp-06eb41e14121c550a"
+                },
+                "sourceVmUid": {
+                    "description": "SourceVmUid is the UID of the source VM from which this image was created",
+                    "type": "string",
+                    "example": "wef12awefadf1221edcf"
+                },
                 "systemLabel": {
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
@@ -15289,6 +15285,21 @@ const docTemplate = `{
                 "message": {
                     "description": "Message explains the image-specific risk reasoning",
                     "type": "string"
+                }
+            }
+        },
+        "model.ImageSourceCommandHistory": {
+            "type": "object",
+            "properties": {
+                "commandExecuted": {
+                    "description": "CommandExecuted is the actual SSH command executed on the VM (may be adjusted)",
+                    "type": "string",
+                    "example": "ls -la"
+                },
+                "index": {
+                    "description": "Index is sequential identifier for this command execution (1, 2, 3, ...)",
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
@@ -16799,6 +16810,33 @@ const docTemplate = `{
                     "description": "SystemLabel is for describing the mci in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": ""
+                }
+            }
+        },
+        "model.MciSnapshotResult": {
+            "type": "object",
+            "properties": {
+                "failCount": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "mciId": {
+                    "type": "string",
+                    "example": "mci01"
+                },
+                "namespace": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.VmSnapshotResult"
+                    }
+                },
+                "successCount": {
+                    "type": "integer",
+                    "example": 3
                 }
             }
         },
@@ -18982,6 +19020,22 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SnapshotReq": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Description about this custom image"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "custom-image01"
+                }
+            }
+        },
         "model.SpecAvailabilityBatchResult": {
             "type": "object",
             "properties": {
@@ -20585,12 +20639,38 @@ const docTemplate = `{
                 }
             }
         },
-        "model.VmSnapshotReq": {
+        "model.VmSnapshotResult": {
             "type": "object",
             "properties": {
-                "name": {
+                "error": {
+                    "type": "string"
+                },
+                "imageId": {
                     "type": "string",
-                    "example": "aws-ap-southeast-1-snapshot"
+                    "example": "custom-image-g1"
+                },
+                "imageInfo": {
+                    "$ref": "#/definitions/model.ImageInfo"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "Success",
+                        "Failed"
+                    ],
+                    "example": "Success"
+                },
+                "subGroupId": {
+                    "type": "string",
+                    "example": "g1"
+                },
+                "vmId": {
+                    "type": "string",
+                    "example": "g1-1"
+                },
+                "vmName": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2-g1-1"
                 }
             }
         },
@@ -21332,7 +21412,7 @@ const docTemplate = `{
                 "customImage": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.CustomImageInfo"
+                        "$ref": "#/definitions/model.ImageInfo"
                     }
                 }
             }

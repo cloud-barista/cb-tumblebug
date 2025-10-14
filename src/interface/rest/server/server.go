@@ -105,6 +105,8 @@ var (
 		{"/resources/securityGroup"},
 		{"/resources/vpn"},
 		{"/resources/sshKey"},
+		{"/resources/customImage"},
+		{"/resources/dataDisk"},
 	}
 )
 
@@ -532,6 +534,8 @@ func RunServer() {
 
 	// VM snapshot -> creates one customImage and 'n' dataDisks
 	g.POST("/:nsId/mci/:mciId/vm/:vmId/snapshot", rest_infra.RestPostMciVmSnapshot)
+	// MCI snapshot -> creates snapshots for first running VM in each subgroup (parallel)
+	g.POST("/:nsId/mci/:mciId/snapshot", rest_infra.RestPostMciSnapshot)
 
 	// These REST APIs are for dev/test only
 	g.POST("/:nsId/mci/:mciId/nlb/:resourceId/vm", rest_infra.RestAddNLBVMs)

@@ -1502,15 +1502,15 @@ func fetchVmStatusesWithRateLimiting(nsId, mciId string, vmList []string) ([]mod
 
 	wg.Wait()
 
-	// Summary logging
-	cspCount := len(vmGroups)
-	totalRegions := 0
-	for _, regions := range vmGroups {
-		totalRegions += len(regions)
-	}
+	// // Summary logging
+	// cspCount := len(vmGroups)
+	// totalRegions := 0
+	// for _, regions := range vmGroups {
+	// 	totalRegions += len(regions)
+	// }
 
-	log.Debug().Msgf("Rate-limited VM status fetch completed: %d CSPs, %d regions, %d VMs processed",
-		cspCount, totalRegions, len(allVmStatuses))
+	// log.Debug().Msgf("Rate-limited VM status fetch completed: %d CSPs, %d regions, %d VMs processed",
+	// 	cspCount, totalRegions, len(allVmStatuses))
 	return allVmStatuses, nil
 }
 

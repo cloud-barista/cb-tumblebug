@@ -146,7 +146,7 @@ type SpiderConnectionName struct {
 var ResourceTypeRegistry = map[string]func() interface{}{
 	StrSSHKey:        func() interface{} { return &SshKeyInfo{} },
 	StrImage:         func() interface{} { return &ImageInfo{} },
-	StrCustomImage:   func() interface{} { return &CustomImageInfo{} },
+	StrCustomImage:   func() interface{} { return &ImageInfo{} },
 	StrSecurityGroup: func() interface{} { return &SecurityGroupInfo{} },
 	StrSpec:          func() interface{} { return &SpecInfo{} },
 	StrVNet:          func() interface{} { return &VNetInfo{} },
