@@ -15098,6 +15098,13 @@ const docTemplate = `{
         "model.ImageInfo": {
             "type": "object",
             "properties": {
+                "commandHistory": {
+                    "description": "CommandHistory stores the status and history of remote commands executed on this VM",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ImageSourceCommandHistory"
+                    }
+                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -15278,6 +15285,21 @@ const docTemplate = `{
                 "message": {
                     "description": "Message explains the image-specific risk reasoning",
                     "type": "string"
+                }
+            }
+        },
+        "model.ImageSourceCommandHistory": {
+            "type": "object",
+            "properties": {
+                "commandExecuted": {
+                    "description": "CommandExecuted is the actual SSH command executed on the VM (may be adjusted)",
+                    "type": "string",
+                    "example": "ls -la"
+                },
+                "index": {
+                    "description": "Index is sequential identifier for this command execution (1, 2, 3, ...)",
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },

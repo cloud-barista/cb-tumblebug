@@ -114,6 +114,14 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 		log.Debug().Msgf("Successfully retrieved source image info for VM %s", vmId)
 	}
 
+	commandHistory := []model.ImageSourceCommandHistory{}
+	for _, cmd := range vm.CommandStatus {
+		commandHistory = append(commandHistory, model.ImageSourceCommandHistory{
+			Index:           cmd.Index,
+			CommandExecuted: cmd.CommandExecuted,
+		})
+	}
+
 	// Create ImageInfo inheriting from source image
 	// Use ConnectionConfig from VM (already contains all necessary information)
 	tempImageInfo := model.ImageInfo{
@@ -161,6 +169,8 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 		Details:     tempSpiderMyImageInfo.KeyValueList,
 		SystemLabel: "Created from VM snapshot",
 		Description: fmt.Sprintf("Custom image from MCI/VM: %s/%s (Uid: %s): %s", mciId, vm.Name, vm.Uid, snapshotReq.Description),
+
+		CommandHistory: commandHistory,
 	}
 
 	result, err := resource.RegisterCustomImageWithInfo(nsId, tempImageInfo)

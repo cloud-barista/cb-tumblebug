@@ -12360,6 +12360,12 @@ components:
     model.ImageInfo:
       type: object
       properties:
+        commandHistory:
+          type: array
+          description: CommandHistory stores the status and history of remote commands
+            executed on this VM
+          items:
+            $ref: '#/components/schemas/model.ImageSourceCommandHistory'
         connectionName:
           type: string
         creationDate:
@@ -12496,6 +12502,19 @@ components:
         message:
           type: string
           description: Message explains the image-specific risk reasoning
+    model.ImageSourceCommandHistory:
+      type: object
+      properties:
+        commandExecuted:
+          type: string
+          description: CommandExecuted is the actual SSH command executed on the VM
+            (may be adjusted)
+          example: ls -la
+        index:
+          type: integer
+          description: "Index is sequential identifier for this command execution\
+            \ (1, 2, 3, ...)"
+          example: 1
     model.ImageStatus:
       type: string
       enum:
