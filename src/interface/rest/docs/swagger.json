@@ -2323,6 +2323,61 @@
                 }
             }
         },
+        "/ns/{nsId}/buildAgnosticImage": {
+            "post": {
+                "description": "Creates an MCI infrastructure, executes post-deployment commands, creates snapshots from each subgroup, and optionally cleans up the MCI. This is a complete workflow for building CSP-agnostic custom images.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Image Management"
+                ],
+                "summary": "Build agnostic custom images by creating MCI, executing commands, and taking snapshots",
+                "operationId": "PostBuildAgnosticImage",
+                "parameters": [
+                    {
+                        "description": "Request body to build agnostic images",
+                        "name": "buildReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.BuildAgnosticImageReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.BuildAgnosticImageResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/checkResource/{resourceType}/{resourceId}": {
             "get": {
                 "description": "Check resources' existence",
@@ -13739,6 +13794,76 @@
                     "items": {
                         "$ref": "#/definitions/model.BenchmarkInfo"
                     }
+                }
+            }
+        },
+        "model.BuildAgnosticImageReq": {
+            "type": "object",
+            "required": [
+                "snapshotReq",
+                "sourceMciReq"
+            ],
+            "properties": {
+                "cleanupMciAfterSnapshot": {
+                    "description": "Whether to cleanup (terminate) MCI after snapshot creation",
+                    "type": "boolean",
+                    "default": true,
+                    "example": true
+                },
+                "snapshotReq": {
+                    "description": "Snapshot configuration for creating custom images",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.SnapshotReq"
+                        }
+                    ]
+                },
+                "sourceMciReq": {
+                    "description": "MCI configuration for creating the infrastructure",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MciDynamicReq"
+                        }
+                    ]
+                }
+            }
+        },
+        "model.BuildAgnosticImageResult": {
+            "type": "object",
+            "properties": {
+                "mciCleanedUp": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "mciId": {
+                    "description": "MCI information",
+                    "type": "string",
+                    "example": "mci01"
+                },
+                "mciStatus": {
+                    "type": "string",
+                    "example": "Running"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Successfully created 3 custom images from MCI"
+                },
+                "namespace": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "snapshotResult": {
+                    "description": "Snapshot results",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.MciSnapshotResult"
+                        }
+                    ]
+                },
+                "totalDuration": {
+                    "description": "Overall summary",
+                    "type": "string",
+                    "example": "15m30s"
                 }
             }
         },

@@ -88,3 +88,32 @@ type MciSnapshotResult struct {
 	FailCount    int                `json:"failCount" example:"0"`
 	Results      []VmSnapshotResult `json:"results"`
 }
+
+// BuildAgnosticImageReq is a struct to handle 'Build Agnostic Image' request
+// This combines MCI creation and snapshot creation into a single workflow
+type BuildAgnosticImageReq struct {
+	// MCI configuration for creating the infrastructure
+	SourceMciReq MciDynamicReq `json:"sourceMciReq" validate:"required"`
+
+	// Snapshot configuration for creating custom images
+	SnapshotReq SnapshotReq `json:"snapshotReq" validate:"required"`
+
+	// Whether to cleanup (terminate) MCI after snapshot creation
+	CleanupMciAfterSnapshot bool `json:"cleanupMciAfterSnapshot" example:"true" default:"true"`
+}
+
+// BuildAgnosticImageResult represents the result of building agnostic images
+type BuildAgnosticImageResult struct {
+	// MCI information
+	MciId        string `json:"mciId" example:"mci01"`
+	Namespace    string `json:"namespace" example:"default"`
+	MciStatus    string `json:"mciStatus" example:"Running"`
+	MciCleanedUp bool   `json:"mciCleanedUp" example:"true"`
+
+	// Snapshot results
+	SnapshotResult MciSnapshotResult `json:"snapshotResult"`
+
+	// Overall summary
+	TotalDuration string `json:"totalDuration" example:"15m30s"`
+	Message       string `json:"message" example:"Successfully created 3 custom images from MCI"`
+}

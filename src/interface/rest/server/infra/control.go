@@ -175,3 +175,32 @@ func RestPostMciSnapshot(c echo.Context) error {
 	}
 	return clientManager.EndRequestWithLog(c, err, result)
 }
+
+// RestPostBuildAgnosticImage godoc
+// @ID PostBuildAgnosticImage
+// @Summary Build agnostic custom images by creating MCI, executing commands, and taking snapshots
+// @Description Creates an MCI infrastructure, executes post-deployment commands, creates snapshots from each subgroup, and optionally cleans up the MCI. This is a complete workflow for building CSP-agnostic custom images.
+// @Tags [Infra Resource] Image Management
+// @Accept  json
+// @Produce  json
+// @Param buildReq body model.BuildAgnosticImageReq true "Request body to build agnostic images"
+// @Param nsId path string true "Namespace ID" default(default)
+// @Success 200 {object} model.BuildAgnosticImageResult
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/buildAgnosticImage [post]
+func RestPostBuildAgnosticImage(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	req := &model.BuildAgnosticImageReq{}
+	if err := c.Bind(req); err != nil {
+		return clientManager.EndRequestWithLog(c, err, model.SimpleMsg{Message: "Invalid request body"})
+	}
+
+	result, err := infra.BuildAgnosticImage(nsId, *req)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, model.SimpleMsg{Message: "Failed to build agnostic images"})
+	}
+	return clientManager.EndRequestWithLog(c, err, result)
+}
