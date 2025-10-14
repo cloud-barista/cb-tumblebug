@@ -91,6 +91,7 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 	tumblebugImageId := cspImageName
 
 	// Set basic fields
+	tumblebugImage.ResourceType = model.StrImage
 	tumblebugImage.Id = tumblebugImageId
 	tumblebugImage.Name = tumblebugImageId
 	tumblebugImage.Uid = common.GenUid()
@@ -566,6 +567,7 @@ func LookupImageList(connConfigName string) (model.SpiderImageList, error) {
 }
 
 // LookupImage accepts Spider conn config and CSP image ID, lookups and returns the Spider image object
+// If the regular image lookup fails, it checks for custom images in the database
 func LookupImage(connConfig string, imageId string) (model.SpiderImageInfo, error) {
 
 	if connConfig == "" {
@@ -582,7 +584,7 @@ func LookupImage(connConfig string, imageId string) (model.SpiderImageInfo, erro
 
 	client := resty.New()
 	client.SetTimeout(2 * time.Minute)
-	url := model.SpiderRestUrl + "/vmimage/" + url.QueryEscape(imageId)
+	apiUrl := model.SpiderRestUrl + "/vmimage/" + url.QueryEscape(imageId)
 	method := "GET"
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = connConfig
@@ -591,7 +593,7 @@ func LookupImage(connConfig string, imageId string) (model.SpiderImageInfo, erro
 	err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
-		url,
+		apiUrl,
 		nil,
 		clientManager.SetUseBody(requestBody),
 		&requestBody,
@@ -600,8 +602,50 @@ func LookupImage(connConfig string, imageId string) (model.SpiderImageInfo, erro
 	)
 
 	if err != nil {
-		log.Trace().Err(err).Msg("")
-		return callResult, err
+		log.Trace().Err(err).Msg("Failed to lookup regular image")
+
+		// Try to check if it's a custom image directly from Spider
+		log.Debug().Msgf("Checking if '%s' exists as a custom image", imageId)
+
+		// Query Spider for custom image using ExecuteHttpRequest
+		customImageUrl := model.SpiderRestUrl + "/myimage/" + url.QueryEscape(imageId)
+		requestBody.ConnectionName = connConfig
+
+		var spiderMyImageResult model.SpiderMyImageInfo
+
+		statusErr := clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			customImageUrl,
+			nil,
+			clientManager.SetUseBody(requestBody),
+			&requestBody,
+			&spiderMyImageResult,
+			clientManager.MediumDuration,
+		)
+
+		if statusErr != nil {
+			// Custom image also not found in Spider
+			enhancedErr := fmt.Errorf("image '%s' not found in both regular and custom images: %w", imageId, err)
+			log.Trace().Err(enhancedErr).Msg("Image not found in both sources")
+			return callResult, enhancedErr
+		}
+
+		// Successfully found custom image in Spider
+		currentStatus := model.ImageStatus(spiderMyImageResult.Status)
+
+		// Check if status is Available
+		if currentStatus == model.ImageAvailable {
+			// Custom image is available - return success with nil error
+			log.Debug().Msgf("Custom image found and available with status: %s", currentStatus)
+			return callResult, nil
+		} else {
+			// Custom image exists but status is not Available
+			enhancedErr := fmt.Errorf("custom image exists but has status '%s' (not Available yet): %w",
+				currentStatus, err)
+			log.Trace().Err(enhancedErr).Msgf("Custom image found with status: %s", currentStatus)
+			return callResult, enhancedErr
+		}
 	}
 
 	return callResult, nil
@@ -1210,7 +1254,7 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 }
 
 // SearchImage returns a list of images based on the search criteria
-func SearchImage(nsId string, req model.SearchImageRequest) ([]model.ImageInfo, int, error) {
+func SearchImage(nsId string, req model.SearchImageRequest, isCustomImage bool) ([]model.ImageInfo, int, error) {
 	err := common.CheckString(nsId)
 	cnt := 0
 	if err != nil {
@@ -1221,7 +1265,7 @@ func SearchImage(nsId string, req model.SearchImageRequest) ([]model.ImageInfo, 
 	var specInfo *model.SpecInfo
 	// If MatchedSpecId is provided, fetch spec information and apply to search criteria
 	if req.MatchedSpecId != "" {
-		spec, err := GetSpec(nsId, req.MatchedSpecId)
+		spec, err := GetSpec(model.SystemCommonNs, req.MatchedSpecId)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to get spec information for MatchedSpecId: %s", req.MatchedSpecId)
 			return nil, cnt, err
@@ -1248,6 +1292,12 @@ func SearchImage(nsId string, req model.SearchImageRequest) ([]model.ImageInfo, 
 
 	var images []model.ImageInfo
 	sqlQuery := model.ORM.Where("namespace = ?", nsId)
+
+	// Apply isCustomImage filter first (highest priority)
+	if isCustomImage {
+		sqlQuery = sqlQuery.Where("resource_type = ?", model.StrCustomImage)
+		log.Debug().Msg("Applied isCustomImage filter: resource_type = customImage")
+	}
 
 	if req.ProviderName != "" {
 		sqlQuery = sqlQuery.Where("provider_name = ?", req.ProviderName)
@@ -1797,38 +1847,18 @@ func GetImage(nsId string, cspImageName string) (model.ImageInfo, error) {
 	// Normalize the image name to lower case for searching
 	cspImageName = strings.ToLower(cspImageName)
 
+	// imageKey does not include information for providerName, regionName
+	// 1) Check if the image is a custom image
+	// ex: custom-img-487zeit5
+	var customImage model.ImageInfo
+	result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(id) = ? AND resource_type = ?",
+		nsId, cspImageName, model.StrCustomImage).First(&customImage)
+	if result.Error == nil {
+		return customImage, nil
+	}
+
 	providerName, regionName, _, imageIdentifier, err := ResolveProviderRegionZoneResourceKey(cspImageName)
 	if err != nil {
-		// imageKey does not include information for providerName, regionName
-		image := model.ImageInfo{Namespace: nsId, Id: cspImageName}
-
-		// 1) Check if the image is a custom image
-		// ex: custom-img-487zeit5
-		tempInterface, err := GetResource(nsId, model.StrCustomImage, cspImageName)
-		customImage := model.CustomImageInfo{}
-		if err == nil {
-			err = common.CopySrcToDest(&tempInterface, &customImage)
-			if err != nil {
-				log.Error().Err(err).Msg("CustomImageInfo CopySrcToDest error")
-				return model.ImageInfo{}, err
-			}
-			image.CspImageName = customImage.CspResourceName
-			image.SystemLabel = model.StrCustomImage
-			return image, nil
-		}
-
-		// 2) Check if the image is a registered image in the given namespace
-		// ex: img-487zeit5
-		image = model.ImageInfo{Namespace: nsId, Id: cspImageName}
-		result := model.ORM.Where("LOWER(namespace) = ? AND LOWER(id) = ?", nsId, cspImageName).First(&image)
-		if result.Error != nil {
-			log.Info().Err(result.Error).Msgf("Cannot get image %s by ID from %s", cspImageName, nsId)
-		} else {
-			return image, nil
-		}
-
-	} else {
-		// imageKey includes information for providerName, regionName
 
 		// 1) Check if the image is a registered image in the common namespace model.SystemCommonNs by ImageId
 		// ex: tencent+ap-jakarta+ubuntu22.04 or tencent+ap-jakarta+img-487zeit5
@@ -1840,7 +1870,19 @@ func GetImage(nsId string, cspImageName string) (model.ImageInfo, error) {
 			return image, nil
 		}
 
-		// 2) Check if the image is a registered image in the common namespace model.SystemCommonNs by CspImageName
+		// 2) Check if the image is a registered image in the given namespace
+		// ex: img-487zeit5
+
+		result = model.ORM.Where("LOWER(namespace) = ? AND LOWER(csp_image_name) = ?", nsId, cspImageName).First(&image)
+		if result.Error != nil {
+			log.Info().Err(result.Error).Msgf("Cannot get image %s by ID from %s", cspImageName, nsId)
+		} else {
+			return image, nil
+		}
+	} else {
+		// imageKey includes information for providerName, regionName
+
+		// 1) Check if the image is a registered image in the common namespace model.SystemCommonNs by CspImageName
 		// ex: tencent+img-487zeit5
 		image, err := GetImageByPrimaryKey(model.SystemCommonNs, providerName, imageIdentifier)
 		if err != nil {
@@ -1849,7 +1891,7 @@ func GetImage(nsId string, cspImageName string) (model.ImageInfo, error) {
 			return image, nil
 		}
 
-		// 3) Check if the image is a registered image in the common namespace model.SystemCommonNs by GuestOS
+		// 2) Check if the image is a registered image in the common namespace model.SystemCommonNs by GuestOS
 		// ex: tencent+ap-jakarta+Ubuntu22.04
 
 		//isKubernetesImage := false
@@ -1864,7 +1906,7 @@ func GetImage(nsId string, cspImageName string) (model.ImageInfo, error) {
 			IncludeDeprecatedImage: &includeDeprecatedImage,
 		}
 
-		images, imageCnt, err := SearchImage(model.SystemCommonNs, req)
+		images, imageCnt, err := SearchImage(model.SystemCommonNs, req, false)
 		if err != nil || imageCnt == 0 {
 			log.Info().Err(result.Error).Msgf("Failed to get image %s by OS type", imageIdentifier)
 		} else {

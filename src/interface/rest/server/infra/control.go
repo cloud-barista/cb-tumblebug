@@ -119,11 +119,11 @@ func RestGetControlMciVm(c echo.Context) error {
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
-// @Param vmSnapshotReq body model.VmSnapshotReq true "Request body to create VM snapshot"
+// @Param snapshotReq body model.SnapshotReq true "Request body to create VM snapshot"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param mciId path string true "MCI ID" default(mci01)
 // @Param vmId path string true "VM ID" default(g1-1)
-// @Success 200 {object} model.CustomImageInfo
+// @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/snapshot [post]
@@ -133,14 +133,45 @@ func RestPostMciVmSnapshot(c echo.Context) error {
 	mciId := c.Param("mciId")
 	vmId := c.Param("vmId")
 
-	u := &model.VmSnapshotReq{}
-	if err := c.Bind(u); err != nil {
+	req := &model.SnapshotReq{}
+	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	result, err := infra.CreateVmSnapshot(nsId, mciId, vmId, u.Name)
+	result, err := infra.CreateVmSnapshot(nsId, mciId, vmId, *req)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, model.SimpleMsg{Message: "Failed to create a snapshot"})
+	}
+	return clientManager.EndRequestWithLog(c, err, result)
+}
+
+// RestPostMciSnapshot godoc
+// @ID PostMciSnapshot
+// @Summary Create snapshots for all subgroups in MCI (one VM per subgroup in parallel)
+// @Description Create snapshots for the first running VM in each subgroup of an MCI in parallel
+// @Tags [Infra Resource] Image Management
+// @Accept  json
+// @Produce  json
+// @Param snapshotReq body model.SnapshotReq true "Request body to create MCI snapshots"
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Success 200 {object} model.MciSnapshotResult
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/snapshot [post]
+func RestPostMciSnapshot(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+
+	req := &model.SnapshotReq{}
+	if err := c.Bind(req); err != nil {
+		return err
+	}
+
+	result, err := infra.CreateMciSnapshot(nsId, mciId, *req)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, model.SimpleMsg{Message: "Failed to create MCI snapshots"})
 	}
 	return clientManager.EndRequestWithLog(c, err, result)
 }

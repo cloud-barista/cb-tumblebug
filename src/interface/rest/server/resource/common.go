@@ -155,10 +155,10 @@ func RestGetAllResources(c echo.Context) error {
 			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrCustomImage:
 			var content struct {
-				Image []model.CustomImageInfo `json:"customImage"`
+				Image []model.ImageInfo `json:"customImage"`
 			}
 
-			content.Image = resourceList.([]model.CustomImageInfo) // type assertion (interface{} -> array)
+			content.Image = resourceList.([]model.ImageInfo) // type assertion (interface{} -> array)
 			return clientManager.EndRequestWithLog(c, err, content)
 		case model.StrSecurityGroup:
 			var content struct {

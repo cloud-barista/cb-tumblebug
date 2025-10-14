@@ -33,7 +33,7 @@ import (
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string true "Option: " Enums(register)
 // @Param customImageRegisterReq body model.CustomImageReq true "Request to Register existing Custom Image in a CSP"
-// @Success 200 {object} model.CustomImageInfo
+// @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/customImage [post]
@@ -66,7 +66,7 @@ func RestPostCustomImage(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param customImageId path string true "customImage ID"
-// @Success 200 {object} model.CustomImageInfo
+// @Success 200 {object} model.ImageInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/customImage/{customImageId} [get]
@@ -77,7 +77,7 @@ func RestGetCustomImage(c echo.Context) error {
 
 // Response structure for RestGetAllCustomImage
 type RestGetAllCustomImageResponse struct {
-	CustomImage []model.CustomImageInfo `json:"customImage"`
+	CustomImage []model.ImageInfo `json:"customImage"`
 }
 
 // RestGetAllCustomImage godoc

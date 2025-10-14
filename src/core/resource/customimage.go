@@ -42,50 +42,47 @@ func CustomImageReqStructLevelValidation(sl validator.StructLevel) {
 }
 
 // RegisterCustomImageWithInfo accepts customimage registration request, creates and returns an TB customimage object
-func RegisterCustomImageWithInfo(nsId string, content model.CustomImageInfo) (model.CustomImageInfo, error) {
+func RegisterCustomImageWithInfo(nsId string, content model.ImageInfo) (model.ImageInfo, error) {
 
 	resourceType := model.StrCustomImage
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.CustomImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 	err = common.CheckString(content.Name)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.CustomImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 	check, err := CheckResource(nsId, resourceType, content.Name)
 
 	if check {
 		err := fmt.Errorf("The customImage " + content.Name + " already exists.")
-		return model.CustomImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 
 	if err != nil {
 		err := fmt.Errorf("Failed to check the existence of the customImage " + content.Name + ".")
-		return model.CustomImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 
+	// Set required fields based on new structure
 	content.ResourceType = resourceType
 	content.Namespace = nsId
 	content.Id = content.Name
-	content.AssociatedObjectList = []string{}
 
-	log.Info().Msg("POST registerCustomImage")
-	Key := common.GenResourceKey(nsId, resourceType, content.Id)
-	Val, _ := json.Marshal(content)
-	err = kvstore.Put(Key, string(Val))
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return model.CustomImageInfo{}, err
+	// Generate Uid if not set
+	if content.Uid == "" {
+		content.Uid = common.GenUid()
 	}
 
-	// "INSERT INTO `image`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
+	// "INSERT INTO `custom_image`(`namespace`, `provider_name`, `csp_image_name`, ...) VALUES ('nsId', 'content.ProviderName', 'content.CspImageName', ...);
 	result := model.ORM.Create(&content)
 	if result.Error != nil {
-		log.Error().Err(result.Error).Msg("")
+		log.Error().Err(result.Error).Msg("Failed to insert custom image to database")
+		return model.ImageInfo{}, result.Error
 	} else {
 		log.Trace().Msg("SQL: Insert success")
 	}
@@ -136,43 +133,61 @@ func LookupMyImage(connConfig string, myImageId string) (model.SpiderMyImageInfo
 }
 
 // ConvertSpiderMyImageToTumblebugCustomImage accepts an Spider MyImage object, converts to and returns an TB customImage object
-func ConvertSpiderMyImageToTumblebugCustomImage(spiderMyImage model.SpiderMyImageInfo) (model.CustomImageInfo, error) {
+func ConvertSpiderMyImageToTumblebugCustomImage(connConfig model.ConnConfig, spiderMyImage model.SpiderMyImageInfo) (model.ImageInfo, error) {
 	if spiderMyImage.IId.NameId == "" {
 		err := fmt.Errorf("ConvertSpiderMyImageToTumblebugCustomImage failed; spiderMyImage.IId.NameId == \"\" ")
-		return model.CustomImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 
-	tumblebugCustomImage := model.CustomImageInfo{
-		CspResourceId:        spiderMyImage.IId.SystemId,
-		CspResourceName:      spiderMyImage.IId.NameId, // common.LookupKeyValueList(spiderMyImage.KeyValueList, "Name"),
-		Description:          common.LookupKeyValueList(spiderMyImage.KeyValueList, "Description"),
-		CreationDate:         spiderMyImage.CreatedTime,
-		GuestOS:              "",
-		Status:               spiderMyImage.Status,
-		KeyValueList:         spiderMyImage.KeyValueList,
-		AssociatedObjectList: []string{},
+	// Extract name from KeyValueList or use IId.NameId
+	imageName := common.LookupKeyValueList(spiderMyImage.KeyValueList, "Name")
+	if len(imageName) == 0 {
+		imageName = spiderMyImage.IId.NameId
 	}
-	//tumblebugCustomImage.Id = spiderMyImage.IId.NameId
 
-	spiderKeyValueListName := common.LookupKeyValueList(spiderMyImage.KeyValueList, "Name")
-	if len(spiderKeyValueListName) > 0 {
-		tumblebugCustomImage.Name = spiderKeyValueListName
-	} else {
-		tumblebugCustomImage.Name = spiderMyImage.IId.NameId
+	// Extract description from KeyValueList
+	description := common.LookupKeyValueList(spiderMyImage.KeyValueList, "Description")
+
+	tumblebugCustomImage := model.ImageInfo{
+		// CustomImage-specific fields
+		ResourceType: model.StrCustomImage,
+		CspImageId:   spiderMyImage.IId.SystemId,
+		SourceVmUid:  "", // This should be filled by caller if available
+
+		// Composite primary key fields
+		ProviderName: connConfig.ProviderName,
+		CspImageName: spiderMyImage.IId.NameId,
+
+		// Array field
+		RegionList: []string{connConfig.RegionDetail.RegionName},
+
+		// Identifiers
+		Name:           imageName,
+		ConnectionName: connConfig.ConfigName,
+
+		// Time fields
+		CreationDate: spiderMyImage.CreatedTime.Format(time.RFC3339),
+
+		// Status
+		ImageStatus: model.ImageStatus(spiderMyImage.Status),
+
+		// Additional information
+		Details:     spiderMyImage.KeyValueList,
+		Description: description,
 	}
 
 	return tumblebugCustomImage, nil
 }
 
 // RegisterCustomImageWithId accepts customimage creation request, creates and returns an TB customimage object
-func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.CustomImageInfo, error) {
+func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.ImageInfo, error) {
 
 	resourceType := model.StrCustomImage
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.CustomImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 
 	err = validate.Struct(u)
@@ -180,22 +195,22 @@ func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.Cust
 
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			log.Err(err).Msg("")
-			return model.CustomImageInfo{}, err
+			return model.ImageInfo{}, err
 		}
 
-		return model.CustomImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {
 		err := fmt.Errorf("The customimage " + u.Name + " already exists.")
-		return model.CustomImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 
 	if err != nil {
 		err := fmt.Errorf("Failed to check the existence of the customimage " + u.Name + ".")
-		return model.CustomImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 
 	client := resty.New()
@@ -234,36 +249,54 @@ func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.Cust
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.CustomImageInfo{}, err
+		return model.ImageInfo{}, err
 	}
 
-	content := model.CustomImageInfo{
-		ResourceType:         resourceType,
-		Namespace:            nsId,
-		Id:                   u.Name,
-		Name:                 u.Name,
-		ConnectionName:       u.ConnectionName,
-		SourceVmId:           "",
-		CspResourceId:        callResult.IId.SystemId,
-		CspResourceName:      callResult.IId.NameId,
-		Description:          u.Description,
-		CreationDate:         callResult.CreatedTime,
-		GuestOS:              "",
-		Status:               callResult.Status,
-		KeyValueList:         callResult.KeyValueList,
-		AssociatedObjectList: []string{},
-		IsAutoGenerated:      false,
-	}
-
-	content.ConnectionConfig, err = common.GetConnConfig(content.ConnectionName)
+	// Get connection config for provider and region information
+	connConfig, err := common.GetConnConfig(u.ConnectionName)
 	if err != nil {
-		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+		err = fmt.Errorf("Cannot retrieve ConnectionConfig: " + err.Error())
 		log.Error().Err(err).Msg("")
+		return model.ImageInfo{}, err
 	}
 
+	// Create ImageInfo based on new structure
+	content := model.ImageInfo{
+		// CustomImage-specific fields
+		ResourceType: resourceType,
+		CspImageId:   callResult.IId.SystemId,
+		SourceVmUid:  "", // Not available for registered images
+
+		// Composite primary key fields
+		Namespace:    nsId,
+		ProviderName: connConfig.ProviderName,
+		CspImageName: callResult.IId.NameId,
+
+		// Array field
+		RegionList: []string{connConfig.RegionDetail.RegionName},
+
+		// Identifiers
+		Id:             u.Name,
+		Uid:            common.GenUid(),
+		Name:           u.Name,
+		ConnectionName: u.ConnectionName,
+
+		// Time fields
+		FetchedTime:  time.Now().Format(time.RFC3339),
+		CreationDate: callResult.CreatedTime.Format(time.RFC3339),
+
+		// Status
+		ImageStatus: model.ImageStatus(callResult.Status),
+
+		// Additional information
+		Details:     callResult.KeyValueList,
+		Description: u.Description,
+	}
+
+	// Set system label based on registration source
 	if u.CspResourceId == "" {
 		content.SystemLabel = "Registered from CB-Spider resource"
-	} else if u.CspResourceId != "" {
+	} else {
 		content.SystemLabel = "Registered from CSP resource"
 	}
 
@@ -274,5 +307,13 @@ func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.Cust
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
+
+	// Insert into database
+	result := model.ORM.Create(&content)
+	if result.Error != nil {
+		log.Error().Err(result.Error).Msg("Failed to insert custom image to database")
+		return content, result.Error
+	}
+
 	return content, nil
 }

@@ -369,6 +369,7 @@ func RestDelAllImage(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system)
+// @Param customImage query boolean false "Search custom images (snapshots) only" default(false)
 // @Param condition body model.SearchImageRequest true "condition"
 // @Success 200 {object} model.SearchImageResponse
 // @Failure 404 {object} model.SimpleMsg
@@ -383,7 +384,17 @@ func RestSearchImage(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, cnt, err := resource.SearchImage(nsId, *u)
+	// Get customImage query parameter (default: false)
+	customImageStr := c.QueryParam("customImage")
+	customImage := false
+	if customImageStr != "" {
+		parsedValue, err := strconv.ParseBool(customImageStr)
+		if err == nil {
+			customImage = parsedValue
+		}
+	}
+
+	content, cnt, err := resource.SearchImage(nsId, *u, customImage)
 
 	result := model.SearchImageResponse{}
 	result.ImageCount = cnt

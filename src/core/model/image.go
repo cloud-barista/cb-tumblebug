@@ -78,6 +78,10 @@ type ImageReq struct {
 
 // ImageInfo is a struct that represents TB image object.
 type ImageInfo struct {
+
+	// ResourceType is the type of the resource
+	ResourceType string `json:"resourceType"`
+
 	// Composite primary key
 	Namespace    string `json:"namespace" example:"default" gorm:"primaryKey"`
 	ProviderName string `json:"providerName" gorm:"primaryKey"`
@@ -86,10 +90,17 @@ type ImageInfo struct {
 	// Array field for supporting multiple regions
 	RegionList []string `json:"regionList" gorm:"type:text;serializer:json"`
 
-	Id  string `json:"id" example:"aws-ap-southeast-1"`
-	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	Id   string `json:"id" example:"aws-ap-southeast-1"`
+	Uid  string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+	Name string `json:"name" example:"aws-ap-southeast-1"`
 
-	Name           string `json:"name" example:"aws-ap-southeast-1"`
+	// CspImageId is resource identifier managed by CSP
+	CspImageId string `json:"cspImageId,omitempty" example:"ami-0d399fba46a30a310"`
+	// SourceVmUid is the UID of the source VM from which this image was created
+	SourceVmUid string `json:"sourceVmUid" example:"wef12awefadf1221edcf"`
+	// SourceCspImageName is the name of the source CSP image from which this image was created
+	SourceCspImageName string `json:"sourceCspImageName" example:"csp-06eb41e14121c550a"`
+
 	ConnectionName string `json:"connectionName,omitempty"`
 	InfraType      string `json:"infraType,omitempty"` // vm|k8s|kubernetes|container, etc.
 

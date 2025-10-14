@@ -236,12 +236,16 @@ func TrimIP(sshAccessPoint string) (string, error) {
 
 // InspectResources returns the state list of TB Resource objects of given connConfig and resourceType
 func InspectResources(connConfig string, resourceType string) (model.InspectResource, error) {
+	nullObj := model.InspectResource{}
 
 	// get providerName from connection
 	providerName, err := common.GetProviderNameFromConnConfig(connConfig)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return nullObj, err
+	}
 
 	nsList, err := common.ListNsId()
-	nullObj := model.InspectResource{}
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("an error occurred while getting namespaces' list: " + err.Error())
@@ -446,7 +450,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			resourcesInNs := resourceListInNs.([]model.CustomImageInfo) // type assertion
+			resourcesInNs := resourceListInNs.([]model.ImageInfo) // type assertion
 			if len(resourcesInNs) == 0 {
 				continue
 			}
@@ -454,7 +458,7 @@ func InspectResources(connConfig string, resourceType string) (model.InspectReso
 				if resource.ConnectionName == connConfig { // filtering
 					temp := model.ResourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
-					temp.CspResourceId = resource.CspResourceId
+					temp.CspResourceId = resource.CspImageId
 					temp.NsId = ns
 					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
