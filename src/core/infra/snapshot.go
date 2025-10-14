@@ -418,7 +418,7 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 		// Even if snapshot fails, we should still cleanup if requested
 		if req.CleanupMciAfterSnapshot {
 			log.Info().Msg("Attempting to cleanup MCI despite snapshot failure...")
-			_, cleanupErr := DelMci(nsId, mciInfo.Id, "force")
+			_, cleanupErr := DelMci(nsId, mciInfo.Id, model.ActionTerminate)
 			if cleanupErr != nil {
 				log.Error().Err(cleanupErr).Msg("Failed to cleanup MCI")
 			} else {
