@@ -1,6 +1,6 @@
 module github.com/cloud-barista/cb-tumblebug
 
-go 1.23.0
+go 1.25.0
 
 // Uncomment the following line to use local mc-terrarium module for development.
 // replace github.com/cloud-barista/mc-terrarium v0.0.22 => ../mc-terrarium
