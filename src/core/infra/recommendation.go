@@ -81,10 +81,21 @@ func setFieldCondition(field reflect.Value, condition model.Operation) error {
 func applyRange(field reflect.Value, operator string, operand float32) error {
 	min := field.FieldByName("Min")
 	max := field.FieldByName("Max")
+
 	switch operator {
 	case "<=":
+		// If min already exists and is greater than this max, it's a logical contradiction
+		if min.IsValid() && !min.IsZero() && min.Float() > float64(operand) {
+			log.Warn().Msgf("Logical contradiction: min(%.1f) > max(%.1f) - this will return no results",
+				min.Float(), float64(operand))
+		}
 		max.SetFloat(float64(operand))
 	case ">=":
+		// If max already exists and is less than this min, it's a logical contradiction
+		if max.IsValid() && !max.IsZero() && max.Float() < float64(operand) {
+			log.Warn().Msgf("Logical contradiction: min(%.1f) > max(%.1f) - this will return no results",
+				float64(operand), max.Float())
+		}
 		min.SetFloat(float64(operand))
 	case "==":
 		min.SetFloat(float64(operand))
@@ -104,6 +115,22 @@ func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, 
 	if err := applyFilterPolicies(u, &plan); err != nil {
 		log.Error().Err(err).Msg("Failed to apply filter policies")
 		return nil, err
+	}
+
+	// Debug: Log the actual Range values to see what's being set
+	val := reflect.ValueOf(u).Elem()
+	typ := val.Type()
+	for i := 0; i < val.NumField(); i++ {
+		field := typ.Field(i)
+		value := val.Field(i)
+		if value.Kind() == reflect.Struct && value.Type().Name() == "Range" {
+			min := value.FieldByName("Min")
+			max := value.FieldByName("Max")
+			if min.IsValid() || max.IsValid() {
+				log.Debug().Msgf("Range Field %s: Min=%.2f (IsZero=%v), Max=%.2f (IsZero=%v)",
+					field.Name, min.Float(), min.IsZero(), max.Float(), max.IsZero())
+			}
+		}
 	}
 
 	// Set final limit
@@ -135,6 +162,20 @@ func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, 
 
 	startTime := time.Now()
 	filteredSpecs, err := resource.FilterSpecsByRange(nsId, *u, orderBy)
+
+	// Check for potential conflicts between user conditions and K8s minimum requirements
+	conflictingSpecs := 0
+	for _, spec := range filteredSpecs {
+		if spec.VCPU < 2 || spec.MemoryGiB < 4.0 {
+			conflictingSpecs++
+			log.Warn().Msgf("Spec below K8s minimum: ID=%-35s vCPU=%2d Memory=%5.1fGB (requires: vCPU>=2, Memory>=4GB)",
+				spec.Id, spec.VCPU, spec.MemoryGiB)
+		}
+	}
+
+	if conflictingSpecs > 0 {
+		log.Warn().Msgf("Found %d specs that don't meet K8s minimum requirements (will be filtered out)", conflictingSpecs)
+	}
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1222,39 +1263,91 @@ func RecommendVmPerformance(nsId string, specList *[]model.SpecInfo) ([]model.Sp
 
 // RecommendK8sNode is func to recommend a node for K8sCluster
 func RecommendK8sNode(nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, error) {
+	// Ensure K8s minimum requirements in filter policy
+	ensureK8sMinimumRequirements(&plan)
+
+	return RecommendSpec(nsId, plan)
+}
+
+// ensureK8sMinimumRequirements updates filter policy to meet K8s minimum requirements
+func ensureK8sMinimumRequirements(plan *model.RecommendSpecReq) {
 	// K8s node minimum requirements
 	const minVCPU = 2
 	const minMemoryGiB = 4.0
-
-	// Add K8s minimum requirements to the filter policy
-	vCPUCondition := model.FilterCondition{
-		Metric: "vCPU",
-		Condition: []model.Operation{
-			{
-				Operand:  strconv.Itoa(minVCPU),
-				Operator: ">=",
-			},
-		},
-	}
-
-	memoryCondition := model.FilterCondition{
-		Metric: "memoryGiB",
-		Condition: []model.Operation{
-			{
-				Operand:  strconv.FormatFloat(minMemoryGiB, 'f', 1, 64),
-				Operator: ">=",
-			},
-		},
-	}
 
 	// Initialize filter policy if not exists
 	if plan.Filter.Policy == nil {
 		plan.Filter.Policy = []model.FilterCondition{}
 	}
+	log.Debug().Msgf("K8sNode Recommend - Original Filter Policy: %+v", plan.Filter.Policy)
 
-	plan.Filter.Policy = append(plan.Filter.Policy, vCPUCondition, memoryCondition)
+	// Update existing conditions to meet K8s minimum requirements
+	vCPUConditionExists := false
+	memoryConditionExists := false
 
-	return RecommendSpec(nsId, plan)
+	for i, condition := range plan.Filter.Policy {
+		if condition.Metric == "vCPU" {
+			vCPUConditionExists = true
+			updateMinimumCondition(&plan.Filter.Policy[i], "vCPU", minVCPU)
+		}
+
+		if condition.Metric == "memoryGiB" {
+			memoryConditionExists = true
+			updateMinimumCondition(&plan.Filter.Policy[i], "memoryGiB", minMemoryGiB)
+		}
+	}
+
+	// Add K8s minimum requirements only if they don't exist
+	if !vCPUConditionExists {
+		plan.Filter.Policy = append(plan.Filter.Policy, createMinimumCondition("vCPU", minVCPU))
+	}
+
+	if !memoryConditionExists {
+		plan.Filter.Policy = append(plan.Filter.Policy, createMinimumCondition("memoryGiB", minMemoryGiB))
+	}
+
+	log.Debug().Msgf("K8sNode Recommend - Updated Filter Policy: %+v", plan.Filter.Policy)
+}
+
+// updateMinimumCondition updates >= conditions that are below the minimum requirement
+func updateMinimumCondition(condition *model.FilterCondition, metric string, minValue float64) {
+	for j, op := range condition.Condition {
+		if op.Operator == ">=" {
+			if val, err := strconv.ParseFloat(op.Operand, 64); err == nil && val < minValue {
+				log.Debug().Msgf("Updating %s >= condition from %.1f to %.1f (K8s minimum)", metric, val, minValue)
+
+				// Use the same formatting logic as createMinimumCondition
+				if minValue == float64(int(minValue)) {
+					condition.Condition[j].Operand = strconv.Itoa(int(minValue))
+				} else {
+					condition.Condition[j].Operand = strconv.FormatFloat(minValue, 'f', -1, 64)
+				}
+			}
+		}
+	}
+}
+
+// createMinimumCondition creates a new filter condition for minimum requirement
+func createMinimumCondition(metric string, minValue float64) model.FilterCondition {
+	// Convert value to string based on whether it's an integer or float
+	var operand string
+	if minValue == float64(int(minValue)) {
+		// If it's a whole number, format as integer
+		operand = strconv.Itoa(int(minValue))
+	} else {
+		// Otherwise, format as float with appropriate precision
+		operand = strconv.FormatFloat(minValue, 'f', -1, 64)
+	}
+
+	return model.FilterCondition{
+		Metric: metric,
+		Condition: []model.Operation{
+			{
+				Operand:  operand,
+				Operator: ">=",
+			},
+		},
+	}
 }
 
 // // GetRecommendList is func to get recommendation list
