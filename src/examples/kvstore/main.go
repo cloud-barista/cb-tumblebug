@@ -116,7 +116,7 @@ func ExampleBasicCRUDTest(ctx context.Context) {
 	fmt.Printf("Successfully put key '%s' with value '%s'\n", key, value)
 
 	// Get (Retrieve) the value
-	retrievedValue, err := kvstore.GetWith(ctx, key)
+	retrievedValue, _, err := kvstore.GetWith(ctx, key)
 	if err != nil {
 		log.Fatalf("Failed to get value: %v", err)
 	}
@@ -131,7 +131,7 @@ func ExampleBasicCRUDTest(ctx context.Context) {
 	fmt.Printf("Successfully updated key '%s' with new value '%s'\n", key, newValue)
 
 	// Get (Retrieve) the updated value
-	retrievedValue, err = kvstore.GetWith(ctx, key)
+	retrievedValue, _, err = kvstore.GetWith(ctx, key)
 	if err != nil {
 		log.Fatalf("Failed to get updated value: %v", err)
 	}
@@ -145,7 +145,7 @@ func ExampleBasicCRUDTest(ctx context.Context) {
 	fmt.Printf("Successfully deleted key '%s'\n", key)
 
 	// Verify deletion
-	_, err = kvstore.GetWith(ctx, key)
+	_, _, err = kvstore.GetWith(ctx, key)
 	if err != nil {
 		fmt.Printf("As expected, failed to get deleted key '%s': %v\n", key, err)
 	} else {
@@ -198,7 +198,7 @@ func ExampleRaceConditionTest(ctx context.Context) {
 				}
 
 				// Get current value, increment, and put new value within the lock
-				value, err := kvstore.GetWith(ctx, key)
+				value, _, err := kvstore.GetWith(ctx, key)
 				if err != nil {
 					log.Printf("Failed to get value: %v", err)
 					// Unlock
@@ -237,7 +237,7 @@ func ExampleRaceConditionTest(ctx context.Context) {
 	wg.Wait()
 
 	// Verify the final value
-	finalValue, err := kvstore.GetWith(ctx, key)
+	finalValue, _, err := kvstore.GetWith(ctx, key)
 	if err != nil {
 		log.Fatalf("Failed to get final value: %v", err)
 	}

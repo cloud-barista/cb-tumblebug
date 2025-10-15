@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-GO_VERSION=1.23.0
+GO_VERSION=1.25.0
 GO_TAR=go${GO_VERSION}.linux-amd64.tar.gz
 CB_DIR=$HOME/go/src/github.com/cloud-barista/cb-tumblebug
 SPEC_WARNING="false"
