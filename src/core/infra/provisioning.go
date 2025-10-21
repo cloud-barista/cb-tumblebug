@@ -3293,33 +3293,30 @@ func filterCheckMciDynamicReqInfoToCheckK8sClusterDynamicReqInfo(mciDReqInfo *mo
 
 	if mciDReqInfo != nil {
 		for _, k := range mciDReqInfo.ReqCheck {
-			if strings.Contains(k.Spec.InfraType, model.StrK8s) ||
-				strings.Contains(k.Spec.InfraType, model.StrKubernetes) {
+			// Note: InfraType field is deprecated.
+			// K8s minimum requirements (vCPU >= 2, Memory >= 4GB) are validated separately.
 
-				imageListForK8s := []model.ImageInfo{}
-				for _, i := range k.Image {
-					if strings.Contains(i.InfraType, model.StrK8s) ||
-						strings.Contains(i.InfraType, model.StrKubernetes) {
-						imageListForK8s = append(imageListForK8s, i)
-					}
-				}
-
-				nodeDReqInfo := model.CheckNodeDynamicReqInfo{
-					ConnectionConfigCandidates: k.ConnectionConfigCandidates,
-					Spec:                       k.Spec,
-					Region:                     k.Region,
-					SystemMessage:              k.SystemMessage,
-				}
-
-				if len(imageListForK8s) > 0 {
-					nodeDReqInfo.Image = imageListForK8s
-				} else {
-					// No available image because some CSP(ex. azure) can not specify an image
-					nodeDReqInfo.Image = []model.ImageInfo{{Id: "default", Name: "default"}}
-				}
-
-				k8sDReqInfo.ReqCheck = append(k8sDReqInfo.ReqCheck, nodeDReqInfo)
+			imageListForK8s := []model.ImageInfo{}
+			for _, i := range k.Image {
+				// Note: InfraType filtering removed as this field is deprecated
+				imageListForK8s = append(imageListForK8s, i)
 			}
+
+			nodeDReqInfo := model.CheckNodeDynamicReqInfo{
+				ConnectionConfigCandidates: k.ConnectionConfigCandidates,
+				Spec:                       k.Spec,
+				Region:                     k.Region,
+				SystemMessage:              k.SystemMessage,
+			}
+
+			if len(imageListForK8s) > 0 {
+				nodeDReqInfo.Image = imageListForK8s
+			} else {
+				// No available image because some CSP(ex. azure) can not specify an image
+				nodeDReqInfo.Image = []model.ImageInfo{{Id: "default", Name: "default"}}
+			}
+
+			k8sDReqInfo.ReqCheck = append(k8sDReqInfo.ReqCheck, nodeDReqInfo)
 		}
 	}
 
