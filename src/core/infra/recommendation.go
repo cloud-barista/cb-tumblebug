@@ -81,10 +81,21 @@ func setFieldCondition(field reflect.Value, condition model.Operation) error {
 func applyRange(field reflect.Value, operator string, operand float32) error {
 	min := field.FieldByName("Min")
 	max := field.FieldByName("Max")
+
 	switch operator {
 	case "<=":
+		// If min already exists and is greater than this max, it's a logical contradiction
+		if min.IsValid() && !min.IsZero() && min.Float() > float64(operand) {
+			log.Warn().Msgf("Logical contradiction: min(%.1f) > max(%.1f) - this will return no results",
+				min.Float(), float64(operand))
+		}
 		max.SetFloat(float64(operand))
 	case ">=":
+		// If max already exists and is less than this min, it's a logical contradiction
+		if max.IsValid() && !max.IsZero() && max.Float() < float64(operand) {
+			log.Warn().Msgf("Logical contradiction: min(%.1f) > max(%.1f) - this will return no results",
+				float64(operand), max.Float())
+		}
 		min.SetFloat(float64(operand))
 	case "==":
 		min.SetFloat(float64(operand))
@@ -1222,48 +1233,94 @@ func RecommendVmPerformance(nsId string, specList *[]model.SpecInfo) ([]model.Sp
 
 // RecommendK8sNode is func to recommend a node for K8sCluster
 func RecommendK8sNode(nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, error) {
-	emptyObjList := []model.SpecInfo{}
+	// Validate K8s minimum requirements in filter policy
+	if err := validateK8sMinimumRequirements(&plan); err != nil {
+		log.Error().Err(err).Msg("K8s minimum requirements validation failed")
+		return nil, err
+	}
 
+	return RecommendSpec(nsId, plan)
+}
+
+// validateK8sMinimumRequirements validates that filter policy meets K8s minimum requirements
+// Returns error if user-specified conditions are below K8s minimums
+func validateK8sMinimumRequirements(plan *model.RecommendSpecReq) error {
 	// K8s node minimum requirements
 	const minVCPU = 2
 	const minMemoryGiB = 4.0
 
-	limitOrig := plan.Limit
-	plan.Limit = strconv.Itoa(math.MaxInt)
-
-	SpecInfoListForVm, err := RecommendSpec(nsId, plan)
-	if err != nil {
-		return emptyObjList, err
+	// Initialize filter policy if not exists
+	if plan.Filter.Policy == nil {
+		plan.Filter.Policy = []model.FilterCondition{}
 	}
+	log.Debug().Msgf("K8sNode Recommend - Validating Filter Policy: %+v", plan.Filter.Policy)
 
-	limitNum, err := strconv.Atoi(limitOrig)
-	if err != nil {
-		limitNum = math.MaxInt
-	}
+	// Validate existing user conditions against K8s minimum requirements
+	vCPUConditionExists := false
+	memoryConditionExists := false
 
-	SpecInfoListForK8s := []model.SpecInfo{}
-	count := 0
-	for _, SpecInfo := range SpecInfoListForVm {
-		// K8s node minimum hardware requirements: 2+ vCPU, 4+ GB RAM
-		log.Debug().Msgf("Checking spec: %s (vCPU: %d, Memory: %.2fGB)",
-			SpecInfo.Id, SpecInfo.VCPU, SpecInfo.MemoryGiB)
-
-		if SpecInfo.VCPU >= minVCPU && SpecInfo.MemoryGiB >= minMemoryGiB {
-			SpecInfoListForK8s = append(SpecInfoListForK8s, SpecInfo)
-			count++
-			if count == limitNum {
-				break
+	for _, condition := range plan.Filter.Policy {
+		if condition.Metric == "vCPU" {
+			vCPUConditionExists = true
+			for _, op := range condition.Condition {
+				if val, err := strconv.ParseFloat(op.Operand, 64); err == nil {
+					if val < minVCPU {
+						return fmt.Errorf("K8s node requires minimum vCPU >= %d, but user specified 'vCPU %s %.0f'. Please adjust your filter conditions", 
+							minVCPU, op.Operator, val)
+					}
+				}
 			}
-		} else {
-			log.Debug().Msgf("Spec %s does not meet K8s minimum requirements (need: vCPU>=%d, RAM>=%.1fGB)",
-				SpecInfo.Id, minVCPU, minMemoryGiB)
+		}
+
+		if condition.Metric == "memoryGiB" {
+			memoryConditionExists = true
+			for _, op := range condition.Condition {
+				if val, err := strconv.ParseFloat(op.Operand, 64); err == nil {
+					if val < minMemoryGiB {
+						return fmt.Errorf("K8s node requires minimum Memory >= %.1fGB, but user specified 'memoryGiB %s %.1fGB'. Please adjust your filter conditions", 
+							minMemoryGiB, op.Operator, val)
+					}
+				}
+			}
 		}
 	}
 
-	log.Info().Msgf("K8s node recommendation complete: %d specs found (from %d total specs)",
-		len(SpecInfoListForK8s), len(SpecInfoListForVm))
+	// If no conflicting conditions found, add K8s minimum requirements
+	if !vCPUConditionExists {
+		log.Debug().Msgf("Adding K8s minimum vCPU requirement: >= %d", minVCPU)
+		plan.Filter.Policy = append(plan.Filter.Policy, createMinimumCondition("vCPU", float64(minVCPU)))
+	}
 
-	return SpecInfoListForK8s, nil
+	if !memoryConditionExists {
+		log.Debug().Msgf("Adding K8s minimum Memory requirement: >= %.1fGB", minMemoryGiB)
+		plan.Filter.Policy = append(plan.Filter.Policy, createMinimumCondition("memoryGiB", minMemoryGiB))
+	}
+
+	log.Debug().Msgf("K8sNode Recommend - Validated Filter Policy: %+v", plan.Filter.Policy)
+	return nil
+}
+
+// createMinimumCondition creates a new filter condition for minimum requirement
+func createMinimumCondition(metric string, minValue float64) model.FilterCondition {
+	// Convert value to string based on whether it's an integer or float
+	var operand string
+	if minValue == float64(int(minValue)) {
+		// If it's a whole number, format as integer
+		operand = strconv.Itoa(int(minValue))
+	} else {
+		// Otherwise, format as float with appropriate precision
+		operand = strconv.FormatFloat(minValue, 'f', -1, 64)
+	}
+
+	return model.FilterCondition{
+		Metric: metric,
+		Condition: []model.Operation{
+			{
+				Operand:  operand,
+				Operator: ">=",
+			},
+		},
+	}
 }
 
 // // GetRecommendList is func to get recommendation list
