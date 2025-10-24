@@ -16,7 +16,7 @@
 [![Slack](https://img.shields.io/badge/Slack-SIG--TB-brightgreen)](https://cloud-barista.slack.com/archives/CJQ7575PU)
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-49-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-50-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## What is CB-Tumblebug? ✨
@@ -746,6 +746,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ShehzadAhm"><img src="https://avatars.githubusercontent.com/u/55528726?v=4?s=100" width="100px;" alt="Shehzad"/><br /><sub><b>Shehzad</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=ShehzadAhm" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://wavee.world/invitation/b96d00e6-b802-4a1b-8a66-2e3854a01ffd"><img src="https://avatars.githubusercontent.com/u/22633385?v=4?s=100" width="100px;" alt="Ikko Eltociear Ashimine"/><br /><sub><b>Ikko Eltociear Ashimine</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=eltociear" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/MohitKambli"><img src="https://avatars.githubusercontent.com/u/31406633?v=4?s=100" width="100px;" alt="Mohit Kambli"/><br /><sub><b>Mohit Kambli</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=MohitKambli" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/hanizang77"><img src="https://avatars.githubusercontent.com/u/194071819?v=4?s=100" width="100px;" alt="Hannie Zang"/><br /><sub><b>Hannie Zang</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=hanizang77" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
