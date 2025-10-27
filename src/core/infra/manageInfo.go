@@ -986,10 +986,10 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 
 	// Check if MCI is in a stable state (all VMs have same stable status)
 	isStableState := tmpMax == statusVmCount && tmpMax > 0
-	stableStatusName := ""
-	if isStableState && tmpMaxIndex < len(statusFlagStr) {
-		stableStatusName = statusFlagStr[tmpMaxIndex]
-	}
+	// stableStatusName := ""
+	// if isStableState && tmpMaxIndex < len(statusFlagStr) {
+	// 	stableStatusName = statusFlagStr[tmpMaxIndex]
+	// }
 
 	var numVm int
 	if isCreating {
@@ -1026,8 +1026,8 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 			numVm = tmpMax
 		}
 
-		log.Debug().Msgf("MCI %s is in stable state (%s): using stable VM count (%d) - actual: %d, status: %d, vmInfos: %d, stored: %d, dominant: %d",
-			mciId, stableStatusName, numVm, actualVmCount, statusVmCount, vmInfoCount, len(mciTmp.Vm), tmpMax)
+		// log.Debug().Msgf("MCI %s is in stable state (%s): using stable VM count (%d) - actual: %d, status: %d, vmInfos: %d, stored: %d, dominant: %d",
+		// 	mciId, stableStatusName, numVm, actualVmCount, statusVmCount, vmInfoCount, len(mciTmp.Vm), tmpMax)
 	} else {
 		// MCI creation completed, use actual VM count from status
 		numVm = statusVmCount

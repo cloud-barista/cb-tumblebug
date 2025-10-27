@@ -1,8 +1,14 @@
 providerName,regionName,cspImageName,osType,description,supportedInstance,infraType
-AZURE,all,Canonical:0001-com-ubuntu-pro-advanced-sla-airdig:18_04-gen2:18.04.202507300,Ubuntu 18.04,,,vm
+AZURE,all,Canonical:0001-com-ubuntu-pro-bionic:pro-18_04-lts-gen2:18.04.202510010,Ubuntu 18.04,,,vm
 AZURE,all,Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:20.04.202505200,Ubuntu 20.04,,,vm
-AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202507300,Ubuntu 22.04,,,vm
-AZURE,all,Canonical:0001-com-ubuntu-pro-advanced-sla-airdig:24_04-gen2:24.04.202507310,Ubuntu 24.04,,,vm
+AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202510230,Ubuntu 22.04,,,vm
+AZURE,all,Canonical:ubuntu-24_04-lts:cvm:24.04.202509250,Ubuntu 24.04,,,vm
+AZURE,all,Canonical:ubuntu-24_04-lts:minimal:24.04.202509300,Ubuntu 24.04,,,vm
+AZURE,all,Canonical:ubuntu-24_04-lts:minimal-arm64:24.04.202509300,Ubuntu 24.04,,,vm
+AZURE,all,Canonical:ubuntu-24_04-lts:server:24.04.202510010,Ubuntu 24.04,,,vm
+AZURE,all,Canonical:ubuntu-24_04-lts:server-arm64:24.04.202510010,Ubuntu 24.04,,,vm
+AZURE,all,Canonical:ubuntu-24_04-lts:ubuntu-pro:24.04.202510020,Ubuntu 24.04,,,vm
+AZURE,all,Canonical:ubuntu-24_04-lts:ubuntu-pro-arm64:24.04.202510020,Ubuntu 24.04,,,vm
 AZURE,all,Debian:debian-10:10-gen2:0.20240430.1733,Debian 10,,,vm
 AZURE,all,Debian:debian-11:11-gen2:0.20250801.2191,Debian 11,,,vm
 AZURE,all,Debian:debian-12:12-gen2:0.20250814.2204,Debian 12,,,vm
