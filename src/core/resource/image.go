@@ -1067,6 +1067,91 @@ func GetFetchImagesAsyncResult(nsId string) (*FetchImagesAsyncResult, error) {
 	return result, nil
 }
 
+// createBasicImageInfoFromCSV creates a basic ImageInfo structure from CSV data
+func createBasicImageInfoFromCSV(nsId, providerName, regionName, cspImageName, connectionName, osType, description, infraType string) model.ImageInfo {
+	imageInfo := model.ImageInfo{
+		ResourceType:   model.StrImage,
+		Id:             cspImageName,
+		Name:           cspImageName,
+		Uid:            common.GenUid(),
+		Namespace:      nsId,
+		ConnectionName: connectionName,
+		ProviderName:   providerName,
+		CspImageName:   cspImageName,
+		OSType:         osType,
+		Description:    description,
+		SystemLabel:    model.StrFromAssets,
+		FetchedTime:    time.Now().Format("2006.01.02 15:04:05 Mon"),
+		RegionList:     []string{},
+	}
+
+	// Set region information
+	if strings.EqualFold(regionName, model.StrCommon) {
+		imageInfo.RegionList = append(imageInfo.RegionList, model.StrCommon)
+	} else {
+		imageInfo.RegionList = append(imageInfo.RegionList, regionName)
+	}
+
+	// Set infra type
+	imageInfo.InfraType = expandInfraType(infraType)
+
+	return imageInfo
+}
+
+// enrichImageInfoFromCSP enriches ImageInfo with additional details from CSP lookup
+func enrichImageInfoFromCSP(imageInfo *model.ImageInfo, imageReq model.ImageReq, regionName string, connectionList model.ConnConfigList) bool {
+	// Try to get additional details from CSP lookup (optional)
+	if strings.EqualFold(regionName, model.StrCommon) {
+		// If region is common, try to lookup from any region for this provider
+		for _, connConfig := range connectionList.Connectionconfig {
+			if strings.EqualFold(connConfig.ProviderName, imageInfo.ProviderName) {
+				lookupReq := imageReq
+				lookupReq.ConnectionName = imageInfo.ProviderName + "-" + connConfig.RegionDetail.RegionName
+
+				if detailedInfo, err := GetImageInfoFromLookupImage(model.SystemCommonNs, lookupReq); err == nil {
+					mergeCSPDetails(imageInfo, &detailedInfo)
+					log.Info().Msgf("Successfully looked up image details from CSP: %s", imageReq.CspImageName)
+					return true
+				}
+			}
+		}
+	} else {
+		if detailedInfo, err := GetImageInfoFromLookupImage(model.SystemCommonNs, imageReq); err == nil {
+			mergeCSPDetails(imageInfo, &detailedInfo)
+			log.Info().Msgf("Successfully looked up image details from CSP: %s", imageReq.CspImageName)
+			return true
+		}
+	}
+
+	log.Info().Msgf("CSP lookup failed, but will register with CSV data only: Provider: %s, Region: %s, CspImageName: %s",
+		imageInfo.ProviderName, regionName, imageReq.CspImageName)
+	return false
+}
+
+// mergeCSPDetails merges CSP lookup details into the base ImageInfo
+func mergeCSPDetails(target *model.ImageInfo, source *model.ImageInfo) {
+	target.OSArchitecture = source.OSArchitecture
+	target.OSPlatform = source.OSPlatform
+	target.OSDistribution = source.OSDistribution
+	target.IsBasicImage = source.IsBasicImage
+	target.OSDiskType = source.OSDiskType
+	target.OSDiskSizeGB = source.OSDiskSizeGB
+	target.CreationDate = source.CreationDate
+	target.ImageStatus = source.ImageStatus
+	target.IsGPUImage = source.IsGPUImage
+	target.IsKubernetesImage = source.IsKubernetesImage
+	target.Details = source.Details
+}
+
+// updateExistingImageFromCSV updates existing image with CSV data
+func updateExistingImageFromCSV(existingImage model.ImageInfo, osType, description, infraType string) model.ImageInfo {
+	existingImage.OSType = osType
+	existingImage.Description = description
+	existingImage.InfraType = expandInfraType(infraType)
+	existingImage.SystemLabel = model.StrFromAssets
+	return existingImage
+}
+
 // UpdateImagesFromAsset updates image information based on cloudimage.csv asset file
 func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 	if nsId == "" {
@@ -1156,76 +1241,29 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 		existingImage, err := GetImageByPrimaryKey(nsId, providerName, imageReqTmp.CspImageName)
 		if err != nil {
 			wait.Add(1)
-			// fmt.Printf("[%d] i, row := range rowsImg[1:] %s\n", i, row)
-			// goroutine
 			go func(i int, row []string, lenImages int) {
 				defer wait.Done()
 
 				// RandomSleep for safe parallel executions
 				common.RandomSleep(0, lenImages/8*1000)
-				log.Info().Msgf("Failed to get existing image, Provider: %s, Region: %s, CspImageName: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err.Error())
+				log.Info().Msgf("New image from CSV, Provider: %s, Region: %s, CspImageName: %s", providerName, regionName, imageReqTmp.CspImageName)
 
-				if strings.EqualFold(regionName, model.StrCommon) {
-					// If region is common, check all regions for the provider
-					for _, connConfig := range connectionList.Connectionconfig {
-						if strings.EqualFold(connConfig.ProviderName, providerName) {
-							regionNameForConnection = connConfig.RegionDetail.RegionName
-							imageReqTmp.ConnectionName = providerName + "-" + regionNameForConnection
+				// Create a basic image info from CSV data
+				tmpImageInfo := createBasicImageInfoFromCSV(nsId, providerName, regionName, imageReqTmp.CspImageName,
+					imageReqTmp.ConnectionName, osType, description, infraType)
 
-							tmpImageInfo, err1 := GetImageInfoFromLookupImage(model.SystemCommonNs, imageReqTmp)
-							if err1 != nil {
-								log.Info().Msgf("lookup failure, Provider: %s, Region: %s, CspImageName: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err1.Error())
+				// Try to enrich with CSP lookup (optional)
+				enrichImageInfoFromCSP(&tmpImageInfo, imageReqTmp, regionName, connectionList)
 
-							} else {
-								// Update registered image object with OsType info
-								expandedInfraType := expandInfraType(infraType)
-
-								tmpImageInfo.OSType = osType
-								tmpImageInfo.Description = description
-								tmpImageInfo.InfraType = expandedInfraType
-								tmpImageInfo.SystemLabel = model.StrFromAssets
-
-								mutex.Lock()
-								tmpImageList = append(tmpImageList, tmpImageInfo)
-								mutex.Unlock()
-								break // Exit loop after first successful lookup
-							}
-
-						}
-					}
-				} else {
-					tmpImageInfo, err1 := GetImageInfoFromLookupImage(model.SystemCommonNs, imageReqTmp)
-					if err1 != nil {
-						log.Info().Msgf("lookup failure, Provider: %s, Region: %s, CspImageName: %s Error: %s", providerName, regionName, imageReqTmp.CspImageName, err1.Error())
-
-					} else {
-						// Update registered image object with OsType info
-						expandedInfraType := expandInfraType(infraType)
-
-						tmpImageInfo.OSType = osType
-						tmpImageInfo.Description = description
-						tmpImageInfo.InfraType = expandedInfraType
-						tmpImageInfo.SystemLabel = model.StrFromAssets
-
-						mutex.Lock()
-						tmpImageList = append(tmpImageList, tmpImageInfo)
-						mutex.Unlock()
-
-					}
-				}
+				// Add to list regardless of CSP lookup success
+				mutex.Lock()
+				tmpImageList = append(tmpImageList, tmpImageInfo)
+				mutex.Unlock()
 
 			}(i, row, lenImages)
 		} else {
 			// Update existing image with new information from the asset file
-			// log.Info().Msgf("Found existing image, Provider: %s, Region: %s, CspImageName: %s", providerName, regionName, imageReqTmp.CspImageName)
-			tmpImageInfo := existingImage
-			// Update registered image object with OsType info
-			expandedInfraType := expandInfraType(infraType)
-
-			tmpImageInfo.OSType = osType
-			tmpImageInfo.Description = description
-			tmpImageInfo.InfraType = expandedInfraType
-			tmpImageInfo.SystemLabel = model.StrFromAssets
+			tmpImageInfo := updateExistingImageFromCSV(existingImage, osType, description, infraType)
 
 			mutex.Lock()
 			tmpImageList = append(tmpImageList, tmpImageInfo)
