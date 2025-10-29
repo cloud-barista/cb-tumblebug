@@ -19108,10 +19108,10 @@ const docTemplate = `{
                     "example": "aws-ap-northeast-2"
                 },
                 "intervalSeconds": {
-                    "description": "Execution interval in seconds (minimum 60)",
+                    "description": "Execution interval in seconds",
                     "type": "integer",
-                    "minimum": 60,
-                    "example": 3600
+                    "minimum": 10,
+                    "example": 60
                 },
                 "jobType": {
                     "description": "Job type: registerCspResources, registerCspResourcesAll",
@@ -19177,7 +19177,7 @@ const docTemplate = `{
                 },
                 "intervalSeconds": {
                     "type": "integer",
-                    "example": 3600
+                    "example": 60
                 },
                 "jobId": {
                     "type": "string",
@@ -19220,9 +19220,8 @@ const docTemplate = `{
                     "example": ""
                 },
                 "status": {
-                    "description": "Running, Stopped, Executing, Waiting",
                     "type": "string",
-                    "example": "Waiting"
+                    "example": "Scheduled"
                 },
                 "successCount": {
                     "description": "Total successful executions",
@@ -20908,9 +20907,9 @@ const docTemplate = `{
                     "example": true
                 },
                 "intervalSeconds": {
-                    "description": "New execution interval in seconds (minimum 60)",
+                    "description": "New execution interval in seconds",
                     "type": "integer",
-                    "example": 7200
+                    "example": 60
                 }
             }
         },

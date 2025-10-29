@@ -37,7 +37,7 @@ type KeyValue struct {
 type ScheduleJobRequest struct {
 	JobType         string `json:"jobType" validate:"required" example:"registerCspResources"` // Job type: registerCspResources, registerCspResourcesAll
 	NsId            string `json:"nsId" validate:"required" example:"default"`                 // Namespace ID
-	IntervalSeconds int    `json:"intervalSeconds" validate:"required,min=10" example:"60"`    // Execution interval in seconds (minimum 60)
+	IntervalSeconds int    `json:"intervalSeconds" validate:"required,min=10" example:"60"`    // Execution interval in seconds
 
 	// Job-specific parameters (for registerCspResources)
 	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2"` // Connection configuration name
@@ -48,7 +48,7 @@ type ScheduleJobRequest struct {
 
 // UpdateScheduleJobRequest is struct for updating a scheduled job
 type UpdateScheduleJobRequest struct {
-	IntervalSeconds *int  `json:"intervalSeconds,omitempty" example:"60"` // New execution interval in seconds (minimum 10)
+	IntervalSeconds *int  `json:"intervalSeconds,omitempty" example:"60"` // New execution interval in seconds
 	Enabled         *bool `json:"enabled,omitempty" example:"true"`       // Enable or disable the job
 }
 

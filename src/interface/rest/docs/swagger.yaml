@@ -15429,10 +15429,10 @@ components:
           description: Job-specific parameters (for registerCspResources)
           example: aws-ap-northeast-2
         intervalSeconds:
-          minimum: 60
+          minimum: 10
           type: integer
-          description: Execution interval in seconds (minimum 60)
-          example: 3600
+          description: Execution interval in seconds
+          example: 60
         jobType:
           type: string
           description: "Job type: registerCspResources, registerCspResourcesAll"
@@ -15483,7 +15483,7 @@ components:
           example: 1
         intervalSeconds:
           type: integer
-          example: 3600
+          example: 60
         jobId:
           type: string
           example: registerCspResources-default-1698765432
@@ -15516,8 +15516,7 @@ components:
           example: ""
         status:
           type: string
-          description: "Running, Stopped, Executing, Waiting"
-          example: Waiting
+          example: Scheduled
         successCount:
           type: integer
           description: Total successful executions
@@ -16785,8 +16784,8 @@ components:
           example: true
         intervalSeconds:
           type: integer
-          description: New execution interval in seconds (minimum 60)
-          example: 7200
+          description: New execution interval in seconds
+          example: 60
     model.UpdateSpecListByAvailabilityRequest:
       required:
       - provider
