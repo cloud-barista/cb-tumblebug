@@ -1295,8 +1295,10 @@ paths:
     post:
       tags:
       - "[MC-Infra] MCI Provisioning and Management"
-      summary: Check Resource Availability for Dynamic MCI Creation
+      summary: (Deprecated) Check Resource Availability for Dynamic MCI Creation
       description: |-
+        **⚠️ DEPRECATED: This endpoint is deprecated and will be removed in a future version. Please use `/mciDynamicReview` instead for comprehensive validation and cost estimation.**
+
         Validate resource availability and discover optimal connection configurations before creating MCI dynamically.
         This endpoint provides comprehensive resource validation and connection discovery for MCI planning:
 
@@ -1378,6 +1380,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+      deprecated: true
       x-codegen-request-body-name: mciReq
   /mergeCSPLabel/{labelType}/{uid}:
     put:
@@ -9643,8 +9646,16 @@ paths:
       - "[Admin] System Management"
       summary: "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to\
         \ CB-Tumblebug"
-      description: "Register CSP Native Resources (vNet, securityGroup, sshKey, vm)\
-        \ to CB-Tumblebug"
+      description: |-
+        Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug.
+
+        **Behavior based on connectionName:**
+        - If `connectionName` is specified: Registers resources from the specified connection only
+        - If `connectionName` is empty or omitted: Registers resources from **all available connections**
+
+        **Usage Examples:**
+        - Single connection: `{"connectionName": "aws-ap-northeast-2", "nsId": "default", "mciNamePrefix": "mci-01"}`
+        - All connections: `{"connectionName": "", "nsId": "default", "mciNamePrefix": "mci-all"}` or `{"nsId": "default", "mciNamePrefix": "mci-all"}`
       operationId: RegisterCspNativeResources
       parameters:
       - name: option
@@ -9665,7 +9676,8 @@ paths:
           - "y"
           - "n"
       requestBody:
-        description: "Specify connectionName, NS Id, and MCI Name"
+        description: "Specify connectionName (optional for all connections), NS Id,\
+          \ and MCI Name Prefix"
         content:
           application/json:
             schema:
@@ -9673,11 +9685,11 @@ paths:
         required: true
       responses:
         "200":
-          description: OK
+          description: All connections result (when connectionName is empty)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.RegisterResourceResult'
+                $ref: '#/components/schemas/model.RegisterResourceAllResult'
         "404":
           description: Not Found
           content:
@@ -9691,14 +9703,381 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: Request
+  /registerCspResources/schedule:
+    get:
+      tags:
+      - "[Job Scheduler] (WIP) CSP Resource Registration"
+      summary: List all scheduled CSP resource registration jobs
+      description: Get a list of all scheduled CSP resource registration jobs (jobs
+        are not scoped to namespaces)
+      operationId: GetScheduleRegisterCspResourcesList
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ScheduleJobListResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[Job Scheduler] (WIP) CSP Resource Registration"
+      summary: Create scheduled CSP resource registration job
+      description: |-
+        Create a scheduled job to periodically register CSP-native resources (vNet, securityGroup, sshKey, vm) into CB-Tumblebug
+
+        **Resource Registration Behavior:**
+        This job registers CSP-native resources based on the `connectionName` field:
+        - If `connectionName` is specified: Registers resources from the **specified connection only**
+        - If `connectionName` is empty or omitted: Registers resources from **all available connections**
+
+        **Usage Examples:**
+        - Single connection: `{"jobType": "registerCspResources", "nsId": "default", "intervalSeconds": 60, "connectionName": "aws-ap-northeast-2", "mciNamePrefix": "mci-01"}`
+        - All connections: `{"jobType": "registerCspResources", "nsId": "default", "intervalSeconds": 60, "connectionName": "", "mciNamePrefix": "mci-all"}` or `{"jobType": "registerCspResources", "nsId": "default", "intervalSeconds": 60, "mciNamePrefix": "mci-all"}`
+
+        **Job Status Values:**
+        - `Scheduled`: Job is scheduled and waiting for the next execution time
+        - `Executing`: Job is currently running the task
+        - `Stopped`: Job has been stopped and deleted
+
+        **Job Lifecycle:**
+        1. Create job (this API) → Status: `Scheduled`, **executes immediately**
+        2. First execution starts → Status: `Executing`
+        3. Execution completes → Status: `Scheduled` (waits for interval)
+        4. After interval → Status: `Executing` (cycles back to step 3)
+        5. Pause job → `enabled: false`, Status: `Scheduled` (no execution)
+        6. Resume job → `enabled: true`, Status: `Scheduled` (resumes execution)
+        7. Delete job → Status: `Stopped`, job removed permanently
+
+        **Failure Handling:**
+        - Tracks `successCount`, `failureCount`, `consecutiveFailures`
+        - Auto-disables after 5 consecutive failures (`autoDisabled: true`)
+        - Auto-recovers when next execution succeeds
+
+        **Timeout Protection:**
+        - Default execution timeout: 30 minutes
+        - Jobs exceeding timeout are marked as failed
+        - Server restart during execution marks job as interrupted
+
+        **Duplicate Prevention:**
+        - System checks for existing jobs with same configuration
+        - Configuration uniqueness based on: jobType + nsId + connectionName + mciNamePrefix + option + mciFlag
+        - Returns 409 Conflict if duplicate job exists with existing job ID
+      operationId: PostScheduleRegisterCspResources
+      requestBody:
+        description: Schedule job request (nsId must be specified in request body)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.ScheduleJobRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ScheduleJobStatus'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Duplicate job already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: scheduleRequest
+    delete:
+      tags:
+      - "[Job Scheduler] (WIP) CSP Resource Registration"
+      summary: Delete ALL scheduled jobs
+      description: |-
+        ⚠️ **DANGER: This operation deletes ALL scheduled jobs in the system!**
+
+        **⚠️ CRITICAL WARNINGS:**
+        - This will PERMANENTLY DELETE **ALL** scheduled jobs across all namespaces
+        - All job execution history will be lost
+        - This operation is IRREVERSIBLE and cannot be undone
+        - Use with EXTREME CAUTION in production environments
+
+        **Use Cases:**
+        - Cleaning up test/development environments
+        - Emergency shutdown of all scheduled operations
+        - System maintenance or reset
+
+        **Safer Alternatives:**
+        - Delete individual jobs: Use `DELETE /registerCspResources/schedule/{jobId}`
+        - Temporarily stop all jobs: Pause each job individually via `/pause` endpoint
+        - Disable without deleting: Update each job with `enabled: false`
+
+        **Response Information:**
+        - Returns the count of deleted jobs
+        - Returns 200 even if no jobs were found (count will be 0)
+      operationId: DeleteScheduleRegisterCspResourcesAll
+      responses:
+        "200":
+          description: Successfully deleted all jobs (message includes count)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /registerCspResources/schedule/{jobId}:
+    get:
+      tags:
+      - "[Job Scheduler] (WIP) CSP Resource Registration"
+      summary: Get scheduled job status
+      description: |-
+        Get the current status of a specific scheduled CSP resource registration job
+
+        **Response Fields Explanation:**
+        - `status`: Current job state (Scheduled/Executing/Stopped)
+        - `enabled`: Whether job is active (can be paused with false)
+        - `executionCount`: Total number of executions attempted
+        - `successCount`: Number of successful executions
+        - `failureCount`: Number of failed executions
+        - `consecutiveFailures`: Current streak of failures (resets on success)
+        - `autoDisabled`: True if job was auto-disabled due to 5+ consecutive failures
+        - `lastExecutedAt`: Timestamp of most recent execution
+        - `nextExecutionAt`: Scheduled time for next execution
+        - `lastError`: Error message from most recent failure (empty if success)
+        - `lastResult`: Result message from most recent execution
+
+        **Monitoring Recommendations:**
+        - Check `consecutiveFailures` - alert if >= 3
+        - Monitor `autoDisabled` - requires manual intervention if true
+        - Compare `successCount` vs `failureCount` for reliability metrics
+      operationId: GetScheduleRegisterCspResourcesStatus
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ScheduleJobStatus'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[Job Scheduler] (WIP) CSP Resource Registration"
+      summary: Update scheduled job configuration
+      description: |-
+        Update the configuration of a scheduled CSP resource registration job (interval, enabled status)
+
+        **Updatable Fields:**
+        - `intervalSeconds`: Change execution frequency (minimum 10 seconds)
+        - `enabled`: Enable (true) or disable (false) the job
+
+        **Usage Examples:**
+        - Change interval: `{"intervalSeconds": 30}` (30 seconds)
+        - Pause job: `{"enabled": false}`
+        - Resume job: `{"enabled": true}`
+        - Change both: `{"intervalSeconds": 10, "enabled": true}`
+
+        **Note:** For simpler pause/resume operations, consider using dedicated `/pause` and `/resume` endpoints
+      operationId: PutScheduleRegisterCspResources
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: Update schedule job request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.UpdateScheduleJobRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ScheduleJobStatus'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: updateRequest
+    delete:
+      tags:
+      - "[Job Scheduler] (WIP) CSP Resource Registration"
+      summary: Stop and delete scheduled job
+      description: |-
+        Stop and permanently delete a scheduled CSP resource registration job
+
+        **Warning:** This operation is irreversible!
+        - Job will be stopped immediately
+        - All job data and execution history will be deleted
+        - Cannot be recovered after deletion
+
+        **Alternatives:**
+        - To temporarily stop: Use `/pause` endpoint instead
+        - To keep history: Set `enabled: false` via PUT endpoint
+      operationId: DeleteScheduleRegisterCspResources
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /registerCspResources/schedule/{jobId}/pause:
+    put:
+      tags:
+      - "[Job Scheduler] (WIP) CSP Resource Registration"
+      summary: Pause a scheduled job
+      description: |-
+        Temporarily pause a scheduled job without deleting it. The job can be resumed later.
+        This sets enabled=false and preserves all job state and execution history.
+      operationId: PutScheduleRegisterCspResourcesPause
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ScheduleJobStatus'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /registerCspResources/schedule/{jobId}/resume:
+    put:
+      tags:
+      - "[Job Scheduler] (WIP) CSP Resource Registration"
+      summary: Resume a paused scheduled job
+      description: |-
+        Resume a previously paused scheduled job to continue periodic execution.
+        This sets enabled=true and restarts the job scheduler.
+      operationId: PutScheduleRegisterCspResourcesResume
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ScheduleJobStatus'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /registerCspResourcesAll:
     post:
       tags:
       - "[Admin] System Management"
-      summary: "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from\
-        \ all Clouds to CB-Tumblebug"
-      description: "Register CSP Native Resources (vNet, securityGroup, sshKey, vm)\
-        \ from all Clouds to CB-Tumblebug"
+      summary: "[Deprecated] Register CSP Native Resources from all connections"
+      description: |-
+        **DEPRECATED**: This endpoint is deprecated. Please use `/registerCspResources` with empty `connectionName` instead.
+
+        This endpoint now redirects to `/registerCspResources` for unified API behavior.
+
+        **Migration Guide:**
+        - Old: `POST /registerCspResourcesAll` with `{"nsId": "default", "mciNamePrefix": "mci-all"}`
+        - New: `POST /registerCspResources` with `{"connectionName": "", "nsId": "default", "mciNamePrefix": "mci-all"}`
       operationId: RegisterCspNativeResourcesAll
       parameters:
       - name: option
@@ -9719,7 +10098,7 @@ paths:
           - "y"
           - "n"
       requestBody:
-        description: Specify NS Id and MCI Name
+        description: Specify NS Id and MCI Name Prefix
         content:
           application/json:
             schema:
@@ -9744,6 +10123,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+      deprecated: true
       x-codegen-request-body-name: Request
   /request/{reqId}:
     get:
@@ -11199,8 +11579,10 @@ components:
       properties:
         connectionName:
           type: string
+          description: "Optional: if empty or omitted, registers resources from all\
+            \ connections"
           example: aws-ap-southeast-1
-        mciName:
+        mciNamePrefix:
           type: string
           example: csp
         nsId:
@@ -11209,7 +11591,7 @@ components:
     common.RestRegisterCspNativeResourcesRequestAll:
       type: object
       properties:
-        mciName:
+        mciNamePrefix:
           type: string
           example: csp
         nsId:
@@ -15028,6 +15410,117 @@ components:
           type: string
           description: Define addtional VMs to scaleOut
           example: "2"
+    model.ScheduleJobListResponse:
+      type: object
+      properties:
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.ScheduleJobStatus'
+    model.ScheduleJobRequest:
+      required:
+      - intervalSeconds
+      - jobType
+      - nsId
+      type: object
+      properties:
+        connectionName:
+          type: string
+          description: Job-specific parameters (for registerCspResources)
+          example: aws-ap-northeast-2
+        intervalSeconds:
+          minimum: 10
+          type: integer
+          description: Execution interval in seconds
+          example: 60
+        jobType:
+          type: string
+          description: "Job type: registerCspResources, registerCspResourcesAll"
+          example: registerCspResources
+        mciFlag:
+          type: string
+          description: "MCI flag: y or n"
+          example: "y"
+        mciNamePrefix:
+          type: string
+          description: MCI name prefix
+          example: mci-01
+        nsId:
+          type: string
+          description: Namespace ID
+          example: default
+        option:
+          type: string
+          description: "Options: onlyVm, exceptVm, or empty for all"
+          example: ""
+    model.ScheduleJobStatus:
+      type: object
+      properties:
+        autoDisabled:
+          type: boolean
+          description: Whether job was auto-disabled due to failures
+          example: false
+        connectionName:
+          type: string
+          description: Job-specific parameters
+          example: aws-ap-northeast-2
+        consecutiveFailures:
+          type: integer
+          description: Current consecutive failures
+          example: 0
+        createdAt:
+          type: string
+          example: 2023-10-27T10:30:00Z
+        enabled:
+          type: boolean
+          example: true
+        executionCount:
+          type: integer
+          example: 5
+        failureCount:
+          type: integer
+          description: Total failed executions
+          example: 1
+        intervalSeconds:
+          type: integer
+          example: 60
+        jobId:
+          type: string
+          example: registerCspResources-default-1698765432
+        jobType:
+          type: string
+          example: registerCspResources
+        lastError:
+          type: string
+          example: ""
+        lastExecutedAt:
+          type: string
+          example: 2023-10-27T11:30:00Z
+        lastResult:
+          type: string
+          example: "Success (execution #5)"
+        mciFlag:
+          type: string
+          example: "y"
+        mciNamePrefix:
+          type: string
+          example: mci-01
+        nextExecutionAt:
+          type: string
+          example: 2023-10-27T12:30:00Z
+        nsId:
+          type: string
+          example: default
+        option:
+          type: string
+          example: ""
+        status:
+          type: string
+          example: Scheduled
+        successCount:
+          type: integer
+          description: Total successful executions
+          example: 4
     model.SearchImageRequest:
       type: object
       properties:
@@ -16282,6 +16775,17 @@ components:
           type: object
           additionalProperties:
             type: string
+    model.UpdateScheduleJobRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Enable or disable the job
+          example: true
+        intervalSeconds:
+          type: integer
+          description: New execution interval in seconds
+          example: 60
     model.UpdateSpecListByAvailabilityRequest:
       required:
       - provider

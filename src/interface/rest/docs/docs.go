@@ -1738,7 +1738,7 @@ const docTemplate = `{
         },
         "/mciDynamicCheckRequest": {
             "post": {
-                "description": "Validate resource availability and discover optimal connection configurations before creating MCI dynamically.\nThis endpoint provides comprehensive resource validation and connection discovery for MCI planning:\n\n**Resource Validation Process:**\n1. **Specification Analysis**: Validates that requested common specs exist and are accessible\n2. **Provider Discovery**: Identifies available cloud providers and regions for each specification\n3. **Connectivity Assessment**: Tests connection configurations and CSP API accessibility\n4. **Quota Verification**: Checks available quotas and resource limits where possible\n5. **Compatibility Matrix**: Generates matrix of viable spec-provider-region combinations\n\n**Connection Configuration Discovery:**\n- **Available Providers**: Lists all configured cloud providers (AWS, Azure, GCP, etc.)\n- **Active Regions**: Shows available regions per provider with connectivity status\n- **Specification Mapping**: Maps common specs to provider-specific instance types\n- **Image Compatibility**: Validates image availability across different providers/regions\n- **Network Capabilities**: Identifies supported network features and configurations\n\n**Pre-Deployment Validation:**\n- **Resource Existence**: Confirms all specified resources exist in system namespace\n- **Permission Verification**: Validates CSP credentials and required permissions\n- **API Connectivity**: Tests connection to CSP APIs and service endpoints\n- **Dependency Resolution**: Identifies any missing dependencies or prerequisites\n\n**Optimization Recommendations:**\n- **Cost-Effective Regions**: Suggests regions with lower pricing for specified resources\n- **Performance Optimization**: Recommends regions with better network performance\n- **Availability Zone**: Identifies optimal AZ distribution for high availability\n- **Resource Bundling**: Suggests efficient resource combinations and groupings\n\n**Output Information:**\n- **Connection Candidates**: List of viable connection configurations\n- **Provider Capabilities**: Detailed capabilities matrix per provider\n- **Resource Status**: Real-time availability status for each requested resource\n- **Recommendation Summary**: Actionable recommendations for optimal deployment\n\n**Use Cases:**\n- Pre-validate MCI configuration before expensive deployment operations\n- Discover optimal provider/region combinations for cost or performance\n- Troubleshoot resource availability issues during MCI planning\n- Generate connection configuration templates for standardized deployments\n- Assess infrastructure capacity and planning constraints\n\n**Integration Workflow:**\n1. Use this endpoint to validate and discover connection options\n2. Review recommendations and adjust specifications if needed\n3. Use ` + "`" + `/mciDynamicReview` + "`" + ` for detailed cost estimation and final validation\n4. Proceed with ` + "`" + `/mciDynamic` + "`" + ` using validated configuration",
+                "description": "**⚠️ DEPRECATED: This endpoint is deprecated and will be removed in a future version. Please use ` + "`" + `/mciDynamicReview` + "`" + ` instead for comprehensive validation and cost estimation.**\n\nValidate resource availability and discover optimal connection configurations before creating MCI dynamically.\nThis endpoint provides comprehensive resource validation and connection discovery for MCI planning:\n\n**Resource Validation Process:**\n1. **Specification Analysis**: Validates that requested common specs exist and are accessible\n2. **Provider Discovery**: Identifies available cloud providers and regions for each specification\n3. **Connectivity Assessment**: Tests connection configurations and CSP API accessibility\n4. **Quota Verification**: Checks available quotas and resource limits where possible\n5. **Compatibility Matrix**: Generates matrix of viable spec-provider-region combinations\n\n**Connection Configuration Discovery:**\n- **Available Providers**: Lists all configured cloud providers (AWS, Azure, GCP, etc.)\n- **Active Regions**: Shows available regions per provider with connectivity status\n- **Specification Mapping**: Maps common specs to provider-specific instance types\n- **Image Compatibility**: Validates image availability across different providers/regions\n- **Network Capabilities**: Identifies supported network features and configurations\n\n**Pre-Deployment Validation:**\n- **Resource Existence**: Confirms all specified resources exist in system namespace\n- **Permission Verification**: Validates CSP credentials and required permissions\n- **API Connectivity**: Tests connection to CSP APIs and service endpoints\n- **Dependency Resolution**: Identifies any missing dependencies or prerequisites\n\n**Optimization Recommendations:**\n- **Cost-Effective Regions**: Suggests regions with lower pricing for specified resources\n- **Performance Optimization**: Recommends regions with better network performance\n- **Availability Zone**: Identifies optimal AZ distribution for high availability\n- **Resource Bundling**: Suggests efficient resource combinations and groupings\n\n**Output Information:**\n- **Connection Candidates**: List of viable connection configurations\n- **Provider Capabilities**: Detailed capabilities matrix per provider\n- **Resource Status**: Real-time availability status for each requested resource\n- **Recommendation Summary**: Actionable recommendations for optimal deployment\n\n**Use Cases:**\n- Pre-validate MCI configuration before expensive deployment operations\n- Discover optimal provider/region combinations for cost or performance\n- Troubleshoot resource availability issues during MCI planning\n- Generate connection configuration templates for standardized deployments\n- Assess infrastructure capacity and planning constraints\n\n**Integration Workflow:**\n1. Use this endpoint to validate and discover connection options\n2. Review recommendations and adjust specifications if needed\n3. Use ` + "`" + `/mciDynamicReview` + "`" + ` for detailed cost estimation and final validation\n4. Proceed with ` + "`" + `/mciDynamic` + "`" + ` using validated configuration",
                 "consumes": [
                     "application/json"
                 ],
@@ -1748,8 +1748,9 @@ const docTemplate = `{
                 "tags": [
                     "[MC-Infra] MCI Provisioning and Management"
                 ],
-                "summary": "Check Resource Availability for Dynamic MCI Creation",
+                "summary": "(Deprecated) Check Resource Availability for Dynamic MCI Creation",
                 "operationId": "PostMciDynamicCheckRequest",
+                "deprecated": true,
                 "parameters": [
                     {
                         "description": "Resource check request containing common specifications to validate",
@@ -11807,7 +11808,7 @@ const docTemplate = `{
         },
         "/registerCspResources": {
             "post": {
-                "description": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug",
+                "description": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug.\n\n**Behavior based on connectionName:**\n- If ` + "`" + `connectionName` + "`" + ` is specified: Registers resources from the specified connection only\n- If ` + "`" + `connectionName` + "`" + ` is empty or omitted: Registers resources from **all available connections**\n\n**Usage Examples:**\n- Single connection: ` + "`" + `{\"connectionName\": \"aws-ap-northeast-2\", \"nsId\": \"default\", \"mciNamePrefix\": \"mci-01\"}` + "`" + `\n- All connections: ` + "`" + `{\"connectionName\": \"\", \"nsId\": \"default\", \"mciNamePrefix\": \"mci-all\"}` + "`" + ` or ` + "`" + `{\"nsId\": \"default\", \"mciNamePrefix\": \"mci-all\"}` + "`" + `",
                 "consumes": [
                     "application/json"
                 ],
@@ -11821,7 +11822,7 @@ const docTemplate = `{
                 "operationId": "RegisterCspNativeResources",
                 "parameters": [
                     {
-                        "description": "Specify connectionName, NS Id, and MCI Name",
+                        "description": "Specify connectionName (optional for all connections), NS Id, and MCI Name Prefix",
                         "name": "Request",
                         "in": "body",
                         "required": true,
@@ -11853,9 +11854,354 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
+                        "description": "All connections result (when connectionName is empty)",
+                        "schema": {
+                            "$ref": "#/definitions/model.RegisterResourceAllResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/registerCspResources/schedule": {
+            "get": {
+                "description": "Get a list of all scheduled CSP resource registration jobs (jobs are not scoped to namespaces)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Job Scheduler] (WIP) CSP Resource Registration"
+                ],
+                "summary": "List all scheduled CSP resource registration jobs",
+                "operationId": "GetScheduleRegisterCspResourcesList",
+                "responses": {
+                    "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.RegisterResourceResult"
+                            "$ref": "#/definitions/model.ScheduleJobListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a scheduled job to periodically register CSP-native resources (vNet, securityGroup, sshKey, vm) into CB-Tumblebug\n\n**Resource Registration Behavior:**\nThis job registers CSP-native resources based on the ` + "`" + `connectionName` + "`" + ` field:\n- If ` + "`" + `connectionName` + "`" + ` is specified: Registers resources from the **specified connection only**\n- If ` + "`" + `connectionName` + "`" + ` is empty or omitted: Registers resources from **all available connections**\n\n**Usage Examples:**\n- Single connection: ` + "`" + `{\"jobType\": \"registerCspResources\", \"nsId\": \"default\", \"intervalSeconds\": 60, \"connectionName\": \"aws-ap-northeast-2\", \"mciNamePrefix\": \"mci-01\"}` + "`" + `\n- All connections: ` + "`" + `{\"jobType\": \"registerCspResources\", \"nsId\": \"default\", \"intervalSeconds\": 60, \"connectionName\": \"\", \"mciNamePrefix\": \"mci-all\"}` + "`" + ` or ` + "`" + `{\"jobType\": \"registerCspResources\", \"nsId\": \"default\", \"intervalSeconds\": 60, \"mciNamePrefix\": \"mci-all\"}` + "`" + `\n\n**Job Status Values:**\n- ` + "`" + `Scheduled` + "`" + `: Job is scheduled and waiting for the next execution time\n- ` + "`" + `Executing` + "`" + `: Job is currently running the task\n- ` + "`" + `Stopped` + "`" + `: Job has been stopped and deleted\n\n**Job Lifecycle:**\n1. Create job (this API) → Status: ` + "`" + `Scheduled` + "`" + `, **executes immediately**\n2. First execution starts → Status: ` + "`" + `Executing` + "`" + `\n3. Execution completes → Status: ` + "`" + `Scheduled` + "`" + ` (waits for interval)\n4. After interval → Status: ` + "`" + `Executing` + "`" + ` (cycles back to step 3)\n5. Pause job → ` + "`" + `enabled: false` + "`" + `, Status: ` + "`" + `Scheduled` + "`" + ` (no execution)\n6. Resume job → ` + "`" + `enabled: true` + "`" + `, Status: ` + "`" + `Scheduled` + "`" + ` (resumes execution)\n7. Delete job → Status: ` + "`" + `Stopped` + "`" + `, job removed permanently\n\n**Failure Handling:**\n- Tracks ` + "`" + `successCount` + "`" + `, ` + "`" + `failureCount` + "`" + `, ` + "`" + `consecutiveFailures` + "`" + `\n- Auto-disables after 5 consecutive failures (` + "`" + `autoDisabled: true` + "`" + `)\n- Auto-recovers when next execution succeeds\n\n**Timeout Protection:**\n- Default execution timeout: 30 minutes\n- Jobs exceeding timeout are marked as failed\n- Server restart during execution marks job as interrupted\n\n**Duplicate Prevention:**\n- System checks for existing jobs with same configuration\n- Configuration uniqueness based on: jobType + nsId + connectionName + mciNamePrefix + option + mciFlag\n- Returns 409 Conflict if duplicate job exists with existing job ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Job Scheduler] (WIP) CSP Resource Registration"
+                ],
+                "summary": "Create scheduled CSP resource registration job",
+                "operationId": "PostScheduleRegisterCspResources",
+                "parameters": [
+                    {
+                        "description": "Schedule job request (nsId must be specified in request body)",
+                        "name": "scheduleRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ScheduleJobRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ScheduleJobStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "409": {
+                        "description": "Duplicate job already exists",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "⚠️ **DANGER: This operation deletes ALL scheduled jobs in the system!**\n\n**⚠️ CRITICAL WARNINGS:**\n- This will PERMANENTLY DELETE **ALL** scheduled jobs across all namespaces\n- All job execution history will be lost\n- This operation is IRREVERSIBLE and cannot be undone\n- Use with EXTREME CAUTION in production environments\n\n**Use Cases:**\n- Cleaning up test/development environments\n- Emergency shutdown of all scheduled operations\n- System maintenance or reset\n\n**Safer Alternatives:**\n- Delete individual jobs: Use ` + "`" + `DELETE /registerCspResources/schedule/{jobId}` + "`" + `\n- Temporarily stop all jobs: Pause each job individually via ` + "`" + `/pause` + "`" + ` endpoint\n- Disable without deleting: Update each job with ` + "`" + `enabled: false` + "`" + `\n\n**Response Information:**\n- Returns the count of deleted jobs\n- Returns 200 even if no jobs were found (count will be 0)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Job Scheduler] (WIP) CSP Resource Registration"
+                ],
+                "summary": "Delete ALL scheduled jobs",
+                "operationId": "DeleteScheduleRegisterCspResourcesAll",
+                "responses": {
+                    "200": {
+                        "description": "Successfully deleted all jobs (message includes count)",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/registerCspResources/schedule/{jobId}": {
+            "get": {
+                "description": "Get the current status of a specific scheduled CSP resource registration job\n\n**Response Fields Explanation:**\n- ` + "`" + `status` + "`" + `: Current job state (Scheduled/Executing/Stopped)\n- ` + "`" + `enabled` + "`" + `: Whether job is active (can be paused with false)\n- ` + "`" + `executionCount` + "`" + `: Total number of executions attempted\n- ` + "`" + `successCount` + "`" + `: Number of successful executions\n- ` + "`" + `failureCount` + "`" + `: Number of failed executions\n- ` + "`" + `consecutiveFailures` + "`" + `: Current streak of failures (resets on success)\n- ` + "`" + `autoDisabled` + "`" + `: True if job was auto-disabled due to 5+ consecutive failures\n- ` + "`" + `lastExecutedAt` + "`" + `: Timestamp of most recent execution\n- ` + "`" + `nextExecutionAt` + "`" + `: Scheduled time for next execution\n- ` + "`" + `lastError` + "`" + `: Error message from most recent failure (empty if success)\n- ` + "`" + `lastResult` + "`" + `: Result message from most recent execution\n\n**Monitoring Recommendations:**\n- Check ` + "`" + `consecutiveFailures` + "`" + ` - alert if \u003e= 3\n- Monitor ` + "`" + `autoDisabled` + "`" + ` - requires manual intervention if true\n- Compare ` + "`" + `successCount` + "`" + ` vs ` + "`" + `failureCount` + "`" + ` for reliability metrics",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Job Scheduler] (WIP) CSP Resource Registration"
+                ],
+                "summary": "Get scheduled job status",
+                "operationId": "GetScheduleRegisterCspResourcesStatus",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ScheduleJobStatus"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update the configuration of a scheduled CSP resource registration job (interval, enabled status)\n\n**Updatable Fields:**\n- ` + "`" + `intervalSeconds` + "`" + `: Change execution frequency (minimum 10 seconds)\n- ` + "`" + `enabled` + "`" + `: Enable (true) or disable (false) the job\n\n**Usage Examples:**\n- Change interval: ` + "`" + `{\"intervalSeconds\": 30}` + "`" + ` (30 seconds)\n- Pause job: ` + "`" + `{\"enabled\": false}` + "`" + `\n- Resume job: ` + "`" + `{\"enabled\": true}` + "`" + `\n- Change both: ` + "`" + `{\"intervalSeconds\": 10, \"enabled\": true}` + "`" + `\n\n**Note:** For simpler pause/resume operations, consider using dedicated ` + "`" + `/pause` + "`" + ` and ` + "`" + `/resume` + "`" + ` endpoints",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Job Scheduler] (WIP) CSP Resource Registration"
+                ],
+                "summary": "Update scheduled job configuration",
+                "operationId": "PutScheduleRegisterCspResources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update schedule job request",
+                        "name": "updateRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateScheduleJobRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ScheduleJobStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Stop and permanently delete a scheduled CSP resource registration job\n\n**Warning:** This operation is irreversible!\n- Job will be stopped immediately\n- All job data and execution history will be deleted\n- Cannot be recovered after deletion\n\n**Alternatives:**\n- To temporarily stop: Use ` + "`" + `/pause` + "`" + ` endpoint instead\n- To keep history: Set ` + "`" + `enabled: false` + "`" + ` via PUT endpoint",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Job Scheduler] (WIP) CSP Resource Registration"
+                ],
+                "summary": "Stop and delete scheduled job",
+                "operationId": "DeleteScheduleRegisterCspResources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/registerCspResources/schedule/{jobId}/pause": {
+            "put": {
+                "description": "Temporarily pause a scheduled job without deleting it. The job can be resumed later.\nThis sets enabled=false and preserves all job state and execution history.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Job Scheduler] (WIP) CSP Resource Registration"
+                ],
+                "summary": "Pause a scheduled job",
+                "operationId": "PutScheduleRegisterCspResourcesPause",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ScheduleJobStatus"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/registerCspResources/schedule/{jobId}/resume": {
+            "put": {
+                "description": "Resume a previously paused scheduled job to continue periodic execution.\nThis sets enabled=true and restarts the job scheduler.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Job Scheduler] (WIP) CSP Resource Registration"
+                ],
+                "summary": "Resume a paused scheduled job",
+                "operationId": "PutScheduleRegisterCspResourcesResume",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ScheduleJobStatus"
                         }
                     },
                     "404": {
@@ -11875,7 +12221,7 @@ const docTemplate = `{
         },
         "/registerCspResourcesAll": {
             "post": {
-                "description": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug",
+                "description": "**DEPRECATED**: This endpoint is deprecated. Please use ` + "`" + `/registerCspResources` + "`" + ` with empty ` + "`" + `connectionName` + "`" + ` instead.\n\nThis endpoint now redirects to ` + "`" + `/registerCspResources` + "`" + ` for unified API behavior.\n\n**Migration Guide:**\n- Old: ` + "`" + `POST /registerCspResourcesAll` + "`" + ` with ` + "`" + `{\"nsId\": \"default\", \"mciNamePrefix\": \"mci-all\"}` + "`" + `\n- New: ` + "`" + `POST /registerCspResources` + "`" + ` with ` + "`" + `{\"connectionName\": \"\", \"nsId\": \"default\", \"mciNamePrefix\": \"mci-all\"}` + "`" + `",
                 "consumes": [
                     "application/json"
                 ],
@@ -11885,11 +12231,12 @@ const docTemplate = `{
                 "tags": [
                     "[Admin] System Management"
                 ],
-                "summary": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug",
+                "summary": "[Deprecated] Register CSP Native Resources from all connections",
                 "operationId": "RegisterCspNativeResourcesAll",
+                "deprecated": true,
                 "parameters": [
                     {
-                        "description": "Specify NS Id and MCI Name",
+                        "description": "Specify NS Id and MCI Name Prefix",
                         "name": "Request",
                         "in": "body",
                         "required": true,
@@ -13507,10 +13854,11 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "connectionName": {
+                    "description": "Optional: if empty or omitted, registers resources from all connections",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
-                "mciName": {
+                "mciNamePrefix": {
                     "type": "string",
                     "example": "csp"
                 },
@@ -13523,7 +13871,7 @@ const docTemplate = `{
         "common.RestRegisterCspNativeResourcesRequestAll": {
             "type": "object",
             "properties": {
-                "mciName": {
+                "mciNamePrefix": {
                     "type": "string",
                     "example": "csp"
                 },
@@ -18735,6 +19083,153 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ScheduleJobListResponse": {
+            "type": "object",
+            "properties": {
+                "jobs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ScheduleJobStatus"
+                    }
+                }
+            }
+        },
+        "model.ScheduleJobRequest": {
+            "type": "object",
+            "required": [
+                "intervalSeconds",
+                "jobType",
+                "nsId"
+            ],
+            "properties": {
+                "connectionName": {
+                    "description": "Job-specific parameters (for registerCspResources)",
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                },
+                "intervalSeconds": {
+                    "description": "Execution interval in seconds",
+                    "type": "integer",
+                    "minimum": 10,
+                    "example": 60
+                },
+                "jobType": {
+                    "description": "Job type: registerCspResources, registerCspResourcesAll",
+                    "type": "string",
+                    "example": "registerCspResources"
+                },
+                "mciFlag": {
+                    "description": "MCI flag: y or n",
+                    "type": "string",
+                    "example": "y"
+                },
+                "mciNamePrefix": {
+                    "description": "MCI name prefix",
+                    "type": "string",
+                    "example": "mci-01"
+                },
+                "nsId": {
+                    "description": "Namespace ID",
+                    "type": "string",
+                    "example": "default"
+                },
+                "option": {
+                    "description": "Options: onlyVm, exceptVm, or empty for all",
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "model.ScheduleJobStatus": {
+            "type": "object",
+            "properties": {
+                "autoDisabled": {
+                    "description": "Whether job was auto-disabled due to failures",
+                    "type": "boolean",
+                    "example": false
+                },
+                "connectionName": {
+                    "description": "Job-specific parameters",
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                },
+                "consecutiveFailures": {
+                    "description": "Current consecutive failures",
+                    "type": "integer",
+                    "example": 0
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2023-10-27T10:30:00Z"
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "executionCount": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "failureCount": {
+                    "description": "Total failed executions",
+                    "type": "integer",
+                    "example": 1
+                },
+                "intervalSeconds": {
+                    "type": "integer",
+                    "example": 60
+                },
+                "jobId": {
+                    "type": "string",
+                    "example": "registerCspResources-default-1698765432"
+                },
+                "jobType": {
+                    "type": "string",
+                    "example": "registerCspResources"
+                },
+                "lastError": {
+                    "type": "string",
+                    "example": ""
+                },
+                "lastExecutedAt": {
+                    "type": "string",
+                    "example": "2023-10-27T11:30:00Z"
+                },
+                "lastResult": {
+                    "type": "string",
+                    "example": "Success (execution #5)"
+                },
+                "mciFlag": {
+                    "type": "string",
+                    "example": "y"
+                },
+                "mciNamePrefix": {
+                    "type": "string",
+                    "example": "mci-01"
+                },
+                "nextExecutionAt": {
+                    "type": "string",
+                    "example": "2023-10-27T12:30:00Z"
+                },
+                "nsId": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "option": {
+                    "type": "string",
+                    "example": ""
+                },
+                "status": {
+                    "type": "string",
+                    "example": "Scheduled"
+                },
+                "successCount": {
+                    "description": "Total successful executions",
+                    "type": "integer",
+                    "example": 4
+                }
+            }
+        },
         "model.SearchImageRequest": {
             "type": "object",
             "properties": {
@@ -20400,6 +20895,21 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "model.UpdateScheduleJobRequest": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Enable or disable the job",
+                    "type": "boolean",
+                    "example": true
+                },
+                "intervalSeconds": {
+                    "description": "New execution interval in seconds",
+                    "type": "integer",
+                    "example": 60
                 }
             }
         },

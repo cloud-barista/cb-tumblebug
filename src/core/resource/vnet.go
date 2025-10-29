@@ -1352,6 +1352,12 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VN
 	vNetInfo.Name = vNetRegisterReq.Name
 	vNetInfo.Uid = uid
 	vNetInfo.ConnectionName = vNetRegisterReq.ConnectionName
+	connectionConfig, err := common.GetConnConfig(vNetInfo.ConnectionName)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	vNetInfo.ConnectionConfig = connectionConfig
 	vNetInfo.Description = vNetRegisterReq.Description
 
 	// Set a vNetKey for the vNet object

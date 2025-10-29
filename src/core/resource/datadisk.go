@@ -121,7 +121,7 @@ func CreateDataDisk(nsId string, u *model.DataDiskReq, option string) (model.Dat
 		return model.DataDiskInfo{}, err
 	}
 
-	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
+	// fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
@@ -284,7 +284,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *model.DataDiskUpsizeReq) 
 		return model.DataDiskInfo{}, err
 	}
 
-	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
+	// fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
