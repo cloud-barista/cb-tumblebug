@@ -517,7 +517,9 @@ func RestPostMciDynamicSubGroupVmReview(c echo.Context) error {
 
 // RestPostMciDynamicCheckRequest godoc
 // @ID PostMciDynamicCheckRequest
-// @Summary Check Resource Availability for Dynamic MCI Creation
+// @Summary (Deprecated) Check Resource Availability for Dynamic MCI Creation
+// @Description **⚠️ DEPRECATED: This endpoint is deprecated and will be removed in a future version. Please use `/mciDynamicReview` instead for comprehensive validation and cost estimation.**
+// @Description
 // @Description Validate resource availability and discover optimal connection configurations before creating MCI dynamically.
 // @Description This endpoint provides comprehensive resource validation and connection discovery for MCI planning:
 // @Description
@@ -573,6 +575,7 @@ func RestPostMciDynamicSubGroupVmReview(c echo.Context) error {
 // @Failure 400 {object} model.SimpleMsg "Invalid request format or malformed specification identifiers"
 // @Failure 404 {object} model.SimpleMsg "Specified common specifications not found in system namespace"
 // @Failure 500 {object} model.SimpleMsg "CSP connectivity issues or internal validation service errors"
+// @Deprecated
 // @Router /mciDynamicCheckRequest [post]
 func RestPostMciDynamicCheckRequest(c echo.Context) error {
 

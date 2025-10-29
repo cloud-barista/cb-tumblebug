@@ -17,6 +17,7 @@ package model
 import (
 	"database/sql"
 	"sync"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -30,6 +31,56 @@ type SimpleMsg struct {
 type KeyValue struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+}
+
+// ScheduleJobRequest is struct for creating a scheduled job
+type ScheduleJobRequest struct {
+	JobType         string `json:"jobType" validate:"required" example:"registerCspResources"` // Job type: registerCspResources, registerCspResourcesAll
+	NsId            string `json:"nsId" validate:"required" example:"default"`                 // Namespace ID
+	IntervalSeconds int    `json:"intervalSeconds" validate:"required,min=10" example:"60"`    // Execution interval in seconds (minimum 60)
+
+	// Job-specific parameters (for registerCspResources)
+	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2"` // Connection configuration name
+	MciNamePrefix  string `json:"mciNamePrefix,omitempty" example:"mci-01"`              // MCI name prefix
+	Option         string `json:"option,omitempty" example:""`                           // Options: onlyVm, exceptVm, or empty for all
+	MciFlag        string `json:"mciFlag,omitempty" example:"y"`                         // MCI flag: y or n
+}
+
+// UpdateScheduleJobRequest is struct for updating a scheduled job
+type UpdateScheduleJobRequest struct {
+	IntervalSeconds *int  `json:"intervalSeconds,omitempty" example:"60"` // New execution interval in seconds (minimum 10)
+	Enabled         *bool `json:"enabled,omitempty" example:"true"`       // Enable or disable the job
+}
+
+// ScheduleJobStatus is struct for scheduled job status response
+type ScheduleJobStatus struct {
+	JobId               string    `json:"jobId" example:"registerCspResources-default-1698765432"`
+	JobType             string    `json:"jobType" example:"registerCspResources"`
+	NsId                string    `json:"nsId" example:"default"`
+	Status              string    `json:"status" example:"Scheduled"`
+	IntervalSeconds     int       `json:"intervalSeconds" example:"60"`
+	Enabled             bool      `json:"enabled" example:"true"`
+	CreatedAt           time.Time `json:"createdAt" example:"2023-10-27T10:30:00Z"`
+	LastExecutedAt      time.Time `json:"lastExecutedAt,omitempty" example:"2023-10-27T11:30:00Z"`
+	NextExecutionAt     time.Time `json:"nextExecutionAt,omitempty" example:"2023-10-27T12:30:00Z"`
+	ExecutionCount      int       `json:"executionCount" example:"5"`
+	SuccessCount        int       `json:"successCount" example:"4"`        // Total successful executions
+	FailureCount        int       `json:"failureCount" example:"1"`        // Total failed executions
+	ConsecutiveFailures int       `json:"consecutiveFailures" example:"0"` // Current consecutive failures
+	AutoDisabled        bool      `json:"autoDisabled" example:"false"`    // Whether job was auto-disabled due to failures
+	LastError           string    `json:"lastError,omitempty" example:""`
+	LastResult          string    `json:"lastResult,omitempty" example:"Success (execution #5)"`
+
+	// Job-specific parameters
+	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2"`
+	MciNamePrefix  string `json:"mciNamePrefix,omitempty" example:"mci-01"`
+	Option         string `json:"option,omitempty" example:""`
+	MciFlag        string `json:"mciFlag,omitempty" example:"y"`
+}
+
+// ScheduleJobListResponse is struct for list of scheduled jobs
+type ScheduleJobListResponse struct {
+	Jobs []ScheduleJobStatus `json:"jobs"`
 }
 
 // KeyWithEncryptedValue is struct for key-(encrypted)value pair

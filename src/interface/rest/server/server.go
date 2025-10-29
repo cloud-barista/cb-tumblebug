@@ -333,6 +333,16 @@ func RunServer() {
 	e.POST("/tumblebug/registerCspResources", rest_common.RestRegisterCspNativeResources)
 	e.POST("/tumblebug/registerCspResourcesAll", rest_common.RestRegisterCspNativeResourcesAll)
 
+	// Scheduled jobs for CSP resource registration
+	e.POST("/tumblebug/registerCspResources/schedule", rest_infra.RestPostScheduleRegisterCspResources)
+	e.GET("/tumblebug/registerCspResources/schedule", rest_infra.RestGetScheduleRegisterCspResourcesList)
+	e.GET("/tumblebug/registerCspResources/schedule/:jobId", rest_infra.RestGetScheduleRegisterCspResourcesStatus)
+	e.PUT("/tumblebug/registerCspResources/schedule/:jobId", rest_infra.RestPutScheduleRegisterCspResources)
+	e.PUT("/tumblebug/registerCspResources/schedule/:jobId/pause", rest_infra.RestPutScheduleRegisterCspResourcesPause)
+	e.PUT("/tumblebug/registerCspResources/schedule/:jobId/resume", rest_infra.RestPutScheduleRegisterCspResourcesResume)
+	e.DELETE("/tumblebug/registerCspResources/schedule/:jobId", rest_infra.RestDeleteScheduleRegisterCspResources)
+	e.DELETE("/tumblebug/registerCspResources/schedule", rest_infra.RestDeleteScheduleRegisterCspResourcesAll)
+
 	// @Tags [Admin] System Configuration
 	e.POST("/tumblebug/config", rest_common.RestPostConfig)
 	e.GET("/tumblebug/config/:configId", rest_common.RestGetConfig)

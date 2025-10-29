@@ -1308,7 +1308,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 				return res, err
 			}
 
-			fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
+			// fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
 			switch {
 			case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 				err := fmt.Errorf(string(resp.Body()))
@@ -1319,7 +1319,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 
 			updatedSpiderDisk := resp.Result().(*model.SpiderDiskInfo)
 			res.Status = updatedSpiderDisk.Status
-			fmt.Printf("res.Status: %s \n", res.Status) // for debug
+			// fmt.Printf("res.Status: %s \n", res.Status) // for debug
 			UpdateResourceObject(nsId, model.StrDataDisk, res)
 
 			return res, nil

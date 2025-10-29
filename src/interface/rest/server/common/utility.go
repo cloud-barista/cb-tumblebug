@@ -494,22 +494,31 @@ func RestInspectResourcesOverview(c echo.Context) error {
 
 // Request struct for RestRegisterCspNativeResources
 type RestRegisterCspNativeResourcesRequest struct {
-	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"`
+	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"` // Optional: if empty or omitted, registers resources from all connections
 	NsId           string `json:"nsId" example:"default"`
-	MciName        string `json:"mciName" example:"csp"`
+	MciNamePrefix  string `json:"mciNamePrefix" example:"csp"`
 }
 
 // RestRegisterCspNativeResources godoc
 // @ID RegisterCspNativeResources
 // @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug
-// @Description Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug
+// @Description Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug.
+// @Description
+// @Description **Behavior based on connectionName:**
+// @Description - If `connectionName` is specified: Registers resources from the specified connection only
+// @Description - If `connectionName` is empty or omitted: Registers resources from **all available connections**
+// @Description
+// @Description **Usage Examples:**
+// @Description - Single connection: `{"connectionName": "aws-ap-northeast-2", "nsId": "default", "mciNamePrefix": "mci-01"}`
+// @Description - All connections: `{"connectionName": "", "nsId": "default", "mciNamePrefix": "mci-all"}` or `{"nsId": "default", "mciNamePrefix": "mci-all"}`
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
-// @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName, NS Id, and MCI Name""
+// @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName (optional for all connections), NS Id, and MCI Name Prefix"
 // @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
 // @Param mciFlag query string false "Flag to show VMs in a collective MCI form (y,n)" Enums(y, n) default(y)
-// @Success 200 {object} model.RegisterResourceResult
+// @Success 200 {object} model.RegisterResourceResult "Single connection result"
+// @Success 200 {object} model.RegisterResourceAllResult "All connections result (when connectionName is empty)"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /registerCspResources [post]
@@ -522,41 +531,59 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 	option := c.QueryParam("option")
 	mciFlag := c.QueryParam("mciFlag")
 
-	content, err := infra.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.MciName, option, mciFlag)
+	// If connectionName is empty, register from all connections
+	if u.ConnectionName == "" {
+		log.Info().Msg("ConnectionName is empty, registering resources from all connections")
+		content, err := infra.RegisterCspNativeResourcesAll(u.NsId, u.MciNamePrefix, option, mciFlag)
+		return clientManager.EndRequestWithLog(c, err, content)
+	}
+
+	// Register from specific connection
+	log.Info().Msgf("Registering resources from connection: %s", u.ConnectionName)
+	content, err := infra.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.MciNamePrefix, option, mciFlag)
 	return clientManager.EndRequestWithLog(c, err, content)
 
 }
 
-// Request struct for RestRegisterCspNativeResources
+// Request struct for RestRegisterCspNativeResourcesAll (Deprecated)
 type RestRegisterCspNativeResourcesRequestAll struct {
-	NsId    string `json:"nsId" example:"default"`
-	MciName string `json:"mciName" example:"csp"`
+	NsId          string `json:"nsId" example:"default"`
+	MciNamePrefix string `json:"mciNamePrefix" example:"csp"`
 }
 
 // RestRegisterCspNativeResourcesAll godoc
 // @ID RegisterCspNativeResourcesAll
-// @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug
-// @Description Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug
+// @Summary [Deprecated] Register CSP Native Resources from all connections
+// @Description **DEPRECATED**: This endpoint is deprecated. Please use `/registerCspResources` with empty `connectionName` instead.
+// @Description
+// @Description This endpoint now redirects to `/registerCspResources` for unified API behavior.
+// @Description
+// @Description **Migration Guide:**
+// @Description - Old: `POST /registerCspResourcesAll` with `{"nsId": "default", "mciNamePrefix": "mci-all"}`
+// @Description - New: `POST /registerCspResources` with `{"connectionName": "", "nsId": "default", "mciNamePrefix": "mci-all"}`
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
-// @Param Request body RestRegisterCspNativeResourcesRequestAll true "Specify NS Id and MCI Name"
+// @Param Request body RestRegisterCspNativeResourcesRequestAll true "Specify NS Id and MCI Name Prefix"
 // @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
 // @Param mciFlag query string false "Flag to show VMs in a collective MCI form (y,n)" Enums(y, n) default(y)
 // @Success 200 {object} model.RegisterResourceAllResult
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
+// @Deprecated
 // @Router /registerCspResourcesAll [post]
 func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 
-	u := &RestRegisterCspNativeResourcesRequest{}
+	u := &RestRegisterCspNativeResourcesRequestAll{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	option := c.QueryParam("option")
 	mciFlag := c.QueryParam("mciFlag")
 
-	content, err := infra.RegisterCspNativeResourcesAll(u.NsId, u.MciName, option, mciFlag)
+	log.Warn().Msg("[DEPRECATED] /registerCspResourcesAll is deprecated. Use /registerCspResources with empty connectionName instead.")
+
+	content, err := infra.RegisterCspNativeResourcesAll(u.NsId, u.MciNamePrefix, option, mciFlag)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

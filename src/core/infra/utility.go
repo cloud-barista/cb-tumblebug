@@ -692,7 +692,7 @@ func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 }
 
 // RegisterCspNativeResourcesAll func registers all CSP-native resources into CB-TB
-func RegisterCspNativeResourcesAll(nsId string, mciId string, option string, mciFlag string) (model.RegisterResourceAllResult, error) {
+func RegisterCspNativeResourcesAll(nsId string, mciNamePrefix string, option string, mciFlag string) (model.RegisterResourceAllResult, error) {
 	startTime := time.Now()
 
 	connectionConfigList, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
@@ -710,7 +710,7 @@ func RegisterCspNativeResourcesAll(nsId string, mciId string, option string, mci
 		go func(k model.ConnConfig) {
 			defer wait.Done()
 
-			mciNameForRegister := mciId + "-" + k.ConfigName
+			mciNameForRegister := mciNamePrefix + "-" + k.ConfigName
 			// Assign RandomSleep range by clouds
 			// This code is temporal, CB-Spider needs to be enhnaced for locking mechanism.
 			// CB-SP v0.5.9 will not help with rate limit issue.
@@ -766,7 +766,7 @@ func RegisterCspNativeResourcesAll(nsId string, mciId string, option string, mci
 }
 
 // RegisterCspNativeResources func registers all CSP-native resources into CB-TB
-func RegisterCspNativeResources(nsId string, connConfig string, mciId string, option string, mciFlag string) (model.RegisterResourceResult, error) {
+func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix string, option string, mciFlag string) (model.RegisterResourceResult, error) {
 	startTime := time.Now()
 
 	optionFlag := "register"
@@ -949,7 +949,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciId string, op
 			req := model.MciReq{}
 			req.Description = "MCI for CSP managed VMs (registered to CB-TB)"
 			req.InstallMonAgent = "no"
-			req.Name = mciId
+			req.Name = mciNamePrefix
 			req.Name = common.ChangeIdString(req.Name)
 
 			subGroupReq := model.CreateSubGroupReq{}
