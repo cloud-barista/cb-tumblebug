@@ -51,27 +51,27 @@ k8scluster:
     nodeGroupNamingRule: ^[a-z][a-z0-9]*$
     version:
       - region: [westeurope,westus]
-        available: # not tested
+        available: # Updated: 2025-10-30 (verified with az aks get-versions)
           - name: "1.33"
-            id: "1.33.0"
+            id: "1.33.3"
           - name: "1.32"
-            id: "1.32.3"
+            id: "1.32.7"
           - name: "1.31"
-            id: "1.31.6"
+            id: "1.31.11"
           - name: "1.30"
-            id: "1.30.9"
+            id: "1.30.100"
       - region: [westindia]
         # no available version
       - region: [common]
         available:
           - name: "1.33"
-            id: "1.33.0"
+            id: "1.33.3"
           - name: "1.32"
-            id: "1.32.3"
+            id: "1.32.7"
           - name: "1.31"
-            id: "1.31.6"
+            id: "1.31.11"
           - name: "1.30"
-            id: "1.30.9"
+            id: "1.30.100"
     rootDisk:
       - region: [common]
         type:
@@ -86,15 +86,16 @@ k8scluster:
     requiredSubnetCount: 1
     version:
       - region: [common]
-        # ref: https://cloud.google.com/kubernetes-engine/docs/release-notes
+        # ref: https://cloud.google.com/kubernetes-engine/docs/release-notes-stable
+        # Updated: 2025-10-30 (latest stable channel versions)
         # gcloud container get-server-config --region=asia-northeast3 --format=json | jq '{validMasterVersions, channels: [.channels[] | {channel, defaultVersion, validVersions}]}'
-        available: # stable channel
+        available: # stable channel versions as of 2025-10-29
           - name: "1.33"
-            id: "1.33.4-gke.1172000"
+            id: "1.33.5-gke.1125000"
           - name: "1.32"      
-            id: "1.32.8-gke.1134000"
+            id: "1.32.9-gke.1092000"
           - name: "1.31"
-            id: "1.31.11-gke.1036000"
+            id: "1.31.13-gke.1008000"
       - region: [africa-south1]
         # addnodegroup unavailble
     rootDisk:
