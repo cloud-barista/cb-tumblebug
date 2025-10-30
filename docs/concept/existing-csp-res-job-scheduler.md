@@ -178,25 +178,25 @@ graph TB
 stateDiagram-v2
     [*] --> Scheduled: 1. Create (POST)
     
-    Scheduled --> Executing: First execution<br/>starts immediately
+    Scheduled --> Executing: First execution starts immediately
     
-    Executing --> Scheduled: 3. Execution Complete<br/>Success: successCount++<br/>consecutiveFailures=0
-    Executing --> Scheduled: Failure: failureCount++<br/>consecutiveFailures++
+    Executing --> Scheduled: 3. Success (successCount++, consecutiveFailures=0)
+    Executing --> Scheduled: 3. Failure (failureCount++, consecutiveFailures++)
     
-    Scheduled --> Executing: 4. Next Execution<br/>(after IntervalSeconds)
+    Scheduled --> Executing: 4. Next Execution (after IntervalSeconds)
     
-    Scheduled --> Scheduled: 5. Pause<br/>(enabled=false)<br/>No execution
+    Scheduled --> Scheduled: 5. Pause (enabled=false)
     
-    Scheduled --> Scheduled: 6. Resume<br/>(enabled=true)<br/>Execution resumes
+    Scheduled --> Scheduled: 6. Resume (enabled=true)
     
     Scheduled --> Stopped: 7. Delete (DELETE)
     Stopped --> [*]
     
     note right of Executing
         2. First Execution
-        - status: Executing
-        - executionCount++
-        - RegisterCspNativeResources()
+        status: Executing
+        executionCount++
+        RegisterCspNativeResources()
     end note
     
     note right of Scheduled
@@ -1376,17 +1376,6 @@ Alert: Slack #infra-alerts
 
 ---
 
-## Additional Resources
-
-### Related API Documentation
-- [CSP Resource Registration API](../README.md)
-- [Namespace Management API](../README.md)
-- [MCI Management API](../README.md)
-
-### Related Guides
-- [Scheduled Jobs API](./scheduled-jobs-api.md) - Detailed API specification
-- [Scheduled Jobs Persistence](./scheduled-jobs-persistence.md) - Persistence design
-
 ### Swagger UI
 Access interactive API documentation at:
 ```
@@ -1465,23 +1454,3 @@ print(f"Executions: {status['executionCount']}")
 
 ### Q10: Can I use Cron expressions?
 **A:** Currently only interval-based scheduling is supported. Cron expression support is planned for the future.
-
----
-
-## Version Information
-
-- **Current Version**: v0.11.14
-- **Job Scheduler Introduced**: v0.11.13
-- **Last Updated**: 2025-10-29
-
----
-
-## Contribution and Feedback
-
-For bug reports, feature requests, or documentation improvements, please let us know via GitHub Issues:
-- GitHub Repository: https://github.com/cloud-barista/cb-tumblebug
-- Issues: https://github.com/cloud-barista/cb-tumblebug/issues
-
----
-
-**© 2019-2025 The Cloud-Barista Authors. Licensed under the Apache License 2.0.**
