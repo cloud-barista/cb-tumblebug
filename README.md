@@ -16,7 +16,7 @@
 [![Slack](https://img.shields.io/badge/Slack-SIG--TB-brightgreen)](https://cloud-barista.slack.com/archives/CJQ7575PU)
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-50-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-51-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## What is CB-Tumblebug? ✨
@@ -749,6 +749,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/hanizang77"><img src="https://avatars.githubusercontent.com/u/194071819?v=4?s=100" width="100px;" alt="Hannie Zang"/><br /><sub><b>Hannie Zang</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=hanizang77" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Jeon-Jinhyeok"><img src="https://avatars.githubusercontent.com/u/85602664?v=4?s=100" width="100px;" alt="Jinhyeok"/><br /><sub><b>Jinhyeok</b></sub></a><br /><a href="#userTesting-Jeon-Jinhyeok" title="User Testing">📓</a></td>
     </tr>
   </tbody>
 </table>

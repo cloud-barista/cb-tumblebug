@@ -471,6 +471,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Jeon-Jinhyeok",
+      "name": "Jinhyeok",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85602664?v=4",
+      "profile": "https://github.com/Jeon-Jinhyeok",
+      "contributions": [
+        "userTesting"
+      ]
     }
   ],
   "contributorsPerLine": 7,
