@@ -630,7 +630,7 @@ These endpoints have been modified in various ways:
 ### GET /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/{index}
 
 - **Summary**: Get a specific command status by index for a VM
-- **Tags**: [MC-Infra] MCI Remote Command Status
+- **Tags**: [MC-Infra] MCI Remote Command
 - **Parameters**: 5
 - **Request Body**: No
 - **Response Codes**: 200, 404, 500
@@ -691,7 +691,7 @@ These endpoints have been modified in various ways:
     "500"
   ],
   "tags": [
-    "[MC-Infra] MCI Remote Command Status"
+    "[MC-Infra] MCI Remote Command"
   ]
 }
 ```
@@ -702,7 +702,7 @@ These endpoints have been modified in various ways:
 ### GET /ns/{nsId}/mci/{mciId}/vm/{vmId}/handlingCount
 
 - **Summary**: Get count of currently handling commands for a VM
-- **Tags**: [MC-Infra] MCI Remote Command Status
+- **Tags**: [MC-Infra] MCI Remote Command
 - **Parameters**: 4
 - **Request Body**: No
 - **Response Codes**: 200, 404, 500
@@ -755,7 +755,7 @@ These endpoints have been modified in various ways:
     "500"
   ],
   "tags": [
-    "[MC-Infra] MCI Remote Command Status"
+    "[MC-Infra] MCI Remote Command"
   ]
 }
 ```
@@ -873,7 +873,7 @@ These endpoints have been modified in various ways:
 ### DELETE /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatusAll
 
 - **Summary**: Clear all command status records for a VM
-- **Tags**: [MC-Infra] MCI Remote Command Status
+- **Tags**: [MC-Infra] MCI Remote Command
 - **Parameters**: 4
 - **Request Body**: No
 - **Response Codes**: 200, 404, 500
@@ -926,7 +926,7 @@ These endpoints have been modified in various ways:
     "500"
   ],
   "tags": [
-    "[MC-Infra] MCI Remote Command Status"
+    "[MC-Infra] MCI Remote Command"
   ]
 }
 ```
@@ -937,7 +937,7 @@ These endpoints have been modified in various ways:
 ### GET /ns/{nsId}/mci/{mciId}/handlingCount
 
 - **Summary**: Get count of currently handling commands for all VMs in MCI
-- **Tags**: [MC-Infra] MCI Remote Command Status
+- **Tags**: [MC-Infra] MCI Remote Command
 - **Parameters**: 3
 - **Request Body**: No
 - **Response Codes**: 200, 404, 500
@@ -982,7 +982,7 @@ These endpoints have been modified in various ways:
     "500"
   ],
   "tags": [
-    "[MC-Infra] MCI Remote Command Status"
+    "[MC-Infra] MCI Remote Command"
   ]
 }
 ```
@@ -1168,7 +1168,7 @@ These endpoints have been modified in various ways:
 ### DELETE /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus/{index}
 
 - **Summary**: Delete a specific command status by index for a VM
-- **Tags**: [MC-Infra] MCI Remote Command Status
+- **Tags**: [MC-Infra] MCI Remote Command
 - **Parameters**: 5
 - **Request Body**: No
 - **Response Codes**: 200, 404, 500
@@ -1229,7 +1229,7 @@ These endpoints have been modified in various ways:
     "500"
   ],
   "tags": [
-    "[MC-Infra] MCI Remote Command Status"
+    "[MC-Infra] MCI Remote Command"
   ]
 }
 ```
@@ -1303,7 +1303,7 @@ These endpoints have been modified in various ways:
 ### GET /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus
 
 - **Summary**: List command status records for a VM with filtering
-- **Tags**: [MC-Infra] MCI Remote Command Status
+- **Tags**: [MC-Infra] MCI Remote Command
 - **Parameters**: 13
 - **Request Body**: No
 - **Response Codes**: 200, 404, 500
@@ -1423,7 +1423,7 @@ These endpoints have been modified in various ways:
     "500"
   ],
   "tags": [
-    "[MC-Infra] MCI Remote Command Status"
+    "[MC-Infra] MCI Remote Command"
   ]
 }
 ```
@@ -1530,7 +1530,7 @@ These endpoints have been modified in various ways:
 ### DELETE /ns/{nsId}/mci/{mciId}/vm/{vmId}/commandStatus
 
 - **Summary**: Delete multiple command status records by criteria for a VM
-- **Tags**: [MC-Infra] MCI Remote Command Status
+- **Tags**: [MC-Infra] MCI Remote Command
 - **Parameters**: 11
 - **Request Body**: No
 - **Response Codes**: 200, 404, 500
@@ -1636,7 +1636,7 @@ These endpoints have been modified in various ways:
     "500"
   ],
   "tags": [
-    "[MC-Infra] MCI Remote Command Status"
+    "[MC-Infra] MCI Remote Command"
   ]
 }
 ```
@@ -2089,7 +2089,7 @@ These endpoints have been modified in various ways:
 
 ## 🆕 New API Categories
 
-- `[MC-Infra] MCI Remote Command Status`
+- `[MC-Infra] MCI Remote Command`
 - `[Resource] Object Storage Management`
 
 ## 🚀 Migration Guide

@@ -120,7 +120,7 @@ func RestCheckHTTPVersion(c echo.Context) error {
 // @ID GetPublicKeyForCredentialEncryption
 // @Summary Get RSA Public Key for Credential Encryption
 // @Description Generates an RSA key pair using a 4096-bit key size with the RSA algorithm. The public key is generated using the RSA algorithm with OAEP padding and SHA-256 as the hash function. This key is used to encrypt an AES key that will be used for hybrid encryption of credentials.
-// @Tags [Admin] Credential Management
+// @Tags [Admin] Cloud Credential Management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} model.PublicKeyResponse
@@ -136,7 +136,7 @@ func RestGetPublicKeyForCredentialEncryption(c echo.Context) error {
 // @ID RegisterCredential
 // @Summary Register Credential Information
 // @Description This API registers credential information using hybrid encryption. The process involves compressing and encrypting sensitive data with AES-256, encrypting the AES key with a 4096-bit RSA public key (retrieved via `GET /credential/publicKey`), and using OAEP padding with SHA-256. All values, including the AES key, must be base64 encoded before sending, and the public key token ID must be included in the request.
-// @Tags [Admin] Credential Management
+// @Tags [Admin] Cloud Credential Management
 // @Accept json
 // @Produce json
 // @Param CredentialReq body model.CredentialReq true "Credential request info"
@@ -161,7 +161,7 @@ func RestRegisterCredential(c echo.Context) error {
 // @ID GetConnConfig
 // @Summary Get registered ConnConfig info
 // @Description Get registered ConnConfig info
-// @Tags [Admin] Credential Management
+// @Tags [Admin] Cloud Credential Management
 // @Accept  json
 // @Produce  json
 // @Param connConfigName path string true "Name of connection config (cloud config)"
@@ -183,7 +183,7 @@ func RestGetConnConfig(c echo.Context) error {
 // @ID GetConnConfigList
 // @Summary List all registered ConnConfig
 // @Description List all registered ConnConfig
-// @Tags [Admin] Credential Management
+// @Tags [Admin] Cloud Credential Management
 // @Accept  json
 // @Produce  json
 // @Param filterCredentialHolder query string false "filter objects by Credential Holder" default()

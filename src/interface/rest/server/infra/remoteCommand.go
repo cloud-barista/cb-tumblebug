@@ -263,7 +263,7 @@ func RestRemoveBastionNodes(c echo.Context) error {
 // @ID GetVmCommandStatus
 // @Summary Get a specific command status by index for a VM
 // @Description Get a specific command status record by index for a VM
-// @Tags [MC-Infra] MCI Remote Command Status
+// @Tags [MC-Infra] MCI Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -294,7 +294,7 @@ func RestGetVmCommandStatus(c echo.Context) error {
 // @ID ListVmCommandStatus
 // @Summary List command status records for a VM with filtering
 // @Description List command status records for a VM with various filtering options
-// @Tags [MC-Infra] MCI Remote Command Status
+// @Tags [MC-Infra] MCI Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -371,7 +371,7 @@ func RestListVmCommandStatus(c echo.Context) error {
 // @ID DeleteVmCommandStatus
 // @Summary Delete a specific command status by index for a VM
 // @Description Delete a specific command status record by index for a VM
-// @Tags [MC-Infra] MCI Remote Command Status
+// @Tags [MC-Infra] MCI Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -407,7 +407,7 @@ func RestDeleteVmCommandStatus(c echo.Context) error {
 // @ID DeleteVmCommandStatusByCriteria
 // @Summary Delete multiple command status records by criteria for a VM
 // @Description Delete multiple command status records for a VM based on filtering criteria
-// @Tags [MC-Infra] MCI Remote Command Status
+// @Tags [MC-Infra] MCI Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -473,7 +473,7 @@ func RestDeleteVmCommandStatusByCriteria(c echo.Context) error {
 // @ID ClearAllVmCommandStatus
 // @Summary Clear all command status records for a VM
 // @Description Delete all command status records for a VM
-// @Tags [MC-Infra] MCI Remote Command Status
+// @Tags [MC-Infra] MCI Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -502,7 +502,7 @@ func RestClearAllVmCommandStatus(c echo.Context) error {
 // @ID GetVmHandlingCommandCount
 // @Summary Get count of currently handling commands for a VM
 // @Description Get the number of commands currently in 'Handling' status for a specific VM. Optimized for frequent polling.
-// @Tags [MC-Infra] MCI Remote Command Status
+// @Tags [MC-Infra] MCI Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
@@ -534,7 +534,7 @@ func RestGetVmHandlingCommandCount(c echo.Context) error {
 // @ID GetMciHandlingCommandCount
 // @Summary Get count of currently handling commands for all VMs in MCI
 // @Description Get the number of commands currently in 'Handling' status for all VMs in an MCI. Returns per-VM counts and total count.
-// @Tags [MC-Infra] MCI Remote Command Status
+// @Tags [MC-Infra] MCI Remote Command
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)

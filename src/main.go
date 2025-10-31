@@ -570,6 +570,88 @@ func addIndexes() error {
 // @in header
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token ([TBD] Get token in http://xxx.xxx.xxx.xxx:xxx/auth)
+
+// @tag.name [Admin] System Management
+// @tag.description System configuration, namespace management, and administrative operations
+
+// @tag.name [Admin] Cloud Credential Management
+// @tag.description Cloud credential and authentication management
+
+// @tag.name [Admin] Multi-Cloud Information
+// @tag.description Multi-cloud provider information and metadata
+
+// @tag.name [Admin] Provisioning History and Analytics
+// @tag.description Provisioning event history and risk analytics
+
+// @tag.name [MC-Infra] MCI Provisioning and Management
+// @tag.description Multi-Cloud Infrastructure provisioning, lifecycle management, and operations
+
+// @tag.name [MC-Infra] MCI Remote Command
+// @tag.description Execute commands or transfer files remotely on VMs in MCI via SSH
+
+// @tag.name [Kubernetes] Cluster Management
+// @tag.description Kubernetes cluster provisioning and management
+
+// @tag.name [Kubernetes] Cluster's Container Remote Command
+// @tag.description Execute commands in Kubernetes cluster containers
+
+// @tag.name [Job Scheduler] (WIP) CSP Resource Registration
+// @tag.description Scheduled CSP resource registration jobs (Work In Progress)
+
+// @tag.name [Infra Resource] Common Utility
+// @tag.description Common utility functions for infrastructure resources
+
+// @tag.name [Infra Resource] Spec Management
+// @tag.description VM specification recommendation and management
+
+// @tag.name [Infra Resource] Image Management
+// @tag.description VM image lookup, registration, and management
+
+// @tag.name [Infra Resource] Network Management
+// @tag.description Virtual network (VNet/VPC) and subnet management
+
+// @tag.name [Infra Resource] Security Group Management
+// @tag.description Security group and firewall rule management
+
+// @tag.name [Infra Resource] Access Key Management
+// @tag.description SSH key pair management for VM access
+
+// @tag.name [Infra Resource] Data Disk Management
+// @tag.description Additional data disk management for VMs
+
+// @tag.name [Infra Resource] Object Storage Management
+// @tag.description Object storage bucket and object management
+
+// @tag.name [Infra Resource] SQL Database Management (under development)
+// @tag.description Managed SQL database service operations
+
+// @tag.name [Infra Resource] NLB Management
+// @tag.description Network Load Balancer management
+
+// @tag.name [Infra Resource] NLB Management (for developer)
+// @tag.description Advanced NLB management operations for developers
+
+// @tag.name [Infra Resource] Site-to-site VPN Management (under development)
+// @tag.description Site-to-site VPN tunnel management
+
+// @tag.name [Admin] System Configuration
+// @tag.description System settings and configuration management
+
+// @tag.name [Admin] API Request Management
+// @tag.description API request tracking and management
+
+// @tag.name [MC-Infra] MCI Performance Benchmarking (WIP)
+// @tag.description Performance benchmark operations for MCI (Work In Progress)
+
+// @tag.name [MC-Infra] MCI Orchestration Management (WIP)
+// @tag.description MCI orchestration policy and automation (Work In Progress)
+
+// @tag.name [MC-Infra] MCI Resource Monitor (for developer)
+// @tag.description MCI resource monitoring operations for developers
+
+// @tag.name [Test] Stream Response
+// @tag.description Test endpoints for streaming responses
+
 func main() {
 
 	//Ticker for MCI Orchestration Policy
