@@ -1,30 +1,53 @@
 #!/bin/bash
 
-SWAGGER_FILE="$(dirname "$0")/../../src/interface/rest/docs/swagger.yaml"
-SWAGGER_FILE_v3="$SWAGGER_FILE"
+DOCS_DIR="$(dirname "$0")/../../src/interface/rest/docs"
+SWAGGER_YAML="$DOCS_DIR/swagger.yaml"
+SWAGGER_JSON="$DOCS_DIR/swagger.json"
 
-echo "Converting Swagger 2.0 to 3.0.1..."
+echo "Converting Swagger 2.0 to OpenAPI 3.0.1..."
 
-if [ ! -f "$SWAGGER_FILE" ]; then
-  echo "Error: $SWAGGER_FILE does not exist at $SWAGGER_FILE."
+# Check if YAML file exists
+if [ ! -f "$SWAGGER_YAML" ]; then
+  echo "Error: $SWAGGER_YAML does not exist."
   exit 1
 fi
 
-# Converting tool: https://converter.swagger.io/#/Converter/convertByContent
+# Convert YAML file
+echo "Converting swagger.yaml..."
 curl -X 'POST' \
   'https://converter.swagger.io/api/convert' \
   -H 'accept: application/yaml' \
   -H 'Content-Type: application/yaml' \
-  --data-binary @"$SWAGGER_FILE" \
-  -o "$SWAGGER_FILE_v3"
+  --data-binary @"$SWAGGER_YAML" \
+  -o "$SWAGGER_YAML"
 
-if [ $? -eq 0 ]; then
-  echo "Conversion complete. Updated $SWAGGER_FILE_v3"
-
-  echo "Adding security section to the swagger.yaml file..."
-  echo -e "\nsecurity:\n  - BasicAuth: []\n  - Bearer: []" >> "$SWAGGER_FILE_v3"
-  echo "Security section added successfully."
-
-else
-  echo "Conversion failed."
+if [ $? -ne 0 ]; then
+  echo "Error: YAML conversion failed."
+  exit 1
 fi
+
+echo "YAML conversion complete. Updated $SWAGGER_YAML"
+echo "Adding security section to swagger.yaml..."
+echo -e "\nsecurity:\n  - BasicAuth: []\n  - Bearer: []" >> "$SWAGGER_YAML"
+echo "Security section added to swagger.yaml."
+
+# Convert JSON file
+if [ -f "$SWAGGER_JSON" ]; then
+  echo "Converting swagger.json..."
+  curl -X 'POST' \
+    'https://converter.swagger.io/api/convert' \
+    -H 'accept: application/json' \
+    -H 'Content-Type: application/json' \
+    --data-binary @"$SWAGGER_JSON" \
+    -o "$SWAGGER_JSON"
+  
+  if [ $? -eq 0 ]; then
+    echo "JSON conversion complete. Updated $SWAGGER_JSON"
+  else
+    echo "Warning: JSON conversion failed, but continuing..."
+  fi
+else
+  echo "Warning: swagger.json not found, skipping JSON conversion."
+fi
+
+echo "Swagger conversion completed successfully."

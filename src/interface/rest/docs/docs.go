@@ -589,7 +589,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Credential Management"
+                    "[Admin] Cloud Credential Management"
                 ],
                 "summary": "List all registered ConnConfig",
                 "operationId": "GetConnConfigList",
@@ -656,7 +656,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Credential Management"
+                    "[Admin] Cloud Credential Management"
                 ],
                 "summary": "Get registered ConnConfig info",
                 "operationId": "GetConnConfig",
@@ -701,7 +701,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Credential Management"
+                    "[Admin] Cloud Credential Management"
                 ],
                 "summary": "Register Credential Information",
                 "operationId": "RegisterCredential",
@@ -748,7 +748,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Credential Management"
+                    "[Admin] Cloud Credential Management"
                 ],
                 "summary": "Get RSA Public Key for Credential Encryption",
                 "operationId": "GetPublicKeyForCredentialEncryption",
@@ -4359,7 +4359,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Remote Command Status"
+                    "[MC-Infra] MCI Remote Command"
                 ],
                 "summary": "Get count of currently handling commands for all VMs in MCI",
                 "operationId": "GetMciHandlingCommandCount",
@@ -5856,7 +5856,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Remote Command Status"
+                    "[MC-Infra] MCI Remote Command"
                 ],
                 "summary": "List command status records for a VM with filtering",
                 "operationId": "ListVmCommandStatus",
@@ -5989,7 +5989,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Remote Command Status"
+                    "[MC-Infra] MCI Remote Command"
                 ],
                 "summary": "Delete multiple command status records by criteria for a VM",
                 "operationId": "DeleteVmCommandStatusByCriteria",
@@ -6110,7 +6110,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Remote Command Status"
+                    "[MC-Infra] MCI Remote Command"
                 ],
                 "summary": "Get a specific command status by index for a VM",
                 "operationId": "GetVmCommandStatus",
@@ -6184,7 +6184,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Remote Command Status"
+                    "[MC-Infra] MCI Remote Command"
                 ],
                 "summary": "Delete a specific command status by index for a VM",
                 "operationId": "DeleteVmCommandStatus",
@@ -6260,7 +6260,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Remote Command Status"
+                    "[MC-Infra] MCI Remote Command"
                 ],
                 "summary": "Clear all command status records for a VM",
                 "operationId": "ClearAllVmCommandStatus",
@@ -6557,7 +6557,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] MCI Remote Command Status"
+                    "[MC-Infra] MCI Remote Command"
                 ],
                 "summary": "Get count of currently handling commands for a VM",
                 "operationId": "GetVmHandlingCommandCount",
@@ -11461,7 +11461,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] Provisioning History and Analytics"
+                    "[Admin] Provisioning History and Analytics"
                 ],
                 "summary": "Record Manual Provisioning Event",
                 "operationId": "RecordProvisioningEvent",
@@ -11508,7 +11508,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] Provisioning History and Analytics"
+                    "[Admin] Provisioning History and Analytics"
                 ],
                 "summary": "Get Provisioning History Log for VM Specification",
                 "operationId": "GetProvisioningLog",
@@ -11554,7 +11554,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] Provisioning History and Analytics"
+                    "[Admin] Provisioning History and Analytics"
                 ],
                 "summary": "Delete Provisioning History Log",
                 "operationId": "DeleteProvisioningLog",
@@ -11602,7 +11602,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MC-Infra] Provisioning History and Analytics"
+                    "[Admin] Provisioning History and Analytics"
                 ],
                 "summary": "Analyze Provisioning Risk for Spec and Image Combination",
                 "operationId": "AnalyzeProvisioningRisk",
@@ -12521,7 +12521,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "List object storages (buckets)",
                 "operationId": "ListObjectStorages",
@@ -12555,7 +12555,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Generate a presigned URL for downloading an object from a bucket",
                 "operationId": "GeneratePresignedDownloadURL",
@@ -12612,7 +12612,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Generate a presigned URL for uploading an object to a bucket",
                 "operationId": "GeneratePresignedUploadURL",
@@ -12669,7 +12669,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Get details of an object storage (bucket)",
                 "operationId": "GetObjectStorage",
@@ -12709,7 +12709,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Create an object storage (bucket)",
                 "operationId": "CreateObjectStorage",
@@ -12746,7 +12746,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "**Delete** multiple objects from a bucket",
                 "operationId": "DeleteMultipleDataObjects",
@@ -12803,7 +12803,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Delete an object storage (bucket)",
                 "operationId": "DeleteObjectStorage",
@@ -12840,7 +12840,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Check existence of an object storage (bucket)",
                 "operationId": "ExistObjectStorage",
@@ -12882,7 +12882,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Get CORS configuration of an object storage (bucket)",
                 "operationId": "GetObjectStorageCORS",
@@ -12928,7 +12928,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Set CORS configuration of an object storage (bucket)",
                 "operationId": "SetObjectStorageCORS",
@@ -12974,7 +12974,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Delete CORS configuration of an object storage (bucket)",
                 "operationId": "DeleteObjectStorageCORS",
@@ -13013,7 +13013,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Get the location of an object storage (bucket)",
                 "operationId": "GetObjectStorageLocation",
@@ -13055,7 +13055,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Get versioning status of an object storage (bucket)",
                 "operationId": "GetObjectStorageVersioning",
@@ -13095,7 +13095,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Set versioning status of an object storage (bucket)",
                 "operationId": "SetObjectStorageVersioning",
@@ -13143,7 +13143,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "List object versions in an object storage (bucket)",
                 "operationId": "ListObjectVersions",
@@ -13185,7 +13185,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Delete a specific version of an object in an object storage (bucket)",
                 "operationId": "DeleteVersionedObject",
@@ -13240,7 +13240,7 @@ const docTemplate = `{
                     "text/xml"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Delete an object from a bucket",
                 "operationId": "DeleteDataObject",
@@ -13285,7 +13285,7 @@ const docTemplate = `{
                     "application/octet-stream"
                 ],
                 "tags": [
-                    "[Resource] Object Storage Management"
+                    "[Infra Resource] Object Storage Management"
                 ],
                 "summary": "Get an object info from a bucket",
                 "operationId": "GetObjectInfoGetDataObjectInfo",
@@ -13518,7 +13518,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCI] Provisioning History"
+                    "[Admin] Provisioning History and Analytics"
                 ],
                 "summary": "Analyze Detailed Provisioning Risk with Spec and Image Breakdown",
                 "operationId": "AnalyzeProvisioningRiskDetailed",
@@ -22197,7 +22197,117 @@ const docTemplate = `{
             "name": "Authorization",
             "in": "header"
         }
-    }
+    },
+    "tags": [
+        {
+            "description": "System configuration, namespace management, and administrative operations",
+            "name": "[Admin] System Management"
+        },
+        {
+            "description": "Cloud credential and authentication management",
+            "name": "[Admin] Cloud Credential Management"
+        },
+        {
+            "description": "Multi-cloud provider information and metadata",
+            "name": "[Admin] Multi-Cloud Information"
+        },
+        {
+            "description": "Provisioning event history and risk analytics",
+            "name": "[Admin] Provisioning History and Analytics"
+        },
+        {
+            "description": "Multi-Cloud Infrastructure provisioning, lifecycle management, and operations",
+            "name": "[MC-Infra] MCI Provisioning and Management"
+        },
+        {
+            "description": "Execute commands or transfer files remotely on VMs in MCI via SSH",
+            "name": "[MC-Infra] MCI Remote Command"
+        },
+        {
+            "description": "Kubernetes cluster provisioning and management",
+            "name": "[Kubernetes] Cluster Management"
+        },
+        {
+            "description": "Execute commands in Kubernetes cluster containers",
+            "name": "[Kubernetes] Cluster's Container Remote Command"
+        },
+        {
+            "description": "Scheduled CSP resource registration jobs (Work In Progress)",
+            "name": "[Job Scheduler] (WIP) CSP Resource Registration"
+        },
+        {
+            "description": "Common utility functions for infrastructure resources",
+            "name": "[Infra Resource] Common Utility"
+        },
+        {
+            "description": "VM specification recommendation and management",
+            "name": "[Infra Resource] Spec Management"
+        },
+        {
+            "description": "VM image lookup, registration, and management",
+            "name": "[Infra Resource] Image Management"
+        },
+        {
+            "description": "Virtual network (VNet/VPC) and subnet management",
+            "name": "[Infra Resource] Network Management"
+        },
+        {
+            "description": "Security group and firewall rule management",
+            "name": "[Infra Resource] Security Group Management"
+        },
+        {
+            "description": "SSH key pair management for VM access",
+            "name": "[Infra Resource] Access Key Management"
+        },
+        {
+            "description": "Additional data disk management for VMs",
+            "name": "[Infra Resource] Data Disk Management"
+        },
+        {
+            "description": "Object storage bucket and object management",
+            "name": "[Infra Resource] Object Storage Management"
+        },
+        {
+            "description": "Managed SQL database service operations",
+            "name": "[Infra Resource] SQL Database Management (under development)"
+        },
+        {
+            "description": "Network Load Balancer management",
+            "name": "[Infra Resource] NLB Management"
+        },
+        {
+            "description": "Advanced NLB management operations for developers",
+            "name": "[Infra Resource] NLB Management (for developer)"
+        },
+        {
+            "description": "Site-to-site VPN tunnel management",
+            "name": "[Infra Resource] Site-to-site VPN Management (under development)"
+        },
+        {
+            "description": "System settings and configuration management",
+            "name": "[Admin] System Configuration"
+        },
+        {
+            "description": "API request tracking and management",
+            "name": "[Admin] API Request Management"
+        },
+        {
+            "description": "Performance benchmark operations for MCI (Work In Progress)",
+            "name": "[MC-Infra] MCI Performance Benchmarking (WIP)"
+        },
+        {
+            "description": "MCI orchestration policy and automation (Work In Progress)",
+            "name": "[MC-Infra] MCI Orchestration Management (WIP)"
+        },
+        {
+            "description": "MCI resource monitoring operations for developers",
+            "name": "[MC-Infra] MCI Resource Monitor (for developer)"
+        },
+        {
+            "description": "Test endpoints for streaming responses",
+            "name": "[Test] Stream Response"
+        }
+    ]
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it

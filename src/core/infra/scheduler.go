@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"sync"
 	"time"
 
@@ -542,8 +543,47 @@ func (job *ScheduledJob) stop() {
 
 // execute runs the actual job task with timeout protection
 func (job *ScheduledJob) execute() {
+	// Memory monitoring - capture stats before execution
+	var memBefore, memAfter runtime.MemStats
+	runtime.ReadMemStats(&memBefore)
+	goroutinesBefore := runtime.NumGoroutine()
+
 	// Panic recovery to prevent job from getting stuck
 	defer func() {
+		// Memory monitoring - capture stats after execution
+		runtime.ReadMemStats(&memAfter)
+		goroutinesAfter := runtime.NumGoroutine()
+
+		// Calculate memory delta
+		allocDelta := int64(memAfter.Alloc) - int64(memBefore.Alloc)
+		goroutineDelta := goroutinesAfter - goroutinesBefore
+
+		// Log memory stats
+		log.Debug().
+			Str("jobId", job.JobId).
+			Uint64("allocMB", memAfter.Alloc/1024/1024).
+			Int64("allocDeltaKB", allocDelta/1024).
+			Uint32("numGoroutine", uint32(goroutinesAfter)).
+			Int("goroutineDelta", goroutineDelta).
+			Msg("Job execution memory stats")
+
+		// Warn if suspicious memory growth
+		if allocDelta > 50*1024*1024 { // > 50MB growth
+			log.Warn().
+				Str("jobId", job.JobId).
+				Int64("allocDeltaMB", allocDelta/1024/1024).
+				Msg("Large memory allocation detected during job execution")
+		}
+
+		// Warn if goroutine leak suspected
+		if goroutineDelta > 5 {
+			log.Warn().
+				Str("jobId", job.JobId).
+				Int("goroutineDelta", goroutineDelta).
+				Uint32("totalGoroutines", uint32(goroutinesAfter)).
+				Msg("Possible goroutine leak detected - goroutines increased")
+		}
+
 		if r := recover(); r != nil {
 			job.mu.Lock()
 			job.LastError = fmt.Sprintf("Job panic: %v", r)
@@ -591,9 +631,26 @@ func (job *ScheduledJob) execute() {
 		result interface{}
 		err    error
 	}
+	// Use buffered channel to prevent goroutine leak on timeout
 	resultChan := make(chan executionResult, 1)
 
 	go func() {
+		// Panic recovery within goroutine
+		defer func() {
+			if r := recover(); r != nil {
+				panicErr := fmt.Errorf("job execution panic: %v", r)
+				log.Error().Str("jobId", job.JobId).Interface("panic", r).Msg("Job goroutine panicked")
+
+				// Try to send panic error to channel, but don't block if channel is closed/full
+				select {
+				case resultChan <- executionResult{err: panicErr}:
+				default:
+					// Channel not ready (timeout already occurred), just log
+					log.Warn().Str("jobId", job.JobId).Msg("Panic occurred but result channel not available")
+				}
+			}
+		}()
+
 		var result interface{}
 		var err error
 
@@ -632,7 +689,16 @@ func (job *ScheduledJob) execute() {
 			err = fmt.Errorf("unknown job type: %s", job.JobType)
 		}
 
-		resultChan <- executionResult{result: result, err: err}
+		// Send result to channel with context awareness to prevent goroutine leak
+		select {
+		case resultChan <- executionResult{result: result, err: err}:
+			// Successfully sent result
+		case <-ctx.Done():
+			// Context cancelled/timed out while we were working
+			// Don't block on channel send - just exit goroutine
+			log.Warn().Str("jobId", job.JobId).Msg("Job completed but context already done, discarding result")
+			return
+		}
 	}()
 
 	// Wait for execution or timeout
@@ -646,7 +712,7 @@ func (job *ScheduledJob) execute() {
 		if ctx.Err() == context.DeadlineExceeded {
 			execResult.err = fmt.Errorf("job execution timeout after %s", executionTimeout)
 			log.Error().Str("jobId", job.JobId).Dur("timeout", executionTimeout).
-				Msg("Job execution timed out")
+				Msg("Job execution timed out - goroutine will exit when operation completes")
 		} else {
 			execResult.err = fmt.Errorf("job execution cancelled: %w", ctx.Err())
 		}

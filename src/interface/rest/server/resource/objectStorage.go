@@ -191,7 +191,7 @@ type ListAllMyBucketsResult struct {
 // @Description   </Buckets>
 // @Description </ListAllMyBucketsResult>
 // @Description ```
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
@@ -224,7 +224,7 @@ func ListObjectStorages(c echo.Context) error {
 // @Description **Important Notes:**
 // @Description - The `objectStorageName` must be globally unique across all existing buckets in the S3 compatible storage.
 // @Description - The bucket namespace is shared by all users of the system.
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -288,7 +288,7 @@ type ListBucketResult struct {
 // @Description   <IsTruncated>false</IsTruncated>
 // @Description </ListBucketResult>
 // @Description ```
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -325,7 +325,7 @@ func GetObjectStorage(c echo.Context) error {
 // @ID ExistObjectStorage
 // @Summary Check existence of an object storage (bucket)
 // @Description Check existence of an object storage (bucket)
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -380,7 +380,7 @@ type LocationConstraint struct {
 // @Description <?xml version="1.0" encoding="UTF-8"?>
 // @Description <LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">ap-northeast-2</LocationConstraint>
 // @Description ```
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -417,7 +417,7 @@ func GetObjectStorageLocation(c echo.Context) error {
 // @ID DeleteObjectStorage
 // @Summary Delete an object storage (bucket)
 // @Description Delete an object storage (bucket)
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -483,7 +483,7 @@ type VersioningConfiguration struct {
 // @Description   <Status>Enabled</Status>
 // @Description </VersioningConfiguration>
 // @Description ```
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -533,7 +533,7 @@ func GetObjectStorageVersioning(c echo.Context) error {
 // @Description   <Status>Enabled</Status>
 // @Description </VersioningConfiguration>
 // @Description ```
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -655,7 +655,7 @@ type Version struct {
 // @Description   </Version>
 // @Description </ListVersionsResult>
 // @Description ```
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -693,7 +693,7 @@ func ListObjectVersions(c echo.Context) error {
 // @ID DeleteVersionedObject
 // @Summary Delete a specific version of an object in an object storage (bucket)
 // @Description Delete a specific version of an object in an object storage (bucket)
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -826,7 +826,7 @@ type Error struct {
 // @Description   <RequestId>656c76696e6727732072657175657374</RequestId>
 // @Description </Error>
 // @Description ```
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -891,7 +891,7 @@ func GetObjectStorageCORS(c echo.Context) error {
 // @Description   </CORSRule>
 // @Description </CORSConfiguration>
 // @Description ```
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -930,7 +930,7 @@ func SetObjectStorageCORS(c echo.Context) error {
 // @ID DeleteObjectStorageCORS
 // @Summary Delete CORS configuration of an object storage (bucket)
 // @Description Delete CORS configuration of an object storage (bucket)
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -975,7 +975,7 @@ func DeleteObjectStorageCORS(c echo.Context) error {
 // @Description
 // @Description **Important Notes:**
 // @Description - The generated `Download file` link in Swagger UI may not work because this API get the object metadata only.
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce octet-stream
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -1021,7 +1021,7 @@ func GetDataObjectInfo(c echo.Context) error {
 // @ID DeleteDataObject
 // @Summary Delete an object from a bucket
 // @Description Delete an object from a bucket
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -1110,7 +1110,7 @@ type DeleteResult struct {
 // @Description   </Deleted>
 // @Description </DeleteResult>
 // @Description ```
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept xml
 // @Produce xml
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -1181,7 +1181,7 @@ type PresignedURLResult struct {
 // @Description   <Method>GET</Method>
 // @Description </PresignedURLResult>
 // @Description ```
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept json
 // @Produce json
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
@@ -1243,7 +1243,7 @@ func GeneratePresignedDownloadURL(c echo.Context) error {
 // @Description   <Method>PUT</Method>
 // @Description </PresignedURLResult>
 // @Description ```
-// @Tags [Resource] Object Storage Management
+// @Tags [Infra Resource] Object Storage Management
 // @Accept json
 // @Produce json
 // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)

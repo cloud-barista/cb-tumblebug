@@ -778,7 +778,7 @@ func RestPostMciSubGroupScaleOut(c echo.Context) error {
 // @Description - `successImages`: List of CSP images that succeeded with this spec
 // @Description - `failureMessages`: Detailed error messages from CSP
 // @Description - `lastUpdated`: Timestamp of most recent provisioning attempt
-// @Tags [MC-Infra] Provisioning History and Analytics
+// @Tags [Admin] Provisioning History and Analytics
 // @Accept  json
 // @Produce  json
 // @Param specId path string true "VM Specification ID (format: provider+region+spec_name, e.g., aws+ap-northeast-2+t2.micro)"
@@ -830,7 +830,7 @@ func RestGetProvisioningLog(c echo.Context) error {
 // @Description - Future risk analysis for this spec will have no historical baseline
 // @Description - MCI review process will not show historical warnings for this spec
 // @Description - Provisioning reliability metrics will be reset to zero
-// @Tags [MC-Infra] Provisioning History and Analytics
+// @Tags [Admin] Provisioning History and Analytics
 // @Accept  json
 // @Produce  json
 // @Param specId path string true "VM Specification ID to delete history for (format: provider+region+spec_name)"
@@ -898,7 +898,7 @@ func RestDeleteProvisioningLog(c echo.Context) error {
 // @Description - Automatically called during MCI review process
 // @Description - Can be used in CI/CD pipelines for deployment validation
 // @Description - Helpful for capacity planning and resource selection
-// @Tags [MC-Infra] Provisioning History and Analytics
+// @Tags [Admin] Provisioning History and Analytics
 // @Accept  json
 // @Produce  json
 // @Param specId path string true "VM Specification ID (format: provider+region+spec_name)"
@@ -999,7 +999,7 @@ func RestAnalyzeProvisioningRisk(c echo.Context) error {
 // @Description - Try different image (when image is the primary risk factor)
 // @Description - Monitor deployment closely (for new combinations or medium risk)
 // @Description - Proceed with confidence (for low-risk combinations)
-// @Tags [MCI] Provisioning History
+// @Tags [Admin] Provisioning History and Analytics
 // @Accept json
 // @Produce json
 // @Param specId query string true "VM specification ID (e.g., 'gcp+europe-north1+f1-micro')"
@@ -1063,7 +1063,7 @@ func RestAnalyzeProvisioningRiskDetailed(c echo.Context) error {
 // @Description - Contributes to risk analysis algorithms
 // @Description - Affects future MCI review recommendations
 // @Description - Builds historical baseline for reliability metrics
-// @Tags [MC-Infra] Provisioning History and Analytics
+// @Tags [Admin] Provisioning History and Analytics
 // @Accept  json
 // @Produce  json
 // @Param provisioningEvent body model.ProvisioningEvent true "Provisioning event details with success/failure information"
