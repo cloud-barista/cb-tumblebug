@@ -13,9 +13,6 @@ info:
   version: latest
 servers:
 - url: /tumblebug
-security:
-- BasicAuth: []
-- Bearer: []
 tags:
 - name: "[Admin] System Management"
   description: "System configuration, namespace management, and administrative operations"
@@ -107,16 +104,12 @@ paths:
         in: query
         description: Name of the CSP to retrieve
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       - name: regionName
         in: query
         description: Name of region to retrieve
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -150,16 +143,12 @@ paths:
         in: query
         description: Name of the CSP to retrieve
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       - name: regionName
         in: query
         description: Name of region to retrieve
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -262,8 +251,6 @@ paths:
         in: query
         description: Name of the CSP to retrieve
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -297,8 +284,6 @@ paths:
         in: query
         description: Name of the CSP to retrieve
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -437,8 +422,6 @@ paths:
         in: path
         description: Config ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -471,8 +454,6 @@ paths:
         in: path
         description: Config ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -505,17 +486,11 @@ paths:
       - name: filterCredentialHolder
         in: query
         description: filter objects by Credential Holder
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: filterVerified
         in: query
         description: filter verified connections only
-        required: false
-        style: form
-        explode: true
         schema:
           type: boolean
           default: true
@@ -525,9 +500,6 @@ paths:
       - name: filterRegionRepresentative
         in: query
         description: filter connections with the representative region only
-        required: false
-        style: form
-        explode: true
         schema:
           type: boolean
           default: false
@@ -565,8 +537,6 @@ paths:
         in: path
         description: Name of connection config (cloud config)
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -820,8 +790,6 @@ paths:
           \ - see [https://documenter.getpostman.com/view/24786935/2s9Ykq8Lpf#231eec23-b0ab-4966-83ce-a0ef92ead7bc]\
           \ for more details"
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: vmspec
@@ -1043,8 +1011,6 @@ paths:
         in: path
         description: Label Type
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           enum:
@@ -1065,8 +1031,6 @@ paths:
         in: path
         description: Resource uid
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -1099,8 +1063,6 @@ paths:
         in: path
         description: Label Type
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           enum:
@@ -1121,8 +1083,6 @@ paths:
         in: path
         description: Resource uid
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -1164,8 +1124,6 @@ paths:
         in: path
         description: Label Type
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           enum:
@@ -1186,16 +1144,12 @@ paths:
         in: path
         description: Resource uid
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       - name: key
         in: path
         description: Label key to remove
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -1496,8 +1450,6 @@ paths:
         in: path
         description: Label Type
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           enum:
@@ -1518,8 +1470,6 @@ paths:
         in: path
         description: Resource uid
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -1552,9 +1502,6 @@ paths:
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -1649,8 +1596,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -1684,8 +1629,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -1727,8 +1670,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -1757,8 +1698,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -1766,8 +1705,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -1775,8 +1712,6 @@ paths:
         in: query
         description: Benchmark Action to MCI
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -1832,8 +1767,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -1841,8 +1774,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -1885,8 +1816,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
@@ -1894,8 +1823,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: probe
@@ -1933,8 +1860,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -1977,8 +1902,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -1986,16 +1909,12 @@ paths:
         in: path
         description: Resource Type
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       - name: resourceId
         in: path
         description: Resource ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -2027,8 +1946,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2036,8 +1953,6 @@ paths:
         in: path
         description: K8sCluster ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8scluster01
@@ -2045,8 +1960,6 @@ paths:
         in: query
         description: Namespace in K8sCluster to apply the command
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           default: default
@@ -2054,25 +1967,17 @@ paths:
         in: query
         description: Pod Name in K8sCluster to apply the command
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           default: mypod
       - name: k8sClusterContainerName
         in: query
         description: Container Name in K8sCluster to apply the command
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: x-request-id
         in: header
         description: Custom request ID
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -2114,8 +2019,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2123,43 +2026,29 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
       - name: subGroupId
         in: query
         description: subGroupId to apply the command only for VMs in subGroup of MCI
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           default: g1
       - name: vmId
         in: query
         description: vmId to apply the command only for a VM in MCI
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           default: g1-1
       - name: labelSelector
         in: query
         description: "Target VM Label selector query. Example: sys.id=g1-1,role=worker"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: x-request-id
         in: header
         description: Custom request ID
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -2201,8 +2090,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2210,8 +2097,6 @@ paths:
         in: path
         description: K8sCluster ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8scluster01
@@ -2219,8 +2104,6 @@ paths:
         in: query
         description: Action to K8sCluster
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -2258,8 +2141,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2267,8 +2148,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -2276,8 +2155,6 @@ paths:
         in: query
         description: Action to MCI
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -2291,9 +2168,6 @@ paths:
       - name: force
         in: query
         description: Force control to skip checking controllable status
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -2330,8 +2204,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2339,8 +2211,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -2348,8 +2218,6 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
@@ -2357,8 +2225,6 @@ paths:
         in: query
         description: Action to MCI
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -2369,9 +2235,6 @@ paths:
       - name: force
         in: query
         description: Force control to skip checking controllable status
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -2408,8 +2271,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2417,16 +2278,11 @@ paths:
         in: path
         description: VNet ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       - name: withSubnets
         in: query
         description: Delete subnets as well
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -2463,8 +2319,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2472,16 +2326,12 @@ paths:
         in: path
         description: VNet ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       - name: subnetId
         in: path
         description: Subnet ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -2509,8 +2359,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2518,17 +2366,12 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
       - name: option
         in: query
         description: Option for checking update
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -2572,17 +2415,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -2590,17 +2428,11 @@ paths:
       - name: filterKey
         in: query
         description: "Field key for filtering (ex: cspResourceName)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: filterVal
         in: query
         description: "Field value for filtering (ex: default-alibaba-ap-northeast-2-vpc)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -2640,8 +2472,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2649,9 +2479,6 @@ paths:
         in: query
         description: "Option: [required params for register] connectionName, name,\
           \ cspResourceId"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -2694,25 +2521,17 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: match
         in: query
         description: Delete resources containing matched ID-substring only
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: option
         in: query
         description: Option for K8sCluster deletion
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -2742,8 +2561,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2751,8 +2568,6 @@ paths:
         in: path
         description: K8sCluster ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8scluster01
@@ -2786,8 +2601,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2795,17 +2608,12 @@ paths:
         in: path
         description: K8sCluster ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8scluster01
       - name: option
         in: query
         description: Option for K8sCluster deletion
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -2835,8 +2643,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2844,8 +2650,6 @@ paths:
         in: path
         description: K8sCluster ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8scluster01
@@ -2888,8 +2692,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2897,8 +2699,6 @@ paths:
         in: path
         description: K8sCluster ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8scluster01
@@ -2906,17 +2706,12 @@ paths:
         in: path
         description: K8sNodeGroup Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8sng01
       - name: option
         in: query
         description: Option for K8sNodeGroup deletion
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -2946,8 +2741,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -2955,8 +2748,6 @@ paths:
         in: path
         description: K8sCluster ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8scluster01
@@ -2964,8 +2755,6 @@ paths:
         in: path
         description: K8sNodeGroup Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8sng01
@@ -3008,8 +2797,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3017,8 +2804,6 @@ paths:
         in: path
         description: K8sCluster ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8scluster01
@@ -3026,8 +2811,6 @@ paths:
         in: path
         description: K8sNodeGroup Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8sng01
@@ -3070,8 +2853,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3079,17 +2860,12 @@ paths:
         in: path
         description: K8sCluster ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8scluster01
       - name: x-request-id
         in: header
         description: Custom request ID
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -3134,8 +2910,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3143,8 +2917,6 @@ paths:
         in: path
         description: K8sCluster ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8scluster01
@@ -3187,17 +2959,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: option
         in: query
         description: Option for K8sCluster creation
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -3205,9 +2972,6 @@ paths:
       - name: x-request-id
         in: header
         description: Custom request ID
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -3253,17 +3017,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -3341,8 +3100,6 @@ paths:
         in: path
         description: Namespace ID for resource isolation
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3399,8 +3156,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3408,9 +3163,6 @@ paths:
         in: query
         description: "Option for delete all MCIs (support force object delete, terminate\
           \ before delete)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -3441,8 +3193,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3450,17 +3200,12 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -3471,25 +3216,16 @@ paths:
       - name: filterKey
         in: query
         description: "(For option=id) Field key for filtering (ex: connectionName)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: filterVal
         in: query
         description: "(For option=id) Field value for filtering (ex: aws-ap-northeast-2)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: accessInfoOption
         in: query
         description: (For option=accessinfo) accessInfoOption (showSshKey)
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -3533,8 +3269,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3542,17 +3276,12 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
       - name: option
         in: query
         description: Option for delete MCI (support force delete)
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -3584,8 +3313,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3593,8 +3320,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -3651,8 +3376,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3660,8 +3383,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -3706,8 +3427,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3715,8 +3434,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -3724,8 +3441,6 @@ paths:
         in: path
         description: Bastion VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
@@ -3761,8 +3476,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3770,17 +3483,12 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
       - name: x-request-id
         in: header
         description: Custom request ID
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -3815,8 +3523,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3824,8 +3530,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -3868,8 +3572,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3877,17 +3579,12 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -3895,17 +3592,11 @@ paths:
       - name: filterKey
         in: query
         description: "Field key for filtering (ex: cspResourceName)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: filterVal
         in: query
         description: "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -3945,8 +3636,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -3954,8 +3643,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -3963,9 +3650,6 @@ paths:
         in: query
         description: "Option: [required params for register] connectionName, name,\
           \ cspResourceId"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -4008,8 +3692,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4017,17 +3699,12 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
       - name: match
         in: query
         description: Delete resources containing matched ID-substring only
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -4055,8 +3732,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4064,8 +3739,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -4073,8 +3746,6 @@ paths:
         in: path
         description: NLB ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1
@@ -4108,8 +3779,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4117,8 +3786,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -4126,8 +3793,6 @@ paths:
         in: path
         description: NLB ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -4155,8 +3820,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4164,8 +3827,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -4173,8 +3834,6 @@ paths:
         in: path
         description: NLB ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1
@@ -4209,8 +3868,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4218,8 +3875,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -4227,8 +3882,6 @@ paths:
         in: path
         description: NLB ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1
@@ -4270,8 +3923,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4279,8 +3930,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -4288,8 +3937,6 @@ paths:
         in: path
         description: NLB ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1
@@ -4326,8 +3973,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4335,8 +3980,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -4378,8 +4021,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4387,8 +4028,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -4477,8 +4116,6 @@ paths:
         in: path
         description: Namespace ID containing the target MCI
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4486,8 +4123,6 @@ paths:
         in: path
         description: MCI ID to which new VMs will be added
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -4572,8 +4207,6 @@ paths:
         in: path
         description: Namespace ID containing the target MCI
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4581,17 +4214,12 @@ paths:
         in: path
         description: MCI ID to which the VM will be added
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
       - name: x-request-id
         in: header
         description: Custom request ID for tracking
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -4642,8 +4270,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4651,8 +4277,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -4687,8 +4311,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4696,8 +4318,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -4705,17 +4325,12 @@ paths:
         in: path
         description: subGroup ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -4806,8 +4421,6 @@ paths:
         in: path
         description: Namespace ID containing the target MCI and subgroup
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4815,8 +4428,6 @@ paths:
         in: path
         description: MCI ID containing the subgroup to scale
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -4825,8 +4436,6 @@ paths:
         description: SubGroup ID to scale out (must exist and contain at least one
           VM)
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1
@@ -4935,8 +4544,6 @@ paths:
         in: path
         description: Namespace ID containing the target MCI
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -4944,8 +4551,6 @@ paths:
         in: path
         description: MCI ID to which the VM subgroup will be added
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5006,8 +4611,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -5015,8 +4618,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5024,8 +4625,6 @@ paths:
         in: path
         description: Target VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
@@ -5062,8 +4661,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -5071,8 +4668,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5080,8 +4675,6 @@ paths:
         in: path
         description: Target VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
@@ -5089,8 +4682,6 @@ paths:
         in: path
         description: Bastion VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
@@ -5125,8 +4716,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -5134,8 +4723,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5143,17 +4730,12 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
       - name: option
         in: query
         description: Option for MCI
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -5164,9 +4746,6 @@ paths:
       - name: accessInfoOption
         in: query
         description: (For option=accessinfo) accessInfoOption (showSshKey)
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -5208,8 +4787,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -5217,8 +4794,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5226,17 +4801,12 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
       - name: option
         in: query
         description: Option for delete VM (support force delete)
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -5266,8 +4836,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -5275,8 +4843,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5284,15 +4850,12 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
       - name: status
         in: query
         description: Filter by command execution status (can specify multiple)
-        required: false
         style: form
         explode: false
         schema:
@@ -5308,75 +4871,48 @@ paths:
       - name: xRequestId
         in: query
         description: Filter by X-Request-ID
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: commandContains
         in: query
         description: Filter commands containing this text
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: startTimeFrom
         in: query
         description: Filter commands started from this time (RFC3339 format)
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: startTimeTo
         in: query
         description: Filter commands started until this time (RFC3339 format)
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: indexFrom
         in: query
         description: Filter commands from this index (inclusive)
-        required: false
-        style: form
-        explode: true
         schema:
           type: integer
       - name: indexTo
         in: query
         description: Filter commands to this index (inclusive)
-        required: false
-        style: form
-        explode: true
         schema:
           type: integer
       - name: limit
         in: query
         description: Limit the number of results returned
-        required: false
-        style: form
-        explode: true
         schema:
           type: integer
           default: 50
       - name: offset
         in: query
         description: Number of results to skip
-        required: false
-        style: form
-        explode: true
         schema:
           type: integer
           default: 0
       - name: x-request-id
         in: header
         description: Custom request ID
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -5410,8 +4946,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -5419,8 +4953,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5428,15 +4960,12 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
       - name: status
         in: query
         description: Filter by command execution status (can specify multiple)
-        required: false
         style: form
         explode: false
         schema:
@@ -5452,57 +4981,36 @@ paths:
       - name: xRequestId
         in: query
         description: Filter by X-Request-ID
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: commandContains
         in: query
         description: Filter commands containing this text
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: startTimeFrom
         in: query
         description: Filter commands started from this time (RFC3339 format)
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: startTimeTo
         in: query
         description: Filter commands started until this time (RFC3339 format)
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: indexFrom
         in: query
         description: Filter commands from this index (inclusive)
-        required: false
-        style: form
-        explode: true
         schema:
           type: integer
       - name: indexTo
         in: query
         description: Filter commands to this index (inclusive)
-        required: false
-        style: form
-        explode: true
         schema:
           type: integer
       - name: x-request-id
         in: header
         description: Custom request ID
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -5536,8 +5044,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -5545,8 +5051,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5554,8 +5058,6 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
@@ -5563,17 +5065,12 @@ paths:
         in: path
         description: Command Index
         required: true
-        style: simple
-        explode: false
         schema:
           type: integer
           default: 1
       - name: x-request-id
         in: header
         description: Custom request ID
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -5606,8 +5103,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -5615,8 +5110,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5624,8 +5117,6 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
@@ -5633,17 +5124,12 @@ paths:
         in: path
         description: Command Index
         required: true
-        style: simple
-        explode: false
         schema:
           type: integer
           default: 1
       - name: x-request-id
         in: header
         description: Custom request ID
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -5677,8 +5163,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -5686,8 +5170,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5695,17 +5177,12 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
       - name: x-request-id
         in: header
         description: Custom request ID
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -5739,8 +5216,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -5748,8 +5223,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5757,8 +5230,6 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
@@ -5799,8 +5270,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -5808,8 +5277,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5817,8 +5284,6 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
@@ -5826,8 +5291,6 @@ paths:
         in: query
         description: Option for MCI
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -5836,9 +5299,6 @@ paths:
       - name: force
         in: query
         description: Force to attach/detach even if VM info is not matched
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -5882,8 +5342,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -5891,8 +5349,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5900,8 +5356,6 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
@@ -5939,8 +5393,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -5948,8 +5400,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -5957,17 +5407,12 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
       - name: x-request-id
         in: header
         description: Custom request ID
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -6001,8 +5446,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6010,8 +5453,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -6019,8 +5460,6 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: g1-1
@@ -6063,8 +5502,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6072,17 +5509,12 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           default: IdList
@@ -6132,8 +5564,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6141,17 +5571,12 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
       - name: action
         in: query
         description: Action
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -6201,8 +5626,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6210,8 +5633,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -6219,8 +5640,6 @@ paths:
         in: path
         description: VPN ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: vpn01
@@ -6260,8 +5679,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6269,8 +5686,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -6278,8 +5693,6 @@ paths:
         in: path
         description: VPN ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: vpn01
@@ -6320,8 +5733,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6329,8 +5740,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -6338,8 +5747,6 @@ paths:
         in: path
         description: VPN ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: vpn01
@@ -6347,8 +5754,6 @@ paths:
         in: path
         description: Request ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -6458,8 +5863,6 @@ paths:
         in: path
         description: Namespace ID for resource organization and isolation
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6467,9 +5870,6 @@ paths:
         in: query
         description: "Deployment option: 'hold' to create MCI without immediate VM\
           \ provisioning"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -6477,9 +5877,6 @@ paths:
       - name: x-request-id
         in: header
         description: Custom request ID for tracking and correlation across API calls
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -6560,17 +5957,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: option
         in: query
         description: Option for MCI creation review (same as actual creation)
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -6578,9 +5970,6 @@ paths:
       - name: x-request-id
         in: header
         description: Custom request ID for tracking
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -6632,8 +6021,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6641,8 +6028,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -6687,8 +6072,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6696,8 +6079,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -6705,8 +6086,6 @@ paths:
         in: path
         description: "Metric type: cpu, memory, disk, network"
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -6742,8 +6121,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6751,8 +6128,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -6760,8 +6135,6 @@ paths:
         in: path
         description: VM ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: vm01
@@ -6796,8 +6169,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6831,8 +6202,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6861,8 +6230,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6870,8 +6237,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -6905,8 +6270,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6914,8 +6277,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -6957,8 +6318,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -6966,8 +6325,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -6996,8 +6353,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -7040,8 +6395,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -7049,8 +6402,6 @@ paths:
         in: path
         description: VNet ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -7124,8 +6475,6 @@ paths:
         in: path
         description: Namespace ID for organizing registered resources
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -7183,17 +6532,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -7201,17 +6545,11 @@ paths:
       - name: filterKey
         in: query
         description: Field key for filtering (ex:guestOS)
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: filterVal
         in: query
         description: "Field value for filtering (ex: Ubuntu18.04)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -7251,8 +6589,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -7260,8 +6596,6 @@ paths:
         in: query
         description: "Option: "
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -7304,17 +6638,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: match
         in: query
         description: Delete resources containing matched ID-substring only
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -7342,8 +6671,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -7351,8 +6678,6 @@ paths:
         in: path
         description: customImage ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -7385,8 +6710,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -7394,8 +6717,6 @@ paths:
         in: path
         description: customImage ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -7423,17 +6744,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -7441,17 +6757,11 @@ paths:
       - name: filterKey
         in: query
         description: "Field key for filtering (ex: systemLabel)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: filterVal
         in: query
         description: "Field value for filtering (ex: Registered from CSP resource)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -7491,17 +6801,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: option
         in: query
         description: "Option: "
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -7544,17 +6849,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: match
         in: query
         description: Delete resources containing matched ID-substring only
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -7582,8 +6882,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -7591,8 +6889,6 @@ paths:
         in: path
         description: Data Disk ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -7625,8 +6921,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -7634,8 +6928,6 @@ paths:
         in: path
         description: DataDisk ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -7676,8 +6968,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -7685,8 +6975,6 @@ paths:
         in: path
         description: Data Disk ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -7716,8 +7004,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
@@ -7761,17 +7047,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -7779,17 +7060,11 @@ paths:
       - name: filterKey
         in: query
         description: Field key for filtering (ex:guestOS)
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: filterVal
         in: query
         description: "Field value for filtering (ex: Ubuntu18.04)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -7829,8 +7104,6 @@ paths:
         in: query
         description: registeringMethod
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -7840,17 +7113,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
       - name: update
         in: query
         description: Force update to existing image object
-        required: false
-        style: form
-        explode: true
         schema:
           type: boolean
           default: false
@@ -7893,17 +7161,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
       - name: match
         in: query
         description: Delete resources containing matched ID-substring only
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -7932,8 +7195,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
@@ -7944,8 +7205,6 @@ paths:
           \ 2) provider+region+imageId, 3) imageId. For exact matching, use provider+imageId\
           \ form."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -7978,8 +7237,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
@@ -7987,8 +7244,6 @@ paths:
         in: path
         description: "Image ID ({providerName}+{regionName}+{cspImageName})"
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -8029,8 +7284,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
@@ -8038,8 +7291,6 @@ paths:
         in: path
         description: "Image ID ({providerName}+{regionName}+{cspImageName})"
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -8067,17 +7318,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
       - name: customImage
         in: query
         description: Search custom images (snapshots) only
-        required: false
-        style: form
-        explode: true
         schema:
           type: boolean
           default: false
@@ -8119,8 +7365,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
@@ -8155,17 +7399,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -8173,17 +7412,11 @@ paths:
       - name: filterKey
         in: query
         description: "Field key for filtering (ex: systemLabel)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: filterVal
         in: query
         description: "Field value for filtering (ex: Registered from CSP resource)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -8223,8 +7456,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -8232,9 +7463,6 @@ paths:
         in: query
         description: "Option: [required params for register] connectionName, name,\
           \ vNetId, cspResourceId"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -8277,17 +7505,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: match
         in: query
         description: Delete resources containing matched ID-substring only
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -8315,8 +7538,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -8324,8 +7545,6 @@ paths:
         in: path
         description: Security Group ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -8377,8 +7596,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -8386,8 +7603,6 @@ paths:
         in: path
         description: Security Group ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -8429,8 +7644,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -8438,8 +7651,6 @@ paths:
         in: path
         description: Security Group ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -8483,8 +7694,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -8492,8 +7701,6 @@ paths:
         in: path
         description: Security Group ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -8547,8 +7754,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -8556,8 +7761,6 @@ paths:
         in: path
         description: Security Group ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -8593,8 +7796,6 @@ paths:
         in: query
         description: registeringMethod
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -8604,17 +7805,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
       - name: update
         in: query
         description: Force update to existing spec object
-        required: false
-        style: form
-        explode: true
         schema:
           type: boolean
           default: false
@@ -8658,8 +7854,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
@@ -8667,8 +7861,6 @@ paths:
         in: path
         description: "Spec ID ({providerName}+{regionName}+{cspSpecName})"
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -8701,8 +7893,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
@@ -8710,8 +7900,6 @@ paths:
         in: path
         description: "Spec ID ({providerName}+{regionName}+{cspSpecName})"
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -8752,8 +7940,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
@@ -8761,8 +7947,6 @@ paths:
         in: path
         description: "Spec ID ({providerName}+{regionName}+{cspSpecName})"
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -8790,17 +7974,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           default: IdList
@@ -8851,17 +8030,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: action
         in: query
         description: Action
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -8911,8 +8085,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -8920,17 +8092,12 @@ paths:
         in: path
         description: SQL DB ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: sqldb01
       - name: detail
         in: query
         description: "Resource info by detail (refined, raw)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           default: refined
@@ -8970,8 +8137,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -8979,8 +8144,6 @@ paths:
         in: path
         description: SQL DB ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: sqldb01
@@ -9021,17 +8184,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -9039,17 +8197,11 @@ paths:
       - name: filterKey
         in: query
         description: "Field key for filtering (ex: systemLabel)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: filterVal
         in: query
         description: "Field value for filtering (ex: Registered from CSP resource)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -9089,8 +8241,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9098,9 +8248,6 @@ paths:
         in: query
         description: "Option: [required params for register] connectionName, name,\
           \ cspResourceId, fingerprint, username, publicKey, privateKey"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -9143,17 +8290,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: match
         in: query
         description: Delete resources containing matched ID-substring only
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -9181,8 +8323,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9190,8 +8330,6 @@ paths:
         in: path
         description: SSH Key ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -9224,8 +8362,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9233,8 +8369,6 @@ paths:
         in: path
         description: SshKey ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -9275,8 +8409,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9284,8 +8416,6 @@ paths:
         in: path
         description: SSH Key ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -9313,17 +8443,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: option
         in: query
         description: Option
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -9331,17 +8456,11 @@ paths:
       - name: filterKey
         in: query
         description: "Field key for filtering (ex: cspResourceName)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: filterVal
         in: query
         description: "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -9381,8 +8500,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9424,17 +8541,12 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
       - name: match
         in: query
         description: Delete resources containing matched ID-substring only
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -9462,8 +8574,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9471,8 +8581,6 @@ paths:
         in: path
         description: VNet ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -9509,8 +8617,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9518,16 +8624,11 @@ paths:
         in: path
         description: VNet ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       - name: action
         in: query
         description: Action
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -9559,8 +8660,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9568,8 +8667,6 @@ paths:
         in: path
         description: VNet ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -9602,8 +8699,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9611,8 +8706,6 @@ paths:
         in: path
         description: VNet ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -9654,8 +8747,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9663,16 +8754,12 @@ paths:
         in: path
         description: VNet ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       - name: subnetId
         in: path
         description: Subnet ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -9708,8 +8795,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9717,24 +8802,17 @@ paths:
         in: path
         description: VNet ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       - name: subnetId
         in: path
         description: Subnet ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       - name: action
         in: query
         description: Action
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -9765,8 +8843,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9774,8 +8850,6 @@ paths:
         in: query
         description: Option
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -9786,9 +8860,6 @@ paths:
       - name: connectionName
         in: query
         description: connectionName of cloud for designated resource
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -9816,8 +8887,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9850,8 +8919,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9859,8 +8926,6 @@ paths:
         in: path
         description: K8sCluster ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: k8scluster01
@@ -9868,8 +8933,6 @@ paths:
         in: query
         description: Namespace in K8sCluster to apply the command
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           default: default
@@ -9877,25 +8940,17 @@ paths:
         in: query
         description: Pod Name in K8sCluster to apply the command
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           default: mypod
       - name: k8sClusterContainerName
         in: query
         description: Container Name in K8sCluster to apply the command
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: x-request-id
         in: header
         description: Custom request ID
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -9950,8 +9005,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: default
@@ -9959,8 +9012,6 @@ paths:
         in: path
         description: MCI ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: mci01
@@ -9968,27 +9019,18 @@ paths:
         in: query
         description: subGroupId to apply the file transfer only for VMs in subGroup
           of MCI
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           default: g1
       - name: vmId
         in: query
         description: vmId to apply the file transfer only for a VM in MCI
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           default: g1-1
       - name: x-request-id
         in: header
         description: Custom request ID
-        required: false
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -10042,8 +9084,6 @@ paths:
         in: path
         description: Namespace ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: system
@@ -10086,8 +9126,6 @@ paths:
         in: query
         description: get object value by key
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -10120,8 +9158,6 @@ paths:
         in: query
         description: delete object value by key
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -10155,8 +9191,6 @@ paths:
         in: query
         description: retrieve objects by key
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -10189,8 +9223,6 @@ paths:
         in: query
         description: Delete child objects based on the given key string
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -10250,8 +9282,6 @@ paths:
         in: path
         description: Name of the CSP to retrieve
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -10285,16 +9315,12 @@ paths:
         in: path
         description: Name of the CSP to retrieve
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       - name: regionName
         in: path
         description: Name of region to retrieve
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -10408,8 +9434,6 @@ paths:
         description: "VM Specification ID (format: provider+region+spec_name, e.g.,\
           \ aws+ap-northeast-2+t2.micro)"
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -10465,8 +9489,6 @@ paths:
         in: path
         description: "VM Specification ID to delete history for (format: provider+region+spec_name)"
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -10527,16 +9549,12 @@ paths:
         in: path
         description: "VM Specification ID (format: provider+region+spec_name)"
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       - name: cspImageName
         in: query
         description: CSP-specific image name/ID to analyze compatibility
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -10699,9 +9717,6 @@ paths:
       - name: option
         in: query
         description: Option to specify resourceType
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -10710,9 +9725,6 @@ paths:
       - name: mciFlag
         in: query
         description: "Flag to show VMs in a collective MCI form (y,n)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           default: "y"
@@ -10917,8 +9929,6 @@ paths:
         in: path
         description: Job ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -10964,8 +9974,6 @@ paths:
         in: path
         description: Job ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       requestBody:
@@ -11022,8 +10030,6 @@ paths:
         in: path
         description: Job ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -11059,8 +10065,6 @@ paths:
         in: path
         description: Job ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -11096,8 +10100,6 @@ paths:
         in: path
         description: Job ID
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -11137,9 +10139,6 @@ paths:
       - name: option
         in: query
         description: Option to specify resourceType
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -11148,9 +10147,6 @@ paths:
       - name: mciFlag
         in: query
         description: "Flag to show VMs in a collective MCI form (y,n)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           default: "y"
@@ -11197,8 +10193,6 @@ paths:
         in: path
         description: Request ID acquired from X-Request-ID header
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -11231,8 +10225,6 @@ paths:
         in: path
         description: Request ID to delete
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
       responses:
@@ -11253,9 +10245,6 @@ paths:
       - name: status
         in: query
         description: "Filter by request status (Handling, Error, Success)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -11265,9 +10254,6 @@ paths:
       - name: method
         in: query
         description: "Filter by HTTP method (GET, POST, PUT, DELETE, etc.)"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -11278,25 +10264,16 @@ paths:
       - name: url
         in: query
         description: Filter by request URL
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: time
         in: query
         description: Filter by time in minutes from now (to get recent requests)
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
       - name: savefile
         in: query
         description: Option to save the results to a file (set 'true' to activate)
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           default: "false"
@@ -11339,8 +10316,6 @@ paths:
         in: query
         description: Name of the CSP to retrieve
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -11381,8 +10356,6 @@ paths:
         in: path
         description: Label Type
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           enum:
@@ -11403,8 +10376,6 @@ paths:
         in: query
         description: "Label selector query. Example: env=production,tier=backend"
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       responses:
@@ -11458,8 +10429,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -11498,8 +10467,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -11508,8 +10475,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -11536,8 +10501,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -11546,8 +10509,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -11597,8 +10558,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -11606,8 +10565,6 @@ paths:
         in: query
         description: Delete
         required: true
-        style: form
-        explode: true
         schema:
           type: boolean
           default: true
@@ -11616,8 +10573,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -11647,8 +10602,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -11657,8 +10610,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -11677,8 +10628,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -11687,8 +10636,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -11711,8 +10658,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -11720,8 +10665,6 @@ paths:
         in: path
         description: Object Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: test-object.txt
@@ -11730,8 +10673,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -11754,8 +10695,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -11763,8 +10702,6 @@ paths:
         in: path
         description: Object Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: test-object.txt
@@ -11773,8 +10710,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -11829,8 +10764,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -11839,8 +10772,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -11895,8 +10826,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -11905,8 +10834,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -11933,8 +10860,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -11943,8 +10868,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -11974,8 +10897,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -11984,8 +10905,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -12020,8 +10939,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -12030,8 +10947,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -12066,8 +10981,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -12076,8 +10989,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -12137,8 +11048,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -12147,8 +11056,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -12171,8 +11078,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -12180,8 +11085,6 @@ paths:
         in: path
         description: Object Key
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: test-file.txt
@@ -12189,8 +11092,6 @@ paths:
         in: query
         description: Version ID
         required: true
-        style: form
-        explode: true
         schema:
           type: string
           default: yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ
@@ -12199,8 +11100,6 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
@@ -12236,8 +11135,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -12245,8 +11142,6 @@ paths:
         in: path
         description: Object Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: test-object.txt
@@ -12255,17 +11150,12 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
       - name: expires
         in: query
         description: Expiration time in seconds for the presigned URL
-        required: false
-        style: form
-        explode: true
         schema:
           type: integer
           default: 3600
@@ -12304,8 +11194,6 @@ paths:
         in: path
         description: Object Storage Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: globally-unique-bucket-hctdx3
@@ -12313,8 +11201,6 @@ paths:
         in: path
         description: Object Name
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: test-object.txt
@@ -12323,17 +11209,12 @@ paths:
         description: "This represents a credential or an access key ID. The required\
           \ format is `{csp-region}` (i.e., the connection name)."
         required: true
-        style: simple
-        explode: false
         schema:
           type: string
           default: aws-ap-northeast-2
       - name: expires
         in: query
         description: Expiration time in seconds for the presigned URL
-        required: false
-        style: form
-        explode: true
         schema:
           type: integer
           default: 3600
@@ -12393,9 +11274,6 @@ paths:
         in: query
         description: "System MCI type: 'probe' for connectivity testing, 'monitor'\
           \ for system monitoring"
-        required: false
-        style: form
-        explode: true
         schema:
           type: string
           enum:
@@ -12512,16 +11390,12 @@ paths:
         in: query
         description: "VM specification ID (e.g., 'gcp+europe-north1+f1-micro')"
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       - name: cspImageName
         in: query
         description: "CSP-specific image name (e.g., 'ami-0c02fb55956c7d316' for AWS)"
         required: true
-        style: form
-        explode: true
         schema:
           type: string
       responses:
