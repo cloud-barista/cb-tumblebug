@@ -35,7 +35,7 @@ Examples:
   %(prog)s -y --credentials --fetch-price     # Register credentials and fetch price (no confirmation)
     """
 )
-parser.add_argument('-y', '--yes', action='store_true', 
+parser.add_argument('-y', '--yes', action='store_true',
                     help='Automatically answer yes to prompts and proceed without confirmation')
 parser.add_argument('--credentials', '--credentials-only', action='store_true', dest='credentials_only',
                     help='Register cloud credentials only')
@@ -275,6 +275,7 @@ def fetch_price():
         print(Fore.RED + error_msg)
         return {'error': error_msg}
 
+
 # Register credentials if requested
 if run_credentials:
     # Get the decryption key and decrypt the credentials file
@@ -359,9 +360,9 @@ if run_load_assets:
 # Fetch price information if requested
 if run_fetch_price:
     # Print a message for initiating price fetching and say that this final operation can be run in the background
-    print(Fore.CYAN + f"\nInitiating price fetching information from all CSPs...")
-    print(Fore.CYAN + f"Price for Specs will be updated (it may take around 10 mins).")
-    print(Fore.YELLOW + f"\nYou can run this procedure in the background using ctrl+c or ctrl+z.")
+    print(Fore.CYAN + "\nInitiating price fetching information from all CSPs...")
+    print(Fore.CYAN + "Price for Specs will be updated (it may take around 10 mins).")
+    print(Fore.YELLOW + "\nYou can run this procedure in the background using ctrl+c or ctrl+z.")
     # Start the price fetching
     fetch_price()
 
