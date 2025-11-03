@@ -1,5 +1,42 @@
 #!/bin/bash
 
+# Check for help option
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    echo "CB-Tumblebug Initialization Script"
+    echo ""
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "This script initializes CB-Tumblebug by registering credentials,"
+    echo "loading assets (specs and images), and fetching price information."
+    echo ""
+    echo "Options:"
+    echo "  -h, --help                    Show this help message"
+    echo "  -y, --yes                     Automatically answer yes to prompts"
+    echo "  --credentials, --credentials-only"
+    echo "                                Register cloud credentials only"
+    echo "  --load-assets, --load-assets-only"
+    echo "                                Load common specs and images only"
+    echo "  --fetch-price, --fetch-price-only"
+    echo "                                Fetch price information only"
+    echo ""
+    echo "Examples:"
+    echo "  $0                            # Run all steps (default)"
+    echo "  $0 -y                         # Run all steps without confirmation"
+    echo "  $0 --credentials-only         # Register credentials only"
+    echo "  $0 --load-assets-only         # Load assets only"
+    echo "  $0 --fetch-price-only         # Fetch price only"
+    echo "  $0 --credentials --load-assets"
+    echo "                                # Register credentials and load assets"
+    echo ""
+    echo "Environment Variables:"
+    echo "  TUMBLEBUG_SERVER              Server address (default: localhost:1323)"
+    echo "  TB_API_USERNAME               API username (default: default)"
+    echo "  TB_API_PASSWORD               API password (default: default)"
+    echo "  LOG                           Set to 'on' to enable resource monitoring"
+    echo ""
+    exit 0
+fi
+
 SCRIPT_DIR=$(cd $(dirname "$0") && pwd)
 
 # Change to the script directory
