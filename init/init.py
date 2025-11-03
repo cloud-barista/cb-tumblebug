@@ -256,6 +256,25 @@ def print_credential_info(response):
         # Print table
         print(tabulate(table_rows, headers, tablefmt="grid"))
 
+# Function to fetch price information from CSPs
+def fetch_price():
+    try:
+        # FetchPrice API is a POST endpoint with no required body
+        response = requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/fetchPrice", headers=HEADERS)
+        response.raise_for_status()  # Will raise an exception for HTTP error codes
+        
+        response_json = response.json()
+        if response_json is None:  # Check if response.json() returned None
+            response_json = {'error': 'No content returned'}
+        
+        # Log success message
+        print(f"Price fetching initiated: {response_json.get('message', 'No message returned')}")
+        return response_json
+    except requests.RequestException as e:
+        error_msg = f'Failed to fetch prices: {str(e)}'
+        print(Fore.RED + error_msg)
+        return {'error': error_msg}
+
 # Register credentials if requested
 if run_credentials:
     # Get the decryption key and decrypt the credentials file
@@ -288,12 +307,6 @@ if run_load_assets:
             response = requests.get(f"http://{TUMBLEBUG_SERVER}/tumblebug/loadAssets", headers=HEADERS)
             response.raise_for_status()  # Will raise an exception for HTTP error codes
             response_json = response.json()
-            # if response_json is None:  # Check if response.json() returned None
-            #     response_json = {'error': 'No content returned'}
-            # if 'output' not in response_json:
-            #     response_json = {'error': 'No output content returned'}
-            # if response_json.get('output', []) is None:
-            #     response_json = {'error': 'Empty output content returned'}
         except requests.RequestException as e:
             response_json = {'error': str(e)}
         finally:
@@ -333,64 +346,22 @@ if run_load_assets:
     # Calculate duration
     end_time = time.time()
     duration = end_time - start_time
-    minutes = duration / 60
 
     # Handling output based on the API response
     if 'error' in response_json:
         print(Fore.RED + "Error during resource loading: " + response_json['error'])
         exit(1)
-    elif response_json: 
-        # failed_specs = 0
-        # failed_images = 0
-        # successful_specs = 0
-        # successful_images = 0
-
-        # for item in response_json.get('output', []):  
-        #     if "spec:" in item:
-        #         if "[Failed]" in item:
-        #             failed_specs += 1
-        #         else:
-        #             successful_specs += 1
-        #     elif "image:" in item:
-        #         if "[Failed]" in item:
-        #             failed_images += 1
-        #         else:
-        #             successful_images += 1
-
+    elif response_json:
         print(Fore.CYAN + f"\nLoading completed (elapsed: {duration}s)")
-
-        # print(Fore.RESET + "Registered Common specs")
-        # print(Fore.GREEN + f"- Successful: {successful_specs}" + Fore.RESET + f", Failed: {failed_specs}")
-        # print(Fore.RESET + "Registered Common images")
-        # print(Fore.GREEN + f"- Successful: {successful_images}" + Fore.RESET + f", Failed: {failed_images}")
     else:
         print(Fore.RED + "No data returned from the API.")
 
 # Fetch price information if requested
 if run_fetch_price:
-    # Function to fetch price information from CSPs
-    def fetch_price():
-        try:
-            # FetchPrice API is a POST endpoint with no required body
-            response = requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/fetchPrice", headers=HEADERS)
-            response.raise_for_status()  # Will raise an exception for HTTP error codes
-            
-            response_json = response.json()
-            if response_json is None:  # Check if response.json() returned None
-                response_json = {'error': 'No content returned'}
-            
-            # Log success message
-            print(f"Price fetching initiated: {response_json.get('message', 'No message returned')}")
-            return response_json
-        except requests.RequestException as e:
-            error_msg = f'Failed to fetch prices: {str(e)}'
-            print(Fore.RED + error_msg)
-            return {'error': error_msg}
-
-    # print a message for initiating price fetching and say that this final operation can be run background
+    # Print a message for initiating price fetching and say that this final operation can be run in the background
     print(Fore.CYAN + f"\nInitiating price fetching information from all CSPs...")
     print(Fore.CYAN + f"Price for Specs will be updated (it may take around 10 mins).")
-    print(Fore.YELLOW + f"\nYou can run this procedure in the background using by ctrl+c or ctrl+z.")
+    print(Fore.YELLOW + f"\nYou can run this procedure in the background using ctrl+c or ctrl+z.")
     # Start the price fetching
     fetch_price()
 
