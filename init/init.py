@@ -21,9 +21,36 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad
 
-parser = argparse.ArgumentParser(description="Automatically proceed without confirmation.")
-parser.add_argument('-y', '--yes', action='store_true', help='Automatically answer yes to prompts and proceed.')
+parser = argparse.ArgumentParser(
+    description="Initialize CB-Tumblebug with credentials, assets, and pricing information.",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""
+Examples:
+  %(prog)s                                    # Run all steps (default)
+  %(prog)s -y                                 # Run all steps without confirmation
+  %(prog)s --credentials-only                 # Register credentials only
+  %(prog)s --load-assets-only                 # Load assets (specs and images) only
+  %(prog)s --fetch-price-only                 # Fetch price information only
+  %(prog)s --credentials --load-assets        # Register credentials and load assets
+  %(prog)s -y --credentials --fetch-price     # Register credentials and fetch price (no confirmation)
+    """
+)
+parser.add_argument('-y', '--yes', action='store_true', 
+                    help='Automatically answer yes to prompts and proceed without confirmation')
+parser.add_argument('--credentials', '--credentials-only', action='store_true', dest='credentials_only',
+                    help='Register cloud credentials only')
+parser.add_argument('--load-assets', '--load-assets-only', action='store_true', dest='load_assets_only',
+                    help='Load common specs and images only')
+parser.add_argument('--fetch-price', '--fetch-price-only', action='store_true', dest='fetch_price_only',
+                    help='Fetch price information only')
 args = parser.parse_args()
+
+# Determine which operations to run
+# If no specific options are provided, run all operations (default behavior)
+run_all = not (args.credentials_only or args.load_assets_only or args.fetch_price_only)
+run_credentials = run_all or args.credentials_only
+run_load_assets = run_all or args.load_assets_only
+run_fetch_price = run_all or args.fetch_price_only
 
 # Initialize colorama
 init(autoreset=True)
@@ -112,19 +139,26 @@ except requests.exceptions.RequestException as e:
     print(Fore.RED + f"Failed to connect to server. Check the server address and try again.")
     sys.exit(1)
 
+# Display what will be executed
+operations = []
+if run_credentials:
+    operations.append("Register credentials")
+if run_load_assets:
+    operations.append("Load common specs and images")
+if run_fetch_price:
+    operations.append("Fetch price information")
+
+print(Fore.YELLOW + "\nOperations to be performed:")
+for op in operations:
+    print(Fore.CYAN + f"  ✓ {op}")
+print("")
+
 # Wait for user input to proceed
-print(Fore.YELLOW + "Registering credentials and Loading common Specs and Images takes time")
 if not args.yes:
-    if input(Fore.CYAN + 'Do you want to proceed ? (y/n) : ').lower() not in ['y', 'yes']:
+    if input(Fore.CYAN + 'Do you want to proceed? (y/n): ').lower() not in ['y', 'yes']:
         print(Fore.GREEN + "Cancel [{}]".format(' '.join(sys.argv)))
         print(Fore.GREEN + "See you soon. :)")
         sys.exit(0)
-
-# Get the decryption key and decrypt the credentials file
-decrypted_content = get_decryption_key()
-cred_data = yaml.safe_load(decrypted_content)['credentialholder']['admin']
-
-print(Fore.YELLOW + f"\nRegistering all valid credentials for all cloud regions...")
 
 # Function to encrypt credentials using AES and RSA public key
 def encrypt_credential_value_with_publickey(public_key_pem, credentials):
@@ -222,133 +256,144 @@ def print_credential_info(response):
         # Print table
         print(tabulate(table_rows, headers, tablefmt="grid"))
 
+# Register credentials if requested
+if run_credentials:
+    # Get the decryption key and decrypt the credentials file
+    decrypted_content = get_decryption_key()
+    cred_data = yaml.safe_load(decrypted_content)['credentialholder']['admin']
+    
+    print(Fore.YELLOW + f"\nRegistering all valid credentials for all cloud regions...")
 
-# Register credentials to TumblebugServer using ThreadPoolExecutor
-with ThreadPoolExecutor(max_workers=20) as executor:
-    future_to_provider = {executor.submit(register_credential, provider, credentials): provider for provider, credentials in cred_data.items()}
-    for future in as_completed(future_to_provider):
-        provider, message, color = future.result()
-        if message is None:
-            message = ""  # Handle NoneType message
-        else:
-            print("")
-            print(color + f"- {provider.upper()}: {message}")
-            print_credential_info(message)
+    # Register credentials to TumblebugServer using ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=20) as executor:
+        future_to_provider = {executor.submit(register_credential, provider, credentials): provider for provider, credentials in cred_data.items()}
+        for future in as_completed(future_to_provider):
+            provider, message, color = future.result()
+            if message is None:
+                message = ""  # Handle NoneType message
+            else:
+                print("")
+                print(color + f"- {provider.upper()}: {message}")
+                print_credential_info(message)
 
-print(Fore.YELLOW + f"\nLoading common Specs and Images... (Estimated: {expected_completion_time_seconds}s)")
-print(Fore.RESET)
+# Load assets (specs and images) if requested
+if run_load_assets:
+    print(Fore.YELLOW + f"\nLoading common Specs and Images... (Estimated: {expected_completion_time_seconds}s)")
+    print(Fore.RESET)
 
-# Function to perform the HTTP request and handle exceptions
-def load_resources():
-    global response_json
-    try:
-        response = requests.get(f"http://{TUMBLEBUG_SERVER}/tumblebug/loadAssets", headers=HEADERS)
-        response.raise_for_status()  # Will raise an exception for HTTP error codes
-        response_json = response.json()
-        # if response_json is None:  # Check if response.json() returned None
-        #     response_json = {'error': 'No content returned'}
-        # if 'output' not in response_json:
-        #     response_json = {'error': 'No output content returned'}
-        # if response_json.get('output', []) is None:
-        #     response_json = {'error': 'Empty output content returned'}
-    except requests.RequestException as e:
-        response_json = {'error': str(e)}
-    finally:
-        event.set()  # Signal that the request is complete regardless of success or failure
+    # Function to perform the HTTP request and handle exceptions
+    def load_resources():
+        global response_json
+        try:
+            response = requests.get(f"http://{TUMBLEBUG_SERVER}/tumblebug/loadAssets", headers=HEADERS)
+            response.raise_for_status()  # Will raise an exception for HTTP error codes
+            response_json = response.json()
+            # if response_json is None:  # Check if response.json() returned None
+            #     response_json = {'error': 'No content returned'}
+            # if 'output' not in response_json:
+            #     response_json = {'error': 'No output content returned'}
+            # if response_json.get('output', []) is None:
+            #     response_json = {'error': 'Empty output content returned'}
+        except requests.RequestException as e:
+            response_json = {'error': str(e)}
+        finally:
+            event.set()  # Signal that the request is complete regardless of success or failure
 
-# Function to fetch price information from CSPs
-def fetch_price():
-    global response_json
-    try:
-        # FetchPrice API is a POST endpoint with no required body
-        response = requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/fetchPrice", headers=HEADERS)
-        response.raise_for_status()  # Will raise an exception for HTTP error codes
-        
-        response_json = response.json()
-        if response_json is None:  # Check if response.json() returned None
-            response_json = {'error': 'No content returned'}
-        
-        # Log success message
-        print(f"Price fetching initiated: {response_json.get('message', 'No message returned')}")
-    except requests.RequestException as e:
-        response_json = {'error': f'Failed to fetch prices: {str(e)}'}
-        print(f"Error fetching prices: {str(e)}")
-    finally:
-        event.set()  # Signal that the request is complete regardless of success or failure
-        return response_json
+    # Start time
+    start_time = time.time()
 
-# Start time
-start_time = time.time()
+    # Event object to signal the request completion
+    event = threading.Event()
 
-# Event object to signal the request completion
-event = threading.Event()
+    # Start the network request in a separate thread
+    thread = threading.Thread(target=load_resources)
+    thread.start()
 
-# Start the network request in a separate thread
-thread = threading.Thread(target=load_resources)
-thread.start()
+    # Expected duration and progress bar
+    update_interval = 0.1  # Update interval in seconds
+    step_multiplier = 10  # Increase this to make the bar move faster visually
+    total_steps = expected_completion_time_seconds * step_multiplier
 
-# Expected duration and progress bar
-update_interval = 0.1  # Update interval in seconds
-step_multiplier = 10  # Increase this to make the bar move faster visually
-total_steps = expected_completion_time_seconds * step_multiplier
+    # Progress bar with 'smooth' style and manual updates enabled
+    with alive_bar(total_steps, bar="smooth", manual=True, stats=False, elapsed=False) as bar:
+        elapsed_steps = 0  # Track the number of elapsed steps
+        while not event.is_set():  # Continue until the event signals completion
+            time.sleep(update_interval)  # Wait for the specified update interval
+            elapsed_steps += 1  # Increment the step count
 
-# Progress bar with 'smooth' style and manual updates enabled
-with alive_bar(total_steps, bar="smooth", manual=True, stats=False, elapsed=False) as bar:
-    elapsed_steps = 0  # Track the number of elapsed steps
-    while not event.is_set():  # Continue until the event signals completion
-        time.sleep(update_interval)  # Wait for the specified update interval
-        elapsed_steps += 1  # Increment the step count
+            # Update the bar text with elapsed and expected time
+            # bar.text = f"Expected: {expected_completion_time_seconds}s"
+            bar(elapsed_steps / total_steps)  # Update the progress bar manually
 
-        # Update the bar text with elapsed and expected time
-        # bar.text = f"Expected: {expected_completion_time_seconds}s"
-        bar(elapsed_steps / total_steps)  # Update the progress bar manually
+        # Ensure the bar reaches 100% when the task completes
+        bar(1.0)
+    # Wait for the thread to complete
+    thread.join()
 
-    # Ensure the bar reaches 100% when the task completes
-    bar(1.0)
-# Wait for the thread to complete
-thread.join()
+    # Calculate duration
+    end_time = time.time()
+    duration = end_time - start_time
+    minutes = duration / 60
 
-# Calculate duration
-end_time = time.time()
-duration = end_time - start_time
-minutes = duration / 60
+    # Handling output based on the API response
+    if 'error' in response_json:
+        print(Fore.RED + "Error during resource loading: " + response_json['error'])
+        exit(1)
+    elif response_json: 
+        # failed_specs = 0
+        # failed_images = 0
+        # successful_specs = 0
+        # successful_images = 0
 
-# Handling output based on the API response
-if 'error' in response_json:
-    print(Fore.RED + "Error during resource loading: " + response_json['error'])
-    exit(1)
-elif response_json: 
-    # failed_specs = 0
-    # failed_images = 0
-    # successful_specs = 0
-    # successful_images = 0
+        # for item in response_json.get('output', []):  
+        #     if "spec:" in item:
+        #         if "[Failed]" in item:
+        #             failed_specs += 1
+        #         else:
+        #             successful_specs += 1
+        #     elif "image:" in item:
+        #         if "[Failed]" in item:
+        #             failed_images += 1
+        #         else:
+        #             successful_images += 1
 
-    # for item in response_json.get('output', []):  
-    #     if "spec:" in item:
-    #         if "[Failed]" in item:
-    #             failed_specs += 1
-    #         else:
-    #             successful_specs += 1
-    #     elif "image:" in item:
-    #         if "[Failed]" in item:
-    #             failed_images += 1
-    #         else:
-    #             successful_images += 1
+        print(Fore.CYAN + f"\nLoading completed (elapsed: {duration}s)")
 
-    print(Fore.CYAN + f"\nLoading completed (elapsed: {duration}s)")
-    print(Fore.YELLOW + f"\nThe system is ready to use.")
+        # print(Fore.RESET + "Registered Common specs")
+        # print(Fore.GREEN + f"- Successful: {successful_specs}" + Fore.RESET + f", Failed: {failed_specs}")
+        # print(Fore.RESET + "Registered Common images")
+        # print(Fore.GREEN + f"- Successful: {successful_images}" + Fore.RESET + f", Failed: {failed_images}")
+    else:
+        print(Fore.RED + "No data returned from the API.")
 
-    # print a message for initiating price fetching and say that this finial operation can be run background
+# Fetch price information if requested
+if run_fetch_price:
+    # Function to fetch price information from CSPs
+    def fetch_price():
+        try:
+            # FetchPrice API is a POST endpoint with no required body
+            response = requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/fetchPrice", headers=HEADERS)
+            response.raise_for_status()  # Will raise an exception for HTTP error codes
+            
+            response_json = response.json()
+            if response_json is None:  # Check if response.json() returned None
+                response_json = {'error': 'No content returned'}
+            
+            # Log success message
+            print(f"Price fetching initiated: {response_json.get('message', 'No message returned')}")
+            return response_json
+        except requests.RequestException as e:
+            error_msg = f'Failed to fetch prices: {str(e)}'
+            print(Fore.RED + error_msg)
+            return {'error': error_msg}
+
+    # print a message for initiating price fetching and say that this final operation can be run background
     print(Fore.CYAN + f"\nInitiating price fetching information from all CSPs...")
     print(Fore.CYAN + f"Price for Specs will be updated (it may take around 10 mins).")
     print(Fore.YELLOW + f"\nYou can run this procedure in the background using by ctrl+c or ctrl+z.")
     # Start the price fetching
     fetch_price()
-    
 
-    # print(Fore.RESET + "Registered Common specs")
-    # print(Fore.GREEN + f"- Successful: {successful_specs}" + Fore.RESET + f", Failed: {failed_specs}")
-    # print(Fore.RESET + "Registered Common images")
-    # print(Fore.GREEN + f"- Successful: {successful_images}" + Fore.RESET + f", Failed: {failed_images}")
-else:
-    print(Fore.RED + "No data returned from the API.")
+# Final message
+if run_all or (run_credentials and run_load_assets):
+    print(Fore.YELLOW + f"\nThe system is ready to use.")
