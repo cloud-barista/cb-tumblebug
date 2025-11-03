@@ -27,9 +27,6 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "YAML conversion complete. Updated $SWAGGER_YAML"
-echo "Adding security section to swagger.yaml..."
-echo -e "\nsecurity:\n  - BasicAuth: []\n  - Bearer: []" >> "$SWAGGER_YAML"
-echo "Security section added to swagger.yaml."
 
 # Convert JSON file
 if [ -f "$SWAGGER_JSON" ]; then
