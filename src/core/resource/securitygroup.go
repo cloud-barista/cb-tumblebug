@@ -63,7 +63,7 @@ func ConvertSpiderToFirewallRuleInfo(s model.SpiderSecurityRuleInfo) model.Firew
 	if s.FromPort != s.ToPort {
 		ports = s.FromPort + "-" + s.ToPort
 	}
-	if strings.EqualFold(s.IPProtocol, "ICMP") {
+	if strings.EqualFold(s.IPProtocol, "ICMP") || strings.EqualFold(s.IPProtocol, "ALL") {
 		ports = ""
 	}
 	// if one of FromPort or ToPort is empty or "-1", set ports to empty string
@@ -83,8 +83,9 @@ func ConvertSpiderToFirewallRuleInfo(s model.SpiderSecurityRuleInfo) model.Firew
 func ConvertTbToSpiderSecurityRuleInfo(t model.FirewallRuleInfo) model.SpiderSecurityRuleInfo {
 	var from, to string
 
-	// if Port is empty or "-1", set both from, to to "-1"
-	if t.Port == "" || t.Port == "-1" {
+	if strings.EqualFold(t.Protocol, "ALL") || strings.EqualFold(t.Protocol, "ICMP") {
+		from, to = "-1", "-1"
+	} else if t.Port == "" || t.Port == "-1" { // if Port is empty or "-1", set both from, to to "-1"
 		from, to = "-1", "-1"
 	} else {
 		from, to = parsePortsToFromTo(t.Port)
@@ -253,7 +254,7 @@ func CreateSecurityGroup(nsId string, u *model.SecurityGroupReq, option string) 
 
 			for _, rule := range expandedRules {
 
-				if !strings.EqualFold(rule.Protocol, "ICMP") {
+				if !strings.EqualFold(rule.Protocol, "ICMP") && !strings.EqualFold(rule.Protocol, "ALL") {
 					if !isValidPorts(rule.Port) {
 						err := fmt.Errorf("invalid port range in rule: %v", rule)
 						return model.SecurityGroupInfo{}, err
