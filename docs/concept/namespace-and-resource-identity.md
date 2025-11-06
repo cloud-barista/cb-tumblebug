@@ -199,7 +199,7 @@ Every resource in CB-Tumblebug has three identifiers:
 ```go
 // GenUid generates a globally unique identifier
 func GenUid() string {
-    return uid.New().String()  // Uses xid library
+    return uid.New().String()  // Uses rs/xid library
 }
 ```
 
