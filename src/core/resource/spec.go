@@ -972,7 +972,12 @@ func UpdateSpecsFromAsset(nsId string) error {
 		acceleratorModel := row[18]
 		acceleratorCount := 0
 		if s, err := strconv.Atoi(strings.ReplaceAll(row[19], " ", "")); err == nil {
-			acceleratorCount = s
+			// Enforce bounds for uint8 before conversion
+			if s < 0 || s > 255 {
+				acceleratorCount = 0 // or choose another safe default, e.g., 255
+			} else {
+				acceleratorCount = s
+			}
 		}
 		acceleratorMemoryGB := 0.0
 		if s, err := strconv.ParseFloat(strings.ReplaceAll(row[20], " ", ""), 32); err == nil {
