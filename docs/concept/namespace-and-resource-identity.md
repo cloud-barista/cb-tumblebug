@@ -192,7 +192,13 @@ Every resource in CB-Tumblebug has three identifiers:
 |--------|------|-----------|------|
 | **Id** | CB-Tumblebug internal identification (user-defined) | Resource creation request | `web-vm-01` |
 | **Uid** | Globally unique identifier (for CSP resource name) | Auto-generated on creation | `c9nqt72b9s0d3f6qe2cg` |
-| **CspResourceName** | CSP native resource name | After CSP resource creation | `c9nqt72b9s0d3f6qe2cg` |
+| **CspResourceName** | CSP native resource name (Spider's NameId) | After CSP resource creation | `c9nqt72b9s0d3f6qe2cg` |
+| **CspResourceId** | CSP internal system ID (Spider's SystemId) | After CSP resource creation | `i-0d6c7d2a0f4d0ba2a` |
+
+> **Note on CSP Identifiers:**
+> - **CspResourceName**: Maps to CB-Spider's `IId.NameId` - The name CB-Tumblebug assigns (usually Uid) and Spider uses to manage the resource
+> - **CspResourceId**: Maps to CB-Spider's `IId.SystemId` - The actual internal ID assigned by the Cloud Service Provider (e.g., AWS instance ID `i-xxx`, Azure resource ID, GCP resource ID)
+> - CB-Tumblebug stores both as metadata to maintain complete resource tracking and enable operations like "register" which requires the CSP's native ID
 
 ### 2. Uid Generation Mechanism
 
@@ -267,11 +273,41 @@ func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
     }
     
     // 4. Spider creates VPC with Uid as name in CSP
-    // 5. CSP returns the created resource name (which is the Uid)
-    vNetInfo.CspResourceName = spResp.IId.NameId  // This will be the Uid
+    // 5. CSP returns IId with both NameId and SystemId
+    var spResp spiderVPCInfo
+    err = callSpider(spReqt, &spResp)
+    
+    // 6. Store both CSP identifiers
+    vNetInfo.CspResourceName = spResp.IId.NameId   // Spider's NameId (= our Uid)
+    vNetInfo.CspResourceId = spResp.IId.SystemId   // CSP's internal ID (e.g., vpc-0ca3af89...)
+    
+    // 7. Also store subnet CSP IDs
+    for i, spSubnetInfo := range spResp.SubnetInfoList {
+        vNetInfo.SubnetInfoList[i].CspResourceId = spSubnetInfo.IId.SystemId
+    }
     
     return vNetInfo, nil
 }
+```
+
+**Why Store Both CspResourceName and CspResourceId?**
+
+1. **CspResourceName (NameId)**:
+   - Used for regular resource management operations (get, delete, update)
+   - CB-Spider uses this name to identify resources
+   - Usually matches the Uid we generated
+
+2. **CspResourceId (SystemId)**:
+   - CSP's actual internal identifier (e.g., AWS: `i-0d6c7d2a0f4d0ba2a`, Azure: `/subscriptions/.../resourceGroups/...`)
+   - Required for "register" operations to import existing CSP resources into CB-Tumblebug
+   - Used for cross-referencing and auditing
+   - Provides complete resource traceability
+
+**Example: Register Operation**
+```go
+// When registering an existing VM from CSP
+// User must provide the CSP's native ID (CspResourceId)
+requestBody.ReqInfo.CSPid = vmInfoData.CspResourceId  // e.g., "i-0d6c7d2a0f4d0ba2a"
 ```
 
 ## KeyValue Store Structure
@@ -302,27 +338,27 @@ func GenMciKey(nsId string, mciId string, vmId string) string {
 
 ```mermaid
 graph TB
-    ROOT[ETCD Root]
+    ROOT["ETCD Root"]
     
-    ROOT --> NS1[/ns/production]
-    ROOT --> NS2[/ns/development]
-    ROOT --> SYS[/ns/system]
+    ROOT --> NS1["ns/production"]
+    ROOT --> NS2["ns/development"]
+    ROOT --> SYS["ns/system"]
     
-    NS1 --> RES1[/resources]
-    NS1 --> MCI1[/mci]
+    NS1 --> RES1["resources"]
+    NS1 --> MCI1["mci"]
     
-    RES1 --> VNET1[/vNet/prod-vpc]
-    RES1 --> SG1[/securityGroup/prod-sg]
-    RES1 --> SSH1[/sshKey/prod-key]
-    RES1 --> DISK1[/dataDisk/prod-disk]
+    RES1 --> VNET1["vNet/prod-vpc"]
+    RES1 --> SG1["securityGroup/prod-sg"]
+    RES1 --> SSH1["sshKey/prod-key"]
+    RES1 --> DISK1["dataDisk/prod-disk"]
     
-    MCI1 --> MCIOBJ1[/web-cluster]
-    MCIOBJ1 --> VM1[/vm/frontend-1]
-    MCIOBJ1 --> VM2[/vm/backend-1]
+    MCI1 --> MCIOBJ1["web-cluster"]
+    MCIOBJ1 --> VM1["vm/frontend-1"]
+    MCIOBJ1 --> VM2["vm/backend-1"]
     
-    SYS --> SYSRES[/resources]
-    SYSRES --> IMG1[/image/ubuntu-22.04]
-    SYSRES --> SPEC1[/spec/t2.medium]
+    SYS --> SYSRES["resources"]
+    SYSRES --> IMG1["image/ubuntu-22.04"]
+    SYSRES --> SPEC1["spec/t2.medium"]
     
     style NS1 fill:#e1f5ff
     style NS2 fill:#fff4e1
@@ -495,16 +531,99 @@ sequenceDiagram
     TB->>ETCD: 6. Update stored data
     TB-->>API: Return VNetInfo
     
-    Note over TB,CSP: User sees: Id="prod-vpc"<br/>CSP sees: name="c9nqt72b..."<br/>TB tracks all three identifiers
+    Note over TB,CSP: User sees: Id="prod-vpc"<br/>CSP sees: name="c9nqt72b..."<br/>TB tracks: Id, Uid, CspResourceName, CspResourceId
 ```
 
 ### 2. Identifier Mapping Table
 
-| TB Internal ID | TB Global ID | CSP Resource Name | CSP System ID |
+| TB Internal ID | TB Global ID | CSP Resource Name (Spider NameId) | CSP System ID (Spider SystemId) |
 |-------------|-------------|-----------|--------------|
 | Id: `prod-vpc` | Uid: `c9nqt72b9s0d3f6qe2cg` | CspResourceName: `c9nqt72b9s0d3f6qe2cg` | CspResourceId: `vpc-0ca3af89d65a3b478` |
 | Id: `web-vm-01` | Uid: `d44ikdomt0tac4ejrmmg` | CspResourceName: `d44ikdomt0tac4ejrmmg` | CspResourceId: `i-0d6c7d2a0f4d0ba2a` |
 | Id: `prod-sg` | Uid: `e5jle8omt0tac4ejrn0g` | CspResourceName: `e5jle8omt0tac4ejrn0g` | CspResourceId: `sg-04dcc53ef58a49869` |
+
+**Identifier Flow:**
+```
+User Input (Id: "prod-vpc")
+    ↓
+TB Generates (Uid: "c9nqt72b...")
+    ↓
+Spider Creates Resource with Name = Uid
+    ↓
+CSP Assigns Internal ID
+    ↓
+Spider Returns IId {
+    NameId: "c9nqt72b..." ← Becomes CspResourceName
+    SystemId: "vpc-0ca3af..." ← Becomes CspResourceId
+}
+    ↓
+TB Stores All Four Identifiers
+```
+
+### 3. CspResourceId Use Cases
+
+**1. Resource Registration (Import Existing Resources)**
+
+The most important use case for `CspResourceId` is registering existing CSP resources into CB-Tumblebug:
+
+```go
+// User wants to register an existing VM from AWS
+// User must provide the CSP's actual instance ID
+vmRequest := model.VmRequest{
+    Name:          "imported-vm",
+    CspResourceId: "i-0d6c7d2a0f4d0ba2a",  // AWS instance ID (required!)
+    // ... other fields
+}
+
+// In provisioning.go
+if option == "register" {
+    // CspResourceId is required for registration
+    if vmInfoData.CspResourceId == "" {
+        return fmt.Errorf("CspResourceId is required for register operation")
+    }
+    
+    // Send CSP's native ID to Spider
+    requestBody.ReqInfo.CSPid = vmInfoData.CspResourceId
+}
+```
+
+**2. Resource Traceability and Auditing**
+
+```go
+// Store complete resource lineage
+vmInfoData.CspResourceName = callResult.IId.NameId   // Spider's managed name
+vmInfoData.CspResourceId = callResult.IId.SystemId   // CSP's native ID
+
+// Also store related resource IDs for complete tracking
+vmInfoData.CspSpecName = callResult.VMSpecName
+vmInfoData.CspImageName = callResult.ImageIId.SystemId    // CSP's image ID
+vmInfoData.CspVNetId = callResult.VpcIID.SystemId         // CSP's VPC ID
+vmInfoData.CspSubnetId = callResult.SubnetIID.SystemId    // CSP's subnet ID
+vmInfoData.CspSshKeyId = callResult.KeyPairIId.SystemId   // CSP's key pair ID
+```
+
+**3. Cross-Reference Validation**
+
+When resources reference each other, CB-Tumblebug can validate using CSP IDs:
+
+```go
+// Check if a resource exists in CSP using SystemId
+func validateResourceExists(cspResourceId string) bool {
+    // Query Spider/CSP using the SystemId
+    resource := getResourceBySystemId(cspResourceId)
+    return resource != nil
+}
+```
+
+**4. System Labels for Monitoring and Management**
+
+```go
+// CspResourceId is stored as a system label for easy querying
+vmInfoData.Label = map[string]string{
+    model.LabelCspResourceId: vmInfoData.CspResourceId,  // "sys.cspResourceId"
+    // ... other labels
+}
+```
 
 ## Identifier Application by Resource Type
 
