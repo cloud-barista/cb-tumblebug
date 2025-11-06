@@ -24,7 +24,7 @@ services:
 
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.11.18
+    image: cloudbaristaorg/cb-tumblebug:0.11.19
     container_name: cb-tumblebug
     build:
       context: .
@@ -442,7 +442,6 @@ services:
     restart: "no"
     # To re-init metabase, remove the marker and metabase data
     # sudo rm -rf container-volume/cb-tumblebug-container/meta_db/metabase-*
-
 
   # # CB-Tumblebug pgAdmin Dashboard for PostgreSQL
   # # Enable this service to manage the PostgreSQL database of CB-Tumblebug.
