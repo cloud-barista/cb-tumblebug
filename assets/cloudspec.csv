@@ -141,36 +141,34 @@ NHN,all,g2.t4.c8m64,1639,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA T4,2,64,,vm|
 NHN,all,g2.t4.c16m128,3279,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA T4,4,128,,vm|k8s
 NHN,all,g2.t4.c32m256,6582,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA T4,8,256,,vm|k8s
 NHN,all,g4.c92m1800,47848,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA A100,8,320,,vm|k8s
-kt,kr1,1x1,31,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,1x2,53,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,2x2,64,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,2x4,107,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,2x8,137,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,2x16,167,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,4x4,129,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,4x8,214,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,4x16,274,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,4x32,334,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,8x8,259,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,8x16,429,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,8x32,549,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,8x64,668,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,16x16,519,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,16x32,859,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,16x64,1098,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,16x128,1337,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,24x24,779,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,24x48,1288,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,24x96,1647,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,24x192,2006,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,32x32,1039,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,32x64,1718,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,32x128,2197,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,32x256,2675,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,64x64,2079,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,64x128,3436,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,64x256,4394,KRW,-1,,,,,,,,,,default,default,,,,,,vm
-kt,kr1,8x64.gpu,4048,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,1,32,,vm
-kt,kr1,16x64.gpu,4477,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,1,32,,vm
-kt,kr1,16x90.gpu,6716,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA A100,1,80,,vm
-kt,kr1,32x180.gpu,6716,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA A100,2,160,,vm
+kt,kr1,1x1.itl,31,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,1x2.itl,53,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,2x2.itl,64,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,2x4.itl,107,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,2x8.itl,137,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,2x16.itl,167,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x4.itl,129,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x8.itl,214,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x16.itl,274,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,4x32.itl,334,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,8x8.itl,259,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,8x16.itl,429,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,8x32.itl,549,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,8x64.itl,668,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,16x16.itl,519,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,16x32.itl,859,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,16x64.itl,1098,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,16x128.itl,1337,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x24.itl,779,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x48.itl,1288,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x96.itl,1647,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,24x192.itl,2006,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,32x32.itl,1039,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,32x64.itl,1718,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,32x128.itl,2197,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,32x256.itl,2675,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,64x64.itl,2079,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,64x128.itl,3436,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,64x256.itl,4394,KRW,-1,,,,,,,,,,default,default,,,,,,vm
+kt,kr1,8x64.itl.v100-1,4048,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,1,32,,vm
+kt,kr1,16x64.itl.v100-1,4477,KRW,-1,,,,,,,,,,default,default,gpu,NVIDIA V100,1,32,,vm
