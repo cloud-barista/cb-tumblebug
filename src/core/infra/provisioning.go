@@ -3303,9 +3303,19 @@ func filterCheckMciDynamicReqInfoToCheckK8sClusterDynamicReqInfo(mciDReqInfo *mo
 			// K8s minimum requirements (vCPU >= 2, Memory >= 4GB) are validated separately.
 
 			imageListForK8s := []model.ImageInfo{}
+
+			// Priority 1: Filter and prioritize K8s-optimized images
 			for _, i := range k.Image {
-				// Note: InfraType filtering removed as this field is deprecated
-				imageListForK8s = append(imageListForK8s, i)
+				if i.IsKubernetesImage {
+					imageListForK8s = append(imageListForK8s, i)
+				}
+			}
+
+			// Priority 2: Fallback to all images if no K8s-optimized images available
+			// This handles CSPs like Azure AKS where no dedicated K8s images exist
+			if len(imageListForK8s) == 0 {
+				log.Debug().Msg("No K8s-optimized images found, using all available images as fallback")
+				imageListForK8s = k.Image
 			}
 
 			nodeDReqInfo := model.CheckNodeDynamicReqInfo{
