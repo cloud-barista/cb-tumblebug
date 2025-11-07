@@ -93,20 +93,26 @@ extractionPatterns:
     # General terms
     - "kubernetes"
     - "k8s"
-    - "container"
+    # Removed "container" - too broad, causes false positives
     
     # CSP-specific terms
-    - "eks"                # AWS
+    - "eks"                # AWS Elastic Kubernetes Service
+    - "amazon-eks"         # AWS EKS (full name in AMI)
     - "eks-optimized"      # AWS
-    - "aks"                # Azure
+    - "aks"                # Azure Kubernetes Service
     - "azurek8s"           # Azure
-    - "gke"                # GCP
-    - "cos"                # GCP Container-Optimized OS
+    - "gke"                # Google Kubernetes Engine
+    - "cos-stable"         # GCP Container-Optimized OS (more specific than "cos")
     - "cos-cloud"          # GCP
     - "container-optimized" # GCP
-    - "ack"                # Alibaba Cloud
+    - "ack"                # Alibaba Cloud Container Service for Kubernetes
     - "aliyun-linux-k8s"   # Alibaba Cloud
-    - "tke"                # Tencent Cloud
-    - "nks"                # NHN Cloud, NCP
-    - "iks"                # IBM Cloud
+    - "tke"                # Tencent Kubernetes Engine
+    - "nks"                # NHN Cloud, NCP Kubernetes Service
+    - "iks"                # IBM Kubernetes Service
+    
+    # K8s-dedicated/optimized OS distributions
+    - "bottlerocket-aws-k8s"  # AWS Bottlerocket for Kubernetes (excludes ECS)
+    - "flatcar"            # Flatcar Container Linux
+    - "talos"              # Talos Linux (K8s-specific OS)
     
