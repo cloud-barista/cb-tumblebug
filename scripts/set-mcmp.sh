@@ -1,7 +1,14 @@
 #!/bin/bash
 set -e
 
-MCMP_DIR=$HOME/mc-admin-cli
+# Minimum system requirements
+MIN_VCPU=4
+MIN_RAM_GB=8
+
+# Detect actual user (important when executed with sudo)
+TARGET_USER="${SUDO_USER:-$USER}"
+TARGET_HOME=$(eval echo ~"$TARGET_USER")
+MCMP_DIR="$TARGET_HOME/mc-admin-cli"
 SPEC_WARNING="false"
 
 # ──────────────
@@ -13,8 +20,8 @@ echo "📋 MC-Admin-CLI Setup Prerequisites"
 echo
 echo "✅ Recommended:"
 echo "   - OS: Ubuntu 22.04 (Jammy)"
-echo "   - vCPU: 4 or more"
-echo "   - RAM: 8 GiB or more"
+echo "   - vCPU: $MIN_VCPU or more"
+echo "   - RAM: $MIN_RAM_GB GiB or more"
 echo "   - Example: AWS c5a.xlarge or larger"
 echo
 echo "🧪 Checking your system..."
@@ -24,10 +31,10 @@ MEM_GB=$(free -g | awk '/^Mem:/{print $2}')
 
 echo "   → Detected: $VCPU vCPU, $MEM_GB GiB memory"
 
-if [ "$VCPU" -lt 4 ] || [ "$MEM_GB" -lt 8 ]; then
+if [ "$VCPU" -lt "$MIN_VCPU" ] || [ "$MEM_GB" -lt "$MIN_RAM_GB" ]; then
   SPEC_WARNING="true"
   echo
-  echo "⚠️  WARNING: Your system does not meet the recommended minimum spec (4 vCPU, 8 GiB RAM)"
+  echo "⚠️  WARNING: Your system does not meet the recommended minimum spec ($MIN_VCPU vCPU, $MIN_RAM_GB GiB RAM)"
   echo "   → Proceeding anyway (non-interactive mode)"
 else
   echo "✅ Spec check passed."
@@ -36,11 +43,11 @@ fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ──────────────
-# Detect actual user
+# Display target user
 # ──────────────
-TARGET_USER="${SUDO_USER:-$USER}"
 echo
 echo "👤 Target user: $TARGET_USER"
+echo "👤 Target home: $TARGET_HOME"
 
 # ──────────────
 # Install prerequisites
@@ -56,7 +63,12 @@ sudo apt install -y curl git
 echo
 if ! command -v docker &> /dev/null; then
   echo "🐳 Installing Docker..."
-  curl -fsSL https://get.docker.com | sh
+  echo "   ⚠️  Security Note: Downloading and executing remote script"
+  echo "   → See https://docs.docker.com/engine/install/ for manual installation"
+  TMP_DOCKER_SCRIPT=$(mktemp)
+  curl -fsSL https://get.docker.com -o "$TMP_DOCKER_SCRIPT"
+  sh "$TMP_DOCKER_SCRIPT"
+  rm -f "$TMP_DOCKER_SCRIPT"
 else
   echo "✅ Docker already installed. Skipping."
 fi
@@ -74,12 +86,12 @@ fi
 # Add user to docker group
 # ──────────────
 echo
-if groups $TARGET_USER | grep -q '\bdocker\b'; then
+if groups "$TARGET_USER" | grep -q '\bdocker\b'; then
   echo "✅ User '$TARGET_USER' already in 'docker' group."
 else
   echo "👥 Adding user '$TARGET_USER' to docker group..."
   sudo groupadd docker 2>/dev/null || true
-  sudo usermod -aG docker $TARGET_USER
+  sudo usermod -aG docker "$TARGET_USER"
 fi
 
 # ──────────────
@@ -105,21 +117,22 @@ fi
 # ──────────────
 echo
 echo "🚀 Installing mc-admin-cli (mode=dev, background)..."
-cd "$MCMP_DIR/bin"
+cd "$MCMP_DIR/bin" || { echo "❌ Error: Cannot access $MCMP_DIR/bin"; exit 1; }
 ./installAll.sh --mode dev --run background
 
 # ──────────────
 # Register aliases
 # ──────────────
 echo
-if ! grep -q "alias cdmcmp=" ~/.bashrc; then
-  echo "🔗 Registering aliases in ~/.bashrc..."
+TARGET_BASHRC="$TARGET_HOME/.bashrc"
+if ! grep -q "alias cdmcmp=" "$TARGET_BASHRC"; then
+  echo "🔗 Registering aliases in $TARGET_BASHRC..."
   {
     echo "alias cdmcmp='cd $MCMP_DIR'"
     echo "alias cdmcmpbin='cd $MCMP_DIR/bin'"
-  } >> ~/.bashrc
-  echo "ℹ️  Aliases added to ~/.bashrc"
-  echo "   → To use them now, run: source ~/.bashrc"
+  } >> "$TARGET_BASHRC"
+  echo "ℹ️  Aliases added to $TARGET_BASHRC"
+  echo "   → To use them now, run: source $TARGET_BASHRC"
 fi
 
 # ──────────────
@@ -164,7 +177,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 # ──────────────
 if [ "$SPEC_WARNING" = "true" ]; then
   echo
-  echo "⚠️  Final Warning: Your system is running below recommended spec (4 vCPU, 8 GiB RAM)."
+  echo "⚠️  Final Warning: Your system is running below recommended spec ($MIN_VCPU vCPU, $MIN_RAM_GB GiB RAM)."
   echo "   mc-admin-cli may not perform optimally under load."
 fi
 
@@ -178,9 +191,15 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "📦 OPTIONAL: Install CB-Tumblebug"
 echo
 echo "   MC-Admin-CLI works with CB-Tumblebug for multi-cloud orchestration."
-echo "   To install CB-Tumblebug, run:"
+echo "   To install CB-Tumblebug:"
 echo
+echo "   # Option 1: Quick install (recommended for trusted sources)"
 echo "   curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/set-tb.sh | bash"
+echo
+echo "   # Option 2: Download, inspect, then execute (more secure)"
+echo "   curl -sSL -O https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/set-tb.sh"
+echo "   less set-tb.sh    # inspect the script"
+echo "   bash set-tb.sh    # execute after review"
 echo
 echo "   After installation, initialize CB-Tumblebug with:"
 echo
