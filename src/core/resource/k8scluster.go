@@ -159,7 +159,7 @@ func getK8sClusterInfo(nsId, k8sClusterId string) (*model.K8sClusterInfo, error)
 // storeK8sClusterInfo is func to update K8sClusterInfo
 func storeK8sClusterInfo(nsId string, newTbK8sCInfo *model.K8sClusterInfo) {
 	k8sClusterId := newTbK8sCInfo.Id
-	log.Debug().Msg("[Update K8sClusterInfo] " + k8sClusterId)
+	// log.Debug().Msg("[Update K8sClusterInfo] " + k8sClusterId)
 
 	k := common.GenK8sClusterKey(nsId, k8sClusterId)
 
@@ -375,6 +375,13 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string) (*mo
 		spSecurityGroupNames = append(spSecurityGroupNames, spSgName)
 	}
 
+	// Check if node image designation is supported by the CSP
+	nodeImageDesignation, createErr := common.GetK8sNodeImageDesignation(connConfig.ProviderName)
+	if createErr != nil {
+		log.Err(createErr).Msgf("Failed to Get Node Image Designation setting")
+		return emptyObj, createErr
+	}
+
 	var spNodeGroupList []model.SpiderNodeGroupReqInfo
 	for _, v := range req.K8sNodeGroupList {
 		spName := v.Name
@@ -384,25 +391,35 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string) (*mo
 		}
 
 		spImgName := "" // Some CSPs do not require ImageName for creating a k8s cluster
-		if v.ImageId == "" || v.ImageId == "default" {
-			spImgName = ""
+		if !nodeImageDesignation {
+			// CSP does not support image designation (e.g., Azure, NCP)
+			if v.ImageId != "" && v.ImageId != "default" {
+				log.Warn().Msgf("Provider(%s) does not support image designation. ImageId(%s) will be ignored.",
+					connConfig.ProviderName, v.ImageId)
+			}
+			spImgName = "" // Always empty for CSPs that don't support image designation
 		} else {
-			spImgName, err = GetCspResourceName(nsId, model.StrImage, v.ImageId)
-			if spImgName == "" || createErr != nil {
-				log.Warn().Msgf("Not found the Image %s in ns %s, find it from SystemCommonNs", v.ImageId, nsId)
-				errAgg := err.Error()
-				// If cannot find the resource, use common resource
-				spImgName, err = GetCspResourceName(model.SystemCommonNs, model.StrImage, v.ImageId)
-				if spImgName == "" || err != nil {
-					errAgg += err.Error()
-					createErr = fmt.Errorf(errAgg)
-					log.Err(createErr).Msgf("Not found the Image %s both from ns %s and SystemCommonNs", v.ImageId, nsId)
-					return emptyObj, createErr
-				} else {
-					log.Info().Msgf("Use the ImageId %s in SystemCommonNs", spImgName)
-				}
+			// CSP supports image designation (e.g., AWS, GCP, Alibaba, NHN, Tencent)
+			if v.ImageId == "" || v.ImageId == "default" {
+				spImgName = ""
 			} else {
-				log.Info().Msgf("Use the Image %s in ns %s", spImgName, nsId)
+				spImgName, err = GetCspResourceName(nsId, model.StrImage, v.ImageId)
+				if spImgName == "" || createErr != nil {
+					log.Warn().Msgf("Not found the Image %s in ns %s, find it from SystemCommonNs", v.ImageId, nsId)
+					errAgg := err.Error()
+					// If cannot find the resource, use common resource
+					spImgName, err = GetCspResourceName(model.SystemCommonNs, model.StrImage, v.ImageId)
+					if spImgName == "" || err != nil {
+						errAgg += err.Error()
+						createErr = fmt.Errorf(errAgg)
+						log.Err(createErr).Msgf("Not found the Image %s both from ns %s and SystemCommonNs", v.ImageId, nsId)
+						return emptyObj, createErr
+					} else {
+						log.Info().Msgf("Use the ImageId %s in SystemCommonNs", spImgName)
+					}
+				} else {
+					log.Info().Msgf("Use the Image %s in ns %s", spImgName, nsId)
+				}
 			}
 		}
 
@@ -599,6 +616,49 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.K8sNodeGroupReq)
 		return emptyObj, err
 	}
 
+	// Get connection config to check CSP capabilities
+	connConfig, err := common.GetConnConfig(tbK8sCInfo.ConnectionName)
+	if err != nil {
+		log.Err(err).Msgf("Failed to get connection config for k8scluster(%s)", k8sClusterId)
+		return emptyObj, err
+	}
+
+	// Check if node image designation is supported by the CSP
+	nodeImageDesignation, err := common.GetK8sNodeImageDesignation(connConfig.ProviderName)
+	if err != nil {
+		log.Err(err).Msgf("Failed to Get Node Image Designation setting")
+		return emptyObj, err
+	}
+
+	// Validate K8sNodeGroup's Naming Rule
+	k8sNgNamingRule, err := common.GetK8sNodeGroupNamingRule(connConfig.ProviderName)
+	if err != nil {
+		log.Err(err).Msgf("Failed to Get Nodegroup's Naming Rule")
+		return emptyObj, err
+	}
+
+	// Validate naming rule only if a rule is defined
+	if k8sNgNamingRule != "" {
+		re := regexp.MustCompile(k8sNgNamingRule)
+		ngName := u.Name
+
+		// Auto-fix common naming pattern: convert "ng-xxxxx" to "ngxxxxx" for CSPs that don't allow hyphens
+		if !re.MatchString(ngName) {
+			// Try to fix by removing hyphens (common issue with auto-generated names)
+			fixedName := strings.ReplaceAll(ngName, "-", "")
+			if re.MatchString(fixedName) {
+				log.Warn().Msgf("NodeGroup name(%s) contains hyphens not allowed by provider(%s). Auto-converting to: %s",
+					ngName, connConfig.ProviderName, fixedName)
+				u.Name = fixedName
+			} else {
+				err := fmt.Errorf("K8sNodeGroup's Name(%s) does not match naming rule(%s) for provider(%s)",
+					ngName, k8sNgNamingRule, connConfig.ProviderName)
+				log.Err(err).Msg("Invalid NodeGroup name - even after removing hyphens")
+				return emptyObj, err
+			}
+		}
+	}
+
 	// Build RequestBody for SpiderNodeGroupReq{}
 	spName := u.Name
 	err = common.CheckString(spName)
@@ -608,26 +668,36 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.K8sNodeGroupReq)
 	}
 
 	spImgName := "" // Some CSPs do not require ImageName for creating a k8s cluster
-	if u.ImageId == "" || u.ImageId == "default" {
-		spImgName = ""
+	if !nodeImageDesignation {
+		// CSP does not support image designation (e.g., Azure, NCP)
+		if u.ImageId != "" && u.ImageId != "default" {
+			log.Warn().Msgf("Provider(%s) does not support image designation. ImageId(%s) will be ignored.",
+				connConfig.ProviderName, u.ImageId)
+		}
+		spImgName = "" // Always empty for CSPs that don't support image designation
 	} else {
-		spImgName, err = GetCspResourceName(nsId, model.StrImage, u.ImageId)
-		if spImgName == "" || err != nil {
-			log.Warn().Msgf("Not found the Image %s in ns %s, find it from SystemCommonNs", u.ImageId, nsId)
-			errAgg := err.Error()
-			// If cannot find the resource, use common resource
-			spImgName, err = GetCspResourceName(model.SystemCommonNs, model.StrImage, u.ImageId)
-			if spImgName == "" || err != nil {
-				errAgg += err.Error()
-				err = fmt.Errorf(errAgg)
-				log.Err(err).Msgf("Not found the Image %s both from ns %s and SystemCommonNs", u.ImageId, nsId)
-				log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
-				return emptyObj, err
-			} else {
-				log.Info().Msgf("Use the ImageId %s in SystemCommonNs", spImgName)
-			}
+		// CSP supports image designation (e.g., AWS, GCP, Alibaba, NHN, Tencent)
+		if u.ImageId == "" || u.ImageId == "default" {
+			spImgName = ""
 		} else {
-			log.Info().Msgf("Use the Image %s in ns %s", spImgName, nsId)
+			spImgName, err = GetCspResourceName(nsId, model.StrImage, u.ImageId)
+			if spImgName == "" || err != nil {
+				log.Warn().Msgf("Not found the Image %s in ns %s, find it from SystemCommonNs", u.ImageId, nsId)
+				errAgg := err.Error()
+				// If cannot find the resource, use common resource
+				spImgName, err = GetCspResourceName(model.SystemCommonNs, model.StrImage, u.ImageId)
+				if spImgName == "" || err != nil {
+					errAgg += err.Error()
+					err = fmt.Errorf(errAgg)
+					log.Err(err).Msgf("Not found the Image %s both from ns %s and SystemCommonNs", u.ImageId, nsId)
+					log.Err(err).Msgf("Failed to Add K8sNodeGroup to K8sCluster(%s)", k8sClusterId)
+					return emptyObj, err
+				} else {
+					log.Info().Msgf("Use the ImageId %s in SystemCommonNs", spImgName)
+				}
+			} else {
+				log.Info().Msgf("Use the Image %s in ns %s", spImgName, nsId)
+			}
 		}
 	}
 
@@ -1457,6 +1527,10 @@ func checkK8sClusterEnablement(connectionName string) error {
 
 func validateAtCreateK8sCluster(tbK8sClusterReq *model.K8sClusterReq) error {
 	connConfig, err := common.GetConnConfig(tbK8sClusterReq.ConnectionName)
+	if err != nil {
+		log.Err(err).Msgf("Failed to get connection config")
+		return err
+	}
 
 	// Validate K8sCluster Version
 	err = validateK8sVersion(connConfig.ProviderName, connConfig.RegionDetail.RegionName, tbK8sClusterReq.Version)
@@ -1465,42 +1539,78 @@ func validateAtCreateK8sCluster(tbK8sClusterReq *model.K8sClusterReq) error {
 		return err
 	}
 
-	// Validate K8sNodeGroups On K8s Creation
+	// Get K8sNodeGroups On K8s Creation setting
 	k8sNgOnCreation, err := common.GetK8sNodeGroupsOnK8sCreation(connConfig.ProviderName)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Get Nodegroups on K8sCluster Creation")
 		return err
 	}
 
+	// Validate K8sNodeGroups On K8s Creation only if required by the CSP
 	if k8sNgOnCreation {
+		// CSP requires nodegroups at creation time (e.g., Azure, GCP, NHN, NCP)
 		if len(tbK8sClusterReq.K8sNodeGroupList) <= 0 {
-			err := fmt.Errorf("Need to Set One more K8sNodeGroupList")
-			log.Err(err).Msgf("Provider(%s)", connConfig.ProviderName)
+			err := fmt.Errorf("NodeGroups are required at K8sCluster creation for provider '%s'", connConfig.ProviderName)
+			log.Err(err).Msg("Need to Set One or more K8sNodeGroupList")
 			return err
+		}
+
+		// Validate K8sNodeGroup's Naming Rule (only when nodegroups are required)
+		k8sNgNamingRule, err := common.GetK8sNodeGroupNamingRule(connConfig.ProviderName)
+		if err != nil {
+			log.Err(err).Msgf("Failed to Get Nodegroup's Naming Rule")
+			return err
+		}
+
+		// Validate naming rule only if a rule is defined
+		if k8sNgNamingRule != "" {
+			re := regexp.MustCompile(k8sNgNamingRule)
+			for i, ng := range tbK8sClusterReq.K8sNodeGroupList {
+				ngName := ng.Name
+
+				// Auto-fix common naming pattern: convert "ng-xxxxx" to "ngxxxxx" for CSPs that don't allow hyphens
+				if !re.MatchString(ngName) {
+					// Try to fix by removing hyphens (common issue with auto-generated names)
+					fixedName := strings.ReplaceAll(ngName, "-", "")
+					if re.MatchString(fixedName) {
+						log.Warn().Msgf("NodeGroup name(%s) contains hyphens not allowed by provider(%s). Auto-converting to: %s",
+							ngName, connConfig.ProviderName, fixedName)
+						tbK8sClusterReq.K8sNodeGroupList[i].Name = fixedName
+					} else {
+						err := fmt.Errorf("K8sNodeGroup's Name(%s) does not match naming rule(%s) for provider(%s)",
+							ngName, k8sNgNamingRule, connConfig.ProviderName)
+						log.Err(err).Msg("Invalid NodeGroup name - even after removing hyphens")
+						return err
+					}
+				}
+			}
+		}
+
+		// Validate ImageId only if nodeImageDesignation is true
+		nodeImageDesignation, err := common.GetK8sNodeImageDesignation(connConfig.ProviderName)
+		if err != nil {
+			log.Err(err).Msgf("Failed to Get Node Image Designation setting")
+			return err
+		}
+
+		if !nodeImageDesignation {
+			// CSP does not support image designation (e.g., Azure, NCP)
+			// Check if user specified imageId when it's not allowed
+			for _, ng := range tbK8sClusterReq.K8sNodeGroupList {
+				if ng.ImageId != "" && ng.ImageId != "default" {
+					log.Warn().Msgf("Provider(%s) does not support image designation. ImageId(%s) will be ignored.",
+						connConfig.ProviderName, ng.ImageId)
+					// Don't return error, just warn and continue (Spider will handle it)
+				}
+			}
 		}
 	} else {
+		// CSP does not require nodegroups at creation time (e.g., AWS, Alibaba, Tencent)
 		if len(tbK8sClusterReq.K8sNodeGroupList) > 0 {
-			err := fmt.Errorf("Need to Set Empty K8sNodeGroupList")
-			log.Err(err).Msgf("Provider(%s)", connConfig.ProviderName)
+			err := fmt.Errorf("NodeGroups should not be specified at K8sCluster creation for provider '%s'. Use AddK8sNodeGroup API after cluster creation.",
+				connConfig.ProviderName)
+			log.Err(err).Msg("K8sNodeGroupList should be empty")
 			return err
-		}
-	}
-
-	// Validate K8sNodeGroup's Naming Rule
-	k8sNgNamingRule, err := common.GetK8sNodeGroupNamingRule(connConfig.ProviderName)
-	if err != nil {
-		log.Err(err).Msgf("Failed to Get Nodegroup's Naming Rule")
-		return err
-	}
-
-	if len(tbK8sClusterReq.K8sNodeGroupList) > 0 {
-		re := regexp.MustCompile(k8sNgNamingRule)
-		for _, ng := range tbK8sClusterReq.K8sNodeGroupList {
-			if re.MatchString(ng.Name) == false {
-				err := fmt.Errorf("K8sNodeGroup's Name(%s) should be match regular expression(%s)", ng.Name, k8sNgNamingRule)
-				log.Err(err).Msgf("Provider(%s)", connConfig.ProviderName)
-				return err
-			}
 		}
 	}
 
