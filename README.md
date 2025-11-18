@@ -150,15 +150,10 @@ make compose
 
 For new users on clean Linux systems:
 
+- https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/set-tb.sh
+- 
 ```bash
 # Download and run automated setup script
-curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/set-tb.sh | bash
-```
-
-> ℹ️ **Post-installation**: Log out and back in to activate Docker permissions and aliases.
-- https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/set-tb.sh
-
-```bash
 curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/set-tb.sh | bash
 ```
 
