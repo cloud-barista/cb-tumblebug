@@ -107,7 +107,7 @@ if sudo -u "$TARGET_USER" docker ps &>/dev/null; then
 elif sudo docker ps &>/dev/null; then
   echo "⚠️  Docker requires sudo (group membership not yet active)"
   echo "   → This is normal for first-time setup"
-  echo "   → Will run installAll.sh with appropriate user permissions"
+  echo "   → Will run installAll.sh with sudo to ensure Docker access"
   DOCKER_NEEDS_SUDO="true"
 else
   echo "❌ Docker is not accessible. Please check Docker installation."
@@ -134,10 +134,20 @@ cd "$MCMP_DIR/bin" || { echo "❌ Error: Cannot access $MCMP_DIR/bin"; exit 1; }
 
 # Run installAll.sh with appropriate Docker access method
 if [ "$DOCKER_NEEDS_SUDO" = "true" ]; then
-  echo "   → Running installAll.sh (Docker commands will use sudo internally)..."
-  echo "   → Note: mc-admin-cli's installAll.sh handles Docker permissions automatically"
-  # installAll.sh will detect Docker access and use sudo if needed
-  su - "$TARGET_USER" -c "cd \"$MCMP_DIR/bin\" && ./installAll.sh --mode dev --run background"
+  echo "   → Running installAll.sh with sudo (Docker group not yet active)..."
+  echo "   → Note: Using sudo to ensure Docker access"
+  # WARNING: Running installAll.sh as root may create files owned by root in $MCMP_DIR.
+  # We will fix ownership after installation to prevent permission issues.
+  sudo ./installAll.sh --mode dev --run background
+  
+  # Fix ownership of all files in $MCMP_DIR to $TARGET_USER
+  echo "   → Fixing file ownership in $MCMP_DIR..."
+  sudo chown -R "$TARGET_USER":"$TARGET_USER" "$MCMP_DIR"
+  if [ $? -ne 0 ]; then
+    echo "⚠️  Warning: Failed to change ownership of $MCMP_DIR. You may need to fix permissions manually."
+  else
+    echo "✅ File ownership fixed successfully"
+  fi
 else
   echo "   → Running with current user permissions..."
   ./installAll.sh --mode dev --run background
