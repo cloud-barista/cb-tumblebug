@@ -404,7 +404,7 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string) (*mo
 				spImgName = ""
 			} else {
 				spImgName, err = GetCspResourceName(nsId, model.StrImage, v.ImageId)
-				if spImgName == "" || createErr != nil {
+				if spImgName == "" || err != nil {
 					log.Warn().Msgf("Not found the Image %s in ns %s, find it from SystemCommonNs", v.ImageId, nsId)
 					errAgg := err.Error()
 					// If cannot find the resource, use common resource
