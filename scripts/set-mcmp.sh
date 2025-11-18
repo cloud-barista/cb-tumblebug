@@ -92,14 +92,27 @@ else
   echo "👥 Adding user '$TARGET_USER' to docker group..."
   sudo groupadd docker 2>/dev/null || true
   sudo usermod -aG docker "$TARGET_USER"
+  echo "   → User added to docker group"
+  echo "   → Note: Group membership will be active after re-login or using 'sg docker' command"
 fi
 
 # ──────────────
-# Test Docker with sudo
+# Test Docker access
 # ──────────────
 echo
-echo "🐳 Testing Docker (using sudo, group membership not required yet):"
-sudo docker ps || true
+echo "🐳 Testing Docker access..."
+if sudo -u "$TARGET_USER" docker ps &>/dev/null; then
+  echo "✅ Docker access confirmed (no sudo required)"
+  DOCKER_NEEDS_SUDO="false"
+elif sudo docker ps &>/dev/null; then
+  echo "⚠️  Docker requires sudo (group membership not yet active)"
+  echo "   → This is normal for first-time setup"
+  echo "   → Will run installAll.sh with appropriate user permissions"
+  DOCKER_NEEDS_SUDO="true"
+else
+  echo "❌ Docker is not accessible. Please check Docker installation."
+  exit 1
+fi
 
 # ──────────────
 # Clone mc-admin-cli
@@ -118,7 +131,17 @@ fi
 echo
 echo "🚀 Installing mc-admin-cli (mode=dev, background)..."
 cd "$MCMP_DIR/bin" || { echo "❌ Error: Cannot access $MCMP_DIR/bin"; exit 1; }
-./installAll.sh --mode dev --run background
+
+# Run installAll.sh with appropriate Docker access method
+if [ "$DOCKER_NEEDS_SUDO" = "true" ]; then
+  echo "   → Running installAll.sh (Docker commands will use sudo internally)..."
+  echo "   → Note: mc-admin-cli's installAll.sh handles Docker permissions automatically"
+  # installAll.sh will detect Docker access and use sudo if needed
+  su - "$TARGET_USER" -c "cd \"$MCMP_DIR/bin\" && ./installAll.sh --mode dev --run background"
+else
+  echo "   → Running with current user permissions..."
+  ./installAll.sh --mode dev --run background
+fi
 
 # ──────────────
 # Register aliases
@@ -146,7 +169,7 @@ echo "📁 Your mc-admin-cli directory:"
 echo "   $MCMP_DIR"
 
 echo
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📌 NEXT STEPS"
 echo
 echo "👉 1. Access the Web Console:"
@@ -159,6 +182,13 @@ echo "👉 2. Verify infrastructure status:"
 echo
 echo "   cd $MCMP_DIR/bin"
 echo "   ./mcc infra info"
+
+if [ "$DOCKER_NEEDS_SUDO" = "true" ]; then
+  echo
+  echo "   ⚠️  Note: If 'mcc infra info' shows permission errors:"
+  echo "   → The 'mcc' command will automatically use sudo for Docker operations"
+  echo "   → Or log out and log back in to activate docker group membership"
+fi
 echo
 echo "   ⚠️  IMPORTANT:"
 echo "   - There are many Docker images and containers involved."

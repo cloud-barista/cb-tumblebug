@@ -125,10 +125,31 @@ fi
 echo
 if groups $USER | grep -q '\bdocker\b'; then
   echo "✅ User already in 'docker' group."
+  DOCKER_NEEDS_SUDO="false"
 else
   echo "👥 Adding user to docker group..."
   sudo groupadd docker 2>/dev/null || true
   sudo usermod -aG docker $USER
+  echo "   → User added to docker group"
+  echo "   → Note: Group membership will be active after re-login"
+  DOCKER_NEEDS_SUDO="true"
+fi
+
+# ──────────────
+# Test Docker access
+# ──────────────
+echo
+echo "🐳 Testing Docker access..."
+if docker ps &>/dev/null; then
+  echo "✅ Docker access confirmed (no sudo required)"
+  DOCKER_NEEDS_SUDO="false"
+elif sudo docker ps &>/dev/null; then
+  echo "⚠️  Docker requires sudo (group membership not yet active)"
+  echo "   → This is normal for first-time setup"
+  DOCKER_NEEDS_SUDO="true"
+else
+  echo "❌ Docker is not accessible. Please check Docker installation."
+  exit 1
 fi
 
 # ──────────────
@@ -170,11 +191,19 @@ echo "📌 NEXT STEPS"
 echo
 echo "👉 1. Run CB-Tumblebug (Docker Compose):"
 echo
+
 echo "   # Option A: Run without building (faster)"
 echo "   docker compose up"
 echo
 echo "   # Option B: Build and run everything (docker --build)"
 echo "   make compose"
+
+if [ "$DOCKER_NEEDS_SUDO" = "true" ]; then
+  echo
+  echo "   ⚠️  Note: If you see Docker permission errors:"
+  echo "   → Use 'sudo docker compose up' temporarily"
+  echo "   → Or log out and log back in to activate docker group membership"
+fi
 echo
 echo "👉 2. Create your cloud credentials:"
 echo
