@@ -877,10 +877,14 @@ func UpdateSpecsFromAsset(nsId string) error {
 	}
 
 	// Open and read CSV file
-	file, err := os.Open("../assets/cloudspec.csv")
+	csvPath := common.GetAssetsFilePath("cloudspec.csv")
+	file, err := os.Open(csvPath)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to open cloudspec.csv")
-		return err
+		log.Error().
+			Err(err).
+			Str("attempted_path", csvPath).
+			Msg("Failed to open cloudspec.csv")
+		return fmt.Errorf("failed to open cloudspec.csv at %s: %w", csvPath, err)
 	}
 	defer file.Close()
 
@@ -2630,10 +2634,8 @@ func loadCloudSpecIgnoreConfig() (*model.CloudSpecIgnoreConfig, error) {
 		// Create a new Viper instance for the ignore config
 		ignoreViper := viper.New()
 
-		// Add possible config paths
-		ignoreViper.AddConfigPath(".")
-		ignoreViper.AddConfigPath("./assets/")
-		ignoreViper.AddConfigPath("../assets/")
+		// Add possible config paths using centralized helper
+		common.SetupViperPaths(ignoreViper)
 		ignoreViper.SetConfigName("cloudspec_ignore")
 		ignoreViper.SetConfigType("yaml")
 

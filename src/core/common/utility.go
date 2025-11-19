@@ -16,6 +16,8 @@ package common
 
 import (
 	"math/rand"
+	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -38,6 +40,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	uid "github.com/rs/xid"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 
 	"gopkg.in/yaml.v2"
 
@@ -46,6 +49,84 @@ import (
 
 	"github.com/go-resty/resty/v2"
 )
+
+// Assets path management
+
+// GetAssetsFilePath returns the full path to an assets file.
+// It tries multiple paths in order:
+// 1. TB_ROOT_PATH environment variable + /assets/filename
+// 2. ./assets/filename (current directory)
+// 3. ../assets/filename (parent directory - default for src/ execution)
+//
+// The function logs the attempted and resolved paths for debugging.
+func GetAssetsFilePath(filename string) string {
+	var attemptedPaths []string
+
+	// Try TB_ROOT_PATH environment variable first
+	if rootPath := os.Getenv("TB_ROOT_PATH"); rootPath != "" {
+		path := filepath.Join(rootPath, "assets", filename)
+		attemptedPaths = append(attemptedPaths, path)
+		if _, err := os.Stat(path); err == nil {
+			log.Debug().
+				Str("filename", filename).
+				Str("resolved_path", path).
+				Msg("Assets file resolved via TB_ROOT_PATH")
+			return path
+		}
+	}
+
+	// Try multiple standard paths
+	possiblePaths := []string{
+		filepath.Join(".", "assets", filename),
+		filepath.Join("./assets/", filename),
+		filepath.Join("../assets/", filename),
+	}
+
+	for _, path := range possiblePaths {
+		attemptedPaths = append(attemptedPaths, path)
+		if _, err := os.Stat(path); err == nil {
+			log.Debug().
+				Str("filename", filename).
+				Str("resolved_path", path).
+				Msg("Assets file resolved")
+			return path
+		}
+	}
+
+	// Default fallback to ../assets/ (most common case)
+	defaultPath := filepath.Join("../assets/", filename)
+	log.Warn().
+		Str("filename", filename).
+		Str("default_path", defaultPath).
+		Strs("attempted_paths", attemptedPaths).
+		Msg("Assets file not found, using default path")
+
+	return defaultPath
+}
+
+// SetupViperPaths configures standard asset paths for a Viper instance.
+// This centralizes the path configuration logic used across multiple config files.
+// It adds paths in priority order:
+// 1. TB_ROOT_PATH/assets (if TB_ROOT_PATH is set)
+// 2. TB_ROOT_PATH (if TB_ROOT_PATH is set)
+// 3. . (current directory)
+// 4. ./assets/
+// 5. ../assets/ (default for src/ execution)
+func SetupViperPaths(v *viper.Viper) {
+	// Check TB_ROOT_PATH environment variable
+	if rootPath := os.Getenv("TB_ROOT_PATH"); rootPath != "" {
+		v.AddConfigPath(filepath.Join(rootPath, "assets"))
+		v.AddConfigPath(rootPath)
+		log.Debug().
+			Str("TB_ROOT_PATH", rootPath).
+			Msg("Added TB_ROOT_PATH to Viper config paths")
+	}
+
+	// Standard paths (in priority order)
+	v.AddConfigPath(".")
+	v.AddConfigPath("./assets/")
+	v.AddConfigPath("../assets/")
+}
 
 // MCI utilities
 

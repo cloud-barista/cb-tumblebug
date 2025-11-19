@@ -1184,13 +1184,17 @@ func UpdateImagesFromAsset(nsId string) (*FetchImagesAsyncResult, error) {
 	}
 
 	// Open cloudimage.csv file
-	file, fileErr := os.Open("../assets/cloudimage.csv")
+	csvPath := common.GetAssetsFilePath("cloudimage.csv")
+	file, fileErr := os.Open(csvPath)
 	if fileErr != nil {
-		log.Error().Err(fileErr).Msg("Failed to open cloudimage.csv")
+		log.Error().
+			Err(fileErr).
+			Str("attempted_path", csvPath).
+			Msg("Failed to open cloudimage.csv")
 		result.InProgress = false
 		result.ElapsedTime = time.Since(startTime).String()
 		updateFetchImagesProgress(nsId, result)
-		return result, fileErr
+		return result, fmt.Errorf("failed to open cloudimage.csv at %s: %w", csvPath, fileErr)
 	}
 	defer file.Close()
 
