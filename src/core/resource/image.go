@@ -338,7 +338,7 @@ func RegisterImageWithInfoInBulk(imageList []model.ImageInfo) error {
 				altTx := model.ORM.Begin()
 				for _, img := range batch {
 					var exists bool
-					altTx.Raw("SELECT EXISTS(SELECT 1 FROM tb_image_infos WHERE namespace = ? AND provider_name = ? AND csp_image_name = ?)",
+					altTx.Raw("SELECT EXISTS(SELECT 1 FROM image_infos WHERE namespace = ? AND provider_name = ? AND csp_image_name = ?)",
 						img.Namespace, img.ProviderName, img.CspImageName).Scan(&exists)
 
 					if exists {
@@ -386,10 +386,10 @@ func RegisterImageWithInfoInBulk(imageList []model.ImageInfo) error {
 func RemoveDuplicateImagesInSQL() error {
 	// PostgreSQL deduplication query (using ctid)
 	sqlStr := `
-    DELETE FROM tb_image_infos
+    DELETE FROM image_infos
     WHERE ctid NOT IN (
         SELECT MIN(ctid)
-        FROM tb_image_infos
+        FROM image_infos
         GROUP BY namespace, provider_name, csp_image_name
     );
     `

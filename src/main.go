@@ -484,23 +484,23 @@ func migrateLatencyDataFromCSV() error {
 // addIndexes adds indexes to the tables for faster search
 func addIndexes() error {
 	// Existing single column indexes
-	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_namespace ON tb_spec_infos (namespace)").Error; err != nil {
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_namespace ON spec_infos (namespace)").Error; err != nil {
 		return err
 	}
 
-	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_vcpu ON tb_spec_infos (v_cpu)").Error; err != nil {
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_vcpu ON spec_infos (v_cpu)").Error; err != nil {
 		return err
 	}
 
-	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_memorygib ON tb_spec_infos (memory_gi_b)").Error; err != nil {
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_memorygib ON spec_infos (memory_gi_b)").Error; err != nil {
 		return err
 	}
 
-	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_cspspecname ON tb_spec_infos (csp_spec_name)").Error; err != nil {
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_cspspecname ON spec_infos (csp_spec_name)").Error; err != nil {
 		return err
 	}
 
-	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_costperhour ON tb_spec_infos (cost_per_hour)").Error; err != nil {
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_costperhour ON spec_infos (cost_per_hour)").Error; err != nil {
 		return err
 	}
 
@@ -508,7 +508,7 @@ func addIndexes() error {
 	// This index covers the most frequent query: namespace + architecture + v_cpu + memory_gi_b
 	if err := model.ORM.Exec(`
         CREATE INDEX IF NOT EXISTS idx_spec_main_filter 
-        ON tb_spec_infos(namespace, architecture, v_cpu, memory_gi_b, cost_per_hour)
+        ON spec_infos(namespace, architecture, v_cpu, memory_gi_b, cost_per_hour)
     `).Error; err != nil {
 		log.Warn().Err(err).Msg("Failed to create main filter composite index")
 	}
@@ -516,7 +516,7 @@ func addIndexes() error {
 	// Partial index for x86_64 architecture (most common case)
 	if err := model.ORM.Exec(`
         CREATE INDEX IF NOT EXISTS idx_spec_x86_64 
-        ON tb_spec_infos(namespace, v_cpu, memory_gi_b, cost_per_hour) 
+        ON spec_infos(namespace, v_cpu, memory_gi_b, cost_per_hour) 
         WHERE architecture = 'x86_64'
     `).Error; err != nil {
 		log.Warn().Err(err).Msg("Failed to create x86_64 partial index")
@@ -525,23 +525,23 @@ func addIndexes() error {
 	// Partial index for arm64 architecture
 	if err := model.ORM.Exec(`
         CREATE INDEX IF NOT EXISTS idx_spec_arm64 
-        ON tb_spec_infos(namespace, v_cpu, memory_gi_b, cost_per_hour) 
+        ON spec_infos(namespace, v_cpu, memory_gi_b, cost_per_hour) 
         WHERE architecture = 'arm64'
     `).Error; err != nil {
 		log.Warn().Err(err).Msg("Failed to create arm64 partial index")
 	}
 
 	// Latency table indexes for fast lookups
-	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_latency_source ON tb_latency_infos (source_region)").Error; err != nil {
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_latency_source ON latency_infos (source_region)").Error; err != nil {
 		log.Warn().Err(err).Msg("Failed to create latency source region index")
 	}
 
-	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_latency_target ON tb_latency_infos (target_region)").Error; err != nil {
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_latency_target ON latency_infos (target_region)").Error; err != nil {
 		log.Warn().Err(err).Msg("Failed to create latency target region index")
 	}
 
 	// Composite index for latency queries (source + target)
-	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_latency_regions ON tb_latency_infos (source_region, target_region)").Error; err != nil {
+	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_latency_regions ON latency_infos (source_region, target_region)").Error; err != nil {
 		log.Warn().Err(err).Msg("Failed to create latency composite index")
 	}
 

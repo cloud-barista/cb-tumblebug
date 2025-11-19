@@ -470,9 +470,9 @@ func BuildLatencyOrderByClause(param *[]model.ParameterKeyVal) (string, error) {
 				latencySubquery := fmt.Sprintf(`
 					COALESCE((
 						SELECT latency_ms 
-						FROM tb_latency_infos 
+						FROM latency_infos 
 						WHERE source_region = '%s' 
-						AND target_region = tb_spec_infos.provider_name || '+' || tb_spec_infos.region_name
+						AND target_region = spec_infos.provider_name || '+' || spec_infos.region_name
 						LIMIT 1
 					), 999999)`, targetRegion)
 
@@ -1265,7 +1265,7 @@ func validateK8sMinimumRequirements(plan *model.RecommendSpecReq) error {
 			for _, op := range condition.Condition {
 				if val, err := strconv.ParseFloat(op.Operand, 64); err == nil {
 					if val < minVCPU {
-						return fmt.Errorf("K8s node requires minimum vCPU >= %d, but user specified 'vCPU %s %.0f'. Please adjust your filter conditions", 
+						return fmt.Errorf("K8s node requires minimum vCPU >= %d, but user specified 'vCPU %s %.0f'. Please adjust your filter conditions",
 							minVCPU, op.Operator, val)
 					}
 				}
@@ -1277,7 +1277,7 @@ func validateK8sMinimumRequirements(plan *model.RecommendSpecReq) error {
 			for _, op := range condition.Condition {
 				if val, err := strconv.ParseFloat(op.Operand, 64); err == nil {
 					if val < minMemoryGiB {
-						return fmt.Errorf("K8s node requires minimum Memory >= %.1fGB, but user specified 'memoryGiB %s %.1fGB'. Please adjust your filter conditions", 
+						return fmt.Errorf("K8s node requires minimum Memory >= %.1fGB, but user specified 'memoryGiB %s %.1fGB'. Please adjust your filter conditions",
 							minMemoryGiB, op.Operator, val)
 					}
 				}

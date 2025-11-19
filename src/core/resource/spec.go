@@ -2226,10 +2226,10 @@ func RegisterSpecWithInfoInBulk(specList []model.SpecInfo) error {
 func RemoveDuplicateSpecsInSQL() error {
 	// PostgreSQL deduplication query
 	sqlStr := `
-    DELETE FROM tb_spec_infos
+    DELETE FROM spec_infos
     WHERE ctid NOT IN (
         SELECT MIN(ctid)
-        FROM tb_spec_infos
+        FROM spec_infos
         GROUP BY namespace, id
     );
     `
