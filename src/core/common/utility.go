@@ -78,7 +78,6 @@ func GetAssetsFilePath(filename string) string {
 	// Try multiple standard paths
 	possiblePaths := []string{
 		filepath.Join(".", "assets", filename),
-		filepath.Join("./assets/", filename),
 		filepath.Join("../assets/", filename),
 	}
 
