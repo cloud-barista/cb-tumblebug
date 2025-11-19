@@ -24,7 +24,7 @@ services:
 
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.11.20
+    image: cloudbaristaorg/cb-tumblebug:0.11.21
     container_name: cb-tumblebug
     build:
       context: .
@@ -164,7 +164,7 @@ services:
 
   # CB-Spider
   cb-spider:
-    image: cloudbaristaorg/cb-spider:0.11.16
+    image: cloudbaristaorg/cb-spider:0.11.18
     container_name: cb-spider
     # build:
     #   context: ../cb-spider
