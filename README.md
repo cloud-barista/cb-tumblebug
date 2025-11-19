@@ -98,13 +98,13 @@ curl -sSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scri
 
 # 2. Start all services
 cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-make compose
+make up
 
 # 3. Configure credentials (see detailed setup below)
 ./init/genCredential.sh
 # Edit ~/.cloud-barista/credentials.yaml with your cloud credentials
 ./init/encCredential.sh
-./init/init.sh
+make init
 
 # 4. Access services
 # - API: http://localhost:1323/tumblebug/api
@@ -378,11 +378,14 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
   - How to register
 
-    Refer to [README.md for init.py](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/README.md), and execute the [`init.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/init.py) script. (enter 'y' for confirmation prompts)
+    Refer to [README.md for init.py](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/README.md), and execute the [`init.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/init.py) script by the [`init.sh`](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/init.sh). (enter 'y' for confirmation prompts)
+    `init.sh --help` will show the available options.
+
+    You can also simply use the `make init` command as follows:
 
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./init/init.sh
+    make init
     ```
 
     - The credentials in `~/.cloud-barista/credentials.yaml.enc` (encrypted file from the `credentials.yaml`) will be automatically registered (all CSP and region information recorded in [`cloudinfo.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudinfo.yaml) will be automatically registered in the system)
@@ -403,7 +406,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
 - Shutting down CB-TB and related components
 
-  - Stop all containers by `ctrl` + `c` or type the command `sudo docker compose stop` / `sudo docker compose down`
+  - Stop all containers by `ctrl` + `c` or type the command `docker compose stop` / `docker compose down` / `make down`
     (When a shutdown event occurs to CB-TB, the system will be shutting down gracefully: API requests that can be processed within 10 seconds will be completed)
     
     ![image](https://github.com/user-attachments/assets/009e5df6-93cb-4ff7-93c0-62458341c78b)
@@ -413,7 +416,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     - Delete CB-TB & CB-Spider metadata using the provided script
       ```bash
       cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-      ./init/cleanDB.sh
+      make clean-db
       ```
 
 - Upgrading the CB-TB & CB-Spider versions
@@ -424,7 +427,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   - Delete CB-TB & CB-Spider metadata
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./init/cleanDB.sh
+    make clean-db
     ```
   - Restart with the upgraded version
 
@@ -446,13 +449,13 @@ The Model Context Protocol (MCP) Server enables natural language interaction wit
 - **🧠 AI-Powered Infrastructure Management**: Deploy and manage multi-cloud resources using natural language commands
 - **🔗 Seamless Integration**: Works with Claude Desktop (via proxy), VS Code (direct), and other MCP-compatible clients  
 - **📡 Modern Protocol**: Uses Streamable HTTP transport (current MCP standard)
-- **⚡ Quick Start**: Enable with `make compose` and uncomment MCP service in `docker-compose.yaml`
+- **⚡ Quick Start**: Enable with `make up` and uncomment MCP service in `docker-compose.yaml`
 
 ```bash
 # Enable MCP Server (Proof of Concept)
 # 1. Uncomment cb-tumblebug-mcp-server in docker-compose.yaml
 # 2. Launch with Docker Compose
-make compose
+make up
 
 # Access MCP server at http://localhost:8000/mcp
 ```
