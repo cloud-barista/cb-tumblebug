@@ -44,6 +44,7 @@ services:
         condition: service_healthy
     volumes:
       - ./conf/:/app/conf/
+      - ./assets/:/app/assets/
       - ./container-volume/cb-tumblebug-container/meta_db/:/app/meta_db/
       - ./container-volume/cb-tumblebug-container/log/:/app/log/
     environment:
@@ -198,7 +199,7 @@ services:
   # CB-MapUI
   # This is the Map-based client for CB-Tumblebug.
   cb-mapui:
-    image: cloudbaristaorg/cb-mapui:0.11.19
+    image: cloudbaristaorg/cb-mapui:0.11.20
     container_name: cb-mapui
     labels:
       # Explicitly tell Traefik to expose this container

@@ -186,9 +186,7 @@ func setConfig() {
 	// Load cloudinfo
 	cloudInfoViper := viper.New()
 	fileName = "cloudinfo"
-	cloudInfoViper.AddConfigPath(".")
-	cloudInfoViper.AddConfigPath("./assets/")
-	cloudInfoViper.AddConfigPath("../assets/")
+	common.SetupViperPaths(cloudInfoViper)
 	cloudInfoViper.SetConfigName(fileName)
 	cloudInfoViper.SetConfigType("yaml")
 	err = cloudInfoViper.ReadInConfig()
@@ -212,9 +210,7 @@ func setConfig() {
 	//
 	networkInfo := viper.New()
 	fileName = "networkinfo"
-	networkInfo.AddConfigPath(".")
-	networkInfo.AddConfigPath("./assets/")
-	networkInfo.AddConfigPath("../assets/")
+	common.SetupViperPaths(networkInfo)
 	networkInfo.SetConfigName(fileName)
 	networkInfo.SetConfigType("yaml")
 	err = networkInfo.ReadInConfig()
@@ -237,9 +233,7 @@ func setConfig() {
 	//
 	k8sClusterInfoViper := viper.New()
 	fileName = "k8sclusterinfo"
-	k8sClusterInfoViper.AddConfigPath(".")
-	k8sClusterInfoViper.AddConfigPath("./assets/")
-	k8sClusterInfoViper.AddConfigPath("../assets/")
+	common.SetupViperPaths(k8sClusterInfoViper)
 	k8sClusterInfoViper.SetConfigName(fileName)
 	k8sClusterInfoViper.SetConfigType("yaml")
 	err = k8sClusterInfoViper.ReadInConfig()
@@ -259,9 +253,7 @@ func setConfig() {
 	//
 	extractPatternsViper := viper.New()
 	fileName = "extractionpatterns"
-	extractPatternsViper.AddConfigPath(".")
-	extractPatternsViper.AddConfigPath("./assets/")
-	extractPatternsViper.AddConfigPath("../assets/")
+	common.SetupViperPaths(extractPatternsViper)
 	extractPatternsViper.SetConfigName(fileName)
 	extractPatternsViper.SetConfigType("yaml")
 	err = extractPatternsViper.ReadInConfig()
@@ -410,10 +402,14 @@ func migrateLatencyDataFromCSV() error {
 	log.Info().Msg("Starting latency data migration from CSV to database")
 
 	// Read CSV file
-	file, err := os.Open("../assets/cloudlatencymap.csv")
+	csvPath := common.GetAssetsFilePath("cloudlatencymap.csv")
+	file, err := os.Open(csvPath)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to open cloudlatencymap.csv file")
-		return err
+		log.Error().
+			Err(err).
+			Str("attempted_path", csvPath).
+			Msg("Failed to open cloudlatencymap.csv file")
+		return fmt.Errorf("failed to open cloudlatencymap.csv at %s: %w", csvPath, err)
 	}
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
