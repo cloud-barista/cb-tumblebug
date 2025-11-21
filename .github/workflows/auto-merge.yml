@@ -43,7 +43,7 @@ jobs:
           fi
       
       # Apply 'approved' label when OWNER left '/approve' comment
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions-ecosystem/action-add-labels@v1
         with:
           github_token: ${{ secrets.github_token }}
