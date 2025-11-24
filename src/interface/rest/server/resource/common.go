@@ -311,16 +311,24 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 // RestLoadAssets godoc
 // @ID LoadAssets
 // @Summary Load Common Resources from internal asset files
-// @Description Load Common Resources from internal asset files (Spec, Image)
+// @Description Load Common Resources from internal asset files (Spec, Image). By default, Azure images are excluded for faster initialization. Use includeAzure=true to fetch Azure images (may take 40+ minutes).
 // @Tags [Admin] System Configuration
 // @Accept  json
 // @Produce  json
+// @Param includeAzure query string false "Include Azure images (may take 40+ minutes)" default(false) Enums(true, false)
 // @Success 200 {object} model.IdList
 // @Failure 404 {object} model.SimpleMsg
 // @Router /loadAssets [get]
 func RestLoadAssets(c echo.Context) error {
 
-	content, err := resource.LoadAssets()
+	// Parse includeAzure query parameter (default: false)
+	includeAzureStr := c.QueryParam("includeAzure")
+	includeAzure := false
+	if includeAzureStr == "true" {
+		includeAzure = true
+	}
+
+	content, err := resource.LoadAssets(includeAzure)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

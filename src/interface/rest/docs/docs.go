@@ -1520,7 +1520,7 @@ const docTemplate = `{
         },
         "/loadAssets": {
             "get": {
-                "description": "Load Common Resources from internal asset files (Spec, Image)",
+                "description": "Load Common Resources from internal asset files (Spec, Image). By default, Azure images are excluded for faster initialization. Use includeAzure=true to fetch Azure images (may take 40+ minutes).",
                 "consumes": [
                     "application/json"
                 ],
@@ -1532,6 +1532,19 @@ const docTemplate = `{
                 ],
                 "summary": "Load Common Resources from internal asset files",
                 "operationId": "LoadAssets",
+                "parameters": [
+                    {
+                        "enum": [
+                            "true",
+                            "false"
+                        ],
+                        "type": "string",
+                        "default": "false",
+                        "description": "Include Azure images (may take 40+ minutes)",
+                        "name": "includeAzure",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",

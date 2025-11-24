@@ -1709,16 +1709,64 @@ func ExtractOSInfo(combinedInfo string) string {
 
 // CheckBasicOSImage checks if the given combined info matches any basic OS image patterns
 // Returns true if the image is considered a basic OS image based on predefined patterns
-func CheckBasicOSImage(combinedInfo string) bool {
+// providerName is used to apply CSP-specific rules (if defined) or common rules (as fallback)
+//
+// Logic:
+// 1. Determine include patterns:
+//   - If CSP-specific include exists and not empty → use CSP-specific include
+//   - Otherwise → use common include
+//
+// 2. Determine exclude patterns:
+//   - If CSP-specific exclude exists and not empty → use CSP-specific exclude
+//   - Otherwise → use common exclude
+//
+// 3. Check exclude patterns first (return false if matched)
+// 4. Check include patterns (return true if matched)
+func CheckBasicOSImage(combinedInfo string, providerName string) bool {
 	if combinedInfo == "" {
 		return false
 	}
 
+	// Normalize provider name to lowercase for consistent matching
+	providerNameLower := strings.ToLower(providerName)
+
 	// Loop through all OS types from extraction patterns
 	for _, osInfo := range RuntimeExtractPatternsInfo.ExtractPatterns.OSType {
-		// Check if any basic image patterns match
-		for _, pattern := range osInfo.PatternsForBasicImage {
-			if matchesPattern(combinedInfo, pattern) {
+		// Skip if no basic image rules defined
+		if osInfo.BasicImageRules == nil {
+			continue
+		}
+
+		// Start with common patterns as default
+		includePatterns := osInfo.BasicImageRules.Common.Include
+		excludePatterns := osInfo.BasicImageRules.Common.Exclude
+
+		// Override with CSP-specific patterns if they exist and are not empty
+		if osInfo.BasicImageRules.CspSpecific != nil {
+			if cspPatterns, exists := osInfo.BasicImageRules.CspSpecific[providerNameLower]; exists {
+				// Use CSP-specific include if defined and not empty
+				if len(cspPatterns.Include) > 0 {
+					includePatterns = cspPatterns.Include
+				}
+				// Use CSP-specific exclude if defined and not empty
+				if len(cspPatterns.Exclude) > 0 {
+					excludePatterns = cspPatterns.Exclude
+				}
+			}
+		}
+
+		// Step 1: Check exclude patterns first (higher priority)
+		for _, excludePattern := range excludePatterns {
+			if matchesPattern(combinedInfo, excludePattern) {
+				// This image matches an exclude pattern, so it's not a basic image
+				return false
+			}
+		}
+
+		// Step 2: Check include patterns
+		for _, includePattern := range includePatterns {
+			if matchesPattern(combinedInfo, includePattern) {
+				// Pattern matched and not excluded
 				return true
 			}
 		}
