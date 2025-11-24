@@ -2495,6 +2495,13 @@ paths:
           type: string
           enum:
           - register
+      - name: skipVersionCheck
+        in: query
+        description: Skip Kubernetes version validation (use for testing with unlisted
+          versions)
+        schema:
+          type: string
+          default: "false"
       requestBody:
         description: Details of the K8sCluster object
         content:
@@ -2932,6 +2939,13 @@ paths:
         schema:
           type: string
           default: k8scluster01
+      - name: skipVersionCheck
+        in: query
+        description: Skip Kubernetes version validation (use for testing with unlisted
+          versions)
+        schema:
+          type: string
+          default: "false"
       requestBody:
         description: Details of the UpgradeK8sClusterReq object
         content:
