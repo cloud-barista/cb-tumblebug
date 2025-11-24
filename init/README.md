@@ -4,10 +4,44 @@
 ## Overview
 The `init.py` script is designed to automate the process of registering credentials and loading common specifications and images for a Tumblebug server. It can be executed directly or via the `init.sh` script which sets up a Python virtual environment. This script ensures the Tumblebug server is healthy before proceeding and performs several network operations in a secure and managed way.
 
+## 🚀 NEW: Fast Initialization with Database Backup
+
+Starting from this version, `init.py` supports **fast initialization** using
+pre-built database backups:
+
+- **Standard mode** (~20 minutes): Fetches fresh data from all Cloud Service
+  Provider APIs
+- **Fast mode** (~1 minute): Restores from pre-built database backup in
+  `assets/assets.dump.gz`
+
+When running `init.py`, you'll be prompted:
+
+```text
+🚀 Database Backup Found!
+========================================
+
+A pre-built database backup was found:
+  Location: ./assets/assets.dump.gz
+  Size:     74 MB
+
+  ✅ Fast initialization (restore from backup): ~1 minute
+  ⏱️  Standard initialization (fetch from CSPs):  ~20 minutes
+
+Would you like to use the backup database? (y/n):
+```
+
+**Auto-yes mode**: Use `-y` flag to automatically use backup without prompting:
+```bash
+./init/init.py -y
+```
+
 ## Features
 - **Health Check**: Verifies that the Tumblebug server is ready to handle requests before proceeding with operations.
 - **Credential Registration**: Dynamically registers all valid credentials stored in a YAML file to the Tumblebug server.
-- **Resource Loading**: Initiates the loading of common specs and images into Tumblebug.
+- **Fast Database Restore** (**NEW**): Optionally restore from pre-built
+  database backup (~1 min vs ~20 min)
+- **Resource Loading**: Initiates the loading of common specs and images into
+  Tumblebug from CSP APIs.
 
 ## Prerequisites
 - Python 3.8.0 or higher is installed

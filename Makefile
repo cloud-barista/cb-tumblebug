@@ -32,6 +32,19 @@ clean-db: ## Clean all database metadata (./init/cleanDB.sh)
 	@chmod +x ./init/cleanDB.sh 2>/dev/null || true
 	@./init/cleanDB.sh
 
+# ===== Database Backup & Restore =====
+backup-assets: ## Backup PostgreSQL database to assets directory for version control
+	@chmod +x ./scripts/backup-assets.sh 2>/dev/null || true
+	@./scripts/backup-assets.sh
+
+restore-assets: ## Restore PostgreSQL database from assets backup (or FILE=<path>)
+	@chmod +x ./scripts/restore-assets.sh 2>/dev/null || true
+	@if [ -z "$(FILE)" ]; then \
+		./scripts/restore-assets.sh; \
+	else \
+		./scripts/restore-assets.sh $(FILE); \
+	fi
+
 # ===== Utility Aliases =====
 up: ## Quick start (alias for compose)
 	$(MAKE) compose
@@ -92,6 +105,9 @@ help: ## Display this help screen
 	@echo "  \033[36mclean-db\033[0m               Clean database metadata (./init/cleanDB.sh)"
 	@echo "  \033[36mclean-all\033[0m              Clean build + containers + databases"
 	@echo ""
+	@echo "💾 Database Backup & Restore:"
+	@grep -E '^(backup-assets|restore-assets):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
+	@echo ""
 	@echo "🔧 Utilities:"
 	@grep -E '^(swag|bcrypt|certs):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 	@echo ""
@@ -100,8 +116,11 @@ help: ## Display this help screen
 	@echo ""	
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo "💡 Quick Start Workflow:"
-	@echo "   make up ▶  make gen-cred ▶  (edit credentials) ▶  make enc-cred ▶  make init"
+	@echo "   make up ▶ make gen-cred ▶ (edit credentials) ▶ make enc-cred ▶ make init"
+	@echo ""
+	@echo "   💡 During 'make init', you'll be asked if you want to use the pre-built"
+	@echo "      database backup (1 min) or fetch fresh data from CSPs (20 min)."
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init compose compose-up compose-down clean-db up down gen-cred enc-cred dec-cred bcrypt certs help
+.PHONY: default run clean clean-all swag swagger init compose compose-up compose-down clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help

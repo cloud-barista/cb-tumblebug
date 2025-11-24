@@ -139,18 +139,132 @@ except requests.exceptions.RequestException as e:
     print(Fore.RED + f"Failed to connect to server. Check the server address and try again.")
     sys.exit(1)
 
-# Display what will be executed
+# Check for database backup availability early (before asking for confirmation)
+backup_db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets', 'assets.dump.gz')
+backup_available = os.path.isfile(backup_db_path)
+backup_size_mb = 0
+backup_age_days = 0
+use_backup = False  # Decision variable
+include_azure = False  # Decision variable for Azure image fetch
+
+if backup_available:
+    backup_size_mb = os.path.getsize(backup_db_path) / (1024 * 1024)
+    
+    # Get backup age from Git commit date (more accurate than file mtime)
+    try:
+        # Using git from trusted system path, file path is validated above
+        git_commit_time_result = subprocess.run(
+            ['git', 'log', '-1', '--format=%ct', '--', 'assets/assets.dump.gz'],
+            cwd=os.path.dirname(os.path.abspath(__file__)) + '/..',
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False  # Don't raise exception on non-zero exit
+        )
+        if git_commit_time_result.returncode == 0 and git_commit_time_result.stdout.strip():
+            git_commit_timestamp = int(git_commit_time_result.stdout.strip())
+            backup_age_days = int((time.time() - git_commit_timestamp) / 86400)
+        else:
+            # Fallback to file mtime if git command fails
+            backup_mtime = os.path.getmtime(backup_db_path)
+            backup_age_days = int((time.time() - backup_mtime) / 86400)
+    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, ValueError):
+        # Fallback to file mtime if git is not available or command fails
+        backup_mtime = os.path.getmtime(backup_db_path)
+        backup_age_days = int((time.time() - backup_mtime) / 86400)
+
+# Ask for backup choice BEFORE showing operations summary
+if run_load_assets and backup_available and not args.yes:
+    print(Fore.CYAN + "="*80)
+    print(Fore.CYAN + "🚀 Choose Initialization Method")
+    print(Fore.CYAN + "="*80)
+    print("")
+    print(Fore.GREEN + "  a. ⏩ Restore from backup (~1 minute)")
+    print(Fore.WHITE + f"     Location: ./assets/assets.dump.gz ({backup_size_mb:.1f} MB, {backup_age_days} days old)")
+    if backup_age_days > 30:
+        print(Fore.YELLOW + f"     ⚠️  Backup is {backup_age_days} days old - data may be outdated")
+    elif backup_age_days > 7:
+        print(Fore.YELLOW + f"     ℹ️  Backup is {backup_age_days} days old - consider fetching fresh data for latest info")
+    print(Fore.WHITE + "     Contains: Specs, Images, and Pricing data")
+    print(Fore.WHITE + "     → Steps 2 & 3 will be skipped")
+    print("")
+    print(Fore.YELLOW + "  b. 🔄 Fetch fresh from CSPs (~10-20 minutes)")
+    print(Fore.WHITE + "     → Fetches latest specs, images from cloud providers (excluding Azure)")
+    print(Fore.WHITE + "     → Step 3 (pricing) will run separately if requested")
+    print("")
+    print(Fore.MAGENTA + "  c. 🔁 Fetch from ALL CSPs including Azure (~40+ minutes)")
+    print(Fore.WHITE + "     → Fetches from ALL cloud providers including Azure")
+    print(Fore.YELLOW + "     ⚠️  Warning: Azure image fetch is very slow and may take 40+ minutes")
+    print("")
+    
+    while True:
+        choice = input(Fore.CYAN + "Select option (a/b/c): " + Fore.RESET).lower()
+        if choice in ['a']:
+            use_backup = True
+            include_azure = False
+            break
+        elif choice in ['b']:
+            use_backup = False
+            include_azure = False
+            break
+        elif choice in ['c']:
+            use_backup = False
+            include_azure = True
+            break
+        else:
+            print(Fore.RED + "Invalid input. Please enter 'a', 'b', or 'c'.")
+    print("")
+elif run_load_assets and backup_available and args.yes:
+    # Auto-yes mode: use backup by default
+    use_backup = True
+    include_azure = False
+    print(Fore.GREEN + "\nAuto-yes mode: Using backup (Option A)." + Fore.RESET)
+elif run_load_assets and not backup_available and not args.yes:
+    # No backup available, ask about Azure
+    print(Fore.YELLOW + "\n⚠️  No backup found. Image fetch from CSPs is required.")
+    print(Fore.CYAN + "\nInclude Azure images?")
+    print(Fore.WHITE + "  - No (default): ~20-30 minutes")
+    print(Fore.YELLOW + "  - Yes: ~40+ minutes (Azure is very slow)")
+    print("")
+    
+    while True:
+        choice = input(Fore.CYAN + "Include Azure? (y/N): " + Fore.RESET).lower()
+        if choice in ['y', 'yes']:
+            include_azure = True
+            break
+        elif choice in ['n', 'no', '']:
+            include_azure = False
+            break
+        else:
+            print(Fore.RED + "Invalid input. Please enter 'y' or 'n'.")
+    print("")
+
+# Display what will be executed (after user choice)
 operations = []
 if run_credentials:
     operations.append("Register credentials")
 if run_load_assets:
-    operations.append("Load common specs and images")
-if run_fetch_price:
+    if use_backup:
+        operations.append(f"Load assets from backup ({backup_size_mb:.1f} MB - includes specs, images, pricing)")
+    else:
+        operations.append("Load assets (fetch from CSPs)")
+if run_fetch_price and not use_backup:
     operations.append("Fetch price information")
 
-print(Fore.YELLOW + "\nOperations to be performed:")
-for op in operations:
-    print(Fore.CYAN + f"  ✓ {op}")
+print(Fore.YELLOW + "\n" + "="*80)
+print(Fore.YELLOW + "Operations to be performed:")
+print(Fore.YELLOW + "="*80)
+for i, op in enumerate(operations, 1):
+    print(Fore.CYAN + f"  {i}. {op}")
+
+if use_backup:
+    print("")
+    print(Fore.GREEN + "  ℹ️  Using backup - Steps 2 & 3 completed in ~1 minute")
+elif run_load_assets and not backup_available:
+    print("")
+    print(Fore.YELLOW + "  ⚠️  No backup found - will fetch from CSPs (~20 minutes)")
+
+print(Fore.YELLOW + "="*80)
 print("")
 
 # Wait for user input to proceed
@@ -159,6 +273,9 @@ if not args.yes:
         print(Fore.GREEN + "Cancel [{}]".format(' '.join(sys.argv)))
         print(Fore.GREEN + "See you soon. :)")
         sys.exit(0)
+else:
+    print(Fore.GREEN + "Auto-yes mode enabled - proceeding with selected options...")
+    print("")
 
 # Function to encrypt credentials using AES and RSA public key
 def encrypt_credential_value_with_publickey(public_key_pem, credentials):
@@ -298,14 +415,91 @@ if run_credentials:
 
 # Load assets (specs and images) if requested
 if run_load_assets:
-    print(Fore.YELLOW + f"\nLoading common Specs and Images... (Estimated: {expected_completion_time_seconds}s)")
-    print(Fore.RESET)
+    # use_backup was already determined earlier (before confirmation prompt)
+    
+    if use_backup:
+        # Restore from backup
+        print(Fore.YELLOW + "\n📦 Restoring database from backup...")
+        print(Fore.RESET)
+        
+        try:
+            # Run restore script
+            restore_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts', 'restore-assets.sh')
+            
+            if not os.path.isfile(restore_script):
+                print(Fore.RED + f"Error: Restore script not found at {restore_script}")
+                print(Fore.YELLOW + "Falling back to standard initialization...")
+                use_backup = False
+            else:
+                # Run restore script with the backup file
+                # Note: Script permissions are managed by Git (should be executable)
+                result = subprocess.run(
+                    [restore_script, backup_db_path],
+                    env={**os.environ, 'RESTORE_SKIP_CONFIRM': 'yes'},  # Skip confirmation in script
+                    capture_output=True,
+                    text=True,
+                    timeout=600  # 10 minutes timeout to prevent hanging
+                )
+                
+                if result.returncode == 0:
+                    print(Fore.GREEN + "✅ Database restored successfully from backup!")
+                    print(Fore.CYAN + "   Initialization time: ~1 minute (instead of ~20 minutes)")
+                    print(Fore.CYAN + "   Restored: Specs, Images, and Pricing data")
+                    
+                    # Create 'system' namespace if it doesn't exist (required for image/spec operations)
+                    print(Fore.YELLOW + "\n   Ensuring 'system' namespace exists...")
+                    try:
+                        ns_check_response = requests.get(f"http://{TUMBLEBUG_SERVER}/tumblebug/ns/system", headers=HEADERS)
+                        if ns_check_response.status_code == 404:
+                            # Create system namespace
+                            ns_payload = {"name": "system", "description": "Namespace for common resources"}
+                            ns_create_response = requests.post(f"http://{TUMBLEBUG_SERVER}/tumblebug/ns", json=ns_payload, headers=HEADERS)
+                            if ns_create_response.status_code == 200:
+                                print(Fore.GREEN + "   ✅ 'system' namespace created")
+                            else:
+                                print(Fore.YELLOW + f"   ⚠️  Failed to create 'system' namespace: {ns_create_response.text}")
+                        else:
+                            print(Fore.GREEN + "   ✅ 'system' namespace already exists")
+                    except Exception as ns_err:
+                        print(Fore.YELLOW + f"   ⚠️  Namespace check failed: {str(ns_err)}")
+                    
+                    # Skip the load_resources call since DB is already populated
+                    run_load_assets = False  # Mark as completed
+                    # Also skip fetch_price since pricing data is included in backup
+                    if run_fetch_price:
+                        print(Fore.GREEN + "   ℹ️  Skipping price fetch - pricing data already included in backup")
+                        run_fetch_price = False
+                else:
+                    print(Fore.RED + f"❌ Database restore failed: {result.stderr}")
+                    print(Fore.YELLOW + "Falling back to standard initialization...")
+                    use_backup = False
+        except Exception as e:
+            print(Fore.RED + f"❌ Error during database restore: {str(e)}")
+            print(Fore.YELLOW + "Falling back to standard initialization...")
+            use_backup = False
+    
+    # If not using backup or backup failed, proceed with standard initialization
+    if not use_backup and run_load_assets:
+        # Adjust estimated time based on Azure inclusion
+        if include_azure:
+            expected_completion_time_seconds = 2400  # 40 minutes for Azure
+            print(Fore.YELLOW + "\nLoading common Specs and Images from ALL CSPs including Azure...")
+            print(Fore.MAGENTA + "⚠️  This may take 40+ minutes due to Azure image fetch")
+        else:
+            print(Fore.YELLOW + "\nLoading common Specs and Images from CSPs (excluding Azure)...")
+            print(Fore.CYAN + f"Estimated time: ~{expected_completion_time_seconds}s")
+        print(Fore.RESET)
 
     # Function to perform the HTTP request and handle exceptions
     def load_resources():
         global response_json
         try:
-            response = requests.get(f"http://{TUMBLEBUG_SERVER}/tumblebug/loadAssets", headers=HEADERS)
+            # Build URL with includeAzure parameter
+            url = f"http://{TUMBLEBUG_SERVER}/tumblebug/loadAssets"
+            if include_azure:
+                url += "?includeAzure=true"
+            
+            response = requests.get(url, headers=HEADERS)
             response.raise_for_status()  # Will raise an exception for HTTP error codes
             response_json = response.json()
         except requests.RequestException as e:
@@ -313,49 +507,51 @@ if run_load_assets:
         finally:
             event.set()  # Signal that the request is complete regardless of success or failure
 
-    # Start time
-    start_time = time.time()
+    # Only run standard initialization if we didn't use backup
+    if not use_backup and run_load_assets:
+        # Start time
+        start_time = time.time()
 
-    # Event object to signal the request completion
-    event = threading.Event()
+        # Event object to signal the request completion
+        event = threading.Event()
 
-    # Start the network request in a separate thread
-    thread = threading.Thread(target=load_resources)
-    thread.start()
+        # Start the network request in a separate thread
+        thread = threading.Thread(target=load_resources)
+        thread.start()
 
-    # Expected duration and progress bar
-    update_interval = 0.1  # Update interval in seconds
-    step_multiplier = 10  # Increase this to make the bar move faster visually
-    total_steps = expected_completion_time_seconds * step_multiplier
+        # Expected duration and progress bar
+        update_interval = 0.1  # Update interval in seconds
+        step_multiplier = 10  # Increase this to make the bar move faster visually
+        total_steps = expected_completion_time_seconds * step_multiplier
 
-    # Progress bar with 'smooth' style and manual updates enabled
-    with alive_bar(total_steps, bar="smooth", manual=True, stats=False, elapsed=False) as bar:
-        elapsed_steps = 0  # Track the number of elapsed steps
-        while not event.is_set():  # Continue until the event signals completion
-            time.sleep(update_interval)  # Wait for the specified update interval
-            elapsed_steps += 1  # Increment the step count
+        # Progress bar with 'smooth' style and manual updates enabled
+        with alive_bar(total_steps, bar="smooth", manual=True, stats=False, elapsed=False) as bar:
+            elapsed_steps = 0  # Track the number of elapsed steps
+            while not event.is_set():  # Continue until the event signals completion
+                time.sleep(update_interval)  # Wait for the specified update interval
+                elapsed_steps += 1  # Increment the step count
 
-            # Update the bar text with elapsed and expected time
-            # bar.text = f"Expected: {expected_completion_time_seconds}s"
-            bar(elapsed_steps / total_steps)  # Update the progress bar manually
+                # Update the bar text with elapsed and expected time
+                # bar.text = f"Expected: {expected_completion_time_seconds}s"
+                bar(elapsed_steps / total_steps)  # Update the progress bar manually
 
-        # Ensure the bar reaches 100% when the task completes
-        bar(1.0)
-    # Wait for the thread to complete
-    thread.join()
+            # Ensure the bar reaches 100% when the task completes
+            bar(1.0)
+        # Wait for the thread to complete
+        thread.join()
 
-    # Calculate duration
-    end_time = time.time()
-    duration = end_time - start_time
+        # Calculate duration
+        end_time = time.time()
+        duration = end_time - start_time
 
-    # Handling output based on the API response
-    if 'error' in response_json:
-        print(Fore.RED + "Error during resource loading: " + response_json['error'])
-        exit(1)
-    elif response_json:
-        print(Fore.CYAN + f"\nLoading completed (elapsed: {duration}s)")
-    else:
-        print(Fore.RED + "No data returned from the API.")
+        # Handling output based on the API response
+        if 'error' in response_json:
+            print(Fore.RED + "Error during resource loading: " + response_json['error'])
+            exit(1)
+        elif response_json:
+            print(Fore.CYAN + f"\nLoading completed (elapsed: {duration}s)")
+        else:
+            print(Fore.RED + "No data returned from the API.")
 
 # Fetch price information if requested
 if run_fetch_price:

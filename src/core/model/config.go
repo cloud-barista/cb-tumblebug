@@ -66,11 +66,24 @@ type ExtractPatterns struct {
 
 // OSTypeDetail is structure for OS type detail information
 type OSTypeDetail struct {
-	Name                  string   `mapstructure:"name" json:"name"`
-	Versions              []string `mapstructure:"versions" json:"versions"`
-	DefaultVersion        string   `mapstructure:"defaultVersion" json:"default_version"`
-	Patterns              []string `mapstructure:"patterns" json:"patterns"`
-	PatternsForBasicImage []string `mapstructure:"patternsForBasicImage" json:"patternsForBasicImage"`
+	Name            string           `mapstructure:"name" json:"name"`
+	Versions        []string         `mapstructure:"versions" json:"versions"`
+	DefaultVersion  string           `mapstructure:"defaultVersion" json:"default_version"`
+	Patterns        []string         `mapstructure:"patterns" json:"patterns"`
+	BasicImageRules *BasicImageRules `mapstructure:"basicImageRules" json:"basicImageRules,omitempty"`
+}
+
+// BasicImageRules defines rules for identifying basic OS images
+// Basic images are clean, official OS installations without additional software or customization
+type BasicImageRules struct {
+	Common      PatternSet            `mapstructure:"common" json:"common"`
+	CspSpecific map[string]PatternSet `mapstructure:"cspSpecific" json:"cspSpecific,omitempty"`
+}
+
+// PatternSet defines include and exclude patterns for basic image detection
+type PatternSet struct {
+	Include []string `mapstructure:"include" json:"include,omitempty"`
+	Exclude []string `mapstructure:"exclude" json:"exclude,omitempty"`
 }
 
 /*

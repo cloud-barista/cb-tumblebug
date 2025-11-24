@@ -1586,7 +1586,8 @@ func GetNameFromStruct(u interface{}) (string, error) {
 }
 
 // LoadAssets is to register common resources from asset files (../assets/*.csv)
-func LoadAssets() (*model.IdList, error) {
+// includeAzure: if true, Azure images will be fetched (may take 40+ minutes)
+func LoadAssets(includeAzure bool) (*model.IdList, error) {
 
 	regiesteredIds := &model.IdList{}
 
@@ -1629,8 +1630,19 @@ func LoadAssets() (*model.IdList, error) {
 	// Start image fetching (keeping this part running)
 	startTime = time.Now()
 	reqBodyImageFetchOption := &model.ImageFetchOption{}
-	reqBodyImageFetchOption.ExcludedProviders = []string{csp.Azure}
-	reqBodyImageFetchOption.RegionAgnosticProviders = []string{csp.GCP, csp.Tencent}
+
+	// Configure Azure inclusion based on parameter
+	if includeAzure {
+		log.Info().Msg("Azure images will be fetched (this may take 40+ minutes)")
+		// When including Azure, add it to RegionAgnosticProviders
+		reqBodyImageFetchOption.RegionAgnosticProviders = []string{csp.GCP, csp.Tencent, csp.Azure}
+		reqBodyImageFetchOption.ExcludedProviders = []string{} // Don't exclude any providers
+	} else {
+		log.Info().Msg("Azure images will be excluded (default behavior for faster initialization)")
+		// Default behavior: exclude Azure, use GCP and Tencent as region-agnostic
+		reqBodyImageFetchOption.ExcludedProviders = []string{csp.Azure}
+		reqBodyImageFetchOption.RegionAgnosticProviders = []string{csp.GCP, csp.Tencent}
+	}
 	resultFetchImagesForAllConnConfigs, err := FetchImagesForAllConnConfigs(model.SystemCommonNs, reqBodyImageFetchOption)
 	if err != nil {
 		log.Error().Err(err).Msg("FetchImagesForAllConnConfigs failed")

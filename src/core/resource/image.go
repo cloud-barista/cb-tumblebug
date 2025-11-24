@@ -174,7 +174,7 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 		tumblebugImage.OSDistribution += " (Hypervisor:" + hypervisorInfo + ")"
 	}
 
-	tumblebugImage.IsBasicImage = common.CheckBasicOSImage(tumblebugImage.OSDistribution)
+	tumblebugImage.IsBasicImage = common.CheckBasicOSImage(tumblebugImage.OSDistribution, providerName)
 
 	tumblebugImage.OSDiskType = spiderImage.OSDiskType
 	tumblebugImage.OSDiskSizeGB, _ = strconv.ParseFloat(spiderImage.OSDiskSizeGB, 64)

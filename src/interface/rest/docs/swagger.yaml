@@ -1196,8 +1196,20 @@ paths:
       tags:
       - "[Admin] System Configuration"
       summary: Load Common Resources from internal asset files
-      description: "Load Common Resources from internal asset files (Spec, Image)"
+      description: "Load Common Resources from internal asset files (Spec, Image).\
+        \ By default, Azure images are excluded for faster initialization. Use includeAzure=true\
+        \ to fetch Azure images (may take 40+ minutes)."
       operationId: LoadAssets
+      parameters:
+      - name: includeAzure
+        in: query
+        description: Include Azure images (may take 40+ minutes)
+        schema:
+          type: string
+          default: "false"
+          enum:
+          - "true"
+          - "false"
       responses:
         "200":
           description: OK
