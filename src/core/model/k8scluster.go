@@ -490,8 +490,8 @@ type CheckNodeDynamicReqInfo struct {
 
 // K8sClusterDynamicReq is struct for requirements to create K8sCluster dynamically (with default resource option)
 type K8sClusterDynamicReq struct {
-	// K8sCluster name if it is not empty.
-	Name string `json:"name" validate:"required" example:"k8scluster01"`
+	// K8sCluster name if it is not empty. Optional when used with namePrefix in multi-cluster creation.
+	Name string `json:"name" example:"k8scluster01"`
 
 	// K8s Clsuter version
 	Version string `json:"version,omitempty" example:"1.29"`
@@ -564,4 +564,19 @@ type K8sClusterContainerCmdResult struct {
 // K8sClusterContainerCmdResultMap is struct maps for K8sClusterContainerCmd Result
 type K8sClusterContainerCmdResults struct {
 	Results []*K8sClusterContainerCmdResult `json:"results"`
+}
+
+/*
+ * Multi K8sCluster Request/Response (for parallel creation)
+ */
+
+// K8sMultiClusterDynamicReq is a wrapper struct for creating multiple K8sClusters in parallel
+type K8sMultiClusterDynamicReq struct {
+	NamePrefix string                 `json:"namePrefix" example:"across"`
+	Clusters   []K8sClusterDynamicReq `json:"clusters" validate:"required,dive"`
+}
+
+// K8sMultiClusterInfo is a wrapper struct for multiple K8sCluster creation results
+type K8sMultiClusterInfo struct {
+	Clusters []K8sClusterInfo `json:"clusters"`
 }

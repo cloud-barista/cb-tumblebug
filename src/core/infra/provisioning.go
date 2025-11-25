@@ -3669,6 +3669,14 @@ func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.K8sClusterDy
 		log.Err(err).Msg("")
 		return emptyK8sCluster, err
 	}
+
+	// Validate that name is provided for single cluster creation
+	if dReq.Name == "" {
+		err := fmt.Errorf("cluster name is required")
+		log.Err(err).Msg("")
+		return emptyK8sCluster, err
+	}
+
 	check, err := resource.CheckK8sCluster(nsId, dReq.Name)
 	if err != nil {
 		log.Err(err).Msg("")
@@ -4558,4 +4566,106 @@ func getRecentUniqueFailureMessages(provisioningLog *model.ProvisioningLog, maxM
 	}
 
 	return recentMessages
+}
+
+// CreateK8sMultiClusterDynamic creates multiple K8sClusters in parallel
+func CreateK8sMultiClusterDynamic(reqID string, nsId string, multiReq *model.K8sMultiClusterDynamicReq, deployOption string, skipVersionCheck bool) (*model.K8sMultiClusterInfo, error) {
+	if len(multiReq.Clusters) == 0 {
+		return nil, fmt.Errorf("no clusters specified in the request")
+	}
+
+	// Validate: Either namePrefix is provided OR all clusters have names
+	if multiReq.NamePrefix == "" {
+		for i, cluster := range multiReq.Clusters {
+			if cluster.Name == "" {
+				return nil, fmt.Errorf("cluster[%d] must have a name when namePrefix is not provided", i)
+			}
+		}
+	}
+
+	log.Info().Msgf("Creating %d K8sClusters in parallel", len(multiReq.Clusters))
+
+	// Create channels for results
+	type clusterResult struct {
+		index   int
+		name    string // Store actual cluster name for error reporting
+		cluster *model.K8sClusterInfo
+		err     error
+	}
+	resultChan := make(chan clusterResult, len(multiReq.Clusters))
+
+	// Capture namePrefix to avoid data race in goroutines
+	namePrefix := multiReq.NamePrefix
+
+	// Launch goroutines for parallel creation
+	for i, clusterReq := range multiReq.Clusters {
+		go func(index int, req model.K8sClusterDynamicReq) {
+			// Generate unique request ID for each cluster
+			clusterReqID := fmt.Sprintf("%s-cluster-%d", reqID, index)
+
+			// Auto-generate cluster name if NamePrefix is provided and name is empty
+			if namePrefix != "" && req.Name == "" {
+				// Extract CSP name from specId (format: "provider+region+spec")
+				cspName := "unknown"
+				if req.SpecId != "" {
+					parts := strings.Split(req.SpecId, "+")
+					if len(parts) > 0 {
+						cspName = parts[0]
+					}
+				}
+				req.Name = fmt.Sprintf("%s-%s-%d", namePrefix, cspName, index+1)
+				log.Debug().Msgf("Auto-generated cluster name: %s", req.Name)
+			}
+
+			log.Info().Msgf("[%d/%d] Starting K8sCluster creation: %s", index+1, len(multiReq.Clusters), req.Name)
+
+			cluster, err := CreateK8sClusterDynamic(clusterReqID, nsId, &req, deployOption, skipVersionCheck)
+
+			if err != nil {
+				log.Error().Err(err).Msgf("[%d/%d] Failed to create K8sCluster: %s", index+1, len(multiReq.Clusters), req.Name)
+			} else {
+				log.Info().Msgf("[%d/%d] Successfully created K8sCluster: %s", index+1, len(multiReq.Clusters), req.Name)
+			}
+
+			resultChan <- clusterResult{
+				index:   index,
+				name:    req.Name, // Store actual name for error reporting
+				cluster: cluster,
+				err:     err,
+			}
+		}(i, clusterReq)
+	}
+
+	// Collect results
+	results := make([]*model.K8sClusterInfo, len(multiReq.Clusters))
+	var errors []string
+
+	for i := 0; i < len(multiReq.Clusters); i++ {
+		result := <-resultChan
+		results[result.index] = result.cluster
+		if result.err != nil {
+			// Use actual cluster name (which may be auto-generated)
+			errors = append(errors, fmt.Sprintf("Cluster[%d] %s: %v", result.index, result.name, result.err))
+		}
+	}
+
+	// Prepare response
+	multiInfo := &model.K8sMultiClusterInfo{
+		Clusters: make([]model.K8sClusterInfo, 0, len(results)),
+	}
+
+	for _, cluster := range results {
+		if cluster != nil {
+			multiInfo.Clusters = append(multiInfo.Clusters, *cluster)
+		}
+	}
+
+	// Return error if any cluster failed
+	if len(errors) > 0 {
+		log.Warn().Msgf("Some clusters failed to create: %v", errors)
+		return multiInfo, fmt.Errorf("failed to create %d cluster(s): %s", len(errors), strings.Join(errors, "; "))
+	}
+
+	log.Info().Msgf("Successfully created all %d K8sClusters", len(multiInfo.Clusters))
+	return multiInfo, nil
 }

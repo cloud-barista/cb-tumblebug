@@ -3852,6 +3852,89 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/k8sMultiClusterDynamic": {
+            "post": {
+                "description": "(PoC API. For developers only, and do not use in production.)\nCreate multiple K8sClusters in parallel from common spec and image.\nIf namePrefix is provided, cluster names will be auto-generated as '{namePrefix}-{csp}-{number}' (e.g., 'across-aws-1', 'across-alibaba-2').\n\nIf namePrefix is not provided, each cluster must have a name specified.\n\n**Example request body:**\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"namePrefix\": \"across\",\n\"clusters\": [\n{\n\"imageId\": \"default\",\n\"specId\": \"aws+ap-northeast-2+t3a.xlarge\"\n},\n{\n\"imageId\": \"default\",\n\"specId\": \"aws+ap-northeast-3+t3.xlarge\"\n},\n{\n\"imageId\": \"ubuntu_22_04_x64_20G_alibase_20251103.vhd\",\n\"specId\": \"alibaba+ap-northeast-2+ecs.t6-c1m4.xlarge\"\n},\n{\n\"imageId\": \"https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-minimal-2204-jammy-v20251120\",\n\"specId\": \"gcp+asia-northeast3+e2-highmem-4\"\n}\n]\n}\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Kubernetes] Cluster Management"
+                ],
+                "summary": "(PoC API. For developers only, and do not use in production.) Create Multiple K8s Clusters Dynamically in Parallel",
+                "operationId": "PostK8sMultiClusterDynamic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body to provision multiple K8sClusters dynamically in parallel. \u003cbr\u003e Must include clusters array with specId and imageId info for each cluster. \u003cbr\u003e Optional namePrefix will auto-generate cluster names. \u003cbr\u003e You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get spec and image info. \u003cbr\u003e Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913",
+                        "name": "k8sMultiClusterDynamicReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sMultiClusterDynamicReq"
+                        }
+                    },
+                    {
+                        "enum": [
+                            "hold"
+                        ],
+                        "type": "string",
+                        "description": "Option for K8sCluster creation",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "description": "Skip Kubernetes version validation (use for testing with unlisted versions)",
+                        "name": "skipVersionCheck",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All clusters created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sMultiClusterInfo"
+                        }
+                    },
+                    "207": {
+                        "description": "Multi-Status - Partial success, some clusters created but others failed",
+                        "schema": {
+                            "$ref": "#/definitions/model.K8sMultiClusterInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mci": {
             "get": {
                 "description": "List all MCIs or MCIs' ID",
@@ -16046,7 +16129,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "imageId",
-                "name",
                 "specId"
             ],
             "properties": {
@@ -16087,7 +16169,7 @@ const docTemplate = `{
                     "example": "1"
                 },
                 "name": {
-                    "description": "K8sCluster name if it is not empty.",
+                    "description": "K8sCluster name if it is not empty. Optional when used with namePrefix in multi-cluster creation.",
                     "type": "string",
                     "example": "k8scluster01"
                 },
@@ -16491,6 +16573,35 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "1.30"
+                }
+            }
+        },
+        "model.K8sMultiClusterDynamicReq": {
+            "type": "object",
+            "required": [
+                "clusters"
+            ],
+            "properties": {
+                "clusters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterDynamicReq"
+                    }
+                },
+                "namePrefix": {
+                    "type": "string",
+                    "example": "across"
+                }
+            }
+        },
+        "model.K8sMultiClusterInfo": {
+            "type": "object",
+            "properties": {
+                "clusters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterInfo"
+                    }
                 }
             }
         },

@@ -526,6 +526,7 @@ func RunServer() {
 	e.POST("/tumblebug/k8sClusterRecommendNode", rest_resource.RestRecommendK8sNode)
 	e.POST("/tumblebug/k8sClusterDynamicCheckRequest", rest_resource.RestPostK8sClusterDynamicCheckRequest)
 	g.POST("/:nsId/k8sClusterDynamic", rest_resource.RestPostK8sClusterDynamic)
+	g.POST("/:nsId/k8sMultiClusterDynamic", rest_resource.RestPostK8sMultiClusterDynamic)
 	g.POST("/:nsId/k8sCluster/:k8sClusterId/k8sNodeGroupDynamic", rest_resource.RestPostK8sNodeGroupDynamic)
 	g.GET("/:nsId/control/k8sCluster/:k8sClusterId", rest_resource.RestGetControlK8sCluster)
 

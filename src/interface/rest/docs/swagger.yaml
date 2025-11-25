@@ -3038,6 +3038,109 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: k8sClusterDyanmicReq
+  /ns/{nsId}/k8sMultiClusterDynamic:
+    post:
+      tags:
+      - "[Kubernetes] Cluster Management"
+      summary: "(PoC API. For developers only, and do not use in production.) Create\
+        \ Multiple K8s Clusters Dynamically in Parallel"
+      description: |-
+        (PoC API. For developers only, and do not use in production.)
+        Create multiple K8sClusters in parallel from common spec and image.
+        If namePrefix is provided, cluster names will be auto-generated as '{namePrefix}-{csp}-{number}' (e.g., 'across-aws-1', 'across-alibaba-2').
+
+        If namePrefix is not provided, each cluster must have a name specified.
+
+        **Example request body:**
+        ```json
+        {
+        "namePrefix": "across",
+        "clusters": [
+        {
+        "imageId": "default",
+        "specId": "aws+ap-northeast-2+t3a.xlarge"
+        },
+        {
+        "imageId": "default",
+        "specId": "aws+ap-northeast-3+t3.xlarge"
+        },
+        {
+        "imageId": "ubuntu_22_04_x64_20G_alibase_20251103.vhd",
+        "specId": "alibaba+ap-northeast-2+ecs.t6-c1m4.xlarge"
+        },
+        {
+        "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-minimal-2204-jammy-v20251120",
+        "specId": "gcp+asia-northeast3+e2-highmem-4"
+        }
+        ]
+        }
+        ```
+      operationId: PostK8sMultiClusterDynamic
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: option
+        in: query
+        description: Option for K8sCluster creation
+        schema:
+          type: string
+          enum:
+          - hold
+      - name: skipVersionCheck
+        in: query
+        description: Skip Kubernetes version validation (use for testing with unlisted
+          versions)
+        schema:
+          type: string
+          default: "false"
+      - name: x-request-id
+        in: header
+        description: Custom request ID
+        schema:
+          type: string
+      requestBody:
+        description: "Request body to provision multiple K8sClusters dynamically in\
+          \ parallel. <br> Must include clusters array with specId and imageId info\
+          \ for each cluster. <br> Optional namePrefix will auto-generate cluster\
+          \ names. <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest\
+          \ to get spec and image info. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.K8sMultiClusterDynamicReq'
+        required: true
+      responses:
+        "200":
+          description: All clusters created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sMultiClusterInfo'
+        "207":
+          description: "Multi-Status - Partial success, some clusters created but\
+            \ others failed"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.K8sMultiClusterInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: k8sMultiClusterDynamicReq
   /ns/{nsId}/mci:
     get:
       tags:
@@ -13244,7 +13347,6 @@ components:
     model.K8sClusterDynamicReq:
       required:
       - imageId
-      - name
       - specId
       type: object
       properties:
@@ -13280,7 +13382,8 @@ components:
           default: "1"
         name:
           type: string
-          description: K8sCluster name if it is not empty.
+          description: K8sCluster name if it is not empty. Optional when used with
+            namePrefix in multi-cluster creation.
           example: k8scluster01
         nodeGroupName:
           type: string
@@ -13579,6 +13682,25 @@ components:
         name:
           type: string
           example: "1.30"
+    model.K8sMultiClusterDynamicReq:
+      required:
+      - clusters
+      type: object
+      properties:
+        clusters:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sClusterDynamicReq'
+        namePrefix:
+          type: string
+          example: across
+    model.K8sMultiClusterInfo:
+      type: object
+      properties:
+        clusters:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.K8sClusterInfo'
     model.K8sNodeGroupDynamicReq:
       required:
       - imageId

@@ -613,6 +613,81 @@ func RestPostK8sClusterDynamic(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
+// RestPostK8sMultiClusterDynamic godoc
+// @ID PostK8sMultiClusterDynamic
+// @Summary (PoC API. For developers only, and do not use in production.) Create Multiple K8s Clusters Dynamically in Parallel
+// @Description (PoC API. For developers only, and do not use in production.)
+// @Description Create multiple K8sClusters in parallel from common spec and image.
+// @Description If namePrefix is provided, cluster names will be auto-generated as '{namePrefix}-{csp}-{number}' (e.g., 'across-aws-1', 'across-alibaba-2').
+// @Description
+// @Description If namePrefix is not provided, each cluster must have a name specified.
+// @Description
+// @Description **Example request body:**
+// @Description ```json
+// @Description {
+// @Description   "namePrefix": "across",
+// @Description   "clusters": [
+// @Description     {
+// @Description       "imageId": "default",
+// @Description       "specId": "aws+ap-northeast-2+t3a.xlarge"
+// @Description     },
+// @Description     {
+// @Description       "imageId": "default",
+// @Description       "specId": "aws+ap-northeast-3+t3.xlarge"
+// @Description     },
+// @Description     {
+// @Description       "imageId": "ubuntu_22_04_x64_20G_alibase_20251103.vhd",
+// @Description       "specId": "alibaba+ap-northeast-2+ecs.t6-c1m4.xlarge"
+// @Description     },
+// @Description     {
+// @Description       "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-minimal-2204-jammy-v20251120",
+// @Description       "specId": "gcp+asia-northeast3+e2-highmem-4"
+// @Description     }
+// @Description   ]
+// @Description }
+// @Description ```
+// @Tags [Kubernetes] Cluster Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param k8sMultiClusterDynamicReq body model.K8sMultiClusterDynamicReq true "Request body to provision multiple K8sClusters dynamically in parallel. <br> Must include clusters array with specId and imageId info for each cluster. <br> Optional namePrefix will auto-generate cluster names. <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get spec and image info. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
+// @Param option query string false "Option for K8sCluster creation" Enums(hold)
+// @Param skipVersionCheck query string false "Skip Kubernetes version validation (use for testing with unlisted versions)" default(false)
+// @Param x-request-id header string false "Custom request ID"
+// @Success 200 {object} model.K8sMultiClusterInfo "All clusters created successfully"
+// @Success 207 {object} model.K8sMultiClusterInfo "Multi-Status - Partial success, some clusters created but others failed"
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/k8sMultiClusterDynamic [post]
+func RestPostK8sMultiClusterDynamic(c echo.Context) error {
+	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+
+	nsId := c.Param("nsId")
+	optionFlag := c.QueryParam("option")
+	skipVersionCheckStr := c.QueryParam("skipVersionCheck")
+	skipVersionCheck := skipVersionCheckStr == "true"
+
+	req := &model.K8sMultiClusterDynamicReq{}
+	if err := c.Bind(req); err != nil {
+		log.Warn().Err(err).Msg("invalid request")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	log.Info().Msgf("Received request to create %d K8sClusters in parallel", len(req.Clusters))
+
+	result, err := infra.CreateK8sMultiClusterDynamic(reqID, nsId, req, optionFlag, skipVersionCheck)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to create K8sClusters dynamically")
+		// Partial success case: some clusters created successfully
+		if result != nil && len(result.Clusters) > 0 {
+			log.Warn().Msgf("Partial success: %d out of %d clusters created", len(result.Clusters), len(req.Clusters))
+			return c.JSON(http.StatusMultiStatus, result)
+		}
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	return c.JSON(http.StatusOK, result)
+}
+
 // RestPostK8sNodeGroupDynamic godoc
 // @ID PostK8sNodeGroupDynamic
 // @Summary Create K8sNodeGroup Dynamically
