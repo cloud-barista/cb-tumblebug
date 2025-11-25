@@ -1623,6 +1623,10 @@ func validateAtCreateK8sCluster(tbK8sClusterReq *model.K8sClusterReq, skipVersio
 
 func validateAtUpgradeK8sCluster(connectionName string, tbUpgradeK8sClusterReq *model.UpgradeK8sClusterReq, skipVersionCheck bool) error {
 	connConfig, err := common.GetConnConfig(connectionName)
+	if err != nil {
+		log.Err(err).Msgf("Failed to get connection config")
+		return err
+	}
 
 	// Validate K8sCluster Version (skip if skipVersionCheck is true)
 	if !skipVersionCheck {
