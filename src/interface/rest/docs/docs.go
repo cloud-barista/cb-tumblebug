@@ -3818,6 +3818,13 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "false",
+                        "description": "Skip Kubernetes version validation (use for testing with unlisted versions)",
+                        "name": "skipVersionCheck",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"

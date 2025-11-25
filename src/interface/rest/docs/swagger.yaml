@@ -2995,6 +2995,13 @@ paths:
           type: string
           enum:
           - hold
+      - name: skipVersionCheck
+        in: query
+        description: Skip Kubernetes version validation (use for testing with unlisted
+          versions)
+        schema:
+          type: string
+          default: "false"
       - name: x-request-id
         in: header
         description: Custom request ID

@@ -585,6 +585,7 @@ func RestPostK8sClusterDynamicCheckRequest(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterDyanmicReq body model.K8sClusterDynamicReq true "Request body to provision K8sCluster dynamically. <br> Must include specId and imageId info. <br> (ex: {name: k8scluster01, imageId: azure+koreacentral+ubuntu22.04, specId: azure+koreacentral+Standard_B2s}]}) <br> You can use /k8sClusterRecommendNode and /k8sClusterDynamicCheckRequest to get it. <br> Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1913"
 // @Param option query string false "Option for K8sCluster creation" Enums(hold)
+// @Param skipVersionCheck query string false "Skip Kubernetes version validation (use for testing with unlisted versions)" default(false)
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} model.K8sClusterInfo
 // @Failure 404 {object} model.SimpleMsg
@@ -595,6 +596,8 @@ func RestPostK8sClusterDynamic(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	optionFlag := c.QueryParam("option")
+	skipVersionCheckStr := c.QueryParam("skipVersionCheck")
+	skipVersionCheck := skipVersionCheckStr == "true"
 
 	req := &model.K8sClusterDynamicReq{}
 	if err := c.Bind(req); err != nil {
@@ -602,7 +605,7 @@ func RestPostK8sClusterDynamic(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	result, err := infra.CreateK8sClusterDynamic(reqID, nsId, req, optionFlag)
+	result, err := infra.CreateK8sClusterDynamic(reqID, nsId, req, optionFlag, skipVersionCheck)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create K8sCluster dynamically")
 		return clientManager.EndRequestWithLog(c, err, nil)
