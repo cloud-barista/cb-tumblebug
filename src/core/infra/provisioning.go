@@ -3473,7 +3473,7 @@ func checkCommonResAvailableForK8sNodeGroupDynamicReq(connName string, dReq *mod
 }
 
 // getK8sClusterReqFromDynamicReq is func to get K8sClusterReq from K8sClusterDynamicReq
-func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.K8sClusterDynamicReq) (*model.K8sClusterReq, error) {
+func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.K8sClusterDynamicReq, skipVersionCheck bool) (*model.K8sClusterReq, error) {
 	onDemand := true
 
 	emptyK8sReq := &model.K8sClusterReq{}
@@ -3487,10 +3487,24 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.K8sCl
 	}
 	k8sngReq.SpecId = specInfo.Id
 
-	k8sRecVersion, err := getK8sRecommendVersion(specInfo.ProviderName, specInfo.RegionName, dReq.Version)
-	if err != nil {
-		log.Err(err).Msg("")
-		return emptyK8sReq, err
+	var k8sRecVersion string
+	if skipVersionCheck {
+		// Use the requested version directly without validation
+		k8sRecVersion = dReq.Version
+		if k8sRecVersion == "" {
+			// If skipVersionCheck is true, an explicit version must be provided
+			err := fmt.Errorf("skipVersionCheck is true but no version is specified; an explicit version must be provided")
+			log.Err(err).Msg("")
+			return emptyK8sReq, err
+		}
+		log.Warn().Msgf("K8sCluster version validation skipped for version: %s (dynamic)", k8sRecVersion)
+	} else {
+		// Normal validation path
+		k8sRecVersion, err = getK8sRecommendVersion(specInfo.ProviderName, specInfo.RegionName, dReq.Version)
+		if err != nil {
+			log.Err(err).Msg("")
+			return emptyK8sReq, err
+		}
 	}
 
 	// If ConnectionName is specified by the request, Use ConnectionName from the request
@@ -3648,7 +3662,7 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.K8sCl
 }
 
 // CreateK8sClusterDynamic is func to create K8sCluster obeject and deploy requested K8sCluster and NodeGroup in a dynamic way
-func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.K8sClusterDynamicReq, deployOption string) (*model.K8sClusterInfo, error) {
+func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.K8sClusterDynamicReq, deployOption string, skipVersionCheck bool) (*model.K8sClusterInfo, error) {
 	emptyK8sCluster := &model.K8sClusterInfo{}
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -3673,7 +3687,7 @@ func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.K8sClusterDy
 	}
 
 	//If not, generate default resources dynamically.
-	k8sReq, err := getK8sClusterReqFromDynamicReq(reqID, nsId, dReq)
+	k8sReq, err := getK8sClusterReqFromDynamicReq(reqID, nsId, dReq, skipVersionCheck)
 	if err != nil {
 		log.Err(err).Msg("Failed to get shared resources for dynamic K8sCluster creation")
 		return emptyK8sCluster, err
@@ -3706,8 +3720,7 @@ func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.K8sClusterDy
 		option = "hold"
 	}
 
-	// Default: version check is enabled (skipVersionCheck = false)
-	skipVersionCheck := false
+	// skipVersionCheck parameter is passed from function argument
 	return resource.CreateK8sCluster(nsId, k8sReq, option, skipVersionCheck)
 }
 
