@@ -197,7 +197,7 @@ func deleteK8sClusterInfo(nsId, k8sClusterId string) error {
 }
 
 // CreateK8sCluster create a k8s cluster
-func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string) (*model.K8sClusterInfo, error) {
+func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string, skipVersionCheck bool) (*model.K8sClusterInfo, error) {
 	log.Info().Msg("CreateK8sCluster")
 
 	emptyObj := &model.K8sClusterInfo{}
@@ -306,7 +306,7 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string) (*mo
 	}
 
 	// Validate
-	createErr = validateAtCreateK8sCluster(req)
+	createErr = validateAtCreateK8sCluster(req, skipVersionCheck)
 	if createErr != nil {
 		log.Err(err).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
 		return emptyObj, createErr
@@ -1382,7 +1382,7 @@ func DeleteAllK8sCluster(nsId, subString, option string) (*model.IdList, error) 
 }
 
 // UpgradeK8sCluster upgrades an existing k8s cluster to the specified version
-func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.UpgradeK8sClusterReq) (*model.K8sClusterInfo, error) {
+func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.UpgradeK8sClusterReq, skipVersionCheck bool) (*model.K8sClusterInfo, error) {
 	log.Info().Msg("UpgradeK8sCluster")
 
 	emptyObj := &model.K8sClusterInfo{}
@@ -1424,7 +1424,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.UpgradeK8sClus
 	}
 
 	// Validate
-	err = validateAtUpgradeK8sCluster(tbK8sCInfo.ConnectionName, u)
+	err = validateAtUpgradeK8sCluster(tbK8sCInfo.ConnectionName, u, skipVersionCheck)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Upgrade a K8sCluster(%s)", k8sClusterId)
 		return emptyObj, err
@@ -1525,18 +1525,22 @@ func checkK8sClusterEnablement(connectionName string) error {
 	return nil
 }
 
-func validateAtCreateK8sCluster(tbK8sClusterReq *model.K8sClusterReq) error {
+func validateAtCreateK8sCluster(tbK8sClusterReq *model.K8sClusterReq, skipVersionCheck bool) error {
 	connConfig, err := common.GetConnConfig(tbK8sClusterReq.ConnectionName)
 	if err != nil {
 		log.Err(err).Msgf("Failed to get connection config")
 		return err
 	}
 
-	// Validate K8sCluster Version
-	err = validateK8sVersion(connConfig.ProviderName, connConfig.RegionDetail.RegionName, tbK8sClusterReq.Version)
-	if err != nil {
-		log.Err(err).Msgf("Requested K8sVersion(%s)", tbK8sClusterReq.Version)
-		return err
+	// Validate K8sCluster Version (skip if skipVersionCheck is true)
+	if !skipVersionCheck {
+		err = validateK8sVersion(connConfig.ProviderName, connConfig.RegionDetail.RegionName, tbK8sClusterReq.Version)
+		if err != nil {
+			log.Err(err).Msgf("Requested K8sVersion(%s)", tbK8sClusterReq.Version)
+			return err
+		}
+	} else {
+		log.Warn().Msgf("K8sCluster version validation skipped for version: %s", tbK8sClusterReq.Version)
 	}
 
 	// Get K8sNodeGroups On K8s Creation setting
@@ -1617,14 +1621,22 @@ func validateAtCreateK8sCluster(tbK8sClusterReq *model.K8sClusterReq) error {
 	return nil
 }
 
-func validateAtUpgradeK8sCluster(connectionName string, tbUpgradeK8sClusterReq *model.UpgradeK8sClusterReq) error {
+func validateAtUpgradeK8sCluster(connectionName string, tbUpgradeK8sClusterReq *model.UpgradeK8sClusterReq, skipVersionCheck bool) error {
 	connConfig, err := common.GetConnConfig(connectionName)
-
-	// Validate K8sCluster Version
-	err = validateK8sVersion(connConfig.ProviderName, connConfig.RegionDetail.RegionName, tbUpgradeK8sClusterReq.Version)
 	if err != nil {
-		log.Err(err).Msgf("Requested K8sVersion(%s)", tbUpgradeK8sClusterReq.Version)
+		log.Err(err).Msgf("Failed to get connection config")
 		return err
+	}
+
+	// Validate K8sCluster Version (skip if skipVersionCheck is true)
+	if !skipVersionCheck {
+		err = validateK8sVersion(connConfig.ProviderName, connConfig.RegionDetail.RegionName, tbUpgradeK8sClusterReq.Version)
+		if err != nil {
+			log.Err(err).Msgf("Requested K8sVersion(%s)", tbUpgradeK8sClusterReq.Version)
+			return err
+		}
+	} else {
+		log.Warn().Msgf("K8sCluster version validation skipped for upgrade version: %s", tbUpgradeK8sClusterReq.Version)
 	}
 
 	return nil

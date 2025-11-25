@@ -3165,6 +3165,13 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "default": "false",
+                        "description": "Skip Kubernetes version validation (use for testing with unlisted versions)",
+                        "name": "skipVersionCheck",
+                        "in": "query"
+                    },
+                    {
                         "description": "Details of the K8sCluster object",
                         "name": "k8sClusterReq",
                         "in": "body",
@@ -3728,6 +3735,13 @@ const docTemplate = `{
                         "name": "k8sClusterId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "false",
+                        "description": "Skip Kubernetes version validation (use for testing with unlisted versions)",
+                        "name": "skipVersionCheck",
+                        "in": "query"
                     },
                     {
                         "description": "Details of the UpgradeK8sClusterReq object",

@@ -3706,7 +3706,9 @@ func CreateK8sClusterDynamic(reqID string, nsId string, dReq *model.K8sClusterDy
 		option = "hold"
 	}
 
-	return resource.CreateK8sCluster(nsId, k8sReq, option)
+	// Default: version check is enabled (skipVersionCheck = false)
+	skipVersionCheck := false
+	return resource.CreateK8sCluster(nsId, k8sReq, option, skipVersionCheck)
 }
 
 // getK8sNodeGroupReqFromDynamicReq is func to get K8sNodeGroupReq from K8sNodeGroupDynamicReq

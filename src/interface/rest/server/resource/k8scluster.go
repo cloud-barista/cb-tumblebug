@@ -147,6 +147,7 @@ func RestGetRequiredK8sSubnetCount(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param option query string false "Option: [required params for register] connectionName, name, cspResourceId" Enums(register)
+// @Param skipVersionCheck query string false "Skip Kubernetes version validation (use for testing with unlisted versions)" default(false)
 // @Param k8sClusterReq body model.K8sClusterReq true "Details of the K8sCluster object"
 // @Success 200 {object} model.K8sClusterInfo
 // @Failure 404 {object} model.SimpleMsg
@@ -157,6 +158,8 @@ func RestPostK8sCluster(c echo.Context) error {
 	nsId := c.Param("nsId")
 
 	optionFlag := c.QueryParam("option")
+	skipVersionCheckStr := c.QueryParam("skipVersionCheck")
+	skipVersionCheck := skipVersionCheckStr == "true"
 
 	u := &model.K8sClusterReq{}
 	if err := c.Bind(u); err != nil {
@@ -165,7 +168,7 @@ func RestPostK8sCluster(c echo.Context) error {
 
 	log.Debug().Msg("[POST K8sCluster]")
 
-	content, err := resource.CreateK8sCluster(nsId, u, optionFlag)
+	content, err := resource.CreateK8sCluster(nsId, u, optionFlag, skipVersionCheck)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -517,6 +520,7 @@ func RestDeleteAllK8sCluster(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster01)
+// @Param skipVersionCheck query string false "Skip Kubernetes version validation (use for testing with unlisted versions)" default(false)
 // @Param upgradeK8sClusterReq body model.UpgradeK8sClusterReq true "Details of the UpgradeK8sClusterReq object"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
@@ -527,6 +531,9 @@ func RestPutUpgradeK8sCluster(c echo.Context) error {
 	nsId := c.Param("nsId")
 	k8sClusterId := c.Param("k8sClusterId")
 
+	skipVersionCheckStr := c.QueryParam("skipVersionCheck")
+	skipVersionCheck := skipVersionCheckStr == "true"
+
 	u := &model.UpgradeK8sClusterReq{}
 	if err := c.Bind(u); err != nil {
 		return err
@@ -534,7 +541,7 @@ func RestPutUpgradeK8sCluster(c echo.Context) error {
 
 	log.Debug().Msg("[PUT Upgrade K8sCluster]")
 
-	content, err := resource.UpgradeK8sCluster(nsId, k8sClusterId, u)
+	content, err := resource.UpgradeK8sCluster(nsId, k8sClusterId, u, skipVersionCheck)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
