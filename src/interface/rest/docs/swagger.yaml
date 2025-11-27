@@ -3058,19 +3058,17 @@ paths:
         "clusters": [
         {
         "imageId": "default",
-        "specId": "aws+ap-northeast-2+t3a.xlarge"
+        "specId": "aws+eu-west-2+t3a.xlarge"
         },
         {
+        "nodeGroupName": "ng-1",
         "imageId": "default",
-        "specId": "aws+ap-northeast-3+t3.xlarge"
+        "specId": "azure+germanywestcentral+standard_b4ms"
         },
         {
-        "imageId": "ubuntu_22_04_x64_20G_alibase_20251103.vhd",
-        "specId": "alibaba+ap-northeast-2+ecs.t6-c1m4.xlarge"
-        },
-        {
+        "nodeGroupName": "ng-1",
         "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-minimal-2204-jammy-v20251120",
-        "specId": "gcp+asia-northeast3+e2-highmem-4"
+        "specId": "gcp+europe-west9+e2-highmem-4"
         }
         ]
         }
