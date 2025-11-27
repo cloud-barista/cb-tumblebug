@@ -625,7 +625,7 @@ func RestPostK8sClusterDynamic(c echo.Context) error {
 // @Description **Example request body:**
 // @Description ```json
 // @Description {
-// @Description   "namePrefix": "eu-cluster",
+// @Description   "namePrefix": "across",
 // @Description   "clusters": [
 // @Description     {
 // @Description       "imageId": "default",
