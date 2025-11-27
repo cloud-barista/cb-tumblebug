@@ -625,23 +625,21 @@ func RestPostK8sClusterDynamic(c echo.Context) error {
 // @Description **Example request body:**
 // @Description ```json
 // @Description {
-// @Description   "namePrefix": "across",
+// @Description   "namePrefix": "eu-cluster",
 // @Description   "clusters": [
 // @Description     {
 // @Description       "imageId": "default",
-// @Description       "specId": "aws+ap-northeast-2+t3a.xlarge"
+// @Description       "specId": "aws+eu-west-2+t3a.xlarge"
 // @Description     },
 // @Description     {
+// @Description       "nodeGroupName": "ng-1",
 // @Description       "imageId": "default",
-// @Description       "specId": "aws+ap-northeast-3+t3.xlarge"
+// @Description       "specId": "azure+germanywestcentral+standard_b4ms"
 // @Description     },
 // @Description     {
-// @Description       "imageId": "ubuntu_22_04_x64_20G_alibase_20251103.vhd",
-// @Description       "specId": "alibaba+ap-northeast-2+ecs.t6-c1m4.xlarge"
-// @Description     },
-// @Description     {
+// @Description       "nodeGroupName": "ng-1",
 // @Description       "imageId": "https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-minimal-2204-jammy-v20251120",
-// @Description       "specId": "gcp+asia-northeast3+e2-highmem-4"
+// @Description       "specId": "gcp+europe-west9+e2-highmem-4"
 // @Description     }
 // @Description   ]
 // @Description }
