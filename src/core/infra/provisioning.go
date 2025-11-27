@@ -3430,11 +3430,10 @@ func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.K8sClusterDynami
 	}
 
 	if niDesignation == false {
-		// if node image designation is not supported by CSP, ImageId should be "default" or ""(blank)
+		// if node image designation is not supported by CSP, auto-correct ImageId to "default"
 		if !(strings.EqualFold(dReq.ImageId, "default") || strings.EqualFold(dReq.ImageId, "")) {
-			err := fmt.Errorf("The NodeImageDesignation is not supported by CSP(%s). ImageId's value should be \"default\" or \"\"", connConfig.ProviderName)
-			log.Error().Err(err).Msg("")
-			return err
+			log.Warn().Msgf("NodeImageDesignation is not supported by CSP(%s). ImageId '%s' will be replaced with 'default'", connConfig.ProviderName, dReq.ImageId)
+			dReq.ImageId = "default"
 		}
 	}
 
@@ -4587,10 +4586,12 @@ func CreateK8sMultiClusterDynamic(reqID string, nsId string, multiReq *model.K8s
 
 	// Create channels for results
 	type clusterResult struct {
-		index   int
-		name    string // Store actual cluster name for error reporting
-		cluster *model.K8sClusterInfo
-		err     error
+		index          int
+		name           string // Store actual cluster name for error reporting
+		connectionName string // Connection name for error reporting
+		specId         string // Spec ID for error reporting
+		cluster        *model.K8sClusterInfo
+		err            error
 	}
 	resultChan := make(chan clusterResult, len(multiReq.Clusters))
 
@@ -4603,18 +4604,28 @@ func CreateK8sMultiClusterDynamic(reqID string, nsId string, multiReq *model.K8s
 			// Generate unique request ID for each cluster
 			clusterReqID := fmt.Sprintf("%s-cluster-%d", reqID, index)
 
-			// Auto-generate cluster name if NamePrefix is provided and name is empty
-			if namePrefix != "" && req.Name == "" {
-				// Extract CSP name from specId (format: "provider+region+spec")
-				cspName := "unknown"
-				if req.SpecId != "" {
-					parts := strings.Split(req.SpecId, "+")
-					if len(parts) > 0 {
-						cspName = parts[0]
+			// Auto-generate cluster name and inject clustergroup label if NamePrefix is provided
+			if namePrefix != "" {
+				// Auto-generate name if not provided
+				if req.Name == "" {
+					// Extract CSP name from specId (format: "provider+region+spec")
+					cspName := "unknown"
+					if req.SpecId != "" {
+						parts := strings.Split(req.SpecId, "+")
+						if len(parts) > 0 {
+							cspName = parts[0]
+						}
 					}
+					req.Name = fmt.Sprintf("%s-%s-%d", namePrefix, cspName, index+1)
+					log.Debug().Msgf("Auto-generated cluster name: %s", req.Name)
 				}
-				req.Name = fmt.Sprintf("%s-%s-%d", namePrefix, cspName, index+1)
-				log.Debug().Msgf("Auto-generated cluster name: %s", req.Name)
+
+				// Inject clustergroup label for grouping clusters created together
+				if req.Label == nil {
+					req.Label = make(map[string]string)
+				}
+				req.Label["clustergroup"] = namePrefix
+				log.Debug().Msgf("Injected clustergroup label: %s for cluster: %s", namePrefix, req.Name)
 			}
 
 			log.Info().Msgf("[%d/%d] Starting K8sCluster creation: %s", index+1, len(multiReq.Clusters), req.Name)
@@ -4628,10 +4639,12 @@ func CreateK8sMultiClusterDynamic(reqID string, nsId string, multiReq *model.K8s
 			}
 
 			resultChan <- clusterResult{
-				index:   index,
-				name:    req.Name, // Store actual name for error reporting
-				cluster: cluster,
-				err:     err,
+				index:          index,
+				name:           req.Name, // Store actual name for error reporting
+				connectionName: req.ConnectionName,
+				specId:         req.SpecId,
+				cluster:        cluster,
+				err:            err,
 			}
 		}(i, clusterReq)
 	}
@@ -4639,6 +4652,7 @@ func CreateK8sMultiClusterDynamic(reqID string, nsId string, multiReq *model.K8s
 	// Collect results
 	results := make([]*model.K8sClusterInfo, len(multiReq.Clusters))
 	var errors []string
+	var failedClusters []model.K8sClusterFailedInfo
 
 	for i := 0; i < len(multiReq.Clusters); i++ {
 		result := <-resultChan
@@ -4646,16 +4660,25 @@ func CreateK8sMultiClusterDynamic(reqID string, nsId string, multiReq *model.K8s
 		if result.err != nil {
 			// Use actual cluster name (which may be auto-generated)
 			errors = append(errors, fmt.Sprintf("Cluster[%d] %s: %v", result.index, result.name, result.err))
+			// Add to failed clusters list for detailed error reporting
+			failedClusters = append(failedClusters, model.K8sClusterFailedInfo{
+				Name:           result.name,
+				ConnectionName: result.connectionName,
+				SpecId:         result.specId,
+				Error:          result.err.Error(),
+			})
 		}
 	}
 
 	// Prepare response
 	multiInfo := &model.K8sMultiClusterInfo{
-		Clusters: make([]model.K8sClusterInfo, 0, len(results)),
+		Clusters:       make([]model.K8sClusterInfo, 0, len(results)),
+		FailedClusters: failedClusters,
 	}
 
 	for _, cluster := range results {
-		if cluster != nil {
+		// Skip nil or empty clusters (empty cluster has no Id/Name)
+		if cluster != nil && cluster.Id != "" {
 			multiInfo.Clusters = append(multiInfo.Clusters, *cluster)
 		}
 	}

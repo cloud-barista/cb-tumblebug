@@ -16207,6 +16207,27 @@ const docTemplate = `{
                 }
             }
         },
+        "model.K8sClusterFailedInfo": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                },
+                "error": {
+                    "type": "string",
+                    "example": "failed to create cluster: resource quota exceeded"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "k8s-cluster-01"
+                },
+                "specId": {
+                    "type": "string",
+                    "example": "aws+ap-northeast-2+t3.medium"
+                }
+            }
+        },
         "model.K8sClusterInfo": {
             "type": "object",
             "properties": {
@@ -16601,6 +16622,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.K8sClusterInfo"
+                    }
+                },
+                "failedClusters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.K8sClusterFailedInfo"
                     }
                 }
             }

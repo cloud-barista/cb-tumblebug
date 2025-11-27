@@ -578,5 +578,14 @@ type K8sMultiClusterDynamicReq struct {
 
 // K8sMultiClusterInfo is a wrapper struct for multiple K8sCluster creation results
 type K8sMultiClusterInfo struct {
-	Clusters []K8sClusterInfo `json:"clusters"`
+	Clusters       []K8sClusterInfo       `json:"clusters"`
+	FailedClusters []K8sClusterFailedInfo `json:"failedClusters,omitempty"`
+}
+
+// K8sClusterFailedInfo contains information about a failed cluster creation attempt
+type K8sClusterFailedInfo struct {
+	Name           string `json:"name" example:"k8s-cluster-01"`
+	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2"`
+	SpecId         string `json:"specId,omitempty" example:"aws+ap-northeast-2+t3.medium"`
+	Error          string `json:"error" example:"failed to create cluster: resource quota exceeded"`
 }

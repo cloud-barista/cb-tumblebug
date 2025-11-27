@@ -60,11 +60,19 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 					log.Error().Msg("Response body is empty")
 					return
 				}
-				responseJsonLines := parts[:len(parts)-1]
+
+				// Filter out empty parts (handles trailing newline and no-newline cases)
+				var responseJsonLines [][]byte
+				for _, part := range parts {
+					trimmed := bytes.TrimSpace(part)
+					if len(trimmed) > 0 {
+						responseJsonLines = append(responseJsonLines, trimmed)
+					}
+				}
 
 				// Check if responseJsonLines has any content
 				if len(responseJsonLines) == 0 {
-					log.Error().Msg("No valid response JSON lines found")
+					log.Debug().Msg("No valid response JSON lines found (response may be empty or non-JSON)")
 					return
 				}
 

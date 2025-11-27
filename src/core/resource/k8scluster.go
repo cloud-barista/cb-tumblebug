@@ -99,7 +99,7 @@ func HandleK8sClusterAction(nsId string, k8sClusterId string, action string) (st
 }
 
 func createK8sClusterInfo(nsId string, tbK8sCInfo model.K8sClusterInfo) error {
-	log.Debug().Msg("[Create K8sClusterInfo] " + tbK8sCInfo.Id)
+	log.Debug().Msgf("[Create K8sClusterInfo] %s", tbK8sCInfo.Id)
 
 	k8sClusterId := tbK8sCInfo.Id
 	k := common.GenK8sClusterKey(nsId, k8sClusterId)
@@ -159,7 +159,6 @@ func getK8sClusterInfo(nsId, k8sClusterId string) (*model.K8sClusterInfo, error)
 // storeK8sClusterInfo is func to update K8sClusterInfo
 func storeK8sClusterInfo(nsId string, newTbK8sCInfo *model.K8sClusterInfo) {
 	k8sClusterId := newTbK8sCInfo.Id
-	// log.Debug().Msg("[Update K8sClusterInfo] " + k8sClusterId)
 
 	k := common.GenK8sClusterKey(nsId, k8sClusterId)
 
@@ -251,6 +250,8 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string, skip
 		ConnectionName:   req.ConnectionName,
 		ConnectionConfig: connConfig,
 		Description:      req.Description,
+		Label:            req.Label,
+		SystemLabel:      req.SystemLabel,
 		Network: model.K8sClusterNetworkInfo{
 			VNetId:           req.VNetId,
 			SubnetIds:        req.SubnetIds,
@@ -268,12 +269,12 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string, skip
 	var createErr error
 	defer func() {
 		if createErr != nil {
-			log.Err(createErr).Msgf("Failed to Create a K8sCluster(%s)", k8sClusterId)
+			log.Err(createErr).Msgf("Failed to Create a K8sCluster(%s), cleaning up", k8sClusterId)
 
 			if tbK8sCInfo != nil {
 				err := deleteK8sClusterInfo(nsId, k8sClusterId)
 				if err != nil {
-					log.Err(err).Msgf("")
+					log.Err(err).Msgf("Failed to delete K8sClusterInfo: %s", k8sClusterId)
 				}
 			}
 		}
@@ -533,12 +534,19 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string, skip
 		model.LabelCreatedTime:     tbK8sCInfo.CreatedTime.String(),
 		model.LabelConnectionName:  tbK8sCInfo.ConnectionName,
 	}
+	// Add user labels (user labels override system labels if conflict)
+	for key, value := range tbK8sCInfo.Label {
+		labels[key] = value
+	}
 	k8sClusterKey := common.GenK8sClusterKey(nsId, k8sClusterId)
-	createErr = label.CreateOrUpdateLabel(model.StrK8s, uid, k8sClusterKey, labels)
-	if createErr != nil {
-		return emptyObj, createErr
+	labelErr := label.CreateOrUpdateLabel(model.StrK8s, uid, k8sClusterKey, labels)
+	if labelErr != nil {
+		// Label creation failure should not fail the entire cluster creation
+		// Log the error but continue with the cluster creation
+		log.Warn().Err(labelErr).Msgf("Failed to create/update labels for K8sCluster(%s), but cluster creation succeeded", k8sClusterId)
 	}
 
+	log.Info().Msgf("Successfully created K8sCluster: %s", tbK8sCInfo.Name)
 	return tbK8sCInfo, nil
 }
 
@@ -1116,7 +1124,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (*model.K8sClusterInfo, err
 		return emptyObj, err
 	}
 
-	// add label info
+	// add label info (labels already include user labels merged at creation time)
 	labelInfo, err := label.GetLabels(model.StrK8s, storedTbK8sCInfo.Uid)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Get K8sCluster(%s)", k8sClusterId)
@@ -1239,10 +1247,18 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{
 
 		tbK8sCInfo, err := GetK8sCluster(nsId, storedTbK8sCInfo.Id)
 		if err != nil {
+			// Check if the cluster no longer exists in Spider (CSP)
+			if strings.Contains(err.Error(), "does not exist") {
+				log.Warn().Msgf("K8sCluster(%s) no longer exists in CSP, removing from stored info", storedTbK8sCInfo.Id)
+				// Optionally clean up the stale entry from kvstore
+				// For now, just skip it from the list
+				continue
+			}
 			// If circuit breaker is active or too many requests error, use stored info with warning
+			// But only if we haven't confirmed the cluster doesn't exist
 			if strings.Contains(err.Error(), "API call temporarily blocked") || strings.Contains(err.Error(), "circuit breaker") || strings.Contains(err.Error(), "too many same requests") {
 				log.Warn().Err(err).Msgf("Using stored cluster info due to API limitation for K8sCluster(%s)", storedTbK8sCInfo.Id)
-				// Add label info to stored cluster info
+				// Add label info (labels already include user labels merged at creation time)
 				if labelInfo, labelErr := label.GetLabels(model.StrK8s, storedTbK8sCInfo.Uid); labelErr == nil {
 					storedTbK8sCInfo.Label = labelInfo.Labels
 				}
