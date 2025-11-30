@@ -46,6 +46,27 @@ Job Scheduler is a system in CB-Tumblebug that automatically executes recurring 
 ✅ **Persistence**: Jobs automatically recovered after server restart  
 ✅ **Duplicate Prevention**: Blocks creation of jobs with identical configuration
 
+
+
+---
+
+## Testing based on GUI
+
+### Sync scheduling request
+<img width="983" height="762" alt="image" src="https://github.com/user-attachments/assets/68fef844-ac34-46f8-8e71-7b40086c6615" />
+
+<img width="886" height="762" alt="image" src="https://github.com/user-attachments/assets/021c5cb4-5d22-4d2a-8b2b-5e7c7cc56e50" />
+
+<img width="517" height="762" alt="image" src="https://github.com/user-attachments/assets/86466776-da8f-42eb-84d9-7cbecd2fa452" />
+
+
+### Sync scheduling result
+<img width="1259" height="747" alt="image" src="https://github.com/user-attachments/assets/c4496728-2606-4c0a-ba77-7e6868f5e110" />
+
+<img width="1259" height="739" alt="image" src="https://github.com/user-attachments/assets/e0c6fe86-3290-4491-a0d3-8e783dc23ab0" />
+
+<img width="1002" height="762" alt="image" src="https://github.com/user-attachments/assets/8255f90b-8b41-426b-8580-db779e15c55f" />
+
 ---
 
 ## Key Features
