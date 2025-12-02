@@ -185,11 +185,24 @@ func storeK8sClusterInfo(nsId string, newTbK8sCInfo *model.K8sClusterInfo) {
 func deleteK8sClusterInfo(nsId, k8sClusterId string) error {
 	log.Debug().Msg("[Delete K8sClusterInfo] " + k8sClusterId)
 
-	k := common.GenK8sClusterKey(nsId, k8sClusterId)
-	err := kvstore.Delete(k)
+	// Get cluster info for UID (needed for label deletion)
+	k8sInfo, err := getK8sClusterInfo(nsId, k8sClusterId)
 	if err != nil {
-		err := fmt.Errorf("failed to delete K8sClusterInfo(%s): %v", k8sClusterId, err)
-		return err
+		log.Warn().Err(err).Msgf("K8sClusterInfo not found for %s, continuing with deletion", k8sClusterId)
+	}
+
+	// Delete cluster data from kvstore
+	k := common.GenK8sClusterKey(nsId, k8sClusterId)
+	err = kvstore.Delete(k)
+	if err != nil {
+		return fmt.Errorf("failed to delete K8sClusterInfo(%s): %v", k8sClusterId, err)
+	}
+
+	// Delete associated label
+	if k8sInfo != nil && k8sInfo.Uid != "" {
+		if labelErr := label.DeleteLabelObject(model.StrK8s, k8sInfo.Uid); labelErr != nil {
+			log.Warn().Err(labelErr).Msgf("Failed to delete label for K8sCluster(%s)", k8sClusterId)
+		}
 	}
 
 	return nil
