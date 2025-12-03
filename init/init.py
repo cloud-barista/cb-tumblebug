@@ -349,29 +349,75 @@ def print_credential_info(response):
         print(Fore.YELLOW + f"\n{response['credentialName'].upper()} (holder: {response['credentialHolder']})" + Style.RESET_ALL)
         
     if 'allConnections' in response and 'connectionconfig' in response['allConnections']:
-        # Print the explanation line in yellow
-        print(Style.BRIGHT + "Registered Connections" + Fore.GREEN + " [verified]" + Fore.MAGENTA + "[region representative]" + Style.RESET_ALL)
+        # Print the explanation line with icons
+        print(Style.BRIGHT + "Registered Connections: " + Style.RESET_ALL +
+              Fore.GREEN + "✓" + Style.RESET_ALL + "=verified, " +
+              Fore.RED + "✗" + Style.RESET_ALL + "=unverified, " +
+              Fore.MAGENTA + "*" + Style.RESET_ALL + "=representative zone")
 
-        # Prepare table headers and rows
-        headers = ["Config Name", "Assigned Region", "Assigned Zone"]
-        table_rows = []
+        # Group connections by region, collecting all zones and tracking verification status
+        region_groups = {}
         for conn in response['allConnections']['connectionconfig']:
             if conn['providerName'] == response['providerName']:
-                # Config name with green color if verified
-                config_name_display = Fore.GREEN + conn['configName'] + Style.RESET_ALL if conn['verified'] else conn['configName']
-
-                # Assigned Zone with pink color if region representative
-                assigned_zone_display = Fore.MAGENTA + conn['regionZoneInfo']['assignedZone'] + Style.RESET_ALL if conn['regionRepresentative'] else conn['regionZoneInfo']['assignedZone']
-
-                # Add row to the table
-                table_rows.append([
-                    config_name_display,
-                    conn['regionZoneInfo']['assignedRegion'],
-                    assigned_zone_display
-                ])
-
-        # Print table
-        print(tabulate(table_rows, headers, tablefmt="grid"))
+                region = conn['regionZoneInfo']['assignedRegion']
+                zone = conn['regionZoneInfo']['assignedZone']
+                config_name = conn['configName']
+                is_verified = conn['verified']
+                is_representative = conn['regionRepresentative']
+                
+                if region not in region_groups:
+                    region_groups[region] = {
+                        'base_config_name': config_name,  # Use first (shortest) config name as base
+                        'zones': set(),  # Use set for O(1) lookups
+                        'all_verified': True,  # Track if all connections are verified
+                        'any_verified': False  # Track if any connection is verified
+                    }
+                
+                # Update base_config_name to use shortest name (usually the base without zone suffix)
+                if len(config_name) < len(region_groups[region]['base_config_name']):
+                    region_groups[region]['base_config_name'] = config_name
+                
+                # Track verification status across all connections in this region
+                region_groups[region]['all_verified'] = region_groups[region]['all_verified'] and is_verified
+                region_groups[region]['any_verified'] = region_groups[region]['any_verified'] or is_verified
+                
+                # Add zone info - if zone is representative in any connection, mark it as representative
+                existing_zone = None
+                for z in region_groups[region]['zones']:
+                    if z[0] == zone:
+                        existing_zone = z
+                        break
+                
+                if existing_zone:
+                    # If this zone is representative, update the existing entry
+                    if is_representative and not existing_zone[1]:
+                        region_groups[region]['zones'].discard(existing_zone)
+                        region_groups[region]['zones'].add((zone, True))
+                else:
+                    region_groups[region]['zones'].add((zone, is_representative))
+        
+        # Print in format: icon base-config-name : region (zone1* zone2 zone3)
+        for region, data in sorted(region_groups.items()):
+            # Format zones: representative zones with asterisk, sorted with representative first
+            zone_list = sorted(data['zones'], key=lambda x: (not x[1], x[0]))  # Representative first, then alphabetical
+            zone_displays = []
+            for zone, is_rep in zone_list:
+                if is_rep:
+                    zone_displays.append(f"{Fore.MAGENTA}{zone}*{Style.RESET_ALL}")
+                else:
+                    zone_displays.append(zone)
+            
+            zones_str = " ".join(zone_displays)
+            
+            # Use green check if all verified, red X if none verified, yellow ~ if mixed
+            config_name = data['base_config_name']
+            if data['all_verified']:
+                print(f"{Fore.GREEN}✓{Style.RESET_ALL} {Fore.CYAN}{config_name}{Style.RESET_ALL} : {Fore.YELLOW}{region}{Style.RESET_ALL} ({zones_str})")
+            elif not data['any_verified']:
+                print(f"{Fore.RED}✗{Style.RESET_ALL} {Fore.CYAN}{config_name}{Style.RESET_ALL} : {Fore.YELLOW}{region}{Style.RESET_ALL} ({zones_str})")
+            else:
+                # Mixed verification status
+                print(f"{Fore.YELLOW}~{Style.RESET_ALL} {Fore.CYAN}{config_name}{Style.RESET_ALL} : {Fore.YELLOW}{region}{Style.RESET_ALL} ({zones_str})")
 
 # Function to fetch price information from CSPs
 def fetch_price():
