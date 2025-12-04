@@ -26,6 +26,12 @@ compose-down: ## Stop Docker Compose services (docker compose down)
 	@echo "Stopping Docker Compose services..."
 	docker compose down
 
+status: ## Show status of Docker Compose services (docker compose ps)
+	@docker compose ps
+
+ps: ## Show status of services (alias for status)
+	@docker compose ps
+
 # ===== Database Cleanup Commands =====
 clean-db: ## Clean all database metadata (./init/cleanDB.sh)
 	@echo "Running cleanDB script..."
@@ -97,6 +103,7 @@ help: ## Display this help screen
 	@echo "🐳 Container Build & Run:"
 	@echo "  \033[36mup (compose-up)\033[0m        Start services with --build (docker compose up --build)"
 	@echo "  \033[36mdown (compose-down)\033[0m    Stop services (docker compose down)"
+	@echo "  \033[36mps (status)\033[0m            Show status of services (docker compose ps)"
 	@echo ""
 	@echo "⚙️  Initialization:"
 	@grep -E '^(init|gen-cred|enc-cred|dec-cred):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
@@ -123,4 +130,4 @@ help: ## Display this help screen
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ===== PHONY targets (not actual files) =====
-.PHONY: default run clean clean-all swag swagger init compose compose-up compose-down clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help
+.PHONY: default run clean clean-all swag swagger init compose compose-up compose-down status ps clean-db backup-assets restore-assets up down gen-cred enc-cred dec-cred bcrypt certs help
