@@ -1534,14 +1534,13 @@ func checkK8sClusterEnablement(connectionName string) error {
 	cloudSetting := model.CloudSetting{}
 
 	getCloudSetting := func() {
-		defer func() {
-			if err := recover(); err != nil {
-				log.Error().Msgf("%v", err)
-				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(model.CloudSetting)
-			}
-		}()
-
-		cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName(fnCloudType).Interface().(model.CloudSetting)
+		cloudField := reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName(fnCloudType)
+		if cloudField.IsValid() {
+			cloudSetting = cloudField.Interface().(model.CloudSetting)
+		} else {
+			// Fallback to Common setting if CSP-specific setting is not defined
+			cloudSetting = common.RuntimeConf.Cloud.Common
+		}
 	}
 
 	getCloudSetting()

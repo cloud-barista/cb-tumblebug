@@ -62,6 +62,15 @@ cloud:
       threshold: "3"
     k8scluster:
       enable: "n"
+  ncp:
+    enable: "y"
+    nlb:
+      enable: "y"
+      interval: "10"
+      timeout: "9"
+      threshold: "3"
+    k8scluster:
+      enable: "y"
   nhn:
     enable: "y"
     k8scluster:
