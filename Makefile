@@ -27,10 +27,10 @@ compose-down: ## Stop Docker Compose services (docker compose down)
 	docker compose down
 
 status: ## Show status of Docker Compose services (docker compose ps)
-	@docker compose ps
+	@docker compose ps --format "table {{.Name}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
 
 ps: ## Show status of services (alias for status)
-	@docker compose ps
+	@$(MAKE) status
 
 # ===== Database Cleanup Commands =====
 clean-db: ## Clean all database metadata (./init/cleanDB.sh)
