@@ -182,7 +182,7 @@ k8scluster:
     requiredSubnetCount: 1
     nodeGroupNamingRule: '^[a-z][a-z0-9-]{1,18}[a-z0-9]$'
     version:
-      - region: [kr]
+      - region: [common]
         available:
           - name: "1.33"
             id: "1.33.4-nks.1"
@@ -191,7 +191,7 @@ k8scluster:
           - name: "1.31"
             id: "1.31.7-nks.1"
     rootDisk:
-      - region: [kr]
+      - region: [common]
         type:
           - name: default
             id: default
