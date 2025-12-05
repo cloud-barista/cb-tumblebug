@@ -56,9 +56,9 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 		return err.Error(), err
 	}
 
-	log.Debug().Msg("[Get MCI requested action: " + action)
+	log.Info().Msgf("Action requested for MCI %s: Action=%s", mciId, action)
+
 	if action == "suspend" {
-		log.Debug().Msg("[suspend MCI]")
 
 		err := ControlMciAsync(nsId, mciId, model.ActionSuspend, force)
 		if err != nil {
@@ -68,7 +68,6 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 		return "Suspending the MCI", nil
 
 	} else if action == "resume" {
-		log.Debug().Msg("[resume MCI]")
 
 		err := ControlMciAsync(nsId, mciId, model.ActionResume, force)
 		if err != nil {
@@ -78,7 +77,6 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 		return "Resuming the MCI", nil
 
 	} else if action == "reboot" {
-		log.Debug().Msg("[reboot MCI]")
 
 		err := ControlMciAsync(nsId, mciId, model.ActionReboot, force)
 		if err != nil {
@@ -88,7 +86,6 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 		return "Rebooting the MCI", nil
 
 	} else if action == "terminate" {
-		log.Debug().Msg("[terminate MCI]")
 
 		vmList, err := ListVmId(nsId, mciId)
 		if err != nil {
@@ -108,21 +105,18 @@ func HandleMciAction(nsId string, mciId string, action string, force bool) (stri
 		return "Terminated the MCI", nil
 
 	} else if action == "continue" {
-		log.Debug().Msg("[continue MCI provisioning]")
 		key := common.GenMciKey(nsId, mciId, "")
 		holdingMciMap.Store(key, action)
 
 		return "Continue the holding MCI", nil
 
 	} else if action == "withdraw" {
-		log.Debug().Msg("[withdraw MCI provisioning]")
 		key := common.GenMciKey(nsId, mciId, "")
 		holdingMciMap.Store(key, action)
 
 		return "Withdraw the holding MCI", nil
 
 	} else if action == "refine" { // refine delete VMs in model.StatusFailed or model.StatusUndefined
-		log.Debug().Msg("[refine MCI]")
 
 		vmList, err := ListVmId(nsId, mciId)
 		if err != nil {
@@ -422,8 +416,8 @@ func ControlVmsInParallel(nsId, mciId string, vmList []string, action string, fo
 			// Get rate limits for this specific CSP (use same limits as VM creation)
 			maxRegionsForCSP, maxVMsForRegion := getVmCreateRateLimitsForCSP(providerName)
 
-			log.Debug().Msgf("Controlling VMs for CSP: %s with %d regions (limits: %d regions, %d VMs/region)",
-				providerName, len(regionMap), maxRegionsForCSP, maxVMsForRegion)
+			// log.Debug().Msgf("Controlling VMs for CSP: %s with %d regions (limits: %d regions, %d VMs/region)",
+			// 	providerName, len(regionMap), maxRegionsForCSP, maxVMsForRegion)
 
 			// Step 3: Process regions within CSP with rate limiting
 			regionSemaphore := make(chan struct{}, maxRegionsForCSP)
@@ -441,8 +435,8 @@ func ControlVmsInParallel(nsId, mciId string, vmList []string, action string, fo
 					regionSemaphore <- struct{}{}
 					defer func() { <-regionSemaphore }()
 
-					log.Debug().Msgf("Controlling VMs in region: %s/%s with %d VMs (limit: %d VMs/region)",
-						providerName, regionName, len(vmIdList), maxVMsForRegion)
+					// log.Debug().Msgf("Controlling VMs in region: %s/%s with %d VMs (limit: %d VMs/region)",
+					// 	providerName, regionName, len(vmIdList), maxVMsForRegion)
 
 					// Step 4: Process VMs within region with rate limiting
 					vmSemaphore := make(chan struct{}, maxVMsForRegion)
@@ -494,8 +488,8 @@ func ControlVmsInParallel(nsId, mciId string, vmList []string, action string, fo
 					cspSuccessCount += regionSuccessCount
 					regionMutex.Unlock()
 
-					log.Debug().Msgf("Completed VM control in region %s/%s: %d/%d VMs successful",
-						providerName, regionName, regionSuccessCount, len(vmIdList))
+					// log.Debug().Msgf("Completed VM control in region %s/%s: %d/%d VMs successful",
+					// 	providerName, regionName, regionSuccessCount, len(vmIdList))
 
 				}(region, vmIds)
 			}
@@ -507,7 +501,7 @@ func ControlVmsInParallel(nsId, mciId string, vmList []string, action string, fo
 			successCount += cspSuccessCount
 			mutex.Unlock()
 
-			log.Debug().Msgf("Completed VM control for CSP: %s, %d VMs successful", providerName, cspSuccessCount)
+			// log.Debug().Msgf("Completed VM control for CSP: %s, %d VMs successful", providerName, cspSuccessCount)
 
 		}(csp, regions)
 	}
@@ -525,10 +519,8 @@ func ControlVmsInParallel(nsId, mciId string, vmList []string, action string, fo
 		log.Warn().Msgf("Rate-limited VM control completed with some errors: %d CSPs, %d regions, %d/%d VMs successful, %d errors",
 			cspCount, totalRegions, successCount, totalVmCount, len(allErrors))
 		// Don't return error for partial failures, just log them
-	} else {
-		log.Debug().Msgf("Rate-limited VM control completed successfully: %d CSPs, %d regions, %d VMs processed",
-			cspCount, totalRegions, successCount)
 	}
+	// else: Rate-limited VM control completed successfully
 
 	return nil
 }
@@ -557,7 +549,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 
 	// If VM is already terminated, return early without UpdateVmInfo
 	if temp.Status == model.StatusTerminated {
-		log.Debug().Msgf("[ControlVmAsync] VM [%s] is already terminated, skipping action [%s]", vmId, action)
+		// log.Debug().Msgf("[ControlVmAsync] VM [%s] is already terminated, skipping action [%s]", vmId, action)
 		callResult.Status = temp.Status
 		results <- callResult
 		return
@@ -577,6 +569,10 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 	}
 
 	currentStatusBeforeUpdating := temp.Status
+
+	// Log control request initiation
+	log.Debug().Msgf("[ControlVm] VM %s: Control request received - Action: %s, CurrentStatus: %s",
+		vmId, action, currentStatusBeforeUpdating)
 
 	url := ""
 	method := ""
@@ -628,12 +624,17 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 
 	// Check current VM status before making CB-Spider API call
 	// If VM is already in target status, skip the operation
-	if currentStatusBeforeUpdating == temp.TargetStatus {
-		log.Debug().Msgf("[ControlVmAsync] VM [%s] is already in target status [%s], skipping CB-Spider call", vmId, temp.TargetStatus)
+	// Exception: Reboot action should always be executed even if current status equals target status (Running -> Running)
+	if currentStatusBeforeUpdating == temp.TargetStatus && action != model.ActionReboot {
+		log.Debug().Msgf("[ControlVm] VM %s: Already in target status [%s], skipping", vmId, temp.TargetStatus)
 		callResult.Status = temp.Status
 		results <- callResult
 		return
 	}
+
+	// Log status transition
+	log.Info().Msgf("[ControlVm] VM %s: Status transition - %s -> %s (Target: %s)",
+		vmId, currentStatusBeforeUpdating, temp.Status, temp.TargetStatus)
 
 	UpdateVmInfo(nsId, mciId, temp)
 
@@ -642,12 +643,15 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 
 	// Set longer timeout for NCP (VPC)
 	if strings.Contains(strings.ToLower(temp.ConnectionConfig.ProviderName), csp.NCP) {
-		log.Debug().Msgf("Setting longer API request timeout (15m) for %s", csp.NCP)
+		// log.Debug().Msgf("Setting longer API request timeout (15m) for %s", csp.NCP)
 		client.SetTimeout(15 * time.Minute)
 	}
 
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = temp.ConnectionName
+
+	// log.Debug().Msgf("[ControlVmAsync] VM %s: Calling CB-Spider control API - URL: %s, ConnectionName: %s, Action: %s",
+	// 	vmId, url, temp.ConnectionName, action)
 
 	err = clientManager.ExecuteHttpRequest(
 		client,
@@ -659,6 +663,10 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 		&callResult,
 		clientManager.MediumDuration,
 	)
+
+	// log.Debug().Msgf("[ControlVmAsync] VM %s: CB-Spider control API response - Status: %s, Error: %v",
+	// 	vmId, callResult.Status, err)
+
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		callResult.Error = err
@@ -670,12 +678,12 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 
 	// Fetch actual VM status from CSP after successful control operation
 	// This ensures we have the most accurate status in our database
-	log.Debug().Msgf("Fetching VM status after successful %s operation for VM %s", action, vmId)
 	vmStatusInfo, err := FetchVmStatus(nsId, mciId, vmId)
 	if err != nil {
-		log.Warn().Err(err).Msgf("Failed to fetch VM status after %s operation for VM %s, continuing with expected status", action, vmId)
+		log.Warn().Err(err).Msgf("Failed to fetch VM status after %s operation for VM %s", action, vmId)
 	} else {
-		log.Debug().Msgf("VM %s status after %s: %s (NativeStatus: %s)", vmId, action, vmStatusInfo.Status, vmStatusInfo.NativeStatus)
+		log.Debug().Msgf("[ControlVm] VM %s: After %s - Status: %s, NativeStatus: %s",
+			vmId, action, vmStatusInfo.Status, vmStatusInfo.NativeStatus)
 	}
 
 	if action != model.ActionTerminate {

@@ -906,6 +906,8 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 		log.Error().Err(err).Msg("")
 		return &model.MciStatusInfo{}, err
 	}
+	// log.Debug().Msgf("Fetched %d VM statuses for MCI %s", len(vmStatusList), mciId)
+	// log.Debug().Msgf("VM Status List: %+v", vmStatusList)
 
 	// Copy results to mciStatus
 	mciStatus.Vm = vmStatusList
@@ -918,7 +920,7 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 
 	// If VM status fetch didn't populate all VMs, use VmInfo as fallback
 	if len(mciStatus.Vm) == 0 && len(vmInfos) > 0 {
-		log.Debug().Msgf("No VM status info found, converting from VmInfo for MCI: %s", mciId)
+		// log.Debug().Msgf("No VM status info found, converting from VmInfo for MCI: %s", mciId)
 		mciStatus.Vm = ConvertVmInfoListToVmStatusInfoList(vmInfos)
 	}
 
@@ -1008,8 +1010,8 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 			numVm = len(mciTmp.Vm)
 		}
 
-		log.Debug().Msgf("MCI %s is creating: using stable VM count (%d) - actual: %d, status: %d, previous: %d, stored: %d",
-			mciId, numVm, actualVmCount, statusVmCount, mciStatus.StatusCount.CountTotal, len(mciTmp.Vm))
+		// log.Debug().Msgf("MCI %s is creating: using stable VM count (%d) - actual: %d, status: %d, previous: %d, stored: %d",
+		// 	mciId, numVm, actualVmCount, statusVmCount, mciStatus.StatusCount.CountTotal, len(mciTmp.Vm))
 	} else if isStableState {
 		// For stable MCI states (all VMs in same state), use the most reliable source to avoid count fluctuation
 		// This applies to Terminated, Suspended, Failed, Running, etc.
@@ -1146,8 +1148,8 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 		}
 
 		// Log completion status for debugging
-		log.Debug().Msgf("MCI %s %s recovery completion check: %d VMs total, %d pending, isDone=%t",
-			mciId, mciTargetAction, len(mciStatus.Vm), pendingVmsCount, isDone)
+		// log.Debug().Msgf("MCI %s %s recovery completion check: %d VMs total, %d pending, isDone=%t",
+		// 	mciId, mciTargetAction, len(mciStatus.Vm), pendingVmsCount, isDone)
 
 		if isDone {
 			log.Warn().Msgf("MCI %s action %s completed via RECOVERY PATH (primary completion in control.go/provisioning.go was missed) - VM states: %d total, %d pending",
@@ -1158,7 +1160,7 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 			for _, v := range mciStatus.Vm {
 				statusBreakdown[v.Status]++
 			}
-			log.Debug().Msgf("MCI %s recovery completion - VM status breakdown: %+v", mciId, statusBreakdown)
+			// log.Debug().Msgf("MCI %s recovery completion - VM status breakdown: %+v", mciId, statusBreakdown)
 
 			// Check if all VMs are in failed state
 			// If there are no VMs, consider it as all VMs failed for creation context
@@ -1561,6 +1563,9 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 		return statusInfo, err
 	}
 
+	// log.Debug().Msgf("[FetchVmStatus] VM %s - Initial state from DB: Status=%s, TargetAction=%s, TargetStatus=%s, ConnectionName=%s",
+	// 	vmId, vmInfo.Status, vmInfo.TargetAction, vmInfo.TargetStatus, vmInfo.ConnectionName)
+
 	// Check if we should skip CSP API call based on VM state
 	// Skip API calls for stable final states or when CSP resource doesn't exist
 	shouldSkipCSPCall := false
@@ -1573,8 +1578,9 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 		model.StatusSuspended:  true, // Suspended VMs are stable until explicitly resumed
 	}
 
-	// Skip CSP API call for stable states
-	if stableStates[vmInfo.Status] {
+	// Skip CSP API call for stable states ONLY if there's no active action in progress
+	// If TargetAction is set (Resume, Reboot, etc.), we must fetch from CSP to track progress
+	if stableStates[vmInfo.Status] && vmInfo.TargetAction == model.ActionComplete {
 		shouldSkipCSPCall = true
 	}
 
@@ -1584,7 +1590,6 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 	}
 
 	if shouldSkipCSPCall {
-		// log.Debug().Msgf("VM %s: %s, skipping CSP status fetch", vmId, skipReason)
 		// Return complete status info using stored VM info
 		populateVmStatusInfoFromVmInfo(&statusInfo, vmInfo)
 		statusInfo.NativeStatus = vmInfo.Status
@@ -1620,9 +1625,12 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 		requestBody := VMStatusReqInfo{}
 		requestBody.ConnectionName = vmInfo.ConnectionName
 
+		// log.Debug().Msgf("[FetchVmStatus] VM %s: Calling CB-Spider API - URL: %s, ConnectionName: %s",
+		// 	vmId, url, vmInfo.ConnectionName)
+
 		// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
 		retrycheck := 2
-		for i := 0; i < retrycheck; i++ {
+		for range retrycheck {
 			statusInfo.Status = model.StatusFailed
 			err := clientManager.ExecuteHttpRequest(
 				client,
@@ -1634,13 +1642,17 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 				&callResult,
 				clientManager.MediumDuration,
 			)
+
+			// log.Debug().Msgf("[FetchVmStatus] VM %s: CB-Spider response (attempt %d/%d) - Status: %s, Error: %v",
+			// 	vmId, i+1, retrycheck, callResult.Status, err)
+
 			if err != nil {
 				statusInfo.SystemMessage = err.Error()
 
 				// check if VM is already Terminated
 				if vmInfo.Status == model.StatusTerminated {
 					// VM was already terminated, maintain the status instead of marking as Undefined
-					log.Debug().Msgf("VM %s does not exist in CSP but is already Terminated, maintaining status", vmId)
+					// log.Debug().Msgf("VM %s does not exist in CSP but is already Terminated, maintaining status", vmId)
 					callResult.Status = model.StatusTerminated
 				} else {
 					callResult.Status = model.StatusUndefined
@@ -1659,6 +1671,8 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 
 	nativeStatus := callResult.Status
 
+	// log.Debug().Msgf("[FetchVmStatus] VM %s: Raw NativeStatus from CSP: %s", vmId, nativeStatus)
+
 	// Define a map to validate nativeStatus
 	var validStatuses = map[string]bool{
 		model.StatusCreating:    true,
@@ -1675,6 +1689,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 	if _, ok := validStatuses[nativeStatus]; ok {
 		callResult.Status = nativeStatus
 	} else {
+		// log.Debug().Msgf("[FetchVmStatus] VM %s: NativeStatus '%s' is not valid, setting to Undefined", vmId, nativeStatus)
 		callResult.Status = model.StatusUndefined
 	}
 
@@ -1697,6 +1712,9 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 	vmStatusTmp.CreatedTime = vmInfo.CreatedTime
 	vmStatusTmp.SystemMessage = vmInfo.SystemMessage
 
+	// log.Debug().Msgf("[FetchVmStatus] VM %s: Before TargetAction correction - Status=%s, NativeStatus=%s, TargetAction=%s, TargetStatus=%s",
+	// 	vmId, vmStatusTmp.Status, vmStatusTmp.NativeStatus, vmStatusTmp.TargetAction, vmStatusTmp.TargetStatus)
+
 	//Correct undefined status using TargetAction
 	if strings.EqualFold(vmStatusTmp.TargetAction, model.ActionCreate) {
 		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
@@ -1718,8 +1736,31 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
 			callResult.Status = model.StatusResuming
 		}
+		// NCP may return Creating status during Resume operation instead of Resuming status.
 		if strings.EqualFold(callResult.Status, model.StatusCreating) {
+			log.Debug().Msgf("[FetchVmStatus] VM %s: CSP returned Creating during Resume action, correcting to Resuming", vmId)
 			callResult.Status = model.StatusResuming
+		}
+		// Some CSPs (e.g., KT Cloud) may return Suspended status during Resume operation
+		// instead of returning Resuming status. Correct it to Resuming.
+		if strings.EqualFold(callResult.Status, model.StatusSuspended) {
+			log.Debug().Msgf("[FetchVmStatus] VM %s: CSP returned Suspended during Resume action, correcting to Resuming", vmId)
+			callResult.Status = model.StatusResuming
+		}
+	}
+	// Some CSPs may return Running or Resuming status during Suspend operation instead of Suspending status.
+	if strings.EqualFold(vmStatusTmp.TargetAction, model.ActionSuspend) {
+		if strings.EqualFold(callResult.Status, model.StatusUndefined) {
+			callResult.Status = model.StatusSuspending
+		}
+		if strings.EqualFold(callResult.Status, model.StatusRunning) {
+			log.Debug().Msgf("[FetchVmStatus] VM %s: CSP returned Running during Suspend action, correcting to Suspending", vmId)
+			callResult.Status = model.StatusSuspending
+		}
+		// Tencent may temporarily return Resuming status during Suspend operation
+		if strings.EqualFold(callResult.Status, model.StatusResuming) {
+			log.Debug().Msgf("[FetchVmStatus] VM %s: CSP returned Resuming during Suspend action, correcting to Suspending", vmId)
+			callResult.Status = model.StatusSuspending
 		}
 	}
 	// for action reboot, some csp's native status are suspending, suspended, creating, resuming
@@ -1736,7 +1777,13 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 		callResult.Status = model.StatusTerminated
 	}
 
+	// Log status change if status actually changed
+	previousStatus := vmStatusTmp.Status
 	vmStatusTmp.Status = callResult.Status
+	if previousStatus != vmStatusTmp.Status {
+		log.Debug().Msgf("[FetchVmStatus] VM %s: Status changed - %s -> %s (NativeStatus: %s, TargetAction: %s)",
+			vmId, previousStatus, vmStatusTmp.Status, vmStatusTmp.NativeStatus, vmStatusTmp.TargetAction)
+	}
 
 	// TODO: Alibaba Undefined status error is not resolved yet.
 	// (After Terminate action. "status": "Undefined", "targetStatus": "None", "targetAction": "None")
@@ -1744,6 +1791,8 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 	//if TargetStatus == CurrentStatus, record to finialize the control operation
 	if vmStatusTmp.TargetStatus == vmStatusTmp.Status {
 		if vmStatusTmp.TargetStatus != model.StatusTerminated {
+			log.Debug().Msgf("[FetchVmStatus] VM %s: Action completed - TargetStatus(%s) reached",
+				vmId, vmStatusTmp.TargetStatus)
 			vmStatusTmp.SystemMessage = vmStatusTmp.TargetStatus + "==" + vmStatusTmp.Status
 			vmStatusTmp.TargetStatus = model.StatusComplete
 			vmStatusTmp.TargetAction = model.ActionComplete
@@ -1783,9 +1832,8 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 			// don't update VM info, if cspResourceName is empty
 			UpdateVmInfo(nsId, mciId, vmInfo)
 		}
-	} else {
-		log.Debug().Msgf("VM %s is already terminated, skipping status update", vmId)
 	}
+	// else: VM is already terminated, skip status update
 
 	return vmStatusTmp, nil
 }
