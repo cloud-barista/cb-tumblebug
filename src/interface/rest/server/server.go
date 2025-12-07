@@ -397,6 +397,7 @@ func RunServer() {
 	e.POST("/tumblebug/recommendSpec", rest_infra.RestRecommendSpec)
 	e.GET("/tumblebug/recommendSpecOptions", rest_infra.RestRecommendSpecOptions)
 	e.POST("/tumblebug/mciDynamicCheckRequest", rest_infra.RestPostMciDynamicCheckRequest)
+	e.POST("/tumblebug/specImagePairReview", rest_infra.RestPostSpecImagePairReview)
 	e.POST("/tumblebug/systemMci", rest_infra.RestPostSystemMci)
 
 	g.POST("/:nsId/mciDynamic", rest_infra.RestPostMciDynamic)

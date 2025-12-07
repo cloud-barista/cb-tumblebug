@@ -463,6 +463,45 @@ type ReviewResourceSummary struct {
 	UnavailableImages int `json:"unavailableImages"`
 }
 
+// SpecImagePairReviewReq is struct for spec-image pair review request
+type SpecImagePairReviewReq struct {
+	SpecId  string `json:"specId" validate:"required" example:"aws+ap-northeast-2+t3.nano"`
+	ImageId string `json:"imageId" validate:"required" example:"ami-01f71f215b23ba262"`
+}
+
+// SpecImagePairReviewResult is struct for spec-image pair review result
+type SpecImagePairReviewResult struct {
+	// Review summary
+	IsValid bool   `json:"isValid"`
+	Status  string `json:"status" example:"OK/Warning/Error"`
+	Message string `json:"message" example:"Spec and image pair is valid for provisioning"`
+
+	// Input parameters
+	SpecId  string `json:"specId"`
+	ImageId string `json:"imageId"`
+
+	// Spec details
+	SpecValidation ReviewResourceValidation `json:"specValidation"`
+	SpecDetails    *SpecInfo                `json:"specDetails,omitempty"`
+
+	// Image details
+	ImageValidation ReviewResourceValidation `json:"imageValidation"`
+	ImageDetails    *ImageInfo               `json:"imageDetails,omitempty"`
+
+	// Connection info
+	ConnectionName string `json:"connectionName,omitempty"`
+	ProviderName   string `json:"providerName,omitempty"`
+	RegionName     string `json:"regionName,omitempty"`
+
+	// Cost estimation
+	EstimatedCost string `json:"estimatedCost,omitempty" example:"$0.0052/hour"`
+
+	// Additional info
+	Info     []string `json:"info,omitempty"`
+	Warnings []string `json:"warnings,omitempty"`
+	Errors   []string `json:"errors,omitempty"`
+}
+
 //
 
 // SpiderVMReqInfoWrapper is struct from CB-Spider (VMHandler.go) for wrapping SpiderVMReqInfo

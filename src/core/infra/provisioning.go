@@ -1144,6 +1144,11 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 
 		log.Error().Msgf("MCI %s marked as Failed - all VM and MCI status updates completed", mciId)
 
+		// Record provisioning failure events even when all VMs failed
+		if err := RecordProvisioningEventsFromMci(nsId, mciResult); err != nil {
+			log.Error().Err(err).Msgf("Failed to record provisioning events for failed MCI '%s'", mciId)
+		}
+
 		// Return detailed error message
 		errorMsg := fmt.Sprintf("MCI '%s' creation failed: all %d VMs failed to create.\n\nError: %s",
 			mciId, totalVmsInParallel, err.Error())
@@ -1185,6 +1190,12 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		switch req.PolicyOnPartialFailure {
 		case model.PolicyRollback:
 			log.Error().Msgf("VM creation failed for %d VMs, rolling back entire MCI due to policy=rollback", len(createErrors))
+			// Record provisioning failure events before rollback
+			if mciInfo, mciErr := GetMciInfo(nsId, mciId); mciErr == nil {
+				if err := RecordProvisioningEventsFromMci(nsId, mciInfo); err != nil {
+					log.Error().Err(err).Msgf("Failed to record provisioning events before rollback for MCI '%s'", mciId)
+				}
+			}
 			if cleanupErr := cleanupPartialMci(nsId, mciId); cleanupErr != nil {
 				log.Error().Err(cleanupErr).Msg("Failed to cleanup partial MCI")
 			}
@@ -1838,11 +1849,11 @@ func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynam
 		}
 	}
 
-	// Validate ImageId
+	// Validate ImageId (with auto-registration if found in CSP but not in DB)
 	if specInfoPtr != nil {
-		cspImage, err := resource.LookupImage(specInfoPtr.ConnectionName, subGroupDynamicReq.ImageId)
+		imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, specInfoPtr.ConnectionName, subGroupDynamicReq.ImageId)
 		if err != nil {
-			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Image '%s' not available in CSP: %v", subGroupDynamicReq.ImageId, err))
+			vmReview.Errors = append(vmReview.Errors, fmt.Sprintf("Image '%s' not available: %v", subGroupDynamicReq.ImageId, err))
 			vmReview.ImageValidation = model.ReviewResourceValidation{
 				ResourceId:    subGroupDynamicReq.ImageId,
 				IsAvailable:   false,
@@ -1853,12 +1864,17 @@ func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynam
 			vmReview.CanCreate = false
 			viable = false
 		} else {
+			status := "Available"
+			if isAutoRegistered {
+				status = "Available (Auto-registered)"
+				vmReview.Info = append(vmReview.Info, fmt.Sprintf("Image '%s' was auto-registered from CSP", subGroupDynamicReq.ImageId))
+			}
 			vmReview.ImageValidation = model.ReviewResourceValidation{
 				ResourceId:    subGroupDynamicReq.ImageId,
-				ResourceName:  cspImage.Name,
+				ResourceName:  imageInfo.Name,
 				IsAvailable:   true,
-				Status:        "Available",
-				CspResourceId: cspImage.IId.SystemId,
+				Status:        status,
+				CspResourceId: imageInfo.CspImageName,
 			}
 		}
 	}
@@ -1969,6 +1985,172 @@ func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynam
 
 	log.Debug().Msgf("VM '%s' review completed: %s", subGroupDynamicReq.Name, vmReview.Status)
 	return vmReview, specInfoPtr, viable, hasVmWarning, vmCost
+}
+
+// ReviewSpecImagePair reviews spec and image pair compatibility for provisioning
+func ReviewSpecImagePair(specId, imageId string) (*model.SpecImagePairReviewResult, error) {
+	log.Debug().Msgf("Reviewing spec-image pair: spec=%s, image=%s", specId, imageId)
+
+	result := &model.SpecImagePairReviewResult{
+		SpecId:   specId,
+		ImageId:  imageId,
+		IsValid:  true,
+		Status:   "OK",
+		Info:     make([]string, 0),
+		Warnings: make([]string, 0),
+		Errors:   make([]string, 0),
+	}
+
+	// Validate SpecId
+	specInfo, err := resource.GetSpec(model.SystemCommonNs, specId)
+	if err != nil {
+		result.Errors = append(result.Errors, fmt.Sprintf("Failed to get spec '%s': %v", specId, err))
+		result.SpecValidation = model.ReviewResourceValidation{
+			ResourceId:  specId,
+			IsAvailable: false,
+			Status:      "Unavailable",
+			Message:     err.Error(),
+		}
+		result.IsValid = false
+		result.Status = "Error"
+		result.Message = fmt.Sprintf("Spec '%s' is not available", specId)
+	} else {
+		result.SpecDetails = &specInfo
+		result.ConnectionName = specInfo.ConnectionName
+		result.ProviderName = specInfo.ProviderName
+		result.RegionName = specInfo.RegionName
+
+		// Check if spec is available in CSP
+		cspSpec, err := resource.LookupSpec(specInfo.ConnectionName, specInfo.CspSpecName)
+		if err != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("Spec '%s' not available in CSP: %v", specId, err))
+			result.SpecValidation = model.ReviewResourceValidation{
+				ResourceId:    specId,
+				ResourceName:  specInfo.CspSpecName,
+				IsAvailable:   false,
+				Status:        "Unavailable",
+				Message:       err.Error(),
+				CspResourceId: specInfo.CspSpecName,
+			}
+			result.IsValid = false
+			result.Status = "Error"
+			result.Message = fmt.Sprintf("Spec '%s' is not available in CSP", specId)
+		} else {
+			result.SpecValidation = model.ReviewResourceValidation{
+				ResourceId:    specId,
+				ResourceName:  specInfo.CspSpecName,
+				IsAvailable:   true,
+				Status:        "Available",
+				CspResourceId: cspSpec.Name,
+			}
+
+			// Add cost estimation if available
+			if specInfo.CostPerHour > 0 {
+				result.EstimatedCost = fmt.Sprintf("$%.4f/hour", specInfo.CostPerHour)
+			}
+		}
+	}
+
+	// Validate ImageId (with auto-registration if found in CSP but not in DB)
+	if result.ConnectionName != "" {
+		imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, result.ConnectionName, imageId)
+		if err != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("Image '%s' not available: %v", imageId, err))
+			result.ImageValidation = model.ReviewResourceValidation{
+				ResourceId:    imageId,
+				IsAvailable:   false,
+				Status:        "Unavailable",
+				Message:       err.Error(),
+				CspResourceId: imageId,
+			}
+			result.IsValid = false
+			result.Status = "Error"
+			if result.Message == "" {
+				result.Message = fmt.Sprintf("Image '%s' is not available", imageId)
+			} else {
+				result.Message += fmt.Sprintf("; Image '%s' is not available", imageId)
+			}
+		} else {
+			result.ImageDetails = &imageInfo
+			status := "Available"
+			if isAutoRegistered {
+				status = "Available (Auto-registered)"
+				result.Info = append(result.Info, fmt.Sprintf("Image '%s' was auto-registered from CSP", imageId))
+			}
+			result.ImageValidation = model.ReviewResourceValidation{
+				ResourceId:    imageId,
+				ResourceName:  imageInfo.Name,
+				IsAvailable:   true,
+				Status:        status,
+				CspResourceId: imageInfo.CspImageName,
+			}
+		}
+	} else {
+		// Cannot validate image without connection info from spec
+		result.ImageValidation = model.ReviewResourceValidation{
+			ResourceId:  imageId,
+			IsAvailable: false,
+			Status:      "Unknown",
+			Message:     "Cannot validate image without valid spec",
+		}
+	}
+
+	// Check provisioning history and risk analysis
+	if result.SpecValidation.IsAvailable {
+		riskAnalysis, err := AnalyzeProvisioningRiskDetailed(specId, imageId)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to analyze provisioning risk for spec-image pair: %s / %s", specId, imageId)
+			result.Warnings = append(result.Warnings, "Failed to analyze provisioning history")
+		} else {
+			riskLevel := riskAnalysis.OverallRisk.Level
+			riskMessage := riskAnalysis.OverallRisk.Message
+
+			// Include recent failure messages if available
+			var fullRiskMessage string
+			if len(riskAnalysis.RecentFailureMessages) > 0 {
+				fullRiskMessage = fmt.Sprintf("%s. Recent failures: %s",
+					riskMessage, strings.Join(riskAnalysis.RecentFailureMessages, "; "))
+			} else {
+				fullRiskMessage = riskMessage
+			}
+
+			switch riskLevel {
+			case "high":
+				result.Errors = append(result.Errors, fmt.Sprintf("High provisioning failure risk: %s", fullRiskMessage))
+				result.IsValid = false
+				result.Status = "Error"
+				if result.Message == "" {
+					result.Message = "High provisioning failure risk detected"
+				} else {
+					result.Message += "; High provisioning failure risk detected"
+				}
+				log.Debug().Msgf("High risk detected for spec %s with image %s: %s", specId, imageId, riskMessage)
+			case "medium":
+				result.Warnings = append(result.Warnings, fmt.Sprintf("Moderate provisioning failure risk: %s", fullRiskMessage))
+				if result.Status == "OK" {
+					result.Status = "Warning"
+				}
+				log.Debug().Msgf("Medium risk detected for spec %s with image %s: %s", specId, imageId, riskMessage)
+			case "low":
+				if riskMessage != "No previous provisioning history available" && riskMessage != "No provisioning attempts recorded" {
+					result.Info = append(result.Info, fmt.Sprintf("Provisioning history: %s", riskMessage))
+				}
+				log.Debug().Msgf("Low risk for spec %s with image %s: %s", specId, imageId, riskMessage)
+			}
+		}
+	}
+
+	// Set final message if valid
+	if result.IsValid {
+		if result.Status == "Warning" {
+			result.Message = "Spec and image pair is valid but has warnings"
+		} else {
+			result.Message = "Spec and image pair is valid for provisioning"
+		}
+	}
+
+	log.Debug().Msgf("Spec-image pair review completed: %s - %s", result.Status, result.Message)
+	return result, nil
 }
 
 // ReviewSingleSubGroupDynamicReq reviews and validates a single VM dynamic request and returns comprehensive review information
@@ -2432,14 +2614,17 @@ func checkCommonResAvailableForSubGroupDynamicReq(req *model.CreateSubGroupDynam
 		}
 	}()
 
-	// Check image availability in parallel
+	// Check image availability in parallel (with auto-registration if found in CSP but not in DB)
 	go func() {
-		_, err := resource.LookupImage(specInfo.ConnectionName, req.ImageId)
+		_, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, specInfo.ConnectionName, req.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msgf("Image validation failed for %s", req.ImageId)
 			errorChan <- fmt.Errorf("image '%s' is not available in connection '%s': %w",
 				req.ImageId, specInfo.ConnectionName, err)
 		} else {
+			if isAutoRegistered {
+				log.Info().Msgf("Image '%s' was auto-registered from CSP", req.ImageId)
+			}
 			log.Debug().Msgf("Image validation successful: %s", req.ImageId)
 			errorChan <- nil
 		}
@@ -2564,8 +2749,8 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSu
 	subGroupReq.SpecId = specInfo.Id
 	subGroupReq.ImageId = k.ImageId
 
-	// check if the image is available in the CSP
-	_, err = resource.LookupImage(connection.ConfigName, subGroupReq.ImageId)
+	// Check if the image is available (DB or CSP) and auto-register if needed
+	imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, connection.ConfigName, subGroupReq.ImageId)
 	if err != nil {
 		detailedErr := fmt.Errorf("failed to find image '%s' for VM '%s' in CSP '%s' (connection: %s): %w. Please verify the image exists and is accessible in the target region",
 			subGroupReq.ImageId, req.Name, connection.ProviderName, connection.ConfigName, err)
@@ -2573,7 +2758,11 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSu
 			req.Name, subGroupReq.ImageId, connection.ProviderName, connection.ConfigName)
 		return &VmReqWithCreatedResources{VmReq: &model.CreateSubGroupReq{Name: req.Name, ConnectionName: subGroupReq.ConnectionName, ImageId: subGroupReq.ImageId}, CreatedResources: createdResources}, detailedErr
 	}
-	// Need enhancement to handle custom image request
+	if isAutoRegistered {
+		log.Info().Msgf("Image '%s' was auto-registered from CSP for VM '%s'", subGroupReq.ImageId, req.Name)
+	}
+	// Update ImageId with the registered image ID (handles both regular and custom images)
+	subGroupReq.ImageId = imageInfo.Id
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
 
@@ -3442,14 +3631,15 @@ func checkCommonResAvailableForK8sClusterDynamicReq(dReq *model.K8sClusterDynami
 		strings.EqualFold(dReq.ImageId, "") {
 		// do nothing
 	} else {
-
-		// check if the image is available in the CSP
-		_, err = resource.LookupImage(connName, dReq.ImageId)
+		// Check if the image is available (DB or CSP) and auto-register if needed
+		_, isAutoRegistered, err := resource.EnsureImageAvailable(model.SystemCommonNs, connName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return err
 		}
-
+		if isAutoRegistered {
+			log.Info().Msgf("Image '%s' was auto-registered from CSP for K8sCluster", dReq.ImageId)
+		}
 	}
 
 	return nil
@@ -3531,14 +3721,15 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.K8sCl
 		strings.EqualFold(dReq.ImageId, "") {
 		// do nothing
 	} else {
-
-		// check if the image is available in the CSP
-		_, err = resource.LookupImage(k8sReq.ConnectionName, dReq.ImageId)
+		// Check if the image is available (DB or CSP) and auto-register if needed
+		_, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, k8sReq.ConnectionName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return emptyK8sReq, err
 		}
-
+		if isAutoRegistered {
+			log.Info().Msgf("Image '%s' was auto-registered from CSP for K8sCluster", dReq.ImageId)
+		}
 	}
 
 	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
@@ -3755,11 +3946,14 @@ func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo 
 		strings.EqualFold(dReq.ImageId, "") {
 		// do nothing
 	} else {
-		// check if the image is available in the CSP
-		_, err = resource.LookupImage(k8sClusterInfo.ConnectionName, dReq.ImageId)
+		// Check if the image is available (DB or CSP) and auto-register if needed
+		_, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, k8sClusterInfo.ConnectionName, dReq.ImageId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get the Image from the CSP")
 			return emptyK8sNgReq, err
+		}
+		if isAutoRegistered {
+			log.Info().Msgf("Image '%s' was auto-registered from CSP for K8sNodeGroup", dReq.ImageId)
 		}
 	}
 
@@ -4081,9 +4275,13 @@ func RecordProvisioningEventsFromMci(nsId string, mciInfo *model.MciInfo) error 
 					}
 				}
 			}
-			// If no specific error message found, use a generic one
+			// Check VM's SystemMessage for additional error details
+			if errorMessage == "" && vm.SystemMessage != "" {
+				errorMessage = vm.SystemMessage
+			}
+			// If no specific error message found, provide a clearer message
 			if errorMessage == "" {
-				errorMessage = fmt.Sprintf("VM creation failed with status: %s", vm.Status)
+				errorMessage = fmt.Sprintf("VM provisioning failed (status: %s) - check CSP console for details", vm.Status)
 			}
 		}
 
@@ -4215,10 +4413,10 @@ func AnalyzeProvisioningRiskDetailed(specId string, cspImageName string) (*model
 		specId, provisioningLog.FailureCount, provisioningLog.SuccessCount, failureRate, imageHasFailed, imageHasSucceeded, failedImageCount, succeededImageCount)
 
 	// Analyze spec-specific risk
-	specRisk := analyzeSpecRisk(failedImageCount, succeededImageCount, provisioningLog.FailureCount, provisioningLog.SuccessCount, failureRate)
+	specRisk := analyzeSpecRisk(specId, failedImageCount, succeededImageCount, provisioningLog.FailureCount, provisioningLog.SuccessCount, failureRate)
 
 	// Analyze image-specific risk
-	imageRisk := analyzeImageRisk(imageHasFailed, imageHasSucceeded, isNewCombination, cspImageName)
+	imageRisk := analyzeImageRisk(specId, cspImageName, imageHasFailed, imageHasSucceeded, isNewCombination)
 
 	// Determine overall risk and primary factor
 	overallRisk := determineOverallRisk(specRisk, imageRisk)
@@ -4239,39 +4437,39 @@ func AnalyzeProvisioningRiskDetailed(specId string, cspImageName string) (*model
 }
 
 // analyzeSpecRisk analyzes risk factors specific to the VM specification
-func analyzeSpecRisk(failedImageCount, succeededImageCount, totalFailures, totalSuccesses int, failureRate float64) model.SpecRiskInfo {
+func analyzeSpecRisk(specId string, failedImageCount, succeededImageCount, totalFailures, totalSuccesses int, failureRate float64) model.SpecRiskInfo {
 	var level, message string
 
 	if failedImageCount >= 10 {
 		// Very likely spec-level issue: 10+ different images failed
 		level = "high"
-		message = fmt.Sprintf("Spec-level issue detected: %d different images have failed with this spec (%.1f%% failure rate). This suggests the spec itself may be problematic",
-			failedImageCount, failureRate*100)
+		message = fmt.Sprintf("Spec '%s': %d different images failed (%.0f%% failure rate) - spec itself may be problematic",
+			specId, failedImageCount, failureRate*100)
 	} else if failedImageCount >= 5 {
 		// Likely spec-level issue: 5+ different images failed
 		level = "medium"
-		message = fmt.Sprintf("Possible spec-level issue: %d different images have failed with this spec (%.1f%% failure rate). Consider checking spec compatibility",
-			failedImageCount, failureRate*100)
+		message = fmt.Sprintf("Spec '%s': %d different images failed (%.0f%% failure rate) - check spec compatibility",
+			specId, failedImageCount, failureRate*100)
 	} else if failedImageCount >= 3 && succeededImageCount == 0 {
 		// Potential spec-level issue: 3+ different images failed with no successes
 		level = "medium"
-		message = fmt.Sprintf("Potential spec-level issue: %d different images have failed with this spec and none have succeeded (%.1f%% failure rate)",
-			failedImageCount, failureRate*100)
+		message = fmt.Sprintf("Spec '%s': %d images failed, none succeeded (%.0f%% failure rate)",
+			specId, failedImageCount, failureRate*100)
 	} else if failureRate >= 0.8 {
 		level = "high"
-		message = fmt.Sprintf("Very high failure rate (%.1f%%) for this spec, even with some successful images",
-			failureRate*100)
+		message = fmt.Sprintf("Spec '%s' has %.0f%% failure rate (%d failures out of %d attempts)",
+			specId, failureRate*100, totalFailures, totalFailures+totalSuccesses)
 	} else if failureRate >= 0.5 {
 		level = "medium"
-		message = fmt.Sprintf("Moderate failure rate (%.1f%%) for this spec across different images",
-			failureRate*100)
+		message = fmt.Sprintf("Spec '%s' has %.0f%% failure rate (%d failures, %d successes)",
+			specId, failureRate*100, totalFailures, totalSuccesses)
 	} else if failureRate > 0 {
 		level = "low"
-		message = fmt.Sprintf("Low failure rate (%.1f%%) for this spec, mostly successful with various images",
-			failureRate*100)
+		message = fmt.Sprintf("Spec '%s' has %.0f%% failure rate (%d failures, %d successes) - mostly stable",
+			specId, failureRate*100, totalFailures, totalSuccesses)
 	} else {
 		level = "low"
-		message = "No failures recorded for this spec, appears stable"
+		message = fmt.Sprintf("Spec '%s' has 100%% success rate (%d successes, no failures)", specId, totalSuccesses)
 	}
 
 	return model.SpecRiskInfo{
@@ -4286,7 +4484,7 @@ func analyzeSpecRisk(failedImageCount, succeededImageCount, totalFailures, total
 }
 
 // analyzeImageRisk analyzes risk factors specific to the image
-func analyzeImageRisk(imageHasFailed, imageHasSucceeded, isNewCombination bool, cspImageName string) model.ImageRiskInfo {
+func analyzeImageRisk(specId, imageId string, imageHasFailed, imageHasSucceeded, isNewCombination bool) model.ImageRiskInfo {
 	var level, message string
 
 	if imageHasFailed {
@@ -4294,20 +4492,20 @@ func analyzeImageRisk(imageHasFailed, imageHasSucceeded, isNewCombination bool, 
 		if !imageHasSucceeded {
 			// This specific image has failed before and never succeeded with this spec
 			level = "high"
-			message = fmt.Sprintf("CRITICAL: This exact spec+image combination (%s) has failed before and never succeeded", cspImageName)
+			message = fmt.Sprintf("Image '%s' has FAILED with spec '%s' before (never succeeded)", imageId, specId)
 		} else {
 			// This image has both failed and succeeded with this spec - still high risk due to failure history
 			level = "high"
-			message = fmt.Sprintf("HIGH RISK: This exact spec+image combination (%s) has failed at least once before, despite some successes", cspImageName)
+			message = fmt.Sprintf("Image '%s' has FAILED with spec '%s' before (sometimes succeeds, but unreliable)", imageId, specId)
 		}
 	} else if imageHasSucceeded && !imageHasFailed {
 		// This image has only succeeded with this spec - safest option
 		level = "low"
-		message = fmt.Sprintf("SAFE: This exact spec+image combination (%s) has previously succeeded and never failed", cspImageName)
+		message = fmt.Sprintf("Image '%s' has succeeded with spec '%s' before (no failures)", imageId, specId)
 	} else if isNewCombination {
 		// This is a new combination - unknown risk
 		level = "low"
-		message = fmt.Sprintf("NEW: This exact spec+image combination (%s) has never been tried before", cspImageName)
+		message = fmt.Sprintf("Image '%s' + Spec '%s' is a new combination (no history)", imageId, specId)
 	} else {
 		// Fallback case
 		level = "low"
@@ -4335,23 +4533,23 @@ func determineOverallRisk(specRisk model.SpecRiskInfo, imageRisk model.ImageRisk
 		level = specRisk.Level
 		primaryRiskFactor = "spec"
 		if specRiskValue > imageRiskValue {
-			message = fmt.Sprintf("Primary risk is spec-related: %s", specRisk.Message)
+			message = specRisk.Message
 		} else {
-			message = fmt.Sprintf("Both spec and image have similar risk levels. Spec: %s", specRisk.Message)
+			message = fmt.Sprintf("%s | %s", specRisk.Message, imageRisk.Message)
 		}
 	} else {
 		level = imageRisk.Level
 		primaryRiskFactor = "image"
-		message = fmt.Sprintf("Primary risk is image-related: %s", imageRisk.Message)
+		message = imageRisk.Message
 	}
 
 	// Special case handling
 	if specRisk.Level == "low" && imageRisk.Level == "low" {
 		primaryRiskFactor = "none"
-		message = "Both spec and image appear safe based on historical data"
+		message = imageRisk.Message // Use the detailed image message which includes spec+image info
 	} else if imageRisk.IsNewCombination && specRisk.Level != "low" {
 		primaryRiskFactor = "combination"
-		message = fmt.Sprintf("New image combination with a spec that has shown issues: %s", specRisk.Message)
+		message = fmt.Sprintf("%s (image untested with this spec)", specRisk.Message)
 	}
 
 	return model.OverallRiskInfo{

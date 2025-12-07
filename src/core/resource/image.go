@@ -211,6 +211,136 @@ func GetImageInfoFromLookupImage(nsId string, u model.ImageReq) (model.ImageInfo
 	return content, nil
 }
 
+// EnsureImageAvailable checks if an image is available in DB or CSP, and auto-registers if needed.
+// It first checks the DB (including CustomImage), then looks up in CSP and registers if found.
+// Returns: ImageInfo, isAutoRegistered, error
+func EnsureImageAvailable(nsId, connectionName, imageId string) (model.ImageInfo, bool, error) {
+	if connectionName == "" {
+		return model.ImageInfo{}, false, fmt.Errorf("connectionName is required for EnsureImageAvailable")
+	}
+	if imageId == "" {
+		return model.ImageInfo{}, false, fmt.Errorf("imageId is required for EnsureImageAvailable")
+	}
+
+	// 1. Check if the image exists in DB (user namespace)
+	imageInfo, err := GetImage(nsId, imageId)
+	if err == nil {
+		log.Debug().Msgf("Image '%s' found in DB (namespace: %s)", imageId, nsId)
+		return imageInfo, false, nil
+	}
+
+	// 2. Check if the image exists in DB (SystemCommonNs)
+	imageInfo, err = GetImage(model.SystemCommonNs, imageId)
+	if err == nil {
+		log.Debug().Msgf("Image '%s' found in DB (namespace: %s)", imageId, model.SystemCommonNs)
+		return imageInfo, false, nil
+	}
+
+	log.Debug().Msgf("Image '%s' not found in DB, checking CSP...", imageId)
+
+	// 3. Try to lookup as a regular image from CSP (Spider /vmimage API)
+	spiderImage, lookupErr := lookupRegularImageOnly(connectionName, imageId)
+	if lookupErr == nil && spiderImage.IId.NameId != "" {
+		log.Info().Msgf("Image '%s' found in CSP as regular image, auto-registering...", imageId)
+
+		// Convert and register as regular image
+		imageReq := &model.ImageReq{
+			ConnectionName: connectionName,
+			CspImageName:   imageId,
+			Name:           imageId,
+		}
+		registeredImage, regErr := RegisterImageWithId(model.SystemCommonNs, imageReq, true, false)
+		if regErr != nil {
+			log.Warn().Err(regErr).Msgf("Failed to auto-register image '%s', but CSP lookup succeeded", imageId)
+			// Even if registration fails, return the converted image info
+			tempImage, convErr := ConvertSpiderImageToTumblebugImage(model.SystemCommonNs, connectionName, spiderImage)
+			if convErr != nil {
+				return model.ImageInfo{}, false, fmt.Errorf("image '%s' found in CSP but failed to convert: %w", imageId, convErr)
+			}
+			return tempImage, false, nil
+		}
+		log.Info().Msgf("Successfully auto-registered image '%s' from CSP", imageId)
+		return registeredImage, true, nil
+	}
+
+	// 4. Try to lookup as a custom image (MyImage) from CSP (Spider /myimage API)
+	myImage, myImageErr := LookupMyImage(connectionName, imageId)
+	if myImageErr == nil && myImage.IId.NameId != "" {
+		log.Info().Msgf("Image '%s' found in CSP as custom image (MyImage), auto-registering...", imageId)
+
+		// Get connection config for provider and region information
+		connConfig, configErr := common.GetConnConfig(connectionName)
+		if configErr != nil {
+			return model.ImageInfo{}, false, fmt.Errorf("failed to get connection config for custom image registration: %w", configErr)
+		}
+
+		// Convert Spider MyImage to Tumblebug CustomImage
+		customImageInfo, convErr := ConvertSpiderMyImageToTumblebugCustomImage(connConfig, myImage)
+		if convErr != nil {
+			return model.ImageInfo{}, false, fmt.Errorf("image '%s' found as custom image but failed to convert: %w", imageId, convErr)
+		}
+
+		// Set required fields for registration
+		customImageInfo.Namespace = nsId
+		customImageInfo.Id = imageId
+		customImageInfo.Name = imageId
+		customImageInfo.Uid = common.GenUid()
+		customImageInfo.SystemLabel = "Auto-registered from CSP custom image"
+
+		// Register as custom image
+		registeredImage, regErr := RegisterCustomImageWithInfo(nsId, customImageInfo)
+		if regErr != nil {
+			log.Warn().Err(regErr).Msgf("Failed to auto-register custom image '%s'", imageId)
+			// Return the converted info even if registration fails
+			return customImageInfo, false, nil
+		}
+		log.Info().Msgf("Successfully auto-registered custom image '%s' from CSP", imageId)
+		return registeredImage, true, nil
+	}
+
+	// 5. Image not found anywhere
+	return model.ImageInfo{}, false, fmt.Errorf("image '%s' not found in DB or CSP (checked both regular and custom images)", imageId)
+}
+
+// lookupRegularImageOnly looks up only regular images from CSP (Spider /vmimage API).
+// Unlike LookupImage, this does NOT fall back to checking custom images (MyImage).
+// This is a simpler version of LookupImage for cases where we need to distinguish
+// between regular images and custom images explicitly.
+// See also: LookupImage (with CustomImage fallback), LookupMyImage (CustomImage only)
+func lookupRegularImageOnly(connConfig string, imageId string) (model.SpiderImageInfo, error) {
+	if connConfig == "" {
+		return model.SpiderImageInfo{}, fmt.Errorf("lookupRegularImageOnly() called with empty connConfig")
+	}
+	if imageId == "" {
+		return model.SpiderImageInfo{}, fmt.Errorf("lookupRegularImageOnly() called with empty imageId")
+	}
+
+	client := resty.New()
+	client.SetTimeout(2 * time.Minute)
+	apiUrl := model.SpiderRestUrl + "/vmimage/" + url.QueryEscape(imageId)
+	method := "GET"
+	requestBody := model.SpiderConnectionName{}
+	requestBody.ConnectionName = connConfig
+	callResult := model.SpiderImageInfo{}
+
+	err := clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		apiUrl,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
+
+	if err != nil {
+		return model.SpiderImageInfo{}, err
+	}
+
+	return callResult, nil
+}
+
 // RegisterImageWithInfoInBulk register a list of images in bulk
 func RegisterImageWithInfoInBulk(imageList []model.ImageInfo) error {
 	// Advanced deduplication logic with region merging
