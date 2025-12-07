@@ -515,6 +515,48 @@ func RestPostMciDynamicSubGroupVmReview(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
+// RestPostSpecImagePairReview godoc
+// @ID PostSpecImagePairReview
+// @Summary Review Spec and Image Pair Compatibility
+// @Description Validate whether a spec and image pair is compatible for VM provisioning.
+// @Description This lightweight API checks:
+// @Description - Spec availability in DB and CSP
+// @Description - Image availability in DB and CSP (auto-registers if found in CSP but not in DB)
+// @Description - Cost estimation based on spec
+// @Description
+// @Description **Use Cases:**
+// @Description - Quick validation before VM creation
+// @Description - Pre-check for dynamic provisioning
+// @Description - Verify custom image IDs entered by user
+// @Tags [MC-Infra] MCI Provisioning and Management
+// @Accept  json
+// @Produce  json
+// @Param specImagePair body model.SpecImagePairReviewReq true "Spec and Image pair to review"
+// @Param x-request-id header string false "Custom request ID for tracking"
+// @Success 200 {object} model.SpecImagePairReviewResult "Review result with validation status and details"
+// @Failure 400 {object} model.SimpleMsg "Invalid request format"
+// @Failure 500 {object} model.SimpleMsg "Internal server error"
+// @Router /specImagePairReview [post]
+func RestPostSpecImagePairReview(c echo.Context) error {
+	req := &model.SpecImagePairReviewReq{}
+	if err := c.Bind(req); err != nil {
+		log.Warn().Err(err).Msg("invalid request for spec-image pair review")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	if req.SpecId == "" || req.ImageId == "" {
+		err := fmt.Errorf("specId and imageId are required")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result, err := infra.ReviewSpecImagePair(req.SpecId, req.ImageId)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to review spec-image pair")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	return c.JSON(http.StatusOK, result)
+}
+
 // RestPostMciDynamicCheckRequest godoc
 // @ID PostMciDynamicCheckRequest
 // @Summary (Deprecated) Check Resource Availability for Dynamic MCI Creation

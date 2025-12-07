@@ -11359,6 +11359,56 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/resource.PresignedURLResult'
+  /specImagePairReview:
+    post:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: Review Spec and Image Pair Compatibility
+      description: |-
+        Validate whether a spec and image pair is compatible for VM provisioning.
+        This lightweight API checks:
+        - Spec availability in DB and CSP
+        - Image availability in DB and CSP (auto-registers if found in CSP but not in DB)
+        - Cost estimation based on spec
+
+        **Use Cases:**
+        - Quick validation before VM creation
+        - Pre-check for dynamic provisioning
+        - Verify custom image IDs entered by user
+      operationId: PostSpecImagePairReview
+      parameters:
+      - name: x-request-id
+        in: header
+        description: Custom request ID for tracking
+        schema:
+          type: string
+      requestBody:
+        description: Spec and Image pair to review
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.SpecImagePairReviewReq'
+        required: true
+      responses:
+        "200":
+          description: Review result with validation status and details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SpecImagePairReviewResult'
+        "400":
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: specImagePair
   /systemMci:
     post:
       tags:
@@ -16216,6 +16266,73 @@ components:
           example:
           - gcp
           - tencent
+          items:
+            type: string
+    model.SpecImagePairReviewReq:
+      required:
+      - imageId
+      - specId
+      type: object
+      properties:
+        imageId:
+          type: string
+          example: ami-01f71f215b23ba262
+        specId:
+          type: string
+          example: aws+ap-northeast-2+t3.nano
+    model.SpecImagePairReviewResult:
+      type: object
+      properties:
+        connectionName:
+          type: string
+          description: Connection info
+        errors:
+          type: array
+          items:
+            type: string
+        estimatedCost:
+          type: string
+          description: Cost estimation
+          example: $0.0052/hour
+        imageDetails:
+          $ref: '#/components/schemas/model.ImageInfo'
+        imageId:
+          type: string
+        imageValidation:
+          type: object
+          description: Image details
+          allOf:
+          - $ref: '#/components/schemas/model.ReviewResourceValidation'
+        info:
+          type: array
+          description: Additional info
+          items:
+            type: string
+        isValid:
+          type: boolean
+          description: Review summary
+        message:
+          type: string
+          example: Spec and image pair is valid for provisioning
+        providerName:
+          type: string
+        regionName:
+          type: string
+        specDetails:
+          $ref: '#/components/schemas/model.SpecInfo'
+        specId:
+          type: string
+          description: Input parameters
+        specValidation:
+          type: object
+          description: Spec details
+          allOf:
+          - $ref: '#/components/schemas/model.ReviewResourceValidation'
+        status:
+          type: string
+          example: OK/Warning/Error
+        warnings:
+          type: array
           items:
             type: string
     model.SpecInfo:

@@ -13506,6 +13506,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/specImagePairReview": {
+            "post": {
+                "description": "Validate whether a spec and image pair is compatible for VM provisioning.\nThis lightweight API checks:\n- Spec availability in DB and CSP\n- Image availability in DB and CSP (auto-registers if found in CSP but not in DB)\n- Cost estimation based on spec\n\n**Use Cases:**\n- Quick validation before VM creation\n- Pre-check for dynamic provisioning\n- Verify custom image IDs entered by user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Provisioning and Management"
+                ],
+                "summary": "Review Spec and Image Pair Compatibility",
+                "operationId": "PostSpecImagePairReview",
+                "parameters": [
+                    {
+                        "description": "Spec and Image pair to review",
+                        "name": "specImagePair",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SpecImagePairReviewReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID for tracking",
+                        "name": "x-request-id",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Review result with validation status and details",
+                        "schema": {
+                            "$ref": "#/definitions/model.SpecImagePairReviewResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/systemMci": {
             "post": {
                 "description": "Create specialized MCI instances for CB-Tumblebug system operations and infrastructure probing.\nThis endpoint provisions system-level infrastructure that supports CB-Tumblebug's internal functions:\n\n**System MCI Types:**\n- ` + "`" + `probe` + "`" + `: Creates lightweight VMs for network connectivity testing and CSP capability discovery\n- ` + "`" + `monitor` + "`" + `: Deploys monitoring infrastructure for system health and performance tracking\n- ` + "`" + `test` + "`" + `: Provisions test environments for validating CSP integrations and features\n\n**Probe MCI Features:**\n- **Connectivity Testing**: Validates network paths between different CSP regions\n- **Latency Measurement**: Measures inter-region and inter-provider network performance\n- **Feature Discovery**: Tests CSP-specific capabilities and service availability\n- **Resource Validation**: Verifies that CB-Tumblebug can successfully provision resources\n\n**System Namespace:**\n- All system MCIs are created in the special ` + "`" + `system` + "`" + ` namespace\n- Isolated from user workloads and regular MCI operations\n- Managed automatically by CB-Tumblebug internal processes\n- May be used for background maintenance and monitoring tasks\n\n**Automatic Configuration:**\n- Uses optimized VM specifications for system tasks (typically minimal resources)\n- Automatically selects appropriate regions and providers based on probe requirements\n- Configures necessary network access and security policies\n- Deploys with minimal attack surface and security hardening\n\n**Lifecycle Management:**\n- System MCIs may be automatically created, updated, or destroyed by CB-Tumblebug\n- Typically short-lived for specific system tasks\n- Resource cleanup is handled automatically\n- Status and results are logged for system administrators\n\n**Use Cases:**\n- Infrastructure health checks and validation\n- Performance benchmarking across cloud providers\n- Automated testing of new CSP integrations\n- Network topology discovery and optimization",
@@ -19978,6 +20031,103 @@ const docTemplate = `{
                         "gcp",
                         "tencent"
                     ]
+                }
+            }
+        },
+        "model.SpecImagePairReviewReq": {
+            "type": "object",
+            "required": [
+                "imageId",
+                "specId"
+            ],
+            "properties": {
+                "imageId": {
+                    "type": "string",
+                    "example": "ami-01f71f215b23ba262"
+                },
+                "specId": {
+                    "type": "string",
+                    "example": "aws+ap-northeast-2+t3.nano"
+                }
+            }
+        },
+        "model.SpecImagePairReviewResult": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "description": "Connection info",
+                    "type": "string"
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "estimatedCost": {
+                    "description": "Cost estimation",
+                    "type": "string",
+                    "example": "$0.0052/hour"
+                },
+                "imageDetails": {
+                    "$ref": "#/definitions/model.ImageInfo"
+                },
+                "imageId": {
+                    "type": "string"
+                },
+                "imageValidation": {
+                    "description": "Image details",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ReviewResourceValidation"
+                        }
+                    ]
+                },
+                "info": {
+                    "description": "Additional info",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "isValid": {
+                    "description": "Review summary",
+                    "type": "boolean"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Spec and image pair is valid for provisioning"
+                },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                },
+                "specDetails": {
+                    "$ref": "#/definitions/model.SpecInfo"
+                },
+                "specId": {
+                    "description": "Input parameters",
+                    "type": "string"
+                },
+                "specValidation": {
+                    "description": "Spec details",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ReviewResourceValidation"
+                        }
+                    ]
+                },
+                "status": {
+                    "type": "string",
+                    "example": "OK/Warning/Error"
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

@@ -43,6 +43,32 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// executeWithTimeoutRetry executes a function and retries once after 1 minute if a timeout error occurs
+func executeWithTimeoutRetry(fn func() error, operationName string, resourceName string) error {
+	err := fn()
+	if err == nil {
+		return nil
+	}
+
+	// Check if it's a timeout error - retry once after waiting
+	errStr := err.Error()
+	if strings.Contains(errStr, "Client.Timeout") || strings.Contains(errStr, "context deadline exceeded") {
+		log.Warn().Msgf("%s timeout for '%s', waiting 1 minute before retry...", operationName, resourceName)
+		time.Sleep(1 * time.Minute)
+
+		// Retry once
+		retryErr := fn()
+		if retryErr != nil {
+			log.Error().Err(retryErr).Msgf("%s retry also failed for '%s'", operationName, resourceName)
+			return retryErr
+		}
+		log.Info().Msgf("%s retry succeeded for '%s'", operationName, resourceName)
+		return nil
+	}
+
+	return err
+}
+
 // SpecReqStructLevelValidation is a function to validate 'SpecReq' object.
 func SpecReqStructLevelValidation(sl validator.StructLevel) {
 
@@ -352,16 +378,19 @@ func LookupSpec(connConfig string, specName string) (model.SpiderSpecInfo, error
 	requestBody.ConnectionName = connConfig
 	callResult := model.SpiderSpecInfo{}
 
-	err := clientManager.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		clientManager.SetUseBody(requestBody),
-		&requestBody,
-		&callResult,
-		clientManager.MediumDuration,
-	)
+	err := executeWithTimeoutRetry(func() error {
+		callResult = model.SpiderSpecInfo{}
+		return clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			clientManager.SetUseBody(requestBody),
+			&requestBody,
+			&callResult,
+			clientManager.MediumDuration,
+		)
+	}, "LookupSpec", specName)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
