@@ -941,10 +941,25 @@ func fetchImagesForAllConnConfigsInternal(nsId string, option *model.ImageFetchO
 	for _, connConfig := range connConfigs.Connectionconfig {
 		provider := connConfig.ProviderName
 
-		// Skip excluded providers
-		if slices.Contains(option.ExcludedProviders, provider) {
-			log.Debug().Msgf("[%s] Skipping excluded provider: %s", nsId, provider)
-			continue
+		// If targetProviders is specified, only process those providers
+		if len(option.TargetProviders) > 0 {
+			isTarget := false
+			for _, targetProvider := range option.TargetProviders {
+				if strings.EqualFold(provider, targetProvider) {
+					isTarget = true
+					break
+				}
+			}
+			if !isTarget {
+				log.Debug().Msgf("[%s] Skipping non-target provider: %s", nsId, provider)
+				continue
+			}
+		} else {
+			// Skip excluded providers (only when targetProviders is not specified)
+			if slices.Contains(option.ExcludedProviders, provider) {
+				log.Debug().Msgf("[%s] Skipping excluded provider: %s", nsId, provider)
+				continue
+			}
 		}
 
 		providerConnMap[provider] = append(providerConnMap[provider], connConfig)
@@ -1653,14 +1668,15 @@ func filterDuplicateImagesByDate(images []model.ImageInfo, allowedDuplicationCou
 	return result
 }
 
-// filterDuplicateImagesByVersion keeps only the first (top) image for each group with same base distribution text
+// filterDuplicateImagesByVersion keeps only the latest image for each group with same base distribution text
+// When OSDistribution is identical (e.g., Alibaba images), uses cspImageName date to determine the latest
 func filterDuplicateImagesByVersion(images []model.ImageInfo) []model.ImageInfo {
 	if len(images) == 0 {
 		return images
 	}
 
-	seen := make(map[string]bool)
-	var result []model.ImageInfo
+	// Group images by normalized key
+	imageGroups := make(map[string][]model.ImageInfo)
 
 	for _, img := range images {
 		// Create grouping key based on OSType, OSArchitecture, OSPlatform, and base distribution text
@@ -1671,10 +1687,36 @@ func filterDuplicateImagesByVersion(images []model.ImageInfo) []model.ImageInfo 
 			strings.ToLower(string(img.OSPlatform)),
 			strings.ToLower(baseDistribution))
 
-		// Keep only the first image for each unique key (since images are already sorted)
-		if !seen[key] {
-			seen[key] = true
-			result = append(result, img)
+		imageGroups[key] = append(imageGroups[key], img)
+	}
+
+	var result []model.ImageInfo
+
+	for _, group := range imageGroups {
+		if len(group) == 1 {
+			result = append(result, group[0])
+		} else {
+			// Multiple images with same key - select the latest one
+			// Try to extract date from cspImageName first, then OSDistribution
+			latestImg := group[0]
+			latestDate := extractLatestDateFromString(latestImg.CspImageName)
+			if latestDate.IsZero() {
+				latestDate = extractLatestDateFromDistribution(latestImg.OSDistribution)
+			}
+
+			for i := 1; i < len(group); i++ {
+				imgDate := extractLatestDateFromString(group[i].CspImageName)
+				if imgDate.IsZero() {
+					imgDate = extractLatestDateFromDistribution(group[i].OSDistribution)
+				}
+
+				if imgDate.After(latestDate) {
+					latestImg = group[i]
+					latestDate = imgDate
+				}
+			}
+
+			result = append(result, latestImg)
 		}
 	}
 
@@ -1800,6 +1842,12 @@ func extractLatestDateFromDistribution(distribution string) time.Time {
 	}
 
 	return latestDate
+}
+
+// extractLatestDateFromString extracts the latest date from any string (e.g., cspImageName)
+// This is useful for cases like Alibaba where dates are in the image name (e.g., ubuntu_22_04_x64_20G_alibase_20251126.vhd)
+func extractLatestDateFromString(str string) time.Time {
+	return extractLatestDateFromDistribution(str)
 }
 
 // SearchImageOptions returns the available options for searching images

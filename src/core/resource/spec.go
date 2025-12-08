@@ -588,8 +588,21 @@ func fetchSpecsForAllConnConfigsInternal(nsId string, option *model.SpecFetchOpt
 	for _, connConfig := range connConfigs.Connectionconfig {
 		provider := connConfig.ProviderName
 
-		// Skip excluded providers if specified
-		if len(option.ExcludedProviders) > 0 {
+		// If targetProviders is specified, only process those providers
+		if len(option.TargetProviders) > 0 {
+			isTarget := false
+			for _, targetProvider := range option.TargetProviders {
+				if strings.EqualFold(provider, targetProvider) {
+					isTarget = true
+					break
+				}
+			}
+			if !isTarget {
+				log.Debug().Msgf("[%s] Skipping non-target provider: %s", nsId, provider)
+				continue
+			}
+		} else if len(option.ExcludedProviders) > 0 {
+			// Skip excluded providers (only when targetProviders is not specified)
 			excluded := false
 			for _, excludedProvider := range option.ExcludedProviders {
 				if strings.EqualFold(provider, excludedProvider) {

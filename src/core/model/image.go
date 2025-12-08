@@ -138,6 +138,10 @@ type ImageSourceCommandHistory struct {
 
 // ImageFetchOption is struct for Image Fetch Options
 type ImageFetchOption struct {
+	// Specific providers to target for the image fetching operation (ex: ["aws", "gcp"])
+	// If specified, only these providers will be processed (excludedProviders will be ignored)
+	TargetProviders []string `json:"targetProviders,omitempty" example:"aws,gcp" description:"Specific providers to target. If specified, only these providers will be processed."`
+
 	// providers need to be excluded from the image fetching operation (ex: ["azure"])
 	ExcludedProviders []string `json:"excludedProviders,omitempty" example:"azure" description:"Providers to be excluded from the image fetching operation."`
 
