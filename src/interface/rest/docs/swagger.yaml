@@ -625,7 +625,15 @@ paths:
       tags:
       - "[Infra Resource] Image Management"
       summary: Fetch images for regions of each CSP synchronously
-      description: Fetch images waiting for completion
+      description: |-
+        Fetch images waiting for completion.
+
+        **Provider Selection Options:**
+        - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
+        - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
+        - `regionAgnosticProviders`: Providers where images are shared across regions (e.g., ["gcp", "tencent"]). Only one region will be fetched per provider.
+
+        **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
       operationId: FetchImages
       requestBody:
         description: Fetch option
@@ -659,7 +667,15 @@ paths:
       tags:
       - "[Infra Resource] Image Management"
       summary: Fetch images asynchronously
-      description: Fetch images in the background without waiting for completion
+      description: |-
+        Fetch images in the background without waiting for completion.
+
+        **Provider Selection Options:**
+        - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
+        - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
+        - `regionAgnosticProviders`: Providers where images are shared across regions (e.g., ["gcp", "tencent"]). Only one region will be fetched per provider.
+
+        **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
       operationId: FetchImagesAsync
       requestBody:
         description: Fetch option
@@ -747,7 +763,15 @@ paths:
       tags:
       - "[Infra Resource] Spec Management"
       summary: Fetch specs from CSPs and register them in the system.
-      description: Fetch specs from CSPs and register them in the system.
+      description: |-
+        Fetch specs from CSPs and register them in the system.
+
+        **Provider Selection Options:**
+        - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
+        - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
+        - `regionAgnosticProviders`: Providers where specs are shared across regions (e.g., ["gcp", "tencent"]). Only one region will be fetched per provider.
+
+        **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
       operationId: FetchSpecs
       requestBody:
         description: Fetch option
@@ -13073,6 +13097,16 @@ components:
           - tencent
           items:
             type: string
+        targetProviders:
+          type: array
+          description: |-
+            Specific providers to target for the image fetching operation (ex: ["aws", "gcp"])
+            If specified, only these providers will be processed (excludedProviders will be ignored)
+          example:
+          - aws
+          - gcp
+          items:
+            type: string
     model.ImageInfo:
       type: object
       properties:
@@ -16266,6 +16300,16 @@ components:
           example:
           - gcp
           - tencent
+          items:
+            type: string
+        targetProviders:
+          type: array
+          description: |-
+            Specific providers to target for the spec fetching operation (ex: ["aws", "gcp"])
+            If specified, only these providers will be processed (excludedProviders will be ignored)
+          example:
+          - aws
+          - gcp
           items:
             type: string
     model.SpecImagePairReviewReq:
