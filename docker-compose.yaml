@@ -24,7 +24,7 @@ services:
 
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.12.0
+    image: cloudbaristaorg/cb-tumblebug:0.12.1
     container_name: cb-tumblebug
     build:
       context: .
