@@ -169,6 +169,13 @@ func RestLookupSpecList(c echo.Context) error {
 // @ID FetchSpecs
 // @Summary Fetch specs from CSPs and register them in the system.
 // @Description Fetch specs from CSPs and register them in the system.
+// @Description
+// @Description **Provider Selection Options:**
+// @Description - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
+// @Description - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
+// @Description - `regionAgnosticProviders`: Providers where specs are shared across regions (e.g., ["gcp", "tencent"]). Only one region will be fetched per provider.
+// @Description
+// @Description **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
 // @Tags [Infra Resource] Spec Management
 // @Accept  json
 // @Produce  json

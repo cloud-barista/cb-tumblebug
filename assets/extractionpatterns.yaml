@@ -32,6 +32,7 @@ extractionPatterns:
             - "*custom*"
             - "*test*"
             - "*dev*"
+            - "*gpusvr*"
         
         # CSP-specific rules override common rules independently
         # - If include is defined and not empty → use CSP-specific include (ignore common include)
@@ -41,12 +42,11 @@ extractionPatterns:
         cspSpecific:
           azure:
             include:
-              - "0001-com-ubuntu-server*"
-              - "Canonical:ubuntu*server*"
-              - "Canonical, Ubuntu, * LTS Minimal*"
+              - "0001-com-ubuntu-server*gen2"
             exclude:
               - "dcassociatesgroupinc:*"  # Third-party vendor
               - "*marketplace*"
+              - "*daily*"
           # Add more CSP-specific rules as needed
           # aws:
           #   include:

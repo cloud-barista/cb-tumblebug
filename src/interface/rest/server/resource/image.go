@@ -175,7 +175,14 @@ func RestLookupImageList(c echo.Context) error {
 // RestFetchImages godoc
 // @ID FetchImages
 // @Summary Fetch images for regions of each CSP synchronously
-// @Description Fetch images waiting for completion
+// @Description Fetch images waiting for completion.
+// @Description
+// @Description **Provider Selection Options:**
+// @Description - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
+// @Description - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
+// @Description - `regionAgnosticProviders`: Providers where images are shared across regions (e.g., ["gcp", "tencent"]). Only one region will be fetched per provider.
+// @Description
+// @Description **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json
@@ -203,7 +210,14 @@ func RestFetchImages(c echo.Context) error {
 // RestFetchImagesAsync godoc
 // @ID FetchImagesAsync
 // @Summary Fetch images asynchronously
-// @Description Fetch images in the background without waiting for completion
+// @Description Fetch images in the background without waiting for completion.
+// @Description
+// @Description **Provider Selection Options:**
+// @Description - `targetProviders`: Specify exact providers to fetch (e.g., ["aws", "gcp"]). When set, only these providers are processed and `excludedProviders` is ignored.
+// @Description - `excludedProviders`: Specify providers to skip (e.g., ["azure"]). Only used when `targetProviders` is not set.
+// @Description - `regionAgnosticProviders`: Providers where images are shared across regions (e.g., ["gcp", "tencent"]). Only one region will be fetched per provider.
+// @Description
+// @Description **Note:** `regionAgnosticProviders` should only contain providers that are also in `targetProviders` (or not excluded).
 // @Tags [Infra Resource] Image Management
 // @Accept  json
 // @Produce  json

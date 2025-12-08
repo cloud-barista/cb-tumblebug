@@ -243,6 +243,10 @@ type Range struct {
 
 // SpecFetchOption is struct for Spec Fetch Options
 type SpecFetchOption struct {
+	// Specific providers to target for the spec fetching operation (ex: ["aws", "gcp"])
+	// If specified, only these providers will be processed (excludedProviders will be ignored)
+	TargetProviders []string `json:"targetProviders,omitempty" example:"aws,gcp" description:"Specific providers to target. If specified, only these providers will be processed."`
+
 	// providers need to be excluded from the spec fetching operation (ex: ["azure"])
 	ExcludedProviders []string `json:"excludedProviders,omitempty" example:"azure" description:"Providers to be excluded from the spec fetching operation."`
 
