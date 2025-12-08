@@ -1945,13 +1945,12 @@ func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynam
 		// Check KT Cloud limitations - temporary restriction to .itl specs only
 		if providerName == csp.KT {
 			if !strings.Contains(subGroupDynamicReq.SpecId, ".itl") {
-				vmReview.Errors = append(vmReview.Errors, "KT Cloud currently only supports specs with '.itl' in the name (temporary limitation)")
-				vmReview.CanCreate = false
-				viable = false
-				log.Debug().Msgf("KT Cloud provisioning blocked for VM: %s (spec: %s does not contain '.itl')", subGroupDynamicReq.Name, subGroupDynamicReq.SpecId)
-			} else {
-				vmReview.Warnings = append(vmReview.Warnings, "KT Cloud provisioning is currently limited to '.itl' specs only (temporary limitation)")
+				// Only show warning when spec does not contain '.itl'
+				vmReview.Warnings = append(vmReview.Warnings, "KT Cloud provisioning is currently limited to '.itl' specs only (temporary limitation). This spec may fail to provision.")
 				hasVmWarning = true
+				log.Debug().Msgf("KT Cloud warning for VM: %s (spec: %s does not contain '.itl')", subGroupDynamicReq.Name, subGroupDynamicReq.SpecId)
+			} else {
+				// '.itl' spec is valid, no warning needed
 				log.Debug().Msgf("KT Cloud '.itl' spec detected for VM: %s (spec: %s)", subGroupDynamicReq.Name, subGroupDynamicReq.SpecId)
 			}
 		}
