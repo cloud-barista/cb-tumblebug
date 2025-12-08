@@ -24,7 +24,7 @@ services:
 
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.11.23
+    image: cloudbaristaorg/cb-tumblebug:0.12.0
     container_name: cb-tumblebug
     build:
       context: .
@@ -199,7 +199,7 @@ services:
   # CB-MapUI
   # This is the Map-based client for CB-Tumblebug.
   cb-mapui:
-    image: cloudbaristaorg/cb-mapui:0.11.22
+    image: cloudbaristaorg/cb-mapui:0.12.1
     container_name: cb-mapui
     labels:
       # Explicitly tell Traefik to expose this container
