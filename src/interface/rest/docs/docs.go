@@ -14412,6 +14412,9 @@ const docTemplate = `{
                     "additionalProperties": {
                         "$ref": "#/definitions/model.RegionDetail"
                     }
+                },
+                "useEmptyRepresentativeZone": {
+                    "type": "boolean"
                 }
             }
         },
@@ -18558,6 +18561,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "regionName": {
+                    "type": "string"
+                },
+                "representativeZone": {
                     "type": "string"
                 },
                 "zones": {
