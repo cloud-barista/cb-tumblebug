@@ -1752,12 +1752,30 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 			// This limitation exists in CB-Spider's IBM VPC driver implementation (VPCHandler.go line 108).
 			singleSubnetProviders := []string{csp.IBM}
 
+			// Check if the connection has an assigned zone
+			// If AssignedZone is empty, skip zone assignment to let CSP auto-select the best zone
+			// This is important for resources like GPU VMs that may only be available in specific zones
+			connConfig, err := common.GetConnConfig(connectionName)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to get connection config")
+				return err
+			}
+			assignedZone := connConfig.RegionZoneInfo.AssignedZone
+			shouldAssignZone := assignedZone != ""
+
+			// NCP special case: Always require zone assignment for K8s cluster subnet consistency
+			// ref: https://github.com/cloud-barista/cb-tumblebug/issues/2136
+			if provider == csp.NCP {
+				shouldAssignZone = true
+			}
+
 			// Others: Create 2 subnets (10.i.0.0/18, 10.i.64.0/18) with tentative space for 2 more (10.i.128.0/18, 10.i.192.0/18)
 			zones, length, _ := GetFirstNZones(connectionName, 2)
 			subnetName := reqTmp.Name
 			subnetCidr := "10." + strconv.Itoa(sliceIndex) + ".0.0/18"
 			subnet := model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
-			if length > 0 {
+			// Only assign zone if the connection has an explicitly assigned zone
+			if shouldAssignZone && length > 0 {
 				subnet.Zone = zones[0]
 			}
 			reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
@@ -1770,13 +1788,16 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 				subnetName = reqTmp.Name + "-01"
 				subnetCidr = "10." + strconv.Itoa(sliceIndex) + ".64.0/18"
 				subnet = model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
-				subnet.Zone = zones[1]
+				// Only assign zone if the connection has an explicitly assigned zone
+				if shouldAssignZone {
+					subnet.Zone = zones[1]
 
-				// ref NCP AZ issue: https://github.com/cloud-barista/cb-tumblebug/issues/2136
-				// NCP K8s cluster requires all subnets (including LB subnets) to be within the same AZ.
-				// So, we will create all subnets in the same zone.
-				if provider == csp.NCP {
-					subnet.Zone = zones[0]
+					// ref NCP AZ issue: https://github.com/cloud-barista/cb-tumblebug/issues/2136
+					// NCP K8s cluster requires all subnets (including LB subnets) to be within the same AZ.
+					// So, we will create all subnets in the same zone.
+					if provider == csp.NCP {
+						subnet.Zone = zones[0]
+					}
 				}
 				reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
 			}

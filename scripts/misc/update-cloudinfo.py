@@ -79,6 +79,17 @@ csp_connection_names = {
     # Add more CSPs here
 }
 
+# CSP-level settings for representative zone selection
+# useEmptyRepresentativeZone: true -> Use empty zone for representative region
+# This allows flexible VM placement (e.g., Azure GPU VMs need zone-less deployment)
+CSP_REPRESENTATIVE_ZONE_SETTINGS = {
+    'azure': {
+        'useEmptyRepresentativeZone': True,
+        'comment': 'Use empty zone for representative region to allow flexible VM placement. This prevents OverconstrainedZonalAllocationRequest errors for GPU VMs.'
+    }
+    # Add more CSPs here if needed
+}
+
 
 
 def run_command(command):
@@ -294,7 +305,9 @@ def add_header_comment(file_path):
 #     description: Description of the CSP
 #     driver: Name of the driver library file (a prepared CB-Spider Driver)
 #     link: 
-#     -URLs to the official documentation of the CSP
+#     - URLs to the official documentation of the CSP
+#     useEmptyRepresentativeZone: (optional) If true, use empty zone for representative region
+#       - This allows flexible VM placement (e.g., Azure GPU VMs need zone-less deployment)
 #     region: List of regions
 #       <region>:
 #         description: Description of the region
@@ -303,8 +316,9 @@ def add_header_comment(file_path):
 #           latitude: Latitude
 #           longitude: Longitude
 #         zone: List of availability zones in the region
-#           <zone>:
-#           - <ID/Name of the availability zon>
+#           - <ID/Name of the availability zone>
+#         representativeZone: (optional) Explicit zone for representative region registration
+#           - If set, this value overrides useEmptyRepresentativeZone and default Zones[0]
 
 # Note: Special regions not supporting VM provisioning are disabled. Enable them by removing the comment.
 
@@ -331,6 +345,14 @@ def compare_and_update_yaml(cloud_info, output_file_path, region_zones):
         cloud_info["cloud"] = {}
 
     for csp in csps:
+        # Apply CSP-level representative zone settings
+        if csp in CSP_REPRESENTATIVE_ZONE_SETTINGS:
+            settings = CSP_REPRESENTATIVE_ZONE_SETTINGS[csp]
+            if settings.get('useEmptyRepresentativeZone'):
+                cloud_info["cloud"][csp]['useEmptyRepresentativeZone'] = True
+                print(f"[{csp}] Applied useEmptyRepresentativeZone: true")
+                print(f"  - Reason: {settings.get('comment', 'No comment')}")
+        
         file_csp_regions = set(cloud_info["cloud"][csp]['region'].keys())
         current_csp_regions = set(current_regions_and_zones[csp].keys())
 

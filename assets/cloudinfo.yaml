@@ -644,6 +644,9 @@ cloud:
   azure:
     description: Microsoft Azure
     driver: azure-driver-v1.0.so
+    # Use empty zone for representative region to allow flexible VM placement
+    # This prevents OverconstrainedZonalAllocationRequest errors for GPU VMs
+    useEmptyRepresentativeZone: true
     region:
       australiacentral:
         description: Australia Central
