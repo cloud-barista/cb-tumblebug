@@ -12109,6 +12109,8 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/model.RegionDetail'
+        useEmptyRepresentativeZone:
+          type: boolean
     model.ChangeK8sNodeGroupAutoscaleSizeReq:
       type: object
       properties:
@@ -15201,6 +15203,8 @@ components:
         regionId:
           type: string
         regionName:
+          type: string
+        representativeZone:
           type: string
         zones:
           type: array
