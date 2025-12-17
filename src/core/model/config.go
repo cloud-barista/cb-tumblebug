@@ -21,19 +21,21 @@ type CloudInfo struct {
 
 // CSPDetail is structure for CSP information
 type CSPDetail struct {
-	Description string                  `mapstructure:"description" json:"description"`
-	Driver      string                  `mapstructure:"driver" json:"driver"`
-	Links       []string                `mapstructure:"link" json:"links,omitempty"`
-	Regions     map[string]RegionDetail `mapstructure:"region" json:"regions"`
+	Description                string                  `mapstructure:"description" json:"description"`
+	Driver                     string                  `mapstructure:"driver" json:"driver"`
+	Links                      []string                `mapstructure:"link" json:"links,omitempty"`
+	UseEmptyRepresentativeZone bool                    `mapstructure:"useEmptyRepresentativeZone" json:"useEmptyRepresentativeZone,omitempty"`
+	Regions                    map[string]RegionDetail `mapstructure:"region" json:"regions"`
 }
 
 // RegionDetail is structure for region information
 type RegionDetail struct {
-	RegionId    string   `mapstructure:"id" json:"regionId"`
-	RegionName  string   `mapstructure:"regionName" json:"regionName"`
-	Description string   `mapstructure:"description" json:"description"`
-	Location    Location `mapstructure:"location" json:"location"`
-	Zones       []string `mapstructure:"zone" json:"zones"`
+	RegionId           string   `mapstructure:"id" json:"regionId"`
+	RegionName         string   `mapstructure:"regionName" json:"regionName"`
+	Description        string   `mapstructure:"description" json:"description"`
+	Location           Location `mapstructure:"location" json:"location"`
+	Zones              []string `mapstructure:"zone" json:"zones"`
+	RepresentativeZone *string  `mapstructure:"representativeZone" json:"representativeZone,omitempty"`
 }
 
 // RegionList is structure for region list

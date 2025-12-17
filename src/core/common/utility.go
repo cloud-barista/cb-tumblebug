@@ -565,17 +565,38 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	// register representative regionZone (region only)
 	requestBody.RegionName = providerName + "-" + regionName
 	keyValueInfoList := []model.KeyValue{}
+	emptyZone := ""
 
-	if len(RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones) > 0 {
-		keyValueInfoList = []model.KeyValue{
-			{Key: "Region", Value: RuntimeCloudInfo.CSPs[providerName].Regions[regionName].RegionId},
-			{Key: "Zone", Value: RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones[0]},
-		}
+	// Determine representative zone based on configuration priority:
+	// 1. If region has explicit representativeZone set -> use that value
+	// 2. If CSP has useEmptyRepresentativeZone: true -> use empty zone (for flexible VM placement)
+	// 3. Otherwise, use Zones[0] if available, or empty zone if no zones exist
+	//
+	// Note: "empty zone" means the zone field is left unspecified in the API request.
+	// When zone is empty, CSPs typically auto-select an available zone for the resource.
+	// This is useful for specialized resources (e.g., GPU VMs) that may only be available
+	// in specific zones that vary by region and time.
+	cspInfo := RuntimeCloudInfo.CSPs[providerName]
+	regionInfo := cspInfo.Regions[regionName]
+
+	var representativeZone string
+	if regionInfo.RepresentativeZone != nil {
+		// Priority 1: Explicit representativeZone in region config
+		representativeZone = *regionInfo.RepresentativeZone
+	} else if cspInfo.UseEmptyRepresentativeZone {
+		// Priority 2: CSP-level setting to use empty zone (e.g., Azure for GPU VM flexibility)
+		representativeZone = emptyZone
+	} else if len(regionInfo.Zones) > 0 {
+		// Priority 3: Use first zone from zone list
+		representativeZone = regionInfo.Zones[0]
 	} else {
-		keyValueInfoList = []model.KeyValue{
-			{Key: "Region", Value: RuntimeCloudInfo.CSPs[providerName].Regions[regionName].RegionId},
-			{Key: "Zone", Value: "N/A"},
-		}
+		// Default: Empty zone when no zones exist
+		representativeZone = emptyZone
+	}
+
+	keyValueInfoList = []model.KeyValue{
+		{Key: "Region", Value: regionInfo.RegionId},
+		{Key: "Zone", Value: representativeZone},
 	}
 	requestBody.KeyValueInfoList = keyValueInfoList
 
