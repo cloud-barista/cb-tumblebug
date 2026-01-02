@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
@@ -89,48 +89,41 @@ func CreateDataDisk(nsId string, u *model.DataDiskReq, option string) (model.Dat
 		},
 	}
 
-	var tempSpiderDiskInfo *model.SpiderDiskInfo
+	var callResult model.SpiderDiskInfo
 
-	client := resty.New().SetCloseConnection(true)
+	client := clientManager.NewHttpClient()
 	client.SetAllowGetMethodPayload(true)
 
-	req := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody).
-		SetResult(&model.SpiderDiskInfo{}) // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-
-	var resp *resty.Response
-	// var err error
-
 	var url string
+	var method string
 	if option == "register" && u.CspResourceId == "" {
 		url = fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, u.Name)
-		resp, err = req.Get(url)
+		method = "GET"
 	} else if option == "register" && u.CspResourceId != "" {
 		url = fmt.Sprintf("%s/regdisk", model.SpiderRestUrl)
-		resp, err = req.Post(url)
+		method = "POST"
 	} else { // option != "register"
 		url = fmt.Sprintf("%s/disk", model.SpiderRestUrl)
-		resp, err = req.Post(url)
+		method = "POST"
 	}
+
+	err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return model.DataDiskInfo{}, err
 	}
 
-	// fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		fmt.Println("body: ", string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		return model.DataDiskInfo{}, err
-	}
-
-	tempSpiderDiskInfo = resp.Result().(*model.SpiderDiskInfo)
+	tempSpiderDiskInfo := &callResult
 
 	content := model.DataDiskInfo{
 		ResourceType:         resourceType,
@@ -263,43 +256,28 @@ func UpsizeDataDisk(nsId string, resourceId string, u *model.DataDiskUpsizeReq) 
 		},
 	}
 
-	client := resty.New().SetCloseConnection(true)
+	client := clientManager.NewHttpClient()
 	client.SetAllowGetMethodPayload(true)
 
-	req := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody)
-		// SetResult(&SpiderDiskInfo{}) // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-
-	var resp *resty.Response
-	// var err error
-
 	url := fmt.Sprintf("%s/disk/%s/size", model.SpiderRestUrl, dataDisk.CspResourceName)
-	resp, err = req.Put(url)
+	method := "PUT"
+	var callResult interface{}
+
+	err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return model.DataDiskInfo{}, err
 	}
-
-	// fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		fmt.Println("body: ", string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		return model.DataDiskInfo{}, err
-	}
-
-	/*
-		isSuccessful := resp.Result().(bool)
-		if isSuccessful == false {
-			err := fmt.Errorf("Failed to upsize the dataDisk %s", resourceId)
-			return model.DataDiskInfo{}, err
-		}
-	*/
 
 	content := dataDisk
 	content.DiskSize = u.DiskSize

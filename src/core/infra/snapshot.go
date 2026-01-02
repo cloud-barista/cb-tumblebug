@@ -22,7 +22,6 @@ import (
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -63,7 +62,7 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 
 	// Create VM snapshot using ExecuteHttpRequest
 	var tempSpiderMyImageInfo model.SpiderMyImageInfo
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	client.SetTimeout(5 * time.Minute)
 	url := fmt.Sprintf("%s/myimage", model.SpiderRestUrl)
 	method := "POST"

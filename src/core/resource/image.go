@@ -30,7 +30,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm/clause"
 
@@ -315,7 +314,7 @@ func lookupRegularImageOnly(connConfig string, imageId string) (model.SpiderImag
 		return model.SpiderImageInfo{}, fmt.Errorf("lookupRegularImageOnly() called with empty imageId")
 	}
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	client.SetTimeout(2 * time.Minute)
 	apiUrl := model.SpiderRestUrl + "/vmimage/" + url.QueryEscape(imageId)
 	method := "GET"
@@ -670,7 +669,7 @@ func RegisterImageWithInfo(nsId string, content *model.ImageInfo, update bool) (
 func LookupImageList(connConfigName string) (model.SpiderImageList, error) {
 
 	var callResult model.SpiderImageList
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	client.SetTimeout(100 * time.Minute)
 
 	url := model.SpiderRestUrl + "/vmimage"
@@ -712,7 +711,7 @@ func LookupImage(connConfig string, imageId string) (model.SpiderImageInfo, erro
 		return content, err
 	}
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	client.SetTimeout(2 * time.Minute)
 	apiUrl := model.SpiderRestUrl + "/vmimage/" + url.QueryEscape(imageId)
 	method := "GET"

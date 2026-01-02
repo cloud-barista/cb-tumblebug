@@ -28,7 +28,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -638,7 +637,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 
 	UpdateVmInfo(nsId, mciId, temp)
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	client.SetTimeout(10 * time.Minute)
 
 	// Set longer timeout for NCP (VPC)

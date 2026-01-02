@@ -7,7 +7,6 @@ import (
 	"time"
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
-	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
@@ -19,7 +18,7 @@ func InitJwtAuthMw(iamEndpoint string, pubkeyUrl string) error {
 	log.Debug().Msg("Start - InitJwtAuthMw")
 
 	// Check readiness of MC-IAM-Manager
-	client := resty.New()
+	client := clientManager.NewHttpClientBasic()
 
 	method := "GET"
 	url := fmt.Sprintf("%s/readyz", iamEndpoint)

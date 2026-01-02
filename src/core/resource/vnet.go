@@ -29,7 +29,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -609,7 +608,7 @@ func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
 
 	log.Debug().Msgf("spReqt: %+v", spReqt)
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "POST"
 	var spResp spiderVPCInfo
 
@@ -859,7 +858,7 @@ func GetVNet(nsId string, vNetId string) (model.VNetInfo, error) {
 	 */
 
 	// [Via Spider] Get a vNet and subnets
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "GET"
 	spReqt := clientManager.NoBody
 	var spResp spiderVPCInfo
@@ -1057,7 +1056,7 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 
 		var spResp spiderBooleanInfoResp
 
-		client := resty.New()
+		client := clientManager.NewHttpClient()
 		method := "DELETE"
 
 		err = clientManager.ExecuteHttpRequest(
@@ -1184,7 +1183,7 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 	 */
 
 	// [Via Spider] Get a vNet
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "GET"
 	spReqt := clientManager.NoBody
 	var spResp spiderVPCInfo
@@ -1396,7 +1395,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VN
 	spReqt.ReqInfo.Name = vNetInfo.Uid
 	spReqt.ReqInfo.CSPId = vNetRegisterReq.CspResourceId
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "POST"
 	var spResp spiderVPCInfo
 
@@ -1716,7 +1715,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 
 	var spResp spiderBooleanInfoResp
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "DELETE"
 
 	err = clientManager.ExecuteHttpRequest(

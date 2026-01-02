@@ -36,7 +36,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	validator "github.com/go-playground/validator/v10"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
@@ -326,7 +325,7 @@ func LookupSpecList(connConfig string) (model.SpiderSpecList, error) {
 	}
 
 	var callResult model.SpiderSpecList
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	client.SetTimeout(10 * time.Minute)
 	url := model.SpiderRestUrl + "/vmspec"
 	method := "GET"
@@ -370,7 +369,7 @@ func LookupSpec(connConfig string, specName string) (model.SpiderSpecInfo, error
 		return content, err
 	}
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	client.SetTimeout(2 * time.Minute)
 	url := model.SpiderRestUrl + "/vmspec/" + specName
 	method := "GET"
@@ -1503,7 +1502,7 @@ func sortConnectionsByCSPRotation(configs []model.ConnConfig) {
 func LookupPriceList(connConfig model.ConnConfig) (model.SpiderCloudPrice, error) {
 
 	var callResult model.SpiderCloudPrice
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	client.SetTimeout(10 * time.Minute)
 	url := model.SpiderRestUrl + "/priceinfo/vm/" +
 		connConfig.RegionZoneInfo.AssignedRegion +
@@ -1562,7 +1561,7 @@ func GetAvailableRegionZonesForSpec(provider string, cspSpecName string) (model.
 	}
 
 	// Prepare API call
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	client.SetTimeout(120 * time.Second)
 	url := model.SpiderRestUrl + "/anycall"
 	method := "POST"

@@ -54,6 +54,8 @@ func init() {
 	model.SpiderRestUrl = common.NVL(os.Getenv("TB_SPIDER_REST_URL"), "http://localhost:1024/spider")
 	model.DragonflyRestUrl = common.NVL(os.Getenv("TB_DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
 	model.TerrariumRestUrl = common.NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8055/terrarium")
+	model.APIUsername = common.NVL(os.Getenv("TB_API_USERNAME"), "default")
+	model.APIPassword = common.NVL(os.Getenv("TB_API_PASSWORD"), "default")
 	model.DBUrl = common.NVL(os.Getenv("TB_POSTGRES_ENDPOINT"), "localhost:3306")
 	model.DBDatabase = common.NVL(os.Getenv("TB_POSTGRES_DATABASE"), "tumblebug")
 	model.DBUser = common.NVL(os.Getenv("TB_POSTGRES_USER"), "tumblebug")

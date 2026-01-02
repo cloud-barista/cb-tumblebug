@@ -116,6 +116,8 @@ var SystemReady bool
 var SpiderRestUrl string
 var DragonflyRestUrl string
 var TerrariumRestUrl string
+var APIUsername string
+var APIPassword string
 var DBUrl string
 var DBDatabase string
 var DBUser string
@@ -136,6 +138,8 @@ const (
 	StrSpiderRestUrl         string = "TB_SPIDER_REST_URL"
 	StrDragonflyRestUrl      string = "TB_DRAGONFLY_REST_URL"
 	StrTerrariumRestUrl      string = "TB_TERRARIUM_REST_URL"
+	StrAPIUsername           string = "TB_API_USERNAME"
+	StrAPIPassword           string = "TB_API_PASSWORD"
 	StrDBUrl                 string = "TB_POSTGRES_ENDPOINT"
 	StrDBDatabase            string = "TB_POSTGRES_DATABASE"
 	StrDBUser                string = "TB_POSTGRES_USER"

@@ -72,6 +72,24 @@ const (
 // NoBody is a constant for empty body
 const NoBody = "NOBODY"
 
+// NewHttpClient creates a new HTTP client with Basic Auth configured.
+// It uses the global APIUsername and APIPassword from model package.
+// This is useful for internal API calls that require authentication (e.g., Spider, Terrarium).
+// Note: SetDisableWarn(true) suppresses the "Using Basic Auth in HTTP mode" warning
+// since internal service communication is within trusted network.
+func NewHttpClient() *resty.Client {
+	client := resty.New().SetCloseConnection(true)
+	client.SetDisableWarn(true)
+	client.SetBasicAuth(model.APIUsername, model.APIPassword)
+	return client
+}
+
+// NewHttpClientBasic creates a new HTTP client without any authentication.
+func NewHttpClientBasic() *resty.Client {
+	client := resty.New()
+	return client
+}
+
 // MaxDebugBodyLength is the maximum length of response body for debug logs
 const MaxDebugBodyLength = 50000
 
@@ -675,7 +693,7 @@ func UpdateRequestProgress(reqID string, progressData interface{}) {
 
 // ForwardRequestToAny forwards the given request to the specified path
 func ForwardRequestToAny(reqPath string, method string, requestBody interface{}) (interface{}, error) {
-	client := resty.New()
+	client := NewHttpClient()
 	var callResult interface{}
 
 	url := model.SpiderRestUrl + "/" + reqPath

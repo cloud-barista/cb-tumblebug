@@ -25,7 +25,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -136,7 +135,7 @@ func CreateSshKey(nsId string, u *model.SshKeyReq, option string) (model.SshKeyI
 
 	var tempSpiderKeyPairInfo model.SpiderKeyPairInfo
 
-	client := resty.New().SetCloseConnection(true)
+	client := clientManager.NewHttpClient()
 
 	var url string
 	var method string

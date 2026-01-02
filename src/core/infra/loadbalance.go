@@ -23,12 +23,12 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	validator "github.com/go-playground/validator/v10"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -308,46 +308,41 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 		requestBody.ReqInfo.VMGroup.VMs = append(requestBody.ReqInfo.VMGroup.VMs, vm.CspResourceName)
 	}
 
-	var tempSpiderNLBInfo *model.SpiderNLBInfo
+	var callResult model.SpiderNLBInfo
 
-	client := resty.New().SetCloseConnection(true)
+	client := clientManager.NewHttpClient()
 	client.SetAllowGetMethodPayload(true)
 
-	req := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody).
-		SetResult(&model.SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-
-	var resp *resty.Response
-
 	var url string
+	var method string
 	if option == "register" && u.CspResourceId == "" {
 		url = fmt.Sprintf("%s/nlb/%s", model.SpiderRestUrl, u.TargetGroup.SubGroupId)
-		resp, err = req.Get(url)
+		method = "GET"
 	} else if option == "register" && u.CspResourceId != "" {
 		url = fmt.Sprintf("%s/regnlb", model.SpiderRestUrl)
-		resp, err = req.Post(url)
+		method = "POST"
 	} else { // option != "register"
 		url = fmt.Sprintf("%s/nlb", model.SpiderRestUrl)
-		resp, err = req.Post(url)
+		method = "POST"
 	}
+
+	err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return emptyObj, err
 	}
 
-	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		return emptyObj, err
-	}
-
-	tempSpiderNLBInfo = resp.Result().(*model.SpiderNLBInfo)
+	tempSpiderNLBInfo := &callResult
 	location := connConfig.RegionDetail.Location
 
 	content := model.NLBInfo{
@@ -716,68 +711,54 @@ func DelNLB(nsId string, mciId string, resourceId string, forceFlag string) erro
 
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
-	// NLB has no childResources, so below line is commented.
-	// var childResources interface{}
-
-	var url string
-
-	// Create Req body
-	type JsonTemplate struct {
-		ConnectionName string
-	}
-	requestBody := JsonTemplate{}
-
-	temp := model.NLBInfo{}
-	err = json.Unmarshal([]byte(keyValue.Value), &temp)
+	nlbInfo := model.NLBInfo{}
+	err = json.Unmarshal([]byte(keyValue.Value), &nlbInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	requestBody.ConnectionName = temp.ConnectionName
-	url = model.SpiderRestUrl + "/nlb/" + temp.CspResourceName
 
-	fmt.Println("url: " + url)
+	requestBody := model.SpiderConnectionName{ConnectionName: nlbInfo.ConnectionName}
+	url := fmt.Sprintf("%s/nlb/%s", model.SpiderRestUrl, nlbInfo.CspResourceName)
+	client := clientManager.NewHttpClient()
+	method := "DELETE"
+	var callResult interface{}
 
-	client := resty.New().SetCloseConnection(true)
-
-	resp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody).
-		//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-		Delete(url)
+	err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return err
-	}
+		if forceFlag == "true" {
+			url += "?force=true"
+			log.Debug().Msg("forceFlag == true; url: " + url)
 
-	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case forceFlag == "true":
-		url += "?force=true"
-		log.Debug().Msg("forceFlag == true; url: " + url)
+			err = clientManager.ExecuteHttpRequest(
+				client,
+				method,
+				url,
+				nil,
+				clientManager.SetUseBody(requestBody),
+				&requestBody,
+				&callResult,
+				clientManager.MediumDuration,
+			)
 
-		_, err := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(requestBody).
-			//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
-			Delete(url)
-
-		if err != nil {
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				return err
+			}
+		} else {
 			log.Error().Err(err).Msg("")
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return err
 		}
-
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		return err
-	default:
-
 	}
 
 	err = kvstore.Delete(key)
@@ -881,38 +862,31 @@ func GetNLBHealth(nsId string, mciId string, nlbId string) (model.NLBHealthInfo,
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = nlb.ConnectionName
 
-	var tempSpiderNLBHealthInfo *model.SpiderNLBHealthInfoWrapper
+	var callResult model.SpiderNLBHealthInfoWrapper
 
-	client := resty.New().SetCloseConnection(true)
+	client := clientManager.NewHttpClient()
 	client.SetAllowGetMethodPayload(true)
 
-	req := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody).
-		SetResult(&model.SpiderNLBHealthInfoWrapper{}) // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+	url := fmt.Sprintf("%s/nlb/%s/health", model.SpiderRestUrl, nlb.CspResourceName)
+	method := "GET"
 
-	var resp *resty.Response
-
-	var url string
-	url = fmt.Sprintf("%s/nlb/%s/health", model.SpiderRestUrl, nlb.CspResourceName)
-	resp, err = req.Get(url)
+	err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return model.NLBHealthInfo{}, err
 	}
 
-	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		return model.NLBHealthInfo{}, err
-	}
-
-	tempSpiderNLBHealthInfo = resp.Result().(*model.SpiderNLBHealthInfoWrapper)
+	tempSpiderNLBHealthInfo := &callResult
 
 	result := model.NLBHealthInfo{}
 
@@ -1051,40 +1025,31 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddRemo
 		requestBody.ReqInfo.VMs = append(requestBody.ReqInfo.VMs, vm.CspResourceName)
 	}
 
-	var tempSpiderNLBInfo *model.SpiderNLBInfo
+	var callResult model.SpiderNLBInfo
 
-	client := resty.New().SetCloseConnection(true)
+	client := clientManager.NewHttpClient()
 	client.SetAllowGetMethodPayload(true)
 
-	req := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody).
-		SetResult(&model.SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+	url := fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspResourceName)
+	method := "POST"
 
-	var resp *resty.Response
-
-	var url string
-	url = fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspResourceName)
-	resp, err = req.Post(url)
+	err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		content := model.NLBInfo{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return content, err
+		return model.NLBInfo{}, err
 	}
 
-	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		content := model.NLBInfo{}
-		return content, err
-	}
-
-	tempSpiderNLBInfo = resp.Result().(*model.SpiderNLBInfo)
+	tempSpiderNLBInfo := &callResult
 
 	content := model.NLBInfo{
 		Id:             nlb.Name,
@@ -1256,40 +1221,28 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddR
 		}
 	*/
 
-	// var tempSpiderNLBInfo *model.SpiderNLBInfo
-
-	client := resty.New().SetCloseConnection(true)
+	client := clientManager.NewHttpClient()
 	client.SetAllowGetMethodPayload(true)
 
-	req := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody)
-		// SetResult(&model.SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+	url := fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspResourceName)
+	method := "DELETE"
+	var callResult interface{}
 
-	var resp *resty.Response
-
-	var url string
-	url = fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspResourceName)
-	resp, err = req.Delete(url)
+	err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		// content := model.NLBInfo{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return err
 	}
-
-	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		// content := model.NLBInfo{}
-		return err
-	}
-
-	// result := resp.Result().(bool)
 
 	oldVMList := nlb.TargetGroup.VMs
 	for _, vmToDelete := range u.TargetGroup.VMs {

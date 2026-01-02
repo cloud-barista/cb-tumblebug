@@ -46,8 +46,6 @@ import (
 
 	"encoding/json"
 	"fmt"
-
-	"github.com/go-resty/resty/v2"
 )
 
 // Assets path management
@@ -380,7 +378,7 @@ func GetProviderNameFromConnConfig(ConnConfigName string) (string, error) {
 func CheckConnConfigAvailable(connConfigName string) (bool, error) {
 
 	var callResult interface{}
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/allkeypair"
 	method := "GET"
 	requestBody := model.SpiderConnectionName{}
@@ -409,7 +407,7 @@ func CheckConnConfigAvailable(connConfigName string) (bool, error) {
 func CheckSpiderReady() error {
 
 	var callResult interface{}
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/readyz"
 	method := "GET"
 	requestBody := clientManager.NoBody
@@ -521,7 +519,7 @@ func RegisterCloudInfo(providerName string) error {
 
 	driverName := RuntimeCloudInfo.CSPs[providerName].Driver
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/driver"
 	method := "POST"
 	var callResult model.CloudDriverInfo
@@ -556,7 +554,7 @@ func RegisterCloudInfo(providerName string) error {
 
 // RegisterRegionZone is func to register all regions to CB-Spider
 func RegisterRegionZone(providerName string, regionName string) error {
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/region"
 	method := "POST"
 	var callResult model.SpiderRegionZoneInfo
@@ -779,7 +777,7 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 		KeyValueInfoList: decryptedKeyValueList,
 	}
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/credential"
 	method := "POST"
 	var callResult model.CredentialInfo
@@ -1000,7 +998,7 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 
 // RegisterConnectionConfig is func to register connection config to CB-Spider
 func RegisterConnectionConfig(connConfig model.ConnConfig) (model.ConnConfig, error) {
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/connectionconfig"
 	method := "POST"
 	var callResult model.SpiderConnConfig
@@ -1165,7 +1163,7 @@ func RetrieveRegionListFromCsp() (model.RetrievedRegionList, error) {
 
 	url := model.SpiderRestUrl + "/region"
 
-	client := resty.New().SetCloseConnection(true)
+	client := clientManager.NewHttpClient()
 
 	resp, err := client.R().
 		SetResult(&model.RetrievedRegionList{}).

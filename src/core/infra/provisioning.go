@@ -32,7 +32,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -3290,7 +3289,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 	log.Info().Msg("VM request body to CB-Spider")
 	common.PrintJsonPretty(requestBody)
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "POST"
 	client.SetTimeout(20 * time.Minute)
 

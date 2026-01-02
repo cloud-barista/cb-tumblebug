@@ -5,7 +5,6 @@ import (
 
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
-	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
@@ -14,7 +13,7 @@ func CheckReadiness(url string, apiUser string, apiPass string) echo.MiddlewareF
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 
-			client := resty.New()
+			client := clientManager.NewHttpClient()
 			if apiUser != "" && apiPass != "" {
 				client.SetBasicAuth(apiUser, apiPass)
 			}
