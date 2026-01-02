@@ -1505,10 +1505,12 @@ func LookupPriceList(connConfig model.ConnConfig) (model.SpiderCloudPrice, error
 	var callResult model.SpiderCloudPrice
 	client := resty.New()
 	client.SetTimeout(10 * time.Minute)
-	url := model.SpiderRestUrl + "/priceinfo/vm/" + connConfig.RegionZoneInfo.AssignedRegion + "?simple=true"
-	method := "POST"
-	requestBody := model.SpiderConnectionName{}
-	requestBody.ConnectionName = connConfig.ConfigName
+	url := model.SpiderRestUrl + "/priceinfo/vm/" +
+		connConfig.RegionZoneInfo.AssignedRegion +
+		"?ConnectionName=" + connConfig.ConfigName +
+		"&simple=true"
+	method := "GET"
+	requestBody := clientManager.NoBody
 
 	err := clientManager.ExecuteHttpRequest(
 		client,
