@@ -25,7 +25,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -104,7 +103,7 @@ func LookupMyImage(connConfig string, myImageId string) (model.SpiderMyImageInfo
 	}
 
 	var callResult model.SpiderMyImageInfo
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	client.SetTimeout(2 * time.Minute)
 	url := model.SpiderRestUrl + "/myimage/" + url.QueryEscape(myImageId)
 	method := "GET"
@@ -213,7 +212,7 @@ func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.Imag
 		return model.ImageInfo{}, err
 	}
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	client.SetTimeout(2 * time.Minute)
 	url := ""
 	method := ""

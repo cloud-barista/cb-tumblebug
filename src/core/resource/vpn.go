@@ -19,19 +19,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"os"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
-	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	terrariumModel "github.com/cloud-barista/mc-terrarium/pkg/api/rest/model"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -317,10 +314,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 	 */
 
 	// Initialize resty client with basic auth
-	client := resty.New()
-	apiUser := os.Getenv("TB_TERRARIUM_API_USERNAME")
-	apiPass := os.Getenv("TB_TERRARIUM_API_PASSWORD")
-	client.SetBasicAuth(apiUser, apiPass)
+	client := clientManager.NewHttpClient()
 
 	// Set Terrarium endpoint
 	epTerrarium := model.TerrariumRestUrl
@@ -588,10 +582,7 @@ func retrieveEnrichmentsInfoInTerrarium(ctx context.Context, trId string, enrich
 	var emptyRet model.Response
 
 	// Initialize resty client with basic auth
-	client := resty.New()
-	apiUser := os.Getenv("TB_TERRARIUM_API_USERNAME")
-	apiPass := os.Getenv("TB_TERRARIUM_API_PASSWORD")
-	client.SetBasicAuth(apiUser, apiPass)
+	client := clientManager.NewHttpClient()
 
 	// Set Terrarium endpoint
 	epTerrarium := model.TerrariumRestUrl
@@ -777,10 +768,7 @@ func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string) (m
 	}
 
 	// Initialize resty client with basic auth
-	client := resty.New()
-	apiUser := os.Getenv("TB_TERRARIUM_API_USERNAME")
-	apiPass := os.Getenv("TB_TERRARIUM_API_PASSWORD")
-	client.SetBasicAuth(apiUser, apiPass)
+	client := clientManager.NewHttpClient()
 
 	trId := vpnInfo.Uid
 
@@ -974,10 +962,7 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 	}
 
 	// Initialize resty client with basic auth
-	client := resty.New()
-	apiUser := os.Getenv("TB_TERRARIUM_API_USERNAME")
-	apiPass := os.Getenv("TB_TERRARIUM_API_PASSWORD")
-	client.SetBasicAuth(apiUser, apiPass)
+	client := clientManager.NewHttpClient()
 
 	trId := vpnInfo.Uid
 
@@ -1144,10 +1129,7 @@ func GetRequestStatusOfSiteToSiteVpn(nsId string, mciId string, vpnId string, re
 	}
 
 	// Initialize resty client with basic auth
-	client := resty.New()
-	apiUser := os.Getenv("TB_TERRARIUM_API_USERNAME")
-	apiPass := os.Getenv("TB_TERRARIUM_API_PASSWORD")
-	client.SetBasicAuth(apiUser, apiPass)
+	client := clientManager.NewHttpClient()
 
 	trId := vpnInfo.Uid
 

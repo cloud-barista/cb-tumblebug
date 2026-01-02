@@ -17,7 +17,6 @@ package resource
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
@@ -26,7 +25,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	terrariumModel "github.com/cloud-barista/mc-terrarium/pkg/api/rest/model"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -227,10 +225,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 	 */
 
 	// Initialize resty client with basic auth
-	client := resty.New()
-	apiUser := os.Getenv("TB_API_USERNAME")
-	apiPass := os.Getenv("TB_API_PASSWORD")
-	client.SetBasicAuth(apiUser, apiPass)
+	client := clientManager.NewHttpClient()
 
 	// Set Terrarium endpoint
 	epTerrarium := model.TerrariumRestUrl
@@ -628,10 +623,7 @@ func GetSqlDB(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 	}
 
 	// Initialize resty client with basic auth
-	client := resty.New()
-	apiUser := os.Getenv("TB_API_USERNAME")
-	apiPass := os.Getenv("TB_API_PASSWORD")
-	client.SetBasicAuth(apiUser, apiPass)
+	client := clientManager.NewHttpClient()
 
 	trId := sqlDBInfo.Uid
 
@@ -802,10 +794,7 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 	}
 
 	// Initialize resty client with basic auth
-	client := resty.New()
-	apiUser := os.Getenv("TB_API_USERNAME")
-	apiPass := os.Getenv("TB_API_PASSWORD")
-	client.SetBasicAuth(apiUser, apiPass)
+	client := clientManager.NewHttpClient()
 
 	trId := sqlDBInfo.Uid
 
@@ -987,10 +976,7 @@ func GetRequestStatusOfSqlDB(nsId string, sqlDbId string, reqId string) (model.R
 	}
 
 	// Initialize resty client with basic auth
-	client := resty.New()
-	apiUser := os.Getenv("TB_API_USERNAME")
-	apiPass := os.Getenv("TB_API_PASSWORD")
-	client.SetBasicAuth(apiUser, apiPass)
+	client := clientManager.NewHttpClient()
 
 	trId := sqlDBInfo.Uid
 

@@ -33,7 +33,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 
 	corev1 "k8s.io/api/core/v1"
@@ -490,7 +489,7 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string, skip
 
 	// Randomly sleep within 20 Secs to avoid rateLimit from CSP
 	//common.RandomSleep(0, 20)
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "POST"
 	client.SetTimeout(20 * time.Minute)
 
@@ -782,7 +781,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.K8sNodeGroupReq)
 		},
 	}
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "POST"
 	client.SetTimeout(20 * time.Minute)
 
@@ -852,7 +851,7 @@ func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bo
 		ConnectionName: tbK8sCInfo.ConnectionName,
 	}
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspResourceName + "/nodegroup/" + k8sNodeGroupName
 	if option == "force" {
 		url += "?force=true"
@@ -949,7 +948,7 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 		},
 	}
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspResourceName + "/nodegroup/" + k8sNodeGroupName + "/onautoscaling"
 	method := "PUT"
 
@@ -1039,7 +1038,7 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 		},
 	}
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspResourceName + "/nodegroup/" + k8sNodeGroupName + "/autoscalesize"
 	method := "PUT"
 
@@ -1096,7 +1095,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (*model.K8sClusterInfo, err
 	}
 
 	// Update model.K8sClusterInfo from CB-Spider
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	client.SetTimeout(10 * time.Minute)
 	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspResourceName
 	method := "GET"
@@ -1320,7 +1319,7 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 		ConnectionName: tbK8sCInfo.ConnectionName,
 	}
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspResourceName
 	if option == "force" {
 		url += "?force=true"
@@ -1468,7 +1467,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.UpgradeK8sClus
 		},
 	}
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspResourceName + "/upgrade"
 	method := "PUT"
 	client.SetTimeout(10 * time.Minute)

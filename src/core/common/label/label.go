@@ -24,7 +24,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -471,7 +470,7 @@ func GetResourcesByLabelSelector(labelType, labelSelector string) ([]interface{}
 // UpdateCSPResourceLabel best-effort updates the labels of a resource in the CSP
 func UpdateCSPResourceLabel(labelType, uid string, labels map[string]string, connectionName string) {
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/tag"
 	method := "POST"
 	var callResult model.KeyValue
@@ -509,7 +508,7 @@ func UpdateCSPResourceLabel(labelType, uid string, labels map[string]string, con
 // RemoveCSPResourceLabel best-effort removes the labels of a resource in the CSP
 func RemoveCSPResourceLabel(labelType, uid string, key string, connectionName string) {
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := fmt.Sprintf("%s/tag/%s", model.SpiderRestUrl, key)
 	method := "DELETE"
 	var callResult model.KeyValue
@@ -604,7 +603,7 @@ func ListCSPResourceLabel(labelType, uid string, connectionName string) (labels 
 	resourceType := convertTermToSpider(labelType)
 	resourceName := uid
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := fmt.Sprintf("%s/tag?ConnectionName=%s&ResourceType=%s&ResourceName=%s", model.SpiderRestUrl, connectionName, resourceType, resourceName)
 	method := "GET"
 	var callResult jsonResult

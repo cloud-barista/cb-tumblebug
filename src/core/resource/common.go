@@ -34,7 +34,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
-	"github.com/go-resty/resty/v2"
 
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -523,7 +522,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		url += "?force=true"
 	}
 	var callResult interface{}
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "DELETE"
 	//client.SetTimeout(60 * time.Second)
 
@@ -1192,33 +1191,32 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			// Not effective to CB-TB logic, but need to be aware of it. since cb-spider log may confuse operator.
 			// cb-tumblebug| 4:13PM DBG src/core/resource/common.go:1188 > Updating status for custom image ID:custom-image-g1 CspImageName:custom-image-g1 CspImageId:ami-09e8eaf264b0f76ab
 			// cb-spider| [CB-SPIDER].[ERROR]: 2025-10-14 16:13:19 MyImageManager.go:471, github.com/cloud-barista/cb-spider/api-runtime/common-runtime.GetMyImage() - aws-ap-northeast-2, i-0c4405a99cb146221: does not exist!
-			client := resty.New().SetCloseConnection(true)
+			client := clientManager.NewHttpClient()
 			client.SetAllowGetMethodPayload(true)
 
-			connectionName := model.SpiderConnectionName{
+			requestBody := model.SpiderConnectionName{
 				ConnectionName: res.ConnectionName,
 			}
+			method := "GET"
+			var callResult model.SpiderMyImageInfo
 
-			req := client.R().
-				SetHeader("Content-Type", "application/json").
-				SetBody(connectionName).
-				SetResult(&model.SpiderMyImageInfo{})
+			err := clientManager.ExecuteHttpRequest(
+				client,
+				method,
+				url,
+				nil,
+				clientManager.SetUseBody(requestBody),
+				&requestBody,
+				&callResult,
+				clientManager.MediumDuration,
+			)
 
-			resp, err := req.Get(url)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 
-			switch {
-			case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-				err := fmt.Errorf(string(resp.Body()))
-				log.Error().Err(err).Msg("")
-				return nil, err
-			}
-
-			updatedSpiderMyImage := resp.Result().(*model.SpiderMyImageInfo)
-			res.ImageStatus = model.ImageStatus(updatedSpiderMyImage.Status)
+			res.ImageStatus = model.ImageStatus(callResult.Status)
 
 			// Update the database with new status
 			model.ORM.Model(&res).Where("namespace = ? AND id = ?", nsId, resourceId).
@@ -1289,36 +1287,32 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			// Update TB DataDisk object's 'status' field
 			url := fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, res.CspResourceName)
 
-			client := resty.New().SetCloseConnection(true)
+			client := clientManager.NewHttpClient()
 			client.SetAllowGetMethodPayload(true)
 
-			connectionName := model.SpiderConnectionName{
+			requestBody := model.SpiderConnectionName{
 				ConnectionName: res.ConnectionName,
 			}
+			method := "GET"
+			var callResult model.SpiderDiskInfo
 
-			req := client.R().
-				SetHeader("Content-Type", "application/json").
-				SetBody(connectionName).
-				SetResult(&model.SpiderDiskInfo{}) // or SetResult(AuthSuccess{}).
-				//SetError(&AuthError{}).       // or SetError(AuthError{}).
+			err = clientManager.ExecuteHttpRequest(
+				client,
+				method,
+				url,
+				nil,
+				clientManager.SetUseBody(requestBody),
+				&requestBody,
+				&callResult,
+				clientManager.MediumDuration,
+			)
 
-			resp, err := req.Get(url)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return res, err
 			}
 
-			// fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
-			switch {
-			case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-				err := fmt.Errorf(string(resp.Body()))
-				fmt.Println("body: ", string(resp.Body()))
-				log.Error().Err(err).Msg("")
-				return res, err
-			}
-
-			updatedSpiderDisk := resp.Result().(*model.SpiderDiskInfo)
-			res.Status = updatedSpiderDisk.Status
+			res.Status = callResult.Status
 			// fmt.Printf("res.Status: %s \n", res.Status) // for debug
 			UpdateResourceObject(nsId, model.StrDataDisk, res)
 
@@ -2170,7 +2164,7 @@ func GetCspResourceStatus(connConfig string, resourceType string) (model.CspReso
 	response.ResourceType = resourceType
 
 	// Create HTTP client with connection close for efficiency
-	client := resty.New().SetCloseConnection(true)
+	client := clientManager.NewHttpClient()
 	client.SetAllowGetMethodPayload(true)
 
 	// Create request body
@@ -2208,59 +2202,38 @@ func GetCspResourceStatus(connConfig string, resourceType string) (model.CspReso
 	}
 
 	// Make HTTP request to CB-Spider
-	var resp *resty.Response
+	method := "GET"
 	var err error
 
 	if isSubnetResource {
 		// For Subnet, use different endpoint and query parameter
-		resp, err = client.R().
-			SetHeader("Content-Type", "application/json").
-			SetQueryParam("ConnectionName", connConfig).
-			SetResult(&model.SpiderAllVpcInfoWrapper{}).
-			Get(spiderRequestURL)
-	} else {
-		// For other resources, use standard body-based request
-		resp, err = client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(requestBody).
-			SetResult(&model.SpiderAllListWrapper{}).
-			Get(spiderRequestURL)
-	}
-
-	if err != nil {
-		log.Error().Err(err).Str("connection", connConfig).Str("resourceType", resourceType).
-			Msg("Failed to request CB-Spider for resource status")
-		response.Error = fmt.Sprintf("HTTP request failed: %v", err)
-		return response, fmt.Errorf("failed to request CB-Spider: %w", err)
-	}
-
-	// Check HTTP status code
-	if resp.StatusCode() >= 400 || resp.StatusCode() < 200 {
-		errorMsg := string(resp.Body())
-		log.Error().Int("statusCode", resp.StatusCode()).Str("connection", connConfig).
-			Str("resourceType", resourceType).Str("response", errorMsg).
-			Msg("CB-Spider returned error status")
-		response.Error = fmt.Sprintf("HTTP %d: %s", resp.StatusCode(), errorMsg)
-		return response, fmt.Errorf("CB-Spider error (HTTP %d): %s", resp.StatusCode(), errorMsg)
-	}
-
-	// Parse response from CB-Spider
-	if isSubnetResource {
-		// Special handling for Subnet resources
-		vpcInfoResponse, ok := resp.Result().(*model.SpiderAllVpcInfoWrapper)
-		if !ok {
-			err := fmt.Errorf("failed to parse VPC info response from CB-Spider")
-			response.Error = err.Error()
-			return response, err
+		spiderRequestURL = fmt.Sprintf("%s?ConnectionName=%s", spiderRequestURL, connConfig)
+		noBody := clientManager.NoBody
+		var callResult model.SpiderAllVpcInfoWrapper
+		err = clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			spiderRequestURL,
+			nil,
+			clientManager.SetUseBody(noBody),
+			&noBody,
+			&callResult,
+			clientManager.MediumDuration,
+		)
+		if err != nil {
+			log.Error().Err(err).Str("connection", connConfig).Str("resourceType", resourceType).
+				Msg("Failed to request CB-Spider for resource status")
+			response.Error = fmt.Sprintf("HTTP request failed: %v", err)
+			return response, fmt.Errorf("failed to request CB-Spider: %w", err)
 		}
 
 		// Extract all subnet SystemIds from all VPCs
 		var subnetList []model.SpiderNameIdSystemId
 		// Check all three lists: MappedInfoList, OnlySpiderList, and OnlyCSPInfoList
 		allVpcLists := [][]model.SpiderVpcInfo{
-			vpcInfoResponse.AllListInfo.MappedInfoList,
-			vpcInfoResponse.AllListInfo.OnlySpiderList,
-			vpcInfoResponse.AllListInfo.OnlyCSPInfoList,
+			callResult.AllListInfo.MappedInfoList,
+			callResult.AllListInfo.OnlySpiderList,
+			callResult.AllListInfo.OnlyCSPInfoList,
 		}
 
 		for _, vpcList := range allVpcLists {
@@ -2282,16 +2255,27 @@ func GetCspResourceStatus(connConfig string, resourceType string) (model.CspReso
 			OnlyCSPList:    subnetList,
 		}
 	} else {
-		// Standard handling for other resources
-		spiderResponse, ok := resp.Result().(*model.SpiderAllListWrapper)
-		if !ok {
-			err := fmt.Errorf("failed to parse response from CB-Spider")
-			response.Error = err.Error()
-			return response, err
+		// For other resources, use standard body-based request
+		var callResult model.SpiderAllListWrapper
+		err = clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			spiderRequestURL,
+			nil,
+			clientManager.SetUseBody(requestBody),
+			&requestBody,
+			&callResult,
+			clientManager.MediumDuration,
+		)
+		if err != nil {
+			log.Error().Err(err).Str("connection", connConfig).Str("resourceType", resourceType).
+				Msg("Failed to request CB-Spider for resource status")
+			response.Error = fmt.Sprintf("HTTP request failed: %v", err)
+			return response, fmt.Errorf("failed to request CB-Spider: %w", err)
 		}
 
 		// Copy the AllList data to response
-		response.AllList = spiderResponse.AllList
+		response.AllList = callResult.AllList
 	}
 
 	// Add success message with resource counts

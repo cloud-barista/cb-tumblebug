@@ -177,6 +177,12 @@ func UpdateGlobalVariable(id string) error {
 	case model.StrTerrariumRestUrl:
 		model.TerrariumRestUrl = configInfo.Value
 		log.Debug().Msg("<TB_TERRARIUM_REST_URL> " + model.TerrariumRestUrl)
+	case model.StrAPIUsername:
+		model.APIUsername = configInfo.Value
+		log.Debug().Msg("<TB_API_USERNAME> " + model.APIUsername)
+	case model.StrAPIPassword:
+		model.APIPassword = configInfo.Value
+		log.Debug().Msg("<TB_API_PASSWORD> ********")
 	case model.StrDBUrl:
 		model.DBUrl = configInfo.Value
 		log.Debug().Msg("<TB_POSTGRES_ENDPOINT> " + model.DBUrl)
@@ -214,6 +220,12 @@ func InitConfig(id string) error {
 	case model.StrTerrariumRestUrl:
 		model.TerrariumRestUrl = NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8055/terrarium")
 		log.Debug().Msg("<TB_TERRARIUM_REST_URL> " + model.TerrariumRestUrl)
+	case model.StrAPIUsername:
+		model.APIUsername = NVL(os.Getenv("TB_API_USERNAME"), "default")
+		log.Debug().Msg("<TB_API_USERNAME> " + model.APIUsername)
+	case model.StrAPIPassword:
+		model.APIPassword = NVL(os.Getenv("TB_API_PASSWORD"), "default")
+		log.Debug().Msg("<TB_API_PASSWORD> ********")
 	case model.StrDBUrl:
 		model.DBUrl = NVL(os.Getenv("TB_POSTGRES_ENDPOINT"), "localhost:3306")
 		log.Debug().Msg("<TB_POSTGRES_ENDPOINT> " + model.DBUrl)

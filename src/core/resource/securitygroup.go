@@ -23,12 +23,12 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -268,48 +268,41 @@ func CreateSecurityGroup(nsId string, u *model.SecurityGroupReq, option string) 
 		}
 	}
 
-	var tempSpiderSecurityInfo *model.SpiderSecurityInfo
+	var callResult model.SpiderSecurityInfo
 
-	client := resty.New().SetCloseConnection(true)
+	client := clientManager.NewHttpClient()
 	client.SetAllowGetMethodPayload(true)
 
-	req := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody).
-		SetResult(&model.SpiderSecurityInfo{}) // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-
-	var resp *resty.Response
-
 	var url string
+	var method string
 	if option == "register" && u.CspResourceId == "" {
 		url = fmt.Sprintf("%s/securitygroup/%s", model.SpiderRestUrl, u.Name)
-		resp, err = req.Get(url)
+		method = "GET"
 	} else if option == "register" && u.CspResourceId != "" {
 		url = fmt.Sprintf("%s/regsecuritygroup", model.SpiderRestUrl)
-		resp, err = req.Post(url)
+		method = "POST"
 	} else { // option != "register"
 		url = fmt.Sprintf("%s/securitygroup", model.SpiderRestUrl)
-		resp, err = req.Post(url)
+		method = "POST"
 	}
+
+	err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		content := model.SecurityGroupInfo{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return content, err
+		return model.SecurityGroupInfo{}, err
 	}
 
-	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		content := model.SecurityGroupInfo{}
-		return content, err
-	}
-
-	tempSpiderSecurityInfo = resp.Result().(*model.SpiderSecurityInfo)
+	tempSpiderSecurityInfo := &callResult
 
 	content := model.SecurityGroupInfo{}
 	content.ResourceType = resourceType
@@ -460,34 +453,28 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []model.Firewa
 		}
 
 		url := fmt.Sprintf("%s/securitygroup/%s/rules", model.SpiderRestUrl, oldSecurityGroup.CspResourceName)
+		method := "POST"
+		var callResult model.SpiderSecurityInfo
 
-		client := resty.New().SetCloseConnection(true)
+		client := clientManager.NewHttpClient()
 
-		resp, err := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(requestBody).
-			SetResult(&model.SpiderSecurityInfo{}). // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
-			Post(url)
+		err = clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			clientManager.SetUseBody(requestBody),
+			&requestBody,
+			&callResult,
+			clientManager.MediumDuration,
+		)
 
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			content := model.SecurityGroupInfo{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
+			return model.SecurityGroupInfo{}, err
 		}
 
-		// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			log.Error().Err(err).Msg("")
-			content := model.SecurityGroupInfo{}
-			return content, err
-		}
-
-		tempSpiderSecurityInfo = resp.Result().(*model.SpiderSecurityInfo)
-
+		tempSpiderSecurityInfo = &callResult
 	}
 
 	log.Info().Msg("POST CreateFirewallRule")
@@ -620,33 +607,28 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.Firewa
 	}
 
 	url := fmt.Sprintf("%s/securitygroup/%s/rules", model.SpiderRestUrl, oldSecurityGroup.CspResourceName)
+	method := "DELETE"
+	var callResult SpiderDeleteSecurityRulesResp
 
-	client := resty.New().SetCloseConnection(true)
+	client := clientManager.NewHttpClient()
 
-	resp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody).
-		SetResult(&SpiderDeleteSecurityRulesResp{}). // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-		Delete(url)
+	err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.MediumDuration,
+	)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		content := model.SecurityGroupInfo{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return content, err
+		return model.SecurityGroupInfo{}, err
 	}
 
-	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		content := model.SecurityGroupInfo{}
-		return content, err
-	}
-
-	spiderDeleteSecurityRulesResp = resp.Result().(*SpiderDeleteSecurityRulesResp)
+	spiderDeleteSecurityRulesResp = &callResult
 
 	if spiderDeleteSecurityRulesResp.Result != "true" {
 		err := fmt.Errorf("Failed to delete Security Group rules with CB-Spider.")
@@ -657,37 +639,31 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.Firewa
 	requestBody2 := model.SpiderConnectionName{}
 	requestBody2.ConnectionName = oldSecurityGroup.ConnectionName
 
-	var tempSpiderSecurityInfo *model.SpiderSecurityInfo
+	var callResult2 model.SpiderSecurityInfo
 
 	url = fmt.Sprintf("%s/securitygroup/%s", model.SpiderRestUrl, oldSecurityGroup.CspResourceName)
+	method = "GET"
 
-	client = resty.New().SetCloseConnection(true)
+	client = clientManager.NewHttpClient()
 	client.SetAllowGetMethodPayload(true)
 
-	resp, err = client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody2).
-		SetResult(&model.SpiderSecurityInfo{}). // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-		Get(url)
+	err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody2),
+		&requestBody2,
+		&callResult2,
+		clientManager.MediumDuration,
+	)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		content := model.SecurityGroupInfo{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return content, err
+		return model.SecurityGroupInfo{}, err
 	}
 
-	// fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		content := model.SecurityGroupInfo{}
-		return content, err
-	}
-
-	tempSpiderSecurityInfo = resp.Result().(*model.SpiderSecurityInfo)
+	tempSpiderSecurityInfo := &callResult2
 
 	log.Info().Msg("DELETE FirewallRule")
 

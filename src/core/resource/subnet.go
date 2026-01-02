@@ -28,7 +28,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -318,7 +317,7 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.SubnetReq) (model
 	// todo: restore the tag list later
 	// spReqt.ReqInfo.TagList = subnetReq.TagList
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "POST"
 	var spResp spiderVPCInfo
 
@@ -530,7 +529,7 @@ func GetSubnet(nsId string, vNetId string, subnetId string) (model.SubnetInfo, e
 	}
 
 	// [Via Spider] Get a subnet
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "GET"
 
 	// API to get a subnet
@@ -742,7 +741,7 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 
 	var spResp spiderBooleanInfoResp
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "DELETE"
 
 	err = clientManager.ExecuteHttpRequest(
@@ -931,7 +930,7 @@ func RefineSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 	 */
 
 	// [Via Spider] Get the subnet
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "GET"
 
 	// API to get a subnet
@@ -1138,7 +1137,7 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.RegisterSubnetR
 	spReqt.ReqInfo.Zone = subnetReq.Zone
 	spReqt.ReqInfo.CSPId = subnetReq.CspResourceId
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "POST"
 	var spResp spiderSubnetInfo
 
@@ -1381,7 +1380,7 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 
 	var spResp spiderBooleanInfoResp
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "DELETE"
 
 	err = clientManager.ExecuteHttpRequest(

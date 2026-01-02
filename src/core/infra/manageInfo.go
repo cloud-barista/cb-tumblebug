@@ -34,7 +34,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
-	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -829,7 +828,7 @@ func GetVmIdNameInDetail(nsId string, mciId string, vmId string) (*model.IdNameI
 
 	callResult := spiderResTmp{}
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	url := fmt.Sprintf("%s/cspresourcename/%s", model.SpiderRestUrl, idDetails.IdInSp)
 	method := "GET"
 	client.SetTimeout(5 * time.Minute)
@@ -1270,7 +1269,7 @@ func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (model.VmStatu
 		SSHAccessPoint string
 	}
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	client.SetTimeout(2 * time.Minute)
 	url := model.SpiderRestUrl + "/vm/" + cspResourceName
 	method := "GET"
@@ -1614,7 +1613,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 	callResult.Status = ""
 
 	if vmInfo.Status != model.StatusTerminated && cspResourceName != "" {
-		client := resty.New()
+		client := clientManager.NewHttpClient()
 		url := model.SpiderRestUrl + "/vmstatus/" + cspResourceName
 		method := "GET"
 		client.SetTimeout(60 * time.Second)
@@ -2145,7 +2144,7 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	dataDisk := model.DataDiskInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &dataDisk)
 
-	client := resty.New()
+	client := clientManager.NewHttpClient()
 	method := "PUT"
 	var callResult interface{}
 	//var requestBody interface{}
