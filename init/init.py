@@ -67,7 +67,7 @@ CRED_PATH = os.path.join(os.path.expanduser('~'), '.cloud-barista')
 ENC_FILE_PATH = os.path.join(CRED_PATH, CRED_FILE_NAME_ENC)
 KEY_FILE = os.path.join(CRED_PATH, ".tmp_enc_key")
 
-expected_completion_time_seconds = 180
+expected_completion_time_seconds = 400 # Default 400 seconds for non-Azure asset load
 
 # Check for credential path
 if not os.path.exists(CRED_PATH):
@@ -565,24 +565,41 @@ if run_load_assets:
         thread = threading.Thread(target=load_resources)
         thread.start()
 
-        # Expected duration and progress bar
-        update_interval = 0.1  # Update interval in seconds
-        step_multiplier = 10  # Increase this to make the bar move faster visually
-        total_steps = expected_completion_time_seconds * step_multiplier
-
-        # Progress bar with 'smooth' style and manual updates enabled
-        with alive_bar(total_steps, bar="smooth", manual=True, stats=False, elapsed=False) as bar:
-            elapsed_steps = 0  # Track the number of elapsed steps
-            while not event.is_set():  # Continue until the event signals completion
-                time.sleep(update_interval)  # Wait for the specified update interval
-                elapsed_steps += 1  # Increment the step count
-
-                # Update the bar text with elapsed and expected time
-                # bar.text = f"Expected: {expected_completion_time_seconds}s"
-                bar(elapsed_steps / total_steps)  # Update the progress bar manually
-
-            # Ensure the bar reaches 100% when the task completes
-            bar(1.0)
+        # Use a simple spinner instead of progress bar for indeterminate duration
+        # This avoids the stuttering issue caused by inaccurate time.sleep() and
+        # provides smoother visual feedback for operations with unpredictable duration
+        spinner_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        spinner_idx = 0
+        elapsed = 0
+        last_print_sec = -1  # Track last printed second for non-TTY mode
+        is_tty = sys.stdout.isatty()  # Detect if running in interactive terminal
+        
+        while not event.is_set():
+            # Use shorter sleep for smoother animation
+            time.sleep(0.08)
+            elapsed += 0.08
+            spinner_idx = (spinner_idx + 1) % len(spinner_chars)
+            
+            # Format elapsed time
+            mins, secs = divmod(int(elapsed), 60)
+            time_str = f"{mins}m {secs}s" if mins > 0 else f"{secs}s"
+            
+            if is_tty:
+                # Interactive terminal: spinner animation with carriage return
+                print(f"\r{spinner_chars[spinner_idx]} Loading... {time_str} (expected: ~{expected_completion_time_seconds}s)", end="", flush=True)
+            else:
+                # Non-interactive (SSH, pipe, redirect): print only once per second
+                current_sec = int(elapsed)
+                if current_sec > last_print_sec:
+                    last_print_sec = current_sec
+                    # Print simple progress every 30 seconds to avoid log spam
+                    if current_sec % 30 == 0:
+                        print(f"Loading... {time_str}", flush=True)
+        
+        # Clear the spinner line (only for TTY)
+        if is_tty:
+            print(f"\r{' ' * 80}\r", end="")
+        
         # Wait for the thread to complete
         thread.join()
 
@@ -595,7 +612,7 @@ if run_load_assets:
             print(Fore.RED + "Error during resource loading: " + response_json['error'])
             exit(1)
         elif response_json:
-            print(Fore.CYAN + f"\nLoading completed (elapsed: {duration}s)")
+            print(Fore.CYAN + f"\nLoading completed (elapsed: {int(duration)}s)")
         else:
             print(Fore.RED + "No data returned from the API.")
 
