@@ -198,7 +198,7 @@ services:
   # CB-MapUI
   # This is the Map-based client for CB-Tumblebug.
   cb-mapui:
-    image: cloudbaristaorg/cb-mapui:0.12.1
+    image: cloudbaristaorg/cb-mapui:0.12.2
     container_name: cb-mapui
     labels:
       # Explicitly tell Traefik to expose this container
@@ -361,6 +361,7 @@ services:
     image: metabase/metabase:latest
     container_name: cb-tumblebug-metabase
     restart: always
+    attach: false  # Exclude from docker compose up foreground output
     networks:
       - internal_network
       - external_network
