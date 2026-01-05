@@ -88,7 +88,13 @@ const (
 func shouldSkipRequestLog(c echo.Context) bool {
 	path := c.Request().URL.Path
 	method := c.Request().Method
-	url := path + "?" + c.QueryString()
+	queryString := c.QueryString()
+
+	// Build URL with proper separator
+	url := path
+	if queryString != "" {
+		url = path + "?" + queryString
+	}
 
 	// Skip OPTIONS method requests
 	if method == "OPTIONS" {

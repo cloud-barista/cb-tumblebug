@@ -17,7 +17,12 @@ func Zerologger(skipRules []logfilter.SkipRule) echo.MiddlewareFunc {
 			path := c.Request().URL.Path
 			query := c.Request().URL.RawQuery
 			method := c.Request().Method
-			url := path + query
+
+			// Build URL with proper separator
+			url := path
+			if query != "" {
+				url = path + "?" + query
+			}
 
 			for _, rule := range skipRules {
 				// Check method filter (empty = match any)

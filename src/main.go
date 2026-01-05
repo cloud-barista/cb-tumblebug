@@ -147,10 +147,10 @@ func init() {
 func setupAndWaitForInternalServices() {
 	log.Info().Msg("setup: waiting for internal services (PostgreSQL, CB-Spider, etcd)")
 
-	// Create necessary directories for metadata storage
-	err := os.MkdirAll("../meta_db/dat/", os.ModePerm)
-	if err != nil {
+	// Create necessary directories for metadata storage (fail fast if creation fails)
+	if err := os.MkdirAll("../meta_db/dat/", os.ModePerm); err != nil {
 		log.Error().Err(err).Msg("setup: failed to create meta_db directory")
+		panic("setup: meta_db directory creation failed; cannot continue")
 	}
 
 	// Build PostgreSQL DSN
@@ -162,10 +162,12 @@ func setupAndWaitForInternalServices() {
 		strings.Split(model.DBUrl, ":")[1],
 	)
 
+	// Use error channels to collect failures from all goroutines
+	errChan := make(chan error, 3)
 	var wg sync.WaitGroup
 	wg.Add(3)
 
-	// 1. Wait for PostgreSQL
+	// 1. Wait for PostgreSQL (90 seconds timeout: 30 retries * 3 seconds)
 	go func() {
 		defer wg.Done()
 		log.Info().Msg("setup: connecting to PostgreSQL...")
@@ -189,11 +191,11 @@ func setupAndWaitForInternalServices() {
 			log.Warn().Msgf("setup: PostgreSQL not ready, retrying (%d/%d)", i+1, maxRetries)
 			time.Sleep(retryInterval)
 		}
-		log.Error().Msg("setup: failed to connect to PostgreSQL after maximum retries")
-		panic("PostgreSQL connection failed")
+		errChan <- fmt.Errorf("PostgreSQL connection failed after %d retries", maxRetries)
 	}()
 
-	// 2. Wait for CB-Spider
+	// 2. Wait for CB-Spider (180 seconds timeout: 60 retries * 3 seconds)
+	// CB-Spider requires longer timeout as it initializes cloud drivers on startup
 	go func() {
 		defer wg.Done()
 		log.Info().Msg("setup: connecting to CB-Spider...")
@@ -208,11 +210,10 @@ func setupAndWaitForInternalServices() {
 			log.Warn().Msgf("setup: CB-Spider not ready, retrying (%d/%d)", i+1, maxRetries)
 			time.Sleep(retryInterval)
 		}
-		log.Error().Msg("setup: failed to connect to CB-Spider after maximum retries")
-		panic("CB-Spider connection failed")
+		errChan <- fmt.Errorf("CB-Spider connection failed after %d retries", maxRetries)
 	}()
 
-	// 3. Wait for etcd and initialize kvstore
+	// 3. Wait for etcd and initialize kvstore (50 seconds timeout: 10 retries * 5 seconds)
 	go func() {
 		defer wg.Done()
 		log.Info().Msg("setup: connecting to etcd...")
@@ -225,13 +226,17 @@ func setupAndWaitForInternalServices() {
 		}
 
 		for i := 0; i < maxRetries; i++ {
-			etcdStore, etcdErr := etcd.NewEtcdStore(
-				context.Background(),
-				etcd.Config{
-					Endpoints:   etcdEndpoints,
-					DialTimeout: 5 * time.Second,
-				},
-			)
+			// Build etcd configuration, optionally enabling authentication
+			etcdCfg := etcd.Config{
+				Endpoints:   etcdEndpoints,
+				DialTimeout: 5 * time.Second,
+			}
+			if strings.ToLower(os.Getenv("TB_ETCD_AUTH_ENABLED")) == "true" {
+				etcdCfg.Username = os.Getenv("TB_ETCD_USERNAME")
+				etcdCfg.Password = os.Getenv("TB_ETCD_PASSWORD")
+			}
+
+			etcdStore, etcdErr := etcd.NewEtcdStore(context.Background(), etcdCfg)
 			if etcdErr == nil {
 				if initErr := kvstore.InitializeStore(etcdStore); initErr == nil {
 					log.Info().Msgf("setup: etcd is ready (attempt %d)", i+1)
@@ -241,11 +246,25 @@ func setupAndWaitForInternalServices() {
 			log.Warn().Msgf("setup: etcd not ready, retrying (%d/%d)", i+1, maxRetries)
 			time.Sleep(retryInterval)
 		}
-		log.Error().Msg("setup: failed to connect to etcd after maximum retries")
-		panic("etcd connection failed")
+		errChan <- fmt.Errorf("etcd connection failed after %d retries", maxRetries)
 	}()
 
+	// Wait for all goroutines to complete
 	wg.Wait()
+	close(errChan)
+
+	// Collect and report all errors
+	var errors []error
+	for err := range errChan {
+		errors = append(errors, err)
+	}
+	if len(errors) > 0 {
+		for _, err := range errors {
+			log.Error().Err(err).Msg("setup: service connection failed")
+		}
+		panic(fmt.Sprintf("setup: %d service(s) failed to connect", len(errors)))
+	}
+
 	log.Info().Msg("setup: all internal services are ready")
 }
 

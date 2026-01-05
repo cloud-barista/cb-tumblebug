@@ -11,9 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package logfilter provides centralized log filtering configuration.
-// This package contains ONLY configuration data (skip patterns) with NO dependencies,
-// allowing it to be imported by any package without circular import issues.
+// Package logfilter provides centralized log filtering configuration with minimal dependencies.
+// It defines shared skip patterns and related types for log filtering across the project.
 //
 // Usage:
 //   - RequestSkipPatterns: Echo middleware request logging
