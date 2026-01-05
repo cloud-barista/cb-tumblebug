@@ -36,14 +36,14 @@ VENV_PATH="$HOME/venv_vllm"
 echo "Setting up Python virtual environment at $VENV_PATH..."
 
 if [ ! -d "$VENV_PATH" ]; then
-  python3 -m venv $VENV_PATH
+  python3 -m venv "$VENV_PATH"
   echo "Created new virtual environment."
 else
   echo "Virtual environment already exists."
 fi
 
 # Activate virtual environment
-source $VENV_PATH/bin/activate
+source "$VENV_PATH/bin/activate"
 
 # Upgrade pip
 echo "Upgrading pip..."
@@ -51,11 +51,17 @@ pip install --upgrade pip > /dev/null 2>&1
 
 # Install vLLM
 echo "Installing vLLM (this may take a few minutes)..."
-pip install -U vllm > /dev/null 2>&1
+LOG_FILE="$HOME/vllm_install.log"
+echo "Logging vLLM installation details to $LOG_FILE"
+pip install -U vllm > "$LOG_FILE" 2>&1
 
 if [ $? -ne 0 ]; then
-  echo "Failed to install vLLM. Trying with CUDA 12.1 wheels..."
-  pip install vllm --extra-index-url https://download.pytorch.org/whl/cu121 > /dev/null 2>&1
+  echo "Failed to install vLLM with default wheels. Trying with CUDA 12.1 wheels..."
+  pip install vllm --extra-index-url https://download.pytorch.org/whl/cu121 >> "$LOG_FILE" 2>&1
+  if [ $? -ne 0 ]; then
+    echo "vLLM installation failed. See $LOG_FILE for detailed error messages."
+    exit 1
+  fi
 fi
 
 # Verify installation
@@ -75,18 +81,30 @@ pip install -U openai transformers huggingface_hub > /dev/null 2>&1
 SERVE_SCRIPT="$HOME/vllm-serve.sh"
 echo "Creating helper script at $SERVE_SCRIPT..."
 
-cat > $SERVE_SCRIPT << 'EOF'
+cat > "$SERVE_SCRIPT" << 'EOF'
 #!/bin/bash
 
 # vLLM Model Serving Helper Script
 # Usage: ./vllm-serve.sh <model_name> [options]
 
 VENV_PATH="$HOME/venv_vllm"
-source $VENV_PATH/bin/activate
+source "$VENV_PATH/bin/activate"
 
 MODEL=${1:-"Qwen/Qwen2.5-1.5B-Instruct"}
 HOST=${2:-"0.0.0.0"}
 PORT=${3:-"8000"}
+
+# Validate PORT is a number within valid range
+if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -lt 1 ] || [ "$PORT" -gt 65535 ]; then
+  echo "Error: PORT must be a number between 1 and 65535. Got: $PORT"
+  exit 1
+fi
+
+# Validate HOST format (basic check for IP or hostname)
+if ! [[ "$HOST" =~ ^[0-9a-zA-Z.-]+$ ]]; then
+  echo "Error: HOST contains invalid characters. Got: $HOST"
+  exit 1
+fi
 
 echo "Starting vLLM server..."
 echo "  Model: $MODEL"
@@ -108,7 +126,7 @@ python -m vllm.entrypoints.openai.api_server \
   --trust-remote-code
 EOF
 
-chmod +x $SERVE_SCRIPT
+chmod +x "$SERVE_SCRIPT"
 
 # Display completion message
 echo "=========================================="

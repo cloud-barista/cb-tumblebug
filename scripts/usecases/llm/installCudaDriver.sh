@@ -83,14 +83,14 @@ if [ -n "$NVSWITCH_PCI" ] || [ -n "$NVSWITCH_DEV" ]; then
   fi
   
   # Install Fabric Manager (version must match CUDA driver version)
-  sudo DEBIAN_FRONTEND=noninteractive apt-get -y install nvidia-fabricmanager-555 > /dev/null 2>&1
-  if [ $? -eq 0 ]; then
+  sudo DEBIAN_FRONTEND=noninteractive apt-get -y install nvidia-fabricmanager-555 2>&1 | sudo tee /tmp/nvidia-fabricmanager-install.log > /dev/null
+  if [ "${PIPESTATUS[0]}" -eq 0 ]; then
     echo "Enabling and starting nvidia-fabricmanager service..."
     sudo systemctl enable nvidia-fabricmanager
     sudo systemctl start nvidia-fabricmanager
     echo "Fabric Manager installed and enabled successfully."
   else
-    echo "Warning: Failed to install nvidia-fabricmanager. Manual installation may be required."
+    echo "Warning: Failed to install nvidia-fabricmanager. See /tmp/nvidia-fabricmanager-install.log for details."
   fi
 else
   echo "No NVSwitch detected. Skipping Fabric Manager installation."
@@ -98,7 +98,7 @@ else
 fi
 
 # Notify rebooting the system is required
-echo "Going to reboot the system to make driver works. [sudo reboot]"
+echo "Going to reboot the system to make the driver work. [sudo reboot]"
 echo "You can verify the setup by using [nvidia-smi] and [nvcc --version] after rebooting"
 echo "For NVSwitch systems, also check [sudo systemctl status nvidia-fabricmanager]"
 
