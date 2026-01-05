@@ -68,8 +68,38 @@ echo 'export LD_LIBRARY_PATH=/usr/local/cuda-12.5/lib64${LD_LIBRARY_PATH:+:${LD_
 echo "Verifying LD_LIBRARY_PATH..."
 . ~/.bashrc && echo "$LD_LIBRARY_PATH"
 
+# Check for NVSwitch and install Fabric Manager if needed (required for H100, A100 multi-GPU with NVSwitch)
+echo "Checking for NVSwitch topology..."
+NVSWITCH_PCI=$(sudo lspci | grep -i -E "nvswitch|nvlink" 2>/dev/null)
+NVSWITCH_DEV=$(ls /dev/nvidia-nvswitch* 2>/dev/null)
+
+if [ -n "$NVSWITCH_PCI" ] || [ -n "$NVSWITCH_DEV" ]; then
+  echo "NVSwitch detected. Installing NVIDIA Fabric Manager..."
+  if [ -n "$NVSWITCH_PCI" ]; then
+    echo "  PCI devices: $NVSWITCH_PCI"
+  fi
+  if [ -n "$NVSWITCH_DEV" ]; then
+    echo "  Device nodes: $NVSWITCH_DEV"
+  fi
+  
+  # Install Fabric Manager (version must match CUDA driver version)
+  sudo DEBIAN_FRONTEND=noninteractive apt-get -y install nvidia-fabricmanager-555 > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
+    echo "Enabling and starting nvidia-fabricmanager service..."
+    sudo systemctl enable nvidia-fabricmanager
+    sudo systemctl start nvidia-fabricmanager
+    echo "Fabric Manager installed and enabled successfully."
+  else
+    echo "Warning: Failed to install nvidia-fabricmanager. Manual installation may be required."
+  fi
+else
+  echo "No NVSwitch detected. Skipping Fabric Manager installation."
+  echo "  (Fabric Manager is only needed for multi-GPU systems with NVSwitch, e.g., H100/A100 HGX)"
+fi
+
 # Notify rebooting the system is required
 echo "Going to reboot the system to make driver works. [sudo reboot]"
 echo "You can verify the setup by using [nvidia-smi] and [nvcc --version] after rebooting"
+echo "For NVSwitch systems, also check [sudo systemctl status nvidia-fabricmanager]"
 
 sudo reboot
