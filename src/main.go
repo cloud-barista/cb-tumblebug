@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/user"
 	"strconv"
 	"strings"
 	"sync"
@@ -69,7 +68,7 @@ func init() {
 
 	// load the latest configuration from DB (if exist)
 
-	log.Info().Msg("[Update system environment]")
+	log.Info().Msg("init: updating system environment")
 	common.UpdateGlobalVariable(model.StrDragonflyRestUrl)
 	common.UpdateGlobalVariable(model.StrSpiderRestUrl)
 	common.UpdateGlobalVariable(model.TerrariumRestUrl)
@@ -104,47 +103,24 @@ func init() {
 	// load config
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()
 
-	//Setup database (meta_db/dat/cbtumblebug.s3db)
+	// Setup and wait for internal services (PostgreSQL, CB-Spider, etcd)
+	setupAndWaitForInternalServices()
 
-	log.Info().Msg("[Setup SQL Database]")
-
-	err := os.MkdirAll("../meta_db/dat/", os.ModePerm)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-	}
-
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Seoul",
-		strings.Split(model.DBUrl, ":")[0],
-		model.DBUser,
-		model.DBPassword,
-		model.DBDatabase,
-		strings.Split(model.DBUrl, ":")[1],
-	)
-
-	// Use GORM's default logger in silent mode to avoid verbose output
-	model.ORM, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: gormLogger.Default.LogMode(gormLogger.Silent),
-	})
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to connect to PostgreSQL database")
-	} else {
-		log.Info().Msg("PostgreSQL database connected successfully")
-	}
-	err = model.ORM.AutoMigrate(
+	err := model.ORM.AutoMigrate(
 		&model.SpecInfo{},
 		&model.ImageInfo{},
 		&model.LatencyInfo{},
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("init: failed to migrate database schemas")
 	} else {
-		log.Info().Msg("Database schemas migrated successfully")
+		log.Info().Msg("init: database schemas migrated successfully")
 	}
 
 	err = addIndexes()
 	if err != nil {
-		log.Error().Err(err).Msg("Cannot add indexes to the tables (ORM)")
+		log.Error().Err(err).Msg("init: failed to add indexes to tables")
 	}
 
 	setConfig()
@@ -155,14 +131,122 @@ func init() {
 			defaultNS := model.NsReq{Name: model.DefaultNamespace, Description: "Default Namespace"}
 			_, err := common.CreateNs(&defaultNS)
 			if err != nil {
-				log.Error().Err(err).Msg("")
+				log.Error().Err(err).Msg("init: failed to create default namespace")
 				panic(err)
 			}
 		} else {
-			log.Error().Msg("Default namespace is not set")
+			log.Error().Msg("init: default namespace is not set")
 			panic("Default namespace is not set, please set TB_DEFAULT_NAMESPACE in setup.env or environment variable")
 		}
 	}
+}
+
+// setupAndWaitForInternalServices sets up and waits for all required internal services.
+// This function consolidates the setup and connection logic for PostgreSQL, CB-Spider,
+// and etcd in one place, ensuring all dependencies are ready before the system starts.
+func setupAndWaitForInternalServices() {
+	log.Info().Msg("setup: waiting for internal services (PostgreSQL, CB-Spider, etcd)")
+
+	// Create necessary directories for metadata storage
+	err := os.MkdirAll("../meta_db/dat/", os.ModePerm)
+	if err != nil {
+		log.Error().Err(err).Msg("setup: failed to create meta_db directory")
+	}
+
+	// Build PostgreSQL DSN
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Seoul",
+		strings.Split(model.DBUrl, ":")[0],
+		model.DBUser,
+		model.DBPassword,
+		model.DBDatabase,
+		strings.Split(model.DBUrl, ":")[1],
+	)
+
+	var wg sync.WaitGroup
+	wg.Add(3)
+
+	// 1. Wait for PostgreSQL
+	go func() {
+		defer wg.Done()
+		log.Info().Msg("setup: connecting to PostgreSQL...")
+		maxRetries := 30
+		retryInterval := 3 * time.Second
+
+		for i := 0; i < maxRetries; i++ {
+			db, dbErr := gorm.Open(postgres.Open(dsn), &gorm.Config{
+				Logger: gormLogger.Default.LogMode(gormLogger.Silent),
+			})
+			if dbErr == nil {
+				sqlDB, sqlErr := db.DB()
+				if sqlErr == nil {
+					if pingErr := sqlDB.Ping(); pingErr == nil {
+						model.ORM = db
+						log.Info().Msgf("setup: PostgreSQL is ready (attempt %d)", i+1)
+						return
+					}
+				}
+			}
+			log.Warn().Msgf("setup: PostgreSQL not ready, retrying (%d/%d)", i+1, maxRetries)
+			time.Sleep(retryInterval)
+		}
+		log.Error().Msg("setup: failed to connect to PostgreSQL after maximum retries")
+		panic("PostgreSQL connection failed")
+	}()
+
+	// 2. Wait for CB-Spider
+	go func() {
+		defer wg.Done()
+		log.Info().Msg("setup: connecting to CB-Spider...")
+		maxRetries := 60
+		retryInterval := 3 * time.Second
+
+		for i := 0; i < maxRetries; i++ {
+			if err := common.CheckSpiderReady(); err == nil {
+				log.Info().Msgf("setup: CB-Spider is ready (attempt %d)", i+1)
+				return
+			}
+			log.Warn().Msgf("setup: CB-Spider not ready, retrying (%d/%d)", i+1, maxRetries)
+			time.Sleep(retryInterval)
+		}
+		log.Error().Msg("setup: failed to connect to CB-Spider after maximum retries")
+		panic("CB-Spider connection failed")
+	}()
+
+	// 3. Wait for etcd and initialize kvstore
+	go func() {
+		defer wg.Done()
+		log.Info().Msg("setup: connecting to etcd...")
+		maxRetries := 10
+		retryInterval := 5 * time.Second
+
+		etcdEndpoints := strings.Split(model.EtcdEndpoints, ",")
+		for i := range etcdEndpoints {
+			etcdEndpoints[i] = strings.TrimSpace(etcdEndpoints[i])
+		}
+
+		for i := 0; i < maxRetries; i++ {
+			etcdStore, etcdErr := etcd.NewEtcdStore(
+				context.Background(),
+				etcd.Config{
+					Endpoints:   etcdEndpoints,
+					DialTimeout: 5 * time.Second,
+				},
+			)
+			if etcdErr == nil {
+				if initErr := kvstore.InitializeStore(etcdStore); initErr == nil {
+					log.Info().Msgf("setup: etcd is ready (attempt %d)", i+1)
+					return
+				}
+			}
+			log.Warn().Msgf("setup: etcd not ready, retrying (%d/%d)", i+1, maxRetries)
+			time.Sleep(retryInterval)
+		}
+		log.Error().Msg("setup: failed to connect to etcd after maximum retries")
+		panic("etcd connection failed")
+	}()
+
+	wg.Wait()
+	log.Info().Msg("setup: all internal services are ready")
 }
 
 // setConfig get cloud settings from a config file
@@ -175,13 +259,13 @@ func setConfig() {
 	viper.SetConfigType("yaml")
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("config: failed to read cloud_conf")
 		panic(fmt.Errorf("fatal error reading cloud_conf: %w", err))
 	}
-	log.Info().Msg(viper.ConfigFileUsed())
+	log.Info().Msgf("config: loaded %s", viper.ConfigFileUsed())
 	err = viper.Unmarshal(&common.RuntimeConf)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("config: failed to unmarshal cloud_conf")
 		panic(err)
 	}
 
@@ -196,10 +280,10 @@ func setConfig() {
 		panic(fmt.Errorf("fatal error reading cloudinfo config file: %w", err))
 	}
 
-	log.Info().Msg(cloudInfoViper.ConfigFileUsed())
+	log.Info().Msgf("config: loaded %s", cloudInfoViper.ConfigFileUsed())
 	err = cloudInfoViper.Unmarshal(&common.RuntimeCloudInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("config: failed to unmarshal cloudinfo")
 		panic(err)
 	}
 	// make all map keys lowercase
@@ -220,15 +304,15 @@ func setConfig() {
 		panic(fmt.Errorf("fatal error reading networkinfo config file: %w", err))
 	}
 
-	log.Info().Msg(networkInfo.ConfigFileUsed())
+	log.Info().Msgf("config: loaded %s", networkInfo.ConfigFileUsed())
 	err = networkInfo.Unmarshal(&common.RuntimeCloudNetworkInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("config: failed to unmarshal networkinfo")
 		panic(err)
 	}
 
 	networkInfoJSON, _ := json.MarshalIndent(common.RuntimeCloudNetworkInfo.CSPs["aws"], "", "  ")
-	log.Debug().Msgf("common.RuntimeNetworkInfo: %s", string(networkInfoJSON))
+	log.Debug().Msgf("config: RuntimeNetworkInfo sample (aws): %s", string(networkInfoJSON))
 
 	//
 	// Load k8sclusterinfo
@@ -243,10 +327,10 @@ func setConfig() {
 		panic(fmt.Errorf("fatal error reading cloudinfo config file: %w", err))
 	}
 
-	log.Info().Msg(k8sClusterInfoViper.ConfigFileUsed())
+	log.Info().Msgf("config: loaded %s", k8sClusterInfoViper.ConfigFileUsed())
 	err = k8sClusterInfoViper.Unmarshal(&common.RuntimeK8sClusterInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("config: failed to unmarshal k8sclusterinfo")
 		panic(err)
 	}
 
@@ -263,110 +347,43 @@ func setConfig() {
 		panic(fmt.Errorf("fatal error reading extractionpatterns config file: %w", err))
 	}
 
-	log.Info().Msg(extractPatternsViper.ConfigFileUsed())
+	log.Info().Msgf("config: loaded %s", extractPatternsViper.ConfigFileUsed())
 	err = extractPatternsViper.Unmarshal(&common.RuntimeExtractPatternsInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("config: failed to unmarshal extractionpatterns")
 		panic(err)
 	}
-
-	//
-	// Wait until CB-Spider is ready
-	//
-	maxAttempts := 60 // (3 mins)
-	attempt := 0
-
-	for attempt < maxAttempts {
-		if common.CheckSpiderReady() == nil {
-			log.Info().Msg("CB-Spider is now ready. Initializing CB-Tumblebug...")
-			break
-		}
-		log.Info().Msgf("CB-Spider at %s is not ready. Attempt %d/%d", model.SpiderRestUrl, attempt+1, maxAttempts)
-		time.Sleep(3 * time.Second)
-		attempt++
-	}
-
-	if attempt == maxAttempts {
-		panic("Failed to confirm CB-Spider readiness within the allowed time. \nCheck the connection to CB-Spider.")
-	}
-
-	// Setup etcd and kvstore
-	var etcdAuthEnabled bool
-	var etcdUsername string
-	var etcdPassword string
-	etcdAuthEnabled = os.Getenv("TB_ETCD_AUTH_ENABLED") == "true"
-	if etcdAuthEnabled {
-		etcdUsername = os.Getenv("TB_ETCD_USERNAME")
-		etcdPassword = os.Getenv("TB_ETCD_PASSWORD")
-	}
-
-	etcdEndpoints := strings.Split(model.EtcdEndpoints, ",")
-
-	ctx := context.Background()
-	config := etcd.Config{
-		Endpoints:   etcdEndpoints,
-		DialTimeout: 5 * time.Second,
-	}
-	if etcdAuthEnabled && etcdUsername != "" && etcdPassword != "" {
-		config.Username = etcdUsername
-		config.Password = etcdPassword
-	}
-
-	// Wait until etcd is ready
-	var etcdStore kvstore.Store
-	var err2 error
-	etcdMaxAttempts := 10 // (50 sec)
-	etcdAttempt := 1
-	for ; etcdAttempt <= etcdMaxAttempts; etcdAttempt++ {
-		etcdStore, err2 = etcd.NewEtcdStore(ctx, config)
-		if err2 == nil {
-			log.Info().Msg("etcd is now available.")
-			break
-		}
-		log.Warn().Err(err2).Msgf("etcd at %s is not ready. Attempt %d/%d", model.EtcdEndpoints, etcdAttempt, maxAttempts)
-		time.Sleep(5 * time.Second)
-	}
-
-	if err2 != nil {
-		log.Fatal().Err(err2).Msg("failed to initialize etcd")
-	}
-
-	err2 = kvstore.InitializeStore(etcdStore)
-	if err2 != nil {
-		log.Fatal().Err(err2).Msg("")
-	}
-	log.Info().Msg("kvstore is initialized successfully. Initializing CB-Tumblebug...")
 
 	// Register all cloud info
 	err = common.RegisterAllCloudInfo()
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to register cloud info")
+		log.Error().Err(err).Msg("config: failed to register cloud info")
 		panic(err)
 	}
 
-	// Load credentials
-	usr, err := user.Current()
-	if err != nil {
-		log.Error().Err(err).Msg("")
-	}
-	credPath := usr.HomeDir + "/.cloud-barista"
-	credViper := viper.New()
-	fileName = "credentials"
-	credViper.AddConfigPath(credPath)
-	credViper.SetConfigName(fileName)
-	credViper.SetConfigType("yaml")
-	err = credViper.ReadInConfig()
-	if err != nil {
-		log.Info().Msg("Local credentials file not found. Continue.")
-	} else {
-		log.Info().Msg(credViper.ConfigFileUsed())
-		err = credViper.Unmarshal(&common.RuntimeCredential)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			panic(err)
-		}
-		// common.PrintCredentialInfo(common.RuntimeCredential)
-	}
+	// // Load credentials
+	// usr, err := user.Current()
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("config: failed to get current user")
+	// }
+	// credPath := usr.HomeDir + "/.cloud-barista"
+	// credViper := viper.New()
+	// fileName = "credentials"
+	// credViper.AddConfigPath(credPath)
+	// credViper.SetConfigName(fileName)
+	// credViper.SetConfigType("yaml")
+	// err = credViper.ReadInConfig()
+	// if err != nil {
+	// 	log.Info().Msg("config: local credentials file not found, continuing without it")
+	// } else {
+	// 	log.Info().Msgf("config: loaded %s", credViper.ConfigFileUsed())
+	// 	err = credViper.Unmarshal(&common.RuntimeCredential)
+	// 	if err != nil {
+	// 		log.Error().Err(err).Msg("config: failed to unmarshal credentials")
+	// 		panic(err)
+	// 	}
+	// 	// common.PrintCredentialInfo(common.RuntimeCredential)
+	// }
 
 	// err = common.RegisterAllCloudInfo()
 	// if err != nil {
@@ -383,7 +400,7 @@ func setConfig() {
 
 	// Migrate latency data from CSV to database if database is empty
 	if err := migrateLatencyDataFromCSV(); err != nil {
-		log.Error().Err(err).Msg("Failed to migrate latency data from CSV to database")
+		log.Error().Err(err).Msg("config: failed to migrate latency data from CSV")
 	}
 }
 
@@ -397,11 +414,11 @@ func migrateLatencyDataFromCSV() error {
 
 	// If data already exists, skip migration
 	if count > 0 {
-		log.Info().Msg("Latency data already exists in database, skipping CSV migration")
+		log.Info().Msg("migrate: latency data already exists in database, skipping CSV migration")
 		return nil
 	}
 
-	log.Info().Msg("Starting latency data migration from CSV to database")
+	log.Info().Msg("migrate: starting latency data migration from CSV")
 
 	// Read CSV file
 	csvPath := common.GetAssetsFilePath("cloudlatencymap.csv")
@@ -410,19 +427,19 @@ func migrateLatencyDataFromCSV() error {
 		log.Error().
 			Err(err).
 			Str("attempted_path", csvPath).
-			Msg("Failed to open cloudlatencymap.csv file")
+			Msg("migrate: failed to open cloudlatencymap.csv")
 		return fmt.Errorf("failed to open cloudlatencymap.csv at %s: %w", csvPath, err)
 	}
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
-			log.Warn().Err(closeErr).Msg("Failed to close CSV file")
+			log.Warn().Err(closeErr).Msg("migrate: failed to close CSV file")
 		}
 	}()
 
 	rdr := csv.NewReader(bufio.NewReader(file))
 	records, err := rdr.ReadAll()
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to read CSV data")
+		log.Error().Err(err).Msg("migrate: failed to read CSV data")
 		return err
 	}
 
@@ -456,7 +473,7 @@ func migrateLatencyDataFromCSV() error {
 			// Parse latency value
 			latencyValue, err := strconv.ParseFloat(latencyStr, 64)
 			if err != nil {
-				log.Debug().Err(err).Msgf("Skipping invalid latency value '%s' for %s->%s", latencyStr, sourceRegion, targetRegion)
+				log.Debug().Err(err).Msgf("migrate: skipping invalid latency value '%s' for %s->%s", latencyStr, sourceRegion, targetRegion)
 				continue // Skip invalid values
 			}
 
@@ -473,7 +490,7 @@ func migrateLatencyDataFromCSV() error {
 		if err := model.BatchStoreLatencyInfo(latencyData); err != nil {
 			return err
 		}
-		log.Info().Msgf("Successfully migrated %d latency records to database", len(latencyData))
+		log.Info().Msgf("migrate: successfully migrated %d latency records to database", len(latencyData))
 	}
 
 	return nil
@@ -508,7 +525,7 @@ func addIndexes() error {
         CREATE INDEX IF NOT EXISTS idx_spec_main_filter 
         ON spec_infos(namespace, architecture, v_cpu, memory_gi_b, cost_per_hour)
     `).Error; err != nil {
-		log.Warn().Err(err).Msg("Failed to create main filter composite index")
+		log.Warn().Err(err).Msg("init: failed to create main filter composite index")
 	}
 
 	// Partial index for x86_64 architecture (most common case)
@@ -517,7 +534,7 @@ func addIndexes() error {
         ON spec_infos(namespace, v_cpu, memory_gi_b, cost_per_hour) 
         WHERE architecture = 'x86_64'
     `).Error; err != nil {
-		log.Warn().Err(err).Msg("Failed to create x86_64 partial index")
+		log.Warn().Err(err).Msg("init: failed to create x86_64 partial index")
 	}
 
 	// Partial index for arm64 architecture
@@ -526,24 +543,24 @@ func addIndexes() error {
         ON spec_infos(namespace, v_cpu, memory_gi_b, cost_per_hour) 
         WHERE architecture = 'arm64'
     `).Error; err != nil {
-		log.Warn().Err(err).Msg("Failed to create arm64 partial index")
+		log.Warn().Err(err).Msg("init: failed to create arm64 partial index")
 	}
 
 	// Latency table indexes for fast lookups
 	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_latency_source ON latency_infos (source_region)").Error; err != nil {
-		log.Warn().Err(err).Msg("Failed to create latency source region index")
+		log.Warn().Err(err).Msg("init: failed to create latency source region index")
 	}
 
 	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_latency_target ON latency_infos (target_region)").Error; err != nil {
-		log.Warn().Err(err).Msg("Failed to create latency target region index")
+		log.Warn().Err(err).Msg("init: failed to create latency target region index")
 	}
 
 	// Composite index for latency queries (source + target)
 	if err := model.ORM.Exec("CREATE INDEX IF NOT EXISTS idx_latency_regions ON latency_infos (source_region, target_region)").Error; err != nil {
-		log.Warn().Err(err).Msg("Failed to create latency composite index")
+		log.Warn().Err(err).Msg("init: failed to create latency composite index")
 	}
 
-	log.Info().Msg("All indexes created successfully")
+	log.Info().Msg("init: all database indexes created successfully")
 	return nil
 }
 
@@ -653,7 +670,7 @@ func addIndexes() error {
 func main() {
 
 	//Ticker for MCI Orchestration Policy
-	log.Info().Msg("[Initiate Multi-Cloud Orchestration]")
+	log.Info().Msg("main: initiating multi-cloud orchestration")
 	autoControlDuration, _ := strconv.Atoi(model.AutocontrolDurationMs) //ms
 	ticker := time.NewTicker(time.Millisecond * time.Duration(autoControlDuration))
 	go func() {
@@ -669,15 +686,15 @@ func main() {
 	go func() {
 		viper.WatchConfig()
 		viper.OnConfigChange(func(e fsnotify.Event) {
-			log.Info().Msgf("Config file changed: %s", e.Name)
+			log.Info().Msgf("main: config file changed: %s", e.Name)
 			err := viper.ReadInConfig()
 			if err != nil { // Handle errors reading the config file
-				log.Error().Err(err).Msg("")
+				log.Error().Err(err).Msg("main: failed to reload config file")
 				panic(fmt.Errorf("fatal error config file: %w", err))
 			}
 			err = viper.Unmarshal(&common.RuntimeConf)
 			if err != nil {
-				log.Error().Err(err).Msg("")
+				log.Error().Err(err).Msg("main: failed to unmarshal reloaded config")
 				panic(err)
 			}
 		})

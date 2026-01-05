@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/logfilter"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"golang.org/x/crypto/bcrypt"
 
@@ -83,61 +84,33 @@ const (
  _____________________________________`
 )
 
-// Request log skip patterns - used across multiple middlewares
-var (
-	RequestLogSkipPatterns = [][]string{
-		{"/tumblebug/api"},
-		{"/tumblebug/readyz"},
-		{"/tumblebug/httpVersion"},
-		{"/tumblebug/testStreamResponse"},
-		{"/tumblebug/request"},
-		{"/tumblebug/requests"},
-	}
-
-	APILogSkipPatterns = [][]string{
-		{"/tumblebug/api"},
-		{"/tumblebug/readyz"},
-		{"/tumblebug/httpVersion"},
-		{"/mci", "option=status"},
-		{"/mci"},
-		{"/k8sCluster"},
-		{"/resources/vNet"},
-		{"/resources/securityGroup"},
-		{"/resources/vpn"},
-		{"/resources/sshKey"},
-		{"/resources/customImage"},
-		{"/resources/dataDisk"},
-	}
-)
-
 // Helper function to check if request should skip logging/tracking
 func shouldSkipRequestLog(c echo.Context) bool {
 	path := c.Request().URL.Path
 	method := c.Request().Method
-	queryParams := c.QueryParams()
+	url := path + "?" + c.QueryString()
 
 	// Skip OPTIONS method requests
 	if method == "OPTIONS" {
 		return true
 	}
 
-	for _, pattern := range RequestLogSkipPatterns {
-		if len(pattern) == 1 {
-			// Path-only pattern
-			if strings.Contains(path, pattern[0]) {
-				return true
+	for _, rule := range logfilter.RequestSkipPatterns {
+		// Check method filter (empty = match any)
+		if rule.Method != "" && rule.Method != method {
+			continue
+		}
+
+		// Check all URL patterns (AND condition)
+		allMatched := true
+		for _, pattern := range rule.Patterns {
+			if !strings.Contains(url, pattern) {
+				allMatched = false
+				break
 			}
-		} else if len(pattern) == 2 {
-			// Path + query parameter pattern
-			if strings.Contains(path, pattern[0]) {
-				for key, values := range queryParams {
-					for _, value := range values {
-						if key+"="+value == pattern[1] {
-							return true
-						}
-					}
-				}
-			}
+		}
+		if allMatched {
+			return true
 		}
 	}
 	return false
@@ -152,7 +125,7 @@ func RunServer() {
 
 	// Middleware
 
-	e.Use(middlewares.Zerologger(APILogSkipPatterns))
+	e.Use(middlewares.Zerologger(logfilter.APISkipPatterns))
 
 	e.Use(middleware.Recover())
 	// limit the application to 20 requests/sec using the default in-memory store

@@ -4,26 +4,36 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/logfilter"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/rs/zerolog/log"
 )
 
-func Zerologger(skipPatterns [][]string) echo.MiddlewareFunc {
+func Zerologger(skipRules []logfilter.SkipRule) echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		Skipper: func(c echo.Context) bool {
 			path := c.Request().URL.Path
 			query := c.Request().URL.RawQuery
-			for _, patterns := range skipPatterns {
-				isAllMatched := true
-				for _, pattern := range patterns {
-					if !strings.Contains(path+query, pattern) {
-						isAllMatched = false
+			method := c.Request().Method
+			url := path + query
+
+			for _, rule := range skipRules {
+				// Check method filter (empty = match any)
+				if rule.Method != "" && rule.Method != method {
+					continue
+				}
+
+				// Check all URL patterns (AND condition)
+				allMatched := true
+				for _, pattern := range rule.Patterns {
+					if !strings.Contains(url, pattern) {
+						allMatched = false
 						break
 					}
 				}
-				if isAllMatched {
+				if allMatched {
 					return true
 				}
 			}

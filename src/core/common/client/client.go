@@ -24,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/logfilter"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
@@ -71,6 +72,30 @@ const (
 
 // NoBody is a constant for empty body
 const NoBody = "NOBODY"
+
+// shouldSkipInternalCallLog checks if the internal call should skip logging.
+// Uses InternalCallSkipPatterns from logfilter package.
+func shouldSkipInternalCallLog(method, url string) bool {
+	for _, rule := range logfilter.InternalCallSkipPatterns {
+		// Check method filter (empty = match any)
+		if rule.Method != "" && rule.Method != method {
+			continue
+		}
+
+		// Check all URL patterns (AND condition)
+		allMatched := true
+		for _, p := range rule.Patterns {
+			if !strings.Contains(url, p) {
+				allMatched = false
+				break
+			}
+		}
+		if allMatched {
+			return true
+		}
+	}
+	return false
+}
 
 // NewHttpClient creates a new HTTP client with Basic Auth configured.
 // It uses the global APIUsername and APIPassword from model package.
@@ -265,27 +290,32 @@ func ExecuteHttpRequest[B any, T any](
 	// Record request start time
 	requestStartTime := time.Now()
 
+	// Check if this call should skip logging
+	skipLog := shouldSkipInternalCallLog(method, url)
+
 	// Log the request in zerologger style (use trace for GET, debug for others)
-	if method == "GET" {
-		requestLogEvent := log.Trace().
-			Str("Method", method).
-			Str("URI", url)
-		if useBody && body != nil {
-			if bodyBytes, err := json.Marshal(body); err == nil {
-				requestLogEvent = requestLogEvent.RawJSON("requestBody", bodyBytes)
+	if !skipLog {
+		if method == "GET" {
+			requestLogEvent := log.Trace().
+				Str("Method", method).
+				Str("URI", url)
+			if useBody && body != nil {
+				if bodyBytes, err := json.Marshal(body); err == nil {
+					requestLogEvent = requestLogEvent.RawJSON("requestBody", bodyBytes)
+				}
 			}
-		}
-		requestLogEvent.Msg("Internal Call Start")
-	} else {
-		requestLogEvent := log.Debug().
-			Str("Method", method).
-			Str("URI", url)
-		if useBody && body != nil {
-			if bodyBytes, err := json.Marshal(body); err == nil {
-				requestLogEvent = requestLogEvent.RawJSON("requestBody", bodyBytes)
+			requestLogEvent.Msg("Internal Call Start")
+		} else {
+			requestLogEvent := log.Debug().
+				Str("Method", method).
+				Str("URI", url)
+			if useBody && body != nil {
+				if bodyBytes, err := json.Marshal(body); err == nil {
+					requestLogEvent = requestLogEvent.RawJSON("requestBody", bodyBytes)
+				}
 			}
+			requestLogEvent.Msg("Internal Call Start")
 		}
-		requestLogEvent.Msg("Internal Call Start")
 	}
 
 	// Generate cache key for GET method only
@@ -486,44 +516,46 @@ func ExecuteHttpRequest[B any, T any](
 	// Log successful response in zerologger style (use trace for GET, debug for others)
 	duration := time.Since(requestStartTime)
 
-	if method == "GET" {
-		successLogEvent := log.Trace().
-			Str("Method", method).
-			Str("URI", url).
-			Dur("latency", duration).
-			Int("status", resp.StatusCode())
+	if !skipLog {
+		if method == "GET" {
+			successLogEvent := log.Trace().
+				Str("Method", method).
+				Str("URI", url).
+				Dur("latency", duration).
+				Int("status", resp.StatusCode())
 
-		if len(resp.Body()) > 0 {
-			successLogEvent = successLogEvent.RawJSON("responseBody", resp.Body())
-		}
-		successLogEvent.Msg("Internal Call OK")
-	} else {
-		successLogEvent := log.Debug().
-			Str("Method", method).
-			Str("URI", url).
-			Dur("latency", duration).
-			Int("status", resp.StatusCode())
-
-		if len(resp.Body()) > 0 {
-			if shouldTruncateBody(resp.Body()) {
-				// Body is too large for debug level, show truncation message
-				truncationMsg := createTruncationMessage(len(resp.Body()))
-				successLogEvent = successLogEvent.RawJSON("responseBody", []byte(truncationMsg))
-
-				// Log full body at trace level
-				log.Trace().
-					Str("Method", method).
-					Str("URI", url).
-					Dur("latency", duration).
-					Int("status", resp.StatusCode()).
-					RawJSON("responseBody", resp.Body()).
-					Msg("Internal Call OK (Full Response)")
-			} else {
-				// Body is small enough for debug level
+			if len(resp.Body()) > 0 {
 				successLogEvent = successLogEvent.RawJSON("responseBody", resp.Body())
 			}
+			successLogEvent.Msg("Internal Call OK")
+		} else {
+			successLogEvent := log.Debug().
+				Str("Method", method).
+				Str("URI", url).
+				Dur("latency", duration).
+				Int("status", resp.StatusCode())
+
+			if len(resp.Body()) > 0 {
+				if shouldTruncateBody(resp.Body()) {
+					// Body is too large for debug level, show truncation message
+					truncationMsg := createTruncationMessage(len(resp.Body()))
+					successLogEvent = successLogEvent.RawJSON("responseBody", []byte(truncationMsg))
+
+					// Log full body at trace level
+					log.Trace().
+						Str("Method", method).
+						Str("URI", url).
+						Dur("latency", duration).
+						Int("status", resp.StatusCode()).
+						RawJSON("responseBody", resp.Body()).
+						Msg("Internal Call OK (Full Response)")
+				} else {
+					// Body is small enough for debug level
+					successLogEvent = successLogEvent.RawJSON("responseBody", resp.Body())
+				}
+			}
+			successLogEvent.Msg("Internal Call OK")
 		}
-		successLogEvent.Msg("Internal Call OK")
 	}
 
 	// Update the cache for GET method only
