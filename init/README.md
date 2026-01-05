@@ -32,7 +32,7 @@ Would you like to use the backup database? (y/n):
 
 **Auto-yes mode**: Use `-y` flag to automatically use backup without prompting:
 ```bash
-./init/init.py -y
+cd ./init && uv run init.py -y
 ```
 
 ## Features
