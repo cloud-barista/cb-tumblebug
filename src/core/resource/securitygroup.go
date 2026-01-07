@@ -286,7 +286,7 @@ func CreateSecurityGroup(nsId string, u *model.SecurityGroupReq, option string) 
 		method = "POST"
 	}
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -458,7 +458,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []model.Firewa
 
 		client := clientManager.NewHttpClient()
 
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -612,7 +612,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.Firewa
 
 	client := clientManager.NewHttpClient()
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -647,7 +647,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []model.Firewa
 	client = clientManager.NewHttpClient()
 	client.SetAllowGetMethodPayload(true)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

@@ -384,7 +384,7 @@ func CheckConnConfigAvailable(connConfigName string) (bool, error) {
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = connConfigName
 
-	err := clientManager.ExecuteHttpRequest(
+	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -412,7 +412,7 @@ func CheckSpiderReady() error {
 	method := "GET"
 	requestBody := clientManager.NoBody
 
-	err := clientManager.ExecuteHttpRequest(
+	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -525,7 +525,7 @@ func RegisterCloudInfo(providerName string) error {
 	var callResult model.CloudDriverInfo
 	requestBody := model.CloudDriverInfo{ProviderName: strings.ToUpper(providerName), DriverName: driverName, DriverLibFileName: driverName}
 
-	err := clientManager.ExecuteHttpRequest(
+	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -598,7 +598,7 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	}
 	requestBody.KeyValueInfoList = keyValueInfoList
 
-	err := clientManager.ExecuteHttpRequest(
+	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -624,7 +624,7 @@ func RegisterRegionZone(providerName string, regionName string) error {
 		requestBody.AvailableZoneList = RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones
 		requestBody.KeyValueInfoList = keyValueInfoList
 
-		err := clientManager.ExecuteHttpRequest(
+		_, err := clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -785,7 +785,7 @@ func RegisterCredential(req model.CredentialReq) (model.CredentialInfo, error) {
 
 	//PrintJsonPretty(requestBody)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1009,7 +1009,7 @@ func RegisterConnectionConfig(connConfig model.ConnConfig) (model.ConnConfig, er
 	requestBody.CredentialName = connConfig.CredentialName
 	requestBody.RegionName = connConfig.RegionZoneInfoName
 
-	err := clientManager.ExecuteHttpRequest(
+	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1059,7 +1059,7 @@ func RegisterConnectionConfig(connConfig model.ConnConfig) (model.ConnConfig, er
 	var callResultRegion model.SpiderRegionZoneInfo
 	requestNoBody := clientManager.NoBody
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

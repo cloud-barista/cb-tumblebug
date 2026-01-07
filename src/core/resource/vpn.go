@@ -338,7 +338,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 
 			resTrInfo := new(terrariumModel.TerrariumInfo)
 
-			err = clientManager.ExecuteHttpRequest(
+			_, err = clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,
@@ -460,7 +460,7 @@ func CreateSiteToSiteVPN(nsId string, mciId string, vpnReq *model.RestPostVpnReq
 
 		resInfracode := new(model.Response)
 
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -598,7 +598,7 @@ func retrieveEnrichmentsInfoInTerrarium(ctx context.Context, trId string, enrich
 	currentWaitDuration := maxWaitDuration
 
 	for {
-		err := clientManager.ExecuteHttpRequest(
+		_, err := clientManager.ExecuteHttpRequest(
 			client,
 			"GET",
 			fmt.Sprintf("%s/tr/%s/%s?detail=refined", epTerrarium, trId, enrichments),
@@ -781,7 +781,7 @@ func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string) (m
 	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -809,7 +809,7 @@ func GetSiteToSiteVPN(nsId string, mciId string, vpnId string, detail string) (m
 	requestBody = clientManager.NoBody
 	resResourceInfo := new(model.Response)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -975,7 +975,7 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1001,7 +1001,7 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 	requestBody = clientManager.NoBody
 	resDeleteSiteToSiteVpn := new(model.Response)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1028,7 +1028,7 @@ func DeleteSiteToSiteVPN(nsId string, mciId string, vpnId string) (model.SimpleM
 	// requestBody = clientManager.NoBody
 	// resDeleteTr := new(model.Response)
 
-	// err = clientManager.ExecuteHttpRequest(
+	// _, err = clientManager.ExecuteHttpRequest(
 	// 	client,
 	// 	method,
 	// 	url,
@@ -1142,7 +1142,7 @@ func GetRequestStatusOfSiteToSiteVpn(nsId string, mciId string, vpnId string, re
 	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1168,7 +1168,7 @@ func GetRequestStatusOfSiteToSiteVpn(nsId string, mciId string, vpnId string, re
 	reqReqStatus := clientManager.NoBody
 	resReqStatus := new(model.Response)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

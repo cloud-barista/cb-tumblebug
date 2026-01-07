@@ -651,7 +651,7 @@ func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
 		}
 	}()
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -870,7 +870,7 @@ func GetVNet(nsId string, vNetId string) (model.VNetInfo, error) {
 
 	log.Debug().Msgf("[Request to Spider] Getting VPC (url: %s, request body: %+v)", url, spReqt)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1059,7 +1059,7 @@ func DeleteVNet(nsId string, vNetId string, actionParam string) (model.SimpleMsg
 		client := clientManager.NewHttpClient()
 		method := "DELETE"
 
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -1195,7 +1195,7 @@ func RefineVNet(nsId string, vNetId string) (model.SimpleMsg, error) {
 
 	log.Debug().Msgf("[Request to Spider] Refining VPC (url: %s, request body: %+v)", url, spReqt)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1447,7 +1447,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VN
 		}
 	}()
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1718,7 +1718,7 @@ func DeregisterVNet(nsId string, vNetId string, withSubnets string) (model.Simpl
 	client := clientManager.NewHttpClient()
 	method := "DELETE"
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

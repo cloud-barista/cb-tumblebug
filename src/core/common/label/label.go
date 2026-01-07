@@ -485,7 +485,7 @@ func UpdateCSPResourceLabel(labelType, uid string, labels map[string]string, con
 			Value: value,
 		}
 
-		err := clientManager.ExecuteHttpRequest(
+		_, err := clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -609,7 +609,7 @@ func ListCSPResourceLabel(labelType, uid string, connectionName string) (labels 
 	var callResult jsonResult
 	requestBody := clientManager.NoBody
 
-	err := clientManager.ExecuteHttpRequest(
+	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

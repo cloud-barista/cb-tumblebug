@@ -16,60 +16,80 @@ package model
 
 // Owner represents the owner information in S3 bucket list response
 type Owner struct {
-	ID          string `xml:"ID" json:"id"`
-	DisplayName string `xml:"DisplayName" json:"displayName"`
-}
-
-// Bucket represents a single bucket in S3 bucket list response
-type Bucket struct {
-	Name         string `xml:"Name" json:"name"`
-	CreationDate string `xml:"CreationDate" json:"creationDate"`
+	ID          string `json:"id" example:"aws-ap-northeast-2"`
+	DisplayName string `json:"displayName" example:"aws-ap-northeast-2"`
 }
 
 // Buckets represents the collection of buckets in S3 bucket list response
 type Buckets struct {
-	Bucket []Bucket `xml:"Bucket" json:"buckets"`
+	Bucket []Bucket `json:"bucket"`
 }
 
-// type RestPostObjectStorageRequest struct {
-// 	Name                string                              `json:"name" validate:"required" example:"objectstorage01"`
-// 	ConnectionName      string                              `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
-// 	CSP                 string                              `json:"csp" validate:"required" example:"aws"`
-// 	Region              string                              `json:"region" validate:"required" example:"ap-northeast-2"`
-// 	RequiredCSPResource RequiredCSPResourceForObjectStorage `json:"requiredCSPResource,omitempty"`
-// }
+// Bucket represents a single bucket in S3 bucket list response
+type Bucket struct {
+	Name         string `json:"name" example:"spider-test-bucket"`
+	CreationDate string `json:"creationDate" example:"2025-09-04T04:18:06Z"`
+}
 
-// type RequiredCSPResourceForObjectStorage struct {
-// 	// AWS   RequiredAWSResourceForObjectStorage   `json:"aws,omitempty"`
-// 	Azure RequiredAzureResourceForObjectStorage `json:"azure,omitempty"`
-// }
+type Object struct {
+	Key          string `json:"key" example:"test-object.txt"`
+	LastModified string `json:"lastModified" example:"2025-09-04T04:18:06Z"`
+	ETag         string `json:"eTag" example:"9b2cf535f27731c974343645a3985328"`
+	Size         int64  `json:"size" example:"1024"`
+	StorageClass string `json:"storageClass" example:"STANDARD"`
+}
 
-// // type RequiredAWSResourceForObjectStorage struct {
-// // 	VNetID    string `json:"vNetID,omitempty" example:"vpc-xxxxx"`
-// // 	Subnet1ID string `json:"subnet1ID,omitempty" example:"subnet-xxxx"`
-// // 	Subnet2ID string `json:"subnet2ID,omitempty" example:"subnet-xxxx in different AZ"`
-// // }
+// ListBucketResponse represents the response structure for listing S3 buckets
+type ListBucketResponse struct {
+	Owner   Owner   `json:"owner"`
+	Buckets Buckets `json:"buckets"`
+}
 
-// type RequiredAzureResourceForObjectStorage struct {
-// 	ResourceGroup string `json:"resourceGroup,omitempty" example:"koreacentral"`
-// }
+type ObjectStorageCreateRequest struct {
+	BucketName     string `json:"bucketName" validate:"required" example:"os01"`
+	ConnectionName string `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
+	Description    string `json:"description" example:"this bucket is managed by CB-Tumblebug"`
+}
 
-// type ObjectStorageInfo struct {
-// 	// ResourceType is the type of the resource
-// 	ResourceType     string     `json:"resourceType"`
-// 	ConnectionName   string     `json:"connectionName"`
-// 	ConnectionConfig ConnConfig `json:"connectionConfig"`
-// 	// Id is unique identifier for the object
-// 	Id string `json:"id" example:"sqldb01"`
-// 	// Uid is universally unique identifier for the object, used for labelSelector
-// 	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
-// 	// Name is human-readable string to represent the object
-// 	Name string `json:"name" example:"sqldb01"`
-// 	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
-// 	CspResourceName string `json:"cspResourceName,omitempty" example:"we12fawefadf1221edcf"`
-// 	// CspResourceId is resource identifier managed by CSP
-// 	CspResourceId string      `json:"cspResourceId,omitempty" example:"csp-06eb41e14121c550a"`
-// 	Status        string      `json:"status"`
-// 	Description   string      `json:"description"`
-// 	Details       interface{} `json:"details"`
-// }
+type ObjectStorageInfo struct {
+	// ResourceType is the type of this resource
+	ResourceType string `json:"resourceType" example:"ObjectStorage"`
+
+	// Id is unique identifier for the object
+	Id string `json:"id" example:"globally-unique-bucket-name-12345"`
+	// Uid is universally unique identifier for the object, used for labelSelector
+	Uid string `json:"uid,omitempty" example:"wef12awefadf1221edcf"`
+
+	// CspResourceName is name assigned to the CSP resource. This name is internally used to handle the resource.
+	CspResourceName string `json:"cspResourceName,omitempty" example:""`
+	// CspResourceId is resource identifier managed by CSP
+	CspResourceId string `json:"cspResourceId,omitempty" example:""`
+
+	// Variables for management of Object Storage resource in CB-Tumblebug
+	ConnectionName   string     `json:"connectionName"`
+	ConnectionConfig ConnConfig `json:"connectionConfig"`
+	Description      string     `json:"description" example:"this object storage is managed by CB-Tumblebug"`
+	Status           string     `json:"status"`
+
+	// Name is human-readable string to represent the object
+	Name         string   `json:"name" example:"globally-unique-bucket-name-12345"`
+	Prefix       string   `json:"prefix,omitempty" example:""`
+	Marker       string   `json:"marker,omitempty" example:""`
+	MaxKeys      int      `json:"maxKeys,omitempty" example:"1000"`
+	IsTruncated  bool     `json:"isTruncated,omitempty" example:"false"`
+	CreationDate string   `json:"creationDate,omitempty" example:"2025-09-04T04:18:06Z"`
+	Contents     []Object `json:"contents,omitempty"`
+}
+
+type ObjectStorageListRequest struct {
+	ConnectionName string `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
+}
+
+type ObjectStorageListResponse struct {
+	Owner   Owner   `json:"owner"`
+	Buckets Buckets `json:"buckets"`
+}
+
+type ObjectStorageLocationResponse struct {
+	LocationConstraint string `json:"locationConstraint" example:"ap-northeast-2"`
+}

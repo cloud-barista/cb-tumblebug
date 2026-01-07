@@ -25,7 +25,7 @@ func InitJwtAuthMw(iamEndpoint string, pubkeyUrl string) error {
 	requestBody := clientManager.NoBody
 	var resReadyz map[string]string
 
-	err := clientManager.ExecuteHttpRequest(
+	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

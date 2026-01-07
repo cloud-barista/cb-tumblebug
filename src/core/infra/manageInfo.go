@@ -833,7 +833,7 @@ func GetVmIdNameInDetail(nsId string, mciId string, vmId string) (*model.IdNameI
 	method := "GET"
 	client.SetTimeout(5 * time.Minute)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1277,7 +1277,7 @@ func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (model.VmStatu
 	requestBody.ConnectionName = temp.ConnectionName
 	callResult := statusResponse{}
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1631,7 +1631,7 @@ func FetchVmStatus(nsId string, mciId string, vmId string) (model.VmStatusInfo, 
 		retrycheck := 2
 		for range retrycheck {
 			statusInfo.Status = model.StatusFailed
-			err := clientManager.ExecuteHttpRequest(
+			_, err := clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,
@@ -2176,7 +2176,7 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 
 	}
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -2230,7 +2230,7 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	}
 	var callResultSpiderVMInfo model.SpiderVMInfo
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

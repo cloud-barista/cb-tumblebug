@@ -332,7 +332,7 @@ func LookupSpecList(connConfig string) (model.SpiderSpecList, error) {
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = connConfig
 
-	err := clientManager.ExecuteHttpRequest(
+	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -379,7 +379,7 @@ func LookupSpec(connConfig string, specName string) (model.SpiderSpecInfo, error
 
 	err := executeWithTimeoutRetry(func() error {
 		callResult = model.SpiderSpecInfo{}
-		return clientManager.ExecuteHttpRequest(
+		_, err := clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -389,6 +389,7 @@ func LookupSpec(connConfig string, specName string) (model.SpiderSpecInfo, error
 			&callResult,
 			clientManager.MediumDuration,
 		)
+		return err
 	}, "LookupSpec", specName)
 
 	if err != nil {
@@ -1511,7 +1512,7 @@ func LookupPriceList(connConfig model.ConnConfig) (model.SpiderCloudPrice, error
 	method := "GET"
 	requestBody := clientManager.NoBody
 
-	err := clientManager.ExecuteHttpRequest(
+	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1578,7 +1579,7 @@ func GetAvailableRegionZonesForSpec(provider string, cspSpecName string) (model.
 
 	// Make API call
 	var apiResponse map[string]interface{}
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

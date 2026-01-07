@@ -282,7 +282,7 @@ func ExecuteHttpRequest[B any, T any](
 	body *B,
 	result *T, // Generic type
 	cacheDuration time.Duration,
-) error {
+) (*resty.Response, error) {
 
 	// Perform the HTTP request using Resty
 	setRestyDebug := false // Disable Resty debug, use custom logging instead
@@ -326,7 +326,7 @@ func ExecuteHttpRequest[B any, T any](
 			// Serialize the body to JSON
 			bodyString, err := json.Marshal(body)
 			if err != nil {
-				return fmt.Errorf("JSON marshaling failed: %w", err)
+				return nil, fmt.Errorf("JSON marshaling failed: %w", err)
 			}
 			// Create cache key using both URL and body
 			requestKey = fmt.Sprintf("%s_%s_%s", method, url, string(bodyString))
@@ -341,7 +341,7 @@ func ExecuteHttpRequest[B any, T any](
 			if !ok {
 				log.Error().Msgf("Type assertion failed for cache item: expected CacheItem[%T], got %T", *result, item)
 				clientCache.Delete(requestKey) // Delete invalid cache item
-				return fmt.Errorf("type assertion failed for cache item")
+				return nil, fmt.Errorf("type assertion failed for cache item")
 			}
 
 			if time.Now().Before(cachedItem.ExpiresAt) {
@@ -351,7 +351,7 @@ func ExecuteHttpRequest[B any, T any](
 				//cachedVal := reflect.ValueOf(cachedItem.Response)
 				//val.Set(cachedVal)
 
-				return nil
+				return nil, nil
 			} else {
 				//log.Trace().Msg("Cache item expired!")
 				clientCache.Delete(requestKey)
@@ -360,7 +360,7 @@ func ExecuteHttpRequest[B any, T any](
 
 		// Check circuit breaker before making actual requests
 		if checkCircuitBreaker(requestKey) {
-			return fmt.Errorf("API call temporarily blocked due to circuit breaker protection (repeated failures detected), please try again later (API: %s)", requestKey)
+			return nil, fmt.Errorf("API call temporarily blocked due to circuit breaker protection (repeated failures detected), please try again later (API: %s)", requestKey)
 		}
 
 		// Limit the number of concurrent requests
@@ -373,7 +373,7 @@ func ExecuteHttpRequest[B any, T any](
 			if !limitConcurrentRequests(requestKey, concurrencyLimit) {
 				if retryCount >= retryLimit {
 					log.Debug().Msgf("too many same requests after %d retries: %s", retryLimit, requestKey)
-					return fmt.Errorf("too many same requests: %s", requestKey)
+					return nil, fmt.Errorf("too many same requests: %s", requestKey)
 				}
 				time.Sleep(retryWait)
 
@@ -382,13 +382,13 @@ func ExecuteHttpRequest[B any, T any](
 					if !ok {
 						log.Error().Msgf("Type assertion failed for cache item while waiting: expected CacheItem[%T], got %T", *result, item)
 						clientCache.Delete(requestKey) // Delete invalid cache item
-						return fmt.Errorf("type assertion failed for cache item while waiting")
+						return nil, fmt.Errorf("type assertion failed for cache item while waiting")
 					}
 					*result = cachedItem.Response
 					// release the request count for parallel requests limit
 					requestDone(requestKey)
 					log.Debug().Msg("Got the cached result while waiting")
-					return nil
+					return nil, nil
 				}
 				retryCount++
 			} else {
@@ -426,7 +426,7 @@ func ExecuteHttpRequest[B any, T any](
 	case "DELETE":
 		resp, err = req.Delete(url)
 	default:
-		return fmt.Errorf("unsupported rest method: %s", method)
+		return nil, fmt.Errorf("unsupported rest method: %s", method)
 	}
 
 	if err != nil {
@@ -456,7 +456,7 @@ func ExecuteHttpRequest[B any, T any](
 		}
 		cleanedError := cleanErrorMessage(err.Error())
 		cleanedURL := cleanURL(url)
-		return fmt.Errorf("%s (from %s)", cleanedError, cleanedURL)
+		return resp, fmt.Errorf("%s (from %s)", cleanedError, cleanedURL)
 	}
 
 	if resp.IsError() {
@@ -510,7 +510,7 @@ func ExecuteHttpRequest[B any, T any](
 		}
 		cleanedBody := cleanErrorMessage(string(resp.Body()))
 		cleanedURL := cleanURL(url)
-		return fmt.Errorf("%s (from %s (%s))", cleanedBody, cleanedURL, resp.Status())
+		return resp, fmt.Errorf("%s (from %s (%s))", cleanedBody, cleanedURL, resp.Status())
 	}
 
 	// Log successful response in zerologger style (use trace for GET, debug for others)
@@ -579,7 +579,7 @@ func ExecuteHttpRequest[B any, T any](
 		}
 	}
 
-	return nil
+	return resp, nil
 }
 
 // RequestInfo stores the essential details of an HTTP request.
@@ -742,7 +742,7 @@ func ForwardRequestToAny(reqPath string, method string, requestBody interface{})
 		return nil, fmt.Errorf("JSON unmarshal error: %v", err)
 	}
 
-	err = ExecuteHttpRequest(
+	_, err = ExecuteHttpRequest(
 		client,
 		method,
 		url,

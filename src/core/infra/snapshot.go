@@ -67,7 +67,7 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 	url := fmt.Sprintf("%s/myimage", model.SpiderRestUrl)
 	method := "POST"
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
