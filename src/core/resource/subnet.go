@@ -1511,3 +1511,46 @@ func GetFirstNZones(connectionName string, firstN int) ([]string, int, error) {
 
 	return zones, length, nil
 }
+
+// FindSubnetByZone finds a subnet that matches the specified zone from a VNet.
+// If zone is empty or no matching subnet is found, returns the first (default) subnet.
+// This is useful for VM placement in a specific zone when the user explicitly specifies one.
+//
+// Parameters:
+//   - nsId: Namespace ID
+//   - vNetId: VNet ID to search subnets in
+//   - zone: Target zone to find matching subnet (empty string means use default)
+//
+// Returns:
+//   - subnetId: The ID of the matching or default subnet
+//   - subnetZone: The actual zone of the selected subnet
+//   - error: Error if VNet doesn't exist or has no subnets
+func FindSubnetByZone(nsId string, vNetId string, zone string) (subnetId string, subnetZone string, err error) {
+	log.Debug().Msgf("FindSubnetByZone: nsId=%s, vNetId=%s, zone=%s", nsId, vNetId, zone)
+
+	// Get VNet info to access subnet list
+	vNetInfo, err := GetVNet(nsId, vNetId)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get VNet '%s': %w", vNetId, err)
+	}
+
+	if len(vNetInfo.SubnetInfoList) == 0 {
+		return "", "", fmt.Errorf("VNet '%s' has no subnets", vNetId)
+	}
+
+	// If zone is specified, try to find a matching subnet
+	if zone != "" {
+		for _, subnet := range vNetInfo.SubnetInfoList {
+			if subnet.Zone == zone {
+				log.Info().Msgf("Found subnet '%s' matching zone '%s'", subnet.Id, zone)
+				return subnet.Id, subnet.Zone, nil
+			}
+		}
+		log.Warn().Msgf("No subnet found matching zone '%s', using default subnet", zone)
+	}
+
+	// Return the first (default) subnet if no zone specified or no match found
+	defaultSubnet := vNetInfo.SubnetInfoList[0]
+	log.Debug().Msgf("Using default subnet '%s' (zone: '%s')", defaultSubnet.Id, defaultSubnet.Zone)
+	return defaultSubnet.Id, defaultSubnet.Zone, nil
+}

@@ -519,3 +519,45 @@ type CSPIgnorePatterns struct {
 type RegionIgnorePatterns struct {
 	Patterns []string `yaml:",flow,omitempty"` // Direct array patterns for simplified YAML structure
 }
+
+// AvailableZonesInfo represents available zones for a spec (success response)
+// @Description Available (verified) zones for a specific spec
+type AvailableZonesInfo struct {
+	// SpecId is the queried spec ID
+	SpecId string `json:"specId" example:"aws+ap-northeast-2+t3.medium"`
+	// ProviderName is the cloud service provider name
+	ProviderName string `json:"providerName" example:"aws"`
+	// RegionName is the region name
+	RegionName string `json:"regionName" example:"ap-northeast-2"`
+	// CspSpecName is the CSP-specific spec name
+	CspSpecName string `json:"cspSpecName" example:"t3.medium"`
+	// CredentialHolder is the credential holder used for the query
+	CredentialHolder string `json:"credentialHolder" example:"admin"`
+	// AvailableZones contains zones that are verified and available
+	AvailableZones []string `json:"availableZones" example:"ap-northeast-2a,ap-northeast-2c"`
+	// AllVerifiedZones contains all verified zones for the provider/region (before CSP-specific filtering)
+	AllVerifiedZones []string `json:"allVerifiedZones,omitempty" example:"ap-northeast-2a,ap-northeast-2b,ap-northeast-2c"`
+	// UnavailableZones contains zones that exist but are not verified or filtered out
+	UnavailableZones []string `json:"unavailableZones,omitempty" example:"ap-northeast-2b"`
+	// HasZoneConcept indicates whether the CSP/region has zone concept
+	HasZoneConcept bool `json:"hasZoneConcept" example:"true"`
+	// QueryDurationMs is the time taken to process the query in milliseconds
+	QueryDurationMs int64 `json:"queryDurationMs" example:"125"`
+}
+
+// AvailableZonesError represents an error response for available zones query
+// @Description Error response when available zones query fails
+type AvailableZonesError struct {
+	// SpecId is the queried spec ID
+	SpecId string `json:"specId" example:"aws+ap-northeast-2+t3.medium"`
+	// ErrorCode provides a machine-readable error code for programmatic handling
+	ErrorCode string `json:"errorCode" example:"PROVIDER_NOT_AVAILABLE"`
+	// ErrorMessage provides a human-readable error description
+	ErrorMessage string `json:"errorMessage" example:"Provider 'xyz' is not available"`
+	// Suggestion provides actionable guidance when errors occur
+	Suggestion string `json:"suggestion,omitempty" example:"Available providers: aws, gcp, azure"`
+	// AlternativeRegions provides alternative regions when the specified region is unavailable
+	AlternativeRegions []string `json:"alternativeRegions,omitempty" example:"ap-northeast-1,us-east-1"`
+	// QueryDurationMs is the time taken to process the query in milliseconds
+	QueryDurationMs int64 `json:"queryDurationMs" example:"15"`
+}

@@ -16,6 +16,7 @@ package resource
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -327,6 +328,56 @@ func RestGetAvailableRegionZonesForSpec(c echo.Context) error {
 
 	content, err := resource.GetAvailableRegionZonesForSpec(u.Provider, u.CspSpecName)
 	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestGetAvailableZonesForSpec godoc
+// @ID GetAvailableZonesForSpec
+// @Summary Get available (verified) zones for a specific spec ID
+// @Description Query verified zones for a spec based on connection configs. Returns zones that are both verified and available for the specified spec. For Alibaba Cloud, additional CSP API filtering is applied.
+// @Tags [Infra Resource] Spec Management
+// @Accept  json
+// @Produce  json
+// @Param specId query string true "Spec ID (format: provider+region+cspSpecName)" example(aws+ap-northeast-2+t3.medium)
+// @Param credentialHolder query string false "Credential holder name (defaults to 'admin')" example(admin)
+// @Success 200 {object} model.AvailableZonesInfo "Available zones information"
+// @Failure 400 {object} model.AvailableZonesError "Error with details"
+// @Failure 404 {object} model.AvailableZonesError "Spec not found or resource not available"
+// @Router /availableZonesForSpec [get]
+func RestGetAvailableZonesForSpec(c echo.Context) error {
+	specId := c.QueryParam("specId")
+	credentialHolder := c.QueryParam("credentialHolder")
+
+	if specId == "" {
+		errResp := model.AvailableZonesError{
+			SpecId:       "",
+			ErrorCode:    "INVALID_REQUEST",
+			ErrorMessage: "specId query parameter is required",
+			Suggestion:   "Provide specId in format: provider+region+cspSpecName (e.g., aws+ap-northeast-2+t3.medium)",
+		}
+		return c.JSON(http.StatusBadRequest, errResp)
+	}
+
+	log.Debug().Msgf("[Get Available Zones For Spec] SpecId: %s, CredentialHolder: %s", specId, credentialHolder)
+
+	successResult, errorResult := resource.GetAvailableZonesForSpec(specId, credentialHolder)
+
+	if errorResult != nil {
+		// Determine appropriate HTTP status code based on error code
+		statusCode := http.StatusBadRequest
+		switch errorResult.ErrorCode {
+		case resource.ZoneErrorCodeSpecNotFound:
+			statusCode = http.StatusNotFound
+		case resource.ZoneErrorCodeProviderNotAvailable, resource.ZoneErrorCodeRegionNotAvailable:
+			statusCode = http.StatusNotFound
+		case resource.ZoneErrorCodeNoVerifiedZones, resource.ZoneErrorCodeNoZonesAfterFiltering:
+			statusCode = http.StatusNotFound
+		case resource.ZoneErrorCodeInternalError:
+			statusCode = http.StatusInternalServerError
+		}
+		return c.JSON(statusCode, errorResult)
+	}
+
+	return c.JSON(http.StatusOK, successResult)
 }
 
 // RestGetAvailableRegionZonesForSpecList godoc

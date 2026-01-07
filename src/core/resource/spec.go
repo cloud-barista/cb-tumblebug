@@ -2833,3 +2833,267 @@ func matchesPattern(specName, pattern string) bool {
 
 	return matched
 }
+
+// Error codes for GetAvailableZonesForSpec
+const (
+	ZoneErrorCodeNone                  = ""
+	ZoneErrorCodeSpecNotFound          = "SPEC_NOT_FOUND"
+	ZoneErrorCodeProviderNotAvailable  = "PROVIDER_NOT_AVAILABLE"
+	ZoneErrorCodeRegionNotAvailable    = "REGION_NOT_AVAILABLE"
+	ZoneErrorCodeNoVerifiedZones       = "NO_VERIFIED_ZONES"
+	ZoneErrorCodeNoZonesAfterFiltering = "NO_ZONES_AFTER_FILTERING"
+	ZoneErrorCodeAlibabaAPIFailed      = "ALIBABA_API_FAILED"
+	ZoneErrorCodeInternalError         = "INTERNAL_ERROR"
+)
+
+// GetAvailableZonesForSpec queries available (verified) zones for a specific spec ID
+// It uses connection configs to determine which zones are verified and available.
+// For Alibaba Cloud, it additionally filters zones using CSP API to check spec availability.
+//
+// Parameters:
+//   - specId: TB spec ID (format: provider+region+cspSpecName)
+//   - credentialHolder: Credential holder name (defaults to model.DefaultCredentialHolder if empty)
+//
+// Returns:
+//   - *model.AvailableZonesInfo: Success result with available zones (nil if error)
+//   - *model.AvailableZonesError: Error result with details (nil if success)
+func GetAvailableZonesForSpec(specId string, credentialHolder string) (*model.AvailableZonesInfo, *model.AvailableZonesError) {
+	startTime := time.Now()
+
+	// Default credential holder
+	if credentialHolder == "" {
+		credentialHolder = model.DefaultCredentialHolder
+	}
+
+	// Helper function to create error response
+	makeError := func(errorCode, errorMessage, suggestion string, alternativeRegions []string) *model.AvailableZonesError {
+		return &model.AvailableZonesError{
+			SpecId:             specId,
+			ErrorCode:          errorCode,
+			ErrorMessage:       errorMessage,
+			Suggestion:         suggestion,
+			AlternativeRegions: alternativeRegions,
+			QueryDurationMs:    time.Since(startTime).Milliseconds(),
+		}
+	}
+
+	// Step 1: Get spec information using GetSpec
+	// Use "system" namespace as specs are stored in system namespace
+	specInfo, err := GetSpec("system", specId)
+	if err != nil {
+		return nil, makeError(
+			ZoneErrorCodeSpecNotFound,
+			fmt.Sprintf("Spec '%s' not found: %v", specId, err),
+			"Verify the spec ID format (provider+region+cspSpecName) and ensure the spec exists in the system namespace. Use /tumblebug/ns/system/resources/spec to list available specs.",
+			nil,
+		)
+	}
+
+	// Step 2: Get all connection configs filtered by credential holder and verified status
+	connConfigs, err := common.GetConnConfigList(credentialHolder, true, false)
+	if err != nil {
+		return nil, makeError(
+			ZoneErrorCodeInternalError,
+			fmt.Sprintf("Failed to get connection configs: %v", err),
+			"",
+			nil,
+		)
+	}
+
+	if len(connConfigs.Connectionconfig) == 0 {
+		return nil, makeError(
+			ZoneErrorCodeProviderNotAvailable,
+			fmt.Sprintf("No verified connection configs found for credential holder '%s'", credentialHolder),
+			"Register credentials for the desired cloud provider using the credential registration API.",
+			nil,
+		)
+	}
+
+	// Step 3: Filter connection configs by provider
+	var providerConfigs []model.ConnConfig
+	var allAvailableProviders []string
+	providerSet := make(map[string]bool)
+
+	for _, cc := range connConfigs.Connectionconfig {
+		if !providerSet[cc.ProviderName] {
+			providerSet[cc.ProviderName] = true
+			allAvailableProviders = append(allAvailableProviders, cc.ProviderName)
+		}
+		if strings.EqualFold(cc.ProviderName, specInfo.ProviderName) {
+			providerConfigs = append(providerConfigs, cc)
+		}
+	}
+
+	if len(providerConfigs) == 0 {
+		return nil, makeError(
+			ZoneErrorCodeProviderNotAvailable,
+			fmt.Sprintf("Provider '%s' is not available. No verified connection configs found for this provider.", specInfo.ProviderName),
+			fmt.Sprintf("Available providers: %v. Register credentials for '%s' or choose a spec from an available provider.", allAvailableProviders, specInfo.ProviderName),
+			nil,
+		)
+	}
+
+	// Step 4: Filter connection configs by region
+	var regionConfigs []model.ConnConfig
+	var allAvailableRegions []string
+	regionSet := make(map[string]bool)
+
+	for _, cc := range providerConfigs {
+		regionName := cc.RegionZoneInfo.AssignedRegion
+		if !regionSet[regionName] {
+			regionSet[regionName] = true
+			allAvailableRegions = append(allAvailableRegions, regionName)
+		}
+		if strings.EqualFold(regionName, specInfo.RegionName) {
+			regionConfigs = append(regionConfigs, cc)
+		}
+	}
+
+	if len(regionConfigs) == 0 {
+		return nil, makeError(
+			ZoneErrorCodeRegionNotAvailable,
+			fmt.Sprintf("Region '%s' is not available for provider '%s'. No verified connection configs found for this region.", specInfo.RegionName, specInfo.ProviderName),
+			fmt.Sprintf("Available regions for %s: %v. Choose a spec from an available region.", specInfo.ProviderName, allAvailableRegions),
+			allAvailableRegions,
+		)
+	}
+
+	// Step 5: Extract zones from verified connection configs
+	var verifiedZones []string
+	zoneSet := make(map[string]bool)
+	hasEmptyZone := false
+
+	for _, cc := range regionConfigs {
+		zoneName := cc.RegionZoneInfo.AssignedZone
+		if zoneName == "" {
+			hasEmptyZone = true
+			continue
+		}
+		if !zoneSet[zoneName] {
+			zoneSet[zoneName] = true
+			verifiedZones = append(verifiedZones, zoneName)
+		}
+	}
+
+	// Sort zones for consistent output
+	sort.Strings(verifiedZones)
+
+	// Check if the provider/region has zone concept
+	if len(verifiedZones) == 0 && hasEmptyZone {
+		// Zone concept might not exist for this provider/region
+		log.Info().
+			Str("specId", specId).
+			Str("provider", specInfo.ProviderName).
+			Str("region", specInfo.RegionName).
+			Msg("No zone concept for this provider/region, auto-selection will be used")
+
+		return &model.AvailableZonesInfo{
+			SpecId:           specId,
+			ProviderName:     specInfo.ProviderName,
+			RegionName:       specInfo.RegionName,
+			CspSpecName:      specInfo.CspSpecName,
+			CredentialHolder: credentialHolder,
+			AvailableZones:   []string{}, // Empty array means auto-selection
+			HasZoneConcept:   false,
+			QueryDurationMs:  time.Since(startTime).Milliseconds(),
+		}, nil
+	}
+
+	if len(verifiedZones) == 0 {
+		return nil, makeError(
+			ZoneErrorCodeNoVerifiedZones,
+			fmt.Sprintf("No verified zones found for provider '%s' region '%s'", specInfo.ProviderName, specInfo.RegionName),
+			"Verify that connection configs for this region have been properly verified. Check the connection verification status.",
+			nil,
+		)
+	}
+
+	// Prepare success result
+	result := &model.AvailableZonesInfo{
+		SpecId:           specId,
+		ProviderName:     specInfo.ProviderName,
+		RegionName:       specInfo.RegionName,
+		CspSpecName:      specInfo.CspSpecName,
+		CredentialHolder: credentialHolder,
+		AllVerifiedZones: verifiedZones,
+		HasZoneConcept:   true,
+	}
+
+	// Step 6: For Alibaba Cloud, apply additional CSP API filtering
+	if strings.EqualFold(specInfo.ProviderName, csp.Alibaba) {
+		availableZones, unavailableZones, err := filterAlibabaZonesBySpecAvailability(specInfo.CspSpecName, specInfo.RegionName, verifiedZones)
+		if err != nil {
+			// Log warning but don't fail - return all verified zones
+			log.Warn().Err(err).
+				Str("specId", specId).
+				Str("provider", specInfo.ProviderName).
+				Msg("Alibaba zone filtering failed, returning all verified zones")
+			result.AvailableZones = verifiedZones
+		} else if len(availableZones) == 0 {
+			return nil, makeError(
+				ZoneErrorCodeNoZonesAfterFiltering,
+				fmt.Sprintf("Spec '%s' is not available in any verified zone for region '%s'", specInfo.CspSpecName, specInfo.RegionName),
+				"This spec may not be available in the specified region. Try a different spec or region.",
+				nil,
+			)
+		} else {
+			result.AvailableZones = availableZones
+			result.UnavailableZones = unavailableZones
+		}
+	} else {
+		// For other providers, all verified zones are available
+		result.AvailableZones = verifiedZones
+	}
+
+	result.QueryDurationMs = time.Since(startTime).Milliseconds()
+
+	log.Debug().
+		Str("specId", specId).
+		Str("provider", specInfo.ProviderName).
+		Str("region", specInfo.RegionName).
+		Int("availableZones", len(result.AvailableZones)).
+		Int64("durationMs", result.QueryDurationMs).
+		Msg("Successfully queried available zones for spec")
+
+	return result, nil
+}
+
+// filterAlibabaZonesBySpecAvailability filters zones based on Alibaba Cloud API response
+// Returns zones where the spec is actually available
+func filterAlibabaZonesBySpecAvailability(cspSpecName string, regionName string, verifiedZones []string) (availableZones []string, unavailableZones []string, err error) {
+	// Get the full availability info using existing function
+	availabilityInfo, err := GetAvailableRegionZonesForSpec(csp.Alibaba, cspSpecName)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to query Alibaba spec availability: %w", err)
+	}
+
+	if !availabilityInfo.Success {
+		return nil, nil, fmt.Errorf("Alibaba spec availability query failed: %s", availabilityInfo.ErrorMessage)
+	}
+
+	// Find zones for the specific region
+	var cspAvailableZones []string
+	for _, regionInfo := range availabilityInfo.AvailableRegions {
+		if strings.EqualFold(regionInfo.RegionName, regionName) {
+			cspAvailableZones = regionInfo.Zones
+			break
+		}
+	}
+
+	// Create a set of CSP-available zones for efficient lookup
+	cspZoneSet := make(map[string]bool)
+	for _, z := range cspAvailableZones {
+		cspZoneSet[z] = true
+	}
+
+	// Filter verified zones based on CSP availability
+	for _, zone := range verifiedZones {
+		if cspZoneSet[zone] {
+			availableZones = append(availableZones, zone)
+		} else {
+			unavailableZones = append(unavailableZones, zone)
+		}
+	}
+
+	return availableZones, unavailableZones, nil
+}
