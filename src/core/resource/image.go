@@ -322,7 +322,7 @@ func lookupRegularImageOnly(connConfig string, imageId string) (model.SpiderImag
 	requestBody.ConnectionName = connConfig
 	callResult := model.SpiderImageInfo{}
 
-	err := clientManager.ExecuteHttpRequest(
+	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		apiUrl,
@@ -677,7 +677,7 @@ func LookupImageList(connConfigName string) (model.SpiderImageList, error) {
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = connConfigName
 
-	err := clientManager.ExecuteHttpRequest(
+	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -719,7 +719,7 @@ func LookupImage(connConfig string, imageId string) (model.SpiderImageInfo, erro
 	requestBody.ConnectionName = connConfig
 	callResult := model.SpiderImageInfo{}
 
-	err := clientManager.ExecuteHttpRequest(
+	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		apiUrl,
@@ -742,7 +742,7 @@ func LookupImage(connConfig string, imageId string) (model.SpiderImageInfo, erro
 
 		var spiderMyImageResult model.SpiderMyImageInfo
 
-		statusErr := clientManager.ExecuteHttpRequest(
+		_, statusErr := clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			customImageUrl,

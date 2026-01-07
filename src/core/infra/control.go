@@ -652,7 +652,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 	// log.Debug().Msgf("[ControlVmAsync] VM %s: Calling CB-Spider control API - URL: %s, ConnectionName: %s, Action: %s",
 	// 	vmId, url, temp.ConnectionName, action)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

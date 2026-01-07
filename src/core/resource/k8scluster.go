@@ -503,7 +503,7 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string, skip
 
 	var spClusterRes model.SpiderClusterRes
 
-	createErr = clientManager.ExecuteHttpRequest(
+	_, createErr = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -789,7 +789,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.K8sNodeGroupReq)
 
 	var spClusterRes model.SpiderClusterRes
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -860,7 +860,7 @@ func RemoveK8sNodeGroup(nsId, k8sClusterId, k8sNodeGroupName, option string) (bo
 	client.SetTimeout(10 * time.Minute)
 
 	var ifRes interface{}
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -953,7 +953,7 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 	method := "PUT"
 
 	var spSetAutoscalingRes model.SpiderSetAutoscalingRes
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1043,7 +1043,7 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 	method := "PUT"
 
 	var spChangeAutoscaleSizeRes model.SpiderChangeAutoscaleSizeRes
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1109,7 +1109,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (*model.K8sClusterInfo, err
 	}
 
 	var spClusterRes model.SpiderClusterRes
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1328,7 +1328,7 @@ func DeleteK8sCluster(nsId, k8sClusterId, option string) (bool, error) {
 	client.SetTimeout(20 * time.Minute)
 
 	var ifRes interface{}
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1473,7 +1473,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *model.UpgradeK8sClus
 	client.SetTimeout(10 * time.Minute)
 
 	var spClusterRes model.SpiderClusterRes
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

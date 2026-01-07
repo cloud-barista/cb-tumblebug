@@ -23,7 +23,7 @@ func CheckReadiness(url string, apiUser string, apiPass string) echo.MiddlewareF
 			requestBody := clientManager.NoBody
 			resReadyz := new(model.Response)
 
-			err := clientManager.ExecuteHttpRequest(
+			_, err := clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,

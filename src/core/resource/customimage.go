@@ -110,7 +110,7 @@ func LookupMyImage(connConfig string, myImageId string) (model.SpiderMyImageInfo
 	requestBody := model.SpiderConnectionName{}
 	requestBody.ConnectionName = connConfig
 
-	err := clientManager.ExecuteHttpRequest(
+	_, err := clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -235,7 +235,7 @@ func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.Imag
 	}
 	callResult := model.SpiderMyImageInfo{}
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

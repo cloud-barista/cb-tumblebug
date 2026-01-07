@@ -326,7 +326,7 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 		method = "POST"
 	}
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -724,7 +724,7 @@ func DelNLB(nsId string, mciId string, resourceId string, forceFlag string) erro
 	method := "DELETE"
 	var callResult interface{}
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -740,7 +740,7 @@ func DelNLB(nsId string, mciId string, resourceId string, forceFlag string) erro
 			url += "?force=true"
 			log.Debug().Msg("forceFlag == true; url: " + url)
 
-			err = clientManager.ExecuteHttpRequest(
+			_, err = clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,
@@ -870,7 +870,7 @@ func GetNLBHealth(nsId string, mciId string, nlbId string) (model.NLBHealthInfo,
 	url := fmt.Sprintf("%s/nlb/%s/health", model.SpiderRestUrl, nlb.CspResourceName)
 	method := "GET"
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1033,7 +1033,7 @@ func AddNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddRemo
 	url := fmt.Sprintf("%s/nlb/%s/vms", model.SpiderRestUrl, nlb.CspResourceName)
 	method := "POST"
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1228,7 +1228,7 @@ func RemoveNLBVMs(nsId string, mciId string, resourceId string, u *model.NLBAddR
 	method := "DELETE"
 	var callResult interface{}
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

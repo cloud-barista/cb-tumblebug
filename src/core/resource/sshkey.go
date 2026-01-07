@@ -146,7 +146,7 @@ func CreateSshKey(nsId string, u *model.SshKeyReq, option string) (model.SshKeyI
 		method = "GET"
 
 		requestBodyNoBody := clientManager.NoBody
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -161,7 +161,7 @@ func CreateSshKey(nsId string, u *model.SshKeyReq, option string) (model.SshKeyI
 		url = fmt.Sprintf("%s/regkeypair", model.SpiderRestUrl)
 		method = "POST"
 
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -176,7 +176,7 @@ func CreateSshKey(nsId string, u *model.SshKeyReq, option string) (model.SshKeyI
 		url = fmt.Sprintf("%s/keypair", model.SpiderRestUrl)
 		method = "POST"
 
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,

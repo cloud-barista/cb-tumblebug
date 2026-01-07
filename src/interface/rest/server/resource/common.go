@@ -195,6 +195,13 @@ func RestGetAllResources(c echo.Context) error {
 
 			content.DataDisk = resourceList.([]model.DataDiskInfo) // type assertion (interface{} -> array)
 			return clientManager.EndRequestWithLog(c, err, content)
+		case model.StrObjectStorage:
+			var content struct {
+				ObjectStorage []model.ObjectStorageInfo `json:"objectStorage"`
+			}
+
+			content.ObjectStorage = resourceList.([]model.ObjectStorageInfo) // type assertion (interface{} -> array)
+			return clientManager.EndRequestWithLog(c, err, content)
 		default:
 			err := fmt.Errorf("Not accepatble resourceType: " + resourceType)
 			return clientManager.EndRequestWithLog(c, err, nil)

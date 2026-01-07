@@ -348,7 +348,7 @@ func CreateSubnet(nsId string, vNetId string, subnetReq *model.SubnetReq) (model
 		}
 	}()
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -543,7 +543,7 @@ func GetSubnet(nsId string, vNetId string, subnetId string) (model.SubnetInfo, e
 
 	var spResp spiderSubnetInfo
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -744,7 +744,7 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 	client := clientManager.NewHttpClient()
 	method := "DELETE"
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -944,7 +944,7 @@ func RefineSubnet(nsId string, vNetId string, subnetId string) (model.SimpleMsg,
 
 	var spResp spiderSubnetInfo
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1169,7 +1169,7 @@ func RegisterSubnet(nsId string, vNetId string, subnetReq *model.RegisterSubnetR
 		}
 	}()
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1383,7 +1383,7 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 	client := clientManager.NewHttpClient()
 	method := "DELETE"
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

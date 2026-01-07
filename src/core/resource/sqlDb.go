@@ -243,7 +243,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 
 		resTrInfo := new(terrariumModel.TerrariumInfo)
 
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -271,7 +271,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 		requestBody := clientManager.NoBody
 		resTerrariumEnv := new(model.Response)
 
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -316,7 +316,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 
 		resInfracode := new(model.Response)
 
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -349,7 +349,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 
 		resInfracode := new(model.Response)
 
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -381,7 +381,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 
 		resInfracode := new(model.Response)
 
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -412,7 +412,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 
 		resInfracode := new(model.Response)
 
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			url,
@@ -444,7 +444,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 	requestBody := clientManager.NoBody
 	resPlan := new(model.Response)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -471,7 +471,7 @@ func CreateSqlDB(nsId string, sqlDbReq *model.RestPostSqlDBRequest, retry string
 	requestBody = clientManager.NoBody
 	resApply := new(model.Response)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -636,7 +636,7 @@ func GetSqlDB(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -664,7 +664,7 @@ func GetSqlDB(nsId string, sqlDbId string, detail string) (model.SqlDBInfo, erro
 	requestBody = clientManager.NoBody
 	resResourceInfo := new(model.Response)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -807,7 +807,7 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -833,7 +833,7 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 	requestBody = clientManager.NoBody
 	resDeleteEnrichments := new(model.Response)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -858,7 +858,7 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 	requestBody = clientManager.NoBody
 	resDeleteEnv := new(model.Response)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -883,7 +883,7 @@ func DeleteSqlDB(nsId string, sqlDbId string) (model.SimpleMsg, error) {
 	requestBody = clientManager.NoBody
 	resDeleteTr := new(model.Response)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -989,7 +989,7 @@ func GetRequestStatusOfSqlDB(nsId string, sqlDbId string, reqId string) (model.R
 	requestBody := clientManager.NoBody
 	resTrInfo := new(terrariumModel.TerrariumInfo)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -1015,7 +1015,7 @@ func GetRequestStatusOfSqlDB(nsId string, sqlDbId string, reqId string) (model.R
 	reqReqStatus := clientManager.NoBody
 	resReqStatus := new(model.Response)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

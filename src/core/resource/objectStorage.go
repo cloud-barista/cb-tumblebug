@@ -14,998 +14,769 @@ limitations under the License.
 // Package resource is to manage multi-cloud infra resource
 package resource
 
-// import (
-// 	"encoding/json"
-// 	"fmt"
-// 	"os"
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
 
-// 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-// 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
-// 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
-// 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
-// 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
-// 	terrariumModel "github.com/cloud-barista/mc-terrarium/pkg/api/rest/model"
-// 	"github.com/go-resty/resty/v2"
-// 	"github.com/rs/zerolog/log"
-// )
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
+	validator "github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
+)
 
-// // ObjectStorageStatus represents the status of a network resource.
-// type ObjectStorageStatus string
+type ObjectStorageStatus string
 
-// const (
+const (
+	// CRUD operations
+	ObjectStorageOnConfiguring ObjectStorageStatus = "Configuring" // The object storage is being configured.
+	ObjectStorageOnDeleting    ObjectStorageStatus = "Deleting"    // The object storage is being deleted.
 
-// 	// CRUD operations
-// 	ObjectStorageOnConfiguring ObjectStorageStatus = "Configuring" // Resources are being configured.
-// 	// ObjectStorageOnReading     ObjectStorageStatus = "Reading"     // The network information is being read.
-// 	// ObjectStorageOnUpdating    ObjectStorageStatus = "Updating"    // The network is being updated.
-// 	ObjectStorageOnDeleting ObjectStorageStatus = "Deleting" // The network is being deleted.
-// 	// // ObjectStorageOnRefinining  ObjectStorageStatus = "Refining"    // The network is being refined.
+	// Available status
+	ObjectStorageAvailable ObjectStorageStatus = "Available" // The object storage is fully created and ready for use.
 
-// 	// // Register/deregister operations
-// 	// ObjectStorageOnRegistering   ObjectStorageStatus = "Registering"  // The network is being registered.
-// 	// ObjectStorageOnDeregistering ObjectStorageStatus = "Dergistering" // The network is being registered.
+	// Error Handling
+	ObjectStorageError              ObjectStorageStatus = "Error"              // An error occurred during a CRUD operation.
+	ObjectStorageErrorOnConfiguring ObjectStorageStatus = "ErrorOnConfiguring" // An error occurred during the configuring operation.
+	ObjectStorageErrorOnDeleting    ObjectStorageStatus = "ErrorOnDeleting"    // An error occurred during the deleting operation.
+)
 
-// 	// NetworkAvailable status
-// 	ObjectStorageAvailable ObjectStorageStatus = "Available" // The network is fully created and ready for use.
+// ========== Resource APIs: Object Storage ==========
 
-// 	// // In Use status
-// 	// ObjectStorageInUse ObjectStorageStatus = "InUse" // The network is currently in use.
+// spiderListBucketRes represents the response structure from Spider for listing S3 buckets
+type spiderListBucketRes struct {
+	Owner   spiderOwner   `xml:"Owner" json:"owner"`
+	Buckets spiderBuckets `xml:"Buckets" json:"buckets"`
+}
 
-// 	// // Unknwon status
-// 	// ObjectStorageUnknown ObjectStorageStatus = "Unknown" // The network status is unknown.
+// spiderOwner represents the owner information in S3 bucket list response
+type spiderOwner struct {
+	ID          string `xml:"ID" json:"ID" example:"aws-ap-northeast-2"`
+	DisplayName string `xml:"DisplayName" json:"DisplayName" example:"aws-ap-northeast-2"`
+}
 
-// 	// // ObjectStorageError Handling
-// 	// ObjectStorageError              ObjectStorageStatus = "Error"              // An error occurred during a CRUD operation.
-// 	// ObjectStorageErrorOnConfiguring ObjectStorageStatus = "ErrorOnConfiguring" // An error occurred during the configuring operation.
-// 	// ObjectStorageErrorOnReading     ObjectStorageStatus = "ErrorOnReading"     // An error occurred during the reading operation.
-// 	// ObjectStorageErrorOnUpdating    ObjectStorageStatus = "ErrorOnUpdating"    // An error occurred during the updating operation.
-// 	// ObjectStorageErrorOnDeleting    ObjectStorageStatus = "ErrorOnDeleting"    // An error occurred during the deleting operation.
-// 	// ObjectStorageErrorOnRegistering ObjectStorageStatus = "ErrorOnRegistering" // An error occurred during the registering operation.
-// )
+// spiderBucket represents a single bucket in S3 bucket list response
+type spiderBucket struct {
+	Name         string `xml:"Name" json:"Name" example:"spider-test-bucket"`
+	CreationDate string `xml:"CreationDate" json:"CreationDate" example:"2025-09-04T04:18:06Z"`
+}
 
-// type ObjectStorageAction string
+// spiderBuckets represents the collection of buckets in S3 bucket list response
+type spiderBuckets struct {
+	Bucket []spiderBucket `xml:"Bucket" json:"Bucket"`
+}
 
-// var validCspForObjectStorage = map[string]bool{
-// 	"aws":   true,
-// 	"azure": true,
-// 	"gcp":   true,
-// 	"ncp":   true,
-// 	// "alibaba": true,
-// 	// "nhn":     true,
-// 	// "kt":      true,
+// spiderGetBucketInfoRes represents a single bucket in S3 bucket list response
+type spiderGetBucketInfoRes struct {
+	Name         string         `xml:"Name" json:"Name" example:"spider-test-bucket"`
+	Prefix       string         `xml:"Prefix" json:"Prefix" example:""`
+	Marker       string         `xml:"Marker" json:"Marker" example:""`
+	MaxKeys      int            `xml:"MaxKeys" json:"MaxKeys" example:"1000"`
+	IsTruncated  bool           `xml:"IsTruncated" json:"IsTruncated" example:"false"`
+	CreationDate string         `xml:"CreationDate" json:"CreationDate" example:"2025-09-04T04:18:06Z"`
+	Contents     []spiderObject `xml:"Contents" json:"Contents"`
+}
 
-// 	// Add more CSPs here
-// }
+// spiderObject represents a single object in the S3 bucket
+type spiderObject struct {
+	Key          string `xml:"Key" json:"Key" example:"test-object.txt"`
+	LastModified string `xml:"LastModified" json:"LastModified" example:"2025-09-04T04:18:06Z"`
+	ETag         string `xml:"ETag" json:"ETag" example:"9b2cf535f27731c974343645a3985328"`
+	Size         int64  `xml:"Size" json:"Size" example:"1024"`
+	StorageClass string `xml:"StorageClass" json:"StorageClass" example:"STANDARD"`
+}
 
-// func IsValidCspForObjectStorage(csp string) (bool, error) {
-// 	if !validCspForObjectStorage[csp] {
-// 		return false, fmt.Errorf("currently not supported CSP, %s", csp)
-// 	}
-// 	return true, nil
-// }
+// spiderObjectStorageCreateRequest represents the request structure to create an S3 bucket in Spider
+type spiderObjectStorageCreateRequest struct {
+	BucketName     string `xml:"BucketName" json:"BucketName" validate:"required" example:"globally-unique-bucket-name-12345"`
+	ConnectionName string `xml:"ConnectionName" json:"ConnectionName" validate:"required" example:"aws-ap-northeast-2"`
+}
 
-// // func whichCspForObjectStorage(csp1, csp2 string) string {
-// // 	return csp1 + "," + csp2
-// // }
+type spiderObjectStorageLocationResponse struct {
+	LocationConstraint string `xml:"LocationConstraint" json:"LocationConstraint" example:"ap-northeast-2"`
+}
 
-// // CreateObjectStorage creates a SQL database via Terrarium
-// func CreateObjectStorage(nsId string, objectStorageReq *model.RestPostObjectStorageRequest, retry string) (model.ObjectStorageInfo, error) {
+// CreateObjectStorage creates a new object storage (bucket) in the specified namespace
+func CreateObjectStorage(nsId string, req model.ObjectStorageCreateRequest) (model.ObjectStorageInfo, error) {
 
-// 	// Object Storage objects
-// 	var emptyRet model.ObjectStorageInfo
-// 	var objectStorageInfo model.ObjectStorageInfo
-// 	var err error = nil
-// 	var retried bool = (retry == "retry")
+	var emptyRet model.ObjectStorageInfo
+	var objStrgInfo model.ObjectStorageInfo
 
-// 	/*
-// 	 * Validate the input parameters
-// 	 */
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = validate.Struct(req)
+	if err != nil {
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			log.Error().Err(err).Msg("")
+			return emptyRet, err
+		}
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
 
-// 	err = common.CheckString(nsId)
+	err = common.CheckString(req.BucketName)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	_, err = common.GetConnConfig(req.ConnectionName)
+	if err != nil {
+		err = fmt.Errorf("cannot retrieve ConnectionConfig %s", err.Error())
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// 2. Set the resource type
+	resourceType := model.StrObjectStorage
+
+	// 3. Set the object storage info in advance
+	objStrgInfo.ResourceType = resourceType
+	objStrgInfo.Name = req.BucketName
+	objStrgInfo.Id = req.BucketName
+	// objStrgInfo.Uid = uid             // Set this below, before call to Spider for retry if conflict occurs
+	// objStrgInfo.CspResourceName = ""  // Set this after creation
+	// objStrgInfo.CspResourceId = ""    // Set this after creation
+	objStrgInfo.ConnectionName = req.ConnectionName
+	objStrgInfo.ConnectionConfig, err = common.GetConnConfig(req.ConnectionName)
+	if err != nil {
+		err = fmt.Errorf("cannot retrieve ConnectionConfig %s", err.Error())
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	objStrgInfo.Description = req.Description
+
+	// todo ? restore the tag list later
+	// objStrgInfo.TagList = req.TagList
+
+	// 4. Set a objectStorageKey for the object storage info
+	objStrgKey := common.GenResourceKey(nsId, resourceType, objStrgInfo.Id)
+
+	// 5. Check if the objectStorage already exists or not
+	exists, err := CheckResource(nsId, resourceType, objStrgInfo.Id)
+	if exists {
+		log.Error().Err(err).Msg("")
+		err := fmt.Errorf("already exists, object storage: %s", objStrgInfo.Id)
+		return emptyRet, err
+	}
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		err := fmt.Errorf("failed to check if the object storage (%s) exists or not", objStrgInfo.Id)
+		return emptyRet, err
+	}
+
+	// 6. Set and store status to the key-value store
+	objStrgInfo.Status = string(ObjectStorageOnConfiguring)
+	val, err := json.Marshal(objStrgInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = kvstore.Put(objStrgKey, string(val))
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// 7. Call Spider API to create the object storage and retry if conflict occurs
+
+	client := clientManager.NewHttpClient()
+	method := "PUT"
+	spResp := clientManager.NoBody
+
+	var uid string
+	var spReq spiderObjectStorageCreateRequest
+
+	maxRetries := 5
+	retryCount := 0
+
+	for {
+		uid = common.GenUid()
+		spReq = spiderObjectStorageCreateRequest{}
+		spReq.ConnectionName = req.ConnectionName
+		spReq.BucketName = uid
+
+		log.Debug().Msgf("spReqt: %+v", spReq)
+		// defer function to handle failure case
+
+		url := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, spReq.BucketName, spReq.ConnectionName)
+		log.Debug().Msgf("[Request to Spider] Creating a object storage (url: %s, request body: %+v)", url, spReq)
+
+		restyResp, err := clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			clientManager.SetUseBody(spReq),
+			&spReq,
+			&spResp,
+			clientManager.ShortDuration,
+		)
+
+		if err != nil {
+			if restyResp != nil && restyResp.StatusCode() == http.StatusConflict {
+				retryCount++
+				if retryCount >= maxRetries {
+					err = fmt.Errorf("failed to create object storage after %d retries", maxRetries)
+					log.Error().Err(err).Msg("")
+					return emptyRet, err
+				}
+				log.Warn().Msgf("Conflict detected for bucket name %s, retrying... (%d/%d)", spReq.BucketName, retryCount, maxRetries)
+				continue
+			} else {
+				log.Error().Err(err).Msg("")
+				return emptyRet, err
+			}
+		}
+
+		log.Debug().Msgf("[Response from Spider] Creating a object storage (No response body): %+v", spResp)
+		break
+	}
+	// Set the final values after successful creation
+	objStrgInfo.Uid = uid
+
+	// 8. Call Spider API to get the created object storage info
+	// Currently, there is no specific response body from Spider for object storage creation.
+
+	client = clientManager.NewHttpClient()
+	method = "GET"
+	spGetBucketInfoReq := clientManager.NoBody
+	spGetBucketInfoRes := spiderGetBucketInfoRes{}
+	url := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, objStrgInfo.Uid, req.ConnectionName)
+	log.Debug().Msgf("[Request to Spider] Getting the created object storage info (url: %s)", url)
+
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spGetBucketInfoReq),
+		&spGetBucketInfoReq,
+		&spGetBucketInfoRes,
+		clientManager.ShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	log.Debug().Msgf("[Response from Spider] Getting the created object storage info: %+v", spGetBucketInfoRes)
+
+	// 9. Set the object storage info
+	// TODO: Set CspResourceName and CspResourceId if available from Spider response
+	// objStrgInfo.CspResourceName = spGetBucketInfoRes.IId.NameId
+	// objStrgInfo.CspResourceId = spGetBucketInfoRes.IId.SystemId
+	objStrgInfo.Prefix = spGetBucketInfoRes.Prefix
+	objStrgInfo.Marker = spGetBucketInfoRes.Marker
+	objStrgInfo.MaxKeys = spGetBucketInfoRes.MaxKeys
+	objStrgInfo.IsTruncated = spGetBucketInfoRes.IsTruncated
+	objStrgInfo.CreationDate = spGetBucketInfoRes.CreationDate
+
+	var contents []model.Object
+	for _, spObj := range spGetBucketInfoRes.Contents {
+		obj := model.Object{
+			Key:          spObj.Key,
+			LastModified: spObj.LastModified,
+			ETag:         spObj.ETag,
+			Size:         spObj.Size,
+			StorageClass: spObj.StorageClass,
+		}
+		contents = append(contents, obj)
+	}
+	objStrgInfo.Contents = contents
+
+	// 10. Store the object storage info to the key-value store
+	objStrgInfo.Status = string(ObjectStorageAvailable)
+	val, err = json.Marshal(objStrgInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = kvstore.Put(objStrgKey, string(val))
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// 11. Check if the object storage is stored or not
+	storedObjStrgInfo, exists, err := kvstore.GetKv(objStrgKey)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	if !exists {
+		err = fmt.Errorf("not found after creation, object storage: %s", objStrgInfo.Id)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = json.Unmarshal([]byte(storedObjStrgInfo.Value), &objStrgInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// 12. Store label info using CreateOrUpdateLabel
+	labels := map[string]string{
+		model.LabelManager:         model.StrManager,
+		model.LabelNamespace:       nsId,
+		model.LabelLabelType:       model.StrObjectStorage,
+		model.LabelId:              objStrgInfo.Id,
+		model.LabelName:            objStrgInfo.Name,
+		model.LabelUid:             objStrgInfo.Uid,
+		model.LabelCspResourceId:   objStrgInfo.CspResourceId,
+		model.LabelCspResourceName: objStrgInfo.CspResourceName,
+		model.LabelStatus:          objStrgInfo.Status,
+		model.LabelDescription:     objStrgInfo.Description,
+		model.LabelConnectionName:  objStrgInfo.ConnectionName,
+	}
+
+	err = label.CreateOrUpdateLabel(model.StrObjectStorage, objStrgInfo.Uid, objStrgKey, labels)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// 13. Return the object storage info
+	return objStrgInfo, nil
+}
+
+// // ListObjectStorages retrieves the list of object storages (buckets) from the specified namespace
+// func ListObjectStorages(nsId string) (model.ObjectStorageListResponse, error) {
+
+// 	var emptyRet model.ObjectStorageListResponse
+
+// 	// 1. Validate input parameters
+// 	err := common.CheckString(nsId)
 // 	if err != nil {
 // 		log.Error().Err(err).Msg("")
 // 		return emptyRet, err
 // 	}
-// 	err = common.CheckString(objectStorageReq.Name)
+// 	err = validate.Struct(req)
 // 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	ok, err := IsValidCspForObjectStorage(objectStorageReq.CSP)
-// 	if !ok {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-
-// 	// Check the CSPs of the sites
-// 	switch objectStorageReq.CSP {
-// 	case "aws":
-// 		// TODO: Check if the subnets are in the different AZs
-// 		//
-
-// 	case "azure":
-// 		// Check the required CSP resources
-// 		if objectStorageReq.RequiredCSPResource.Azure.ResourceGroup == "" {
-// 			err = fmt.Errorf("required Azure resource group is empty")
+// 		if _, ok := err.(*validator.InvalidValidationError); ok {
 // 			log.Error().Err(err).Msg("")
 // 			return emptyRet, err
 // 		}
-// 	}
-
-// 	// Set the resource type
-// 	resourceType := model.StrObjectStorage
-
-// 	// Set the Object Storage object in advance
-// 	uid := common.GenUid()
-// 	objectStorageInfo.ResourceType = resourceType
-// 	objectStorageInfo.Name = objectStorageReq.Name
-// 	objectStorageInfo.Id = objectStorageReq.Name
-// 	objectStorageInfo.Uid = uid
-// 	objectStorageInfo.Description = "Object Storage at " + objectStorageReq.Region + " in " + objectStorageReq.CSP
-// 	objectStorageInfo.ConnectionName = objectStorageReq.ConnectionName
-// 	objectStorageInfo.ConnectionConfig, err = common.GetConnConfig(objectStorageInfo.ConnectionName)
-// 	if err != nil {
-// 		err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
-// 		log.Error().Err(err).Msg("")
-// 	}
-
-// 	// Set a objectStorageKey for the Object Storage object
-// 	objectStorageKey := common.GenResourceKey(nsId, resourceType, objectStorageInfo.Id)
-// 	// Check if the Object Storage resource already exists or not
-// 	exists, err := CheckResource(nsId, resourceType, objectStorageInfo.Id)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		err := fmt.Errorf("failed to check if the resource type, %s (%s) exists or not", resourceType, objectStorageInfo.Id)
-// 		return emptyRet, err
-// 	}
-// 	// For retry, read the stored Object Storage info if exists
-// 	if exists {
-// 		if !retried {
-// 			err := fmt.Errorf("already exists, Object Storage: %s", objectStorageInfo.Id)
-// 			log.Error().Err(err).Msg("")
-// 			return emptyRet, err
-// 		}
-
-// 		// Read the stored Object Storage info
-// 		objectStorageKv, _, err := kvstore.GetKv(objectStorageKey)
-// 		if err != nil {
-// 			log.Error().Err(err).Msg("")
-// 			return emptyRet, err
-// 		}
-// 		err = json.Unmarshal([]byte(objectStorageKv.Value), &objectStorageInfo)
-// 		if err != nil {
-// 			log.Error().Err(err).Msg("")
-// 			return emptyRet, err
-// 		}
-
-// 		objectStorageInfo.Name = objectStorageReq.Name
-// 		objectStorageInfo.Id = objectStorageReq.Name
-// 		objectStorageInfo.Description = "Object Storage at " + objectStorageReq.Region + " in " + objectStorageReq.CSP
-// 		objectStorageInfo.ConnectionName = objectStorageReq.ConnectionName
-// 		objectStorageInfo.ConnectionConfig, err = common.GetConnConfig(objectStorageInfo.ConnectionName)
-// 		if err != nil {
-// 			err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
-// 			log.Error().Err(err).Msg("")
-// 		}
-// 	}
-
-// 	// [Set and store status]
-// 	objectStorageInfo.Status = string(ObjectStorageOnConfiguring)
-// 	val, err := json.Marshal(objectStorageInfo)
-// 	if err != nil {
 // 		log.Error().Err(err).Msg("")
 // 		return emptyRet, err
 // 	}
-// 	err = kvstore.Put(objectStorageKey, string(val))
+// 	_, err = common.GetConnConfig(req.ConnectionName)
 // 	if err != nil {
+// 		err = fmt.Errorf("cannot retrieve ConnectionConfig %s", err.Error())
 // 		log.Error().Err(err).Msg("")
 // 		return emptyRet, err
 // 	}
 
-// 	log.Debug().Msgf("Object Storage Info(initial): %+v", objectStorageInfo)
-
-// 	/*
-// 	 * [Via Terrarium] Create a Object Storage
-// 	 */
-
-// 	// Initialize resty client with basic auth
-// 	client := resty.New()
-// 	apiUser := os.Getenv("TB_API_USERNAME")
-// 	apiPass := os.Getenv("TB_API_PASSWORD")
-// 	client.SetBasicAuth(apiUser, apiPass)
-
-// 	// Set Terrarium endpoint
-// 	epTerrarium := model.TerrariumRestUrl
-
-// 	// Set a terrarium ID
-// 	trId := objectStorageInfo.Uid
-
-// 	if !retried {
-// 		// Issue a terrarium
-// 		method := "POST"
-// 		url := fmt.Sprintf("%s/tr", epTerrarium)
-// 		reqTr := new(terrariumModel.TerrariumInfo)
-// 		reqTr.Id = trId
-// 		reqTr.Description = "Object Storage at " + objectStorageReq.Region + " in " + objectStorageReq.CSP
-
-// 		resTrInfo := new(terrariumModel.TerrariumInfo)
-
-// 		err = clientManager.ExecuteHttpRequest(
-// 			client,
-// 			method,
-// 			url,
-// 			nil,
-// 			clientManager.SetUseBody(*reqTr),
-// 			reqTr,
-// 			resTrInfo,
-// 			clientManager.VeryShortDuration,
-// 		)
-
-// 		if err != nil {
-// 			log.Err(err).Msg("")
-// 			return emptyRet, err
-// 		}
-
-// 		log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
-// 		log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
-
-// 		// init env
-// 		method = "POST"
-// 		url = fmt.Sprintf("%s/tr/%s/object-storage/env", epTerrarium, trId)
-// 		queryParams := "provider=" + objectStorageReq.CSP
-// 		url += "?" + queryParams
-
-// 		requestBody := clientManager.NoBody
-// 		resTerrariumEnv := new(model.Response)
-
-// 		err = clientManager.ExecuteHttpRequest(
-// 			client,
-// 			method,
-// 			url,
-// 			nil,
-// 			clientManager.SetUseBody(requestBody),
-// 			&requestBody,
-// 			resTerrariumEnv,
-// 			clientManager.VeryShortDuration,
-// 		)
-
-// 		if err != nil {
-// 			log.Err(err).Msg("")
-// 			return emptyRet, err
-// 		}
-
-// 		log.Debug().Msgf("resInit: %+v", resTerrariumEnv.Message)
-// 		log.Trace().Msgf("resInit: %+v", resTerrariumEnv.Detail)
-// 	}
-
-// 	/*
-// 	 * [Via Terrarium] Generate the infracode for the Object Storage of each CSP
-// 	 */
-// 	switch objectStorageReq.CSP {
-// 	case "aws":
-// 		// generate infracode
-// 		method := "POST"
-// 		url := fmt.Sprintf("%s/tr/%s/object-storage/infracode", epTerrarium, trId)
-// 		reqInfracode := new(terrariumModel.CreateInfracodeOfObjectStorageRequest)
-// 		reqInfracode.TfVars.TerrariumID = trId
-// 		reqInfracode.TfVars.CSPRegion = objectStorageReq.Region
-// 		// reqInfracode.TfVars.CSPResourceGroup
-
-// 		resInfracode := new(model.Response)
-
-// 		err = clientManager.ExecuteHttpRequest(
-// 			client,
-// 			method,
-// 			url,
-// 			nil,
-// 			clientManager.SetUseBody(*reqInfracode),
-// 			reqInfracode,
-// 			resInfracode,
-// 			clientManager.VeryShortDuration,
-// 		)
-
-// 		if err != nil {
-// 			log.Err(err).Msg("")
-// 			return emptyRet, err
-// 		}
-// 		log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
-// 		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
-
-// 	case "azure":
-// 		// generate infracode
-// 		method := "POST"
-// 		url := fmt.Sprintf("%s/tr/%s/object-storage/infracode", epTerrarium, trId)
-// 		reqInfracode := new(terrariumModel.CreateInfracodeOfObjectStorageRequest)
-// 		reqInfracode.TfVars.TerrariumID = trId
-// 		reqInfracode.TfVars.CSPRegion = objectStorageReq.Region
-// 		reqInfracode.TfVars.CSPResourceGroup = objectStorageReq.RequiredCSPResource.Azure.ResourceGroup
-
-// 		resInfracode := new(model.Response)
-
-// 		err = clientManager.ExecuteHttpRequest(
-// 			client,
-// 			method,
-// 			url,
-// 			nil,
-// 			clientManager.SetUseBody(*reqInfracode),
-// 			reqInfracode,
-// 			resInfracode,
-// 			clientManager.VeryShortDuration,
-// 		)
-
-// 		if err != nil {
-// 			log.Err(err).Msg("")
-// 			return emptyRet, err
-// 		}
-// 		log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
-// 		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
-
-// 	// case "gcp":
-// 	// 	// generate infracode
-// 	// 	method := "POST"
-// 	// 	url := fmt.Sprintf("%s/tr/%s/object-storage/infracode", epTerrarium, trId)
-// 	// 	reqInfracode := new(terrariumModel.CreateInfracodeOfObjectStorageRequest)
-// 	// 	reqInfracode.TfVars.TerrariumID = trId
-// 	// 	reqInfracode.TfVars.CSPRegion = objectStorageReq.Region
-
-// 	// 	resInfracode := new(model.Response)
-
-// 	// 	err = clientManager.ExecuteHttpRequest(
-// 	// 		client,
-// 	// 		method,
-// 	// 		url,
-// 	// 		nil,
-// 	// 		clientManager.SetUseBody(*reqInfracode),
-// 	// 		reqInfracode,
-// 	// 		resInfracode,
-// 	// 		clientManager.VeryShortDuration,
-// 	// 	)
-
-// 	// 	if err != nil {
-// 	// 		log.Err(err).Msg("")
-// 	// 		return emptyRet, err
-// 	// 	}
-// 	// 	log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
-// 	// 	log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
-
-// 	// case "ncp":
-// 	// 	// generate infracode
-// 	// 	method := "POST"
-// 	// 	url := fmt.Sprintf("%s/tr/%s/object-storage/infracode", epTerrarium, trId)
-// 	// 	reqInfracode := new(terrariumModel.CreateInfracodeOfObjectStorageRequest)
-// 	// 	reqInfracode.TfVars.TerrariumID = trId
-// 	// 	reqInfracode.TfVars.CSPRegion = objectStorageReq.Region
-
-// 	// 	resInfracode := new(model.Response)
-
-// 	// 	err = clientManager.ExecuteHttpRequest(
-// 	// 		client,
-// 	// 		method,
-// 	// 		url,
-// 	// 		nil,
-// 	// 		clientManager.SetUseBody(*reqInfracode),
-// 	// 		reqInfracode,
-// 	// 		resInfracode,
-// 	// 		clientManager.VeryShortDuration,
-// 	// 	)
-
-// 	// 	if err != nil {
-// 	// 		log.Err(err).Msg("")
-// 	// 		return emptyRet, err
-// 	// 	}
-// 	// 	log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
-// 	// 	log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
-
-// 	default:
-// 		log.Warn().Msgf("not valid CSP: %s", objectStorageReq.CSP)
-// 	}
-
-// 	/*
-// 	 * [Via Terrarium] Check the infracode
-// 	 */
-
-// 	// check the infracode (by `tofu plan`)
-// 	method := "POST"
-// 	url := fmt.Sprintf("%s/tr/%s/object-storage/plan", epTerrarium, trId)
-// 	requestBody := clientManager.NoBody
-// 	resPlan := new(model.Response)
-
-// 	err = clientManager.ExecuteHttpRequest(
-// 		client,
-// 		method,
-// 		url,
-// 		nil,
-// 		clientManager.SetUseBody(requestBody),
-// 		&requestBody,
-// 		resPlan,
-// 		clientManager.VeryShortDuration,
-// 	)
-
-// 	if err != nil {
-// 		log.Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	log.Debug().Msgf("resPlan: %+v", resPlan.Message)
-// 	log.Trace().Msgf("resPlan: %+v", resPlan.Detail)
-
-// 	// apply
-// 	// wait until the task is completed
-// 	// or response immediately with requestId as it is a time-consuming task
-// 	// and provide seperate api to check the status
-// 	method = "POST"
-// 	url = fmt.Sprintf("%s/tr/%s/object-storage", epTerrarium, trId)
-// 	requestBody = clientManager.NoBody
-// 	resApply := new(model.Response)
-
-// 	err = clientManager.ExecuteHttpRequest(
-// 		client,
-// 		method,
-// 		url,
-// 		nil,
-// 		clientManager.SetUseBody(requestBody),
-// 		&requestBody,
-// 		resApply,
-// 		clientManager.VeryShortDuration,
-// 	)
-
-// 	if err != nil {
-// 		log.Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	log.Debug().Msgf("resApply: %+v", resApply.Message)
-// 	log.Trace().Msgf("resApply: %+v", resApply.Detail)
-
-// 	// Set the Object Storage info
-// 	var trObjectStorageInfo terrariumModel.OutputObjectStorageInfo
-// 	jsonData, err := json.Marshal(resApply.Object)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 	}
-// 	err = json.Unmarshal(jsonData, &trObjectStorageInfo)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 	}
-
-// 	objectStorageInfo.CspResourceId = ""
-// 	objectStorageInfo.CspResourceName = trObjectStorageInfo.ObjectStorageDetail.StorageName
-// 	objectStorageInfo.Details = trObjectStorageInfo.ObjectStorageDetail
-
-// 	/*
-// 	 * Set opeartion status and store objectStorageInfo
-// 	 */
-
-// 	objectStorageInfo.Status = string(ObjectStorageAvailable)
-
-// 	log.Debug().Msgf("Object Storage Info(final): %+v", objectStorageInfo)
-
-// 	value, err := json.Marshal(objectStorageInfo)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	err = kvstore.Put(objectStorageKey, string(value))
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-
-// 	// Check if the Object Storage info is stored
-// 	objectStorageKv, exists, err := kvstore.GetKv(objectStorageKey)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	if !exists {
-// 		err := fmt.Errorf("does not exist, Object Storage: %s", objectStorageInfo.Id)
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	err = json.Unmarshal([]byte(objectStorageKv.Value), &objectStorageInfo)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-
-// 	// Store label info using CreateOrUpdateLabel
-// 	labels := map[string]string{
-// 		model.LabelManager:         model.StrManager,
-// 		model.LabelNamespace:       nsId,
-// 		model.LabelLabelType:       model.StrObjectStorage,
-// 		model.LabelId:              objectStorageInfo.Id,
-// 		model.LabelName:            objectStorageInfo.Name,
-// 		model.LabelUid:             objectStorageInfo.Uid,
-// 		model.LabelCspResourceId:   objectStorageInfo.CspResourceId,
-// 		model.LabelCspResourceName: objectStorageInfo.CspResourceName,
-// 		model.LabelStatus:          objectStorageInfo.Status,
-// 		model.LabelDescription:     objectStorageInfo.Description,
-// 	}
-// 	err = label.CreateOrUpdateLabel(model.StrObjectStorage, objectStorageInfo.Uid, objectStorageKey, labels)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-
-// 	return objectStorageInfo, nil
-// }
-
-// // GetObjectStorage returns a Object Storage via Terrarium
-// func GetObjectStorage(nsId string, objectStorageId string, detail string) (model.ObjectStorageInfo, error) {
-
-// 	var emptyRet model.ObjectStorageInfo
-// 	var objectStorageInfo model.ObjectStorageInfo
-// 	var err error = nil
-// 	/*
-// 	 * Validate the input parameters
-// 	 */
-
-// 	err = common.CheckString(nsId)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	err = common.CheckString(objectStorageId)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	if detail != "refined" && detail != "raw" && detail != "" {
-// 		err = fmt.Errorf("not valid detail: %s", detail)
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	if detail == "" {
-// 		log.Warn().Msg("detail is empty, set to refined")
-// 		detail = "refined"
-// 	}
-
-// 	// Set the resource type
-// 	resourceType := model.StrObjectStorage
-
-// 	// Set a objectStorageKey for the Object Storage object
-// 	objectStorageKey := common.GenResourceKey(nsId, resourceType, objectStorageId)
-// 	// Check if the Object Storage resource already exists or not
-// 	exists, err := CheckResource(nsId, resourceType, objectStorageId)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		err := fmt.Errorf("failed to check if the Object Storage(%s) exists or not", objectStorageId)
-// 		return emptyRet, err
-// 	}
-// 	if !exists {
-// 		err := fmt.Errorf("does not exist, Object Storage: %s", objectStorageId)
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-
-// 	// Read the stored Object Storage info
-// 	objectStorageKv, _, err := kvstore.GetKv(objectStorageKey)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	err = json.Unmarshal([]byte(objectStorageKv.Value), &objectStorageInfo)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-
-// 	// Initialize resty client with basic auth
-// 	client := resty.New()
-// 	apiUser := os.Getenv("TB_API_USERNAME")
-// 	apiPass := os.Getenv("TB_API_PASSWORD")
-// 	client.SetBasicAuth(apiUser, apiPass)
-
-// 	trId := objectStorageInfo.Uid
-
-// 	// set endpoint
-// 	epTerrarium := model.TerrariumRestUrl
-
-// 	// Get the terrarium info
+// 	// 2. Call Spider API to list the object storages
+// 	client := clientManager.NewHttpClient()
 // 	method := "GET"
-// 	url := fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
-// 	requestBody := clientManager.NoBody
-// 	resTrInfo := new(terrariumModel.TerrariumInfo)
+// 	spReq := clientManager.NoBody
+// 	spResp := spiderListBucketRes{}
 
-// 	err = clientManager.ExecuteHttpRequest(
+// 	url := fmt.Sprintf("%s/s3?ConnectionName=%s", model.SpiderRestUrl, req.ConnectionName)
+// 	log.Debug().Msgf("[Request to Spider] Listing S3 buckets (url: %s)", url)
+
+// 	_, err = clientManager.ExecuteHttpRequest(
 // 		client,
 // 		method,
 // 		url,
 // 		nil,
-// 		clientManager.SetUseBody(requestBody),
-// 		&requestBody,
-// 		resTrInfo,
-// 		clientManager.VeryShortDuration,
+// 		clientManager.SetUseBody(spReq),
+// 		&spReq,
+// 		&spResp,
+// 		clientManager.ShortDuration,
 // 	)
 
 // 	if err != nil {
-// 		log.Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-
-// 	log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
-// 	log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
-
-// 	// e.g. "object-storage"
-// 	enrichments := resTrInfo.Enrichments
-
-// 	// Get resource info
-// 	method = "GET"
-// 	url = fmt.Sprintf("%s/tr/%s/%s?detail=%s", epTerrarium, trId, enrichments, detail)
-// 	requestBody = clientManager.NoBody
-// 	resResourceInfo := new(model.Response)
-
-// 	err = clientManager.ExecuteHttpRequest(
-// 		client,
-// 		method,
-// 		url,
-// 		nil,
-// 		clientManager.SetUseBody(requestBody),
-// 		&requestBody,
-// 		resResourceInfo,
-// 		clientManager.VeryShortDuration,
-// 	)
-
-// 	if err != nil {
-// 		log.Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-
-// 	var trObjectStorageInfo terrariumModel.OutputObjectStorageInfo
-// 	jsonData, err := json.Marshal(resResourceInfo.Object)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 	}
-// 	err = json.Unmarshal(jsonData, &trObjectStorageInfo)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 	}
-
-// 	objectStorageInfo.CspResourceId = ""
-// 	objectStorageInfo.CspResourceName = trObjectStorageInfo.ObjectStorageDetail.StorageName
-// 	objectStorageInfo.Details = trObjectStorageInfo.ObjectStorageDetail
-
-// 	log.Debug().Msgf("Object Storage Info(final): %+v", objectStorageInfo)
-
-// 	value, err := json.Marshal(objectStorageInfo)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	err = kvstore.Put(objectStorageKey, string(value))
-// 	if err != nil {
 // 		log.Error().Err(err).Msg("")
 // 		return emptyRet, err
 // 	}
 
-// 	// Check if the Object Storage info is stored
-// 	objectStorageKv, exists, err = kvstore.GetKv(objectStorageKey)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	if !exists {
-// 		err := fmt.Errorf("does not exist, Object Storage: %s", objectStorageInfo.Id)
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	err = json.Unmarshal([]byte(objectStorageKv.Value), &objectStorageInfo)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
+// 	log.Debug().Msgf("[Response from Spider] Listing S3 buckets: %+v", spResp)
+
+// 	// 3. Convert spiderListBucketRes to model.ObjectStorageListResponse
+// 	var buckets model.Buckets
+// 	for _, spBucket := range spResp.Buckets.Bucket {
+// 		bucket := model.Bucket{
+// 			Name:         spBucket.Name,
+// 			CreationDate: spBucket.CreationDate,
+// 		}
+// 		buckets.Bucket = append(buckets.Bucket, bucket)
 // 	}
 
-// 	return objectStorageInfo, nil
+// 	listResp := model.ObjectStorageListResponse{
+// 		Owner: model.Owner{
+// 			ID:          spResp.Owner.ID,
+// 			DisplayName: spResp.Owner.DisplayName,
+// 		},
+// 		Buckets: buckets,
+// 	}
+
+// 	return listResp, nil
 // }
 
-// // DeleteObjectStorage deletes a SQL database via Terrarium
-// func DeleteObjectStorage(nsId string, objectStorageId string) (model.SimpleMsg, error) {
+// GetObjectStorage retrieves the object storage (bucket) information from the specified namespace
+func GetObjectStorage(nsId, osId string) (model.ObjectStorageInfo, error) {
+	var emptyRet model.ObjectStorageInfo
 
-// 	// VPN objects
-// 	var emptyRet model.SimpleMsg
-// 	var objectStorageInfo model.ObjectStorageInfo
-// 	var err error = nil
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
 
-// 	/*
-// 	 * Validate the input parameters
-// 	 */
+	// 2. Get the object storage info from the key-value store
+	resourceType := model.StrObjectStorage
+	objStrgData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return emptyRet, err
+	}
+	oldObjStrgInfo := objStrgData.(model.ObjectStorageInfo)
+	connName := oldObjStrgInfo.ConnectionName
+	uid := oldObjStrgInfo.Uid
 
-// 	err = common.CheckString(nsId)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	err = common.CheckString(objectStorageId)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+	// 3. Call Spider API to get the object storage info
+	client := clientManager.NewHttpClient()
+	method := "GET"
+	spReq := clientManager.NoBody
+	spResp := spiderGetBucketInfoRes{}
+	url := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
+	log.Debug().Msgf("[Request to Spider] Getting the object storage info (url: %s)", url)
 
-// 	// Set the resource type
-// 	resourceType := model.StrObjectStorage
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
 
-// 	// Set a objectStorageKey for the Object Storage object
-// 	objectStorageKey := common.GenResourceKey(nsId, resourceType, objectStorageId)
-// 	// Check if the Object Storage resource already exists or not
-// 	exists, err := CheckResource(nsId, resourceType, objectStorageId)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		err := fmt.Errorf("failed to check if the Object Storage (%s) exists or not", objectStorageId)
-// 		return emptyRet, err
-// 	}
-// 	if !exists {
-// 		err := fmt.Errorf("does not exist, Object Storage: %s", objectStorageId)
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
 
-// 	// Read the stored Object Storage info
-// 	objectStorageKv, _, err := kvstore.GetKv(objectStorageKey)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	err = json.Unmarshal([]byte(objectStorageKv.Value), &objectStorageInfo)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+	log.Debug().Msgf("[Response from Spider] Getting the object storage info: %+v", spResp)
 
-// 	// [Set and store status]
-// 	objectStorageInfo.Status = string(ObjectStorageOnDeleting)
-// 	val, err := json.Marshal(objectStorageInfo)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	err = kvstore.Put(objectStorageKey, string(val))
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+	// 4. Compare saved and retrieved info and update the object storage info
 
-// 	// Initialize resty client with basic auth
-// 	client := resty.New()
-// 	apiUser := os.Getenv("TB_API_USERNAME")
-// 	apiPass := os.Getenv("TB_API_PASSWORD")
-// 	client.SetBasicAuth(apiUser, apiPass)
+	// Deep copy by marshalling and unmarshalling
+	data, _ := json.Marshal(oldObjStrgInfo)
+	var newObjStrgInfo model.ObjectStorageInfo
+	_ = json.Unmarshal(data, &newObjStrgInfo)
 
-// 	trId := objectStorageInfo.Uid
+	// Set the retrieved values
+	newObjStrgInfo.Prefix = spResp.Prefix
+	newObjStrgInfo.Marker = spResp.Marker
+	newObjStrgInfo.MaxKeys = spResp.MaxKeys
+	newObjStrgInfo.IsTruncated = spResp.IsTruncated
+	newObjStrgInfo.CreationDate = spResp.CreationDate
 
-// 	// set endpoint
-// 	epTerrarium := model.TerrariumRestUrl
+	var contents []model.Object
+	for _, spObj := range spResp.Contents {
+		obj := model.Object{
+			Key:          spObj.Key,
+			LastModified: spObj.LastModified,
+			ETag:         spObj.ETag,
+			Size:         spObj.Size,
+			StorageClass: spObj.StorageClass,
+		}
+		contents = append(contents, obj)
+	}
+	newObjStrgInfo.Contents = contents
 
-// 	// Get the terrarium info
-// 	method := "GET"
-// 	url := fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
-// 	requestBody := clientManager.NoBody
-// 	resTrInfo := new(terrariumModel.TerrariumInfo)
+	// Check chanages and update if necessary
+	if isObjStrgInfoUpdated(oldObjStrgInfo, newObjStrgInfo) {
+		// Update the object storage info in the key-value store
+		objStrgKey := common.GenResourceKey(nsId, resourceType, newObjStrgInfo.Id)
+		val, err := json.Marshal(newObjStrgInfo)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to marshal new object storage info")
+			return emptyRet, err
+		}
+		err = kvstore.Put(objStrgKey, string(val))
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to update object storage info in kvstore")
+			return emptyRet, err
+		}
+	}
 
-// 	err = clientManager.ExecuteHttpRequest(
-// 		client,
-// 		method,
-// 		url,
-// 		nil,
-// 		clientManager.SetUseBody(requestBody),
-// 		&requestBody,
-// 		resTrInfo,
-// 		clientManager.VeryShortDuration,
-// 	)
+	// 5. Return the object storage info
 
-// 	if err != nil {
-// 		log.Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+	return newObjStrgInfo, nil
+}
 
-// 	log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
-// 	log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
-// 	enrichments := resTrInfo.Enrichments
+func isObjStrgInfoUpdated(oldObjStrgInfo, newObjStrgInfo model.ObjectStorageInfo) bool {
+	if oldObjStrgInfo.Prefix != newObjStrgInfo.Prefix {
+		return true
+	}
+	if oldObjStrgInfo.Marker != newObjStrgInfo.Marker {
+		return true
+	}
+	if oldObjStrgInfo.MaxKeys != newObjStrgInfo.MaxKeys {
+		return true
+	}
+	if oldObjStrgInfo.IsTruncated != newObjStrgInfo.IsTruncated {
+		return true
+	}
+	if oldObjStrgInfo.CreationDate != newObjStrgInfo.CreationDate {
+		return true
+	}
+	if len(oldObjStrgInfo.Contents) != len(newObjStrgInfo.Contents) {
+		return true
+	}
+	for i, oldObj := range oldObjStrgInfo.Contents {
+		newObj := newObjStrgInfo.Contents[i]
+		if oldObj.Key != newObj.Key ||
+			oldObj.LastModified != newObj.LastModified ||
+			oldObj.ETag != newObj.ETag ||
+			oldObj.Size != newObj.Size ||
+			oldObj.StorageClass != newObj.StorageClass {
+			return true
+		}
+	}
+	return false
+}
 
-// 	// delete enrichments
-// 	method = "DELETE"
-// 	url = fmt.Sprintf("%s/tr/%s/%s", epTerrarium, trId, enrichments)
-// 	requestBody = clientManager.NoBody
-// 	resDeleteEnrichments := new(model.Response)
+func DeleteObjectStorage(nsId, osId string) error {
 
-// 	err = clientManager.ExecuteHttpRequest(
-// 		client,
-// 		method,
-// 		url,
-// 		nil,
-// 		clientManager.SetUseBody(requestBody),
-// 		&requestBody,
-// 		resDeleteEnrichments,
-// 		clientManager.VeryShortDuration,
-// 	)
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
 
-// 	if err != nil {
-// 		log.Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+	// 2. Set the resource type
+	resourceType := model.StrObjectStorage
 
-// 	log.Debug().Msgf("resDeleteEnrichments: %+v", resDeleteEnrichments.Message)
-// 	log.Trace().Msgf("resDeleteEnrichments: %+v", resDeleteEnrichments.Detail)
+	// 3. Get the object storage info to retrieve ConnectionName and Uid
+	objStrgData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return err
+	}
+	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
 
-// 	// delete env
-// 	method = "DELETE"
-// 	url = fmt.Sprintf("%s/tr/%s/%s/env", epTerrarium, trId, enrichments)
-// 	requestBody = clientManager.NoBody
-// 	resDeleteEnv := new(model.Response)
+	// 4. Set and store status
+	objStrgInfo.Status = string(ObjectStorageOnDeleting)
+	objStrgKey := common.GenResourceKey(nsId, resourceType, objStrgInfo.Id)
+	val, err := json.Marshal(objStrgInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	err = kvstore.Put(objStrgKey, string(val))
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
 
-// 	err = clientManager.ExecuteHttpRequest(
-// 		client,
-// 		method,
-// 		url,
-// 		nil,
-// 		clientManager.SetUseBody(requestBody),
-// 		&requestBody,
-// 		resDeleteEnv,
-// 		clientManager.VeryShortDuration,
-// 	)
+	uid := objStrgInfo.Uid
+	connName := objStrgInfo.ConnectionName
 
-// 	if err != nil {
-// 		log.Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+	// 5. Call Spider API to delete the object storage
+	client := clientManager.NewHttpClient()
+	method := "DELETE"
+	spReq := clientManager.NoBody
+	spResp := clientManager.NoBody
 
-// 	log.Debug().Msgf("resDeleteEnv: %+v", resDeleteEnv.Message)
-// 	log.Trace().Msgf("resDeleteEnv: %+v", resDeleteEnv.Detail)
+	url := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
 
-// 	// delete terrarium
-// 	method = "DELETE"
-// 	url = fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
-// 	requestBody = clientManager.NoBody
-// 	resDeleteTr := new(model.Response)
+	maxRetries := 2
+	t := uint64(3)
+	for i := 0; i <= maxRetries; i++ {
 
-// 	err = clientManager.ExecuteHttpRequest(
-// 		client,
-// 		method,
-// 		url,
-// 		nil,
-// 		clientManager.SetUseBody(requestBody),
-// 		&requestBody,
-// 		resDeleteTr,
-// 		clientManager.VeryShortDuration,
-// 	)
+		log.Debug().Msgf("[Request to Spider] Deleting the object storage (url: %s)", url)
 
-// 	if err != nil {
-// 		log.Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+		_, err = clientManager.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			clientManager.SetUseBody(spReq),
+			&spReq,
+			&spResp,
+			clientManager.ShortDuration,
+		)
 
-// 	log.Debug().Msgf("resDeleteTr: %+v", resDeleteTr.Message)
-// 	log.Trace().Msgf("resDeleteTr: %+v", resDeleteTr.Detail)
+		if err == nil {
+			break
+		}
 
-// 	// [Set and store status]
-// 	err = kvstore.Delete(objectStorageKey)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+		if i < maxRetries {
+			log.Warn().Err(err).Msgf("Failed to delete object storage, retrying... (%d/%d)", i+1, maxRetries)
+			// Sleep for a while before retrying
+			time.Sleep(time.Duration(t) * time.Second)
+		} else {
+			log.Error().Err(err).Msgf("Failed to delete object storage after %d retries", maxRetries)
+			return err
+		}
+	}
 
-// 	// Remove label info using DeleteLabelObject
-// 	err = label.DeleteLabelObject(model.StrObjectStorage, objectStorageInfo.Uid)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+	log.Debug().Msgf("[Response from Spider] Deleting the object storage (No response body): %+v", spResp)
 
-// 	res := model.SimpleMsg{
-// 		Message: resDeleteTr.Message,
-// 	}
+	// 6. Delete the object storage info from the key-value store
+	err = kvstore.Delete(objStrgKey)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
 
-// 	return res, nil
-// }
+	// 7. Delete label info
+	err = label.DeleteLabelObject(model.StrObjectStorage, objStrgInfo.Uid)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
 
-// // GetRequestStatusOfObjectStorage checks the status of a specific request
-// func GetRequestStatusOfObjectStorage(nsId string, objectStorageId string, reqId string) (model.Response, error) {
+	return nil
+}
 
-// 	var emptyRet model.Response
-// 	var objectStorageInfo model.ObjectStorageInfo
-// 	var err error = nil
+// CheckObjectStorageExistence checks if the object storage exists in both the key-value store and Spider
+func CheckObjectStorageExistence(nsId, osId string) (bool, error) {
 
-// 	/*
-// 	 * Validate the input parameters
-// 	 */
+	exists := false
 
-// 	err = common.CheckString(nsId)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	err = common.CheckString(objectStorageId)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return false, err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return false, err
+	}
 
-// 	// Set the resource type
-// 	resourceType := model.StrObjectStorage
+	// 2. Set the resource type
+	resourceType := model.StrObjectStorage
 
-// 	// Set a objectStorageKey for the Object Storage object
-// 	objectStorageKey := common.GenResourceKey(nsId, resourceType, objectStorageId)
-// 	// Check if the Object Storage resource already exists or not
-// 	exists, err := CheckResource(nsId, resourceType, objectStorageId)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		err := fmt.Errorf("failed to check if the Object Storage(%s) exists or not", objectStorageId)
-// 		return emptyRet, err
-// 	}
-// 	if !exists {
-// 		err := fmt.Errorf("does not exist, Object Storage: %s", objectStorageId)
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+	// 3. Check if the object storage exists
+	objStrgData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("failed to check existence, object storage: %s", osId)
+		return false, err
+	}
 
-// 	// Read the stored Object Storage info
-// 	objectStorageKv, _, err := kvstore.GetKv(objectStorageKey)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	err = json.Unmarshal([]byte(objectStorageKv.Value), &objectStorageInfo)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+	uid := objStrgInfo.Uid
+	connName := objStrgInfo.ConnectionName
 
-// 	// Initialize resty client with basic auth
-// 	client := resty.New()
-// 	apiUser := os.Getenv("TB_API_USERNAME")
-// 	apiPass := os.Getenv("TB_API_PASSWORD")
-// 	client.SetBasicAuth(apiUser, apiPass)
+	// 4. Call Spider API to verify existence if it exists in kvstore
+	client := clientManager.NewHttpClient()
+	method := "HEAD"
+	spReq := clientManager.NoBody
+	spResp := clientManager.NoBody
 
-// 	trId := objectStorageInfo.Uid
+	url := fmt.Sprintf("%s/s3/%s?ConnectionName=%s", model.SpiderRestUrl, uid, connName)
+	log.Debug().Msgf("[Request to Spider] Checking existence of the object storage (url: %s)", url)
 
-// 	// set endpoint
-// 	epTerrarium := model.TerrariumRestUrl
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
 
-// 	// Get the terrarium info
-// 	method := "GET"
-// 	url := fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
-// 	requestBody := clientManager.NoBody
-// 	resTrInfo := new(terrariumModel.TerrariumInfo)
+	if err != nil {
+		log.Error().Err(err).Msgf("object storage %s does not exist in Spider", osId)
+		return false, nil
+	}
 
-// 	err = clientManager.ExecuteHttpRequest(
-// 		client,
-// 		method,
-// 		url,
-// 		nil,
-// 		clientManager.SetUseBody(requestBody),
-// 		&requestBody,
-// 		resTrInfo,
-// 		clientManager.VeryShortDuration,
-// 	)
+	log.Debug().Msgf("[Response from Spider] Object storage %s exists", osId)
 
-// 	if err != nil {
-// 		log.Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
+	// 5. Return existence as true
+	exists = true
 
-// 	log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
-// 	log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
-// 	enrichments := resTrInfo.Enrichments
+	return exists, nil
+}
 
-// 	// Get resource info
-// 	method = "GET"
-// 	url = fmt.Sprintf("%s/tr/%s/%s/request/%s", epTerrarium, trId, enrichments, reqId)
-// 	reqReqStatus := clientManager.NoBody
-// 	resReqStatus := new(model.Response)
+func GetObjectStorageLocation(nsId, osId string) (model.ObjectStorageLocationResponse, error) {
+	var emptyRet model.ObjectStorageLocationResponse
 
-// 	err = clientManager.ExecuteHttpRequest(
-// 		client,
-// 		method,
-// 		url,
-// 		nil,
-// 		clientManager.SetUseBody(reqReqStatus),
-// 		&reqReqStatus,
-// 		resReqStatus,
-// 		clientManager.VeryShortDuration,
-// 	)
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
 
-// 	if err != nil {
-// 		log.Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	log.Debug().Msgf("resReqStatus: %+v", resReqStatus.Detail)
+	// 2. Get the object storage info from the key-value store
+	resourceType := model.StrObjectStorage
+	objStrgData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return emptyRet, err
+	}
+	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
 
-// 	return *resReqStatus, nil
-// }
+	uid := objStrgInfo.Uid
+	connName := objStrgInfo.ConnectionName
+
+	// 3. Call Spider API to get the object storage location
+	client := clientManager.NewHttpClient()
+	method := "GET"
+	spReq := clientManager.NoBody
+	spResp := spiderObjectStorageLocationResponse{}
+	url := fmt.Sprintf("%s/s3/%s?location&ConnectionName=%s", model.SpiderRestUrl, uid, connName)
+	log.Debug().Msgf("[Request to Spider] Getting the object storage location (url: %s)", url)
+
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	log.Debug().Msgf("[Response from Spider] Getting the object storage location: %+v", spResp)
+
+	// 4. Set and return the object storage location response
+	locationResp := model.ObjectStorageLocationResponse{
+		LocationConstraint: spResp.LocationConstraint,
+	}
+
+	return locationResp, nil
+}

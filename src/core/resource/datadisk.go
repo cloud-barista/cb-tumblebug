@@ -107,7 +107,7 @@ func CreateDataDisk(nsId string, u *model.DataDiskReq, option string) (model.Dat
 		method = "POST"
 	}
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -263,7 +263,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *model.DataDiskUpsizeReq) 
 	method := "PUT"
 	var callResult interface{}
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,

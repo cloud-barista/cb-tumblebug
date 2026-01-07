@@ -528,7 +528,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	log.Debug().Msg("Sending DELETE request to " + url)
 
-	err = clientManager.ExecuteHttpRequest(
+	_, err = clientManager.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -620,7 +620,8 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 		strings.EqualFold(resourceType, model.StrSpec) ||
 		strings.EqualFold(resourceType, model.StrVNet) ||
 		strings.EqualFold(resourceType, model.StrSecurityGroup) ||
-		strings.EqualFold(resourceType, model.StrDataDisk) {
+		strings.EqualFold(resourceType, model.StrDataDisk) ||
+		strings.EqualFold(resourceType, model.StrObjectStorage) {
 		// continue
 	} else {
 		err = fmt.Errorf("invalid resource type")
@@ -714,7 +715,8 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 		strings.EqualFold(resourceType, model.StrSpec) ||
 		strings.EqualFold(resourceType, model.StrVNet) ||
 		strings.EqualFold(resourceType, model.StrSecurityGroup) ||
-		strings.EqualFold(resourceType, model.StrDataDisk) {
+		strings.EqualFold(resourceType, model.StrDataDisk) ||
+		strings.EqualFold(resourceType, model.StrObjectStorage) {
 		// continue
 	} else {
 		errString := "Cannot list " + resourceType + "s."
@@ -916,6 +918,26 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				res = append(res, tempObj)
 			}
 			return res, nil
+		case model.StrObjectStorage:
+			res := []model.ObjectStorageInfo{}
+			for _, v := range keyValue {
+				tempObj := model.ObjectStorageInfo{}
+				err = json.Unmarshal([]byte(v.Value), &tempObj)
+				if err != nil {
+					log.Error().Err(err).Msg("")
+					return nil, err
+				}
+				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
+				if filterKey != "" {
+					// If not inclues both, do not append current item to the list result.
+					itemValueForCompare := strings.ToLower(v.Value)
+					if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) && strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
+						continue
+					}
+				}
+				res = append(res, tempObj)
+			}
+			return res, nil
 		}
 
 	} else { //return empty object according to resourceType
@@ -934,6 +956,8 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 			return []model.VNetInfo{}, nil
 		case model.StrDataDisk:
 			return []model.DataDiskInfo{}, nil
+		case model.StrObjectStorage:
+			return []model.ObjectStorageInfo{}, nil
 		}
 	}
 
@@ -1200,7 +1224,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			method := "GET"
 			var callResult model.SpiderMyImageInfo
 
-			err := clientManager.ExecuteHttpRequest(
+			_, err := clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,
@@ -1296,7 +1320,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			method := "GET"
 			var callResult model.SpiderDiskInfo
 
-			err = clientManager.ExecuteHttpRequest(
+			_, err = clientManager.ExecuteHttpRequest(
 				client,
 				method,
 				url,
@@ -1316,6 +1340,14 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			// fmt.Printf("res.Status: %s \n", res.Status) // for debug
 			UpdateResourceObject(nsId, model.StrDataDisk, res)
 
+			return res, nil
+		case model.StrObjectStorage:
+			res := model.ObjectStorageInfo{}
+			err = json.Unmarshal([]byte(keyValue.Value), &res)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				return nil, err
+			}
 			return res, nil
 		}
 
@@ -1455,7 +1487,6 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 		return true, nil
 	}
 	return false, nil
-
 }
 
 // CheckChildResource returns the existence of the TB Resource resource in bool form.
@@ -2210,7 +2241,7 @@ func GetCspResourceStatus(connConfig string, resourceType string) (model.CspReso
 		spiderRequestURL = fmt.Sprintf("%s?ConnectionName=%s", spiderRequestURL, connConfig)
 		noBody := clientManager.NoBody
 		var callResult model.SpiderAllVpcInfoWrapper
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			spiderRequestURL,
@@ -2257,7 +2288,7 @@ func GetCspResourceStatus(connConfig string, resourceType string) (model.CspReso
 	} else {
 		// For other resources, use standard body-based request
 		var callResult model.SpiderAllListWrapper
-		err = clientManager.ExecuteHttpRequest(
+		_, err = clientManager.ExecuteHttpRequest(
 			client,
 			method,
 			spiderRequestURL,

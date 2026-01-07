@@ -7464,6 +7464,273 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/objectStorage:
+    get:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: List object storages (buckets)
+      description: Get the list of object storages (buckets)
+      operationId: ListObjectStorages
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: option
+        in: query
+        description: Option
+        schema:
+          type: string
+          enum:
+          - id
+      - name: filterKey
+        in: query
+        description: "Field key for filtering (ex: cspResourceName)"
+        schema:
+          type: string
+      - name: filterVal
+        in: query
+        description: "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Different return structures by the given option param
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/resource.JSONResult'
+                - type: object
+                  properties:
+                    '[DEFAULT]':
+                      $ref: '#/components/schemas/resource.RestListObjectStorageResponse'
+                    '[ID]':
+                      $ref: '#/components/schemas/model.IdList'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    post:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Create an object storage (bucket)
+      description: Create an object storage (bucket)
+      operationId: CreateObjectStorage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      requestBody:
+        description: Object Storage Create Request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.ObjectStorageCreateRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObjectStorageInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: reqBody
+  /ns/{nsId}/resources/objectStorage/{osId}:
+    get:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Get details of an object storage (bucket)
+      description: Get details of an object storage (bucket)
+      operationId: GetObjectStorage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObjectStorageInfo'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    delete:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Delete an object storage (bucket)
+      description: Delete an object storage (bucket)
+      operationId: RestDeleteObjectStorage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    head:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Check existence of an object storage (bucket)
+      description: Check existence of an object storage (bucket)
+      operationId: CheckObjectStorage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/objectStorage/{osId}/location:
+    get:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Get the location of an object storage (bucket)
+      description: Get the location of an object storage (bucket)
+      operationId: GetObjectStorageLocation
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObjectStorageLocationResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/searchImage:
     post:
       tags:
@@ -10559,9 +10826,9 @@ paths:
     get:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: List object storages (buckets)
+      summary: (To be deprecated) List object storages (buckets)
       description: |-
-        Get the list of all object storages (buckets)
+        (To be deprecated) Get the list of all object storages (buckets)
 
         **Important Notes:**
         - The actual response will be XML format with root element `ListAllMyBucketsResult`
@@ -10580,7 +10847,7 @@ paths:
         </Buckets>
         </ListAllMyBucketsResult>
         ```
-      operationId: ListObjectStorages
+      operationId: ListObjectStoragesLagacy
       parameters:
       - name: credential
         in: header
@@ -10601,9 +10868,9 @@ paths:
     get:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Get details of an object storage (bucket)
+      summary: (To be deprecated) Get details of an object storage (bucket)
       description: |-
-        Get details of an object storage (bucket)
+        (To be deprecated) Get details of an object storage (bucket)
 
         **Important Notes:**
         - The actual response will be XML format with root element `ListBucketResult`
@@ -10619,7 +10886,7 @@ paths:
         <IsTruncated>false</IsTruncated>
         </ListBucketResult>
         ```
-      operationId: GetObjectStorage
+      operationId: GetObjectStorageLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -10646,14 +10913,14 @@ paths:
     put:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Create an object storage (bucket)
+      summary: (To be deprecated) Create an object storage (bucket)
       description: |-
-        Create an object storage (bucket)
+        (To be deprecated) Create an object storage (bucket)
 
         **Important Notes:**
         - The `objectStorageName` must be globally unique across all existing buckets in the S3 compatible storage.
         - The bucket namespace is shared by all users of the system.
-      operationId: CreateObjectStorage
+      operationId: CreateObjectStorageLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -10677,9 +10944,9 @@ paths:
     post:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: '**Delete** multiple objects from a bucket'
+      summary: (To be deprecated) **Delete** multiple objects from a bucket
       description: |-
-        `Delete` multiple objects from a bucket
+        (To be deprecated) `Delete` multiple objects from a bucket
 
         **Important Notes:**
         - The request body must contain the list of objects to delete in XML format
@@ -10710,7 +10977,7 @@ paths:
         </Deleted>
         </DeleteResult>
         ```
-      operationId: DeleteMultipleDataObjects
+      operationId: DeleteMultipleDataObjectsLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -10752,9 +11019,9 @@ paths:
     delete:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Delete an object storage (bucket)
-      description: Delete an object storage (bucket)
-      operationId: DeleteObjectStorage
+      summary: (To be deprecated) Delete an object storage (bucket)
+      description: (To be deprecated) Delete an object storage (bucket)
+      operationId: DeleteObjectStorageLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -10778,9 +11045,9 @@ paths:
     head:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Check existence of an object storage (bucket)
-      description: Check existence of an object storage (bucket)
-      operationId: ExistObjectStorage
+      summary: (To be deprecated) Check existence of an object storage (bucket)
+      description: (To be deprecated) Check existence of an object storage (bucket)
+      operationId: ExistObjectStorageLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -10808,9 +11075,9 @@ paths:
     delete:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Delete an object from a bucket
-      description: Delete an object from a bucket
-      operationId: DeleteDataObject
+      summary: (To be deprecated) Delete an object from a bucket
+      description: (To be deprecated) Delete an object from a bucket
+      operationId: DeleteDataObjectLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -10841,13 +11108,13 @@ paths:
     head:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Get an object info from a bucket
+      summary: (To be deprecated) Get an object info from a bucket
       description: |-
-        Get an object info from a bucket
+        (To be deprecated) Get an object info from a bucket
 
         **Important Notes:**
         - The generated `Download file` link in Swagger UI may not work because this API get the object metadata only.
-      operationId: GetObjectInfoGetDataObjectInfo
+      operationId: GetDataObjectInfoLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -10879,9 +11146,9 @@ paths:
     get:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Get CORS configuration of an object storage (bucket)
+      summary: (To be deprecated) Get CORS configuration of an object storage (bucket)
       description: |-
-        Get CORS configuration of an object storage (bucket)
+        (To be deprecated) Get CORS configuration of an object storage (bucket)
 
         **Important Notes:**
         - The actual response will be XML format with root element `CORSConfiguration`
@@ -10916,7 +11183,7 @@ paths:
         <RequestId>656c76696e6727732072657175657374</RequestId>
         </Error>
         ```
-      operationId: GetObjectStorageCORS
+      operationId: GetObjectStorageCORSLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -10949,9 +11216,9 @@ paths:
     put:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Set CORS configuration of an object storage (bucket)
+      summary: (To be deprecated) Set CORS configuration of an object storage (bucket)
       description: |-
-        Set CORS configuration of an object storage (bucket)
+        (To be deprecated) Set CORS configuration of an object storage (bucket)
 
         **Important Notes:**
         - The CORS configuration must be provided in the request body in XML format.
@@ -10978,7 +11245,7 @@ paths:
         </CORSRule>
         </CORSConfiguration>
         ```
-      operationId: SetObjectStorageCORS
+      operationId: SetObjectStorageCORSLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -11010,9 +11277,10 @@ paths:
     delete:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Delete CORS configuration of an object storage (bucket)
-      description: Delete CORS configuration of an object storage (bucket)
-      operationId: DeleteObjectStorageCORS
+      summary: (To be deprecated) Delete CORS configuration of an object storage (bucket)
+      description: (To be deprecated) Delete CORS configuration of an object storage
+        (bucket)
+      operationId: DeleteObjectStorageCORSLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -11037,9 +11305,9 @@ paths:
     get:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Get the location of an object storage (bucket)
+      summary: (To be deprecated) Get the location of an object storage (bucket)
       description: |-
-        Get the location of an object storage (bucket)
+        (To be deprecated) Get the location of an object storage (bucket)
 
         **Important Notes:**
         - The actual response will be XML format with root element `LocationConstraint`
@@ -11049,7 +11317,7 @@ paths:
         <?xml version="1.0" encoding="UTF-8"?>
         <LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">ap-northeast-2</LocationConstraint>
         ```
-      operationId: GetObjectStorageLocation
+      operationId: GetObjectStorageLocationLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -11077,9 +11345,9 @@ paths:
     get:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Get versioning status of an object storage (bucket)
+      summary: (To be deprecated) Get versioning status of an object storage (bucket)
       description: |-
-        Get versioning status of an object storage (bucket)
+        (To be deprecated) Get versioning status of an object storage (bucket)
 
         **Important Notes:**
         - The actual response will be XML format with root element `VersioningConfiguration`
@@ -11091,7 +11359,7 @@ paths:
         <Status>Enabled</Status>
         </VersioningConfiguration>
         ```
-      operationId: GetObjectStorageVersioning
+      operationId: GetObjectStorageVersioningLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -11118,9 +11386,9 @@ paths:
     put:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Set versioning status of an object storage (bucket)
+      summary: (To be deprecated) Set versioning status of an object storage (bucket)
       description: |-
-        Set versioning status of an object storage (bucket)
+        (To be deprecated) Set versioning status of an object storage (bucket)
 
         **Important Notes:**
         - The request body must be XML format with root element `VersioningConfiguration`
@@ -11133,7 +11401,7 @@ paths:
         <Status>Enabled</Status>
         </VersioningConfiguration>
         ```
-      operationId: SetObjectStorageVersioning
+      operationId: SetObjectStorageVersioningLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -11166,9 +11434,9 @@ paths:
     get:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: List object versions in an object storage (bucket)
+      summary: (To be deprecated) List object versions in an object storage (bucket)
       description: |-
-        List object versions in an object storage (bucket)
+        (To be deprecated) List object versions in an object storage (bucket)
 
         **Important Notes:**
         - The actual response will be XML format with root element `ListVersionsResult`
@@ -11200,7 +11468,7 @@ paths:
         </Version>
         </ListVersionsResult>
         ```
-      operationId: ListObjectVersions
+      operationId: ListObjectVersionsLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -11228,9 +11496,11 @@ paths:
     delete:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Delete a specific version of an object in an object storage (bucket)
-      description: Delete a specific version of an object in an object storage (bucket)
-      operationId: DeleteVersionedObject
+      summary: (To be deprecated) Delete a specific version of an object in an object
+        storage (bucket)
+      description: (To be deprecated) Delete a specific version of an object in an
+        object storage (bucket)
+      operationId: DeleteVersionedObjectLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -11269,9 +11539,10 @@ paths:
     get:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Generate a presigned URL for downloading an object from a bucket
+      summary: (To be deprecated) Generate a presigned URL for downloading an object
+        from a bucket
       description: |-
-        Generate a presigned URL for downloading an object from a bucket
+        (To be deprecated) Generate a presigned URL for downloading an object from a bucket
 
         **Important Notes:**
         - The actual response will be XML format with root element `PresignedURLResult`
@@ -11287,7 +11558,7 @@ paths:
         <Method>GET</Method>
         </PresignedURLResult>
         ```
-      operationId: GeneratePresignedDownloadURL
+      operationId: GeneratePresignedDownloadURLLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -11328,9 +11599,10 @@ paths:
     get:
       tags:
       - "[Infra Resource] Object Storage Management"
-      summary: Generate a presigned URL for uploading an object to a bucket
+      summary: (To be deprecated) Generate a presigned URL for uploading an object
+        to a bucket
       description: |-
-        Generate a presigned URL for uploading an object to a bucket
+        (To be deprecated) Generate a presigned URL for uploading an object to a bucket
 
         **Important Notes:**
         - The actual response will be XML format with root element `PresignedURLResult`
@@ -11346,7 +11618,7 @@ paths:
         <Method>PUT</Method>
         </PresignedURLResult>
         ```
-      operationId: GeneratePresignedUploadURL
+      operationId: GeneratePresignedUploadURLLagacy
       parameters:
       - name: objectStorageName
         in: path
@@ -14874,6 +15146,103 @@ components:
       - Linux_UNIX
       - Windows
       - PlatformNA
+    model.Object:
+      type: object
+      properties:
+        eTag:
+          type: string
+          example: 9b2cf535f27731c974343645a3985328
+        key:
+          type: string
+          example: test-object.txt
+        lastModified:
+          type: string
+          example: 2025-09-04T04:18:06Z
+        size:
+          type: integer
+          example: 1024
+        storageClass:
+          type: string
+          example: STANDARD
+    model.ObjectStorageCreateRequest:
+      required:
+      - bucketName
+      - connectionName
+      type: object
+      properties:
+        bucketName:
+          type: string
+          example: os01
+        connectionName:
+          type: string
+          example: aws-ap-northeast-2
+        description:
+          type: string
+          example: this bucket is managed by CB-Tumblebug
+    model.ObjectStorageInfo:
+      type: object
+      properties:
+        connectionConfig:
+          $ref: '#/components/schemas/model.ConnConfig'
+        connectionName:
+          type: string
+          description: Variables for management of Object Storage resource in CB-Tumblebug
+        contents:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.Object'
+        creationDate:
+          type: string
+          example: 2025-09-04T04:18:06Z
+        cspResourceId:
+          type: string
+          description: CspResourceId is resource identifier managed by CSP
+          example: ""
+        cspResourceName:
+          type: string
+          description: CspResourceName is name assigned to the CSP resource. This
+            name is internally used to handle the resource.
+          example: ""
+        description:
+          type: string
+          example: this object storage is managed by CB-Tumblebug
+        id:
+          type: string
+          description: Id is unique identifier for the object
+          example: globally-unique-bucket-name-12345
+        isTruncated:
+          type: boolean
+          example: false
+        marker:
+          type: string
+          example: ""
+        maxKeys:
+          type: integer
+          example: 1000
+        name:
+          type: string
+          description: Name is human-readable string to represent the object
+          example: globally-unique-bucket-name-12345
+        prefix:
+          type: string
+          example: ""
+        resourceType:
+          type: string
+          description: ResourceType is the type of this resource
+          example: ObjectStorage
+        status:
+          type: string
+        uid:
+          type: string
+          description: "Uid is universally unique identifier for the object, used\
+            \ for labelSelector"
+          example: wef12awefadf1221edcf
+    model.ObjectStorageLocationResponse:
+      type: object
+      properties:
+        locationConstraint:
+          type: string
+          example: ap-northeast-2
     model.Operation:
       type: object
       properties:
@@ -18023,6 +18392,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.VNetInfo'
+    resource.RestListObjectStorageResponse:
+      type: object
+      properties:
+        objectStorage:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.ObjectStorageInfo'
     resource.RestLookupImageRequest:
       type: object
       properties:
