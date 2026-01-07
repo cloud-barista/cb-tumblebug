@@ -102,8 +102,8 @@ const DefaultSystemLabel string = "Managed by CB-Tumblebug"
 
 // RegionInfo is struct for region information
 type RegionInfo struct {
-	Region string
-	Zone   string
+	Region string `json:"region" example:"us-east-1"`
+	Zone   string `json:"zone,omitempty" example:"us-east-1a"`
 }
 
 // MciReq is struct for requirements to create MCI
@@ -346,6 +346,10 @@ type CreateSubGroupDynamicReq struct {
 	// if ConnectionName is given, the VM tries to use associtated credential.
 	// if not, it will use predefined ConnectionName in Spec objects
 	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2" default:""`
+	// Zone is an optional field to specify the availability zone for VM placement.
+	// If specified, subnet will be created in this zone for resources like GPU VMs
+	// that may only be available in specific zones. If empty, auto-selection applies.
+	Zone string `json:"zone,omitempty" example:"ap-northeast-2a" default:""`
 }
 
 // MciConnectionConfigCandidatesReq is struct for a request to check requirements to create a new MCI instance dynamically (with default resource option)

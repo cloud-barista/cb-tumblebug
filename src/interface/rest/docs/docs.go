@@ -256,6 +256,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/availableZonesForSpec": {
+            "get": {
+                "description": "Query verified zones for a spec based on connection configs. Returns zones that are both verified and available for the specified spec. For Alibaba Cloud, additional CSP API filtering is applied.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Spec Management"
+                ],
+                "summary": "Get available (verified) zones for a specific spec ID",
+                "operationId": "GetAvailableZonesForSpec",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "aws+ap-northeast-2+t3.medium",
+                        "description": "Spec ID (format: provider+region+cspSpecName)",
+                        "name": "specId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "admin",
+                        "description": "Credential holder name (defaults to 'admin')",
+                        "name": "credentialHolder",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Available zones information",
+                        "schema": {
+                            "$ref": "#/definitions/model.AvailableZonesInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Error with details",
+                        "schema": {
+                            "$ref": "#/definitions/model.AvailableZonesError"
+                        }
+                    },
+                    "404": {
+                        "description": "Spec not found or resource not available",
+                        "schema": {
+                            "$ref": "#/definitions/model.AvailableZonesError"
+                        }
+                    }
+                }
+            }
+        },
         "/checkK8sNodeGroupsOnK8sCreation": {
             "get": {
                 "description": "Check whether nodegroups are required during the K8sCluster creation",
@@ -14594,6 +14647,122 @@ const docTemplate = `{
                 }
             }
         },
+        "model.AvailableZonesError": {
+            "description": "Error response when available zones query fails",
+            "type": "object",
+            "properties": {
+                "alternativeRegions": {
+                    "description": "AlternativeRegions provides alternative regions when the specified region is unavailable",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "ap-northeast-1",
+                        "us-east-1"
+                    ]
+                },
+                "errorCode": {
+                    "description": "ErrorCode provides a machine-readable error code for programmatic handling",
+                    "type": "string",
+                    "example": "PROVIDER_NOT_AVAILABLE"
+                },
+                "errorMessage": {
+                    "description": "ErrorMessage provides a human-readable error description",
+                    "type": "string",
+                    "example": "Provider 'xyz' is not available"
+                },
+                "queryDurationMs": {
+                    "description": "QueryDurationMs is the time taken to process the query in milliseconds",
+                    "type": "integer",
+                    "example": 15
+                },
+                "specId": {
+                    "description": "SpecId is the queried spec ID",
+                    "type": "string",
+                    "example": "aws+ap-northeast-2+t3.medium"
+                },
+                "suggestion": {
+                    "description": "Suggestion provides actionable guidance when errors occur",
+                    "type": "string",
+                    "example": "Available providers: aws, gcp, azure"
+                }
+            }
+        },
+        "model.AvailableZonesInfo": {
+            "description": "Available (verified) zones for a specific spec",
+            "type": "object",
+            "properties": {
+                "allVerifiedZones": {
+                    "description": "AllVerifiedZones contains all verified zones for the provider/region (before CSP-specific filtering)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "ap-northeast-2a",
+                        "ap-northeast-2b",
+                        "ap-northeast-2c"
+                    ]
+                },
+                "availableZones": {
+                    "description": "AvailableZones contains zones that are verified and available",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "ap-northeast-2a",
+                        "ap-northeast-2c"
+                    ]
+                },
+                "credentialHolder": {
+                    "description": "CredentialHolder is the credential holder used for the query",
+                    "type": "string",
+                    "example": "admin"
+                },
+                "cspSpecName": {
+                    "description": "CspSpecName is the CSP-specific spec name",
+                    "type": "string",
+                    "example": "t3.medium"
+                },
+                "hasZoneConcept": {
+                    "description": "HasZoneConcept indicates whether the CSP/region has zone concept",
+                    "type": "boolean",
+                    "example": true
+                },
+                "providerName": {
+                    "description": "ProviderName is the cloud service provider name",
+                    "type": "string",
+                    "example": "aws"
+                },
+                "queryDurationMs": {
+                    "description": "QueryDurationMs is the time taken to process the query in milliseconds",
+                    "type": "integer",
+                    "example": 125
+                },
+                "regionName": {
+                    "description": "RegionName is the region name",
+                    "type": "string",
+                    "example": "ap-northeast-2"
+                },
+                "specId": {
+                    "description": "SpecId is the queried spec ID",
+                    "type": "string",
+                    "example": "aws+ap-northeast-2+t3.medium"
+                },
+                "unavailableZones": {
+                    "description": "UnavailableZones contains zones that exist but are not verified or filtered out",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "ap-northeast-2b"
+                    ]
+                }
+            }
+        },
         "model.AwsSpecificProperty": {
             "type": "object",
             "properties": {
@@ -15213,6 +15382,11 @@ const docTemplate = `{
                 "vmUserPassword": {
                     "type": "string",
                     "example": ""
+                },
+                "zone": {
+                    "description": "Zone is an optional field to specify the availability zone for VM placement.\nIf specified, subnet will be created in this zone for resources like GPU VMs\nthat may only be available in specific zones. If empty, auto-selection applies.",
+                    "type": "string",
+                    "example": "ap-northeast-2a"
                 }
             }
         },
@@ -19075,10 +19249,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "region": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "us-east-1"
                 },
                 "zone": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "us-east-1a"
                 }
             }
         },

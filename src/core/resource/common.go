@@ -1707,8 +1707,23 @@ func LoadAssets(includeAzure bool) (*model.IdList, error) {
 	return regiesteredIds, nil
 }
 
+// SharedResourceOptions contains optional parameters for creating shared resources
+type SharedResourceOptions struct {
+	// Zone specifies the availability zone for subnet placement.
+	// If specified, the subnet will be created in this zone.
+	// Useful for GPU VMs or other resources only available in specific zones.
+	// If empty, auto-selection based on connection config applies.
+	Zone string
+}
+
 // CreateSharedResource is to register default resource from asset files (../assets/*.csv)
+// This is a wrapper function that maintains backward compatibility
 func CreateSharedResource(nsId string, resType string, connectionName string) error {
+	return CreateSharedResourceWithOptions(nsId, resType, connectionName, nil)
+}
+
+// CreateSharedResourceWithOptions creates shared resources with optional parameters
+func CreateSharedResourceWithOptions(nsId string, resType string, connectionName string, options *SharedResourceOptions) error {
 
 	// Check 'nsId' namespace.
 	_, err := common.GetNs(nsId)
@@ -1754,7 +1769,12 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 
 	//resourceName := connectionName
 	// Default resource name has this pattern (nsId + "-shared-" + connectionName)
+	// If Zone is specified, append zone as postfix for zone-specific shared resources
 	resourceName := nsId + model.StrSharedResourceName + connectionName
+	if options != nil && options.Zone != "" {
+		resourceName = resourceName + "-" + options.Zone
+		log.Info().Msgf("Using zone-specific shared resource name: %s (zone: %s)", resourceName, options.Zone)
+	}
 	description := "Generated Default Resource"
 
 	for _, resType := range resList {
@@ -1794,14 +1814,27 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 				shouldAssignZone = true
 			}
 
+			// If Zone is explicitly specified in options, use that zone for subnet placement
+			// This is useful for GPU VMs or other resources only available in specific zones
+			var explicitZone string
+			if options != nil && options.Zone != "" {
+				explicitZone = options.Zone
+				shouldAssignZone = true
+				log.Info().Msgf("Using explicitly specified zone '%s' for subnet creation", explicitZone)
+			}
+
 			// Others: Create 2 subnets (10.i.0.0/18, 10.i.64.0/18) with tentative space for 2 more (10.i.128.0/18, 10.i.192.0/18)
 			zones, length, _ := GetFirstNZones(connectionName, 2)
 			subnetName := reqTmp.Name
 			subnetCidr := "10." + strconv.Itoa(sliceIndex) + ".0.0/18"
 			subnet := model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
-			// Only assign zone if the connection has an explicitly assigned zone
-			if shouldAssignZone && length > 0 {
-				subnet.Zone = zones[0]
+			// Use explicit zone if specified, otherwise use first zone from connection
+			if shouldAssignZone {
+				if explicitZone != "" {
+					subnet.Zone = explicitZone
+				} else if length > 0 {
+					subnet.Zone = zones[0]
+				}
 			}
 			reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
 
@@ -1809,19 +1842,38 @@ func CreateSharedResource(nsId string, resType string, connectionName string) er
 			requiresSingleSubnet := slices.Contains(singleSubnetProviders, provider)
 
 			// Create second subnet only if provider supports multiple subnets
-			if !requiresSingleSubnet && length > 1 {
+			// When explicit zone is specified, second subnet is placed in a different zone for redundancy
+			// Allow creation even with single zone (length=1) if explicit zone is specified,
+			// as fallback logic below handles placing both subnets in the same zone
+			if !requiresSingleSubnet && (length > 1 || explicitZone != "") {
 				subnetName = reqTmp.Name + "-01"
 				subnetCidr = "10." + strconv.Itoa(sliceIndex) + ".64.0/18"
 				subnet = model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
-				// Only assign zone if the connection has an explicitly assigned zone
 				if shouldAssignZone {
-					subnet.Zone = zones[1]
-
-					// ref NCP AZ issue: https://github.com/cloud-barista/cb-tumblebug/issues/2136
-					// NCP K8s cluster requires all subnets (including LB subnets) to be within the same AZ.
-					// So, we will create all subnets in the same zone.
-					if provider == csp.NCP {
+					if explicitZone != "" {
+						// When user specifies a zone, place second subnet in a different zone for redundancy
+						// Find a zone different from the explicitly specified one
+						secondaryZone := ""
+						for _, z := range zones {
+							if z != explicitZone {
+								secondaryZone = z
+								break
+							}
+						}
+						if secondaryZone != "" {
+							subnet.Zone = secondaryZone
+							log.Info().Msgf("Second subnet will be placed in zone '%s' (different from explicit zone '%s')", secondaryZone, explicitZone)
+						} else {
+							// Fallback: if no different zone found, use the same explicit zone
+							subnet.Zone = explicitZone
+							log.Warn().Msgf("No different zone available, using same zone '%s' for second subnet", explicitZone)
+						}
+					} else if provider == csp.NCP {
+						// ref NCP AZ issue: https://github.com/cloud-barista/cb-tumblebug/issues/2136
+						// NCP K8s cluster requires all subnets (including LB subnets) to be within the same AZ.
 						subnet.Zone = zones[0]
+					} else {
+						subnet.Zone = zones[1]
 					}
 				}
 				reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)

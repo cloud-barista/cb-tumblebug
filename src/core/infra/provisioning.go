@@ -2742,7 +2742,12 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSu
 	}
 
 	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)
+	// If Zone is specified in the request, append zone as postfix for zone-specific shared resources
 	resourceName := nsId + model.StrSharedResourceName + subGroupReq.ConnectionName
+	if req.Zone != "" {
+		resourceName = resourceName + "-" + req.Zone
+		log.Info().Msgf("Using zone-specific shared resource name: %s (zone: %s) for VM '%s'", resourceName, req.Zone, req.Name)
+	}
 
 	subGroupReq.SpecId = specInfo.Id
 	subGroupReq.ImageId = k.ImageId
@@ -2782,7 +2787,13 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSu
 		// Create a new default vNet if it does not exist
 		if err != nil {
 			log.Debug().Msg("Not found default vNet: " + err.Error())
-			err2 := resource.CreateSharedResource(nsId, model.StrVNet, subGroupReq.ConnectionName)
+			// Pass Zone option if explicitly specified in the request
+			var sharedResourceOpts *resource.SharedResourceOptions
+			if req.Zone != "" {
+				sharedResourceOpts = &resource.SharedResourceOptions{Zone: req.Zone}
+				log.Info().Msgf("Creating VNet with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
+			}
+			err2 := resource.CreateSharedResourceWithOptions(nsId, model.StrVNet, subGroupReq.ConnectionName, sharedResourceOpts)
 			if err2 != nil {
 				detailedErr := fmt.Errorf("failed to create default VNet for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or network configuration issues",
 					req.Name, nsId, subGroupReq.ConnectionName, err2)
@@ -2824,7 +2835,23 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSu
 			}
 		}
 	}
-	subGroupReq.SubnetId = resourceName
+
+	// Select subnet based on user-specified zone
+	// If zone is specified in request, find a subnet matching that zone
+	// Otherwise, use the default (first) subnet
+	if req.Zone != "" {
+		subnetId, subnetZone, err := resource.FindSubnetByZone(nsId, subGroupReq.VNetId, req.Zone)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to find subnet by zone '%s', using default subnet", req.Zone)
+			subGroupReq.SubnetId = resourceName
+		} else {
+			subGroupReq.SubnetId = subnetId
+			log.Info().Msgf("Selected subnet '%s' (zone: '%s') for VM '%s' based on requested zone '%s'",
+				subnetId, subnetZone, req.Name, req.Zone)
+		}
+	} else {
+		subGroupReq.SubnetId = resourceName
+	}
 
 	clientManager.UpdateRequestProgress(reqID, clientManager.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
 	subGroupReq.SshKeyId = resourceName
@@ -2845,7 +2872,13 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSu
 		// Create a new default SSHKey if it does not exist
 		if err != nil {
 			log.Debug().Msg("Not found default SSHKey: " + err.Error())
-			err2 := resource.CreateSharedResource(nsId, model.StrSSHKey, subGroupReq.ConnectionName)
+			// Pass Zone option if explicitly specified in the request
+			var sharedResourceOpts *resource.SharedResourceOptions
+			if req.Zone != "" {
+				sharedResourceOpts = &resource.SharedResourceOptions{Zone: req.Zone}
+				log.Info().Msgf("Creating SSHKey with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
+			}
+			err2 := resource.CreateSharedResourceWithOptions(nsId, model.StrSSHKey, subGroupReq.ConnectionName, sharedResourceOpts)
 			if err2 != nil {
 				detailedErr := fmt.Errorf("failed to create default SSHKey for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or key generation issues",
 					req.Name, nsId, subGroupReq.ConnectionName, err2)
@@ -2882,7 +2915,13 @@ func getSubGroupReqFromDynamicReq(reqID string, nsId string, req *model.CreateSu
 		log.Debug().Msg("checked if the default security group does NOT exist")
 		if err != nil {
 			log.Debug().Msg("Not found default security group: " + err.Error())
-			err2 := resource.CreateSharedResource(nsId, model.StrSecurityGroup, subGroupReq.ConnectionName)
+			// Pass Zone option if explicitly specified in the request
+			var sharedResourceOpts *resource.SharedResourceOptions
+			if req.Zone != "" {
+				sharedResourceOpts = &resource.SharedResourceOptions{Zone: req.Zone}
+				log.Info().Msgf("Creating SecurityGroup with explicit zone '%s' for VM '%s'", req.Zone, req.Name)
+			}
+			err2 := resource.CreateSharedResourceWithOptions(nsId, model.StrSecurityGroup, subGroupReq.ConnectionName, sharedResourceOpts)
 			if err2 != nil {
 				detailedErr := fmt.Errorf("failed to create default SecurityGroup for VM '%s' in namespace '%s' using connection '%s': %w. This may be due to CSP quotas, permissions, or firewall rule configuration issues",
 					req.Name, nsId, subGroupReq.ConnectionName, err2)

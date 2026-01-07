@@ -573,6 +573,7 @@ func RunServer() {
 
 	e.POST("/tumblebug/availableRegionZonesForSpec", rest_resource.RestGetAvailableRegionZonesForSpec)
 	e.POST("/tumblebug/availableRegionZonesForSpecList", rest_resource.RestGetAvailableRegionZonesForSpecList)
+	e.GET("/tumblebug/availableZonesForSpec", rest_resource.RestGetAvailableZonesForSpec)
 	g.POST("/:nsId/updateExistingSpecListByAvailableRegionZones", rest_resource.RestUpdateExistingSpecListByAvailableRegionZones)
 
 	e.POST("/tumblebug/fetchSpecs", rest_resource.RestFetchSpecs)
