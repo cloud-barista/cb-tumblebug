@@ -239,6 +239,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: batchAvailabilityReq
+  /availableZonesForSpec:
+    get:
+      tags:
+      - "[Infra Resource] Spec Management"
+      summary: Get available (verified) zones for a specific spec ID
+      description: "Query verified zones for a spec based on connection configs. Returns\
+        \ zones that are both verified and available for the specified spec. For Alibaba\
+        \ Cloud, additional CSP API filtering is applied."
+      operationId: GetAvailableZonesForSpec
+      parameters:
+      - name: specId
+        in: query
+        description: "Spec ID (format: provider+region+cspSpecName)"
+        required: true
+        schema:
+          type: string
+      - name: credentialHolder
+        in: query
+        description: Credential holder name (defaults to 'admin')
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Available zones information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.AvailableZonesInfo'
+        "400":
+          description: Error with details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.AvailableZonesError'
+        "404":
+          description: Spec not found or resource not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.AvailableZonesError'
   /checkK8sNodeGroupsOnK8sCreation:
     get:
       tags:
@@ -12262,6 +12302,98 @@ components:
           - <=
           - '>'
           - '>='
+    model.AvailableZonesError:
+      type: object
+      properties:
+        alternativeRegions:
+          type: array
+          description: AlternativeRegions provides alternative regions when the specified
+            region is unavailable
+          example:
+          - ap-northeast-1
+          - us-east-1
+          items:
+            type: string
+        errorCode:
+          type: string
+          description: ErrorCode provides a machine-readable error code for programmatic
+            handling
+          example: PROVIDER_NOT_AVAILABLE
+        errorMessage:
+          type: string
+          description: ErrorMessage provides a human-readable error description
+          example: Provider 'xyz' is not available
+        queryDurationMs:
+          type: integer
+          description: QueryDurationMs is the time taken to process the query in milliseconds
+          example: 15
+        specId:
+          type: string
+          description: SpecId is the queried spec ID
+          example: aws+ap-northeast-2+t3.medium
+        suggestion:
+          type: string
+          description: Suggestion provides actionable guidance when errors occur
+          example: "Available providers: aws, gcp, azure"
+      description: Error response when available zones query fails
+    model.AvailableZonesInfo:
+      type: object
+      properties:
+        allVerifiedZones:
+          type: array
+          description: AllVerifiedZones contains all verified zones for the provider/region
+            (before CSP-specific filtering)
+          example:
+          - ap-northeast-2a
+          - ap-northeast-2b
+          - ap-northeast-2c
+          items:
+            type: string
+        availableZones:
+          type: array
+          description: AvailableZones contains zones that are verified and available
+          example:
+          - ap-northeast-2a
+          - ap-northeast-2c
+          items:
+            type: string
+        credentialHolder:
+          type: string
+          description: CredentialHolder is the credential holder used for the query
+          example: admin
+        cspSpecName:
+          type: string
+          description: CspSpecName is the CSP-specific spec name
+          example: t3.medium
+        hasZoneConcept:
+          type: boolean
+          description: HasZoneConcept indicates whether the CSP/region has zone concept
+          example: true
+        providerName:
+          type: string
+          description: ProviderName is the cloud service provider name
+          example: aws
+        queryDurationMs:
+          type: integer
+          description: QueryDurationMs is the time taken to process the query in milliseconds
+          example: 125
+        regionName:
+          type: string
+          description: RegionName is the region name
+          example: ap-northeast-2
+        specId:
+          type: string
+          description: SpecId is the queried spec ID
+          example: aws+ap-northeast-2+t3.medium
+        unavailableZones:
+          type: array
+          description: UnavailableZones contains zones that exist but are not verified
+            or filtered out
+          example:
+          - ap-northeast-2b
+          items:
+            type: string
+      description: Available (verified) zones for a specific spec
     model.AwsSpecificProperty:
       type: object
       properties:
@@ -12721,6 +12853,13 @@ components:
         vmUserPassword:
           type: string
           example: ""
+        zone:
+          type: string
+          description: |-
+            Zone is an optional field to specify the availability zone for VM placement.
+            If specified, subnet will be created in this zone for resources like GPU VMs
+            that may only be available in specific zones. If empty, auto-selection applies.
+          example: ap-northeast-2a
     model.CreateSubGroupReq:
       required:
       - connectionName
@@ -15593,8 +15732,10 @@ components:
       properties:
         region:
           type: string
+          example: us-east-1
         zone:
           type: string
+          example: us-east-1a
     model.RegionList:
       type: object
       properties:

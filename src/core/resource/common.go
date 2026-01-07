@@ -1843,7 +1843,9 @@ func CreateSharedResourceWithOptions(nsId string, resType string, connectionName
 
 			// Create second subnet only if provider supports multiple subnets
 			// When explicit zone is specified, second subnet is placed in a different zone for redundancy
-			if !requiresSingleSubnet && length > 1 {
+			// Allow creation even with single zone (length=1) if explicit zone is specified,
+			// as fallback logic below handles placing both subnets in the same zone
+			if !requiresSingleSubnet && (length > 1 || explicitZone != "") {
 				subnetName = reqTmp.Name + "-01"
 				subnetCidr = "10." + strconv.Itoa(sliceIndex) + ".64.0/18"
 				subnet = model.SubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}

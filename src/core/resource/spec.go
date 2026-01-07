@@ -2842,7 +2842,6 @@ const (
 	ZoneErrorCodeRegionNotAvailable    = "REGION_NOT_AVAILABLE"
 	ZoneErrorCodeNoVerifiedZones       = "NO_VERIFIED_ZONES"
 	ZoneErrorCodeNoZonesAfterFiltering = "NO_ZONES_AFTER_FILTERING"
-	ZoneErrorCodeAlibabaAPIFailed      = "ALIBABA_API_FAILED"
 	ZoneErrorCodeInternalError         = "INTERNAL_ERROR"
 )
 
