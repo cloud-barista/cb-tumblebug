@@ -37,17 +37,17 @@ import (
 func HandleMciAction(nsId string, mciId string, action string, force bool) (string, error) {
 	action = common.ToLower(action)
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return "", err
-	}
+	// err := common.CheckString(nsId)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return "", err
+	// }
 
-	err = common.CheckString(mciId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return "", err
-	}
+	// err = common.CheckString(mciId)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return "", err
+	// }
 	check, _ := CheckMci(nsId, mciId)
 
 	if !check {

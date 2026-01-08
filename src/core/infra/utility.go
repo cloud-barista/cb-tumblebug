@@ -184,17 +184,17 @@ func CheckMciPolicy(nsId string, mciId string) (bool, error) {
 		return false, err
 	}
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return false, err
-	}
+	// err := common.CheckString(nsId)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return false, err
+	// }
 
-	err = common.CheckString(mciId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return false, err
-	}
+	// err = common.CheckString(mciId)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return false, err
+	// }
 	log.Debug().Msg("[Check MciPolicy] " + mciId)
 
 	key := common.GenMciPolicyKey(nsId, mciId, "")

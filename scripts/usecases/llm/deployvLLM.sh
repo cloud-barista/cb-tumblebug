@@ -4,13 +4,21 @@
 # vLLM is a high-throughput and memory-efficient inference engine for LLMs.
 # https://docs.vllm.ai/
 
+# Ensure script runs with bash even when executed via SSH
+if [ -z "$BASH_VERSION" ]; then
+  exec /bin/bash "$0" "$@"
+fi
+
+# Set strict mode for better error handling
+set -e
+
 echo "=========================================="
 echo "vLLM Installation and Setup"
 echo "=========================================="
 
 # Check for NVIDIA GPU (vLLM requires CUDA)
 echo "Checking for NVIDIA GPU..."
-if command -v nvidia-smi &> /dev/null; then
+if command -v nvidia-smi >/dev/null 2>&1; then
   nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
   GPU_COUNT=$(nvidia-smi --query-gpu=name --format=csv,noheader | wc -l)
   echo "Detected $GPU_COUNT GPU(s)"
@@ -22,8 +30,19 @@ fi
 
 # Check system resources
 echo "Checking system resources..."
+DISK_AVAIL=$(df -BG / | awk 'NR==2 {gsub("G","",$4); print $4}')
 df -h / | awk '$NF=="/" {print "Disk - Total: "$2, "Available: "$4}'
 free -h | awk '/Mem:/ {print "Memory - Total: "$2, "Available: "$7}'
+
+# Warn if disk space is low (vLLM + models can require 20GB+)
+if [ "$DISK_AVAIL" -lt 20 ] 2>/dev/null; then
+  echo "Warning: Low disk space (${DISK_AVAIL}GB available). vLLM and models may require 20GB+."
+  read -r -t 10 -p "Continue anyway? [y/N]: " CONTINUE || CONTINUE="n"
+  if [[ ! "$CONTINUE" =~ ^[Yy]$ ]]; then
+    echo "Installation cancelled."
+    exit 1
+  fi
+fi
 
 # Install system dependencies
 echo "Installing system dependencies..."
@@ -43,7 +62,8 @@ else
 fi
 
 # Activate virtual environment
-source "$VENV_PATH/bin/activate"
+# shellcheck disable=SC1091
+. "$VENV_PATH/bin/activate"
 
 # Upgrade pip
 echo "Upgrading pip..."
@@ -53,12 +73,19 @@ pip install --upgrade pip > /dev/null 2>&1
 echo "Installing vLLM (this may take a few minutes)..."
 LOG_FILE="$HOME/vllm_install.log"
 echo "Logging vLLM installation details to $LOG_FILE"
-pip install -U vllm > "$LOG_FILE" 2>&1
 
-if [ $? -ne 0 ]; then
+set +e  # Temporarily disable exit on error for pip install
+pip install -U vllm > "$LOG_FILE" 2>&1
+INSTALL_RESULT=$?
+set -e
+
+if [ $INSTALL_RESULT -ne 0 ]; then
   echo "Failed to install vLLM with default wheels. Trying with CUDA 12.1 wheels..."
+  set +e
   pip install vllm --extra-index-url https://download.pytorch.org/whl/cu121 >> "$LOG_FILE" 2>&1
-  if [ $? -ne 0 ]; then
+  INSTALL_RESULT=$?
+  set -e
+  if [ $INSTALL_RESULT -ne 0 ]; then
     echo "vLLM installation failed. See $LOG_FILE for detailed error messages."
     exit 1
   fi
@@ -87,21 +114,34 @@ cat > "$SERVE_SCRIPT" << 'EOF'
 # vLLM Model Serving Helper Script
 # Usage: ./vllm-serve.sh <model_name> [options]
 
+# Ensure script runs with bash
+if [ -z "$BASH_VERSION" ]; then
+  exec /bin/bash "$0" "$@"
+fi
+
 VENV_PATH="$HOME/venv_vllm"
-source "$VENV_PATH/bin/activate"
+# shellcheck disable=SC1091
+. "$VENV_PATH/bin/activate"
 
 MODEL=${1:-"Qwen/Qwen2.5-1.5B-Instruct"}
 HOST=${2:-"0.0.0.0"}
 PORT=${3:-"8000"}
 
 # Validate PORT is a number within valid range
-if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -lt 1 ] || [ "$PORT" -gt 65535 ]; then
+case "$PORT" in
+  ''|*[!0-9]*) 
+    echo "Error: PORT must be a number between 1 and 65535. Got: $PORT"
+    exit 1
+    ;;
+esac
+if [ "$PORT" -lt 1 ] || [ "$PORT" -gt 65535 ]; then
   echo "Error: PORT must be a number between 1 and 65535. Got: $PORT"
   exit 1
 fi
 
 # Validate HOST format (basic check for IP or hostname)
-if ! [[ "$HOST" =~ ^[0-9a-zA-Z.-]+$ ]]; then
+# Allow 0.0.0.0, localhost, valid IPs, and hostnames
+if [[ ! "$HOST" =~ ^[0-9a-zA-Z.:_-]+$ ]]; then
   echo "Error: HOST contains invalid characters. Got: $HOST"
   exit 1
 fi
@@ -120,9 +160,9 @@ echo ""
 
 # Run vLLM with OpenAI-compatible API server
 python -m vllm.entrypoints.openai.api_server \
-  --model $MODEL \
-  --host $HOST \
-  --port $PORT \
+  --model "$MODEL" \
+  --host "$HOST" \
+  --port "$PORT" \
   --trust-remote-code
 EOF
 
