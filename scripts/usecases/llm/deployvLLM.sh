@@ -3,10 +3,22 @@
 # This script installs vLLM and sets up the environment for LLM serving.
 # vLLM is a high-throughput and memory-efficient inference engine for LLMs.
 # https://docs.vllm.ai/
+#
+# Usage:
+#   curl -fsSL <url> | bash        (pipe to bash, not sh)
+#   bash deployvLLM.sh             (direct execution)
 
-# Ensure script runs with bash even when executed via SSH
+# Ensure script runs with bash
 if [ -z "$BASH_VERSION" ]; then
-  exec /bin/bash "$0" "$@"
+  # Check if running from pipe (stdin is not a terminal)
+  if [ ! -t 0 ]; then
+    echo "Error: This script requires bash. Please use:"
+    echo "  curl -fsSL <url> | bash"
+    exit 1
+  else
+    # Running as a file, re-execute with bash
+    exec /bin/bash "$0" "$@"
+  fi
 fi
 
 # Set strict mode for better error handling
