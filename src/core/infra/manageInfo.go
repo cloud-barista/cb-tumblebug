@@ -79,17 +79,17 @@ func ListMciId(nsId string) ([]string, error) {
 // ListVmId is func to list VM IDs
 func ListVmId(nsId string, mciId string) ([]string, error) {
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
+	// err := common.CheckString(nsId)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return nil, err
+	// }
 
-	err = common.CheckString(mciId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
+	// err = common.CheckString(mciId)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return nil, err
+	// }
 
 	var vmList []string
 
@@ -97,7 +97,7 @@ func ListVmId(nsId string, mciId string) ([]string, error) {
 	key := common.GenMciKey(nsId, mciId, "")
 	key += "/"
 
-	_, _, err = kvstore.GetKv(key)
+	_, _, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Debug().Msg("[Not found] " + mciId)
 		log.Error().Err(err).Msg("")
@@ -859,17 +859,17 @@ func GetVmIdNameInDetail(nsId string, mciId string, vmId string) (*model.IdNameI
 // GetMciStatus is func to Get Mci Status
 func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return &model.MciStatusInfo{}, err
-	}
+	// err := common.CheckString(nsId)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return &model.MciStatusInfo{}, err
+	// }
 
-	err = common.CheckString(mciId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return &model.MciStatusInfo{}, err
-	}
+	// err = common.CheckString(mciId)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return &model.MciStatusInfo{}, err
+	// }
 
 	key := common.GenMciKey(nsId, mciId, "")
 
@@ -879,7 +879,7 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 		return &model.MciStatusInfo{}, err
 	}
 	if !exists {
-		err := fmt.Errorf("Not found [" + key + "]")
+		err := fmt.Errorf("%s", "Not found ["+key+"]")
 		log.Error().Err(err).Msg("")
 		return &model.MciStatusInfo{}, err
 	}
