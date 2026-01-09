@@ -82,7 +82,7 @@ services:
       # - TB_LOGWRITER=both
       # - TB_NODE_ENV=development
     healthcheck: # for CB-Tumblebug
-      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/1323 && echo -e 'GET /tumblebug/readyz HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q '200' <&3"]
+      test: ["CMD", "curl", "-f", "http://localhost:1323/tumblebug/readyz"]
       interval: 1m
       timeout: 5s
       retries: 3
@@ -189,7 +189,7 @@ services:
       - ID_TRANSFORM_MODE=OFF
       - ADMINWEB=OFF
     healthcheck: # for CB-Spider
-      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/1024 && echo -e 'GET /spider/readyz HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q '200' <&3"]
+      test: ["CMD", "curl", "-f", "http://localhost:1024/spider/readyz"]
       interval: 1m
       timeout: 5s
       retries: 3
