@@ -896,6 +896,18 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 		return &model.MciStatusInfo{}, err
 	}
 	if len(vmList) == 0 {
+		// MCI has no VMs - check if it's in provisioning phase or truly empty
+		currentStatus := mciTmp.Status
+		if strings.Contains(currentStatus, model.StatusPreparing) || strings.Contains(currentStatus, model.StatusPrepared) ||
+			strings.Contains(currentStatus, model.StatusCreating) || strings.Contains(currentStatus, model.StatusFailed) {
+			// MCI is in provisioning phase or failed - keep current status
+			mciStatus.Status = currentStatus
+		} else {
+			// MCI was already running/completed but now has no VMs - set to Empty
+			mciStatus.Status = model.StatusEmpty
+		}
+		mciStatus.StatusCount = model.StatusCountInfo{}
+		mciStatus.Vm = []model.VmStatusInfo{}
 		return &mciStatus, nil
 	}
 
@@ -2398,8 +2410,9 @@ func DelMci(nsId string, mciId string, option string) (model.IdList, error) {
 	}
 
 	// Check MCI status is Terminated (not Partial)
-	if mciStatus.Id != "" && !(!strings.Contains(mciStatus.Status, "Partial-") && (strings.Contains(mciStatus.Status, model.StatusTerminated) || strings.Contains(mciStatus.Status, model.StatusUndefined) || strings.Contains(mciStatus.Status, model.StatusFailed) || strings.Contains(mciStatus.Status, model.StatusPreparing) || strings.Contains(mciStatus.Status, model.StatusPrepared))) {
-		err := fmt.Errorf("MCI " + mciId + " is " + mciStatus.Status + " and not " + model.StatusTerminated + "/" + model.StatusUndefined + "/" + model.StatusFailed + ", Deletion is not allowed (use option=force for force deletion)")
+	// Allow deletion for: Terminated, Undefined, Failed, Preparing, Prepared, Empty
+	if mciStatus.Id != "" && !(!strings.Contains(mciStatus.Status, "Partial-") && (strings.Contains(mciStatus.Status, model.StatusTerminated) || strings.Contains(mciStatus.Status, model.StatusUndefined) || strings.Contains(mciStatus.Status, model.StatusFailed) || strings.Contains(mciStatus.Status, model.StatusPreparing) || strings.Contains(mciStatus.Status, model.StatusPrepared) || strings.Contains(mciStatus.Status, model.StatusEmpty))) {
+		err := fmt.Errorf("MCI %s is %s, which is not a deletable status (Terminated/Undefined/Failed/Preparing/Prepared/Empty). Use option=force for forced deletion", mciId, mciStatus.Status)
 		log.Error().Err(err).Msg("")
 		if option != "force" {
 			return deletedResources, err

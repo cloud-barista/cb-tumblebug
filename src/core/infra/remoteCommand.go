@@ -96,6 +96,10 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
+	if len(vmList) == 0 {
+		err := fmt.Errorf("MCI %s has no VMs to execute commands (status: Empty)", mciId)
+		return nil, err
+	}
 	if subGroupId != "" {
 		vmListInGroup, err := ListVmBySubGroup(nsId, mciId, subGroupId)
 		if err != nil {

@@ -250,6 +250,10 @@ func InstallMonitorAgentToMci(nsId string, mciId string, mciServiceType string, 
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
+	if len(vmList) == 0 {
+		err := fmt.Errorf("MCI %s has no VMs to install monitoring agent (status: Empty)", mciId)
+		return content, err
+	}
 
 	log.Debug().Msg("[Install agent for each VM]")
 
