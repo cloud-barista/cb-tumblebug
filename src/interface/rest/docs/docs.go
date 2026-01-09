@@ -9118,7 +9118,7 @@ const docTemplate = `{
                     }
                 }
             },
-            "post": {
+            "put": {
                 "description": "Create an object storage (bucket)",
                 "consumes": [
                     "application/json"
@@ -9316,10 +9316,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
+                        "description": "OK"
                     },
                     "404": {
                         "description": "Not Found",
@@ -9368,6 +9365,274 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.ObjectStorageLocationResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/objectStorage/{osId}/object": {
+            "get": {
+                "description": "List all objects in an object storage (bucket)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "List objects in an object storage (bucket)",
+                "operationId": "ListDataObjects",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "os01",
+                        "description": "Object Storage ID",
+                        "name": "osId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK - Returns object storage info with contents",
+                        "schema": {
+                            "$ref": "#/definitions/model.ListObjectResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/objectStorage/{osId}/object/{objectKey}": {
+            "get": {
+                "description": "Generate a presigned URL for uploading  or downloading an object to an object storage (bucket)\n\n**Important Notes:**\n- The generated presigned URL can be used to upload the object directly without further authentication\n- The expiration time is specified in seconds (default: 3600 seconds)\n\n**Example Usage: Upload**\n` + "`" + `` + "`" + `` + "`" + `bash\n# Using the presigned URL to upload a file\ncurl -i -H \"Content-Type: text/plain\" -X PUT \"\u003cPRESIGNED_URL\u003e\" --data-binary \"@local-file.txt\"\n` + "`" + `` + "`" + `` + "`" + `\n\n**Example Usage: download**\n` + "`" + `` + "`" + `` + "`" + `bash\n# Using the presigned URL to download a file\ncurl -X GET \"\u003cPRESIGNED_URL\u003e\" -o downloaded-file.txt\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "Generate a presigned URL for uploading or downloading an object",
+                "operationId": "GeneratePresignedURL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "os01",
+                        "description": "Object Storage ID",
+                        "name": "osId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Object Key",
+                        "name": "objectKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "upload",
+                            "download"
+                        ],
+                        "type": "string",
+                        "description": "Operation type",
+                        "name": "operation",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 3600,
+                        "description": "Expiration time in seconds",
+                        "name": "expiry",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PresignedUrlResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an object from an object storage (bucket)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "Delete an object from an object storage (bucket)",
+                "operationId": "DeleteDataObject",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "os01",
+                        "description": "Object Storage ID",
+                        "name": "osId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Object Key",
+                        "name": "objectKey",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "head": {
+                "description": "Get object info from an object storage (bucket)\n\n**Important Notes:**\n- This API retrieves the metadata of an object without downloading the actual content\n- Returns metadata in response headers (Content-Length, Content-Type, ETag, Last-Modified)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "Get object info from an object storage (bucket)",
+                "operationId": "GetDataObjectInfo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "os01",
+                        "description": "Object Storage ID",
+                        "name": "osId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Object Key",
+                        "name": "objectKey",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK - Object metadata returned in headers"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -17510,6 +17775,17 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ListObjectResponse": {
+            "type": "object",
+            "properties": {
+                "objects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Object"
+                    }
+                }
+            }
+        },
         "model.Location": {
             "type": "object",
             "properties": {
@@ -18919,6 +19195,23 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "model.PresignedUrlResponse": {
+            "type": "object",
+            "properties": {
+                "expires": {
+                    "type": "integer",
+                    "example": 1693824000
+                },
+                "method": {
+                    "type": "string",
+                    "example": "GET"
+                },
+                "presignedURL": {
+                    "type": "string",
+                    "example": "https://example.com/presigned-url"
                 }
             }
         },

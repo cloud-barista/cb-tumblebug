@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/resource"
@@ -40,7 +41,7 @@ import (
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 409 {object} model.SimpleMsg "Conflict"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// @Router /ns/{nsId}/resources/objectStorage [post]
+// @Router /ns/{nsId}/resources/objectStorage [put]
 func RestCreateObjectStorage(c echo.Context) error {
 
 	// [Input]
@@ -173,8 +174,8 @@ func RestGetObjectStorage(c echo.Context) error {
 // @Produce json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param osId path string true "Object Storage ID" default(os01)
-// @Success 200 {object} model.SimpleMsg
-// @Failure 404 {object} model.SimpleMsg
+// @Success 200 "OK"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Router /ns/{nsId}/resources/objectStorage/{osId} [head]
 func RestCheckObjectStorageExistance(c echo.Context) error {
 
@@ -191,17 +192,17 @@ func RestCheckObjectStorageExistance(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	exists, err := resource.CheckResource(nsId, model.StrObjectStorage, osId)
+	exists, err := resource.CheckObjectStorageExistence(nsId, osId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
 	}
 
-	if exists {
-		return c.JSON(http.StatusOK, model.SimpleMsg{Message: "Object Storage exists"})
-	} else {
+	if !exists {
 		return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: "Object Storage does not exist"})
 	}
+
+	return c.NoContent(http.StatusOK)
 }
 
 // RestGetObjectStorageLocation godoc
@@ -802,324 +803,257 @@ func RestDeleteObjectStorage(c echo.Context) error {
 // 	return proxyHandler(c)
 // }
 
-// /*
-//  * Object operations
-//  */
+/*
+ * Object operations
+ */
 
-// // RestGetDataObjectInfoLagacy godoc
-// // @ID GetDataObjectInfoLagacy
-// // @Summary (To be deprecated) Get an object info from a bucket
-// // @Description (To be deprecated) Get an object info from a bucket
-// // @Description
-// // @Description **Important Notes:**
-// // @Description - The generated `Download file` link in Swagger UI may not work because this API get the object metadata only.
-// // @Tags [Infra Resource] Object Storage Management
-// // @Accept xml
-// // @Produce octet-stream
-// // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// // @Param objectKey path string true "Object Name" default(test-object.txt)
-// // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
-// // @Success 200 "OK"
-// // @Router /resources/objectStorage/{objectStorageName}/{objectKey} [head]
-// func GetDataObjectInfoLagacy(c echo.Context) error {
+// RestGeneratePresignedURL godoc
+// @ID GeneratePresignedURL
+// @Summary Generate a presigned URL for uploading or downloading an object
+// @Description Generate a presigned URL for uploading  or downloading an object to an object storage (bucket)
+// @Description
+// @Description **Important Notes:**
+// @Description - The generated presigned URL can be used to upload the object directly without further authentication
+// @Description - The expiration time is specified in seconds (default: 3600 seconds)
+// @Description
+// @Description **Example Usage: Upload**
+// @Description ```bash
+// @Description # Using the presigned URL to upload a file
+// @Description curl -i -H "Content-Type: text/plain" -X PUT "<PRESIGNED_URL>" --data-binary "@local-file.txt"
+// @Description ```
+// @Description
+// @Description **Example Usage: download**
+// @Description ```bash
+// @Description # Using the presigned URL to download a file
+// @Description curl -X GET "<PRESIGNED_URL>" -o downloaded-file.txt
+// @Description ```
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param osId path string true "Object Storage ID" default(os01)
+// @Param objectKey path string true "Object Key"
+// @Param operation query string false "Operation type" Enums(upload, download)
+// @Param expiry query int false "Expiration time in seconds" default(3600)
+// @Success 200 {object} model.PresignedUrlResponse "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/resources/objectStorage/{osId}/object/{objectKey} [get]
+func RestGeneratePresignedURL(c echo.Context) error {
 
-// 	// Validate objectStorageName parameter
-// 	objectStorageName := c.Param("objectStorageName")
-// 	if objectStorageName == "" {
-// 		err := fmt.Errorf("%s", "objectStorageName is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-// 	// Validate objectKey parameter
-// 	objectKey := c.Param("objectKey")
-// 	if objectKey == "" {
-// 		err := fmt.Errorf("%s", "objectKey is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
+	// [Input]
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	// Validate credential header
-// 	credentialHeader := c.Request().Header.Get("credential")
-// 	err := validateCredential(credentialHeader)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("invalid credential header")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
+	osId := c.Param("osId")
+	if osId == "" {
+		err := fmt.Errorf("osId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	// Source path pattern with * to capture objectStorageName and objectKey
-// 	sourcePattern := "/resources/objectStorage/*/*"
-// 	// Target path pattern using $1 for captured objectStorageName and $2 for objectKey
-// 	targetPattern := "/s3/$1/$2"
+	objectKey := c.Param("objectKey")
+	if objectKey == "" {
+		err := fmt.Errorf("objectKey is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
-// 	return proxyHandler(c)
-// }
+	operation := c.QueryParam("operation")
+	if operation == "" {
+		err := fmt.Errorf("operation is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// // RestDeleteDataObjectLagacy godoc
-// // @ID DeleteDataObjectLagacy
-// // @Summary (To be deprecated) Delete an object from a bucket
-// // @Description (To be deprecated) Delete an object from a bucket
-// // @Tags [Infra Resource] Object Storage Management
-// // @Accept xml
-// // @Produce xml
-// // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// // @Param objectKey path string true "Object Name" default(test-object.txt)
-// // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
-// // @Success 204 "No Content"
-// // @Router /resources/objectStorage/{objectStorageName}/{objectKey} [delete]
-// func DeleteDataObjectLagacy(c echo.Context) error {
+	// Parse expiry from query parameter (default: 3600 seconds)
+	expiryStr := c.QueryParam("expiry")
+	expirySeconds := 3600 // default
+	if expiryStr != "" {
+		if parsed, err := fmt.Sscanf(expiryStr, "%d", &expirySeconds); err != nil || parsed != 1 {
+			log.Warn().Str("expiry", expiryStr).Msg("Invalid expiry parameter, using default 3600")
+			expirySeconds = 3600
+		}
+	}
 
-// 	// Validate objectStorageName parameter
-// 	objectStorageName := c.Param("objectStorageName")
-// 	if objectStorageName == "" {
-// 		err := fmt.Errorf("%s", "objectStorageName is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-// 	// Validate objectKey parameter
-// 	objectKey := c.Param("objectKey")
-// 	if objectKey == "" {
-// 		err := fmt.Errorf("%s", "objectKey is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
+	// [Process]
+	result, err := resource.GeneratePresignedURL(nsId, osId, objectKey, time.Duration(expirySeconds)*time.Second, operation)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to generate presigned %s URL", operation)
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	// Validate credential header
-// 	credentialHeader := c.Request().Header.Get("credential")
-// 	err := validateCredential(credentialHeader)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("invalid credential header")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
+	// [Output]
+	return c.JSON(http.StatusOK, result)
+}
 
-// 	// Source path pattern with * to capture objectStorageName and objectKey
-// 	sourcePattern := "/resources/objectStorage/*/*"
-// 	// Target path pattern using $1 for captured objectStorageName and $2 for objectKey
-// 	targetPattern := "/s3/$1/$2"
+// RestListDataObjects godoc
+// @ID ListDataObjects
+// @Summary List objects in an object storage (bucket)
+// @Description List all objects in an object storage (bucket)
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param osId path string true "Object Storage ID" default(os01)
+// // @Param prefix query string false "Filter objects by prefix" default()
+// // @Param maxKeys query int false "Maximum number of keys to return" default(1000)
+// @Success 200 {object} model.ListObjectResponse "OK - Returns object storage info with contents"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/resources/objectStorage/{osId}/object [get]
+func RestListDataObjects(c echo.Context) error {
 
-// 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
-// 	return proxyHandler(c)
-// }
+	// [Input]
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// // Note: The xmlns attribute and root element name may not be accurately
-// // represented in Swagger UI due to XML rendering limitations.
+	osId := c.Param("osId")
+	if osId == "" {
+		err := fmt.Errorf("osId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// type Delete struct {
-// 	Object []Object `xml:"Object" json:"object"`
-// }
+	// // Optional query parameters
+	// prefix := c.QueryParam("prefix")
+	// maxKeysStr := c.QueryParam("maxKeys")
+	// maxKeys := 1000 // default
+	// if maxKeysStr != "" {
+	// 	if parsed, err := fmt.Sscanf(maxKeysStr, "%d", &maxKeys); err != nil || parsed != 1 {
+	// 		log.Warn().Str("maxKeys", maxKeysStr).Msg("Invalid maxKeys parameter, using default 1000")
+	// 		maxKeys = 1000
+	// 	}
+	// }
 
-// type DeleteResult struct {
-// 	// The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
-// 	// Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
-// 	Deleted []Object `xml:"Deleted" json:"deleted"`
-// }
+	// [Process]
+	result, err := resource.ListDataObjects(nsId, osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
 
-// // RestDeleteMultipleDataObjectsLagacy godoc
-// // @ID DeleteMultipleDataObjectsLagacy
-// // @Summary (To be deprecated) **Delete** multiple objects from a bucket
-// // @Description (To be deprecated) `Delete` multiple objects from a bucket
-// // @Description
-// // @Description **Important Notes:**
-// // @Description - The request body must contain the list of objects to delete in XML format
-// // @Description - The `delete` query parameter must be set to `true`
-// // @Description
-// // @Description **Request Body Example:**
-// // @Description ```xml
-// // @Description <?xml version="1.0" encoding="UTF-8"?>
-// // @Description <Delete xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-// // @Description   <Object>
-// // @Description     <Key>test-object1.txt</Key>
-// // @Description   </Object>
-// // @Description   <Object>
-// // @Description     <Key>test-object2.txt</Key>
-// // @Description   </Object>
-// // @Description </Delete>
-// // @Description ```
-// // @Description
-// // @Description **Actual XML Response Example:**
-// // @Description ```xml
-// // @Description <?xml version="1.0" encoding="UTF-8"?>
-// // @Description <DeleteResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-// // @Description   <Deleted>
-// // @Description     <Key>test-object1.txt</Key>
-// // @Description   </Deleted>
-// // @Description   <Deleted>
-// // @Description     <Key>test-object2.txt</Key>
-// // @Description   </Deleted>
-// // @Description </DeleteResult>
-// // @Description ```
-// // @Tags [Infra Resource] Object Storage Management
-// // @Accept xml
-// // @Produce xml
-// // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// // @Param delete query boolean true "Delete" default(true) enum(true)
-// // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
-// // @Param reqBody body Delete true "List of objects to delete"
-// // @Success 200 {object} DeleteResult "OK"
-// // @Router /resources/objectStorage/{objectStorageName} [post]
-// func DeleteMultipleDataObjectsLagacy(c echo.Context) error {
+	// [Output]
+	return c.JSON(http.StatusOK, result)
+}
 
-// 	// Validate objectStorageName parameter
-// 	objectStorageName := c.Param("objectStorageName")
-// 	if objectStorageName == "" {
-// 		err := fmt.Errorf("%s", "objectStorageName is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-// 	// Validate delete query parameter
-// 	deleteParam := c.QueryParam("delete")
-// 	if deleteParam != "true" {
-// 		err := fmt.Errorf("%s", "delete query parameter must be true")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
+// RestGetDataObjectInfo godoc
+// @ID GetDataObjectInfo
+// @Summary Get object info from an object storage (bucket)
+// @Description Get object info from an object storage (bucket)
+// @Description
+// @Description **Important Notes:**
+// @Description - This API retrieves the metadata of an object without downloading the actual content
+// @Description - Returns metadata in response headers (Content-Length, Content-Type, ETag, Last-Modified)
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param osId path string true "Object Storage ID" default(os01)
+// @Param objectKey path string true "Object Key"
+// @Success 200 "OK - Object metadata returned in headers"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/resources/objectStorage/{osId}/object/{objectKey} [head]
+func RestGetDataObjectInfo(c echo.Context) error {
 
-// 	// Validate credential header
-// 	credentialHeader := c.Request().Header.Get("credential")
-// 	err := validateCredential(credentialHeader)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("invalid credential header")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
+	// [Input]
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	// Source path pattern with * to capture objectStorageName
-// 	sourcePattern := "/resources/objectStorage/*?delete=true"
-// 	// Target path pattern using $1 for captured objectStorageName
-// 	targetPattern := "/s3/$1?delete"
+	osId := c.Param("osId")
+	if osId == "" {
+		err := fmt.Errorf("osId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
-// 	return proxyHandler(c)
-// }
+	objectKey := c.Param("objectKey")
+	if objectKey == "" {
+		err := fmt.Errorf("objectKey is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// // Note: The xmlns attribute and root element name may not be accurately
-// // represented in Swagger UI due to XML rendering limitations.
+	// [Process]
+	result, err := resource.GetDataObject(nsId, osId, objectKey)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
 
-// type PresignedURLResult struct {
-// 	PresignedURL string `xml:"PresignedURL" json:"presignedURL" example:">https://globally-unique-bucket-hctdx3.s3.dualstack.ap-southeast-2.amazonaws.com/test-file.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA***EXAMPLE%2F20250904%2Fap-southeast-2%2Fs3%2Faws4_request&X-Amz-Date=20250904T061448Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=***-signature"`
-// 	Expires      int    `xml:"Expires" json:"expires" example:"3600"`
-// 	Method       string `xml:"Method" json:"method" example:"GET"`
-// }
+	// [Output] Set metadata in response headers
+	if result.ETag != "" {
+		c.Response().Header().Set("ETag", result.ETag)
+	}
+	if result.LastModified != "" {
+		c.Response().Header().Set("Last-Modified", result.LastModified)
+	}
 
-// // RestGeneratePresignedDownloadURLLagacy godoc
-// // @ID GeneratePresignedDownloadURLLagacy
-// // @Summary (To be deprecated) Generate a presigned URL for downloading an object from a bucket
-// // @Description (To be deprecated) Generate a presigned URL for downloading an object from a bucket
-// // @Description
-// // @Description **Important Notes:**
-// // @Description - The actual response will be XML format with root element `PresignedURLResult`
-// // @Description - The `expires` query parameter specifies the expiration time in seconds for the presigned URL (default: 3600 seconds)
-// // @Description - The generated presigned URL can be used to download the object directly without further authentication
-// // @Description
-// // @Description **Actual XML Response Example:**
-// // @Description ```xml
-// // @Description <?xml version="1.0" encoding="UTF-8"?>
-// // @Description <PresignedURLResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-// // @Description   <PresignedURL>https://globally-unique-bucket-hctdx3.s3.dualstack.ap-southeast-2.amazonaws.com/test-file.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA***EXAMPLE%2F20250904%2Fap-southeast-2%2Fs3%2Faws4_request&X-Amz-Date=20250904T061448Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=***-signature</PresignedURL>
-// // @Description   <Expires>3600</Expires>
-// // @Description   <Method>GET</Method>
-// // @Description </PresignedURLResult>
-// // @Description ```
-// // @Tags [Infra Resource] Object Storage Management
-// // @Accept json
-// // @Produce json
-// // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// // @Param objectKey path string true "Object Name" default(test-object.txt)
-// // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
-// // @Param expires query int false "Expiration time in seconds for the presigned URL" default(3600)
-// // @Success 200 {object} PresignedURLResult "OK"
-// // @Router /resources/objectStorage/presigned/download/{objectStorageName}/{objectKey} [get]
-// func GeneratePresignedDownloadURLLagacy(c echo.Context) error {
+	return c.NoContent(http.StatusOK)
+}
 
-// 	// Validate objectStorageName parameter
-// 	objectStorageName := c.Param("objectStorageName")
-// 	if objectStorageName == "" {
-// 		err := fmt.Errorf("%s", "objectStorageName is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-// 	// Validate objectKey parameter
-// 	objectKey := c.Param("objectKey")
-// 	if objectKey == "" {
-// 		err := fmt.Errorf("%s", "objectKey is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
+// RestDeleteDataObject godoc
+// @ID DeleteDataObject
+// @Summary Delete an object from an object storage (bucket)
+// @Description Delete an object from an object storage (bucket)
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param osId path string true "Object Storage ID" default(os01)
+// @Param objectKey path string true "Object Key"
+// @Success 204 "No Content"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/resources/objectStorage/{osId}/object/{objectKey} [delete]
+func RestDeleteDataObject(c echo.Context) error {
 
-// 	// Validate credential header
-// 	credentialHeader := c.Request().Header.Get("credential")
-// 	err := validateCredential(credentialHeader)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("invalid credential header")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
+	// [Input]
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	// Source path pattern with * to capture objectStorageName and objectKey
-// 	sourcePattern := "/resources/objectStorage/presigned/download/*/*?expires=*"
-// 	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, and $3 for expires
-// 	targetPattern := "/s3/presigned/download/$1/$2?expires=$3"
+	osId := c.Param("osId")
+	if osId == "" {
+		err := fmt.Errorf("osId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
-// 	return proxyHandler(c)
-// }
+	objectKey := c.Param("objectKey")
+	if objectKey == "" {
+		err := fmt.Errorf("objectKey is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// // RestGeneratePresignedUploadURLLagacy godoc
-// // @ID GeneratePresignedUploadURLLagacy
-// // @Summary (To be deprecated) Generate a presigned URL for uploading an object to a bucket
-// // @Description (To be deprecated) Generate a presigned URL for uploading an object to a bucket
-// // @Description
-// // @Description **Important Notes:**
-// // @Description - The actual response will be XML format with root element `PresignedURLResult`
-// // @Description - The `expires` query parameter specifies the expiration time in seconds for the presigned URL (default: 3600 seconds)
-// // @Description - The generated presigned URL can be used to upload the object directly without further authentication
-// // @Description
-// // @Description **Actual XML Response Example:**
-// // @Description ```xml
-// // @Description <?xml version="1.0" encoding="UTF-8"?>
-// // @Description <PresignedURLResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-// // @Description   <PresignedURL>https://globally-unique-bucket-hctdx3.s3.dualstack.ap-southeast-2.amazonaws.com/test-file.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA***EXAMPLE%2F20250904%2Fap-southeast-2%2Fs3%2Faws4_request&X-Amz-Date=20250904T061448Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=***-signature</PresignedURL>
-// // @Description   <Expires>3600</Expires>
-// // @Description   <Method>PUT</Method>
-// // @Description </PresignedURLResult>
-// // @Description ```
-// // @Tags [Infra Resource] Object Storage Management
-// // @Accept json
-// // @Produce json
-// // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// // @Param objectKey path string true "Object Name" default(test-object.txt)
-// // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
-// // @Param expires query int false "Expiration time in seconds for the presigned URL" default(3600)
-// // @Success 200 {object} PresignedURLResult "OK"
-// // @Router /resources/objectStorage/presigned/upload/{objectStorageName}/{objectKey} [get]
-// func GeneratePresignedUploadURLLagacy(c echo.Context) error {
+	// [Process]
+	err := resource.DeleteDataObject(nsId, osId, objectKey)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to delete object")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	// Validate objectStorageName parameter
-// 	objectStorageName := c.Param("objectStorageName")
-// 	if objectStorageName == "" {
-// 		err := fmt.Errorf("%s", "objectStorageName is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-// 	// Validate objectKey parameter
-// 	objectKey := c.Param("objectKey")
-// 	if objectKey == "" {
-// 		err := fmt.Errorf("%s", "objectKey is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-
-// 	// Validate credential header
-// 	credentialHeader := c.Request().Header.Get("credential")
-// 	err := validateCredential(credentialHeader)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("invalid credential header")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-
-// 	// Source path pattern with * to capture objectStorageName and objectKey
-// 	sourcePattern := "/resources/objectStorage/presigned/upload/*/*?expires=*"
-// 	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, and $3 for expires
-// 	targetPattern := "/s3/presigned/upload/$1/$2?expires=$3"
-
-// 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
-// 	return proxyHandler(c)
-// }
+	// [Output]
+	return c.NoContent(http.StatusNoContent)
+}

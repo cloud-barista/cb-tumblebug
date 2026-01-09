@@ -7562,7 +7562,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-    post:
+    put:
       tags:
       - "[Infra Resource] Object Storage Management"
       summary: Create an object storage (bucket)
@@ -7714,10 +7714,7 @@ paths:
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
+          content: {}
         "404":
           description: Not Found
           content:
@@ -7753,6 +7750,240 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.ObjectStorageLocationResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/objectStorage/{osId}/object:
+    get:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: List objects in an object storage (bucket)
+      description: List all objects in an object storage (bucket)
+      operationId: ListDataObjects
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      responses:
+        "200":
+          description: OK - Returns object storage info with contents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ListObjectResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/objectStorage/{osId}/object/{objectKey}:
+    get:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Generate a presigned URL for uploading or downloading an object
+      description: |-
+        Generate a presigned URL for uploading  or downloading an object to an object storage (bucket)
+
+        **Important Notes:**
+        - The generated presigned URL can be used to upload the object directly without further authentication
+        - The expiration time is specified in seconds (default: 3600 seconds)
+
+        **Example Usage: Upload**
+        ```bash
+        # Using the presigned URL to upload a file
+        curl -i -H "Content-Type: text/plain" -X PUT "<PRESIGNED_URL>" --data-binary "@local-file.txt"
+        ```
+
+        **Example Usage: download**
+        ```bash
+        # Using the presigned URL to download a file
+        curl -X GET "<PRESIGNED_URL>" -o downloaded-file.txt
+        ```
+      operationId: GeneratePresignedURL
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      - name: objectKey
+        in: path
+        description: Object Key
+        required: true
+        schema:
+          type: string
+      - name: operation
+        in: query
+        description: Operation type
+        schema:
+          type: string
+          enum:
+          - upload
+          - download
+      - name: expiry
+        in: query
+        description: Expiration time in seconds
+        schema:
+          type: integer
+          default: 3600
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.PresignedUrlResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    delete:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Delete an object from an object storage (bucket)
+      description: Delete an object from an object storage (bucket)
+      operationId: DeleteDataObject
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      - name: objectKey
+        in: path
+        description: Object Key
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+          content: {}
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    head:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Get object info from an object storage (bucket)
+      description: |-
+        Get object info from an object storage (bucket)
+
+        **Important Notes:**
+        - This API retrieves the metadata of an object without downloading the actual content
+        - Returns metadata in response headers (Content-Length, Content-Type, ETag, Last-Modified)
+      operationId: GetDataObjectInfo
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      - name: objectKey
+        in: path
+        description: Object Key
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK - Object metadata returned in headers
+          content: {}
         "400":
           description: Bad Request
           content:
@@ -14432,6 +14663,13 @@ components:
             type: string
         resourceKey:
           type: string
+    model.ListObjectResponse:
+      type: object
+      properties:
+        objects:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.Object'
     model.Location:
       type: object
       properties:
@@ -15495,6 +15733,18 @@ components:
           $ref: '#/components/schemas/model.AutoCondition'
         status:
           type: string
+    model.PresignedUrlResponse:
+      type: object
+      properties:
+        expires:
+          type: integer
+          example: 1693824000
+        method:
+          type: string
+          example: GET
+        presignedURL:
+          type: string
+          example: https://example.com/presigned-url
     model.PriorityCondition:
       type: object
       properties:

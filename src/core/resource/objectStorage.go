@@ -81,15 +81,6 @@ type spiderGetBucketInfoRes struct {
 	Contents     []spiderObject `xml:"Contents" json:"Contents"`
 }
 
-// spiderObject represents a single object in the S3 bucket
-type spiderObject struct {
-	Key          string `xml:"Key" json:"Key" example:"test-object.txt"`
-	LastModified string `xml:"LastModified" json:"LastModified" example:"2025-09-04T04:18:06Z"`
-	ETag         string `xml:"ETag" json:"ETag" example:"9b2cf535f27731c974343645a3985328"`
-	Size         int64  `xml:"Size" json:"Size" example:"1024"`
-	StorageClass string `xml:"StorageClass" json:"StorageClass" example:"STANDARD"`
-}
-
 // spiderObjectStorageCreateRequest represents the request structure to create an S3 bucket in Spider
 type spiderObjectStorageCreateRequest struct {
 	BucketName     string `xml:"BucketName" json:"BucketName" validate:"required" example:"globally-unique-bucket-name-12345"`
@@ -99,6 +90,60 @@ type spiderObjectStorageCreateRequest struct {
 type spiderObjectStorageLocationResponse struct {
 	LocationConstraint string `xml:"LocationConstraint" json:"LocationConstraint" example:"ap-northeast-2"`
 }
+
+// spiderObject represents a single object in the S3 bucket
+type spiderObject struct {
+	Key          string `xml:"Key" json:"Key" example:"test-object.txt"`
+	LastModified string `xml:"LastModified" json:"LastModified" example:"2025-09-04T04:18:06Z"`
+	ETag         string `xml:"ETag" json:"ETag" example:"9b2cf535f27731c974343645a3985328"`
+	Size         int64  `xml:"Size" json:"Size" example:"1024"`
+	StorageClass string `xml:"StorageClass" json:"StorageClass" example:"STANDARD"`
+}
+
+type spiderPreSignedUrlResponse struct {
+	Expires      int64  `xml:"Expires" json:"Expires" example:"1693824000"`
+	Method       string `xml:"Method" json:"Method" example:"GET"`
+	PreSignedURL string `xml:"PresignedURL" json:"PreSignedURL" example:"https://example.com/presigned-url"`
+}
+
+// checkObjectKey validates the object key (file name) for S3 operations
+func checkObjectKey(objectKey string) error {
+	if objectKey == "" {
+		return fmt.Errorf("objectKey cannot be empty")
+	}
+
+	// S3 object key length validation (max 1024 characters)
+	if len(objectKey) > 1024 {
+		return fmt.Errorf("objectKey length exceeds maximum of 1024 characters")
+	}
+
+	// Check for invalid characters
+	// AWS S3 recommends avoiding: backslash (\), control characters (0x00-0x1F, 0x7F)
+	for i, r := range objectKey {
+		// Control characters
+		if r < 0x20 || r == 0x7F {
+			return fmt.Errorf("objectKey contains invalid control character at position %d", i)
+		}
+		// Backslash
+		if r == '\\' {
+			return fmt.Errorf("objectKey contains backslash (\\) which should be avoided")
+		}
+	}
+
+	// Check for problematic patterns
+	if objectKey[0] == '/' {
+		return fmt.Errorf("objectKey should not start with slash (/)")
+	}
+	if objectKey[len(objectKey)-1] == '/' {
+		return fmt.Errorf("objectKey should not end with slash (/)")
+	}
+
+	return nil
+}
+
+/*
+ * Functions for object storages (buckets)
+ */
 
 // CreateObjectStorage creates a new object storage (bucket) in the specified namespace
 func CreateObjectStorage(nsId string, req model.ObjectStorageCreateRequest) (model.ObjectStorageInfo, error) {
@@ -347,81 +392,6 @@ func CreateObjectStorage(nsId string, req model.ObjectStorageCreateRequest) (mod
 	// 13. Return the object storage info
 	return objStrgInfo, nil
 }
-
-// // ListObjectStorages retrieves the list of object storages (buckets) from the specified namespace
-// func ListObjectStorages(nsId string) (model.ObjectStorageListResponse, error) {
-
-// 	var emptyRet model.ObjectStorageListResponse
-
-// 	// 1. Validate input parameters
-// 	err := common.CheckString(nsId)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	err = validate.Struct(req)
-// 	if err != nil {
-// 		if _, ok := err.(*validator.InvalidValidationError); ok {
-// 			log.Error().Err(err).Msg("")
-// 			return emptyRet, err
-// 		}
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-// 	_, err = common.GetConnConfig(req.ConnectionName)
-// 	if err != nil {
-// 		err = fmt.Errorf("cannot retrieve ConnectionConfig %s", err.Error())
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-
-// 	// 2. Call Spider API to list the object storages
-// 	client := clientManager.NewHttpClient()
-// 	method := "GET"
-// 	spReq := clientManager.NoBody
-// 	spResp := spiderListBucketRes{}
-
-// 	url := fmt.Sprintf("%s/s3?ConnectionName=%s", model.SpiderRestUrl, req.ConnectionName)
-// 	log.Debug().Msgf("[Request to Spider] Listing S3 buckets (url: %s)", url)
-
-// 	_, err = clientManager.ExecuteHttpRequest(
-// 		client,
-// 		method,
-// 		url,
-// 		nil,
-// 		clientManager.SetUseBody(spReq),
-// 		&spReq,
-// 		&spResp,
-// 		clientManager.ShortDuration,
-// 	)
-
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return emptyRet, err
-// 	}
-
-// 	log.Debug().Msgf("[Response from Spider] Listing S3 buckets: %+v", spResp)
-
-// 	// 3. Convert spiderListBucketRes to model.ObjectStorageListResponse
-// 	var buckets model.Buckets
-// 	for _, spBucket := range spResp.Buckets.Bucket {
-// 		bucket := model.Bucket{
-// 			Name:         spBucket.Name,
-// 			CreationDate: spBucket.CreationDate,
-// 		}
-// 		buckets.Bucket = append(buckets.Bucket, bucket)
-// 	}
-
-// 	listResp := model.ObjectStorageListResponse{
-// 		Owner: model.Owner{
-// 			ID:          spResp.Owner.ID,
-// 			DisplayName: spResp.Owner.DisplayName,
-// 		},
-// 		Buckets: buckets,
-// 	}
-
-// 	return listResp, nil
-// }
 
 // GetObjectStorage retrieves the object storage (bucket) information from the specified namespace
 func GetObjectStorage(nsId, osId string) (model.ObjectStorageInfo, error) {
@@ -779,4 +749,253 @@ func GetObjectStorageLocation(nsId, osId string) (model.ObjectStorageLocationRes
 	}
 
 	return locationResp, nil
+}
+
+/*
+ * Functions for objects (data)
+ */
+// ! IMPORTANT: To avoid data transfer overhead,
+// ! Tumblebug will provide presigned URLs for uploading and downloading objects.
+// ! The upload or download of objects is NOT handled directly by Tumblebug.
+
+// GeneratePresignedURL generates a presigned URL for downloading or uploading an object
+func GeneratePresignedURL(nsId, osId, objectKey string, expiry time.Duration, operation string) (model.PresignedUrlResponse, error) {
+	var emptyRet model.PresignedUrlResponse
+
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = checkObjectKey(objectKey)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	if operation != "download" && operation != "upload" {
+		err = fmt.Errorf("invalid operation: %s, must be 'download' or 'upload'", operation)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// 2. Get the object storage info to retrieve ConnectionName and Uid
+	resourceType := model.StrObjectStorage
+	objStrgData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return emptyRet, err
+	}
+	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+	connName := objStrgInfo.ConnectionName
+	uid := objStrgInfo.Uid
+
+	// 3. Call Spider API to generate the presigned URL
+	client := clientManager.NewHttpClient()
+	method := "GET"
+	spReq := clientManager.NoBody
+	spResp := spiderPreSignedUrlResponse{}
+
+	url := fmt.Sprintf("%s/s3/presigned/%s/%s/%s?ConnectionName=%s&expiry=%d",
+		model.SpiderRestUrl, operation, uid, objectKey, connName, int64(expiry.Seconds()))
+	log.Debug().Msgf("[Request to Spider] Generating presigned URL (url: %s)", url)
+
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	log.Debug().Msgf("[Response from Spider] Generating presigned URL: %+v", spResp)
+
+	// 4. Return the presigned URL
+	return model.PresignedUrlResponse{
+		Expires:      spResp.Expires,
+		Method:       spResp.Method,
+		PreSignedURL: spResp.PreSignedURL,
+	}, nil
+}
+
+// ListDataObjects lists the objects in the specified object storage (bucket)
+func ListDataObjects(nsId, osId string) (model.ListObjectResponse, error) {
+	var emptyRet model.ListObjectResponse
+
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// 2. Get the object storage info by calling GetObjectStorage
+	osInfo, err := GetObjectStorage(nsId, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return emptyRet, err
+	}
+
+	// 3. Return the list of objects
+	res := model.ListObjectResponse{}
+
+	if osInfo.Contents == nil {
+		res.Objects = []model.Object{}
+	} else {
+		res.Objects = osInfo.Contents
+	}
+
+	return res, nil
+}
+
+// GetDataObject retrieves a specific object from the specified object storage (bucket)
+func GetDataObject(nsId, osId, objectKey string) (model.Object, error) {
+	var emptyRet model.Object
+
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = checkObjectKey(objectKey)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// 2. Check if the object storage exists
+	resourceType := model.StrObjectStorage
+	osData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return emptyRet, err
+	}
+
+	osInfo := osData.(model.ObjectStorageInfo)
+	connName := osInfo.ConnectionName
+	uid := osInfo.Uid
+
+	// 3. Call Spider API to get the object info
+	client := clientManager.NewHttpClient()
+	method := "HEAD"
+	spReq := clientManager.NoBody
+	spResp := clientManager.NoBody
+
+	url := fmt.Sprintf("%s/s3/%s/%s?ConnectionName=%s", model.SpiderRestUrl, uid, objectKey, connName)
+	log.Debug().Msgf("[Request to Spider] Getting the object info (url: %s)", url)
+
+	restyRes, err := clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	log.Debug().Msgf("[Response from Spider] Getting the object info (No response body): %+v", spResp)
+
+	eTag := restyRes.Header().Get("ETag")
+	lastModified := restyRes.Header().Get("Last-Modified")
+
+	// 4. Since Spider does not return object metadata in the HEAD response,
+	// we will return an empty object with just the key set.
+	obj := model.Object{
+		Key:          objectKey,
+		ETag:         eTag,
+		LastModified: lastModified,
+	}
+
+	return obj, nil
+}
+
+// DeleteDataObject deletes a specific object from the specified object storage (bucket)
+func DeleteDataObject(nsId, osId, objectKey string) error {
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	err = checkObjectKey(objectKey)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	// 2. Get the object storage
+	resourceType := model.StrObjectStorage
+	osData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return err
+	}
+	osInfo := osData.(model.ObjectStorageInfo)
+
+	connName := osInfo.ConnectionName
+	uid := osInfo.Uid
+
+	// 3. Call Spider API to delete the object
+	client := clientManager.NewHttpClient()
+	method := "DELETE"
+	spReq := clientManager.NoBody
+	spResp := clientManager.NoBody
+
+	url := fmt.Sprintf("%s/s3/%s/%s?ConnectionName=%s", model.SpiderRestUrl, uid, objectKey, connName)
+	log.Debug().Msgf("[Request to Spider] Deleting the object (url: %s)", url)
+
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	log.Debug().Msgf("[Response from Spider] Deleting the object (No response body): %+v", spResp)
+
+	return nil
 }
