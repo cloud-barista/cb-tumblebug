@@ -81,15 +81,19 @@ type ObjectStorageInfo struct {
 	Contents     []Object `json:"contents,omitempty"`
 }
 
-type ObjectStorageListRequest struct {
-	ConnectionName string `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
-}
-
-type ObjectStorageListResponse struct {
-	Owner   Owner   `json:"owner"`
-	Buckets Buckets `json:"buckets"`
-}
-
+// ObjectStorageLocationResponse represents the response structure for object storage location
 type ObjectStorageLocationResponse struct {
 	LocationConstraint string `json:"locationConstraint" example:"ap-northeast-2"`
+}
+
+// PresignedUrlResponse represents the response structure for presigned URL generation
+type PresignedUrlResponse struct {
+	Expires      int64  `json:"expires" example:"1693824000"`
+	Method       string `json:"method" example:"GET"`
+	PreSignedURL string `json:"presignedURL" example:"https://example.com/presigned-url"`
+}
+
+// ListObjectResponse represents the response structure for listing objects in a bucket
+type ListObjectResponse struct {
+	Objects []Object `json:"objects"`
 }

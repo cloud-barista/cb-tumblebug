@@ -425,6 +425,8 @@ func ExecuteHttpRequest[B any, T any](
 		resp, err = req.Put(url)
 	case "DELETE":
 		resp, err = req.Delete(url)
+	case "HEAD":
+		resp, err = req.Head(url)
 	default:
 		return nil, fmt.Errorf("unsupported rest method: %s", method)
 	}

@@ -631,16 +631,18 @@ func RunServer() {
 	// sqlDbGroup.PUT("//:sqlDbId", rest_resource.RestPutSqlDB)
 
 	// Object Storage management
-	g.POST("/:nsId/resources/objectStorage", rest_resource.RestCreateObjectStorage)
+	g.PUT("/:nsId/resources/objectStorage", rest_resource.RestCreateObjectStorage)
 	g.GET("/:nsId/resources/objectStorage", rest_resource.RestGetAllResources)
 	g.GET("/:nsId/resources/objectStorage/:osId", rest_resource.RestGetObjectStorage)
 	g.DELETE("/:nsId/resources/objectStorage/:osId", rest_resource.RestDeleteObjectStorage)
 	g.HEAD("/:nsId/resources/objectStorage/:osId", rest_resource.RestCheckObjectStorageExistance)
 	g.GET("/:nsId/resources/objectStorage/:osId/location", rest_resource.RestGetObjectStorageLocation)
-	// objectStorageGroup.Use(middlewares.CheckReadiness(terrariumURL, trApiUser, trApiPass))
-	// objectStorageGroup.POST("", rest_resource.RestPostObjectStorage)
-	// objectStorageGroup.GET("/:objectStorageId", rest_resource.RestGetObjectStorage)
-	// objectStorageGroup.DELETE("/:objectStorageId", rest_resource.RestDeleteObjectStorage)
+
+	// Object operations within Object Storage
+	g.GET("/:nsId/resources/objectStorage/:osId/object/:objectKey", rest_resource.RestGeneratePresignedURL)
+	g.HEAD("/:nsId/resources/objectStorage/:osId/object/:objectKey", rest_resource.RestGetDataObjectInfo)
+	g.GET("/:nsId/resources/objectStorage/:osId/object", rest_resource.RestListDataObjects)
+	g.DELETE("/:nsId/resources/objectStorage/:osId/object/:objectKey", rest_resource.RestDeleteDataObject)
 
 	// #### To be deprecated #### Route for Object Storage
 	objectStorageGroup := e.Group("/tumblebug")
