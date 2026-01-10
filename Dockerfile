@@ -3,7 +3,7 @@
 ## Stage 1 - Go Build
 ##############################################################
 
-FROM golang:1.25.0-bookworm AS builder
+FROM golang:1.25.0-alpine AS builder
 
 ENV GO111MODULE=on
 
