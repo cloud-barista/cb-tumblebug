@@ -790,9 +790,13 @@ func (e *SshHostKeyMismatchError) Error() string {
 }
 
 // calculateHostKeyFingerprint calculates SHA256 fingerprint of an SSH public key
+// Returns standard SSH fingerprint format: "SHA256:" prefix with base64-encoded hash
 func calculateHostKeyFingerprint(publicKey ssh.PublicKey) string {
 	hash := sha256.Sum256(publicKey.Marshal())
-	return base64.StdEncoding.EncodeToString(hash[:])
+	encoded := base64.StdEncoding.EncodeToString(hash[:])
+	// Standard SSH fingerprint format: "SHA256:" prefix with base64-encoded hash without padding
+	encoded = strings.TrimRight(encoded, "=")
+	return "SHA256:" + encoded
 }
 
 // tofuContext contains VM identification info for TOFU host key verification (internal use only)
@@ -821,12 +825,12 @@ func createTOFUHostKeyCallback(ctx tofuContext) ssh.HostKeyCallback {
 		// Get current VM info
 		vmInfo, err := GetVmObject(ctx.NsId, ctx.MciId, ctx.VmId)
 		if err != nil {
-			// If VM info cannot be retrieved, allow connection but log warning
+			// If VM info cannot be retrieved, reject connection for security
 			log.Warn().
 				Err(err).
 				Str("vmId", ctx.VmId).
-				Msg("Cannot retrieve VM info for TOFU verification, allowing connection")
-			return nil
+				Msg("Cannot retrieve VM info for TOFU verification, rejecting connection")
+			return fmt.Errorf("cannot retrieve VM info for TOFU verification: %w", err)
 		}
 
 		// First connection (TOFU): store the host key
