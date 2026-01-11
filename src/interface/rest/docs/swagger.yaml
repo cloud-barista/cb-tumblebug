@@ -5688,6 +5688,105 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: snapshotReq
+  /ns/{nsId}/mci/{mciId}/vm/{vmId}/sshHostKey:
+    get:
+      tags:
+      - "[MC-Infra] MCI Remote Command"
+      summary: Get SSH host key information for a VM
+      description: Get the stored SSH host key information for a specific VM. This
+        is used for TOFU (Trust On First Use) verification.
+      operationId: GetVmSshHostKey
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vmId
+        in: path
+        description: VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SshHostKeyInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    delete:
+      tags:
+      - "[MC-Infra] MCI Remote Command"
+      summary: Reset SSH host key for a VM
+      description: "Reset the stored SSH host key for a specific VM. This should be\
+        \ used when the VM's host key has legitimately changed (e.g., after VM recreation)\
+        \ and you trust the new key. The next SSH connection will store the new host\
+        \ key (TOFU)."
+      operationId: DeleteVmSshHostKey
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vmId
+        in: path
+        description: VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/mci/{mciId}/vpn:
     get:
       tags:
@@ -17722,6 +17821,26 @@ components:
           type: string
         vmIp:
           type: string
+    model.SshHostKeyInfo:
+      type: object
+      properties:
+        fingerprint:
+          type: string
+          description: Fingerprint is the SHA256 fingerprint of the SSH host key
+          example: SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        firstUsedAt:
+          type: string
+          description: FirstUsedAt is the timestamp when the host key was first stored
+            (TOFU moment)
+          example: 2024-01-15T10:30:00Z
+        hostKey:
+          type: string
+          description: HostKey is the SSH host public key (base64 encoded)
+        keyType:
+          type: string
+          description: "KeyType is the type of the SSH host key (e.g., ssh-rsa, ssh-ed25519,\
+            \ ecdsa-sha2-nistp256)"
+          example: ssh-ed25519
     model.SshKeyInfo:
       type: object
       properties:
@@ -18167,6 +18286,12 @@ components:
             type: string
         specId:
           type: string
+        sshHostKeyInfo:
+          type: object
+          description: SshHostKeyInfo contains SSH host key information for TOFU (Trust
+            On First Use) verification
+          allOf:
+          - $ref: '#/components/schemas/model.SshHostKeyInfo'
         sshKeyId:
           type: string
         sshPort:

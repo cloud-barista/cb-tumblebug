@@ -6856,6 +6856,128 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/mci/{mciId}/vm/{vmId}/sshHostKey": {
+            "get": {
+                "description": "Get the stored SSH host key information for a specific VM. This is used for TOFU (Trust On First Use) verification.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command"
+                ],
+                "summary": "Get SSH host key information for a VM",
+                "operationId": "GetVmSshHostKey",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SshHostKeyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Reset the stored SSH host key for a specific VM. This should be used when the VM's host key has legitimately changed (e.g., after VM recreation) and you trust the new key. The next SSH connection will store the new host key (TOFU).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command"
+                ],
+                "summary": "Reset SSH host key for a VM",
+                "operationId": "DeleteVmSshHostKey",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mci/{mciId}/vpn": {
             "get": {
                 "description": "Get all site-to-site VPNs",
@@ -21921,6 +22043,30 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SshHostKeyInfo": {
+            "type": "object",
+            "properties": {
+                "fingerprint": {
+                    "description": "Fingerprint is the SHA256 fingerprint of the SSH host key",
+                    "type": "string",
+                    "example": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                },
+                "firstUsedAt": {
+                    "description": "FirstUsedAt is the timestamp when the host key was first stored (TOFU moment)",
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "hostKey": {
+                    "description": "HostKey is the SSH host public key (base64 encoded)",
+                    "type": "string"
+                },
+                "keyType": {
+                    "description": "KeyType is the type of the SSH host key (e.g., ssh-rsa, ssh-ed25519, ecdsa-sha2-nistp256)",
+                    "type": "string",
+                    "example": "ssh-ed25519"
+                }
+            }
+        },
         "model.SshKeyInfo": {
             "type": "object",
             "properties": {
@@ -22531,6 +22677,14 @@ const docTemplate = `{
                 },
                 "specId": {
                     "type": "string"
+                },
+                "sshHostKeyInfo": {
+                    "description": "SshHostKeyInfo contains SSH host key information for TOFU (Trust On First Use) verification",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.SshHostKeyInfo"
+                        }
+                    ]
                 },
                 "sshKeyId": {
                     "type": "string"
