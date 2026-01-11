@@ -3,7 +3,7 @@
 ## Stage 1 - Go Build
 ##############################################################
 
-FROM golang:1.25.0-bookworm AS builder
+FROM golang:1.25.0-alpine AS builder
 
 ENV GO111MODULE=on
 
@@ -24,21 +24,20 @@ COPY conf ./conf
 # Building the Go application
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    go build -ldflags '-w -s' -tags cb-tumblebug -v -o src/cb-tumblebug src/main.go
+    CGO_ENABLED=0 go build -ldflags '-w -s -extldflags "-static"' -tags cb-tumblebug -v -o src/cb-tumblebug src/main.go
 
 #############################################################
 ## Stage 2 - Application Setup
 ##############################################################
 
-FROM ubuntu:22.04 AS prod
+FROM alpine:3.19 AS prod
 
 WORKDIR /app/src
 
 # Installing necessary packages and cleaning up
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apk add --no-cache \
     ca-certificates \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    curl
 
 # Copying necessary files from the builder stage to the production stage
 COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/assets/ /app/assets/
