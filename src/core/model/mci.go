@@ -684,6 +684,9 @@ type VmInfo struct {
 	VmUserName       string     `json:"vmUserName,omitempty"`
 	VmUserPassword   string     `json:"vmUserPassword,omitempty"`
 
+	// SshHostKeyInfo contains SSH host key information for TOFU (Trust On First Use) verification
+	SshHostKeyInfo *SshHostKeyInfo `json:"sshHostKeyInfo,omitempty"`
+
 	// CommandStatus stores the status and history of remote commands executed on this VM
 	CommandStatus []CommandStatusInfo `json:"commandStatus,omitempty"`
 
@@ -715,6 +718,18 @@ type MciVmAccessInfo struct {
 	VmUserName       string     `json:"vmUserName,omitempty"`
 	VmUserPassword   string     `json:"vmUserPassword,omitempty"`
 	ConnectionConfig ConnConfig `json:"connectionConfig"`
+}
+
+// SshHostKeyInfo is struct for SSH host key information (TOFU verification)
+type SshHostKeyInfo struct {
+	// HostKey is the SSH host public key (base64 encoded)
+	HostKey string `json:"hostKey,omitempty"`
+	// KeyType is the type of the SSH host key (e.g., ssh-rsa, ssh-ed25519, ecdsa-sha2-nistp256)
+	KeyType string `json:"keyType,omitempty" example:"ssh-ed25519"`
+	// Fingerprint is the SHA256 fingerprint of the SSH host key
+	Fingerprint string `json:"fingerprint,omitempty" example:"SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"`
+	// FirstUsedAt is the timestamp when the host key was first stored (TOFU moment)
+	FirstUsedAt string `json:"firstUsedAt,omitempty" example:"2024-01-15T10:30:00Z"`
 }
 
 // IdNameInDetailInfo is struct for details related with ID and Name

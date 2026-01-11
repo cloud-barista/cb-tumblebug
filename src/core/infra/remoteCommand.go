@@ -17,6 +17,8 @@ package infra
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -315,8 +317,20 @@ func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName stri
 		PrivateKey: []byte(targetPrivateKey),
 	}
 
-	// Execute SSH
-	stdoutResults, stderrResults, err := runSSH(bastionSshInfo, targetSshInfo, cmds)
+	// Set TOFU context for bastion and target VMs
+	bastionCtx := tofuContext{
+		NsId:  nsId,
+		MciId: bastionNode.MciId,
+		VmId:  bastionNode.VmId,
+	}
+	targetCtx := tofuContext{
+		NsId:  nsId,
+		MciId: mciId,
+		VmId:  vmId,
+	}
+
+	// Execute SSH with TOFU host key verification
+	stdoutResults, stderrResults, err := runSSH(bastionSshInfo, targetSshInfo, cmds, bastionCtx, targetCtx)
 	if err != nil {
 		log.Err(err).Msg("Error executing commands")
 		return stdoutResults, stderrResults, err
@@ -758,8 +772,189 @@ func init() {
 
 }
 
+// SshHostKeyMismatchError represents an SSH host key verification failure
+// This error occurs when the stored host key doesn't match the server's current host key
+type SshHostKeyMismatchError struct {
+	VmId                string
+	StoredKeyType       string
+	StoredFingerprint   string
+	ReceivedKeyType     string
+	ReceivedFingerprint string
+}
+
+func (e *SshHostKeyMismatchError) Error() string {
+	return fmt.Sprintf("SSH host key verification failed for VM '%s': stored key fingerprint (%s %s) does not match received key (%s %s). "+
+		"This could indicate a man-in-the-middle attack or the VM's host key has changed. "+
+		"If you trust the new key, use the SSH host key reset API to update it.",
+		e.VmId, e.StoredKeyType, e.StoredFingerprint, e.ReceivedKeyType, e.ReceivedFingerprint)
+}
+
+// calculateHostKeyFingerprint calculates SHA256 fingerprint of an SSH public key
+// Returns standard SSH fingerprint format: "SHA256:" prefix with base64-encoded hash
+func calculateHostKeyFingerprint(publicKey ssh.PublicKey) string {
+	hash := sha256.Sum256(publicKey.Marshal())
+	encoded := base64.StdEncoding.EncodeToString(hash[:])
+	// Standard SSH fingerprint format: "SHA256:" prefix with base64-encoded hash without padding
+	encoded = strings.TrimRight(encoded, "=")
+	return "SHA256:" + encoded
+}
+
+// tofuContext contains VM identification info for TOFU host key verification (internal use only)
+type tofuContext struct {
+	NsId  string
+	MciId string
+	VmId  string
+}
+
+// createTOFUHostKeyCallback creates a HostKeyCallback that implements TOFU (Trust On First Use)
+// - On first use: stores the host key and allows connection
+// - On subsequent uses: verifies the host key matches the stored one
+func createTOFUHostKeyCallback(ctx tofuContext) ssh.HostKeyCallback {
+	return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		keyType := key.Type()
+		keyData := base64.StdEncoding.EncodeToString(key.Marshal())
+		fingerprint := calculateHostKeyFingerprint(key)
+
+		log.Debug().
+			Str("vmId", ctx.VmId).
+			Str("hostname", hostname).
+			Str("keyType", keyType).
+			Str("fingerprint", fingerprint).
+			Msg("SSH host key verification")
+
+		// Get current VM info
+		vmInfo, err := GetVmObject(ctx.NsId, ctx.MciId, ctx.VmId)
+		if err != nil {
+			// If VM info cannot be retrieved, reject connection for security
+			log.Warn().
+				Err(err).
+				Str("vmId", ctx.VmId).
+				Msg("Cannot retrieve VM info for TOFU verification, rejecting connection")
+			return fmt.Errorf("cannot retrieve VM info for TOFU verification: %w", err)
+		}
+
+		// First connection (TOFU): store the host key
+		if vmInfo.SshHostKeyInfo == nil || vmInfo.SshHostKeyInfo.HostKey == "" {
+			log.Info().
+				Str("vmId", ctx.VmId).
+				Str("keyType", keyType).
+				Str("fingerprint", fingerprint).
+				Msg("First SSH connection - storing host key (TOFU)")
+
+			vmInfo.SshHostKeyInfo = &model.SshHostKeyInfo{
+				HostKey:     keyData,
+				KeyType:     keyType,
+				Fingerprint: fingerprint,
+				FirstUsedAt: time.Now().Format(time.RFC3339),
+			}
+
+			UpdateVmInfo(ctx.NsId, ctx.MciId, vmInfo)
+
+			return nil
+		}
+
+		// Subsequent connections: verify the host key
+		if vmInfo.SshHostKeyInfo.HostKey != keyData {
+			log.Warn().
+				Str("vmId", ctx.VmId).
+				Str("storedKeyType", vmInfo.SshHostKeyInfo.KeyType).
+				Str("storedFingerprint", vmInfo.SshHostKeyInfo.Fingerprint).
+				Str("receivedKeyType", keyType).
+				Str("receivedFingerprint", fingerprint).
+				Msg("SSH host key mismatch detected")
+
+			return &SshHostKeyMismatchError{
+				VmId:                ctx.VmId,
+				StoredKeyType:       vmInfo.SshHostKeyInfo.KeyType,
+				StoredFingerprint:   vmInfo.SshHostKeyInfo.Fingerprint,
+				ReceivedKeyType:     keyType,
+				ReceivedFingerprint: fingerprint,
+			}
+		}
+
+		log.Debug().
+			Str("vmId", ctx.VmId).
+			Str("fingerprint", fingerprint).
+			Msg("SSH host key verified successfully")
+
+		return nil
+	}
+}
+
+// ResetVmSshHostKey resets the stored SSH host key for a VM
+// This should be called when the user trusts a new host key after verification failure
+func ResetVmSshHostKey(nsId string, mciId string, vmId string) error {
+	err := common.CheckString(nsId)
+	if err != nil {
+		return fmt.Errorf("invalid nsId: %w", err)
+	}
+	err = common.CheckString(mciId)
+	if err != nil {
+		return fmt.Errorf("invalid mciId: %w", err)
+	}
+	err = common.CheckString(vmId)
+	if err != nil {
+		return fmt.Errorf("invalid vmId: %w", err)
+	}
+
+	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	if err != nil {
+		return fmt.Errorf("failed to get VM info: %w", err)
+	}
+
+	log.Info().
+		Str("vmId", vmId).
+		Str("previousKeyType", func() string {
+			if vmInfo.SshHostKeyInfo != nil {
+				return vmInfo.SshHostKeyInfo.KeyType
+			}
+			return ""
+		}()).
+		Str("previousFingerprint", func() string {
+			if vmInfo.SshHostKeyInfo != nil {
+				return vmInfo.SshHostKeyInfo.Fingerprint
+			}
+			return ""
+		}()).
+		Msg("Resetting SSH host key for VM")
+
+	vmInfo.SshHostKeyInfo = nil
+
+	UpdateVmInfo(nsId, mciId, vmInfo)
+
+	return nil
+}
+
+// GetVmSshHostKey returns the stored SSH host key information for a VM
+func GetVmSshHostKey(nsId string, mciId string, vmId string) (model.SshHostKeyInfo, error) {
+	err := common.CheckString(nsId)
+	if err != nil {
+		return model.SshHostKeyInfo{}, fmt.Errorf("invalid nsId: %w", err)
+	}
+	err = common.CheckString(mciId)
+	if err != nil {
+		return model.SshHostKeyInfo{}, fmt.Errorf("invalid mciId: %w", err)
+	}
+	err = common.CheckString(vmId)
+	if err != nil {
+		return model.SshHostKeyInfo{}, fmt.Errorf("invalid vmId: %w", err)
+	}
+
+	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	if err != nil {
+		return model.SshHostKeyInfo{}, fmt.Errorf("failed to get VM info: %w", err)
+	}
+
+	if vmInfo.SshHostKeyInfo == nil {
+		return model.SshHostKeyInfo{}, nil
+	}
+
+	return *vmInfo.SshHostKeyInfo, nil
+}
+
 // runSSH func execute a command by SSH
-func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string) (map[int]string, map[int]string, error) {
+// bastionCtx and targetCtx are used for TOFU host key verification
+func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string, bastionCtx tofuContext, targetCtx tofuContext) (map[int]string, map[int]string, error) {
 	stdoutMap := make(map[int]string)
 	stderrMap := make(map[int]string)
 
@@ -777,13 +972,13 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string) 
 		return stdoutMap, stderrMap, fmt.Errorf("failed to parse bastion private key: %v", err)
 	}
 
-	// Create an SSH client configuration for the bastion host
+	// Create an SSH client configuration for the bastion host with TOFU host key verification
 	bastionConfig := &ssh.ClientConfig{
 		User: bastionInfo.UserName,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(bastionSigner),
 		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: createTOFUHostKeyCallback(bastionCtx),
 		Timeout:         30 * time.Second,
 	}
 
@@ -793,13 +988,13 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string) 
 		return stdoutMap, stderrMap, err
 	}
 
-	// Create an SSH client configuration for the target host
+	// Create an SSH client configuration for the target host with TOFU host key verification
 	targetConfig := &ssh.ClientConfig{
 		User: targetInfo.UserName,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(targetSigner),
 		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: createTOFUHostKeyCallback(targetCtx),
 		Timeout:         30 * time.Second,
 	}
 
@@ -1143,7 +1338,19 @@ func transferFileToVmViaBastion(nsId string, mciId string, vmId string, targetSs
 		PrivateKey: []byte(bastionPrivateKey),
 	}
 
-	err = runSCPWithBastion(bastionSshInfo, targetSshInfo, fileData, fileName, targetPath)
+	// Set TOFU context for bastion and target VMs
+	bastionCtx := tofuContext{
+		NsId:  nsId,
+		MciId: bastionNode.MciId,
+		VmId:  bastionNode.VmId,
+	}
+	targetCtx := tofuContext{
+		NsId:  nsId,
+		MciId: mciId,
+		VmId:  vmId,
+	}
+
+	err = runSCPWithBastion(bastionSshInfo, targetSshInfo, fileData, fileName, targetPath, bastionCtx, targetCtx)
 	if err != nil {
 		return fmt.Errorf("failed to transfer file to VM via bastion: %v", err)
 	}
@@ -1153,7 +1360,8 @@ func transferFileToVmViaBastion(nsId string, mciId string, vmId string, targetSs
 }
 
 // runSCPWithBastion is func to send a file using SCP over SSH via a Bastion host
-func runSCPWithBastion(bastionInfo model.SshInfo, targetInfo model.SshInfo, fileData []byte, fileName string, targetPath string) error {
+// bastionCtx and targetCtx are used for TOFU host key verification
+func runSCPWithBastion(bastionInfo model.SshInfo, targetInfo model.SshInfo, fileData []byte, fileName string, targetPath string, bastionCtx tofuContext, targetCtx tofuContext) error {
 	log.Info().Msg("Setting up SCP connection via Bastion Host")
 
 	// Parse the private key for the bastion host
@@ -1162,13 +1370,13 @@ func runSCPWithBastion(bastionInfo model.SshInfo, targetInfo model.SshInfo, file
 		return fmt.Errorf("failed to parse bastion private key: %v", err)
 	}
 
-	// Create an SSH client configuration for the bastion host
+	// Create an SSH client configuration for the bastion host with TOFU host key verification
 	bastionConfig := &ssh.ClientConfig{
 		User: bastionInfo.UserName,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(bastionSigner),
 		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: createTOFUHostKeyCallback(bastionCtx),
 	}
 
 	// Parse the private key for the target host
@@ -1177,13 +1385,13 @@ func runSCPWithBastion(bastionInfo model.SshInfo, targetInfo model.SshInfo, file
 		return fmt.Errorf("failed to parse target private key: %v", err)
 	}
 
-	// Create an SSH client configuration for the target host
+	// Create an SSH client configuration for the target host with TOFU host key verification
 	targetConfig := &ssh.ClientConfig{
 		User: targetInfo.UserName,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(targetSigner),
 		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: createTOFUHostKeyCallback(targetCtx),
 	}
 
 	// Setup the bastion host connection
@@ -2355,7 +2563,7 @@ func GetMciHandlingCommandCount(nsId, mciId string) (map[string]int, int, error)
 			vmHandlingCounts[vmId] = 0
 			continue
 		}
-		
+
 		vmHandlingCounts[vmId] = handlingCount
 		totalHandlingCount += handlingCount
 	}

@@ -443,6 +443,10 @@ func RunServer() {
 	g.GET("/:nsId/mci/:mciId/vm/:vmId/handlingCount", rest_infra.RestGetVmHandlingCommandCount)
 	g.GET("/:nsId/mci/:mciId/handlingCount", rest_infra.RestGetMciHandlingCommandCount)
 
+	// SSH Host Key Management (TOFU - Trust On First Use)
+	g.GET("/:nsId/mci/:mciId/vm/:vmId/sshHostKey", rest_infra.RestGetVmSshHostKey)
+	g.DELETE("/:nsId/mci/:mciId/vm/:vmId/sshHostKey", rest_infra.RestDeleteVmSshHostKey)
+
 	g.PUT("/:nsId/mci/:mciId/vm/:targetVmId/bastion/:bastionVmId", rest_infra.RestSetBastionNodes)
 	g.DELETE("/:nsId/mci/:mciId/bastion/:bastionVmId", rest_infra.RestRemoveBastionNodes)
 	g.GET("/:nsId/mci/:mciId/vm/:targetVmId/bastion", rest_infra.RestGetBastionNodes)

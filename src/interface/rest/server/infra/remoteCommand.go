@@ -560,3 +560,61 @@ func RestGetMciHandlingCommandCount(c echo.Context) error {
 	}
 	return clientManager.EndRequestWithLog(c, nil, result)
 }
+
+// RestGetVmSshHostKey godoc
+// @ID GetVmSshHostKey
+// @Summary Get SSH host key information for a VM
+// @Description Get the stored SSH host key information for a specific VM. This is used for TOFU (Trust On First Use) verification.
+// @Tags [MC-Infra] MCI Remote Command
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param vmId path string true "VM ID" default(g1-1)
+// @Success 200 {object} model.SshHostKeyInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/sshHostKey [get]
+func RestGetVmSshHostKey(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	vmId := c.Param("vmId")
+
+	result, err := infra.GetVmSshHostKey(nsId, mciId, vmId)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestDeleteVmSshHostKey godoc
+// @ID DeleteVmSshHostKey
+// @Summary Reset SSH host key for a VM
+// @Description Reset the stored SSH host key for a specific VM. This should be used when the VM's host key has legitimately changed (e.g., after VM recreation) and you trust the new key. The next SSH connection will store the new host key (TOFU).
+// @Tags [MC-Infra] MCI Remote Command
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param vmId path string true "VM ID" default(g1-1)
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/sshHostKey [delete]
+func RestDeleteVmSshHostKey(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	vmId := c.Param("vmId")
+
+	err := infra.ResetVmSshHostKey(nsId, mciId, vmId)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result := model.SimpleMsg{
+		Message: fmt.Sprintf("SSH host key for VM '%s' has been reset. The next SSH connection will store the new host key (TOFU).", vmId),
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
