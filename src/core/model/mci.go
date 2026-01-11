@@ -79,6 +79,9 @@ const (
 	// StatusUndefined is const for Undefined
 	StatusUndefined string = "Undefined"
 
+	// StatusEmpty is const for Empty (MCI has no VMs)
+	StatusEmpty string = "Empty"
+
 	// StatusComplete is const for Complete
 	StatusComplete string = "None"
 )
