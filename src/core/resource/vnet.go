@@ -756,7 +756,7 @@ func CreateVNet(nsId string, vNetReq *model.VNetReq) (model.VNetInfo, error) {
 			model.LabelVNetId:          vNetInfo.Id,
 			model.LabelConnectionName:  vNetInfo.ConnectionName,
 		}
-		err = label.CreateOrUpdateLabel(model.StrSubnet, subnetInfo.Uid, subnetKey, labels)
+		err = label.CreateOrUpdateLabel(model.StrSubnet, subnetInfo.CspResourceName, subnetKey, labels)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
@@ -1530,7 +1530,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VN
 			model.LabelVNetId:          vNetInfo.Id,
 			model.LabelConnectionName:  vNetInfo.ConnectionName,
 		}
-		err = label.CreateOrUpdateLabel(model.StrSubnet, subnetInfo.Uid, subnetKey, labels)
+		err = label.CreateOrUpdateLabel(model.StrSubnet, subnetInfo.CspResourceName, subnetKey, labels)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
