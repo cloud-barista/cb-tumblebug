@@ -7820,6 +7820,147 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/objectStorage/{osId}/cors:
+    get:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Get CORS configuration of an object storage (bucket)
+      description: Get CORS configuration of an object storage (bucket)
+      operationId: GetObjectStorageCORS
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.GetCorsConfigurationResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Set CORS configuration of an object storage (bucket)
+      description: Set CORS configuration of an object storage (bucket)
+      operationId: SetObjectStorageCORS
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      requestBody:
+        description: CORS Configuration Request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.SetCorsConfigurationRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content: {}
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: reqBody
+    delete:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Delete CORS configuration of an object storage (bucket)
+      description: Delete all CORS rules of an object storage (bucket)
+      operationId: DeleteObjectStorageCORS
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      responses:
+        "204":
+          description: No Content
+          content: {}
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/resources/objectStorage/{osId}/location:
     get:
       tags:
@@ -13125,6 +13266,37 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.ConnConfig'
+    model.CorsRule:
+      type: object
+      properties:
+        allowedHeader:
+          type: array
+          example:
+          - '*'
+          items:
+            type: string
+        allowedMethod:
+          type: array
+          example:
+          - GET
+          - PUT
+          items:
+            type: string
+        allowedOrigin:
+          type: array
+          example:
+          - '*'
+          items:
+            type: string
+        exposeHeader:
+          type: array
+          example:
+          - ETag
+          items:
+            type: string
+        maxAgeSeconds:
+          type: integer
+          example: 3000
     model.CreateSubGroupDynamicReq:
       required:
       - imageId
@@ -13779,6 +13951,13 @@ components:
         provider:
           type: string
           example: alibaba
+    model.GetCorsConfigurationResponse:
+      type: object
+      properties:
+        corsRule:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.CorsRule'
     model.HandlingCommandCountResponse:
       type: object
       properties:
@@ -16980,6 +17159,15 @@ components:
           type: boolean
         updated:
           $ref: '#/components/schemas/model.SecurityGroupInfo'
+    model.SetCorsConfigurationRequest:
+      required:
+      - corsRule
+      type: object
+      properties:
+        corsRule:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.CorsRule'
     model.SetK8sNodeGroupAutoscalingReq:
       type: object
       properties:

@@ -95,38 +95,6 @@ func RestListObjectStorages(c echo.Context) error {
 	return nil
 }
 
-// // RestListObjectStorages godoc
-// // @ID ListObjectStorages
-// // @Summary List object storages (buckets)
-// // @Description Get the list of object storages (buckets)
-// // @Tags [Infra Resource] Object Storage Management
-// // @Accept json
-// // @Produce json
-// // @Param nsId path string true "Namespace ID" default(default)
-// // @Success 200 {object} model.ObjectStorageListResponse "OK"
-// // @Failure 400 {object} model.SimpleMsg "Bad Request"
-// // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
-// // @Router /ns/{nsId}/resources/objectStorage [get]
-// func RestListObjectStorages(c echo.Context) error {
-
-// 	// [Input]
-// 	nsId := c.Param("nsId")
-// 	if nsId == "" {
-// 		err := fmt.Errorf("nsId is required")
-// 		log.Warn().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-
-// 	// [Process]
-// 	result, err := resource.ListObjectStorages(nsId, req)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
-// 	}
-
-// 	return c.JSON(http.StatusOK, result)
-// }
-
 // RestGetObjectStorage godoc
 // @ID GetObjectStorage
 // @Summary Get details of an object storage (bucket)
@@ -582,226 +550,145 @@ func RestDeleteObjectStorage(c echo.Context) error {
 // 	return proxyHandler(c)
 // }
 
-// /*
-//  * Object Storage Operations - CORS
-//  */
+/*
+ * Object Storage management - CORS
+ */
 
-// // Note: The xmlns attribute and root element name may not be accurately
-// // represented in Swagger UI due to XML rendering limitations.
+// RestSetObjectStorageCORS godoc
+// @ID SetObjectStorageCORS
+// @Summary Set CORS configuration of an object storage (bucket)
+// @Description Set CORS configuration of an object storage (bucket)
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param osId path string true "Object Storage ID" default(os01)
+// @Param reqBody body model.SetCorsConfigurationRequest true "CORS Configuration Request"
+// @Success 200 "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/resources/objectStorage/{osId}/cors [put]
+func RestSetObjectStorageCORS(c echo.Context) error {
 
-// // <?xml version="1.0" encoding="UTF-8"?>
-// // <CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-// //   <CORSRule>
-// //     <AllowedOrigin>*</AllowedOrigin>
-// //     <AllowedMethod>GET</AllowedMethod>
-// //     <AllowedMethod>PUT</AllowedMethod>
-// //     <AllowedMethod>POST</AllowedMethod>
-// //     <AllowedMethod>DELETE</AllowedMethod>
-// //     <AllowedHeader>*</AllowedHeader>
-// //     <ExposeHeader>ETag</ExposeHeader>
-// //     <ExposeHeader>x-amz-server-side-encryption</ExposeHeader>
-// //     <ExposeHeader>x-amz-request-id</ExposeHeader>
-// //     <ExposeHeader>x-amz-id-2</ExposeHeader>
-// //     <MaxAgeSeconds>3000</MaxAgeSeconds>
-// //   </CORSRule>
-// // </CORSConfiguration>
+	// [Input]
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// type CORSRule struct {
-// 	AllowedOrigin []string `xml:"AllowedOrigin" json:"allowedOrigin" example:"*"`
-// 	AllowedMethod []string `xml:"AllowedMethod" json:"allowedMethod" example:"GET"`
-// 	AllowedHeader []string `xml:"AllowedHeader" json:"allowedHeader" example:"*"`
-// 	ExposeHeader  []string `xml:"ExposeHeader" json:"exposeHeader" example:"ETag"`
-// 	MaxAgeSeconds int      `xml:"MaxAgeSeconds" json:"maxAgeSeconds" example:"3000"`
-// }
+	osId := c.Param("osId")
+	if osId == "" {
+		err := fmt.Errorf("osId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// type CORSConfiguration struct {
-// 	// The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
-// 	// Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
-// 	CORSRule []CORSRule `xml:"CORSRule" json:"corsRule"`
-// }
+	req := model.SetCorsConfigurationRequest{}
+	if err := c.Bind(&req); err != nil {
+		log.Error().Err(err).Msg("Failed to bind request body to SetCorsConfigurationRequest")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// type Error struct {
-// 	Code      string `xml:"Code" json:"code" example:"NoSuchCORSConfiguration"`
-// 	Message   string `xml:"Message" json:"message" example:"The CORS configuration does not exist"`
-// 	Resource  string `xml:"Resource" json:"resource" example:"/example-bucket"`
-// 	RequestId string `xml:"RequestId" json:"requestId" example:"656c76696e6727732072657175657374"`
-// }
+	// [Process]
+	err := resource.SetObjectStorageCorsConfigurations(nsId, osId, req)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to set CORS configuration")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
 
-// // RestGetObjectStorageCORSLagacy
-// // @ID GetObjectStorageCORSLagacy
-// // @Summary (To be deprecated) Get CORS configuration of an object storage (bucket)
-// // @Description (To be deprecated) Get CORS configuration of an object storage (bucket)
-// // @Description
-// // @Description **Important Notes:**
-// // @Description - The actual response will be XML format with root element `CORSConfiguration`
-// // @Description
-// // @Description **Actual XML Response Example:**
-// // @Description ```xml
-// // @Description <?xml version="1.0" encoding="UTF-8"?>
-// // @Description <CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-// // @Description   <CORSRule>
-// // @Description     <AllowedOrigin>*</AllowedOrigin>
-// // @Description     <AllowedMethod>GET</AllowedMethod>
-// // @Description     <AllowedMethod>PUT</AllowedMethod>
-// // @Description     <AllowedMethod>POST</AllowedMethod>
-// // @Description     <AllowedMethod>DELETE</AllowedMethod>
-// // @Description     <AllowedHeader>*</AllowedHeader>
-// // @Description     <ExposeHeader>ETag</ExposeHeader>
-// // @Description     <ExposeHeader>x-amz-server-side-encryption</ExposeHeader>
-// // @Description     <ExposeHeader>x-amz-request-id</ExposeHeader>
-// // @Description     <ExposeHeader>x-amz-id-2</ExposeHeader>
-// // @Description     <MaxAgeSeconds>3000</MaxAgeSeconds>
-// // @Description   </CORSRule>
-// // @Description </CORSConfiguration>
-// // @Description ```
-// // @Description
-// // @Description **Error Response Example (if CORS not configured):**
-// // @Description ```xml
-// // @Description <?xml version="1.0" encoding="UTF-8"?>
-// // @Description <Error>
-// // @Description   <Code>NoSuchCORSConfiguration</Code>
-// // @Description   <Message>The CORS configuration does not exist</Message>
-// // @Description   <Resource>/example-bucket</Resource>
-// // @Description   <RequestId>656c76696e6727732072657175657374</RequestId>
-// // @Description </Error>
-// // @Description ```
-// // @Tags [Infra Resource] Object Storage Management
-// // @Accept xml
-// // @Produce xml
-// // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
-// // @Success 200 {object} CORSConfiguration "OK"
-// // @Failure 404 {object} Error "Not Found"
-// // @Router /resources/objectStorage/{objectStorageName}/cors [get]
-// func GetObjectStorageCORSLagacy(c echo.Context) error {
+	// [Output]
+	return c.NoContent(http.StatusOK)
+}
 
-// 	// Validate objectStorageName parameter
-// 	objectStorageName := c.Param("objectStorageName")
-// 	if objectStorageName == "" {
-// 		err := fmt.Errorf("%s", "objectStorageName is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
+// RestGetObjectStorageCORS godoc
+// @ID GetObjectStorageCORS
+// @Summary Get CORS configuration of an object storage (bucket)
+// @Description Get CORS configuration of an object storage (bucket)
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param osId path string true "Object Storage ID" default(os01)
+// @Success 200 {object} model.GetCorsConfigurationResponse "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/resources/objectStorage/{osId}/cors [get]
+func RestGetObjectStorageCORS(c echo.Context) error {
 
-// 	// Validate credential header
-// 	credentialHeader := c.Request().Header.Get("credential")
-// 	err := validateCredential(credentialHeader)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("invalid credential header")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
+	// [Input]
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	// Source path pattern with * to capture objectStorageName
-// 	sourcePattern := "/resources/objectStorage/*/cors"
-// 	// Target path pattern using $1 for captured objectStorageName
-// 	targetPattern := "/s3/$1?cors"
+	osId := c.Param("osId")
+	if osId == "" {
+		err := fmt.Errorf("osId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
-// 	return proxyHandler(c)
-// }
+	// [Process]
+	result, err := resource.GetObjectStorageCorsConfigurations(nsId, osId)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return c.JSON(http.StatusNotFound, model.SimpleMsg{Message: err.Error()})
+		}
+		log.Error().Err(err).Msg("Failed to get CORS configuration")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
 
-// // RestSetObjectStorageCORSLagacy godoc
-// // @ID SetObjectStorageCORSLagacy
-// // @Summary (To be deprecated) Set CORS configuration of an object storage (bucket)
-// // @Description (To be deprecated) Set CORS configuration of an object storage (bucket)
-// // @Description
-// // @Description **Important Notes:**
-// // @Description - The CORS configuration must be provided in the request body in XML format.
-// // @Description - The actual request body should have root element `CORSConfiguration`
-// // @Description
-// // @Description **Actual XML Request Body Example:**
-// // @Description ```xml
-// // @Description <?xml version="1.0" encoding="UTF-8"?>
-// // @Description <CORSConfiguration>
-// // @Description   <CORSRule>
-// // @Description     <AllowedOrigin>https://example.com</AllowedOrigin>
-// // @Description     <AllowedOrigin>https://app.example.com</AllowedOrigin>
-// // @Description     <AllowedMethod>GET</AllowedMethod>
-// // @Description     <AllowedMethod>PUT</AllowedMethod>
-// // @Description     <AllowedHeader>Content-Type</AllowedHeader>
-// // @Description     <AllowedHeader>Authorization</AllowedHeader>
-// // @Description     <ExposeHeader>ETag</ExposeHeader>
-// // @Description     <MaxAgeSeconds>1800</MaxAgeSeconds>
-// // @Description   </CORSRule>
-// // @Description   <CORSRule>
-// // @Description     <AllowedOrigin>*</AllowedOrigin>
-// // @Description     <AllowedMethod>GET</AllowedMethod>
-// // @Description     <MaxAgeSeconds>300</MaxAgeSeconds>
-// // @Description   </CORSRule>
-// // @Description </CORSConfiguration>
-// // @Description ```
-// // @Tags [Infra Resource] Object Storage Management
-// // @Accept xml
-// // @Produce xml
-// // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
-// // @Param reqBody body CORSConfiguration true "CORS Configuration in XML format"
-// // @Success 200 "OK"
-// // @Router /resources/objectStorage/{objectStorageName}/cors [put]
-// func SetObjectStorageCORSLagacy(c echo.Context) error {
+	// [Output]
+	return c.JSON(http.StatusOK, result)
+}
 
-// 	// Validate objectStorageName parameter
-// 	objectStorageName := c.Param("objectStorageName")
-// 	if objectStorageName == "" {
-// 		err := fmt.Errorf("%s", "objectStorageName is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
+// RestDeleteObjectStorageCORS godoc
+// @ID DeleteObjectStorageCORS
+// @Summary Delete CORS configuration of an object storage (bucket)
+// @Description Delete all CORS rules of an object storage (bucket)
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param osId path string true "Object Storage ID" default(os01)
+// @Success 204 "No Content"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/resources/objectStorage/{osId}/cors [delete]
+func RestDeleteObjectStorageCORS(c echo.Context) error {
 
-// 	// Validate credential header
-// 	credentialHeader := c.Request().Header.Get("credential")
-// 	err := validateCredential(credentialHeader)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("invalid credential header")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
+	// [Input]
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	// Source path pattern with * to capture objectStorageName
-// 	sourcePattern := "/resources/objectStorage/*/cors"
-// 	// Target path pattern using $1 for captured objectStorageName
-// 	targetPattern := "/s3/$1?cors"
+	osId := c.Param("osId")
+	if osId == "" {
+		err := fmt.Errorf("osId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
 
-// 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
-// 	return proxyHandler(c)
-// }
+	// [Process]
+	err := resource.DeleteObjectStorageCorsConfigurations(nsId, osId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to delete CORS configuration")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
 
-// // RestDeleteObjectStorageCORSLagacy godoc
-// // @ID DeleteObjectStorageCORSLagacy
-// // @Summary (To be deprecated) Delete CORS configuration of an object storage (bucket)
-// // @Description (To be deprecated) Delete CORS configuration of an object storage (bucket)
-// // @Tags [Infra Resource] Object Storage Management
-// // @Accept xml
-// // @Produce xml
-// // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
-// // @Success 204 "No Content"
-// // @Router /resources/objectStorage/{objectStorageName}/cors [delete]
-// func DeleteObjectStorageCORSLagacy(c echo.Context) error {
-
-// 	// Validate objectStorageName parameter
-// 	objectStorageName := c.Param("objectStorageName")
-// 	if objectStorageName == "" {
-// 		err := fmt.Errorf("%s", "objectStorageName is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-
-// 	// Validate credential header
-// 	credentialHeader := c.Request().Header.Get("credential")
-// 	err := validateCredential(credentialHeader)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("invalid credential header")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-
-// 	// Source path pattern with * to capture objectStorageName
-// 	sourcePattern := "/resources/objectStorage/*/cors"
-// 	// Target path pattern using $1 for captured objectStorageName
-// 	targetPattern := "/s3/$1?cors"
-
-// 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
-// 	return proxyHandler(c)
-// }
+	// [Output]
+	return c.NoContent(http.StatusNoContent)
+}
 
 /*
  * Object operations
