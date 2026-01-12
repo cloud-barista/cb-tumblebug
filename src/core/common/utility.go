@@ -377,7 +377,7 @@ func GetProviderNameFromConnConfig(ConnConfigName string) (string, error) {
 // CheckConnConfigAvailable is func to check if connection config is available by checking allkeypair list
 func CheckConnConfigAvailable(connConfigName string) (bool, error) {
 
-	var callResult interface{}
+	var callResult model.SpiderAllListWrapper
 	client := clientManager.NewHttpClient()
 	url := model.SpiderRestUrl + "/allkeypair"
 	method := "GET"
