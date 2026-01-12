@@ -97,3 +97,22 @@ type PresignedUrlResponse struct {
 type ListObjectResponse struct {
 	Objects []Object `json:"objects"`
 }
+
+// GetCorsConfigurationResponse represents the response structure for CORS configuration
+type GetCorsConfigurationResponse struct {
+	CorsRule []CorsRule `json:"corsRule"`
+}
+
+// CorsRule represents a single CORS rule in the set CORS request
+type CorsRule struct {
+	AllowedMethod []string `json:"allowedMethod" example:"GET,PUT"`
+	AllowedOrigin []string `json:"allowedOrigin" example:"*"`
+	AllowedHeader []string `json:"allowedHeader" example:"*"`
+	ExposeHeader  []string `json:"exposeHeader" example:"ETag"`
+	MaxAgeSeconds int      `json:"maxAgeSeconds" example:"3000"`
+}
+
+// SetObjectStorageCorsConfigurationsRequest represents the request structure to set CORS configuration
+type SetCorsConfigurationRequest struct {
+	CorsRule []CorsRule `json:"corsRule" validate:"required"`
+}

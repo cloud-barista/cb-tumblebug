@@ -642,6 +642,14 @@ func RunServer() {
 	g.HEAD("/:nsId/resources/objectStorage/:osId", rest_resource.RestCheckObjectStorageExistance)
 	g.GET("/:nsId/resources/objectStorage/:osId/location", rest_resource.RestGetObjectStorageLocation)
 
+	// Object Storage management - CORS
+	g.PUT("/:nsId/resources/objectStorage/:osId/cors", rest_resource.RestSetObjectStorageCORS)
+	g.GET("/:nsId/resources/objectStorage/:osId/cors", rest_resource.RestGetObjectStorageCORS)
+	g.DELETE("/:nsId/resources/objectStorage/:osId/cors", rest_resource.RestDeleteObjectStorageCORS)
+
+	// Object Storage management - Versioning
+	// TBD
+
 	// Object operations within Object Storage
 	g.GET("/:nsId/resources/objectStorage/:osId/object/:objectKey", rest_resource.RestGeneratePresignedURL)
 	g.HEAD("/:nsId/resources/objectStorage/:osId/object/:objectKey", rest_resource.RestGetDataObjectInfo)

@@ -18,12 +18,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
@@ -100,10 +102,30 @@ type spiderObject struct {
 	StorageClass string `xml:"StorageClass" json:"StorageClass" example:"STANDARD"`
 }
 
+// spiderPreSignedUrlResponse represents the response structure from Spider for generating a presigned URL
 type spiderPreSignedUrlResponse struct {
 	Expires      int64  `xml:"Expires" json:"Expires" example:"1693824000"`
 	Method       string `xml:"Method" json:"Method" example:"GET"`
 	PreSignedURL string `xml:"PresignedURL" json:"PreSignedURL" example:"https://example.com/presigned-url"`
+}
+
+// spiderGetCORSResponse represents the CORS rules for an S3 bucket
+type spiderGetCORSResponse struct {
+	CORSRule []spiderCorsRule `xml:"CORSRule" json:"CORSRule"`
+}
+
+// spiderSetCorsRequest represents the request structure to set CORS configuration for an S3 bucket in Spider
+type spiderSetCorsRequest struct {
+	CORSRule []spiderCorsRule `xml:"CORSRule" json:"CORSRule" validate:"required"`
+}
+
+// spiderCorsRule represents a single CORS rule in the set CORS request
+type spiderCorsRule struct {
+	AllowedOrigin []string `xml:"AllowedOrigin" json:"AllowedOrigin" example:"*"`
+	AllowedMethod []string `xml:"AllowedMethod" json:"AllowedMethod" example:"GET"`
+	AllowedHeader []string `xml:"AllowedHeader" json:"AllowedHeader" example:"*"`
+	ExposeHeader  []string `xml:"ExposeHeader" json:"ExposeHeader" example:"ETag"`
+	MaxAgeSeconds int      `xml:"MaxAgeSeconds" json:"MaxAgeSeconds" example:"3000"`
 }
 
 // checkObjectKey validates the object key (file name) for S3 operations
@@ -141,6 +163,72 @@ func checkObjectKey(objectKey string) error {
 	return nil
 }
 
+var cspSupportingObjectStorage = map[string]bool{
+	csp.AWS:       true,
+	csp.Azure:     false, // TODO: to be supported
+	csp.GCP:       true,
+	csp.Alibaba:   true,
+	csp.Tencent:   true,
+	csp.IBM:       true,
+	csp.OpenStack: true,
+	csp.NCP:       true,
+	csp.NHN:       true,
+	csp.KT:        true,
+}
+
+func isObjectStorageSupported(cspType string) bool {
+	cspType = strings.ToLower(cspType)
+	supported, exists := cspSupportingObjectStorage[cspType]
+	if !exists {
+		return false
+	}
+	return supported
+}
+
+var cspSupportingObjectStorageCors = map[string]bool{
+	csp.AWS:       true,
+	csp.Azure:     false, // TODO: to be decided when Azure object storage is supported
+	csp.GCP:       true,
+	csp.Alibaba:   true,
+	csp.Tencent:   true,
+	csp.IBM:       true,
+	csp.OpenStack: true,
+	csp.NCP:       false,
+	csp.NHN:       false,
+	csp.KT:        true,
+}
+
+func isObjectStorageCorsSupported(cspType string) bool {
+	cspType = strings.ToLower(cspType)
+	supported, exists := cspSupportingObjectStorageCors[cspType]
+	if !exists {
+		return false
+	}
+	return supported
+}
+
+var cspSupportingObjectStorageVersioning = map[string]bool{
+	csp.AWS:       true,
+	csp.Azure:     false, // TODO: to be decided when Azure object storage is supported
+	csp.GCP:       true,
+	csp.Alibaba:   true,
+	csp.Tencent:   true,
+	csp.IBM:       true,
+	csp.OpenStack: false,
+	csp.NCP:       false,
+	csp.NHN:       false,
+	csp.KT:        true,
+}
+
+func isObjectStorageVersioningSupported(cspType string) bool {
+	cspType = strings.ToLower(cspType)
+	supported, exists := cspSupportingObjectStorageVersioning[cspType]
+	if !exists {
+		return false
+	}
+	return supported
+}
+
 /*
  * Functions for object storages (buckets)
  */
@@ -175,6 +263,14 @@ func CreateObjectStorage(nsId string, req model.ObjectStorageCreateRequest) (mod
 	_, err = common.GetConnConfig(req.ConnectionName)
 	if err != nil {
 		err = fmt.Errorf("cannot retrieve ConnectionConfig %s", err.Error())
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// Check if the input CSP is supported for object storage
+	cspType := objStrgInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageSupported(cspType) {
+		err = fmt.Errorf("object storage is not supported for CSP: %s", cspType)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
@@ -417,6 +513,15 @@ func GetObjectStorage(nsId, osId string) (model.ObjectStorageInfo, error) {
 		return emptyRet, err
 	}
 	oldObjStrgInfo := objStrgData.(model.ObjectStorageInfo)
+
+	// Check if the input CSP is supported for object storage
+	cspType := oldObjStrgInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageSupported(cspType) {
+		err = fmt.Errorf("object storage is not supported for CSP: %s", cspType)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
 	connName := oldObjStrgInfo.ConnectionName
 	uid := oldObjStrgInfo.Uid
 
@@ -526,6 +631,7 @@ func isObjStrgInfoUpdated(oldObjStrgInfo, newObjStrgInfo model.ObjectStorageInfo
 	return false
 }
 
+// DeleteObjectStorage deletes the specified object storage (bucket) from the specified namespace
 func DeleteObjectStorage(nsId, osId string) error {
 
 	// 1. Validate input parameters
@@ -550,6 +656,14 @@ func DeleteObjectStorage(nsId, osId string) error {
 		return err
 	}
 	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+
+	// Check if the input CSP is supported for object storage
+	cspType := objStrgInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageSupported(cspType) {
+		err = fmt.Errorf("object storage is not supported for CSP: %s", cspType)
+		log.Error().Err(err).Msg("")
+		return err
+	}
 
 	// 4. Set and store status
 	objStrgInfo.Status = string(ObjectStorageOnDeleting)
@@ -654,6 +768,15 @@ func CheckObjectStorageExistence(nsId, osId string) (bool, error) {
 	}
 
 	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+
+	// Check if the input CSP is supported for object storage
+	cspType := objStrgInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageSupported(cspType) {
+		err = fmt.Errorf("object storage is not supported for CSP: %s", cspType)
+		log.Error().Err(err).Msg("")
+		return false, err
+	}
+
 	uid := objStrgInfo.Uid
 	connName := objStrgInfo.ConnectionName
 
@@ -690,6 +813,7 @@ func CheckObjectStorageExistence(nsId, osId string) (bool, error) {
 	return exists, nil
 }
 
+// GetObjectStorageLocation retrieves the location of the specified object storage (bucket)
 func GetObjectStorageLocation(nsId, osId string) (model.ObjectStorageLocationResponse, error) {
 	var emptyRet model.ObjectStorageLocationResponse
 
@@ -713,6 +837,14 @@ func GetObjectStorageLocation(nsId, osId string) (model.ObjectStorageLocationRes
 		return emptyRet, err
 	}
 	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+
+	// Check if the input CSP is supported for object storage
+	cspType := objStrgInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageSupported(cspType) {
+		err = fmt.Errorf("object storage is not supported for CSP: %s", cspType)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
 
 	uid := objStrgInfo.Uid
 	connName := objStrgInfo.ConnectionName
@@ -752,8 +884,242 @@ func GetObjectStorageLocation(nsId, osId string) (model.ObjectStorageLocationRes
 }
 
 /*
+ * Functions for object storages (buckets) CORS configuration
+ */
+
+// SetObjectStorageCorsConfigurations sets the CORS configuration for the specified object storage (bucket)
+func SetObjectStorageCorsConfigurations(nsId, osId string, req model.SetCorsConfigurationRequest) error {
+
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	// 2. Get the object storage info from the key-value store
+	resourceType := model.StrObjectStorage
+	objStrgData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return err
+	}
+	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+
+	// Check if CORS configuration is supported for the CSP type
+	cspType := objStrgInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageCorsSupported(cspType) {
+		err = fmt.Errorf("cors configuration is not supported for CSP (%s)", cspType)
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	uid := objStrgInfo.Uid
+	connName := objStrgInfo.ConnectionName
+
+	// 3. Prepare the Spider CORS rules request body
+	spCorsRules := spiderSetCorsRequest{}
+	for _, rule := range req.CorsRule {
+		spRule := spiderCorsRule{
+			AllowedOrigin: rule.AllowedOrigin,
+			AllowedMethod: rule.AllowedMethod,
+			AllowedHeader: rule.AllowedHeader,
+			ExposeHeader:  rule.ExposeHeader,
+			MaxAgeSeconds: rule.MaxAgeSeconds,
+		}
+		spCorsRules.CORSRule = append(spCorsRules.CORSRule, spRule)
+	}
+
+	// 4. Call Spider API to set the object storage CORS configuration
+	client := clientManager.NewHttpClient()
+	method := "PUT"
+	spReq := spCorsRules
+	spResp := clientManager.NoBody
+	url := fmt.Sprintf("%s/s3/%s?cors&ConnectionName=%s", model.SpiderRestUrl, uid, connName)
+
+	log.Debug().Msgf("[Request to Spider] Setting the object storage CORS configuration (url: %s, request body: %+v)", url, spReq)
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	log.Debug().Msgf("[Response from Spider] Setting the object storage CORS configuration (No response body): %+v", spResp)
+
+	return nil
+}
+
+// GetObjectStorageCorsConfigurations retrieves the CORS configuration for the specified object storage (bucket)
+func GetObjectStorageCorsConfigurations(nsId, osId string) (model.GetCorsConfigurationResponse, error) {
+	var emptyRet model.GetCorsConfigurationResponse
+
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// 2. Get the object storage info from the key-value store
+	resourceType := model.StrObjectStorage
+	objStrgData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return emptyRet, err
+	}
+	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+
+	// Check if CORS configuration is supported for the CSP type
+	cspType := objStrgInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageCorsSupported(cspType) {
+		err = fmt.Errorf("cors configuration is not supported for CSP (%s)", cspType)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	uid := objStrgInfo.Uid
+	connName := objStrgInfo.ConnectionName
+
+	// 3. Call Spider API to get the object storage CORS configuration
+	client := clientManager.NewHttpClient()
+	method := "GET"
+	spReq := clientManager.NoBody
+	spResp := spiderGetCORSResponse{}
+	url := fmt.Sprintf("%s/s3/%s?cors&ConnectionName=%s", model.SpiderRestUrl, uid, connName)
+
+	log.Debug().Msgf("[Request to Spider] Getting the object storage CORS configuration (url: %s)", url)
+	restyResponse, err := clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+
+	if err != nil {
+		if restyResponse != nil && restyResponse.StatusCode() == http.StatusNotFound {
+			// Return empty CORS configuration if not found
+			err := fmt.Errorf("not found CORS configuration for object storage: %s", osId)
+			log.Warn().Err(err).Msg(err.Error())
+			return model.GetCorsConfigurationResponse{CorsRule: []model.CorsRule{}}, err
+		}
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	log.Debug().Msgf("[Response from Spider] Getting the object storage CORS configuration: %+v", spResp)
+
+	// 4. Set and return the object storage CORS configuration
+	var corsRules []model.CorsRule
+	for _, spRule := range spResp.CORSRule {
+		rule := model.CorsRule{
+			AllowedOrigin: spRule.AllowedOrigin,
+			AllowedMethod: spRule.AllowedMethod,
+			AllowedHeader: spRule.AllowedHeader,
+			ExposeHeader:  spRule.ExposeHeader,
+			MaxAgeSeconds: spRule.MaxAgeSeconds,
+		}
+		corsRules = append(corsRules, rule)
+	}
+
+	corsConfig := model.GetCorsConfigurationResponse{
+		CorsRule: corsRules,
+	}
+
+	return corsConfig, nil
+}
+
+// DeleteObjectStorageCorsConfigurations deletes the CORS configuration for the specified object storage (bucket)
+func DeleteObjectStorageCorsConfigurations(nsId, osId string) error {
+
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	// 2. Get the object storage info from the key-value store
+	resourceType := model.StrObjectStorage
+	objStrgData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return err
+	}
+	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+
+	// Check if CORS configuration is supported for the CSP type
+	cspType := objStrgInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageCorsSupported(cspType) {
+		err = fmt.Errorf("cors configuration is not supported for CSP (%s)", cspType)
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	uid := objStrgInfo.Uid
+	connName := objStrgInfo.ConnectionName
+
+	// 3. Call Spider API to delete the object storage CORS configuration
+	client := clientManager.NewHttpClient()
+	method := "DELETE"
+	spReq := clientManager.NoBody
+	spResp := clientManager.NoBody
+	url := fmt.Sprintf("%s/s3/%s?cors&ConnectionName=%s", model.SpiderRestUrl, uid, connName)
+
+	log.Debug().Msgf("[Request to Spider] Deleting the object storage CORS configuration (url: %s)", url)
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	log.Debug().Msgf("[Response from Spider] Deleting the object storage CORS configuration (No response body): %+v", spResp)
+
+	return nil
+}
+
+/*
  * Functions for objects (data)
  */
+
 // ! IMPORTANT: To avoid data transfer overhead,
 // ! Tumblebug will provide presigned URLs for uploading and downloading objects.
 // ! The upload or download of objects is NOT handled directly by Tumblebug.
@@ -792,6 +1158,15 @@ func GeneratePresignedURL(nsId, osId, objectKey string, expiry time.Duration, op
 		return emptyRet, err
 	}
 	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+
+	// Check if the input CSP is supported for object storage
+	cspType := objStrgInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageSupported(cspType) {
+		err = fmt.Errorf("object storage is not supported for CSP: %s", cspType)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
 	connName := objStrgInfo.ConnectionName
 	uid := objStrgInfo.Uid
 
@@ -896,6 +1271,15 @@ func GetDataObject(nsId, osId, objectKey string) (model.Object, error) {
 	}
 
 	osInfo := osData.(model.ObjectStorageInfo)
+
+	// Check if the input CSP is supported for object storage
+	cspType := osInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageSupported(cspType) {
+		err = fmt.Errorf("object storage is not supported for CSP: %s", cspType)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
 	connName := osInfo.ConnectionName
 	uid := osInfo.Uid
 
@@ -966,6 +1350,14 @@ func DeleteDataObject(nsId, osId, objectKey string) error {
 		return err
 	}
 	osInfo := osData.(model.ObjectStorageInfo)
+
+	// Check if the input CSP is supported for object storage
+	cspType := osInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageSupported(cspType) {
+		err = fmt.Errorf("object storage is not supported for CSP: %s", cspType)
+		log.Error().Err(err).Msg("")
+		return err
+	}
 
 	connName := osInfo.ConnectionName
 	uid := osInfo.Uid

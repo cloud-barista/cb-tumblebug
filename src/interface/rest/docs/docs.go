@@ -9449,6 +9449,185 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/objectStorage/{osId}/cors": {
+            "get": {
+                "description": "Get CORS configuration of an object storage (bucket)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "Get CORS configuration of an object storage (bucket)",
+                "operationId": "GetObjectStorageCORS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "os01",
+                        "description": "Object Storage ID",
+                        "name": "osId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.GetCorsConfigurationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Set CORS configuration of an object storage (bucket)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "Set CORS configuration of an object storage (bucket)",
+                "operationId": "SetObjectStorageCORS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "os01",
+                        "description": "Object Storage ID",
+                        "name": "osId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "CORS Configuration Request",
+                        "name": "reqBody",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SetCorsConfigurationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all CORS rules of an object storage (bucket)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "Delete CORS configuration of an object storage (bucket)",
+                "operationId": "DeleteObjectStorageCORS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "os01",
+                        "description": "Object Storage ID",
+                        "name": "osId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/objectStorage/{osId}/location": {
             "get": {
                 "description": "Get the location of an object storage (bucket)",
@@ -15706,6 +15885,52 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CorsRule": {
+            "type": "object",
+            "properties": {
+                "allowedHeader": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "*"
+                    ]
+                },
+                "allowedMethod": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "GET",
+                        "PUT"
+                    ]
+                },
+                "allowedOrigin": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "*"
+                    ]
+                },
+                "exposeHeader": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "ETag"
+                    ]
+                },
+                "maxAgeSeconds": {
+                    "type": "integer",
+                    "example": 3000
+                }
+            }
+        },
         "model.CreateSubGroupDynamicReq": {
             "type": "object",
             "required": [
@@ -16566,6 +16791,17 @@ const docTemplate = `{
                 "provider": {
                     "type": "string",
                     "example": "alibaba"
+                }
+            }
+        },
+        "model.GetCorsConfigurationResponse": {
+            "type": "object",
+            "properties": {
+                "corsRule": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CorsRule"
+                    }
                 }
             }
         },
@@ -20863,6 +21099,20 @@ const docTemplate = `{
                 },
                 "updated": {
                     "$ref": "#/definitions/model.SecurityGroupInfo"
+                }
+            }
+        },
+        "model.SetCorsConfigurationRequest": {
+            "type": "object",
+            "required": [
+                "corsRule"
+            ],
+            "properties": {
+                "corsRule": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CorsRule"
+                    }
                 }
             }
         },
