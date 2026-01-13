@@ -648,7 +648,10 @@ func RunServer() {
 	g.DELETE("/:nsId/resources/objectStorage/:osId/cors", rest_resource.RestDeleteObjectStorageCORS)
 
 	// Object Storage management - Versioning
-	// TBD
+	g.PUT("/:nsId/resources/objectStorage/:osId/versioning", rest_resource.RestSetObjectStorageVersioning)
+	g.GET("/:nsId/resources/objectStorage/:osId/versioning", rest_resource.RestGetObjectStorageVersioning)
+	g.GET("/:nsId/resources/objectStorage/:osId/versions", rest_resource.RestListObjectVersions)
+	g.DELETE("/:nsId/resources/objectStorage/:osId/versions/:objectKey", rest_resource.RestDeleteVersionedObject)
 
 	// Object operations within Object Storage
 	g.GET("/:nsId/resources/objectStorage/:osId/object/:objectKey", rest_resource.RestGeneratePresignedURL)

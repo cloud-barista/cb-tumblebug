@@ -9385,11 +9385,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -9485,7 +9482,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.GetCorsConfigurationResponse"
+                            "$ref": "#/definitions/model.ObjectStorageGetCorsResponse"
                         }
                     },
                     "400": {
@@ -9544,7 +9541,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.SetCorsConfigurationRequest"
+                            "$ref": "#/definitions/model.ObjectStorageSetCorsRequest"
                         }
                     }
                 ],
@@ -9724,7 +9721,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK - Returns object storage info with contents",
                         "schema": {
-                            "$ref": "#/definitions/model.ListObjectResponse"
+                            "$ref": "#/definitions/model.ObjectStorageListObjectsResponse"
                         }
                     },
                     "400": {
@@ -9808,7 +9805,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.PresignedUrlResponse"
+                            "$ref": "#/definitions/model.ObjectStoragePresignedUrlResponse"
                         }
                     },
                     "400": {
@@ -9934,6 +9931,261 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK - Object metadata returned in headers"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/objectStorage/{osId}/versioning": {
+            "get": {
+                "description": "Get versioning configuration of an object storage (bucket)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "Get versioning configuration of an object storage (bucket)",
+                "operationId": "GetObjectStorageVersioning",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "os01",
+                        "description": "Object Storage ID",
+                        "name": "osId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ObjectStorageGetVersioningResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Set versioning configuration of an object storage (bucket)\n\n**Note: **\n- Versioning options: \"Enabled\", \"Suspended\", \"Unversioned\"\n",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "Set versioning configuration of an object storage (bucket)",
+                "operationId": "SetObjectStorageVersioning",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "os01",
+                        "description": "Object Storage ID",
+                        "name": "osId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Versioning Configuration Request",
+                        "name": "reqBody",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ObjectStorageSetVersioningRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/objectStorage/{osId}/versions": {
+            "get": {
+                "description": "List all versions of objects in an object storage (bucket)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "List object versions in an object storage (bucket)",
+                "operationId": "ListObjectVersions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "os01",
+                        "description": "Object Storage ID",
+                        "name": "osId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ObjectStorageListObjectVersionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/objectStorage/{osId}/versions/{objectKey}": {
+            "delete": {
+                "description": "Delete a specific version of an object in an object storage (bucket)\n\n**Note: **\n- If no version is specified, we will define how it behaves and update it when necessary.\n",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "Delete a specific version of an object",
+                "operationId": "DeleteVersionedObject",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "os01",
+                        "description": "Object Storage ID",
+                        "name": "osId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Object Key",
+                        "name": "objectKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Version ID",
+                        "name": "versionId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -16794,17 +17046,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.GetCorsConfigurationResponse": {
-            "type": "object",
-            "properties": {
-                "corsRule": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.CorsRule"
-                    }
-                }
-            }
-        },
         "model.HandlingCommandCountResponse": {
             "type": "object",
             "properties": {
@@ -18133,17 +18374,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.ListObjectResponse": {
-            "type": "object",
-            "properties": {
-                "objects": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Object"
-                    }
-                }
-            }
-        },
         "model.Location": {
             "type": "object",
             "properties": {
@@ -19312,6 +19542,26 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ObjectStorageGetCorsResponse": {
+            "type": "object",
+            "properties": {
+                "corsRule": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CorsRule"
+                    }
+                }
+            }
+        },
+        "model.ObjectStorageGetVersioningResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "Enabled"
+                }
+            }
+        },
         "model.ObjectStorageInfo": {
             "type": "object",
             "properties": {
@@ -19387,12 +19637,151 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ObjectStorageListObjectVersionsResponse": {
+            "type": "object",
+            "properties": {
+                "deleteMarker": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ObjectVersion"
+                    }
+                },
+                "isTruncated": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "keyMarker": {
+                    "type": "string",
+                    "example": ""
+                },
+                "maxKeys": {
+                    "type": "integer",
+                    "example": 1000
+                },
+                "name": {
+                    "type": "string",
+                    "example": "example-bucket"
+                },
+                "nextKeyMarker": {
+                    "type": "string",
+                    "example": ""
+                },
+                "nextVersionIdMarker": {
+                    "type": "string",
+                    "example": ""
+                },
+                "prefix": {
+                    "type": "string",
+                    "example": ""
+                },
+                "version": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ObjectVersion"
+                    }
+                },
+                "versionIdMarker": {
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "model.ObjectStorageListObjectsResponse": {
+            "type": "object",
+            "properties": {
+                "objects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Object"
+                    }
+                }
+            }
+        },
         "model.ObjectStorageLocationResponse": {
             "type": "object",
             "properties": {
                 "locationConstraint": {
                     "type": "string",
                     "example": "ap-northeast-2"
+                }
+            }
+        },
+        "model.ObjectStoragePresignedUrlResponse": {
+            "type": "object",
+            "properties": {
+                "expires": {
+                    "type": "integer",
+                    "example": 1693824000
+                },
+                "method": {
+                    "type": "string",
+                    "example": "GET"
+                },
+                "presignedURL": {
+                    "type": "string",
+                    "example": "https://example.com/presigned-url"
+                }
+            }
+        },
+        "model.ObjectStorageSetCorsRequest": {
+            "type": "object",
+            "required": [
+                "corsRule"
+            ],
+            "properties": {
+                "corsRule": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CorsRule"
+                    }
+                }
+            }
+        },
+        "model.ObjectStorageSetVersioningRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "Enabled"
+                }
+            }
+        },
+        "model.ObjectVersion": {
+            "type": "object",
+            "properties": {
+                "eTag": {
+                    "type": "string",
+                    "example": "9b2cf535f27731c974343645a3985328"
+                },
+                "isLatest": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "key": {
+                    "type": "string",
+                    "example": "test-object.txt"
+                },
+                "lastModified": {
+                    "type": "string",
+                    "example": "2025-09-04T04:18:06Z"
+                },
+                "owner": {
+                    "$ref": "#/definitions/model.Owner"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 1024
+                },
+                "storageClass": {
+                    "type": "string",
+                    "example": "STANDARD"
+                },
+                "versionId": {
+                    "type": "string",
+                    "example": "3/L4kqtJlcpXroDTDmJ+rmSpXd3aIbrC"
                 }
             }
         },
@@ -19448,6 +19837,19 @@ const docTemplate = `{
                 "primaryRiskFactor": {
                     "description": "PrimaryRiskFactor indicates what the main risk factor is: \"spec\", \"image\", \"combination\", \"none\"",
                     "type": "string"
+                }
+            }
+        },
+        "model.Owner": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
                 }
             }
         },
@@ -19553,23 +19955,6 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
-                }
-            }
-        },
-        "model.PresignedUrlResponse": {
-            "type": "object",
-            "properties": {
-                "expires": {
-                    "type": "integer",
-                    "example": 1693824000
-                },
-                "method": {
-                    "type": "string",
-                    "example": "GET"
-                },
-                "presignedURL": {
-                    "type": "string",
-                    "example": "https://example.com/presigned-url"
                 }
             }
         },
@@ -21099,20 +21484,6 @@ const docTemplate = `{
                 },
                 "updated": {
                     "$ref": "#/definitions/model.SecurityGroupInfo"
-                }
-            }
-        },
-        "model.SetCorsConfigurationRequest": {
-            "type": "object",
-            "required": [
-                "corsRule"
-            ],
-            "properties": {
-                "corsRule": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.CorsRule"
-                    }
                 }
             }
         },

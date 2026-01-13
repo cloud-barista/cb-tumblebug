@@ -39,8 +39,8 @@ type Object struct {
 	StorageClass string `json:"storageClass" example:"STANDARD"`
 }
 
-// ListBucketResponse represents the response structure for listing S3 buckets
-type ListBucketResponse struct {
+// ObjectStorageListResponse represents the response structure for listing S3 buckets
+type ObjectStorageListResponse struct {
 	Owner   Owner   `json:"owner"`
 	Buckets Buckets `json:"buckets"`
 }
@@ -86,20 +86,20 @@ type ObjectStorageLocationResponse struct {
 	LocationConstraint string `json:"locationConstraint" example:"ap-northeast-2"`
 }
 
-// PresignedUrlResponse represents the response structure for presigned URL generation
-type PresignedUrlResponse struct {
+// ObjectStoragePresignedUrlResponse represents the response structure for presigned URL generation
+type ObjectStoragePresignedUrlResponse struct {
 	Expires      int64  `json:"expires" example:"1693824000"`
 	Method       string `json:"method" example:"GET"`
 	PreSignedURL string `json:"presignedURL" example:"https://example.com/presigned-url"`
 }
 
-// ListObjectResponse represents the response structure for listing objects in a bucket
-type ListObjectResponse struct {
+// ObjectStorageListObjectsResponse represents the response structure for listing objects in a bucket
+type ObjectStorageListObjectsResponse struct {
 	Objects []Object `json:"objects"`
 }
 
-// GetCorsConfigurationResponse represents the response structure for CORS configuration
-type GetCorsConfigurationResponse struct {
+// ObjectStorageGetCorsResponse represents the response structure for CORS configuration
+type ObjectStorageGetCorsResponse struct {
 	CorsRule []CorsRule `json:"corsRule"`
 }
 
@@ -112,7 +112,43 @@ type CorsRule struct {
 	MaxAgeSeconds int      `json:"maxAgeSeconds" example:"3000"`
 }
 
-// SetObjectStorageCorsConfigurationsRequest represents the request structure to set CORS configuration
-type SetCorsConfigurationRequest struct {
+// ObjectStorageSetCorsRequest represents the request structure to set CORS configuration
+type ObjectStorageSetCorsRequest struct {
 	CorsRule []CorsRule `json:"corsRule" validate:"required"`
+}
+
+// ObjectStorageSetVersioningRequest represents the request structure to set versioning configuration
+type ObjectStorageSetVersioningRequest struct {
+	Status string `json:"status" validate:"required" example:"Enabled"`
+}
+
+// ObjectStorageGetVersioningResponse represents the response structure for versioning configuration
+type ObjectStorageGetVersioningResponse struct {
+	Status string `json:"status" example:"Enabled"`
+}
+
+// ObjectStorageListObjectVersionsResponse represents the response structure for listing object versions in a bucket
+type ObjectStorageListObjectVersionsResponse struct {
+	Name                string          `json:"name" example:"example-bucket"`
+	Prefix              string          `json:"prefix" example:""`
+	KeyMarker           string          `json:"keyMarker" example:""`
+	VersionIdMarker     string          `json:"versionIdMarker" example:""`
+	NextKeyMarker       string          `json:"nextKeyMarker" example:""`
+	NextVersionIdMarker string          `json:"nextVersionIdMarker" example:""`
+	MaxKeys             int             `json:"maxKeys" example:"1000"`
+	IsTruncated         bool            `json:"isTruncated" example:"false"`
+	Version             []ObjectVersion `json:"version"`
+	DeleteMarker        []ObjectVersion `json:"deleteMarker"`
+}
+
+// ObjectVersion represents a single object version in the list object versions response
+type ObjectVersion struct {
+	Key          string `json:"key,omitempty" example:"test-object.txt"`
+	VersionId    string `json:"versionId,omitempty" example:"3/L4kqtJlcpXroDTDmJ+rmSpXd3aIbrC"`
+	IsLatest     bool   `json:"isLatest,omitempty" example:"true"`
+	LastModified string `json:"lastModified,omitempty" example:"2025-09-04T04:18:06Z"`
+	ETag         string `json:"eTag,omitempty" example:"9b2cf535f27731c974343645a3985328"`
+	Size         int64  `json:"size,omitempty" example:"1024"`
+	StorageClass string `json:"storageClass,omitempty" example:"STANDARD"`
+	Owner        Owner  `json:"owner,omitempty"`
 }
