@@ -31,6 +31,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// This file lists the structs and functions as followings:
+// - Structs for Spider request/response for object storage
+// - Functions for object storages (buckets)
+// - Functions for object storages (buckets) CORS configuration
+// - Functions for object storages (buckets) versioning configuration
+// - Functions for objects (files) in the object storages (buckets)
+
 type ObjectStorageStatus string
 
 const (
@@ -45,6 +52,14 @@ const (
 	ObjectStorageError              ObjectStorageStatus = "Error"              // An error occurred during a CRUD operation.
 	ObjectStorageErrorOnConfiguring ObjectStorageStatus = "ErrorOnConfiguring" // An error occurred during the configuring operation.
 	ObjectStorageErrorOnDeleting    ObjectStorageStatus = "ErrorOnDeleting"    // An error occurred during the deleting operation.
+)
+
+type ObjectStorageVersioningOption string
+
+const (
+	ObjectStorageVersioningEnabled     ObjectStorageVersioningOption = "Enabled"     // Versioning is enabled for the object storage.
+	ObjectStorageVersioningSuspended   ObjectStorageVersioningOption = "Suspended"   // Versioning is suspended for the object storage.
+	ObjectStorageVersioningUnversioned ObjectStorageVersioningOption = "Unversioned" // Versioning is not enabled for the object storage.
 )
 
 // ========== Resource APIs: Object Storage ==========
@@ -126,6 +141,42 @@ type spiderCorsRule struct {
 	AllowedHeader []string `xml:"AllowedHeader" json:"AllowedHeader" example:"*"`
 	ExposeHeader  []string `xml:"ExposeHeader" json:"ExposeHeader" example:"ETag"`
 	MaxAgeSeconds int      `xml:"MaxAgeSeconds" json:"MaxAgeSeconds" example:"3000"`
+}
+
+// spiderSetVersioningRequest represents the request structure to set versioning configuration for an S3 bucket in Spider
+type spiderSetVersioningRequest struct {
+	Status string `xml:"Status" json:"Status" validate:"required" example:"Enabled"` // Possible values: "Enabled", "Suspended"
+}
+
+// spiderGetVersioningResponse represents the response structure from Spider for versioning configuration
+type spiderGetVersioningResponse struct {
+	Status string `xml:"Status" json:"Status" example:"Enabled"` // Possible values: "Enabled", "Suspended"
+}
+
+// spiderListObjectsVersionsResponse represents the response structure from Spider for listing object versions in a bucket
+type spiderListObjectsVersionsResponse struct {
+	Name                string                `xml:"Name" json:"Name" example:"spider-test-bucket"`
+	Prefix              string                `xml:"Prefix" json:"Prefix" example:""`
+	KeyMarker           string                `xml:"KeyMarker" json:"KeyMarker" example:""`
+	VersionIdMarker     string                `xml:"VersionIdMarker" json:"VersionIdMarker" example:""`
+	NextKeyMarker       string                `xml:"NextKeyMarker" json:"NextKeyMarker" example:""`
+	NextVersionIdMarker string                `xml:"NextVersionIdMarker" json:"NextVersionIdMarker" example:""`
+	MaxKeys             int                   `xml:"MaxKeys" json:"MaxKeys" example:"1000"`
+	IsTruncated         bool                  `xml:"IsTruncated" json:"IsTruncated" example:"false"`
+	Version             []spiderObjectVersion `xml:"Version" json:"Version"`
+	DeleteMarker        []spiderObjectVersion `xml:"DeleteMarker" json:"DeleteMarker"`
+}
+
+// spiderObjectVersion represents a single object version in the S3 bucket
+type spiderObjectVersion struct {
+	Key          string      `xml:"Key" json:"Key,omitempty" example:"test-object.txt"`
+	VersionId    string      `xml:"VersionId" json:"VersionId,omitempty" example:"3/L4kqtJlcpXroDTDmJ+rmSpXd3aIbrC"`
+	IsLatest     bool        `xml:"IsLatest" json:"IsLatest,omitempty" example:"true"`
+	LastModified string      `xml:"LastModified" json:"LastModified,omitempty" example:"2025-09-04T04:18:06Z"`
+	ETag         string      `xml:"ETag" json:"ETag,omitempty" example:"9b2cf535f27731c974343645a3985328"`
+	Size         int64       `xml:"Size" json:"Size,omitempty" example:"1024"`
+	StorageClass string      `xml:"StorageClass" json:"StorageClass,omitempty" example:"STANDARD"`
+	Owner        spiderOwner `xml:"Owner" json:"Owner,omitempty"`
 }
 
 // checkObjectKey validates the object key (file name) for S3 operations
@@ -268,7 +319,7 @@ func CreateObjectStorage(nsId string, req model.ObjectStorageCreateRequest) (mod
 	}
 
 	// Check if the input CSP is supported for object storage
-	cspType := objStrgInfo.ConnectionConfig.ProviderName
+	cspType := strings.Split(req.ConnectionName, "-")[0]
 	if !isObjectStorageSupported(cspType) {
 		err = fmt.Errorf("object storage is not supported for CSP: %s", cspType)
 		log.Error().Err(err).Msg("")
@@ -888,7 +939,7 @@ func GetObjectStorageLocation(nsId, osId string) (model.ObjectStorageLocationRes
  */
 
 // SetObjectStorageCorsConfigurations sets the CORS configuration for the specified object storage (bucket)
-func SetObjectStorageCorsConfigurations(nsId, osId string, req model.SetCorsConfigurationRequest) error {
+func SetObjectStorageCorsConfigurations(nsId, osId string, req model.ObjectStorageSetCorsRequest) error {
 
 	// 1. Validate input parameters
 	err := common.CheckString(nsId)
@@ -965,8 +1016,8 @@ func SetObjectStorageCorsConfigurations(nsId, osId string, req model.SetCorsConf
 }
 
 // GetObjectStorageCorsConfigurations retrieves the CORS configuration for the specified object storage (bucket)
-func GetObjectStorageCorsConfigurations(nsId, osId string) (model.GetCorsConfigurationResponse, error) {
-	var emptyRet model.GetCorsConfigurationResponse
+func GetObjectStorageCorsConfigurations(nsId, osId string) (model.ObjectStorageGetCorsResponse, error) {
+	var emptyRet model.ObjectStorageGetCorsResponse
 
 	// 1. Validate input parameters
 	err := common.CheckString(nsId)
@@ -1024,7 +1075,7 @@ func GetObjectStorageCorsConfigurations(nsId, osId string) (model.GetCorsConfigu
 			// Return empty CORS configuration if not found
 			err := fmt.Errorf("not found CORS configuration for object storage: %s", osId)
 			log.Warn().Err(err).Msg(err.Error())
-			return model.GetCorsConfigurationResponse{CorsRule: []model.CorsRule{}}, err
+			return model.ObjectStorageGetCorsResponse{CorsRule: []model.CorsRule{}}, err
 		}
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
@@ -1045,7 +1096,7 @@ func GetObjectStorageCorsConfigurations(nsId, osId string) (model.GetCorsConfigu
 		corsRules = append(corsRules, rule)
 	}
 
-	corsConfig := model.GetCorsConfigurationResponse{
+	corsConfig := model.ObjectStorageGetCorsResponse{
 		CorsRule: corsRules,
 	}
 
@@ -1117,6 +1168,366 @@ func DeleteObjectStorageCorsConfigurations(nsId, osId string) error {
 }
 
 /*
+ * Functions for object storage versioning
+ */
+
+// SetObjectStorageVersioning sets the versioning configuration for the specified object storage (bucket)
+func SetObjectStorageVersioning(nsId, osId string, req model.ObjectStorageSetVersioningRequest) error {
+
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	// 2. Get the object storage info from the key-value store
+	resourceType := model.StrObjectStorage
+	objStrgData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return err
+	}
+	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+
+	// Check if versioning is supported for the CSP type
+	cspType := objStrgInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageVersioningSupported(cspType) {
+		err = fmt.Errorf("versioning is not supported for CSP (%s)", cspType)
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	uid := objStrgInfo.Uid
+	connName := objStrgInfo.ConnectionName
+
+	// 3. Prepare the Spider versioning request body
+	spVersioningReq := spiderSetVersioningRequest{
+		Status: req.Status,
+	}
+
+	// 4. Call Spider API to set the object storage versioning configuration
+	client := clientManager.NewHttpClient()
+	method := "PUT"
+	spReq := spVersioningReq
+	spResp := clientManager.NoBody
+	url := fmt.Sprintf("%s/s3/%s?versioning&ConnectionName=%s", model.SpiderRestUrl, uid, connName)
+
+	log.Debug().Msgf("[Request to Spider] Setting the object storage versioning configuration (url: %s, request body: %+v)", url, spReq)
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	log.Debug().Msgf("[Response from Spider] Setting the object storage versioning configuration (No response body): %+v", spResp)
+
+	return nil
+}
+
+// GetObjectStorageVersioning retrieves the versioning configuration for the specified object storage (bucket)
+func GetObjectStorageVersioning(nsId, osId string) (model.ObjectStorageGetVersioningResponse, error) {
+	var emptyRet model.ObjectStorageGetVersioningResponse
+
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// 2. Get the object storage info from the key-value store
+	resourceType := model.StrObjectStorage
+	objStrgData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return emptyRet, err
+	}
+	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+
+	// Check if versioning is supported for the CSP type
+	cspType := objStrgInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageVersioningSupported(cspType) {
+		err = fmt.Errorf("versioning is not supported for CSP (%s)", cspType)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	uid := objStrgInfo.Uid
+	connName := objStrgInfo.ConnectionName
+
+	// 3. Call Spider API to get the object storage versioning configuration
+	client := clientManager.NewHttpClient()
+	method := "GET"
+	spReq := clientManager.NoBody
+	spResp := spiderGetVersioningResponse{}
+	url := fmt.Sprintf("%s/s3/%s?versioning&ConnectionName=%s", model.SpiderRestUrl, uid, connName)
+
+	log.Debug().Msgf("[Request to Spider] Getting the object storage versioning configuration (url: %s)", url)
+
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	log.Debug().Msgf("[Response from Spider] Getting the object storage versioning configuration: %+v", spResp)
+
+	// 4. Set and return the object storage versioning configuration
+	versioningResp := model.ObjectStorageGetVersioningResponse{
+		Status: spResp.Status,
+	}
+
+	return versioningResp, nil
+}
+
+// ListObjectVersions lists the versions of objects in the specified object storage (bucket)
+func ListObjectVersions(nsId, osId string) (model.ObjectStorageListObjectVersionsResponse, error) {
+	var emptyRet model.ObjectStorageListObjectVersionsResponse
+
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	// 2. Get the object storage info from the key-value store
+	resourceType := model.StrObjectStorage
+	objStrgData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return emptyRet, err
+	}
+	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+
+	// Check if versioning is supported for the CSP type
+	cspType := objStrgInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageVersioningSupported(cspType) {
+		err = fmt.Errorf("versioning is not supported for CSP (%s)", cspType)
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	uid := objStrgInfo.Uid
+	connName := objStrgInfo.ConnectionName
+
+	// 3. Call Spider API to list object versions
+	client := clientManager.NewHttpClient()
+	method := "GET"
+	spReq := clientManager.NoBody
+	spResp := spiderListObjectsVersionsResponse{}
+	url := fmt.Sprintf("%s/s3/%s?versions&ConnectionName=%s", model.SpiderRestUrl, uid, connName)
+
+	log.Debug().Msgf("[Request to Spider] Listing object versions (url: %s)", url)
+
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyRet, err
+	}
+
+	log.Debug().Msgf("[Response from Spider] Listing object versions: %+v", spResp)
+
+	// 4. Set and return the list of object versions
+	ret := model.ObjectStorageListObjectVersionsResponse{
+		Name:                spResp.Name,
+		Prefix:              spResp.Prefix,
+		KeyMarker:           spResp.KeyMarker,
+		VersionIdMarker:     spResp.VersionIdMarker,
+		NextKeyMarker:       spResp.NextKeyMarker,
+		NextVersionIdMarker: spResp.NextVersionIdMarker,
+		MaxKeys:             spResp.MaxKeys,
+		IsTruncated:         spResp.IsTruncated,
+	}
+
+	var versions []model.ObjectVersion
+	for _, spVer := range spResp.Version {
+		ver := model.ObjectVersion{
+			Key:          spVer.Key,
+			VersionId:    spVer.VersionId,
+			IsLatest:     spVer.IsLatest,
+			LastModified: spVer.LastModified,
+			ETag:         spVer.ETag,
+			Size:         spVer.Size,
+			StorageClass: spVer.StorageClass,
+		}
+
+		owner := model.Owner{
+			ID:          spVer.Owner.ID,
+			DisplayName: spVer.Owner.DisplayName,
+		}
+		ver.Owner = owner
+
+		versions = append(versions, ver)
+	}
+	ret.Version = versions
+
+	var deleteMarkers []model.ObjectVersion
+	for _, spDelMarker := range spResp.DeleteMarker {
+		delMarker := model.ObjectVersion{
+			Key:          spDelMarker.Key,
+			VersionId:    spDelMarker.VersionId,
+			IsLatest:     spDelMarker.IsLatest,
+			LastModified: spDelMarker.LastModified,
+		}
+
+		owner := model.Owner{
+			ID:          spDelMarker.Owner.ID,
+			DisplayName: spDelMarker.Owner.DisplayName,
+		}
+		delMarker.Owner = owner
+
+		deleteMarkers = append(deleteMarkers, delMarker)
+	}
+	ret.DeleteMarker = deleteMarkers
+
+	return ret, nil
+}
+
+// DeleteVersionedObject deletes a specific version of an object in the specified object storage (bucket)
+func DeleteVersionedObject(nsId, osId, objectKey, versionId string) error {
+	// 1. Validate input parameters
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	err = common.CheckString(osId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	err = checkObjectKey(objectKey)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	// 2. Get the object storage info from the key-value store
+	resourceType := model.StrObjectStorage
+	objStrgData, err := GetResource(nsId, resourceType, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("not found, object storage: %s", osId)
+		return err
+	}
+	objStrgInfo := objStrgData.(model.ObjectStorageInfo)
+
+	// Check if versioning is supported for the CSP type
+	cspType := objStrgInfo.ConnectionConfig.ProviderName
+	if !isObjectStorageVersioningSupported(cspType) {
+		err = fmt.Errorf("versioning is not supported for CSP (%s)", cspType)
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	objVersions, err := ListObjectVersions(nsId, osId)
+	if err != nil {
+		log.Error().Err(err).Msgf("failed to list object versions for object storage: %s", osId)
+		return err
+	}
+
+	// Check if the specified version of the object exists in Version or DeleteMarker
+	found := false
+	for _, ver := range objVersions.Version {
+		if ver.Key == objectKey && ver.VersionId == versionId {
+			found = true
+			break
+		}
+	}
+	if !found {
+		for _, delMarker := range objVersions.DeleteMarker {
+			if delMarker.Key == objectKey && delMarker.VersionId == versionId {
+				found = true
+				break
+			}
+		}
+	}
+	if !found {
+		err = fmt.Errorf("not found, object key: %s with version ID: %s", objectKey, versionId)
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	uid := objStrgInfo.Uid
+	connName := objStrgInfo.ConnectionName
+
+	// 3. Call Spider API to delete the specific version of the object
+	client := clientManager.NewHttpClient()
+	method := "DELETE"
+	spReq := clientManager.NoBody
+	spResp := clientManager.NoBody
+	url := fmt.Sprintf("%s/s3/%s/%s?versionId=%s&ConnectionName=%s", model.SpiderRestUrl, uid, objectKey, versionId, connName)
+
+	log.Debug().Msgf("[Request to Spider] Deleting versioned object (url: %s)", url)
+
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(spReq),
+		&spReq,
+		&spResp,
+		clientManager.ShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	log.Debug().Msgf("[Response from Spider] Deleting versioned object (No response body): %+v", spResp)
+
+	return nil
+}
+
+/*
  * Functions for objects (data)
  */
 
@@ -1125,8 +1536,8 @@ func DeleteObjectStorageCorsConfigurations(nsId, osId string) error {
 // ! The upload or download of objects is NOT handled directly by Tumblebug.
 
 // GeneratePresignedURL generates a presigned URL for downloading or uploading an object
-func GeneratePresignedURL(nsId, osId, objectKey string, expiry time.Duration, operation string) (model.PresignedUrlResponse, error) {
-	var emptyRet model.PresignedUrlResponse
+func GeneratePresignedURL(nsId, osId, objectKey string, expiry time.Duration, operation string) (model.ObjectStoragePresignedUrlResponse, error) {
+	var emptyRet model.ObjectStoragePresignedUrlResponse
 
 	// 1. Validate input parameters
 	err := common.CheckString(nsId)
@@ -1199,7 +1610,7 @@ func GeneratePresignedURL(nsId, osId, objectKey string, expiry time.Duration, op
 	log.Debug().Msgf("[Response from Spider] Generating presigned URL: %+v", spResp)
 
 	// 4. Return the presigned URL
-	return model.PresignedUrlResponse{
+	return model.ObjectStoragePresignedUrlResponse{
 		Expires:      spResp.Expires,
 		Method:       spResp.Method,
 		PreSignedURL: spResp.PreSignedURL,
@@ -1207,8 +1618,8 @@ func GeneratePresignedURL(nsId, osId, objectKey string, expiry time.Duration, op
 }
 
 // ListDataObjects lists the objects in the specified object storage (bucket)
-func ListDataObjects(nsId, osId string) (model.ListObjectResponse, error) {
-	var emptyRet model.ListObjectResponse
+func ListDataObjects(nsId, osId string) (model.ObjectStorageListObjectsResponse, error) {
+	var emptyRet model.ObjectStorageListObjectsResponse
 
 	// 1. Validate input parameters
 	err := common.CheckString(nsId)
@@ -1230,7 +1641,7 @@ func ListDataObjects(nsId, osId string) (model.ListObjectResponse, error) {
 	}
 
 	// 3. Return the list of objects
-	res := model.ListObjectResponse{}
+	res := model.ObjectStorageListObjectsResponse{}
 
 	if osInfo.Contents == nil {
 		res.Objects = []model.Object{}

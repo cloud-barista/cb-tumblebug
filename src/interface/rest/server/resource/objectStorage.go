@@ -220,7 +220,7 @@ func RestGetObjectStorageLocation(c echo.Context) error {
 // @Produce json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param osId path string true "Object Storage ID" default(os01)
-// @Success 200 {object} model.SimpleMsg
+// @Success 204 "No Content"
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/objectStorage/{osId} [delete]
@@ -249,306 +249,8 @@ func RestDeleteObjectStorage(c echo.Context) error {
 	}
 
 	// [Output]
-	msg := fmt.Sprintf("The object storage '%s' has been deleted.", osId)
-	simpleMsg := model.SimpleMsg{
-		Message: msg,
-	}
-
-	return c.JSON(http.StatusOK, simpleMsg)
+	return c.NoContent(http.StatusNoContent)
 }
-
-// /*
-//  * Object Storage Operations - Versioning
-//  */
-
-// // Note: The xmlns attribute and root element name may not be accurately
-// // represented in Swagger UI due to XML rendering limitations.
-
-// // <?xml version="1.0" encoding="UTF-8"?>
-// // <VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-// //   <Status>Enabled</Status>
-// // </VersioningConfiguration>
-
-// type VersioningConfiguration struct {
-// 	// The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
-// 	// Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
-// 	Status string `xml:"Status" json:"status" example:"Enabled"`
-// }
-
-// // RestGetObjectStorageVersioningLagacy godoc
-// // @ID GetObjectStorageVersioningLagacy
-// // @Summary (To be deprecated) Get versioning status of an object storage (bucket)
-// // @Description (To be deprecated) Get versioning status of an object storage (bucket)
-// // @Description
-// // @Description **Important Notes:**
-// // @Description - The actual response will be XML format with root element `VersioningConfiguration`
-// // @Description
-// // @Description **Actual XML Response Example:**
-// // @Description ```xml
-// // @Description <?xml version="1.0" encoding="UTF-8"?>
-// // @Description <VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-// // @Description   <Status>Enabled</Status>
-// // @Description </VersioningConfiguration>
-// // @Description ```
-// // @Tags [Infra Resource] Object Storage Management
-// // @Accept xml
-// // @Produce xml
-// // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
-// // @Success 200 {object} VersioningConfiguration "OK"
-// // @Router /resources/objectStorage/{objectStorageName}/versioning [get]
-// func GetObjectStorageVersioningLagacy(c echo.Context) error {
-
-// 	// Validate objectStorageName parameter
-// 	objectStorageName := c.Param("objectStorageName")
-// 	if objectStorageName == "" {
-// 		err := fmt.Errorf("%s", "objectStorageName is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-
-// 	// Validate credential header
-// 	credentialHeader := c.Request().Header.Get("credential")
-// 	err := validateCredential(credentialHeader)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("invalid credential header")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-
-// 	// Source path pattern with * to capture objectStorageName
-// 	sourcePattern := "/resources/objectStorage/*/versioning"
-// 	// Target path pattern using $1 for captured objectStorageName
-// 	targetPattern := "/s3/$1?versioning"
-
-// 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
-// 	return proxyHandler(c)
-// }
-
-// // RestSetObjectStorageVersioningLagacy godoc
-// // @ID SetObjectStorageVersioningLagacy
-// // @Summary (To be deprecated) Set versioning status of an object storage (bucket)
-// // @Description (To be deprecated) Set versioning status of an object storage (bucket)
-// // @Description
-// // @Description **Important Notes:**
-// // @Description - The request body must be XML format with root element `VersioningConfiguration`
-// // @Description - The `Status` field can be either `Enabled` or `Suspended`
-// // @Description
-// // @Description **Request Body Example:**
-// // @Description ```xml
-// // @Description <?xml version="1.0" encoding="UTF-8"?>
-// // @Description <VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-// // @Description   <Status>Enabled</Status>
-// // @Description </VersioningConfiguration>
-// // @Description ```
-// // @Tags [Infra Resource] Object Storage Management
-// // @Accept xml
-// // @Produce xml
-// // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
-// // @Param reqBody body VersioningConfiguration true "Versioning Configuration"
-// // @Success 200 "OK"
-// // @Router /resources/objectStorage/{objectStorageName}/versioning [put]
-// func SetObjectStorageVersioningLagacy(c echo.Context) error {
-
-// 	// Validate objectStorageName parameter
-// 	objectStorageName := c.Param("objectStorageName")
-// 	if objectStorageName == "" {
-// 		err := fmt.Errorf("%s", "objectStorageName is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-
-// 	// Validate credential header
-// 	credentialHeader := c.Request().Header.Get("credential")
-// 	err := validateCredential(credentialHeader)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("invalid credential header")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-// 	// Source path pattern with * to capture objectStorageName
-// 	sourcePattern := "/resources/objectStorage/*/versioning"
-// 	// Target path pattern using $1 for captured objectStorageName
-// 	targetPattern := "/s3/$1?versioning"
-
-// 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
-// 	return proxyHandler(c)
-// }
-
-// // Note: The xmlns attribute and root element name may not be accurately
-// // represented in Swagger UI due to XML rendering limitations.
-
-// // <?xml version="1.0" encoding="UTF-8"?>
-// // <ListVersionsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-// //   <Name>spider-test-bucket</Name>
-// //   <Prefix></Prefix>
-// //   <KeyMarker></KeyMarker>
-// //   <VersionIdMarker></VersionIdMarker>
-// //   <NextKeyMarker></NextKeyMarker>
-// //   <NextVersionIdMarker></NextVersionIdMarker>
-// //   <MaxKeys>1000</MaxKeys>
-// //   <IsTruncated>false</IsTruncated>
-// //   <Version>
-// //     <Key>test-file.txt</Key>
-// //     <VersionId>yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ</VersionId>
-// //     <IsLatest>true</IsLatest>
-// //     <LastModified>2025-09-04T04:24:12Z</LastModified>
-// //     <ETag>23228a38faecd0591107818c7281cece</ETag>
-// //     <Size>23</Size>
-// //     <StorageClass>STANDARD</StorageClass>
-// //     <Owner>
-// //       <ID>aws-config01</ID>
-// //       <DisplayName>aws-config01</DisplayName>
-// //     </Owner>
-// //   </Version>
-// // </ListVersionsResult>
-
-// type ListVersionsResult struct {
-// 	// The xmlns attribute will be set to "http://s3.amazonaws.com/doc/2006-03-01/"
-// 	// Xmlns string `xml:"xmlns,attr" json:"-" example:"http://s3.amazonaws.com/doc/2006-03-01/"`
-// 	Name                string  `xml:"Name" json:"name" example:"spider-test-bucket"`
-// 	Prefix              string  `xml:"Prefix" json:"prefix" example:""`
-// 	KeyMarker           string  `xml:"KeyMarker" json:"keyMarker" example:""`
-// 	VersionIdMarker     string  `xml:"VersionIdMarker" json:"versionIdMarker" example:""`
-// 	NextKeyMarker       string  `xml:"NextKeyMarker" json:"nextKeyMarker" example:""`
-// 	NextVersionIdMarker string  `xml:"NextVersionIdMarker" json:"nextVersionIdMarker" example:""`
-// 	MaxKeys             int     `xml:"MaxKeys" json:"maxKeys" example:"1000"`
-// 	IsTruncated         bool    `xml:"IsTruncated" json:"isTruncated" example:"false"`
-// 	Version             Version `xml:"Version" json:"version"`
-// }
-
-// type Version struct {
-// 	Key          string `xml:"Key" json:"key" example:"test-file.txt"`
-// 	VersionId    string `xml:"VersionId" json:"versionId" example:"yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ"`
-// 	IsLatest     bool   `xml:"IsLatest" json:"isLatest" example:"true"`
-// 	LastModified string `xml:"LastModified" json:"lastModified" example:"2025-09-04T04:24:12Z"`
-// 	ETag         string `xml:"ETag" json:"etag" example:"23228a38faecd0591107818c7281cece"`
-// 	Size         int    `xml:"Size" json:"size" example:"23"`
-// 	StorageClass string `xml:"StorageClass" json:"storageClass" example:"STANDARD"`
-// 	Owner        Owner  `xml:"Owner" json:"owner"`
-// }
-
-// // RestListObjectVersionsLagacy godoc
-// // @ID ListObjectVersionsLagacy
-// // @Summary (To be deprecated) List object versions in an object storage (bucket)
-// // @Description (To be deprecated) List object versions in an object storage (bucket)
-// // @Description
-// // @Description **Important Notes:**
-// // @Description - The actual response will be XML format with root element `ListVersionsResult`
-// // @Description
-// // @Description **Actual XML Response Example:**
-// // @Description ```xml
-// // @Description <?xml version="1.0" encoding="UTF-8"?>
-// // @Description <ListVersionsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-// // @Description   <Name>spider-test-bucket</Name>
-// // @Description   <Prefix></Prefix>
-// // @Description   <KeyMarker></KeyMarker>
-// // @Description   <VersionIdMarker></VersionIdMarker>
-// // @Description   <NextKeyMarker></NextKeyMarker>
-// // @Description   <NextVersionIdMarker></NextVersionIdMarker>
-// // @Description   <MaxKeys>1000</MaxKeys>
-// // @Description   <IsTruncated>false</IsTruncated>
-// // @Description   <Version>
-// // @Description     <Key>test-file.txt</Key>
-// // @Description     <VersionId>yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ</VersionId>
-// // @Description     <IsLatest>true</IsLatest>
-// // @Description     <LastModified>2025-09-04T04:24:12Z</LastModified>
-// // @Description     <ETag>23228a38faecd0591107818c7281cece</ETag>
-// // @Description     <Size>23</Size>
-// // @Description     <StorageClass>STANDARD</StorageClass>
-// // @Description     <Owner>
-// // @Description       <ID>aws-config01</ID>
-// // @Description       <DisplayName>aws-config01</DisplayName>
-// // @Description     </Owner>
-// // @Description   </Version>
-// // @Description </ListVersionsResult>
-// // @Description ```
-// // @Tags [Infra Resource] Object Storage Management
-// // @Accept xml
-// // @Produce xml
-// // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
-// // @Success 200 {object} ListVersionsResult "OK"
-// // @Router /resources/objectStorage/{objectStorageName}/versions [get]
-// func ListObjectVersionsLagacy(c echo.Context) error {
-
-// 	// Validate objectStorageName parameter
-// 	objectStorageName := c.Param("objectStorageName")
-// 	if objectStorageName == "" {
-// 		err := fmt.Errorf("%s", "objectStorageName is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-
-// 	// Validate credential header
-// 	credentialHeader := c.Request().Header.Get("credential")
-// 	err := validateCredential(credentialHeader)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("invalid credential header")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-
-// 	// Source path pattern with * to capture objectStorageName
-// 	sourcePattern := "/resources/objectStorage/*/versions"
-// 	// Target path pattern using $1 for captured objectStorageName
-// 	targetPattern := "/s3/$1?versions"
-
-// 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
-// 	return proxyHandler(c)
-// }
-
-// // RestDeleteVersionedObjectLagacy godoc
-// // @ID DeleteVersionedObjectLagacy
-// // @Summary (To be deprecated) Delete a specific version of an object in an object storage (bucket)
-// // @Description (To be deprecated) Delete a specific version of an object in an object storage (bucket)
-// // @Tags [Infra Resource] Object Storage Management
-// // @Accept xml
-// // @Produce xml
-// // @Param objectStorageName path string true "Object Storage Name" default(globally-unique-bucket-hctdx3)
-// // @Param objectKey path string true "Object Key" default(test-file.txt)
-// // @Param versionId query string true "Version ID" default(yb4PgjnFVD2LfRZHXBjjsHBkQRHlu.TZ)
-// // @Param credential header string true "This represents a credential or an access key ID. The required format is `{csp-region}` (i.e., the connection name)." default(aws-ap-northeast-2)
-// // @Success 204 "No Content"
-// // @Router /resources/objectStorage/{objectStorageName}/versions/{objectKey} [delete]
-// func DeleteVersionedObjectLagacy(c echo.Context) error {
-
-// 	// Validate objectStorageName parameter
-// 	objectStorageName := c.Param("objectStorageName")
-// 	if objectStorageName == "" {
-// 		err := fmt.Errorf("%s", "objectStorageName is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-// 	// Validate objectKey parameter
-// 	objectKey := c.Param("objectKey")
-// 	if objectKey == "" {
-// 		err := fmt.Errorf("%s", "objectKey is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-// 	// Validate versionId parameter
-// 	versionId := c.QueryParam("versionId")
-// 	if versionId == "" {
-// 		err := fmt.Errorf("%s", "versionId is required")
-// 		log.Error().Err(err).Msg("")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-
-// 	// Validate credential header
-// 	credentialHeader := c.Request().Header.Get("credential")
-// 	err := validateCredential(credentialHeader)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("invalid credential header")
-// 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
-// 	}
-
-// 	// Source path pattern with * to capture objectStorageName and objectKey
-// 	sourcePattern := "/resources/objectStorage/*/versions/*?versionId=*"
-// 	// Target path pattern using $1 for captured objectStorageName, $2 for objectKey, and $3 for versionId
-// 	targetPattern := "/s3/$1/$2?versionId=$3"
-
-// 	proxyHandler := createSpiderProxyHandler(sourcePattern, targetPattern)
-// 	return proxyHandler(c)
-// }
 
 /*
  * Object Storage management - CORS
@@ -563,7 +265,7 @@ func RestDeleteObjectStorage(c echo.Context) error {
 // @Produce json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param osId path string true "Object Storage ID" default(os01)
-// @Param reqBody body model.SetCorsConfigurationRequest true "CORS Configuration Request"
+// @Param reqBody body model.ObjectStorageSetCorsRequest true "CORS Configuration Request"
 // @Success 200 "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
@@ -586,7 +288,7 @@ func RestSetObjectStorageCORS(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	req := model.SetCorsConfigurationRequest{}
+	req := model.ObjectStorageSetCorsRequest{}
 	if err := c.Bind(&req); err != nil {
 		log.Error().Err(err).Msg("Failed to bind request body to SetCorsConfigurationRequest")
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
@@ -612,7 +314,7 @@ func RestSetObjectStorageCORS(c echo.Context) error {
 // @Produce json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param osId path string true "Object Storage ID" default(os01)
-// @Success 200 {object} model.GetCorsConfigurationResponse "OK"
+// @Success 200 {object} model.ObjectStorageGetCorsResponse "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
@@ -691,6 +393,209 @@ func RestDeleteObjectStorageCORS(c echo.Context) error {
 }
 
 /*
+ * Object Storage Management - Versioning
+ */
+
+// RestSetObjectStorageVersioning godoc
+// @ID SetObjectStorageVersioning
+// @Summary Set versioning configuration of an object storage (bucket)
+// @Description Set versioning configuration of an object storage (bucket)
+// @Description
+// @Description **Note: **
+// @Description - Versioning options: "Enabled", "Suspended", "Unversioned"
+// @Description
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param osId path string true "Object Storage ID" default(os01)
+// @Param reqBody body model.ObjectStorageSetVersioningRequest true "Versioning Configuration Request"
+// @Success 200 "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/resources/objectStorage/{osId}/versioning [put]
+func RestSetObjectStorageVersioning(c echo.Context) error {
+
+	// [Input]
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	osId := c.Param("osId")
+	if osId == "" {
+		err := fmt.Errorf("osId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	req := model.ObjectStorageSetVersioningRequest{}
+	if err := c.Bind(&req); err != nil {
+		log.Error().Err(err).Msg("Failed to bind request body to ObjectStorageSetVersioningRequest")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Process]
+	err := resource.SetObjectStorageVersioning(nsId, osId, req)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to set versioning configuration")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	return c.NoContent(http.StatusOK)
+}
+
+// RestGetObjectStorageVersioning godoc
+// @ID GetObjectStorageVersioning
+// @Summary Get versioning configuration of an object storage (bucket)
+// @Description Get versioning configuration of an object storage (bucket)
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param osId path string true "Object Storage ID" default(os01)
+// @Success 200 {object} model.ObjectStorageGetVersioningResponse "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/resources/objectStorage/{osId}/versioning [get]
+func RestGetObjectStorageVersioning(c echo.Context) error {
+
+	// [Input]
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	osId := c.Param("osId")
+	if osId == "" {
+		err := fmt.Errorf("osId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Process]
+	result, err := resource.GetObjectStorageVersioning(nsId, osId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get versioning configuration")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestListObjectVersions godoc
+// @ID ListObjectVersions
+// @Summary List object versions in an object storage (bucket)
+// @Description List all versions of objects in an object storage (bucket)
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param osId path string true "Object Storage ID" default(os01)
+// @Success 200 {object} model.ObjectStorageListObjectVersionsResponse "OK"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/resources/objectStorage/{osId}/versions [get]
+func RestListObjectVersions(c echo.Context) error {
+
+	// [Input]
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	osId := c.Param("osId")
+	if osId == "" {
+		err := fmt.Errorf("osId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Process]
+	result, err := resource.ListObjectVersions(nsId, osId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list object versions")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestDeleteVersionedObject godoc
+// @ID DeleteVersionedObject
+// @Summary Delete a specific version of an object
+// @Description Delete a specific version of an object in an object storage (bucket)
+// @Description
+// @Description **Note: **
+// @Description - If no version is specified, we will define how it behaves and update it when necessary.
+// @Description
+// @Tags [Infra Resource] Object Storage Management
+// @Accept json
+// @Produce json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param osId path string true "Object Storage ID" default(os01)
+// @Param objectKey path string true "Object Key"
+// @Param versionId query string true "Version ID"
+// @Success 204 "No Content"
+// @Failure 400 {object} model.SimpleMsg "Bad Request"
+// @Failure 404 {object} model.SimpleMsg "Not Found"
+// @Failure 500 {object} model.SimpleMsg "Internal Server Error"
+// @Router /ns/{nsId}/resources/objectStorage/{osId}/versions/{objectKey} [delete]
+func RestDeleteVersionedObject(c echo.Context) error {
+
+	// [Input]
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("nsId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	osId := c.Param("osId")
+	if osId == "" {
+		err := fmt.Errorf("osId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	objectKey := c.Param("objectKey")
+	if objectKey == "" {
+		err := fmt.Errorf("objectKey is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	versionId := c.QueryParam("versionId")
+	if versionId == "" {
+		err := fmt.Errorf("versionId is required")
+		log.Warn().Err(err).Msg("")
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Process]
+	err := resource.DeleteVersionedObject(nsId, osId, objectKey, versionId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to delete versioned object")
+		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})
+	}
+
+	// [Output]
+	return c.NoContent(http.StatusNoContent)
+}
+
+/*
  * Object operations
  */
 
@@ -722,7 +627,7 @@ func RestDeleteObjectStorageCORS(c echo.Context) error {
 // @Param objectKey path string true "Object Key"
 // @Param operation query string false "Operation type" Enums(upload, download)
 // @Param expiry query int false "Expiration time in seconds" default(3600)
-// @Success 200 {object} model.PresignedUrlResponse "OK"
+// @Success 200 {object} model.ObjectStoragePresignedUrlResponse "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"
@@ -790,7 +695,7 @@ func RestGeneratePresignedURL(c echo.Context) error {
 // @Param osId path string true "Object Storage ID" default(os01)
 // // @Param prefix query string false "Filter objects by prefix" default()
 // // @Param maxKeys query int false "Maximum number of keys to return" default(1000)
-// @Success 200 {object} model.ListObjectResponse "OK - Returns object storage info with contents"
+// @Success 200 {object} model.ObjectStorageListObjectsResponse "OK - Returns object storage info with contents"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
 // @Failure 500 {object} model.SimpleMsg "Internal Server Error"

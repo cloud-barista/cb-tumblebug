@@ -7771,12 +7771,9 @@ paths:
           type: string
           default: os01
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
+        "204":
+          description: No Content
+          content: {}
         "400":
           description: Bad Request
           content:
@@ -7848,7 +7845,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.GetCorsConfigurationResponse'
+                $ref: '#/components/schemas/model.ObjectStorageGetCorsResponse'
         "400":
           description: Bad Request
           content:
@@ -7893,7 +7890,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.SetCorsConfigurationRequest'
+              $ref: '#/components/schemas/model.ObjectStorageSetCorsRequest'
         required: true
       responses:
         "200":
@@ -8036,7 +8033,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.ListObjectResponse'
+                $ref: '#/components/schemas/model.ObjectStorageListObjectsResponse'
         "400":
           description: Bad Request
           content:
@@ -8120,7 +8117,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.PresignedUrlResponse'
+                $ref: '#/components/schemas/model.ObjectStoragePresignedUrlResponse'
         "400":
           description: Bad Request
           content:
@@ -8223,6 +8220,215 @@ paths:
       responses:
         "200":
           description: OK - Object metadata returned in headers
+          content: {}
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/objectStorage/{osId}/versioning:
+    get:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Get versioning configuration of an object storage (bucket)
+      description: Get versioning configuration of an object storage (bucket)
+      operationId: GetObjectStorageVersioning
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObjectStorageGetVersioningResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+    put:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Set versioning configuration of an object storage (bucket)
+      description: |
+        Set versioning configuration of an object storage (bucket)
+
+        **Note: **
+        - Versioning options: "Enabled", "Suspended", "Unversioned"
+      operationId: SetObjectStorageVersioning
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      requestBody:
+        description: Versioning Configuration Request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.ObjectStorageSetVersioningRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content: {}
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: reqBody
+  /ns/{nsId}/resources/objectStorage/{osId}/versions:
+    get:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: List object versions in an object storage (bucket)
+      description: List all versions of objects in an object storage (bucket)
+      operationId: ListObjectVersions
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObjectStorageListObjectVersionsResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/objectStorage/{osId}/versions/{objectKey}:
+    delete:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Delete a specific version of an object
+      description: |
+        Delete a specific version of an object in an object storage (bucket)
+
+        **Note: **
+        - If no version is specified, we will define how it behaves and update it when necessary.
+      operationId: DeleteVersionedObject
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: osId
+        in: path
+        description: Object Storage ID
+        required: true
+        schema:
+          type: string
+          default: os01
+      - name: objectKey
+        in: path
+        description: Object Key
+        required: true
+        schema:
+          type: string
+      - name: versionId
+        in: query
+        description: Version ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
           content: {}
         "400":
           description: Bad Request
@@ -13951,13 +14157,6 @@ components:
         provider:
           type: string
           example: alibaba
-    model.GetCorsConfigurationResponse:
-      type: object
-      properties:
-        corsRule:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.CorsRule'
     model.HandlingCommandCountResponse:
       type: object
       properties:
@@ -14941,13 +15140,6 @@ components:
             type: string
         resourceKey:
           type: string
-    model.ListObjectResponse:
-      type: object
-      properties:
-        objects:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.Object'
     model.Location:
       type: object
       properties:
@@ -15834,6 +16026,19 @@ components:
         description:
           type: string
           example: this bucket is managed by CB-Tumblebug
+    model.ObjectStorageGetCorsResponse:
+      type: object
+      properties:
+        corsRule:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.CorsRule'
+    model.ObjectStorageGetVersioningResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: Enabled
     model.ObjectStorageInfo:
       type: object
       properties:
@@ -15892,12 +16097,109 @@ components:
           description: "Uid is universally unique identifier for the object, used\
             \ for labelSelector"
           example: wef12awefadf1221edcf
+    model.ObjectStorageListObjectVersionsResponse:
+      type: object
+      properties:
+        deleteMarker:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.ObjectVersion'
+        isTruncated:
+          type: boolean
+          example: false
+        keyMarker:
+          type: string
+          example: ""
+        maxKeys:
+          type: integer
+          example: 1000
+        name:
+          type: string
+          example: example-bucket
+        nextKeyMarker:
+          type: string
+          example: ""
+        nextVersionIdMarker:
+          type: string
+          example: ""
+        prefix:
+          type: string
+          example: ""
+        version:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.ObjectVersion'
+        versionIdMarker:
+          type: string
+          example: ""
+    model.ObjectStorageListObjectsResponse:
+      type: object
+      properties:
+        objects:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.Object'
     model.ObjectStorageLocationResponse:
       type: object
       properties:
         locationConstraint:
           type: string
           example: ap-northeast-2
+    model.ObjectStoragePresignedUrlResponse:
+      type: object
+      properties:
+        expires:
+          type: integer
+          example: 1693824000
+        method:
+          type: string
+          example: GET
+        presignedURL:
+          type: string
+          example: https://example.com/presigned-url
+    model.ObjectStorageSetCorsRequest:
+      required:
+      - corsRule
+      type: object
+      properties:
+        corsRule:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.CorsRule'
+    model.ObjectStorageSetVersioningRequest:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          type: string
+          example: Enabled
+    model.ObjectVersion:
+      type: object
+      properties:
+        eTag:
+          type: string
+          example: 9b2cf535f27731c974343645a3985328
+        isLatest:
+          type: boolean
+          example: true
+        key:
+          type: string
+          example: test-object.txt
+        lastModified:
+          type: string
+          example: 2025-09-04T04:18:06Z
+        owner:
+          $ref: '#/components/schemas/model.Owner'
+        size:
+          type: integer
+          example: 1024
+        storageClass:
+          type: string
+          example: STANDARD
+        versionId:
+          type: string
+          example: 3/L4kqtJlcpXroDTDmJ+rmSpXd3aIbrC
     model.Operation:
       type: object
       properties:
@@ -15939,6 +16241,15 @@ components:
           type: string
           description: "PrimaryRiskFactor indicates what the main risk factor is:\
             \ \"spec\", \"image\", \"combination\", \"none\""
+    model.Owner:
+      type: object
+      properties:
+        displayName:
+          type: string
+          example: aws-ap-northeast-2
+        id:
+          type: string
+          example: aws-ap-northeast-2
     model.ParameterKeyVal:
       type: object
       properties:
@@ -16011,18 +16322,6 @@ components:
           $ref: '#/components/schemas/model.AutoCondition'
         status:
           type: string
-    model.PresignedUrlResponse:
-      type: object
-      properties:
-        expires:
-          type: integer
-          example: 1693824000
-        method:
-          type: string
-          example: GET
-        presignedURL:
-          type: string
-          example: https://example.com/presigned-url
     model.PriorityCondition:
       type: object
       properties:
@@ -17159,15 +17458,6 @@ components:
           type: boolean
         updated:
           $ref: '#/components/schemas/model.SecurityGroupInfo'
-    model.SetCorsConfigurationRequest:
-      required:
-      - corsRule
-      type: object
-      properties:
-        corsRule:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.CorsRule'
     model.SetK8sNodeGroupAutoscalingReq:
       type: object
       properties:
