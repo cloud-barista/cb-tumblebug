@@ -765,240 +765,176 @@ func RegisterCspNativeResourcesAll(nsId string, mciNamePrefix string, option str
 	return output, err
 }
 
-// RegisterCspNativeResources func registers all CSP-native resources into CB-TB
+// RegisterCspNativeResources registers resources using Best Effort strategy with clean code
 func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix string, option string, mciFlag string) (model.RegisterResourceResult, error) {
 	startTime := time.Now()
-
 	optionFlag := "register"
-	registeredStatus := ""
 	result := model.RegisterResourceResult{}
 
-	startTime01 := time.Now() //tmp
-	var err error
-
-	if option != "onlyVm" {
-		// bring vNet list and register all
-		inspectedResources, err := InspectResources(connConfig, model.StrVNet)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			result.SystemMessage = err.Error()
-		}
-		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := model.RegisterVNetReq{}
-			req.ConnectionName = connConfig
-			req.CspResourceId = r.CspResourceId
-			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
-			req.Name = req.ConnectionName + "-" + req.CspResourceId
-			req.Name = common.ChangeIdString(req.Name)
-
-			_, err = resource.RegisterVNet(nsId, &req)
-
-			registeredStatus = ""
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				registeredStatus = "  [Failed] " + err.Error()
-				result.RegisterationOverview.VNet--
-				result.RegisterationOverview.Failed++
-			}
-			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrVNet+": "+req.Name+registeredStatus)
-			result.RegisterationOverview.VNet++
-		}
-
-		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, model.StrVNet, int(math.Round(time.Now().Sub(startTime01).Seconds()))) //tmp
-		startTime02 := time.Now()                                                                                                   //tmp
-
-		// bring SecurityGroup list and register all
-		inspectedResources, err = InspectResources(connConfig, model.StrSecurityGroup)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			result.SystemMessage += "//" + err.Error()
-		}
-		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := model.SecurityGroupReq{}
-			req.ConnectionName = connConfig
-			req.VNetId = "not defined"
-			req.CspResourceId = r.CspResourceId
-			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
-			req.Name = req.ConnectionName + "-" + req.CspResourceId
-			req.Name = common.ChangeIdString(req.Name)
-
-			_, err = resource.CreateSecurityGroup(nsId, &req, optionFlag)
-
-			registeredStatus = ""
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				registeredStatus = "  [Failed] " + err.Error()
-				result.RegisterationOverview.SecurityGroup--
-				result.RegisterationOverview.Failed++
-			}
-			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrSecurityGroup+": "+req.Name+registeredStatus)
-			result.RegisterationOverview.SecurityGroup++
-		}
-
-		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, model.StrSecurityGroup, int(math.Round(time.Now().Sub(startTime02).Seconds()))) //tmp
-		startTime03 := time.Now()                                                                                                            //tmp
-
-		// bring SSHKey list and register all
-		inspectedResources, err = InspectResources(connConfig, model.StrSSHKey)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			result.SystemMessage += "//" + err.Error()
-		}
-		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := model.SshKeyReq{}
-			req.ConnectionName = connConfig
-			req.CspResourceId = r.CspResourceId
-			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
-			req.Name = req.ConnectionName + "-" + req.CspResourceId
-			req.Name = common.ChangeIdString(req.Name)
-
-			req.Fingerprint = "cannot retrieve"
-			req.PrivateKey = "cannot retrieve"
-			req.PublicKey = "cannot retrieve"
-			req.Username = "cannot retrieve"
-
-			_, err = resource.CreateSshKey(nsId, &req, optionFlag)
-
-			registeredStatus = ""
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				registeredStatus = "  [Failed] " + err.Error()
-				result.RegisterationOverview.SshKey--
-				result.RegisterationOverview.Failed++
-			}
-			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrSSHKey+": "+req.Name+registeredStatus)
-			result.RegisterationOverview.SshKey++
-		}
-
-		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, model.StrSSHKey, int(math.Round(time.Now().Sub(startTime03).Seconds()))) //tmp
-
-		startTime04 := time.Now() //tmp
-
-		// bring DataDisk list and register all
-		inspectedResources, err = InspectResources(connConfig, model.StrDataDisk)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			result.SystemMessage += "//" + err.Error()
-		}
-		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := model.DataDiskReq{
-				Name:           fmt.Sprintf("%s-%s", connConfig, r.CspResourceId),
-				ConnectionName: connConfig,
-				CspResourceId:  r.CspResourceId,
-			}
-			req.Name = common.ChangeIdString(req.Name)
-
-			_, err = resource.CreateDataDisk(nsId, &req, optionFlag)
-
-			registeredStatus = ""
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				registeredStatus = "  [Failed] " + err.Error()
-				result.RegisterationOverview.DataDisk--
-				result.RegisterationOverview.Failed++
-			}
-			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrDataDisk+": "+req.Name+registeredStatus)
-			result.RegisterationOverview.DataDisk++
-		}
-
-		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, model.StrDataDisk, int(math.Round(time.Now().Sub(startTime04).Seconds()))) //tmp
-
-		startTime05 := time.Now() //tmp
-
-		// bring CustomImage list and register all
-		inspectedResources, err = InspectResources(connConfig, model.StrCustomImage)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			result.SystemMessage += "//" + err.Error()
-		}
-		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-			req := model.CustomImageReq{
-				Name:           fmt.Sprintf("%s-%s", connConfig, r.CspResourceId),
-				ConnectionName: connConfig,
-				CspResourceId:  r.CspResourceId,
-			}
-			req.Name = common.ChangeIdString(req.Name)
-
-			_, err = resource.RegisterCustomImageWithId(nsId, &req)
-
-			registeredStatus = ""
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				registeredStatus = "  [Failed] " + err.Error()
-				result.RegisterationOverview.CustomImage--
-				result.RegisterationOverview.Failed++
-			}
-			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrCustomImage+": "+req.Name+registeredStatus)
-			result.RegisterationOverview.CustomImage++
-		}
-
-		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, model.StrCustomImage, int(math.Round(time.Now().Sub(startTime05).Seconds()))) //tmp
+	// -------------------------------------------------------------------------
+	// 1. Option Parsing & Validation
+	// -------------------------------------------------------------------------
+	reqOptions := strings.Split(strings.ReplaceAll(option, " ", ""), ",")
+	doMap := make(map[string]bool)
+	for _, op := range reqOptions {
+		doMap[op] = true
 	}
 
-	startTime06 := time.Now() //tmp
+	// var valErrs []string
+	// if doMap["dataDisk"] && !doMap["vm"] {
+	// 	valErrs = append(valErrs, "'dataDisk' requires 'vm'")
+	// }
+	// if doMap["vm"] {
+	// 	if !doMap["securityGroup"] {
+	// 		valErrs = append(valErrs, "'vm' requires 'securityGroup'")
+	// 	}
+	// 	if !doMap["sshKey"] {
+	// 		valErrs = append(valErrs, "'vm' requires 'sshKey'")
+	// 	}
+	// }
+	// if doMap["securityGroup"] && !doMap["vNet"] {
+	// 	valErrs = append(valErrs, "'securityGroup' requires 'vNet'")
+	// }
 
-	if option != "exceptVm" {
+	// if len(valErrs) > 0 {
+	// 	return result, fmt.Errorf("Validation Failed: %s", strings.Join(valErrs, ", "))
+	// }
 
-		// bring VM list and register all
-		inspectedResourcesVm, err := InspectResources(connConfig, model.StrVM)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			result.SystemMessage += "//" + err.Error()
+	// -------------------------------------------------------------------------
+	// 2. Execution (Best Effort)
+	// -------------------------------------------------------------------------
+
+	// Helper: Name Generator
+	genName := func(cspId string) string {
+		return common.ChangeIdString(fmt.Sprintf("%s-%s", connConfig, cspId))
+	}
+
+	// [1] CustomImage
+	if doMap["customImage"] {
+		if res, err := InspectResources(connConfig, model.StrCustomImage); err != nil {
+			result.SystemMessage += "// CustomImage Inspect Failed: " + err.Error()
+		} else {
+			for _, r := range res.Resources.OnCspOnly.Info {
+				req := model.CustomImageReq{
+					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
+				}
+				_, err = resource.RegisterCustomImageWithId(nsId, &req)
+				appendResult(&result, model.StrCustomImage, req.Name, err, &result.RegisterationOverview.CustomImage)
+			}
 		}
-		for _, r := range inspectedResourcesVm.Resources.OnCspOnly.Info {
-			req := model.MciReq{}
-			req.Description = "MCI for CSP managed VMs (registered to CB-TB)"
-			req.InstallMonAgent = "no"
-			req.Name = mciNamePrefix
-			req.Name = common.ChangeIdString(req.Name)
+	}
 
-			subGroupReq := model.CreateSubGroupReq{}
-			subGroupReq.ConnectionName = connConfig
-			subGroupReq.CspResourceId = r.CspResourceId
-			subGroupReq.Description = "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)"
-			subGroupReq.Name = subGroupReq.ConnectionName + "-" + r.RefNameOrId + "-" + subGroupReq.CspResourceId
-			subGroupReq.Name = common.ChangeIdString(subGroupReq.Name)
-			if mciFlag == "n" {
-				// (if mciFlag == "n") create a mci for each vm
-				req.Name = subGroupReq.Name
+	// [2] VNet
+	if doMap["vNet"] {
+		if res, err := InspectResources(connConfig, model.StrVNet); err != nil {
+			result.SystemMessage += "// VNet Inspect Failed: " + err.Error()
+		} else {
+			for _, r := range res.Resources.OnCspOnly.Info {
+				req := model.RegisterVNetReq{
+					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
+					Description: "Ref: " + r.RefNameOrId,
+				}
+				_, err = resource.RegisterVNet(nsId, &req)
+				appendResult(&result, model.StrVNet, req.Name, err, &result.RegisterationOverview.VNet)
 			}
-			labels := map[string]string{
-				model.LabelRegistered: "true",
+		}
+	}
+
+	// [3] SecurityGroup
+	if doMap["securityGroup"] {
+		if res, err := InspectResources(connConfig, model.StrSecurityGroup); err != nil {
+			result.SystemMessage += "// SG Inspect Failed: " + err.Error()
+		} else {
+			for _, r := range res.Resources.OnCspOnly.Info {
+				req := model.SecurityGroupReq{
+					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
+					VNetId: "not defined", Description: "Ref: " + r.RefNameOrId,
+				}
+				_, err = resource.CreateSecurityGroup(nsId, &req, optionFlag)
+				appendResult(&result, model.StrSecurityGroup, req.Name, err, &result.RegisterationOverview.SecurityGroup)
 			}
-			subGroupReq.Label = labels
+		}
+	}
 
-			subGroupReq.ImageId = "cannot retrieve"
-			subGroupReq.SpecId = "cannot retrieve"
-			subGroupReq.SshKeyId = "cannot retrieve"
-			subGroupReq.SubnetId = "cannot retrieve"
-			subGroupReq.VNetId = "cannot retrieve"
-			subGroupReq.SecurityGroupIds = append(subGroupReq.SecurityGroupIds, "cannot retrieve")
-
-			req.SubGroups = append(req.SubGroups, subGroupReq)
-
-			_, err = CreateMci(nsId, &req, optionFlag, false)
-
-			registeredStatus = ""
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				registeredStatus = "  [Failed] " + err.Error()
-				result.RegisterationOverview.Vm--
-				result.RegisterationOverview.Failed++
+	// [4] SSHKey
+	if doMap["sshKey"] {
+		if res, err := InspectResources(connConfig, model.StrSSHKey); err != nil {
+			result.SystemMessage += "// SSHKey Inspect Failed: " + err.Error()
+		} else {
+			for _, r := range res.Resources.OnCspOnly.Info {
+				req := model.SshKeyReq{
+					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
+					Username: "unknown", Fingerprint: "unknown", PublicKey: "unknown", PrivateKey: "unknown",
+					Description: "Ref: " + r.RefNameOrId,
+				}
+				_, err = resource.CreateSshKey(nsId, &req, optionFlag)
+				appendResult(&result, model.StrSSHKey, req.Name, err, &result.RegisterationOverview.SshKey)
 			}
-			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, model.StrVM+": "+subGroupReq.Name+registeredStatus)
-			result.RegisterationOverview.Vm++
+		}
+	}
+
+	// [5] VM
+	if doMap["vm"] {
+		if res, err := InspectResources(connConfig, model.StrVM); err != nil {
+			result.SystemMessage += "// VM Inspect Failed: " + err.Error()
+		} else {
+			for _, r := range res.Resources.OnCspOnly.Info {
+				// Unique Name Generation
+				subGroupName := common.ChangeIdString(fmt.Sprintf("%s-%s-%s", connConfig, r.RefNameOrId, r.CspResourceId))
+				mciName := common.ChangeIdString(fmt.Sprintf("%s-%s", mciNamePrefix, r.RefNameOrId))
+
+				req := model.MciReq{
+					Name: mciName, Description: "MCI for CSP managed VMs", InstallMonAgent: "no",
+					SubGroups: []model.CreateSubGroupReq{{
+						ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: subGroupName,
+						Description: "Ref: " + r.RefNameOrId,
+						Label:       map[string]string{model.LabelRegistered: "true"},
+						// Placeholders
+						ImageId: "unknown", SpecId: "unknown", SshKeyId: "unknown",
+						SubnetId: "unknown", VNetId: "unknown", SecurityGroupIds: []string{"unknown"},
+					}},
+				}
+				_, err = CreateMci(nsId, &req, optionFlag, false)
+				appendResult(&result, model.StrVM, subGroupName, err, &result.RegisterationOverview.Vm)
+			}
+		}
+	}
+
+	// [6] DataDisk
+	if doMap["dataDisk"] {
+		if res, err := InspectResources(connConfig, model.StrDataDisk); err != nil {
+			result.SystemMessage += "// DataDisk Inspect Failed: " + err.Error()
+		} else {
+			for _, r := range res.Resources.OnCspOnly.Info {
+				req := model.DataDiskReq{
+					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
+				}
+				_, err = resource.CreateDataDisk(nsId, &req, optionFlag)
+				appendResult(&result, model.StrDataDisk, req.Name, err, &result.RegisterationOverview.DataDisk)
+			}
 		}
 	}
 
 	result.ConnectionName = connConfig
-	result.ElapsedTime = int(math.Round(time.Now().Sub(startTime).Seconds()))
+	result.ElapsedTime = int(math.Round(time.Since(startTime).Seconds()))
+	fmt.Printf("\n\n%s [Elapsed]Total %d \n\n", connConfig, result.ElapsedTime)
 
-	fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, model.StrVM, int(math.Round(time.Now().Sub(startTime06).Seconds()))) //tmp
+	return result, nil
+}
 
-	fmt.Printf("\n\n%s [Elapsed]Total %d \n\n", connConfig, int(math.Round(time.Now().Sub(startTime).Seconds())))
-
-	return result, err
-
+// updates the result counters and logs the outcome.
+func appendResult(result *model.RegisterResourceResult, resType, name string, err error, successCounter *int) {
+	status := ""
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to register %s: %s", resType, name)
+		status = " [Failed] " + err.Error()
+		result.RegisterationOverview.Failed++
+	} else {
+		if successCounter != nil {
+			*successCounter++
+		}
+	}
+	result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, fmt.Sprintf("%s: %s%s", resType, name, status))
 }
 
 func FindTbVmByCspId(nsId string, mciId string, vmCspResourceId string) (model.VmInfo, error) {
