@@ -903,7 +903,14 @@ func getValidatedOptionMap(option string) (map[string]bool, error) {
 	doMap := make(map[string]bool)
 
 	if len(option) == 0 {
-		allResources := []string{"customImage", "vNet", "securityGroup", "sshKey", "vm", "dataDisk"}
+		allResources := []string{
+			model.StrCustomImage,
+			model.StrVNet,
+			model.StrSecurityGroup,
+			model.StrSSHKey,
+			model.StrVM,
+			model.StrDataDisk,
+		}
 		for _, op := range allResources {
 			doMap[op] = true
 		}
@@ -928,12 +935,12 @@ func validateReqOptions(doMap map[string]bool) error {
 	var valErrs []string
 
 	allowed := map[string]bool{
-		"customImage":   true,
-		"vNet":          true,
-		"securityGroup": true,
-		"sshKey":        true,
-		"vm":            true,
-		"dataDisk":      true,
+		model.StrCustomImage:   true,
+		model.StrVNet:          true,
+		model.StrSecurityGroup: true,
+		model.StrSSHKey:        true,
+		model.StrVM:            true,
+		model.StrDataDisk:      true,
 	}
 
 	for op := range doMap {
@@ -942,20 +949,20 @@ func validateReqOptions(doMap map[string]bool) error {
 		}
 	}
 
-	if doMap["dataDisk"] && !doMap["vm"] {
+	if doMap[model.StrDataDisk] && !doMap[model.StrVM] {
 		valErrs = append(valErrs, "'dataDisk' requires 'vm'")
 	}
 
-	if doMap["vm"] {
-		if !doMap["securityGroup"] {
+	if doMap[model.StrVM] {
+		if !doMap[model.StrSecurityGroup] {
 			valErrs = append(valErrs, "'vm' requires 'securityGroup'")
 		}
-		if !doMap["sshKey"] {
+		if !doMap[model.StrSSHKey] {
 			valErrs = append(valErrs, "'vm' requires 'sshKey'")
 		}
 	}
 
-	if doMap["securityGroup"] && !doMap["vNet"] {
+	if doMap[model.StrSecurityGroup] && !doMap[model.StrVNet] {
 		valErrs = append(valErrs, "'securityGroup' requires 'vNet'")
 	}
 
