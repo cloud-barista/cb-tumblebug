@@ -695,6 +695,17 @@ func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 func RegisterCspNativeResourcesAll(nsId string, mciNamePrefix string, option string, mciFlag string) (model.RegisterResourceAllResult, error) {
 	startTime := time.Now()
 
+	reqOptions := strings.Split(strings.ReplaceAll(option, " ", ""), ",")
+	doMap := make(map[string]bool)
+	for _, op := range reqOptions {
+		doMap[op] = true
+	}
+
+	if err := validateReqOptions(doMap); err != nil {
+		log.Error().Err(err).Msg("Invalid registration options")
+		return model.RegisterResourceAllResult{}, err
+	}
+
 	connectionConfigList, err := common.GetConnConfigList(model.DefaultCredentialHolder, true, true)
 	if err != nil {
 		err := fmt.Errorf("Cannot load ConnectionConfigList")
@@ -714,15 +725,13 @@ func RegisterCspNativeResourcesAll(nsId string, mciNamePrefix string, option str
 			// Assign RandomSleep range by clouds
 			// This code is temporal, CB-Spider needs to be enhnaced for locking mechanism.
 			// CB-SP v0.5.9 will not help with rate limit issue.
-			if option != "onlyVm" {
-				if strings.Contains(k.ConfigName, csp.Alibaba) {
-					common.RandomSleep(100*1000, 200*1000)
-				} else if strings.Contains(k.ConfigName, csp.AWS) {
-					common.RandomSleep(300*1000, 500*1000)
-				} else if strings.Contains(k.ConfigName, csp.GCP) {
-					common.RandomSleep(700*1000, 900*1000)
-				} else {
-				}
+			if strings.Contains(k.ConfigName, csp.Alibaba) {
+				common.RandomSleep(100*1000, 200*1000)
+			} else if strings.Contains(k.ConfigName, csp.AWS) {
+				common.RandomSleep(300*1000, 500*1000)
+			} else if strings.Contains(k.ConfigName, csp.GCP) {
+				common.RandomSleep(700*1000, 900*1000)
+			} else {
 			}
 
 			common.RandomSleep(0, 50*1000)
@@ -771,40 +780,19 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 	optionFlag := "register"
 	result := model.RegisterResourceResult{}
 
-	// -------------------------------------------------------------------------
 	// 1. Option Parsing & Validation
-	// -------------------------------------------------------------------------
 	reqOptions := strings.Split(strings.ReplaceAll(option, " ", ""), ",")
 	doMap := make(map[string]bool)
 	for _, op := range reqOptions {
 		doMap[op] = true
 	}
 
-	// var valErrs []string
-	// if doMap["dataDisk"] && !doMap["vm"] {
-	// 	valErrs = append(valErrs, "'dataDisk' requires 'vm'")
-	// }
-	// if doMap["vm"] {
-	// 	if !doMap["securityGroup"] {
-	// 		valErrs = append(valErrs, "'vm' requires 'securityGroup'")
-	// 	}
-	// 	if !doMap["sshKey"] {
-	// 		valErrs = append(valErrs, "'vm' requires 'sshKey'")
-	// 	}
-	// }
-	// if doMap["securityGroup"] && !doMap["vNet"] {
-	// 	valErrs = append(valErrs, "'securityGroup' requires 'vNet'")
-	// }
+	if err := validateReqOptions(doMap); err != nil {
+		log.Error().Err(err).Msgf("Invalid registration options for connection: %s", connConfig)
+		return result, err
+	}
 
-	// if len(valErrs) > 0 {
-	// 	return result, fmt.Errorf("Validation Failed: %s", strings.Join(valErrs, ", "))
-	// }
-
-	// -------------------------------------------------------------------------
 	// 2. Execution (Best Effort)
-	// -------------------------------------------------------------------------
-
-	// Helper: Name Generator
 	genName := func(cspId string) string {
 		return common.ChangeIdString(fmt.Sprintf("%s-%s", connConfig, cspId))
 	}
@@ -920,6 +908,47 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 	fmt.Printf("\n\n%s [Elapsed]Total %d \n\n", connConfig, result.ElapsedTime)
 
 	return result, nil
+}
+
+func validateReqOptions(doMap map[string]bool) error {
+	var valErrs []string
+
+	allowed := map[string]bool{
+		"customImage":   true,
+		"vNet":          true,
+		"securityGroup": true,
+		"sshKey":        true,
+		"vm":            true,
+		"dataDisk":      true,
+	}
+
+	for op := range doMap {
+		if !allowed[op] {
+			valErrs = append(valErrs, "unsupported option: '"+op+"'")
+		}
+	}
+
+	if doMap["dataDisk"] && !doMap["vm"] {
+		valErrs = append(valErrs, "'dataDisk' requires 'vm'")
+	}
+
+	if doMap["vm"] {
+		if !doMap["securityGroup"] {
+			valErrs = append(valErrs, "'vm' requires 'securityGroup'")
+		}
+		if !doMap["sshKey"] {
+			valErrs = append(valErrs, "'vm' requires 'sshKey'")
+		}
+	}
+
+	if doMap["securityGroup"] && !doMap["vNet"] {
+		valErrs = append(valErrs, "'securityGroup' requires 'vNet'")
+	}
+
+	if len(valErrs) > 0 {
+		return fmt.Errorf("Validation Failed: %s", strings.Join(valErrs, ", "))
+	}
+	return nil
 }
 
 // updates the result counters and logs the outcome.
