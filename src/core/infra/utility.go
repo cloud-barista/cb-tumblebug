@@ -787,7 +787,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 	}
 
 	// [1] CustomImage
-	if doMap["customImage"] {
+	if doMap[model.StrCustomImage] {
 		if res, err := InspectResources(connConfig, model.StrCustomImage); err != nil {
 			result.SystemMessage += "// CustomImage Inspect Failed: " + err.Error()
 		} else {
@@ -802,7 +802,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 	}
 
 	// [2] VNet
-	if doMap["vNet"] {
+	if doMap[model.StrVNet] {
 		if res, err := InspectResources(connConfig, model.StrVNet); err != nil {
 			result.SystemMessage += "// VNet Inspect Failed: " + err.Error()
 		} else {
@@ -818,7 +818,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 	}
 
 	// [3] SecurityGroup
-	if doMap["securityGroup"] {
+	if doMap[model.StrSecurityGroup] {
 		if res, err := InspectResources(connConfig, model.StrSecurityGroup); err != nil {
 			result.SystemMessage += "// SG Inspect Failed: " + err.Error()
 		} else {
@@ -834,7 +834,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 	}
 
 	// [4] SSHKey
-	if doMap["sshKey"] {
+	if doMap[model.StrSSHKey] {
 		if res, err := InspectResources(connConfig, model.StrSSHKey); err != nil {
 			result.SystemMessage += "// SSHKey Inspect Failed: " + err.Error()
 		} else {
@@ -851,7 +851,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 	}
 
 	// [5] VM
-	if doMap["vm"] {
+	if doMap[model.StrVM] {
 		if res, err := InspectResources(connConfig, model.StrVM); err != nil {
 			result.SystemMessage += "// VM Inspect Failed: " + err.Error()
 		} else {
@@ -877,7 +877,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 	}
 
 	// [6] DataDisk
-	if doMap["dataDisk"] {
+	if doMap[model.StrDataDisk] {
 		if res, err := InspectResources(connConfig, model.StrDataDisk); err != nil {
 			result.SystemMessage += "// DataDisk Inspect Failed: " + err.Error()
 		} else {
