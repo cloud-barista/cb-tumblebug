@@ -695,13 +695,7 @@ func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 func RegisterCspNativeResourcesAll(nsId string, mciNamePrefix string, option string, mciFlag string) (model.RegisterResourceAllResult, error) {
 	startTime := time.Now()
 
-	reqOptions := strings.Split(strings.ReplaceAll(option, " ", ""), ",")
-	doMap := make(map[string]bool)
-	for _, op := range reqOptions {
-		doMap[op] = true
-	}
-
-	if err := validateReqOptions(doMap); err != nil {
+	if _, err := getValidatedOptionMap(option); err != nil {
 		log.Error().Err(err).Msg("Invalid registration options")
 		return model.RegisterResourceAllResult{}, err
 	}
@@ -781,13 +775,8 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 	result := model.RegisterResourceResult{}
 
 	// 1. Option Parsing & Validation
-	reqOptions := strings.Split(strings.ReplaceAll(option, " ", ""), ",")
-	doMap := make(map[string]bool)
-	for _, op := range reqOptions {
-		doMap[op] = true
-	}
-
-	if err := validateReqOptions(doMap); err != nil {
+	doMap, err := getValidatedOptionMap(option)
+	if err != nil {
 		log.Error().Err(err).Msgf("Invalid registration options for connection: %s", connConfig)
 		return result, err
 	}
@@ -907,6 +896,32 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 	fmt.Printf("\n\n%s [Elapsed]Total %d \n\n", connConfig, result.ElapsedTime)
 
 	return result, nil
+}
+
+// Parse, Set Defaults, and Validate Options
+func getValidatedOptionMap(option string) (map[string]bool, error) {
+	doMap := make(map[string]bool)
+
+	if len(option) == 0 {
+		allResources := []string{"customImage", "vNet", "securityGroup", "sshKey", "vm", "dataDisk"}
+		for _, op := range allResources {
+			doMap[op] = true
+		}
+	} else {
+		reqOptions := strings.Split(strings.ReplaceAll(option, " ", ""), ",")
+		for _, op := range reqOptions {
+			if op == "" {
+				continue
+			}
+			doMap[op] = true
+		}
+	}
+
+	if err := validateReqOptions(doMap); err != nil {
+		return nil, err
+	}
+
+	return doMap, nil
 }
 
 func validateReqOptions(doMap map[string]bool) error {
