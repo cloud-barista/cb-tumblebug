@@ -21087,9 +21087,9 @@ const docTemplate = `{
                     "example": "default"
                 },
                 "option": {
-                    "description": "Options: onlyVm, exceptVm, or empty for all",
+                    "description": "Resource types (csv): vNet, securityGroup, sshKey, vm, dataDisk, customImage. Empty: all",
                     "type": "string",
-                    "example": ""
+                    "example": "vNet,securityGroup"
                 }
             }
         },
