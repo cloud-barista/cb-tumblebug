@@ -774,7 +774,7 @@ func RegisterCspNativeResourcesAll(nsId string, mciNamePrefix string, option str
 	return output, err
 }
 
-// RegisterCspNativeResources registers resources using Best Effort strategy with clean code
+// RegisterCspNativeResources registers specified CSP native resources from a target connection.
 func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix string, option string, mciFlag string) (model.RegisterResourceResult, error) {
 	startTime := time.Now()
 	optionFlag := "register"
@@ -867,7 +867,6 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 			result.SystemMessage += "// VM Inspect Failed: " + err.Error()
 		} else {
 			for _, r := range res.Resources.OnCspOnly.Info {
-				// Unique Name Generation
 				subGroupName := common.ChangeIdString(fmt.Sprintf("%s-%s-%s", connConfig, r.RefNameOrId, r.CspResourceId))
 				mciName := common.ChangeIdString(fmt.Sprintf("%s-%s", mciNamePrefix, r.RefNameOrId))
 
