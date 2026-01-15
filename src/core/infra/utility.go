@@ -949,21 +949,21 @@ func validateReqOptions(doMap map[string]bool) error {
 		}
 	}
 
-	if doMap[model.StrDataDisk] && !doMap[model.StrVM] {
-		valErrs = append(valErrs, "'dataDisk' requires 'vm'")
+	requiredDeps := map[string][]string{
+		model.StrDataDisk:      {model.StrVM},
+		model.StrVM:            {model.StrSecurityGroup, model.StrSSHKey},
+		model.StrSecurityGroup: {model.StrVNet},
 	}
 
-	if doMap[model.StrVM] {
-		if !doMap[model.StrSecurityGroup] {
-			valErrs = append(valErrs, "'vm' requires 'securityGroup'")
+	for key, required := range requiredDeps {
+		if !doMap[key] {
+			continue
 		}
-		if !doMap[model.StrSSHKey] {
-			valErrs = append(valErrs, "'vm' requires 'sshKey'")
+		for _, dep := range required {
+			if !doMap[dep] {
+				valErrs = append(valErrs, fmt.Sprintf("'%s' requires '%s'", key, dep))
+			}
 		}
-	}
-
-	if doMap[model.StrSecurityGroup] && !doMap[model.StrVNet] {
-		valErrs = append(valErrs, "'securityGroup' requires 'vNet'")
 	}
 
 	if len(valErrs) > 0 {
