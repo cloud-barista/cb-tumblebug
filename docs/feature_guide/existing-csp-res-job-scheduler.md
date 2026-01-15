@@ -512,7 +512,7 @@ curl -X DELETE http://localhost:1323/tumblebug/registerCspResources/schedule/{jo
   "intervalSeconds": 3600,                  // Required: Execution interval (seconds, minimum 10)
   "connectionName": "aws-ap-northeast-2",   // Optional: Specific connection (empty = all)
   "mciNamePrefix": "mci-prefix",            // Optional: MCI name prefix
-  "option": "",                             // Optional: "", "onlyVm", "exceptVm"
+  "option": "vNet,securityGroup",           // Optional: Resource types (empty = all)
   "mciFlag": "y"                            // Optional: "y" (single MCI), "n" (per-VM MCI)
 }
 ```
@@ -526,13 +526,15 @@ curl -X DELETE http://localhost:1323/tumblebug/registerCspResources/schedule/{jo
 | `intervalSeconds` | int | Yes | - | Execution interval (seconds), minimum 10 |
 | `connectionName` | string | No | "" | Specific connection (empty = all connections) |
 | `mciNamePrefix` | string | No | "mci" | MCI name prefix |
-| `option` | string | No | "" | Registration option (empty/onlyVm/exceptVm) |
+| `option` | string | No | "" | Resource types to register. (empty = all resources) |
 | `mciFlag` | string | No | "y" | "y": single MCI, "n": individual MCI per VM |
 
 **Option Values:**
-- `""` (empty): Register all resources (vNet, securityGroup, sshKey, VM)
-- `"onlyVm"`: Register VMs only
-- `"exceptVm"`: Register all except VMs
+Specify the resource types to register, separated by commas (e.g., `"vNet, customImage"`).
+
+* **Supported Types:** `vNet`, `securityGroup`, `sshKey`, `vm`, `dataDisk`, `customImage`
+* **Default Behavior (`""`):** If empty, **all** supported resource types are registered.
+* **Dependency Note:** Logical dependencies must be met (e.g., selecting `securityGroup` requires `vNet` to be selected).
 
 **Response:** `200 OK`
 ```json
@@ -772,7 +774,7 @@ curl -X POST http://localhost:1323/tumblebug/registerCspResources/schedule \
     "intervalSeconds": 1800,
     "connectionName": "aws-us-east-1",
     "mciNamePrefix": "network-scan",
-    "option": "exceptVm",
+    "option": "vNet,securityGroup",
     "mciFlag": "n"
   }'
 ```
