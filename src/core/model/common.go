@@ -42,7 +42,7 @@ type ScheduleJobRequest struct {
 	// Job-specific parameters (for registerCspResources)
 	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2"` // Connection configuration name
 	MciNamePrefix  string `json:"mciNamePrefix,omitempty" example:"mci-01"`              // MCI name prefix
-	Option         string `json:"option,omitempty" example:""`                           // Options: onlyVm, exceptVm, or empty for all
+	Option         string `json:"option,omitempty" example:"vNet,securityGroup"`         // Resource types (csv): vNet, securityGroup, sshKey, vm, dataDisk, customImage. Empty: all
 	MciFlag        string `json:"mciFlag,omitempty" example:"y"`                         // MCI flag: y or n
 }
 

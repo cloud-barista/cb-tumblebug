@@ -515,7 +515,7 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName (optional for all connections), NS Id, and MCI Name Prefix"
-// @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
+// @Param option query []string false "Option to specify resourceType (Multi-select available)" collectionFormat(csv) Enums(vNet, securityGroup, sshKey, vm, dataDisk, customImage)
 // @Param mciFlag query string false "Flag to show VMs in a collective MCI form (y,n)" Enums(y, n) default(y)
 // @Success 200 {object} model.RegisterResourceResult "Single connection result"
 // @Success 200 {object} model.RegisterResourceAllResult "All connections result (when connectionName is empty)"
@@ -565,7 +565,7 @@ type RestRegisterCspNativeResourcesRequestAll struct {
 // @Accept  json
 // @Produce  json
 // @Param Request body RestRegisterCspNativeResourcesRequestAll true "Specify NS Id and MCI Name Prefix"
-// @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
+// @Param option query []string false "Option to specify resourceType (Multi-select available)" collectionFormat(csv) Enums(vNet, securityGroup, sshKey, vm, dataDisk, customImage)
 // @Param mciFlag query string false "Flag to show VMs in a collective MCI form (y,n)" Enums(y, n) default(y)
 // @Success 200 {object} model.RegisterResourceAllResult
 // @Failure 404 {object} model.SimpleMsg

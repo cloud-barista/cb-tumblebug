@@ -10858,12 +10858,20 @@ paths:
       parameters:
       - name: option
         in: query
-        description: Option to specify resourceType
+        description: Option to specify resourceType (Multi-select available)
+        style: form
+        explode: false
         schema:
-          type: string
-          enum:
-          - onlyVm
-          - exceptVm
+          type: array
+          items:
+            type: string
+            enum:
+            - vNet
+            - securityGroup
+            - sshKey
+            - vm
+            - dataDisk
+            - customImage
       - name: mciFlag
         in: query
         description: "Flag to show VMs in a collective MCI form (y,n)"
@@ -11280,12 +11288,20 @@ paths:
       parameters:
       - name: option
         in: query
-        description: Option to specify resourceType
+        description: Option to specify resourceType (Multi-select available)
+        style: form
+        explode: false
         schema:
-          type: string
-          enum:
-          - onlyVm
-          - exceptVm
+          type: array
+          items:
+            type: string
+            enum:
+            - vNet
+            - securityGroup
+            - sshKey
+            - vm
+            - dataDisk
+            - customImage
       - name: mciFlag
         in: query
         description: "Flag to show VMs in a collective MCI form (y,n)"

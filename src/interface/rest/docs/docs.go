@@ -13172,12 +13172,20 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "enum": [
-                            "onlyVm",
-                            "exceptVm"
-                        ],
-                        "type": "string",
-                        "description": "Option to specify resourceType",
+                        "type": "array",
+                        "items": {
+                            "enum": [
+                                "vNet",
+                                "securityGroup",
+                                "sshKey",
+                                "vm",
+                                "dataDisk",
+                                "customImage"
+                            ],
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Option to specify resourceType (Multi-select available)",
                         "name": "option",
                         "in": "query"
                     },
@@ -13586,12 +13594,20 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "enum": [
-                            "onlyVm",
-                            "exceptVm"
-                        ],
-                        "type": "string",
-                        "description": "Option to specify resourceType",
+                        "type": "array",
+                        "items": {
+                            "enum": [
+                                "vNet",
+                                "securityGroup",
+                                "sshKey",
+                                "vm",
+                                "dataDisk",
+                                "customImage"
+                            ],
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Option to specify resourceType (Multi-select available)",
                         "name": "option",
                         "in": "query"
                     },
