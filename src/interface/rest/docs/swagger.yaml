@@ -17120,8 +17120,9 @@ components:
           example: default
         option:
           type: string
-          description: "Options: onlyVm, exceptVm, or empty for all"
-          example: ""
+          description: "Resource types (csv): vNet, securityGroup, sshKey, vm, dataDisk,\
+            \ customImage. Empty: all"
+          example: "vNet,securityGroup"
     model.ScheduleJobStatus:
       type: object
       properties:
