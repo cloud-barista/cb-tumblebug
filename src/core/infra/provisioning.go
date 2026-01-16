@@ -3381,10 +3381,63 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 	vmInfoData.CspSshKeyId = callResult.KeyPairIId.SystemId
 
 	if option == "register" {
-
 		// Reconstuct resource IDs
+		// Spec
+		if callResult.VMSpecName != "" {
+			resourceListInNs, err := resource.ListResource(model.SystemCommonNs, model.StrSpec, "csp_spec_name", callResult.VMSpecName)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to list Spec")
+			} else {
+				resourcesInNs := resourceListInNs.([]model.SpecInfo)
+				for _, res := range resourcesInNs {
+					if res.ConnectionName == requestBody.ConnectionName {
+						vmInfoData.SpecId = res.Id
+						break
+					}
+				}
+			}
+		}
+
+		// Image
+		targetImageName := callResult.ImageIId.SystemId
+		if targetImageName == "" {
+			targetImageName = callResult.ImageIId.NameId
+		}
+
+		if targetImageName != "" {
+
+			findImageFunc := func(ns, rType, filterKey string) bool {
+				listResult, err := resource.ListResource(ns, rType, filterKey, targetImageName)
+				if err != nil {
+					return false
+				}
+
+				if imgs, ok := listResult.([]model.ImageInfo); ok {
+					for _, res := range imgs {
+						if res.ConnectionName == requestBody.ConnectionName {
+							vmInfoData.ImageId = res.Id
+							return true
+						}
+					}
+				}
+				return false
+			}
+
+			if findImageFunc(nsId, model.StrCustomImage, "csp_image_id") {
+				customImageFlag = true
+				log.Debug().Msgf("CustomImage found in Current NS: %s", vmInfoData.ImageId)
+
+			} else if findImageFunc(model.SystemCommonNs, model.StrImage, "csp_image_name") {
+				log.Info().Msgf("Public Image found in SystemCommonNs: %s", vmInfoData.ImageId)
+
+			} else {
+				errMsg := fmt.Sprintf("Dependency Missing: Cannot find Image (CSP ID: %s) in TB.", targetImageName)
+				log.Error().Msg(errMsg)
+			}
+		}
+
 		// vNet
-		resourceListInNs, err := resource.ListResource(nsId, model.StrVNet, "cspResourceName", callResult.VpcIID.NameId)
+		resourceListInNs, err := resource.ListResource(nsId, model.StrVNet, "cspResourceName", callResult.VpcIID.SystemId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		} else {
@@ -3392,13 +3445,45 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == requestBody.ConnectionName {
 					vmInfoData.VNetId = resource.Id
-					//vmInfoData.SubnetId = resource.SubnetInfoList
+
+					// subnet
+					targetSubnet := callResult.SubnetIID.SystemId
+
+					if targetSubnet == "" {
+						targetSubnet = callResult.SubnetIID.NameId
+					}
+
+					for _, subnet := range resource.SubnetInfoList {
+						if subnet.CspResourceId == targetSubnet {
+							vmInfoData.SubnetId = subnet.Id
+							break
+						}
+					}
+					break
 				}
 			}
 		}
 
+		// SecurityGroups
+		var matchedSgIds []string
+		for _, sgIID := range callResult.SecurityGroupIIds {
+			resourceListInNs, err := resource.ListResource(nsId, model.StrSecurityGroup, "cspResourceName", sgIID.SystemId)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+			} else {
+				resourcesInNs := resourceListInNs.([]model.SecurityGroupInfo)
+				for _, resource := range resourcesInNs {
+					if resource.ConnectionName == requestBody.ConnectionName {
+						matchedSgIds = append(matchedSgIds, resource.Id)
+						break
+					}
+				}
+			}
+		}
+		vmInfoData.SecurityGroupIds = matchedSgIds
+
 		// access Key
-		resourceListInNs, err = resource.ListResource(nsId, model.StrSSHKey, "cspResourceName", callResult.KeyPairIId.NameId)
+		resourceListInNs, err = resource.ListResource(nsId, model.StrSSHKey, "cspResourceName", callResult.KeyPairIId.SystemId)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		} else {
@@ -3410,25 +3495,24 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 			}
 		}
 
+	}
+
+	if customImageFlag == false {
+		resource.UpdateAssociatedObjectList(nsId, model.StrImage, vmInfoData.ImageId, model.StrAdd, vmKey)
 	} else {
+		resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, vmInfoData.ImageId, model.StrAdd, vmKey)
+	}
 
-		if customImageFlag == false {
-			resource.UpdateAssociatedObjectList(nsId, model.StrImage, vmInfoData.ImageId, model.StrAdd, vmKey)
-		} else {
-			resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, vmInfoData.ImageId, model.StrAdd, vmKey)
-		}
+	//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, vmInfoData.SpecId, model.StrAdd, vmKey)
+	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, vmInfoData.SshKeyId, model.StrAdd, vmKey)
+	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, vmInfoData.VNetId, model.StrAdd, vmKey)
 
-		//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, vmInfoData.SpecId, model.StrAdd, vmKey)
-		resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, vmInfoData.SshKeyId, model.StrAdd, vmKey)
-		resource.UpdateAssociatedObjectList(nsId, model.StrVNet, vmInfoData.VNetId, model.StrAdd, vmKey)
+	for _, v := range vmInfoData.SecurityGroupIds {
+		resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v, model.StrAdd, vmKey)
+	}
 
-		for _, v := range vmInfoData.SecurityGroupIds {
-			resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v, model.StrAdd, vmKey)
-		}
-
-		for _, v := range vmInfoData.DataDiskIds {
-			resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v, model.StrAdd, vmKey)
-		}
+	for _, v := range vmInfoData.DataDiskIds {
+		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v, model.StrAdd, vmKey)
 	}
 
 	// Register dataDisks which are created with the creation of VM
@@ -3451,6 +3535,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 	}
 
 	// Assign a Bastion if none (randomly)
+	UpdateVmInfo(nsId, mciId, *vmInfoData)
 	_, err = SetBastionNodes(nsId, mciId, vmInfoData.Id, "")
 	if err != nil {
 		// just log error and continue
