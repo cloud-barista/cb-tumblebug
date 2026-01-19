@@ -1483,11 +1483,12 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VN
 	//       since the order may differ different between slices
 	for i, spSubnetInfo := range spResp.SubnetInfoList {
 		subnetInfo := model.SubnetInfo{
+			ResourceType:    model.StrSubnet,
 			Id:              fmt.Sprintf("reg-subnet-%02d", i+1),
 			Name:            fmt.Sprintf("reg-subnet-%02d", i+1),
 			Uid:             common.GenUid(),
 			ConnectionName:  vNetInfo.ConnectionName,
-			Status:          string(NetworkUnknown),
+			Status:          string(NetworkAvailable),
 			CspResourceId:   spSubnetInfo.IId.SystemId,
 			CspResourceName: spSubnetInfo.IId.NameId,
 			CspVNetId:       spResp.IId.SystemId,
@@ -1541,7 +1542,15 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VN
 	log.Debug().Msgf("vNetInfo: %+v", vNetInfo)
 
 	// [Set and store status]
-	vNetInfo.Status = string(NetworkAvailable)
+	if len(vNetInfo.SubnetInfoList) == 0 {
+		vNetInfo.Status = string(NetworkAvailable)
+	} else if len(vNetInfo.SubnetInfoList) > 0 {
+		vNetInfo.Status = string(NetworkInUse)
+	} else {
+		vNetInfo.Status = string(NetworkUnknown)
+		log.Warn().Msgf("The status of the vNet (%s) is unknown", vNetInfo.Id)
+	}
+
 	// Put vNet object into the key-value store
 	value, err := json.Marshal(vNetInfo)
 	if err != nil {
