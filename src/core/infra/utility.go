@@ -809,7 +809,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 			for _, r := range res.Resources.OnCspOnly.Info {
 				req := model.RegisterVNetReq{
 					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
-					Description: "Ref: " + r.RefNameOrId,
+					Description: "Ref name: " + r.RefNameOrId + ". CSP managed VNet (registered to CB-TB)",
 				}
 				_, err = resource.RegisterVNet(nsId, &req)
 				appendResult(&result, model.StrVNet, req.Name, err, &result.RegisterationOverview.VNet)
@@ -825,7 +825,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 			for _, r := range res.Resources.OnCspOnly.Info {
 				req := model.SecurityGroupReq{
 					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
-					VNetId: "not defined", Description: "Ref: " + r.RefNameOrId,
+					VNetId: "not defined", Description: "Ref name: " + r.RefNameOrId + ". CSP managed Security Group (registered to CB-TB)",
 				}
 				_, err = resource.CreateSecurityGroup(nsId, &req, optionFlag)
 				appendResult(&result, model.StrSecurityGroup, req.Name, err, &result.RegisterationOverview.SecurityGroup)
@@ -842,7 +842,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 				req := model.SshKeyReq{
 					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
 					Username: "unknown", Fingerprint: "unknown", PublicKey: "unknown", PrivateKey: "unknown",
-					Description: "Ref: " + r.RefNameOrId,
+					Description: "Ref name: " + r.RefNameOrId + ". CSP managed SSH Key (registered to CB-TB)",
 				}
 				_, err = resource.CreateSshKey(nsId, &req, optionFlag)
 				appendResult(&result, model.StrSSHKey, req.Name, err, &result.RegisterationOverview.SshKey)
@@ -863,7 +863,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 					Name: mciName, Description: "MCI for CSP managed VMs", InstallMonAgent: "no",
 					SubGroups: []model.CreateSubGroupReq{{
 						ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: subGroupName,
-						Description: "Ref: " + r.RefNameOrId,
+						Description: "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)",
 						Label:       map[string]string{model.LabelRegistered: "true"},
 						// Placeholders
 						ImageId: "unknown", SpecId: "unknown", SshKeyId: "unknown",
@@ -884,6 +884,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 			for _, r := range res.Resources.OnCspOnly.Info {
 				req := model.DataDiskReq{
 					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
+					Description: "Ref name: " + r.RefNameOrId + ". CSP managed Data Disk (registered to CB-TB)",
 				}
 				_, err = resource.CreateDataDisk(nsId, &req, optionFlag)
 				appendResult(&result, model.StrDataDisk, req.Name, err, &result.RegisterationOverview.DataDisk)
