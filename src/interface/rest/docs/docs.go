@@ -13295,6 +13295,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
+                    "422": {
+                        "description": "Invalid registration options",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {

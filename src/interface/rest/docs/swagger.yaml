@@ -11001,6 +11001,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+        "422":
+          description: Invalid registration options
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "500":
           description: Internal Server Error
           content:
