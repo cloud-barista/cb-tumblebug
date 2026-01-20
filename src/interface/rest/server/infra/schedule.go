@@ -74,6 +74,7 @@ import (
 // @Success 200 {object} model.ScheduleJobStatus
 // @Failure 400 {object} model.SimpleMsg
 // @Failure 409 {object} model.SimpleMsg "Duplicate job already exists"
+// @Failure 422 {object} model.SimpleMsg "Invalid registration options"
 // @Failure 500 {object} model.SimpleMsg
 // @Router /registerCspResources/schedule [post]
 func RestPostScheduleRegisterCspResources(c echo.Context) error {
