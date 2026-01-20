@@ -125,19 +125,32 @@ print(" - " + Fore.CYAN + "CRED_PATH:" + Fore.RESET + f" {CRED_PATH}")
 print(" - " + Fore.CYAN + "CRED_FILE_NAME:" + Fore.RESET + f" {CRED_FILE_NAME_ENC}")
 print(" - " + Fore.CYAN + "expected completion time:" + Fore.RESET + f" {expected_completion_time_seconds} seconds\n")
 
-# Check server health before proceeding
+# Check server health before proceeding (retry up to 50 times with 1 second interval)
 print(Fore.YELLOW + "Checking server health...")
 health_check_url = f"http://{TUMBLEBUG_SERVER}/tumblebug/readyz"
-try:
-    health_response = requests.get(health_check_url, headers=HEADERS)
-    if health_response.status_code == 200:
-        print(Fore.GREEN + "Tumblebug Server is healthy.\n")
-    else:
-        print(Fore.RED + f"Tumblebug health check failed with status {health_response.status_code}.")
-        sys.exit(1)
-except requests.exceptions.RequestException as e:
-    print(Fore.RED + f"Failed to connect to server. Check the server address and try again.")
-    sys.exit(1)
+max_retries = 50
+retry_interval = 1  # seconds
+
+for attempt in range(1, max_retries + 1):
+    try:
+        health_response = requests.get(health_check_url, headers=HEADERS, timeout=5)
+        if health_response.status_code == 200:
+            print(Fore.GREEN + f"Tumblebug Server is healthy. (attempt {attempt}/{max_retries})\n")
+            break
+        else:
+            if attempt < max_retries:
+                print(Fore.YELLOW + f"Health check failed (status {health_response.status_code}), retrying... ({attempt}/{max_retries})")
+                time.sleep(retry_interval)
+            else:
+                print(Fore.RED + f"Tumblebug health check failed with status {health_response.status_code} after {max_retries} attempts.")
+                sys.exit(1)
+    except requests.exceptions.RequestException as e:
+        if attempt < max_retries:
+            print(Fore.YELLOW + f"Connection failed, retrying... ({attempt}/{max_retries})")
+            time.sleep(retry_interval)
+        else:
+            print(Fore.RED + f"Failed to connect to server after {max_retries} attempts. Check the server address and try again.")
+            sys.exit(1)
 
 # Check for database backup availability early (before asking for confirmation)
 backup_db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets', 'assets.dump.gz')
