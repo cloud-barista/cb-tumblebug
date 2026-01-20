@@ -305,6 +305,13 @@ func (sm *SchedulerManager) CreateScheduledJob(req model.ScheduleJobRequest) (*S
 		return nil, fmt.Errorf("interval must be at least %d seconds", minimumInterval)
 	}
 
+	// Validate option parameters early (before job creation)
+	if req.JobType == "registerCspResources" || req.JobType == "registerCspResourcesAll" {
+		if _, err := getValidatedOptionMap(req.Option); err != nil {
+			return nil, err
+		}
+	}
+
 	// Generate job ID
 	jobId := fmt.Sprintf("%s-%s-%d", req.JobType, req.NsId, time.Now().Unix())
 

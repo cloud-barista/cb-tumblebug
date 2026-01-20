@@ -112,6 +112,14 @@ func RestPostScheduleRegisterCspResources(c echo.Context) error {
 			})
 		}
 
+		// Check if it's a validation error
+		if strings.Contains(err.Error(), "Validation Failed") {
+			log.Warn().Err(err).Msg("Invalid registration options")
+			return c.JSON(http.StatusUnprocessableEntity, model.SimpleMsg{
+				Message: err.Error(),
+			})
+		}
+
 		// Other errors
 		log.Error().Err(err).Msg("Failed to create scheduled job")
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{
