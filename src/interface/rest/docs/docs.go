@@ -9797,7 +9797,7 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 3600,
                         "description": "Expiration time in seconds",
-                        "name": "expiry",
+                        "name": "expires",
                         "in": "query"
                     }
                 ],
