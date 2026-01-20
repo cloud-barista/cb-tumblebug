@@ -626,7 +626,7 @@ func RestDeleteVersionedObject(c echo.Context) error {
 // @Param osId path string true "Object Storage ID" default(os01)
 // @Param objectKey path string true "Object Key"
 // @Param operation query string false "Operation type" Enums(upload, download)
-// @Param expiry query int false "Expiration time in seconds" default(3600)
+// @Param expires query int false "Expiration time in seconds" default(3600)
 // @Success 200 {object} model.ObjectStoragePresignedUrlResponse "OK"
 // @Failure 400 {object} model.SimpleMsg "Bad Request"
 // @Failure 404 {object} model.SimpleMsg "Not Found"
@@ -663,18 +663,18 @@ func RestGeneratePresignedURL(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: err.Error()})
 	}
 
-	// Parse expiry from query parameter (default: 3600 seconds)
-	expiryStr := c.QueryParam("expiry")
-	expirySeconds := 3600 // default
-	if expiryStr != "" {
-		if parsed, err := fmt.Sscanf(expiryStr, "%d", &expirySeconds); err != nil || parsed != 1 {
-			log.Warn().Str("expiry", expiryStr).Msg("Invalid expiry parameter, using default 3600")
-			expirySeconds = 3600
+	// Parse expires from query parameter (default: 3600 seconds)
+	expiresStr := c.QueryParam("expires")
+	expiresSeconds := 3600 // default
+	if expiresStr != "" {
+		if parsed, err := fmt.Sscanf(expiresStr, "%d", &expiresSeconds); err != nil || parsed != 1 {
+			log.Warn().Str("expires", expiresStr).Msg("Invalid expires parameter, using default 3600")
+			expiresSeconds = 3600
 		}
 	}
 
 	// [Process]
-	result, err := resource.GeneratePresignedURL(nsId, osId, objectKey, time.Duration(expirySeconds)*time.Second, operation)
+	result, err := resource.GeneratePresignedURL(nsId, osId, objectKey, time.Duration(expiresSeconds)*time.Second, operation)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to generate presigned %s URL", operation)
 		return c.JSON(http.StatusInternalServerError, model.SimpleMsg{Message: err.Error()})

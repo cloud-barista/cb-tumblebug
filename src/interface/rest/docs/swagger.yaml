@@ -8105,7 +8105,7 @@ paths:
           enum:
           - upload
           - download
-      - name: expiry
+      - name: expires
         in: query
         description: Expiration time in seconds
         schema:

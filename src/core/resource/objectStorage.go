@@ -1536,7 +1536,7 @@ func DeleteVersionedObject(nsId, osId, objectKey, versionId string) error {
 // ! The upload or download of objects is NOT handled directly by Tumblebug.
 
 // GeneratePresignedURL generates a presigned URL for downloading or uploading an object
-func GeneratePresignedURL(nsId, osId, objectKey string, expiry time.Duration, operation string) (model.ObjectStoragePresignedUrlResponse, error) {
+func GeneratePresignedURL(nsId, osId, objectKey string, expires time.Duration, operation string) (model.ObjectStoragePresignedUrlResponse, error) {
 	var emptyRet model.ObjectStoragePresignedUrlResponse
 
 	// 1. Validate input parameters
@@ -1587,8 +1587,8 @@ func GeneratePresignedURL(nsId, osId, objectKey string, expiry time.Duration, op
 	spReq := clientManager.NoBody
 	spResp := spiderPreSignedUrlResponse{}
 
-	url := fmt.Sprintf("%s/s3/presigned/%s/%s/%s?ConnectionName=%s&expiry=%d",
-		model.SpiderRestUrl, operation, uid, objectKey, connName, int64(expiry.Seconds()))
+	url := fmt.Sprintf("%s/s3/presigned/%s/%s/%s?ConnectionName=%s&expires=%d",
+		model.SpiderRestUrl, operation, uid, objectKey, connName, int64(expires.Seconds()))
 	log.Debug().Msgf("[Request to Spider] Generating presigned URL (url: %s)", url)
 
 	_, err = clientManager.ExecuteHttpRequest(
