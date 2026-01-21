@@ -1481,11 +1481,11 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VN
 
 	// Note: Check one by one and update the vNet object with the response from the Spider
 	//       since the order may differ different between slices
-	for i, spSubnetInfo := range spResp.SubnetInfoList {
+	for _, spSubnetInfo := range spResp.SubnetInfoList {
 		subnetInfo := model.SubnetInfo{
 			ResourceType:    model.StrSubnet,
-			Id:              fmt.Sprintf("reg-subnet-%02d", i+1),
-			Name:            fmt.Sprintf("reg-subnet-%02d", i+1),
+			Id:              fmt.Sprintf("reg-%s", spSubnetInfo.IId.SystemId),
+			Name:            fmt.Sprintf("reg-%s", spSubnetInfo.IId.NameId),
 			Uid:             common.GenUid(),
 			ConnectionName:  vNetInfo.ConnectionName,
 			Status:          string(NetworkAvailable),
