@@ -3431,8 +3431,48 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 				log.Info().Msgf("Public Image found in SystemCommonNs: %s", vmInfoData.ImageId)
 
 			} else {
-				errMsg := fmt.Sprintf("Dependency Missing: Cannot find Image (CSP ID: %s) in TB.", targetImageName)
-				log.Error().Msg(errMsg)
+				// Try to lookup and register the image from CSP
+				log.Info().Msgf("Image not found in TB, attempting to lookup from CSP: %s", targetImageName)
+
+				handleImageRegistration := func(img model.ImageInfo, err error, imageType string, isCustom bool) {
+					if err != nil {
+						log.Error().Err(err).Msgf("Failed to register %s: %s", imageType, targetImageName)
+						errMsg := fmt.Sprintf("Dependency Missing: Cannot find or register Image (CSP ID: %s) in TB.", targetImageName)
+						log.Error().Msg(errMsg)
+					} else {
+						if isCustom {
+							customImageFlag = true
+						}
+						vmInfoData.ImageId = img.Id
+						log.Info().Msgf("Successfully registered %s: %s as %s", imageType, targetImageName, img.Id)
+					}
+				}
+
+				// First, try to lookup as public image
+				_, lookupErr := resource.LookupImage(requestBody.ConnectionName, targetImageName)
+				if lookupErr == nil {
+					log.Info().Msgf("Public image found in CSP: %s, registering to TB", targetImageName)
+
+					imageReq := &model.ImageReq{
+						Name:           targetImageName,
+						ConnectionName: requestBody.ConnectionName,
+						CspImageName:   targetImageName,
+						Description:    "Auto-registered from existing VM",
+					}
+					registeredImage, regErr := resource.RegisterImageWithId(model.SystemCommonNs, imageReq, false, false)
+					handleImageRegistration(registeredImage, regErr, model.StrImage, false)
+				} else {
+					// Public image lookup failed, try to register as custom image
+					log.Info().Msgf("Public image not found, attempting to register as custom image: %s", targetImageName)
+
+					customImageReq := &model.CustomImageReq{
+						Name:           targetImageName,
+						ConnectionName: requestBody.ConnectionName,
+						CspResourceId:  targetImageName,
+					}
+					registeredImage, regErr := resource.RegisterCustomImageWithId(nsId, customImageReq)
+					handleImageRegistration(registeredImage, regErr, model.StrCustomImage, true)
+				}
 			}
 		}
 
