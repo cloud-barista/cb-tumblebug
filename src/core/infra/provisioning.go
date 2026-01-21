@@ -3402,37 +3402,25 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 		targetImageName := callResult.ImageIId.SystemId
 		if targetImageName == "" {
 			targetImageName = callResult.ImageIId.NameId
-		}
+		} else {
+			// Try to use EnsureImageAvailable for consistent image handling
+			imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, requestBody.ConnectionName, targetImageName)
 
-		if targetImageName != "" {
-
-			findImageFunc := func(ns, rType, filterKey string) bool {
-				listResult, err := resource.ListResource(ns, rType, filterKey, targetImageName)
-				if err != nil {
-					return false
-				}
-
-				if imgs, ok := listResult.([]model.ImageInfo); ok {
-					for _, res := range imgs {
-						if res.ConnectionName == requestBody.ConnectionName {
-							vmInfoData.ImageId = res.Id
-							return true
-						}
-					}
-				}
-				return false
-			}
-
-			if findImageFunc(nsId, model.StrCustomImage, "csp_image_id") {
-				customImageFlag = true
-				log.Debug().Msgf("CustomImage found in Current NS: %s", vmInfoData.ImageId)
-
-			} else if findImageFunc(model.SystemCommonNs, model.StrImage, "csp_image_name") {
-				log.Info().Msgf("Public Image found in SystemCommonNs: %s", vmInfoData.ImageId)
-
-			} else {
-				errMsg := fmt.Sprintf("Dependency Missing: Cannot find Image (CSP ID: %s) in TB.", targetImageName)
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed to ensure image availability: %s", targetImageName)
+				errMsg := fmt.Sprintf("Dependency Missing: Cannot find or register Image (CSP ID: %s) in TB.", targetImageName)
 				log.Error().Msg(errMsg)
+			} else {
+				vmInfoData.ImageId = imageInfo.Id
+
+				// Determine if this is a custom image
+				if imageInfo.ResourceType == model.StrCustomImage {
+					customImageFlag = true
+				}
+
+				if !isAutoRegistered {
+					log.Debug().Msgf("Image found in DB: %s (ID: %s)", targetImageName, imageInfo.Id)
+				}
 			}
 		}
 
