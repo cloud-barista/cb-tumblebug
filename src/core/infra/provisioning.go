@@ -3402,76 +3402,24 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 		targetImageName := callResult.ImageIId.SystemId
 		if targetImageName == "" {
 			targetImageName = callResult.ImageIId.NameId
-		}
+		} else {
+			// Try to use EnsureImageAvailable for consistent image handling
+			imageInfo, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, requestBody.ConnectionName, targetImageName)
 
-		if targetImageName != "" {
-
-			findImageFunc := func(ns, rType, filterKey string) bool {
-				listResult, err := resource.ListResource(ns, rType, filterKey, targetImageName)
-				if err != nil {
-					return false
-				}
-
-				if imgs, ok := listResult.([]model.ImageInfo); ok {
-					for _, res := range imgs {
-						if res.ConnectionName == requestBody.ConnectionName {
-							vmInfoData.ImageId = res.Id
-							return true
-						}
-					}
-				}
-				return false
-			}
-
-			if findImageFunc(nsId, model.StrCustomImage, "csp_image_id") {
-				customImageFlag = true
-				log.Debug().Msgf("CustomImage found in Current NS: %s", vmInfoData.ImageId)
-
-			} else if findImageFunc(model.SystemCommonNs, model.StrImage, "csp_image_name") {
-				log.Info().Msgf("Public Image found in SystemCommonNs: %s", vmInfoData.ImageId)
-
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed to ensure image availability: %s", targetImageName)
+				errMsg := fmt.Sprintf("Dependency Missing: Cannot find or register Image (CSP ID: %s) in TB.", targetImageName)
+				log.Error().Msg(errMsg)
 			} else {
-				// Try to lookup and register the image from CSP
-				log.Info().Msgf("Image not found in TB, attempting to lookup from CSP: %s", targetImageName)
+				vmInfoData.ImageId = imageInfo.Id
 
-				handleImageRegistration := func(img model.ImageInfo, err error, imageType string, isCustom bool) {
-					if err != nil {
-						log.Error().Err(err).Msgf("Failed to register %s: %s", imageType, targetImageName)
-						errMsg := fmt.Sprintf("Dependency Missing: Cannot find or register Image (CSP ID: %s) in TB.", targetImageName)
-						log.Error().Msg(errMsg)
-					} else {
-						if isCustom {
-							customImageFlag = true
-						}
-						vmInfoData.ImageId = img.Id
-						log.Info().Msgf("Successfully registered %s: %s as %s", imageType, targetImageName, img.Id)
-					}
+				// Determine if this is a custom image
+				if imageInfo.ResourceType == model.StrCustomImage {
+					customImageFlag = true
 				}
 
-				// First, try to lookup as public image
-				_, lookupErr := resource.LookupImage(requestBody.ConnectionName, targetImageName)
-				if lookupErr == nil {
-					log.Info().Msgf("Public image found in CSP: %s, registering to TB", targetImageName)
-
-					imageReq := &model.ImageReq{
-						Name:           targetImageName,
-						ConnectionName: requestBody.ConnectionName,
-						CspImageName:   targetImageName,
-						Description:    "Auto-registered from existing VM",
-					}
-					registeredImage, regErr := resource.RegisterImageWithId(model.SystemCommonNs, imageReq, false, false)
-					handleImageRegistration(registeredImage, regErr, model.StrImage, false)
-				} else {
-					// Public image lookup failed, try to register as custom image
-					log.Info().Msgf("Public image not found, attempting to register as custom image: %s", targetImageName)
-
-					customImageReq := &model.CustomImageReq{
-						Name:           targetImageName,
-						ConnectionName: requestBody.ConnectionName,
-						CspResourceId:  targetImageName,
-					}
-					registeredImage, regErr := resource.RegisterCustomImageWithId(nsId, customImageReq)
-					handleImageRegistration(registeredImage, regErr, model.StrCustomImage, true)
+				if !isAutoRegistered {
+					log.Debug().Msgf("Image found in DB: %s (ID: %s)", targetImageName, imageInfo.Id)
 				}
 			}
 		}
