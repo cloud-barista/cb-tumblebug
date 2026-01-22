@@ -203,13 +203,13 @@ func CreateSecurityGroup(nsId string, u *model.SecurityGroupReq, option string) 
 			return model.SecurityGroupInfo{}, fmt.Errorf("vNetId is required when registering SecurityGroup without CspResourceId")
 		}
 
-		// Use Spider API to get VPC info from SecurityGroup's CSP ID
-		vpcIID, err := getVpcInfoFromSecurityGroup(u.ConnectionName, u.CspResourceId)
+		// Use Spider API to get VNet info from SecurityGroup's CSP ID
+		cspVNetId, err := getCspVNetIdFromSecurityGroup(u.ConnectionName, u.CspResourceId)
 		if err != nil {
 			return model.SecurityGroupInfo{}, err
 		}
 
-		// Find matching VNet in Tumblebug by VPC's CspResourceId
+		// Find matching VNet in Tumblebug by VNet's CspResourceId
 		resourceList, err := ListResource(nsId, model.StrVNet, "", "")
 		if err != nil {
 			log.Error().Err(err).Msg("Cannot list vNet resources")
@@ -223,16 +223,16 @@ func CreateSecurityGroup(nsId string, u *model.SecurityGroupReq, option string) 
 
 		vNetFound := false
 		for _, r := range content.VNet {
-			if r.ConnectionName == u.ConnectionName && r.CspResourceId == vpcIID.SystemId {
+			if r.ConnectionName == u.ConnectionName && r.CspResourceId == cspVNetId {
 				u.VNetId = r.Id
 				vNetFound = true
-				log.Info().Msgf("Found matching VNet: %s (CspResourceId: %s) for SecurityGroup", r.Id, r.CspResourceId)
+				log.Info().Msgf("Found matching VNet: %s for SecurityGroup", cspVNetId)
 				break
 			}
 		}
 
 		if !vNetFound {
-			return model.SecurityGroupInfo{}, fmt.Errorf("no matching VNet found for VPC %s (SystemId: %s) in namespace %s", vpcIID.NameId, vpcIID.SystemId, nsId)
+			return model.SecurityGroupInfo{}, fmt.Errorf("no matching VNet found for %s in namespace %s", cspVNetId, nsId)
 		}
 	}
 
@@ -374,8 +374,8 @@ func CreateSecurityGroup(nsId string, u *model.SecurityGroupReq, option string) 
 	return content, nil
 }
 
-// getVpcInfoFromSecurityGroup retrieves VPC information for a SecurityGroup using Spider API
-func getVpcInfoFromSecurityGroup(connectionName, cspResourceId string) (model.IID, error) {
+// getCspVNetIdFromSecurityGroup retrieves VNet information for a SecurityGroup using Spider API
+func getCspVNetIdFromSecurityGroup(connectionName, cspResourceId string) (string, error) {
 	type GetSecurityGroupOwnerReq struct {
 		ConnectionName string `json:"ConnectionName"`
 		ReqInfo        struct {
@@ -387,7 +387,7 @@ func getVpcInfoFromSecurityGroup(connectionName, cspResourceId string) (model.II
 	spReq.ConnectionName = connectionName
 	spReq.ReqInfo.CSPId = cspResourceId
 
-	var vpcIID model.IID
+	var vNetIID model.IID
 	client := clientManager.NewHttpClient()
 	url := fmt.Sprintf("%s/getsecuritygroupowner", model.SpiderRestUrl)
 
@@ -398,16 +398,16 @@ func getVpcInfoFromSecurityGroup(connectionName, cspResourceId string) (model.II
 		nil,
 		clientManager.SetUseBody(spReq),
 		&spReq,
-		&vpcIID,
+		&vNetIID,
 		clientManager.MediumDuration,
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get VPC info from Spider for SecurityGroup")
-		return model.IID{}, fmt.Errorf("failed to get VPC info for SecurityGroup %s: %w", cspResourceId, err)
+		log.Error().Err(err).Msg("Failed to get VNet info from Spider for SecurityGroup")
+		return "", fmt.Errorf("failed to get VNet info for SecurityGroup %s: %w", cspResourceId, err)
 	}
 
-	return vpcIID, nil
+	return vNetIID.SystemId, nil
 }
 
 // CreateFirewallRules accepts firewallRule creation request, creates and returns an TB securityGroup object
