@@ -46,10 +46,29 @@ const (
 type ImageStatus string
 
 const (
-	ImageAvailable   ImageStatus = "Available"
+	// ImageCreating indicates the image is being created (e.g., snapshot in progress)
+	// This is a CB-Tumblebug managed state, independent of CB-Spider's status
+	ImageCreating ImageStatus = "Creating"
+
+	// ImageAvailable indicates the image is ready and can be used
+	ImageAvailable ImageStatus = "Available"
+
+	// ImageFailed indicates the image creation failed
+	// This is a terminal state - no further status updates needed
+	ImageFailed ImageStatus = "Failed"
+
+	// ImageUnavailable indicates the image is temporarily unavailable
+	// This may transition to Available or Failed
 	ImageUnavailable ImageStatus = "Unavailable"
-	ImageDeprecated  ImageStatus = "Deprecated"
-	ImageNA          ImageStatus = "NA"
+
+	// ImageDeleting indicates the image is being deleted
+	ImageDeleting ImageStatus = "Deleting"
+
+	// ImageDeprecated indicates the image is deprecated and should not be used
+	ImageDeprecated ImageStatus = "Deprecated"
+
+	// ImageNA indicates the status is not applicable or unknown
+	ImageNA ImageStatus = "NA"
 )
 
 // SpiderImageInfo represents the information of an Image.

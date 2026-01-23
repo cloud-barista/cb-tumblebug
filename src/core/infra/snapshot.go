@@ -25,6 +25,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// mapSpiderToTumblebugImageStatus delegates to the shared implementation in the resource package
+// to avoid duplicated logic. See resource.MapSpiderToTumblebugImageStatus for detailed mapping.
+func mapSpiderToTumblebugImageStatus(spiderStatus string) model.ImageStatus {
+	return resource.MapSpiderToTumblebugImageStatus(spiderStatus)
+}
+
 // CreateVmSnapshot is func to create VM snapshot
 func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.SnapshotReq) (model.ImageInfo, error) {
 	vm, err := GetVmObject(nsId, mciId, vmId)
@@ -161,8 +167,9 @@ func CreateVmSnapshot(nsId string, mciId string, vmId string, snapshotReq model.
 		OSDiskType:     sourceImageInfo.OSDiskType,
 		OSDiskSizeGB:   sourceImageInfo.OSDiskSizeGB,
 
-		// Status
-		ImageStatus: model.ImageStatus(tempSpiderMyImageInfo.Status),
+		// Status - Use CB-Tumblebug's own status management
+		// Map Spider's status to CB-Tumblebug's enhanced status
+		ImageStatus: mapSpiderToTumblebugImageStatus(string(tempSpiderMyImageInfo.Status)),
 
 		// Additional information
 		Details:     tempSpiderMyImageInfo.KeyValueList,
@@ -447,7 +454,7 @@ func BuildAgnosticImage(nsId string, req model.BuildAgnosticImageReq) (model.Bui
 		}
 
 		// Wait for all images to become Available
-		maxWaitTime := 10 * time.Minute   // Maximum wait time
+		maxWaitTime := resource.CustomImageCreationTimeout // Use shared timeout constant
 		checkInterval := 10 * time.Second // Check every 10 seconds
 		startWait := time.Now()
 

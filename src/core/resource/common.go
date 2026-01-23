@@ -1170,6 +1170,44 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 	return nil, err
 }
 
+// CustomImageCreationTimeout is the maximum time to wait for a custom image to become available
+// If an image stays in "Creating" state longer than this, it will be marked as "Failed"
+const CustomImageCreationTimeout = 30 * time.Minute
+
+// isStableImageStatus checks if CustomImage status is stable (no need to update from Spider)
+// Stable states: Available, Failed, Deprecated - these won't change without explicit user action
+// Unstable states: Creating, Deleting, Unavailable, empty - need to check Spider for updates
+func isStableImageStatus(status model.ImageStatus) bool {
+	return status == model.ImageAvailable ||
+		status == model.ImageFailed ||
+		status == model.ImageDeprecated
+}
+
+// MapSpiderToTumblebugImageStatus maps CB-Spider's image status to CB-Tumblebug's enhanced status
+// CB-Spider only returns "Available" or "Unavailable", but CB-Tumblebug needs more granular states
+// Exported for use by other packages (e.g., infra/snapshot.go)
+func MapSpiderToTumblebugImageStatus(spiderStatus string) model.ImageStatus {
+	switch strings.ToLower(strings.TrimSpace(spiderStatus)) {
+	case "available":
+		return model.ImageAvailable
+	case "unavailable":
+		// Spider returns "Unavailable" for "creating" state
+		// CB-Tumblebug treats this as "Creating" and will check timeout
+		return model.ImageCreating
+	case "":
+		return model.ImageCreating
+	default:
+		return model.ImageUnavailable
+	}
+}
+
+// isStableDiskStatus checks if DataDisk status is stable (no need to update from Spider)
+// Stable states: Available, Attached, Error - won't change without explicit user action
+// Unstable states: empty, Creating, Deleting - need to check Spider for updates
+func isStableDiskStatus(status model.DiskStatus) bool {
+	return status == model.DiskAvailable || status == model.DiskAttached || status == model.DiskError
+}
+
 // GetResource returns the requested TB Resource object
 func GetResource(nsId string, resourceType string, resourceId string) (interface{}, error) {
 
@@ -1206,9 +1244,17 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			return nil, result.Error
 		}
 
-		// For CustomImage, update status from Spider
+		// For CustomImage, update status from Spider only if not in stable state
 		if resourceType == model.StrCustomImage {
-			log.Debug().Msgf("Updating status for custom image ID:%s CspImageName:%s CspImageId:%s", res.Id, res.CspImageName, res.CspImageId)
+			// Skip Spider API call if status is already stable (Available)
+			// CustomImage status changes: Creating -> Available (one-way transition)
+			// Once Available, it remains Available until deleted
+			if isStableImageStatus(res.ImageStatus) {
+				log.Trace().Msgf("Skipping Spider status update for custom image %s (already stable: %s)", res.Id, res.ImageStatus)
+				return res, nil
+			}
+
+			log.Debug().Msgf("Updating status for custom image ID:%s CspImageName:%s CspImageId:%s (current: %s)", res.Id, res.CspImageName, res.CspImageId, res.ImageStatus)
 
 			url := fmt.Sprintf("%s/myimage/%s", model.SpiderRestUrl, res.CspImageName)
 			// Note: CB-Spider has internal error. Log not useful error message like below:
@@ -1240,7 +1286,26 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 				return nil, err
 			}
 
-			res.ImageStatus = model.ImageStatus(callResult.Status)
+			// Map Spider's status to CB-Tumblebug's enhanced status
+			newStatus := MapSpiderToTumblebugImageStatus(string(callResult.Status))
+
+			// Check for creation timeout - if image has been in "Creating" state too long, mark as Failed
+			if newStatus == model.ImageCreating {
+				creationTime, parseErr := time.Parse(time.RFC3339, res.CreationDate)
+				if parseErr == nil {
+					elapsed := time.Since(creationTime)
+					if elapsed > CustomImageCreationTimeout {
+						log.Warn().Msgf("Custom image %s has been in Creating state for %v (timeout: %v), marking as Failed",
+							res.Id, elapsed.Round(time.Minute), CustomImageCreationTimeout)
+						newStatus = model.ImageFailed
+					} else {
+						log.Debug().Msgf("Custom image %s still creating (elapsed: %v, timeout: %v)",
+							res.Id, elapsed.Round(time.Second), CustomImageCreationTimeout)
+					}
+				}
+			}
+
+			res.ImageStatus = newStatus
 
 			// Update the database with new status
 			model.ORM.Model(&res).Where("namespace = ? AND id = ?", nsId, resourceId).
@@ -1308,7 +1373,19 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 				return res, err
 			}
 
-			// Update TB DataDisk object's 'status' field
+			// Skip Spider API call if status is already stable (Available, Attached, Error)
+			// DataDisk status changes:
+			//   Creating -> Available (after creation completes)
+			//   Available <-> Attached (only via explicit Attach/Detach actions)
+			//   Deleting -> (resource deleted)
+			// Once in stable state, it won't change without user action
+			if isStableDiskStatus(res.Status) {
+				log.Trace().Msgf("Skipping Spider status update for dataDisk %s (already stable: %s)", res.Id, res.Status)
+				return res, nil
+			}
+
+			// Update TB DataDisk object's 'status' field (only for unstable states)
+			log.Debug().Msgf("Updating status for dataDisk ID:%s (current: %s)", res.Id, res.Status)
 			url := fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, res.CspResourceName)
 
 			client := clientManager.NewHttpClient()
