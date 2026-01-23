@@ -2650,6 +2650,128 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 	return nil
 }
 
+// DeregisterMciVm deregisters VM from Spider and TB without deleting the actual CSP resource
+// This function only removes the VM mapping from Spider and TB internal storage
+// The actual CSP VM resource remains intact and can be re-registered later
+func DeregisterMciVm(nsId string, mciId string, vmId string) error {
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	err = common.CheckString(mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	err = common.CheckString(vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	check, _ := CheckVm(nsId, mciId, vmId)
+
+	if !check {
+		err := fmt.Errorf("The vm " + vmId + " does not exist.")
+		return err
+	}
+
+	log.Debug().Msg("[Deregister VM] " + vmId)
+
+	// get vm info
+	vmInfo, _ := GetVmObject(nsId, mciId, vmId)
+
+	// Call Spider deregister API
+	var callResult interface{}
+	client := clientManager.NewHttpClient()
+	method := "DELETE"
+
+	// Create request body
+	type JsonTemplate struct {
+		ConnectionName string
+	}
+	requestBody := JsonTemplate{
+		ConnectionName: vmInfo.ConnectionName,
+	}
+
+	url := model.SpiderRestUrl + "/regvm/" + vmInfo.CspResourceName
+	log.Debug().Msg("Sending deregister DELETE request to " + url)
+
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.VeryShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	log.Debug().Msg("Deregister request finished from " + url)
+
+	// delete vms info from TB
+	key := common.GenMciKey(nsId, mciId, vmId)
+	err = kvstore.Delete(key)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	// remove empty SubGroups
+	subGroup, err := ListSubGroupId(nsId, mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list subGroup to remove")
+		return err
+	}
+	for _, v := range subGroup {
+		vmListInSubGroup, err := ListVmBySubGroup(nsId, mciId, v)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to list vm in subGroup to remove")
+			return err
+		}
+		if len(vmListInSubGroup) == 0 {
+			subGroupKey := common.GenMciSubGroupKey(nsId, mciId, v)
+			err := kvstore.Delete(subGroupKey)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to remove the empty subGroup")
+				return err
+			}
+		}
+	}
+
+	// Update associated object lists
+	_, err = resource.UpdateAssociatedObjectList(nsId, model.StrImage, vmInfo.ImageId, model.StrDelete, key)
+	if err != nil {
+		resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, vmInfo.ImageId, model.StrDelete, key)
+	}
+
+	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, vmInfo.SshKeyId, model.StrDelete, key)
+	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, vmInfo.VNetId, model.StrDelete, key)
+
+	for _, v := range vmInfo.SecurityGroupIds {
+		resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v, model.StrDelete, key)
+	}
+
+	for _, v := range vmInfo.DataDiskIds {
+		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v, model.StrDelete, key)
+	}
+
+	err = label.DeleteLabelObject(model.StrVM, vmInfo.Uid)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	}
+
+	return nil
+}
+
 // DelAllMci is func to delete all MCI objects in parallel
 func DelAllMci(nsId string, option string) (string, error) {
 

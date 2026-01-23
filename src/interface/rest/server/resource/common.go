@@ -91,6 +91,25 @@ func RestDelResource(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
+// RestDeregisterResource is a common function to handle 'DeregisterResource' REST API requests.
+// This function deregisters resources from Spider and TB without deleting the actual CSP resource.
+// Dummy functions for Swagger exist in [resource/*.go]
+func RestDeregisterResource(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	resourceType := strings.Split(c.Path(), "/")[5]
+	// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
+
+	resourceId := c.Param("resourceId")
+	resourceId = strings.ReplaceAll(resourceId, " ", "+")
+	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
+
+	err := resource.DeregisterResource(nsId, resourceType, resourceId)
+	content := map[string]string{"message": "The " + resourceType + " " + resourceId + " has been deregistered (CSP resource remains intact)"}
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
 // Todo: need to reimplment the following invalid function
 
 // RestDelChildResource is a common function to handle 'DelChildResource' REST API requests.
