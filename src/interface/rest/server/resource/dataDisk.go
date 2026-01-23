@@ -142,6 +142,23 @@ func RestDelDataDisk(c echo.Context) error {
 	return nil
 }
 
+// RestDeregisterDataDisk godoc
+// @ID DeregisterDataDisk
+// @Summary Deregister Data Disk
+// @Description Deregister Data Disk from Spider and TB without deleting the actual CSP resource
+// @Tags [Infra Resource] Data Disk Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param dataDiskId path string true "Data Disk ID"
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Router /ns/{nsId}/deregisterCspResource/dataDisk/{dataDiskId} [delete]
+func RestDeregisterDataDisk(c echo.Context) error {
+	// This is a dummy function for Swagger.
+	return nil
+}
+
 // RestDelAllDataDisk godoc
 // @ID DelAllDataDisk
 // @Summary Delete all Data Disks
