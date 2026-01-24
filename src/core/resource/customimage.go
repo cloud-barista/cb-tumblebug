@@ -167,8 +167,8 @@ func ConvertSpiderMyImageToTumblebugCustomImage(connConfig model.ConnConfig, spi
 		// Time fields
 		CreationDate: spiderMyImage.CreatedTime.Format(time.RFC3339),
 
-		// Status
-		ImageStatus: model.ImageStatus(spiderMyImage.Status),
+		// Status - Use CB-Tumblebug's enhanced status mapping
+		ImageStatus: MapSpiderToTumblebugImageStatus(string(spiderMyImage.Status)),
 
 		// Additional information
 		Details:     spiderMyImage.KeyValueList,
@@ -284,8 +284,8 @@ func RegisterCustomImageWithId(nsId string, u *model.CustomImageReq) (model.Imag
 		FetchedTime:  time.Now().Format(time.RFC3339),
 		CreationDate: callResult.CreatedTime.Format(time.RFC3339),
 
-		// Status
-		ImageStatus: model.ImageStatus(callResult.Status),
+		// Status - Use CB-Tumblebug's enhanced status mapping
+		ImageStatus: MapSpiderToTumblebugImageStatus(string(callResult.Status)),
 
 		// Additional information
 		Details:     callResult.KeyValueList,

@@ -2267,8 +2267,16 @@ func AttachDetachDataDisk(nsId string, mciId string, vmId string, command string
 	resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDiskId, cmdToUpdateAsso, vmKey)
 
 	// Update TB DataDisk object's 'status' field
-	// Just calling GetResource(dataDisk) once will update TB DataDisk object's 'status' field
-	resource.GetResource(nsId, model.StrDataDisk, dataDiskId)
+	// Directly set the final expected status after successful attach/detach operation
+	// (no need to query Spider again since the operation was successful)
+	switch command {
+	case model.AttachDataDisk:
+		dataDisk.Status = model.DiskAttached
+	case model.DetachDataDisk:
+		dataDisk.Status = model.DiskAvailable
+	}
+	resource.UpdateResourceObject(nsId, model.StrDataDisk, dataDisk)
+	log.Debug().Msgf("Updated DataDisk %s status to %s after %s operation", dataDiskId, dataDisk.Status, command)
 	/*
 		url = fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, dataDisk.CspResourceName)
 
