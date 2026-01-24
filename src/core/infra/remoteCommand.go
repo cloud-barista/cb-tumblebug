@@ -41,6 +41,96 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// cancelInfo stores cancel function and metadata for status updates
+type cancelInfo struct {
+	CancelFunc context.CancelFunc
+	NsId       string
+	MciId      string
+	VmId       string
+	XRequestId string
+	Index      int
+}
+
+// cancelFuncs stores cancel functions for active command executions
+// Key: "xRequestId:vmId", Value: cancelInfo
+// This allows cancelling running SSH commands per VM and updating their status
+var cancelFuncs sync.Map
+
+// makeCancelKey creates a unique key for cancel function storage
+func makeCancelKey(xRequestId, vmId string) string {
+	return xRequestId + ":" + vmId
+}
+
+// registerCancelFunc registers a cancel function for an xRequestId and vmId with metadata
+func registerCancelFunc(xRequestId, vmId, nsId, mciId string, index int, cancel context.CancelFunc) {
+	key := makeCancelKey(xRequestId, vmId)
+	info := cancelInfo{
+		CancelFunc: cancel,
+		NsId:       nsId,
+		MciId:      mciId,
+		VmId:       vmId,
+		XRequestId: xRequestId,
+		Index:      index,
+	}
+	cancelFuncs.Store(key, info)
+}
+
+// unregisterCancelFunc removes a cancel function for an xRequestId and vmId
+func unregisterCancelFunc(xRequestId, vmId string) {
+	key := makeCancelKey(xRequestId, vmId)
+	cancelFuncs.Delete(key)
+}
+
+// cancelByKey cancels the command execution for a specific xRequestId and vmId
+// Returns true if the cancel function was found and called
+func cancelByKey(xRequestId, vmId string) bool {
+	key := makeCancelKey(xRequestId, vmId)
+	if value, ok := cancelFuncs.LoadAndDelete(key); ok {
+		if info, ok := value.(cancelInfo); ok {
+			info.CancelFunc()
+			return true
+		}
+	}
+	return false
+}
+
+// CancelActiveCommandsForVm cancels all active command executions for a specific VM
+// This is called when a VM is being terminated to immediately stop SSH sessions
+// It also updates the command status to Cancelled in kvstore
+// Returns the number of cancelled executions
+func CancelActiveCommandsForVm(vmId string) int {
+	cancelled := 0
+	cancelFuncs.Range(func(key, value interface{}) bool {
+		keyStr, ok := key.(string)
+		if !ok {
+			return true
+		}
+		// Key format is "xRequestId:vmId", check if it ends with ":vmId"
+		suffix := ":" + vmId
+		if len(keyStr) > len(suffix) && keyStr[len(keyStr)-len(suffix):] == suffix {
+			if info, ok := value.(cancelInfo); ok {
+				log.Info().Str("vmId", vmId).Str("key", keyStr).Msg("Cancelling active SSH command due to VM termination")
+				info.CancelFunc()
+				cancelFuncs.Delete(key)
+				
+				// Update command status to Cancelled in kvstore
+				err := UpdateCommandStatusInfo(info.NsId, info.MciId, info.VmId, info.Index,
+					model.CommandStatusCancelled, "Command cancelled due to VM termination", "", "", "")
+				if err != nil {
+					log.Warn().Err(err).Str("vmId", vmId).Int("index", info.Index).Msg("Failed to update command status to Cancelled")
+				}
+				
+				cancelled++
+			}
+		}
+		return true
+	})
+	if cancelled > 0 {
+		log.Info().Str("vmId", vmId).Int("cancelled", cancelled).Msg("Cancelled active SSH commands for terminating VM")
+	}
+	return cancelled
+}
+
 // TbMciCmdReqStructLevelValidation is func to validate fields in model.MciCmdReq
 func TbMciCmdReqStructLevelValidation(sl validator.StructLevel) {
 
@@ -54,6 +144,8 @@ func TbMciCmdReqStructLevelValidation(sl validator.StructLevel) {
 }
 
 // RemoteCommandToMci is func to command to all VMs in MCI by SSH
+// It now supports user-configurable timeout via MciCmdReq.TimeoutMinutes
+// Returns the task ID in x-task-id for tracking and cancellation
 func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId string, labelSelector string, req *model.MciCmdReq, xRequestId string) ([]model.SshCmdResult, error) {
 
 	err := common.CheckString(nsId)
@@ -164,10 +256,28 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 		vmList = filteredVmIds
 	}
 
+	// Get effective timeout from request (with validation and defaults)
+	timeoutMinutes := req.GetEffectiveTimeout()
+
+	// Create a parent context with timeout for overall execution
+	// Each VM will have its own child context for individual cancellation
+	timeout := time.Duration(timeoutMinutes) * time.Minute
+	parentCtx, parentCancel := context.WithTimeout(context.Background(), timeout)
+	defer parentCancel() // Ensure parent context is cancelled when function returns
+
+	log.Info().
+		Str("xRequestId", xRequestId).
+		Int("timeoutMinutes", timeoutMinutes).
+		Int("vmCount", len(vmList)).
+		Strs("commands", req.Command).
+		Msg("Starting remote command execution")
+
 	// goroutine sync wg
 	var wg sync.WaitGroup
+	var resultMutex sync.Mutex
 
 	var resultArray []model.SshCmdResult
+	var completedCount int32
 
 	// Preprocess commands for each VM and add command status info
 	vmCommands := make(map[string][]string)
@@ -197,20 +307,170 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 		}
 	}
 
-	// Execute commands in parallel using goroutines
+	// Execute commands in parallel using goroutines with per-VM context
 	for targetVmId, commands := range vmCommands {
 		wg.Add(1)
-		go RunRemoteCommandAsyncWithStatus(&wg, nsId, mciId, targetVmId, req.UserName, commands, vmCommandIndices[targetVmId], &resultArray)
+		go func(vmId string, cmds []string, cmdIndex int) {
+			defer wg.Done()
+
+			// Create per-VM cancellable context (child of parent context)
+			vmCtx, vmCancel := context.WithCancel(parentCtx)
+			registerCancelFunc(xRequestId, vmId, nsId, mciId, cmdIndex, vmCancel)
+
+			// Execute and clean up
+			result := runRemoteCommandWithContextAndStatus(vmCtx, nsId, mciId, vmId, req.UserName, cmds, cmdIndex)
+
+			// Unregister cancel func after completion
+			unregisterCancelFunc(xRequestId, vmId)
+			vmCancel() // Release resources
+
+			resultMutex.Lock()
+			resultArray = append(resultArray, result)
+			completedCount++
+			resultMutex.Unlock()
+		}(targetVmId, commands, vmCommandIndices[targetVmId])
 	}
 	wg.Wait() // goroutine sync wg
 
 	return resultArray, nil
 }
 
-// RunRemoteCommand is func to execute a SSH command to a VM (sync call)
-func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName string, cmds []string) (map[int]string, map[int]string, error) {
+// runRemoteCommandWithContextAndStatus executes SSH command with context and updates status
+func runRemoteCommandWithContextAndStatus(ctx context.Context, nsId, mciId, vmId, userName string, cmds []string, cmdIndex int) model.SshCmdResult {
+	vmIP, _, _, err := GetVmIp(nsId, mciId, vmId)
 
-	// use privagte IP of the target VM
+	result := model.SshCmdResult{
+		MciId:   mciId,
+		VmId:    vmId,
+		VmIp:    vmIP,
+		Command: make(map[int]string),
+		Stdout:  make(map[int]string),
+		Stderr:  make(map[int]string),
+	}
+
+	for i, c := range cmds {
+		result.Command[i] = c
+	}
+
+	// Update status to Handling
+	if cmdIndex > 0 {
+		if updateErr := UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusHandling, "", "", "", ""); updateErr != nil {
+			log.Error().Err(updateErr).Int("cmdIndex", cmdIndex).Msg("Failed to update command status to Handling")
+		}
+	}
+
+	if err != nil {
+		result.Err = err
+		if cmdIndex > 0 {
+			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "Failed to get VM IP", err.Error(), "", "")
+		}
+		return result
+	}
+
+	// Check VM status before executing SSH command
+	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	if err != nil {
+		result.Err = fmt.Errorf("failed to get VM status: %v", err)
+		if cmdIndex > 0 {
+			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "Failed to get VM status", err.Error(), "", "")
+		}
+		return result
+	}
+
+	// Validate VM status for SSH execution
+	if vmInfo.Status != model.StatusRunning {
+		var errorMsg string
+		if vmInfo.Status == model.StatusTerminated {
+			errorMsg = fmt.Sprintf("VM '%s' is in '%s' status. SSH connection is impossible for terminated VMs", vmId, vmInfo.Status)
+		} else {
+			errorMsg = fmt.Sprintf("VM '%s' is in '%s' status (not Running). Please change the VM status to Running and try again", vmId, vmInfo.Status)
+		}
+		result.Err = fmt.Errorf(errorMsg)
+		if cmdIndex > 0 {
+			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusFailed, "VM not in running status", errorMsg, "", "")
+		}
+		return result
+	}
+
+	// Execute command with context
+	stdout, stderr, err := RunRemoteCommandWithContext(ctx, nsId, mciId, vmId, userName, cmds)
+
+	result.Stdout = stdout
+	result.Stderr = stderr
+
+	if err != nil {
+		result.Err = err
+
+		// Determine status based on error type
+		var status model.CommandExecutionStatus
+		var summary string
+
+		if ctx.Err() == context.DeadlineExceeded {
+			status = model.CommandStatusTimeout
+			summary = "Command execution timed out"
+		} else if ctx.Err() == context.Canceled {
+			// Context was cancelled - could be user cancel or VM termination
+			// Check if status was already updated to Cancelled, if not, update it now
+			if cmdIndex > 0 {
+				existingStatus, getErr := GetCommandStatusInfo(nsId, mciId, vmId, cmdIndex)
+				if getErr == nil && existingStatus != nil && existingStatus.Status != model.CommandStatusCancelled {
+					// Status not yet updated to Cancelled, do it now
+					stdoutStr := mapToString(stdout)
+					stderrStr := mapToString(stderr)
+					UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusCancelled, 
+						"Command execution cancelled", err.Error(), stdoutStr, stderrStr)
+				}
+			}
+			log.Info().
+				Str("vmId", vmId).
+				Int("cmdIndex", cmdIndex).
+				Msg("Command execution was cancelled")
+			return result
+		} else {
+			status = model.CommandStatusFailed
+			summary = "Command execution failed"
+		}
+
+		if cmdIndex > 0 {
+			stdoutStr := mapToString(stdout)
+			stderrStr := mapToString(stderr)
+			UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, status, summary, err.Error(), stdoutStr, stderrStr)
+		}
+		return result
+	}
+
+	// Success
+	if cmdIndex > 0 {
+		stdoutStr := mapToString(stdout)
+		stderrStr := mapToString(stderr)
+		UpdateCommandStatusInfo(nsId, mciId, vmId, cmdIndex, model.CommandStatusCompleted, "Command executed successfully", "", stdoutStr, stderrStr)
+	}
+
+	log.Debug().Str("vmId", vmId).Msg("Command executed successfully")
+	return result
+}
+
+// mapToString converts a map[int]string to a single string
+func mapToString(m map[int]string) string {
+	var result string
+	for _, v := range m {
+		result += v + "\n"
+	}
+	return result
+}
+
+// RunRemoteCommandWithContext executes SSH commands to a VM with context-based timeout and cancellation
+// This is the enhanced version that properly propagates context for cancellation support
+func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string, vmId string, givenUserName string, cmds []string) (map[int]string, map[int]string, error) {
+
+	// Check if context is already cancelled
+	select {
+	case <-ctx.Done():
+		return map[int]string{}, map[int]string{}, fmt.Errorf("operation cancelled before start: %w", ctx.Err())
+	default:
+	}
+
+	// use private IP of the target VM
 	_, targetVmIP, targetSshPort, err := GetVmIp(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -220,6 +480,13 @@ func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName stri
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
+	}
+
+	// Check context again after initial setup
+	select {
+	case <-ctx.Done():
+		return map[int]string{}, map[int]string{}, fmt.Errorf("operation cancelled during setup: %w", ctx.Err())
+	default:
 	}
 
 	// Set Bastion SSH config (bastionEndpoint, userName, Private Key)
@@ -318,25 +585,31 @@ func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName stri
 	}
 
 	// Set TOFU context for bastion and target VMs
-	bastionCtx := tofuContext{
+	bastionTofuCtx := tofuContext{
 		NsId:  nsId,
 		MciId: bastionNode.MciId,
 		VmId:  bastionNode.VmId,
 	}
-	targetCtx := tofuContext{
+	targetTofuCtx := tofuContext{
 		NsId:  nsId,
 		MciId: mciId,
 		VmId:  vmId,
 	}
 
-	// Execute SSH with TOFU host key verification
-	stdoutResults, stderrResults, err := runSSH(bastionSshInfo, targetSshInfo, cmds, bastionCtx, targetCtx)
+	// Execute SSH with context-based timeout and cancellation
+	stdoutResults, stderrResults, err := runSSHWithContext(ctx, bastionSshInfo, targetSshInfo, cmds, bastionTofuCtx, targetTofuCtx)
 	if err != nil {
 		log.Err(err).Msg("Error executing commands")
 		return stdoutResults, stderrResults, err
 	}
 	return stdoutResults, stderrResults, nil
+}
 
+// RunRemoteCommand is the legacy function for backward compatibility
+// It calls RunRemoteCommandWithContext with a background context (no timeout)
+// Deprecated: Use RunRemoteCommandWithContext for new implementations
+func RunRemoteCommand(nsId string, mciId string, vmId string, givenUserName string, cmds []string) (map[int]string, map[int]string, error) {
+	return RunRemoteCommandWithContext(context.Background(), nsId, mciId, vmId, givenUserName, cmds)
 }
 
 // RunRemoteCommandAsync is func to execute a SSH command to a VM (async call)
@@ -404,6 +677,7 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId s
 }
 
 // RunRemoteCommandAsyncWithStatus is func to execute a SSH command to a VM (async call) with command status tracking
+// Deprecated: Use runRemoteCommandWithContextAndStatus instead, which supports context-based cancellation
 func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, mciId string, vmId string, givenUserName string, cmd []string, cmdIndex int, returnResult *[]model.SshCmdResult) {
 
 	defer wg.Done() //goroutine sync done
@@ -952,19 +1226,26 @@ func GetVmSshHostKey(nsId string, mciId string, vmId string) (model.SshHostKeyIn
 	return *vmInfo.SshHostKeyInfo, nil
 }
 
-// runSSH func execute a command by SSH
-// bastionCtx and targetCtx are used for TOFU host key verification
-func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string, bastionCtx tofuContext, targetCtx tofuContext) (map[int]string, map[int]string, error) {
+// runSSHWithContext executes SSH commands with context-based timeout and cancellation support
+// This is the enhanced version of runSSH that properly handles context cancellation
+func runSSHWithContext(ctx context.Context, bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string, bastionCtx tofuContext, targetCtx tofuContext) (map[int]string, map[int]string, error) {
 	stdoutMap := make(map[int]string)
 	stderrMap := make(map[int]string)
 
-	// Log connection details for debugging DNS issues
+	// Check if context is already cancelled
+	select {
+	case <-ctx.Done():
+		return stdoutMap, stderrMap, fmt.Errorf("operation cancelled before start: %w", ctx.Err())
+	default:
+	}
+
+	// Log connection details for debugging
 	log.Debug().
 		Str("bastionEndpoint", bastionInfo.EndPoint).
 		Str("bastionUserName", bastionInfo.UserName).
 		Str("targetEndpoint", targetInfo.EndPoint).
 		Str("targetUserName", targetInfo.UserName).
-		Msg("SSH connection attempt details")
+		Msg("SSH connection attempt details (with context)")
 
 	// Parse the private key for the bastion host
 	bastionSigner, err := ssh.ParsePrivateKey(bastionInfo.PrivateKey)
@@ -1013,6 +1294,13 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string, 
 	var lastErr error
 
 	for i := range retryCount {
+		// Check if parent context is cancelled before each retry attempt
+		select {
+		case <-ctx.Done():
+			return stdoutMap, stderrMap, fmt.Errorf("connection cancelled: %w", ctx.Err())
+		default:
+		}
+
 		// Fix timeout calculation: start with initialTimeout for first attempt (i=0)
 		// then progressively increase for subsequent attempts
 		timeout := min(time.Duration(float64(initialTimeout)*(1.0+0.5*float64(i))), maxTimeout)
@@ -1020,7 +1308,8 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string, 
 		log.Debug().Msgf("[Check Target via Bastion] %v:%v (Attempt %d/%d, Timeout: %v)",
 			targetHost, targetPort, i+1, retryCount, timeout)
 
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		// Use parent context as base for timeout context so cancellation propagates
+		retryCtx, retryCancel := context.WithTimeout(ctx, timeout)
 
 		connCh := make(chan net.Conn, 1)
 		errCh := make(chan error, 1)
@@ -1063,23 +1352,38 @@ func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string, 
 		select {
 		case conn = <-connCh:
 			bastionClient = <-sshClientCh
-			cancel()
+			retryCancel()
 			log.Info().Msgf("Successfully connected to target host on attempt %d", i+1)
 			goto CONNECTION_ESTABLISHED
 		case err := <-errCh:
-			cancel()
+			retryCancel()
 			lastErr = err
 			waitTime := time.Duration(3) * time.Second
 			log.Warn().Err(err).Msgf("Failed to connect to target host. Attempt %d/%d. Retrying in %v...",
 				i+1, retryCount, waitTime)
-			time.Sleep(waitTime)
-		case <-ctx.Done():
-			cancel()
-			lastErr = ctx.Err()
+			// Use select with timer to allow cancellation during wait
+			select {
+			case <-ctx.Done():
+				return stdoutMap, stderrMap, fmt.Errorf("connection cancelled during retry wait: %w", ctx.Err())
+			case <-time.After(waitTime):
+			}
+		case <-retryCtx.Done():
+			retryCancel()
+			// Check if it's parent context cancellation or just timeout
+			if ctx.Err() != nil {
+				// Parent context cancelled - exit immediately
+				return stdoutMap, stderrMap, fmt.Errorf("connection cancelled: %w", ctx.Err())
+			}
+			lastErr = retryCtx.Err()
 			waitTime := time.Duration(3) * time.Second
 			log.Warn().Err(lastErr).Msgf("Connection timeout. Attempt %d/%d. Retrying in %v...",
 				i+1, retryCount, waitTime)
-			time.Sleep(waitTime)
+			// Use select with timer to allow cancellation during wait
+			select {
+			case <-ctx.Done():
+				return stdoutMap, stderrMap, fmt.Errorf("connection cancelled during retry wait: %w", ctx.Err())
+			case <-time.After(waitTime):
+			}
 		}
 	}
 
@@ -1136,35 +1440,48 @@ CONNECTION_ESTABLISHED:
 	client := ssh.NewClient(ncc, chans, reqs)
 	defer client.Close()
 
-	// Run the commands
+	// Run the commands with context support
 	for i, cmd := range cmds {
+		// Check if context is cancelled before each command
+		select {
+		case <-ctx.Done():
+			log.Warn().Int("commandIndex", i).Msg("Context cancelled, stopping command execution")
+			return stdoutMap, stderrMap, fmt.Errorf("operation cancelled: %w", ctx.Err())
+		default:
+		}
+
+		log.Debug().Int("commandIndex", i).Str("command", cmd).Msg("Executing SSH command")
+
 		// Create a new SSH session for each command
 		session, err := client.NewSession()
 		if err != nil {
 			return stdoutMap, stderrMap, err
 		}
-		defer session.Close() // Ensure session is closed
 
 		// Get pipes for stdout and stderr
 		stdoutPipe, err := session.StdoutPipe()
 		if err != nil {
+			session.Close()
 			return stdoutMap, stderrMap, err
 		}
 
 		stderrPipe, err := session.StderrPipe()
 		if err != nil {
+			session.Close()
 			return stdoutMap, stderrMap, err
 		}
 
 		// Start the command
 		if err := session.Start(cmd); err != nil {
+			session.Close()
 			return stdoutMap, stderrMap, err
 		}
 
-		// Read stdout and stderr
+		// Read stdout and stderr with context awareness
 		var stdoutBuf, stderrBuf bytes.Buffer
 		stdoutDone := make(chan struct{})
 		stderrDone := make(chan struct{})
+		waitDone := make(chan error, 1)
 
 		go func() {
 			io.Copy(io.MultiWriter(os.Stdout, &stdoutBuf), stdoutPipe)
@@ -1176,22 +1493,67 @@ CONNECTION_ESTABLISHED:
 			close(stderrDone)
 		}()
 
-		// Wait for the command to finish
-		err = session.Wait()
-		<-stdoutDone
-		<-stderrDone
+		// Wait for command completion in a separate goroutine
+		go func() {
+			waitDone <- session.Wait()
+		}()
 
-		if err != nil {
-			stderrMap[i] = fmt.Sprintf("(%s)\nStderr: %s", err, stderrBuf.String())
+		// Wait for either context cancellation or command completion
+		var waitErr error
+		select {
+		case <-ctx.Done():
+			// Context cancelled - try to signal the remote process to terminate
+			log.Warn().Int("commandIndex", i).Msg("Context cancelled during command execution, attempting to close session")
+
+			// Send SIGTERM/SIGKILL to the remote process
+			if signalErr := session.Signal(ssh.SIGTERM); signalErr != nil {
+				log.Debug().Err(signalErr).Msg("Failed to send SIGTERM, trying to close session")
+			}
+
+			// Close the session to forcefully terminate
+			session.Close()
+
+			// Wait briefly for I/O goroutines to complete
+			select {
+			case <-stdoutDone:
+			case <-time.After(2 * time.Second):
+			}
+			select {
+			case <-stderrDone:
+			case <-time.After(2 * time.Second):
+			}
+
 			stdoutMap[i] = stdoutBuf.String()
-			break
+			stderrMap[i] = fmt.Sprintf("(cancelled: %s)\nStderr: %s", ctx.Err(), stderrBuf.String())
+			return stdoutMap, stderrMap, fmt.Errorf("command execution cancelled: %w", ctx.Err())
+
+		case waitErr = <-waitDone:
+			// Command completed normally
+			<-stdoutDone
+			<-stderrDone
+			session.Close()
+		}
+
+		if waitErr != nil {
+			stderrMap[i] = fmt.Sprintf("(%s)\nStderr: %s", waitErr, stderrBuf.String())
+			stdoutMap[i] = stdoutBuf.String()
+			log.Warn().Err(waitErr).Int("commandIndex", i).Msg("Command execution failed")
+			return stdoutMap, stderrMap, waitErr
 		}
 
 		stdoutMap[i] = stdoutBuf.String()
 		stderrMap[i] = stderrBuf.String()
+		log.Debug().Int("commandIndex", i).Msg("Command executed successfully")
 	}
 
 	return stdoutMap, stderrMap, nil
+}
+
+// runSSH is the legacy function maintained for backward compatibility
+// It calls runSSHWithContext with a background context (no timeout)
+// Deprecated: Use runSSHWithContext for new implementations
+func runSSH(bastionInfo model.SshInfo, targetInfo model.SshInfo, cmds []string, bastionCtx tofuContext, targetCtx tofuContext) (map[int]string, map[int]string, error) {
+	return runSSHWithContext(context.Background(), bastionInfo, targetInfo, cmds, bastionCtx, targetCtx)
 }
 
 // TransferFileToMci is a function to transfer a file to all VMs in MCI by SSH through bastion hosts
@@ -2569,4 +2931,244 @@ func GetMciHandlingCommandCount(nsId, mciId string) (map[string]int, int, error)
 	}
 
 	return vmHandlingCounts, totalHandlingCount, nil
+}
+
+// CleanupInterruptedCommands marks all "Handling" or "Queued" commands as "Interrupted"
+// This should be called during system startup to handle commands that were
+// interrupted by a system restart while SSH sessions were still active
+func CleanupInterruptedCommands() error {
+	log.Info().Msg("Starting cleanup of interrupted commands...")
+
+	// Get all namespaces
+	nsList, err := common.ListNsId()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list namespaces for cleanup")
+		return err
+	}
+
+	totalInterrupted := 0
+
+	for _, nsId := range nsList {
+		// Get all MCIs in namespace
+		mciList, err := ListMciId(nsId)
+		if err != nil {
+			log.Debug().Err(err).Str("nsId", nsId).Msg("Failed to list MCIs")
+			continue
+		}
+
+		for _, mciId := range mciList {
+			// Get all VMs in MCI
+			vmList, err := ListVmId(nsId, mciId)
+			if err != nil {
+				log.Debug().Err(err).Str("mciId", mciId).Msg("Failed to list VMs")
+				continue
+			}
+
+			for _, vmId := range vmList {
+				count, err := cleanupVmInterruptedCommands(nsId, mciId, vmId)
+				if err != nil {
+					log.Debug().Err(err).
+						Str("vmId", vmId).
+						Msg("Failed to cleanup interrupted commands for VM")
+					continue
+				}
+				totalInterrupted += count
+			}
+		}
+	}
+
+	if totalInterrupted > 0 {
+		log.Info().
+			Int("totalInterrupted", totalInterrupted).
+			Msg("Cleanup completed: marked interrupted commands")
+	} else {
+		log.Info().Msg("Cleanup completed: no interrupted commands found")
+	}
+
+	return nil
+}
+
+// cleanupVmInterruptedCommands marks Handling/Queued commands as Interrupted for a specific VM
+func cleanupVmInterruptedCommands(nsId, mciId, vmId string) (int, error) {
+	interruptedCount := 0
+
+	err := updateVmCommandStatusSafe(nsId, mciId, vmId, func(commandStatus *[]model.CommandStatusInfo) error {
+		now := time.Now()
+		for i := range *commandStatus {
+			cmd := &(*commandStatus)[i]
+			// Mark Handling or Queued commands as Interrupted
+			if cmd.Status == model.CommandStatusHandling || cmd.Status == model.CommandStatusQueued {
+				originalStatus := cmd.Status // Save before changing
+				cmd.Status = model.CommandStatusInterrupted
+				cmd.CompletedTime = now.Format(time.RFC3339)
+				cmd.ErrorMessage = "Command was interrupted by system restart"
+
+				// Calculate elapsed time if started (in seconds)
+				if cmd.StartedTime != "" {
+					startTime, err := time.Parse(time.RFC3339, cmd.StartedTime)
+					if err == nil {
+						cmd.ElapsedTime = int64(now.Sub(startTime).Seconds())
+					}
+				}
+
+				interruptedCount++
+				log.Debug().
+					Str("vmId", vmId).
+					Int("index", cmd.Index).
+					Str("originalStatus", string(originalStatus)).
+					Msg("Marked command as interrupted")
+			}
+		}
+		return nil
+	})
+
+	return interruptedCount, err
+}
+
+// GetMciActiveCommands returns command execution tasks for an MCI
+// Each VM's command is returned as a separate task for individual tracking and cancellation
+func GetMciActiveCommands(nsId, mciId string, statusFilter []model.CommandExecutionStatus) (*model.ExecutionTaskListResponse, error) {
+	if nsId != "" {
+		err := common.CheckString(nsId)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if mciId != "" {
+		err := common.CheckString(mciId)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	response := &model.ExecutionTaskListResponse{
+		Tasks: []model.ExecutionTask{},
+	}
+
+	// Get namespaces to scan
+	var nsList []string
+	if nsId != "" {
+		nsList = []string{nsId}
+	} else {
+		var err error
+		nsList, err = common.ListNsId()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// statusFilter can be nil/empty to return all statuses
+
+	for _, ns := range nsList {
+		// Get MCIs to scan
+		var mciList []string
+		if mciId != "" {
+			mciList = []string{mciId}
+		} else {
+			var err error
+			mciList, err = ListMciId(ns)
+			if err != nil {
+				continue
+			}
+		}
+
+		for _, mci := range mciList {
+			vmList, err := ListVmId(ns, mci)
+			if err != nil {
+				continue
+			}
+
+			for _, vmId := range vmList {
+				// Get command status for this VM
+				commandList, err := ListCommandStatusInfo(ns, mci, vmId, &model.CommandStatusFilter{
+					Status: statusFilter,
+				})
+				if err != nil {
+					continue
+				}
+
+				// Create individual task for each VM's command
+				for _, cmd := range commandList.Commands {
+					task := model.ExecutionTask{
+						TaskId:         fmt.Sprintf("%s:%s:%d", cmd.XRequestId, vmId, cmd.Index), // Unique per VM
+						XRequestId:     cmd.XRequestId,
+						NsId:           ns,
+						MciId:          mci,
+						VmId:           vmId,
+						CommandIndex:   cmd.Index,
+						Command:        []string{cmd.CommandRequested},
+						Status:         cmd.Status,
+						StartedAt:      cmd.StartedTime,
+						CompletedAt:    cmd.CompletedTime,
+						ElapsedSeconds: cmd.ElapsedTime, // Already in seconds
+						Message:        cmd.ResultSummary,
+						TargetVmCount:  1,
+						CompletedVmCount: func() int {
+							if isTerminalStatus(cmd.Status) {
+								return 1
+							}
+							return 0
+						}(),
+					}
+					response.Tasks = append(response.Tasks, task)
+				}
+			}
+		}
+	}
+
+	response.Total = len(response.Tasks)
+	return response, nil
+}
+
+// isTerminalStatus returns true if the status represents a terminal (finished) state
+func isTerminalStatus(status model.CommandExecutionStatus) bool {
+	switch status {
+	case model.CommandStatusCompleted, model.CommandStatusFailed, model.CommandStatusTimeout,
+		model.CommandStatusCancelled, model.CommandStatusInterrupted:
+		return true
+	default:
+		return false
+	}
+}
+
+// CancelMciCommand cancels a running command by updating its status to Cancelled
+// It also attempts to cancel the in-memory task if still running
+// If vmId is provided, cancels only that specific VM's command
+// If vmId is empty, cancels all VMs with the given xRequestId
+func CancelMciCommand(nsId, mciId, vmId, xRequestId string, index int, reason string) (*model.CancelTaskResponse, error) {
+	err := common.CheckString(nsId)
+	if err != nil {
+		return nil, err
+	}
+	err = common.CheckString(mciId)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &model.CancelTaskResponse{
+		TaskId:      fmt.Sprintf("%s:%s:%d", xRequestId, vmId, index),
+		CancelledAt: time.Now().Format(time.RFC3339),
+	}
+
+	// Update the command status in VM info
+	err = UpdateCommandStatusInfo(nsId, mciId, vmId, index,
+		model.CommandStatusCancelled,
+		"Cancelled by user request",
+		fmt.Sprintf("Cancellation reason: %s", reason),
+		"", "")
+	if err != nil {
+		response.Success = false
+		response.Message = fmt.Sprintf("Failed to update command status: %v", err)
+		return response, err
+	}
+
+	// Cancel the in-memory context for this specific VM if exists
+	if xRequestId != "" && vmId != "" {
+		cancelByKey(xRequestId, vmId)
+	}
+
+	response.Success = true
+	response.Status = model.CommandStatusCancelled
+	response.Message = "Command cancelled successfully"
+	return response, nil
 }

@@ -139,6 +139,12 @@ func init() {
 			panic("Default namespace is not set, please set TB_DEFAULT_NAMESPACE in setup.env or environment variable")
 		}
 	}
+
+	// Cleanup any commands that were interrupted by previous system shutdown
+	// This marks "Handling" or "Queued" commands as "Interrupted"
+	if err := infra.CleanupInterruptedCommands(); err != nil {
+		log.Warn().Err(err).Msg("init: failed to cleanup interrupted commands (non-fatal)")
+	}
 }
 
 // setupAndWaitForInternalServices sets up and waits for all required internal services.

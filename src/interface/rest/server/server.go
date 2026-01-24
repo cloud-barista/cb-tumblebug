@@ -447,6 +447,15 @@ func RunServer() {
 	g.GET("/:nsId/mci/:mciId/vm/:vmId/sshHostKey", rest_infra.RestGetVmSshHostKey)
 	g.DELETE("/:nsId/mci/:mciId/vm/:vmId/sshHostKey", rest_infra.RestDeleteVmSshHostKey)
 
+	// New resource-centric SSH command endpoint (replaces POST /:nsId/cmd/mci/:mciId)
+	// Note: Keeping original path for backward compatibility, this is an alias
+	// g.POST("/:nsId/mci/:mciId/cmd", rest_infra.RestPostCmdMci)
+
+	// Execution Task Management - follows existing cmd path pattern
+	g.GET("/:nsId/cmd/mci/:mciId/task", rest_infra.RestGetMciExecutionTasks)
+	g.GET("/:nsId/cmd/mci/:mciId/task/:taskId", rest_infra.RestGetExecutionTask)
+	g.POST("/:nsId/cmd/mci/:mciId/task/:taskId/cancel", rest_infra.RestCancelExecutionTask)
+
 	g.PUT("/:nsId/mci/:mciId/vm/:targetVmId/bastion/:bastionVmId", rest_infra.RestSetBastionNodes)
 	g.DELETE("/:nsId/mci/:mciId/bastion/:bastionVmId", rest_infra.RestRemoveBastionNodes)
 	g.GET("/:nsId/mci/:mciId/vm/:targetVmId/bastion", rest_infra.RestGetBastionNodes)

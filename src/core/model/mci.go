@@ -970,10 +970,139 @@ type MciPolicyReq struct {
 // SshDefaultUserName is array for temporal constants
 var SshDefaultUserName = []string{"cb-user", "ubuntu", "root", "ec2-user"}
 
+// SSH Command Timeout Constants
+const (
+	// SSHConnectionTimeoutSeconds is the timeout for establishing SSH connection
+	SSHConnectionTimeoutSeconds = 30
+
+	// SSHCommandDefaultTimeoutMinutes is the default timeout for SSH command execution
+	SSHCommandDefaultTimeoutMinutes = 30
+
+	// SSHCommandMaxTimeoutMinutes is the maximum allowed timeout for SSH command execution
+	SSHCommandMaxTimeoutMinutes = 120
+
+	// SSHCommandMinTimeoutMinutes is the minimum allowed timeout for SSH command execution
+	SSHCommandMinTimeoutMinutes = 1
+)
+
 // MciCmdReq is struct for remote command
 type MciCmdReq struct {
-	UserName string   `json:"userName" example:"cb-user" default:""`
-	Command  []string `json:"command" validate:"required" example:"client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"`
+	// UserName is the SSH username to use for command execution
+	UserName string `json:"userName" example:"cb-user" default:""`
+
+	// Command is the list of commands to execute
+	Command []string `json:"command" validate:"required" example:"client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"`
+
+	// TimeoutMinutes is the timeout for command execution in minutes (default: 30, min: 1, max: 120)
+	// If not specified or set to 0, the default timeout (30 minutes) will be used
+	TimeoutMinutes int `json:"timeoutMinutes,omitempty" example:"30" default:"30"`
+}
+
+// GetEffectiveTimeout returns the effective timeout duration for command execution
+// It validates and normalizes the timeout value within allowed bounds
+func (req *MciCmdReq) GetEffectiveTimeout() int {
+	if req.TimeoutMinutes <= 0 {
+		return SSHCommandDefaultTimeoutMinutes
+	}
+	if req.TimeoutMinutes < SSHCommandMinTimeoutMinutes {
+		return SSHCommandMinTimeoutMinutes
+	}
+	if req.TimeoutMinutes > SSHCommandMaxTimeoutMinutes {
+		return SSHCommandMaxTimeoutMinutes
+	}
+	return req.TimeoutMinutes
+}
+
+// ExecutionTask represents a running or completed command execution task
+// This is used for tracking and cancelling long-running SSH command executions
+// Status uses CommandExecutionStatus (Queued, Handling, Completed, Failed, Timeout, Cancelled, Interrupted)
+type ExecutionTask struct {
+	// TaskId is the unique identifier for this execution task (format: xRequestId:vmId:index)
+	TaskId string `json:"taskId" example:"req-12345678:vm-01:1"`
+
+	// XRequestId is the X-Request-ID header value, the unique identifier for the request
+	XRequestId string `json:"xRequestId,omitempty" example:"req-12345678"`
+
+	// NsId is the namespace ID
+	NsId string `json:"nsId" example:"default"`
+
+	// MciId is the MCI ID
+	MciId string `json:"mciId" example:"mci01"`
+
+	// VmId is the target VM ID
+	VmId string `json:"vmId,omitempty" example:"g1-1"`
+
+	// CommandIndex is the index of this command in the VM's command history
+	CommandIndex int `json:"commandIndex,omitempty" example:"1"`
+
+	// SubGroupId is the target subgroup ID (empty if not specified)
+	SubGroupId string `json:"subGroupId,omitempty" example:"g1"`
+
+	// Command is the command being executed
+	Command []string `json:"command" example:"apt update && apt install -y docker.io"`
+
+	// Status is the current status of the task (uses CommandExecutionStatus: Queued, Handling, Completed, etc.)
+	Status CommandExecutionStatus `json:"status" example:"Handling"`
+
+	// StartedAt is when the task started (RFC3339 format)
+	StartedAt string `json:"startedAt" example:"2024-01-15T10:30:00Z"`
+
+	// CompletedAt is when the task completed (RFC3339 format), empty if still running
+	CompletedAt string `json:"completedAt,omitempty" example:"2024-01-15T10:35:00Z"`
+
+	// TimeoutMinutes is the timeout setting for this task
+	TimeoutMinutes int `json:"timeoutMinutes" example:"30"`
+
+	// ElapsedSeconds is the elapsed time in seconds
+	ElapsedSeconds int64 `json:"elapsedSeconds" example:"120"`
+
+	// Message provides additional status information
+	Message string `json:"message,omitempty" example:"Executing command on 3 VMs"`
+
+	// TargetVmCount is the number of VMs targeted by this task
+	TargetVmCount int `json:"targetVmCount" example:"3"`
+
+	// CompletedVmCount is the number of VMs that have completed execution
+	CompletedVmCount int `json:"completedVmCount" example:"1"`
+}
+
+// ExecutionTaskListResponse represents the response for execution task list queries
+type ExecutionTaskListResponse struct {
+	// Tasks is the list of execution tasks
+	Tasks []ExecutionTask `json:"tasks"`
+
+	// Total is the total number of tasks
+	Total int `json:"total" example:"5"`
+}
+
+// CancelTaskRequest represents a request to cancel an execution task
+type CancelTaskRequest struct {
+	// Reason is an optional reason for cancellation
+	Reason string `json:"reason,omitempty" example:"User requested cancellation"`
+}
+
+// CancelTaskResponse represents the response after cancelling a task
+type CancelTaskResponse struct {
+	// TaskId is the cancelled task ID
+	TaskId string `json:"taskId" example:"cmd-g1-1-req123-1"`
+
+	// Success indicates whether the cancellation was successful
+	Success bool `json:"success" example:"true"`
+
+	// Status is the new status after cancellation (Cancelled)
+	Status CommandExecutionStatus `json:"status,omitempty" example:"Cancelled"`
+
+	// Message provides additional information about the cancellation
+	Message string `json:"message" example:"Task cancelled successfully"`
+
+	// CancelledAt is when the task was cancelled (RFC3339 format)
+	CancelledAt string `json:"cancelledAt,omitempty" example:"2024-01-15T10:32:00Z"`
+}
+
+// ExecutionTaskList represents a list of execution tasks
+type ExecutionTaskList struct {
+	// Tasks is the list of execution tasks
+	Tasks []*ExecutionTask `json:"tasks"`
 }
 
 // CommandExecutionStatus represents the status of command execution
@@ -994,6 +1123,12 @@ const (
 
 	// CommandStatusTimeout indicates the command execution timed out
 	CommandStatusTimeout CommandExecutionStatus = "Timeout"
+
+	// CommandStatusCancelled indicates the command was cancelled by user request
+	CommandStatusCancelled CommandExecutionStatus = "Cancelled"
+
+	// CommandStatusInterrupted indicates the command was interrupted (e.g., system restart)
+	CommandStatusInterrupted CommandExecutionStatus = "Interrupted"
 )
 
 // CommandStatusInfo represents a single remote command execution record
@@ -1019,8 +1154,8 @@ type CommandStatusInfo struct {
 	// CompletedTime is when the command execution completed (success or failure)
 	CompletedTime string `json:"completedTime,omitempty" example:"2024-01-15 10:30:05"`
 
-	// ElapsedTime is the duration of command execution in milliseconds
-	ElapsedTime int64 `json:"elapsedTime,omitempty" example:"5000"`
+	// ElapsedTime is the duration of command execution in seconds
+	ElapsedTime int64 `json:"elapsedTime,omitempty" example:"120"`
 
 	// ResultSummary provides a brief summary of the execution result
 	ResultSummary string `json:"resultSummary,omitempty" example:"Command executed successfully"`
