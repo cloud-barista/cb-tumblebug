@@ -17376,14 +17376,20 @@ const docTemplate = `{
         "model.ImageStatus": {
             "type": "string",
             "enum": [
+                "Creating",
                 "Available",
+                "Failed",
                 "Unavailable",
+                "Deleting",
                 "Deprecated",
                 "NA"
             ],
             "x-enum-varnames": [
+                "ImageCreating",
                 "ImageAvailable",
+                "ImageFailed",
                 "ImageUnavailable",
+                "ImageDeleting",
                 "ImageDeprecated",
                 "ImageNA"
             ]
