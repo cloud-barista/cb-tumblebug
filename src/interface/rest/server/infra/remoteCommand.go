@@ -57,7 +57,7 @@ func convertSshCmdResultForAPI(internal []model.SshCmdResult) model.MciSshCmdRes
 // RestPostCmdMci godoc
 // @ID PostCmdMci
 // @Summary Send a command to specified MCI
-// @Description Send a command to specified MCI
+// @Description Send a command to specified MCI. Use query parameters to target specific subGroup or VM.
 // @Tags [MC-Infra] MCI Remote Command
 // @Accept  json
 // @Produce  json
@@ -617,4 +617,136 @@ func RestDeleteVmSshHostKey(c echo.Context) error {
 	}
 
 	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestGetMciExecutionTasks godoc
+// @ID GetMciExecutionTasks
+// @Summary List execution tasks for an MCI
+// @Description List all running and completed execution tasks for a specific MCI. These tasks can be cancelled if still in progress. The task list is based on persistent VM command status records.
+// @Tags [MC-Infra] MCI Remote Command
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param status query string false "Filter by command status (Queued, Handling, Completed, Failed, Timeout, Cancelled, Interrupted). If not specified, returns all statuses." Enums(Queued, Handling, Completed, Failed, Timeout, Cancelled, Interrupted)
+// @Success 200 {object} model.ExecutionTaskListResponse
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/cmd/mci/{mciId}/task [get]
+func RestGetMciExecutionTasks(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	statusFilter := c.QueryParam("status")
+
+	// Convert status filter
+	var statusSlice []model.CommandExecutionStatus
+	if statusFilter != "" {
+		statusSlice = []model.CommandExecutionStatus{model.CommandExecutionStatus(statusFilter)}
+	}
+	// If no filter specified, statusSlice remains nil -> returns all statuses
+
+	// Get tasks from persistent CommandStatusInfo (this is the source of truth)
+	result, err := infra.GetMciActiveCommands(nsId, mciId, statusSlice)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, result)
+}
+
+// RestGetExecutionTask godoc
+// @ID GetExecutionTask
+// @Summary Get a specific execution task
+// @Description Get detailed information about a specific execution task by taskId
+// @Tags [MC-Infra] MCI Remote Command
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param taskId path string true "Task ID (format: xRequestId:vmId:index)"
+// @Success 200 {object} model.ExecutionTaskListResponse
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/cmd/mci/{mciId}/task/{taskId} [get]
+func RestGetExecutionTask(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	taskId := c.Param("taskId")
+
+	// Get all active commands and filter by taskId
+	// Empty nsId/mciId will scan all namespaces/MCIs (for global route support)
+	result, err := infra.GetMciActiveCommands(nsId, mciId, nil)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Filter tasks by taskId (exact match)
+	var filteredTasks []model.ExecutionTask
+	for _, task := range result.Tasks {
+		if task.TaskId == taskId {
+			filteredTasks = append(filteredTasks, task)
+			break // TaskId is unique, no need to continue
+		}
+	}
+
+	if len(filteredTasks) == 0 {
+		return clientManager.EndRequestWithLog(c, fmt.Errorf("task not found: %s", taskId), nil)
+	}
+
+	return clientManager.EndRequestWithLog(c, nil, &model.ExecutionTaskListResponse{
+		Tasks: filteredTasks,
+		Total: len(filteredTasks),
+	})
+}
+
+// RestCancelExecutionTask godoc
+// @ID CancelExecutionTask
+// @Summary Cancel an execution task
+// @Description Cancel a running execution task by task ID. This will send a cancellation signal to the task and update the VM command status.
+// @Tags [MC-Infra] MCI Remote Command
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param taskId path string true "Task ID"
+// @Param body body model.CancelTaskRequest false "Optional cancellation reason"
+// @Success 200 {object} model.CancelTaskResponse
+// @Failure 400 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/cmd/mci/{mciId}/task/{taskId}/cancel [post]
+func RestCancelExecutionTask(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	taskId := c.Param("taskId")
+
+	// Parse optional cancel request body
+	req := &model.CancelTaskRequest{}
+	c.Bind(req) // Ignore error - body is optional
+
+	// Find the task by taskId from task list
+	taskList, err := infra.GetMciActiveCommands(nsId, mciId, nil)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	// Search for the task with matching taskId
+	var targetTask *model.ExecutionTask
+	for _, task := range taskList.Tasks {
+		if task.TaskId == taskId {
+			targetTask = &task
+			break
+		}
+	}
+
+	if targetTask == nil {
+		return clientManager.EndRequestWithLog(c, fmt.Errorf("task not found: %s", taskId), nil)
+	}
+
+	// Cancel the task using the retrieved information from the task itself
+	// Use targetTask.NsId and targetTask.MciId to support global route (/tumblebug/task/:taskId/cancel)
+	response, err := infra.CancelMciCommand(targetTask.NsId, targetTask.MciId, targetTask.VmId, targetTask.XRequestId, targetTask.CommandIndex, req.Reason)
+	if err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+	return clientManager.EndRequestWithLog(c, nil, response)
 }

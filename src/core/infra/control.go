@@ -585,6 +585,9 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mciId string, vmId string, 
 		url = model.SpiderRestUrl + "/vm/" + cspResourceName
 		method = "DELETE"
 
+		// Cancel any active SSH commands for this VM to prevent hanging sessions
+		CancelActiveCommandsForVm(vmId)
+
 		// Remove Bastion Info from all vNets if the terminating VM is a Bastion
 		_, err := RemoveBastionNodes(nsId, mciId, vmId)
 		if err != nil {
