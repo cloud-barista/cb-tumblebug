@@ -2599,7 +2599,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/cmd/mci/{mciId}": {
             "post": {
-                "description": "Send a command to specified MCI",
+                "description": "Send a command to specified MCI. Use query parameters to target specific subGroup or VM.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2669,6 +2669,205 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.MciSshCmdResultForAPI"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/cmd/mci/{mciId}/task": {
+            "get": {
+                "description": "List all running and completed execution tasks for a specific MCI. These tasks can be cancelled if still in progress. The task list is based on persistent VM command status records.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command"
+                ],
+                "summary": "List execution tasks for an MCI",
+                "operationId": "GetMciExecutionTasks",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "Queued",
+                            "Handling",
+                            "Completed",
+                            "Failed",
+                            "Timeout",
+                            "Cancelled",
+                            "Interrupted"
+                        ],
+                        "type": "string",
+                        "description": "Filter by command status (Queued, Handling, Completed, Failed, Timeout, Cancelled, Interrupted). If not specified, returns all statuses.",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ExecutionTaskListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/cmd/mci/{mciId}/task/{taskId}": {
+            "get": {
+                "description": "Get detailed information about a specific execution task by taskId",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command"
+                ],
+                "summary": "Get a specific execution task",
+                "operationId": "GetExecutionTask",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Task ID (format: xRequestId:vmId:index)",
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ExecutionTaskListResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/cmd/mci/{mciId}/task/{taskId}/cancel": {
+            "post": {
+                "description": "Cancel a running execution task by task ID. This will send a cancellation signal to the task and update the VM command status.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command"
+                ],
+                "summary": "Cancel an execution task",
+                "operationId": "CancelExecutionTask",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "taskId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Optional cancellation reason",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/model.CancelTaskRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.CancelTaskResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
@@ -15780,6 +15979,45 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CancelTaskRequest": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "description": "Reason is an optional reason for cancellation",
+                    "type": "string",
+                    "example": "User requested cancellation"
+                }
+            }
+        },
+        "model.CancelTaskResponse": {
+            "type": "object",
+            "properties": {
+                "cancelledAt": {
+                    "description": "CancelledAt is when the task was cancelled (RFC3339 format)",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "Message provides additional information about the cancellation",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the new status after cancellation (Cancelled)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.CommandExecutionStatus"
+                        }
+                    ]
+                },
+                "success": {
+                    "description": "Success indicates whether the cancellation was successful",
+                    "type": "boolean"
+                },
+                "taskId": {
+                    "description": "TaskId is the cancelled task ID",
+                    "type": "string"
+                }
+            }
+        },
         "model.ChangeK8sNodeGroupAutoscaleSizeReq": {
             "type": "object",
             "properties": {
@@ -15977,14 +16215,18 @@ const docTemplate = `{
                 "Handling",
                 "Completed",
                 "Failed",
-                "Timeout"
+                "Timeout",
+                "Cancelled",
+                "Interrupted"
             ],
             "x-enum-varnames": [
                 "CommandStatusQueued",
                 "CommandStatusHandling",
                 "CommandStatusCompleted",
                 "CommandStatusFailed",
-                "CommandStatusTimeout"
+                "CommandStatusTimeout",
+                "CommandStatusCancelled",
+                "CommandStatusInterrupted"
             ]
         },
         "model.CommandStatusInfo": {
@@ -16006,9 +16248,9 @@ const docTemplate = `{
                     "example": "2024-01-15 10:30:05"
                 },
                 "elapsedTime": {
-                    "description": "ElapsedTime is the duration of command execution in milliseconds",
+                    "description": "ElapsedTime is the duration of command execution in seconds",
                     "type": "integer",
-                    "example": 5000
+                    "example": 120
                 },
                 "errorMessage": {
                     "description": "ErrorMessage contains error details if the execution failed",
@@ -16645,6 +16887,117 @@ const docTemplate = `{
                 "DiskDeleting",
                 "DiskError"
             ]
+        },
+        "model.ExecutionTask": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "description": "Command is the command being executed",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "apt update \u0026\u0026 apt install -y docker.io"
+                    ]
+                },
+                "commandIndex": {
+                    "description": "CommandIndex is the index of this command in the VM's command history",
+                    "type": "integer",
+                    "example": 1
+                },
+                "completedAt": {
+                    "description": "CompletedAt is when the task completed (RFC3339 format), empty if still running",
+                    "type": "string",
+                    "example": "2024-01-15T10:35:00Z"
+                },
+                "completedVmCount": {
+                    "description": "CompletedVmCount is the number of VMs that have completed execution",
+                    "type": "integer",
+                    "example": 1
+                },
+                "elapsedSeconds": {
+                    "description": "ElapsedSeconds is the elapsed time in seconds",
+                    "type": "integer",
+                    "example": 120
+                },
+                "mciId": {
+                    "description": "MciId is the MCI ID",
+                    "type": "string",
+                    "example": "mci01"
+                },
+                "message": {
+                    "description": "Message provides additional status information",
+                    "type": "string",
+                    "example": "Executing command on 3 VMs"
+                },
+                "nsId": {
+                    "description": "NsId is the namespace ID",
+                    "type": "string",
+                    "example": "default"
+                },
+                "startedAt": {
+                    "description": "StartedAt is when the task started (RFC3339 format)",
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "status": {
+                    "description": "Status is the current status of the task (uses CommandExecutionStatus: Queued, Handling, Completed, etc.)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.CommandExecutionStatus"
+                        }
+                    ],
+                    "example": "Handling"
+                },
+                "subGroupId": {
+                    "description": "SubGroupId is the target subgroup ID (empty if not specified)",
+                    "type": "string",
+                    "example": "g1"
+                },
+                "targetVmCount": {
+                    "description": "TargetVmCount is the number of VMs targeted by this task",
+                    "type": "integer",
+                    "example": 3
+                },
+                "taskId": {
+                    "description": "TaskId is the unique identifier for this execution task (format: xRequestId:vmId:index)",
+                    "type": "string",
+                    "example": "req-12345678:vm-01:1"
+                },
+                "timeoutMinutes": {
+                    "description": "TimeoutMinutes is the timeout setting for this task",
+                    "type": "integer",
+                    "example": 30
+                },
+                "vmId": {
+                    "description": "VmId is the target VM ID",
+                    "type": "string",
+                    "example": "g1-1"
+                },
+                "xRequestId": {
+                    "description": "XRequestId is the X-Request-ID header value, the unique identifier for the request",
+                    "type": "string",
+                    "example": "req-12345678"
+                }
+            }
+        },
+        "model.ExecutionTaskListResponse": {
+            "type": "object",
+            "properties": {
+                "tasks": {
+                    "description": "Tasks is the list of execution tasks",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ExecutionTask"
+                    }
+                },
+                "total": {
+                    "description": "Total is the total number of tasks",
+                    "type": "integer",
+                    "example": 5
+                }
+            }
         },
         "model.FilterAvailableValues": {
             "type": "object",
@@ -18563,6 +18916,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "command": {
+                    "description": "Command is the list of commands to execute",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -18571,7 +18925,14 @@ const docTemplate = `{
                         "client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"
                     ]
                 },
+                "timeoutMinutes": {
+                    "description": "TimeoutMinutes is the timeout for command execution in minutes (default: 30, min: 1, max: 120)\nIf not specified or set to 0, the default timeout (30 minutes) will be used",
+                    "type": "integer",
+                    "default": 30,
+                    "example": 30
+                },
                 "userName": {
+                    "description": "UserName is the SSH username to use for command execution",
                     "type": "string",
                     "example": "cb-user"
                 }

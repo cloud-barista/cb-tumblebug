@@ -78,7 +78,6 @@ func registerCancelFunc(xRequestId, vmId, nsId, mciId string, index int, cancel 
 // unregisterCancelFunc removes a cancel function for an xRequestId and vmId
 func unregisterCancelFunc(xRequestId, vmId string) {
 	key := makeCancelKey(xRequestId, vmId)
-	cancelFuncs.Delete(xRequestId) // Also clean up old-style key for backward compatibility
 	cancelFuncs.Delete(key)
 }
 
@@ -1539,7 +1538,7 @@ CONNECTION_ESTABLISHED:
 			stderrMap[i] = fmt.Sprintf("(%s)\nStderr: %s", waitErr, stderrBuf.String())
 			stdoutMap[i] = stdoutBuf.String()
 			log.Warn().Err(waitErr).Int("commandIndex", i).Msg("Command execution failed")
-			break
+			return stdoutMap, stderrMap, waitErr
 		}
 
 		stdoutMap[i] = stdoutBuf.String()
@@ -2999,6 +2998,7 @@ func cleanupVmInterruptedCommands(nsId, mciId, vmId string) (int, error) {
 			cmd := &(*commandStatus)[i]
 			// Mark Handling or Queued commands as Interrupted
 			if cmd.Status == model.CommandStatusHandling || cmd.Status == model.CommandStatusQueued {
+				originalStatus := cmd.Status // Save before changing
 				cmd.Status = model.CommandStatusInterrupted
 				cmd.CompletedTime = now.Format(time.RFC3339)
 				cmd.ErrorMessage = "Command was interrupted by system restart"
@@ -3015,7 +3015,7 @@ func cleanupVmInterruptedCommands(nsId, mciId, vmId string) (int, error) {
 				log.Debug().
 					Str("vmId", vmId).
 					Int("index", cmd.Index).
-					Str("originalStatus", string(cmd.Status)).
+					Str("originalStatus", string(originalStatus)).
 					Msg("Marked command as interrupted")
 			}
 		}

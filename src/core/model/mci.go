@@ -1084,19 +1084,19 @@ type CancelTaskRequest struct {
 // CancelTaskResponse represents the response after cancelling a task
 type CancelTaskResponse struct {
 	// TaskId is the cancelled task ID
-	TaskId string `json:"taskId\" example:\"cmd-g1-1-req123-1\"`
+	TaskId string `json:"taskId" example:"cmd-g1-1-req123-1"`
 
 	// Success indicates whether the cancellation was successful
-	Success bool `json:\"success\" example:\"true\"`
+	Success bool `json:"success" example:"true"`
 
 	// Status is the new status after cancellation (Cancelled)
-	Status CommandExecutionStatus `json:\"status,omitempty\" example:\"Cancelled\"`
+	Status CommandExecutionStatus `json:"status,omitempty" example:"Cancelled"`
 
 	// Message provides additional information about the cancellation
-	Message string `json:\"message\" example:\"Task cancelled successfully\"`
+	Message string `json:"message" example:"Task cancelled successfully"`
 
 	// CancelledAt is when the task was cancelled (RFC3339 format)
-	CancelledAt string `json:\"cancelledAt,omitempty\" example:\"2024-01-15T10:32:00Z\"`
+	CancelledAt string `json:"cancelledAt,omitempty" example:"2024-01-15T10:32:00Z"`
 }
 
 // ExecutionTaskList represents a list of execution tasks
