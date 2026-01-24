@@ -15994,11 +15994,13 @@ const docTemplate = `{
             "properties": {
                 "cancelledAt": {
                     "description": "CancelledAt is when the task was cancelled (RFC3339 format)",
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-01-15T10:32:00Z"
                 },
                 "message": {
                     "description": "Message provides additional information about the cancellation",
-                    "type": "string"
+                    "type": "string",
+                    "example": "Task cancelled successfully"
                 },
                 "status": {
                     "description": "Status is the new status after cancellation (Cancelled)",
@@ -16006,15 +16008,18 @@ const docTemplate = `{
                         {
                             "$ref": "#/definitions/model.CommandExecutionStatus"
                         }
-                    ]
+                    ],
+                    "example": "Cancelled"
                 },
                 "success": {
                     "description": "Success indicates whether the cancellation was successful",
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "taskId": {
                     "description": "TaskId is the cancelled task ID",
-                    "type": "string"
+                    "type": "string",
+                    "example": "cmd-g1-1-req123-1"
                 }
             }
         },
