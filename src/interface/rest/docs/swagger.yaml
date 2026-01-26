@@ -2496,7 +2496,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregisterCspResource/customImage/{customImageId}:
+  /ns/{nsId}/deregister/customImage/{customImageId}:
     delete:
       tags:
       - "[Infra Resource] Image Management"
@@ -2531,7 +2531,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregisterCspResource/dataDisk/{dataDiskId}:
+  /ns/{nsId}/deregister/dataDisk/{dataDiskId}:
     delete:
       tags:
       - "[Infra Resource] Data Disk Management"
@@ -2566,7 +2566,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregisterCspResource/securityGroup/{securityGroupId}:
+  /ns/{nsId}/deregister/mci/{mciId}/vm/{vmId}:
+    delete:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: Deregister VM in specified MCI
+      description: Deregister VM from Spider and TB without deleting the actual CSP
+        resource
+      operationId: DeregisterMciVm
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vmId
+        in: path
+        description: VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/deregister/securityGroup/{securityGroupId}:
     delete:
       tags:
       - "[Infra Resource] Security Group Management"
@@ -2601,7 +2644,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregisterCspResource/sshKey/{sshKeyId}:
+  /ns/{nsId}/deregister/sshKey/{sshKeyId}:
     delete:
       tags:
       - "[Infra Resource] Access Key Management"
@@ -2636,7 +2679,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregisterCspResource/vNet/{vNetId}:
+  /ns/{nsId}/deregister/vNet/{vNetId}:
     delete:
       tags:
       - "[Infra Resource] Network Management"
@@ -2684,7 +2727,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregisterCspResource/vNet/{vNetId}/subnet/{subnetId}:
+  /ns/{nsId}/deregister/vNet/{vNetId}/subnet/{subnetId}:
     delete:
       tags:
       - "[Infra Resource] Network Management"
@@ -5879,49 +5922,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: dataDiskInfo
-  /ns/{nsId}/mci/{mciId}/vm/{vmId}/deregister:
-    delete:
-      tags:
-      - "[MC-Infra] MCI Provisioning and Management"
-      summary: Deregister VM in specified MCI
-      description: Deregister VM from Spider and TB without deleting the actual CSP
-        resource
-      operationId: DeregisterMciVm
-      parameters:
-      - name: nsId
-        in: path
-        description: Namespace ID
-        required: true
-        schema:
-          type: string
-          default: default
-      - name: mciId
-        in: path
-        description: MCI ID
-        required: true
-        schema:
-          type: string
-          default: mci01
-      - name: vmId
-        in: path
-        description: VM ID
-        required: true
-        schema:
-          type: string
-          default: g1-1
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
-        "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/mci/{mciId}/vm/{vmId}/handlingCount:
     get:
       tags:

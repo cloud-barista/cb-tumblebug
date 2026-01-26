@@ -336,7 +336,7 @@ func RestDelMciVm(c echo.Context) error {
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
-// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/deregister [delete]
+// @Router /ns/{nsId}/deregister/mci/{mciId}/vm/{vmId} [delete]
 func RestDeregisterMciVm(c echo.Context) error {
 
 	nsId := c.Param("nsId")
