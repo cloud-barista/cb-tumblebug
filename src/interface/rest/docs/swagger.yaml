@@ -13388,20 +13388,25 @@ components:
         cancelledAt:
           type: string
           description: CancelledAt is when the task was cancelled (RFC3339 format)
+          example: 2024-01-15T10:32:00Z
         message:
           type: string
           description: Message provides additional information about the cancellation
+          example: Task cancelled successfully
         status:
           type: object
           description: Status is the new status after cancellation (Cancelled)
+          example: Cancelled
           allOf:
           - $ref: '#/components/schemas/model.CommandExecutionStatus'
         success:
           type: boolean
           description: Success indicates whether the cancellation was successful
+          example: true
         taskId:
           type: string
           description: TaskId is the cancelled task ID
+          example: cmd-g1-1-req123-1
     model.ChangeK8sNodeGroupAutoscaleSizeReq:
       type: object
       properties:
