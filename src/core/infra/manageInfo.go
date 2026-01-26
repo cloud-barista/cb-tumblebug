@@ -2658,6 +2658,146 @@ func DelMciVm(nsId string, mciId string, vmId string, option string) error {
 	return nil
 }
 
+// DeregisterMciVm deregisters VM from Spider and TB without deleting the actual CSP resource
+// This function only removes the VM mapping from Spider and TB internal storage
+// The actual CSP VM resource remains intact and can be re-registered later
+func DeregisterMciVm(nsId string, mciId string, vmId string) error {
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	err = common.CheckString(mciId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	err = common.CheckString(vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	log.Debug().Msg("[Deregister VM] " + vmId)
+
+	// get vm info
+	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	// Check if associated resources exist before deregistration
+	var relatedResources []string
+
+	// Check DataDisks
+	for _, dataDiskId := range vmInfo.DataDiskIds {
+		exists, _ := resource.CheckResource(nsId, model.StrDataDisk, dataDiskId)
+		if exists {
+			relatedResources = append(relatedResources, fmt.Sprintf("DataDisk: %s", dataDiskId))
+		}
+	}
+
+	// Check SecurityGroups
+	for _, sgId := range vmInfo.SecurityGroupIds {
+		exists, _ := resource.CheckResource(nsId, model.StrSecurityGroup, sgId)
+		if exists {
+			relatedResources = append(relatedResources, fmt.Sprintf("SecurityGroup: %s", sgId))
+		}
+	}
+
+	// Check SSHKey
+	if vmInfo.SshKeyId != "" {
+		exists, _ := resource.CheckResource(nsId, model.StrSSHKey, vmInfo.SshKeyId)
+		if exists {
+			relatedResources = append(relatedResources, fmt.Sprintf("SSHKey: %s", vmInfo.SshKeyId))
+		}
+	}
+
+	// If any resources are missing, return error
+	if len(relatedResources) > 0 {
+		err := fmt.Errorf("cannot deregister VM '%s': the following associated resources do not exist: %v", vmId, relatedResources)
+		return err
+	}
+
+	// Call Spider deregister API
+	var callResult interface{}
+	client := clientManager.NewHttpClient()
+	method := "DELETE"
+
+	// Create request body
+	type JsonTemplate struct {
+		ConnectionName string
+	}
+	requestBody := JsonTemplate{
+		ConnectionName: vmInfo.ConnectionName,
+	}
+
+	url := model.SpiderRestUrl + "/regvm/" + vmInfo.CspResourceName
+	log.Debug().Msg("Sending deregister DELETE request to " + url)
+
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.VeryShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	log.Debug().Msg("Deregister request finished from " + url)
+
+	// delete the VM info from TB
+	key := common.GenMciKey(nsId, mciId, vmId)
+	err = kvstore.Delete(key)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	// remove empty SubGroups
+	vmListInSubGroup, err := ListVmBySubGroup(nsId, mciId, vmInfo.SubGroupId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list vm in subGroup to remove")
+		return err
+	}
+	if len(vmListInSubGroup) == 0 {
+		subGroupKey := common.GenMciSubGroupKey(nsId, mciId, vmInfo.SubGroupId)
+		err := kvstore.Delete(subGroupKey)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to remove the empty subGroup")
+			return err
+		}
+	}
+
+	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, vmInfo.SshKeyId, model.StrDelete, key)
+	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, vmInfo.VNetId, model.StrDelete, key)
+
+	for _, v := range vmInfo.SecurityGroupIds {
+		resource.UpdateAssociatedObjectList(nsId, model.StrSecurityGroup, v, model.StrDelete, key)
+	}
+
+	for _, v := range vmInfo.DataDiskIds {
+		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, v, model.StrDelete, key)
+	}
+
+	err = label.DeleteLabelObject(model.StrVM, vmInfo.Uid)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	}
+
+	return nil
+}
+
 // DelAllMci is func to delete all MCI objects in parallel
 func DelAllMci(nsId string, option string) (string, error) {
 

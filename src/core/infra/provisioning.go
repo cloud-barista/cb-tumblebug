@@ -3371,7 +3371,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 	vmInfoData.PrivateDNS = callResult.PrivateDNS
 	vmInfoData.RootDiskType = callResult.RootDiskType
 	vmInfoData.RootDiskSize = callResult.RootDiskSize
-	vmInfoData.RootDiskName = callResult.RootDiskName
+	vmInfoData.RootDeviceName = callResult.RootDeviceName
 	vmInfoData.NetworkInterface = callResult.NetworkInterface
 
 	vmInfoData.CspSpecName = callResult.VMSpecName
@@ -3575,6 +3575,8 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 		model.LabelMciId:           mciId,
 		model.LabelCreatedTime:     vmInfoData.CreatedTime,
 		model.LabelConnectionName:  vmInfoData.ConnectionName,
+		model.LabelVNetId:          vmInfoData.VNetId,
+		model.LabelSubnetId:        vmInfoData.SubnetId,
 	}
 	for key, value := range vmInfoData.Label {
 		labels[key] = value

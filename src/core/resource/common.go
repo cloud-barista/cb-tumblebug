@@ -593,6 +593,148 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	return nil
 }
 
+// DeregisterResource deregisters the TB Resource object from Spider and TB without deleting the actual CSP resource
+// This function only removes the resource mapping from Spider and TB internal storage (kvstore, label, etc.)
+// The actual CSP resource remains intact and can be re-registered later
+func DeregisterResource(nsId string, resourceType string, resourceId string) error {
+
+	check, err := CheckResource(nsId, resourceType, resourceId)
+
+	if err != nil || !check {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	keyValue, _, _ := kvstore.GetKv(key)
+
+	var url string
+	uid := ""
+
+	// Create Req body
+	type JsonTemplate struct {
+		ConnectionName string
+	}
+	requestBody := JsonTemplate{}
+
+	switch resourceType {
+
+	case model.StrCustomImage:
+		// Get custom image info from database
+		resourceObj, err := GetResource(nsId, model.StrCustomImage, resourceId)
+		if err != nil {
+			return err
+		}
+		temp := resourceObj.(model.ImageInfo)
+		requestBody.ConnectionName = temp.ConnectionName
+		uid = temp.Uid
+
+	case model.StrSSHKey:
+		temp := model.SshKeyInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &temp)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+		requestBody.ConnectionName = temp.ConnectionName
+		// Use deregister API: /regkeypair/{Name}
+		url = model.SpiderRestUrl + "/regkeypair/" + temp.CspResourceName
+		uid = temp.Uid
+
+	case model.StrSecurityGroup:
+		temp := model.SecurityGroupInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &temp)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+		requestBody.ConnectionName = temp.ConnectionName
+		// Use deregister API: /regsecuritygroup/{Name}
+		url = model.SpiderRestUrl + "/regsecuritygroup/" + temp.CspResourceName
+		uid = temp.Uid
+
+	case model.StrDataDisk:
+		temp := model.DataDiskInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &temp)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+		requestBody.ConnectionName = temp.ConnectionName
+		// Use deregister API: /regdisk/{Name}
+		url = model.SpiderRestUrl + "/regdisk/" + temp.CspResourceName
+		uid = temp.Uid
+
+	default:
+		err := fmt.Errorf("invalid resourceType for deregistration: %s", resourceType)
+		return err
+	}
+
+	var callResult interface{}
+	client := clientManager.NewHttpClient()
+	method := "DELETE"
+
+	log.Debug().Msg("Sending deregister DELETE request to " + url)
+
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.VeryShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	log.Debug().Msg("Deregister request finished from " + url)
+
+	if strings.EqualFold(resourceType, model.StrCustomImage) {
+		// Delete custom image from database
+		result := model.ORM.Delete(&model.ImageInfo{}, "namespace = ? AND id = ? AND resource_type = ?",
+			nsId, resourceId, model.StrCustomImage)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("")
+		} else {
+			log.Debug().Msg("Custom image deregistered successfully from database")
+		}
+	} else {
+		// Delete from kvstore (for non-DB resources)
+		err = kvstore.Delete(key)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+	}
+
+	err = label.DeleteLabelObject(resourceType, uid)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	}
+
+	return nil
+}
+
+// CheckSubnetInUseByVMs checks if a subnet is being used by any VMs
+// It retrieves the VNet's associatedObjectList and checks each VM's subnetId field
+func CheckSubnetInUseByVMs(nsId string, vNetId string, subnetId string) (bool, error) {
+	resources, err := label.GetResourcesByLabelSelector(model.StrVM, "sys.subnetId="+subnetId+",sys.vNetId="+vNetId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get VMs by subnetId and vNetId labels")
+		return false, err
+	}
+
+	if len(resources) > 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 // DelEleInSlice delete an element from slice by index
 //   - arr: the reference of slice
 //   - index: the index of element will be deleted

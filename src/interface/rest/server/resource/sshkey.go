@@ -138,6 +138,23 @@ func RestDelSshKey(c echo.Context) error {
 	return nil
 }
 
+// RestDeregisterSshKey godoc
+// @ID DeregisterSshKey
+// @Summary Deregister SSH Key
+// @Description Deregister SSH Key from Spider and TB without deleting the actual CSP resource
+// @Tags [Infra Resource] Access Key Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param sshKeyId path string true "SSH Key ID"
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Router /ns/{nsId}/deregisterCspResource/sshKey/{sshKeyId} [delete]
+func RestDeregisterSshKey(c echo.Context) error {
+	// This is a dummy function for Swagger.
+	return nil
+}
+
 // RestDelAllSshKey godoc
 // @ID DelAllSshKey
 // @Summary Delete all SSH Keys

@@ -117,6 +117,23 @@ func RestDelCustomImage(c echo.Context) error {
 	return nil
 }
 
+// RestDeregisterCustomImage godoc
+// @ID DeregisterCustomImage
+// @Summary Deregister customImage
+// @Description Deregister customImage from Spider and TB without deleting the actual CSP resource
+// @Tags [Infra Resource] Image Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param customImageId path string true "customImage ID"
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Router /ns/{nsId}/deregisterCspResource/customImage/{customImageId} [delete]
+func RestDeregisterCustomImage(c echo.Context) error {
+	// This is a dummy function for Swagger.
+	return nil
+}
+
 // RestDelAllCustomImage godoc
 // @ID DelAllCustomImage
 // @Summary Delete all customImages

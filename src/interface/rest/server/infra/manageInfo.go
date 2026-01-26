@@ -324,6 +324,35 @@ func RestDelMciVm(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, result)
 }
 
+// RestDeregisterMciVm godoc
+// @ID DeregisterMciVm
+// @Summary Deregister VM in specified MCI
+// @Description Deregister VM from Spider and TB without deleting the actual CSP resource
+// @Tags [MC-Infra] MCI Provisioning and Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param vmId path string true "VM ID" default(g1-1)
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Router /ns/{nsId}/mci/{mciId}/vm/{vmId}/deregister [delete]
+func RestDeregisterMciVm(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mciId := c.Param("mciId")
+	vmId := c.Param("vmId")
+
+	err := infra.DeregisterMciVm(nsId, mciId, vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	result := map[string]string{"message": "Deregistered the VM info (CSP resource remains intact)"}
+	return clientManager.EndRequestWithLog(c, err, result)
+}
+
 // RestGetMciGroupVms godoc
 // @ID GetMciGroupVms
 // @Summary List VMs with a SubGroup label in a specified MCI

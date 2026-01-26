@@ -2496,6 +2496,146 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/deregisterCspResource/customImage/{customImageId}:
+    delete:
+      tags:
+      - "[Infra Resource] Image Management"
+      summary: Deregister customImage
+      description: Deregister customImage from Spider and TB without deleting the
+        actual CSP resource
+      operationId: DeregisterCustomImage
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: customImageId
+        in: path
+        description: customImage ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/deregisterCspResource/dataDisk/{dataDiskId}:
+    delete:
+      tags:
+      - "[Infra Resource] Data Disk Management"
+      summary: Deregister Data Disk
+      description: Deregister Data Disk from Spider and TB without deleting the actual
+        CSP resource
+      operationId: DeregisterDataDisk
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: dataDiskId
+        in: path
+        description: Data Disk ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/deregisterCspResource/securityGroup/{securityGroupId}:
+    delete:
+      tags:
+      - "[Infra Resource] Security Group Management"
+      summary: Deregister Security Group
+      description: Deregister Security Group from Spider and TB without deleting the
+        actual CSP resource
+      operationId: DeregisterSecurityGroup
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: securityGroupId
+        in: path
+        description: Security Group ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/deregisterCspResource/sshKey/{sshKeyId}:
+    delete:
+      tags:
+      - "[Infra Resource] Access Key Management"
+      summary: Deregister SSH Key
+      description: Deregister SSH Key from Spider and TB without deleting the actual
+        CSP resource
+      operationId: DeregisterSshKey
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: sshKeyId
+        in: path
+        description: SSH Key ID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/deregisterCspResource/vNet/{vNetId}:
     delete:
       tags:
@@ -5739,6 +5879,49 @@ paths:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
       x-codegen-request-body-name: dataDiskInfo
+  /ns/{nsId}/mci/{mciId}/vm/{vmId}/deregister:
+    delete:
+      tags:
+      - "[MC-Infra] MCI Provisioning and Management"
+      summary: Deregister VM in specified MCI
+      description: Deregister VM from Spider and TB without deleting the actual CSP
+        resource
+      operationId: DeregisterMciVm
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: vmId
+        in: path
+        description: VM ID
+        required: true
+        schema:
+          type: string
+          default: g1-1
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/mci/{mciId}/vm/{vmId}/handlingCount:
     get:
       tags:

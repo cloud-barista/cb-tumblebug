@@ -158,6 +158,23 @@ func RestDelSecurityGroup(c echo.Context) error {
 	return nil
 }
 
+// RestDeregisterSecurityGroup godoc
+// @ID DeregisterSecurityGroup
+// @Summary Deregister Security Group
+// @Description Deregister Security Group from Spider and TB without deleting the actual CSP resource
+// @Tags [Infra Resource] Security Group Management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param securityGroupId path string true "Security Group ID"
+// @Success 200 {object} model.SimpleMsg
+// @Failure 404 {object} model.SimpleMsg
+// @Router /ns/{nsId}/deregisterCspResource/securityGroup/{securityGroupId} [delete]
+func RestDeregisterSecurityGroup(c echo.Context) error {
+	// This is a dummy function for Swagger.
+	return nil
+}
+
 // RestDelAllSecurityGroup godoc
 // @ID DelAllSecurityGroup
 // @Summary Delete all Security Groups
