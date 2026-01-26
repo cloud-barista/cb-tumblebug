@@ -23802,6 +23802,9 @@ const docTemplate = `{
         "model.VmInfo": {
             "type": "object",
             "properties": {
+                "RootDeviceName": {
+                    "type": "string"
+                },
                 "addtionalDetails": {
                     "type": "array",
                     "items": {
@@ -23917,9 +23920,6 @@ const docTemplate = `{
                 },
                 "resourceType": {
                     "description": "ResourceType is the type of the resource",
-                    "type": "string"
-                },
-                "rootDiskName": {
                     "type": "string"
                 },
                 "rootDiskSize": {
