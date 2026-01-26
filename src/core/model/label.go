@@ -67,6 +67,7 @@ const (
 	LabelCspVNetId       string = "sys.cspVNetId"
 	LabelCspVNetName     string = "sys.cspVNetName"
 	LabelCidr            string = "sys.cidr"
+	LabelSubnetId        string = "sys.subnetId"
 )
 
 // GetLabelConstantsMap returns a map with label-related system constants as keys and their example values.

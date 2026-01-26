@@ -702,12 +702,12 @@ func DeleteSubnet(nsId string, vNetId string, subnetId string, actionParam strin
 	// Todo: Check if the subnet is being used by any resouces, such as virtual machines, gateways, etc.
 	// Check if the subnet is being used by any VMs
 	if action == ActionNone {
-		inUse, usingVMs, err := CheckSubnetInUseByVMs(nsId, vNetId, subnetId)
+		inUse, err := CheckSubnetInUseByVMs(nsId, vNetId, subnetId)
 		if err != nil {
 			log.Warn().Err(err).Msg("Failed to check subnet usage, but continuing with deletion")
 		}
 		if inUse {
-			err := fmt.Errorf("the subnet (%s) is in-use by VMs: %v", subnetId, usingVMs)
+			err := fmt.Errorf("the subnet (%s) is in-use by VMs", subnetId)
 			log.Error().Err(err).Msg("")
 			return emptyRet, err
 		}
@@ -1349,12 +1349,12 @@ func DeregisterSubnet(nsId string, vNetId string, subnetId string) (model.Simple
 	}
 
 	// Check if the subnet is being used by any VMs
-	inUse, usingVMs, err := CheckSubnetInUseByVMs(nsId, vNetId, subnetId)
+	inUse, err := CheckSubnetInUseByVMs(nsId, vNetId, subnetId)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to check subnet usage, but continuing with deregistration")
 	}
 	if inUse {
-		err := fmt.Errorf("the subnet (%s) is in-use by VMs: %v", subnetId, usingVMs)
+		err := fmt.Errorf("the subnet (%s) is in-use by VMs", subnetId)
 		log.Error().Err(err).Msg("")
 		return emptyRet, err
 	}
