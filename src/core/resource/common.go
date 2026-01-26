@@ -722,9 +722,9 @@ func DeregisterResource(nsId string, resourceType string, resourceId string) err
 // CheckSubnetInUseByVMs checks if a subnet is being used by any VMs
 // It retrieves the VNet's associatedObjectList and checks each VM's subnetId field
 func CheckSubnetInUseByVMs(nsId string, vNetId string, subnetId string) (bool, error) {
-	resources, err := label.GetResourcesByLabelSelector(model.StrVM, "sys.subnetId="+subnetId)
+	resources, err := label.GetResourcesByLabelSelector(model.StrVM, "sys.subnetId="+subnetId+",sys.vNetId="+vNetId)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get VMs by subnetId label")
+		log.Error().Err(err).Msg("Failed to get VMs by subnetId and vNetId labels")
 		return false, err
 	}
 

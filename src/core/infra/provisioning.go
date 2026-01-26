@@ -3575,6 +3575,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 		model.LabelMciId:           mciId,
 		model.LabelCreatedTime:     vmInfoData.CreatedTime,
 		model.LabelConnectionName:  vmInfoData.ConnectionName,
+		model.LabelVNetId:          vmInfoData.VNetId,
 		model.LabelSubnetId:        vmInfoData.SubnetId,
 	}
 	for key, value := range vmInfoData.Label {
