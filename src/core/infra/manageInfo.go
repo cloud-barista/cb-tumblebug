@@ -2680,17 +2680,48 @@ func DeregisterMciVm(nsId string, mciId string, vmId string) error {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	check, _ := CheckVm(nsId, mciId, vmId)
-
-	if !check {
-		err := fmt.Errorf("The vm " + vmId + " does not exist.")
-		return err
-	}
 
 	log.Debug().Msg("[Deregister VM] " + vmId)
 
 	// get vm info
-	vmInfo, _ := GetVmObject(nsId, mciId, vmId)
+	vmInfo, err := GetVmObject(nsId, mciId, vmId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	// Check if associated resources exist before deregistration
+	var relatedResources []string
+
+	// Check DataDisks
+	for _, dataDiskId := range vmInfo.DataDiskIds {
+		exists, _ := resource.CheckResource(nsId, model.StrDataDisk, dataDiskId)
+		if exists {
+			relatedResources = append(relatedResources, fmt.Sprintf("DataDisk: %s", dataDiskId))
+		}
+	}
+
+	// Check SecurityGroups
+	for _, sgId := range vmInfo.SecurityGroupIds {
+		exists, _ := resource.CheckResource(nsId, model.StrSecurityGroup, sgId)
+		if exists {
+			relatedResources = append(relatedResources, fmt.Sprintf("SecurityGroup: %s", sgId))
+		}
+	}
+
+	// Check SSHKey
+	if vmInfo.SshKeyId != "" {
+		exists, _ := resource.CheckResource(nsId, model.StrSSHKey, vmInfo.SshKeyId)
+		if exists {
+			relatedResources = append(relatedResources, fmt.Sprintf("SSHKey: %s", vmInfo.SshKeyId))
+		}
+	}
+
+	// If any resources are missing, return error
+	if len(relatedResources) > 0 {
+		err := fmt.Errorf("cannot deregister VM '%s': the following associated resources do not exist: %v", vmId, relatedResources)
+		return err
+	}
 
 	// Call Spider deregister API
 	var callResult interface{}
@@ -2725,7 +2756,7 @@ func DeregisterMciVm(nsId string, mciId string, vmId string) error {
 	}
 	log.Debug().Msg("Deregister request finished from " + url)
 
-	// delete vms info from TB
+	// delete the VM info from TB
 	key := common.GenMciKey(nsId, mciId, vmId)
 	err = kvstore.Delete(key)
 	if err != nil {
@@ -2734,31 +2765,18 @@ func DeregisterMciVm(nsId string, mciId string, vmId string) error {
 	}
 
 	// remove empty SubGroups
-	subGroup, err := ListSubGroupId(nsId, mciId)
+	vmListInSubGroup, err := ListVmBySubGroup(nsId, mciId, vmInfo.SubGroupId)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to list subGroup to remove")
+		log.Error().Err(err).Msg("Failed to list vm in subGroup to remove")
 		return err
 	}
-	for _, v := range subGroup {
-		vmListInSubGroup, err := ListVmBySubGroup(nsId, mciId, v)
+	if len(vmListInSubGroup) == 0 {
+		subGroupKey := common.GenMciSubGroupKey(nsId, mciId, vmInfo.SubGroupId)
+		err := kvstore.Delete(subGroupKey)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to list vm in subGroup to remove")
+			log.Error().Err(err).Msg("Failed to remove the empty subGroup")
 			return err
 		}
-		if len(vmListInSubGroup) == 0 {
-			subGroupKey := common.GenMciSubGroupKey(nsId, mciId, v)
-			err := kvstore.Delete(subGroupKey)
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to remove the empty subGroup")
-				return err
-			}
-		}
-	}
-
-	// Update associated object lists
-	_, err = resource.UpdateAssociatedObjectList(nsId, model.StrImage, vmInfo.ImageId, model.StrDelete, key)
-	if err != nil {
-		resource.UpdateAssociatedObjectList(nsId, model.StrCustomImage, vmInfo.ImageId, model.StrDelete, key)
 	}
 
 	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, vmInfo.SshKeyId, model.StrDelete, key)
