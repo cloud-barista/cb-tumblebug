@@ -593,6 +593,349 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	return nil
 }
 
+// DeregisterResource deregisters the TB Resource object from Spider and TB without deleting the actual CSP resource
+// This function only removes the resource mapping from Spider and TB internal storage (kvstore, label, etc.)
+// The actual CSP resource remains intact and can be re-registered later
+func DeregisterResource(nsId string, resourceType string, resourceId string) error {
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	err = common.CheckString(resourceId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	check, err := CheckResource(nsId, resourceType, resourceId)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	if !check {
+		errString := "The " + resourceType + " " + resourceId + " does not exist."
+		err := fmt.Errorf(errString)
+		return err
+	}
+
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	keyValue, _, _ := kvstore.GetKv(key)
+
+	var childResources interface{}
+	var url string
+	uid := ""
+
+	// Create Req body
+	type JsonTemplate struct {
+		ConnectionName string
+	}
+	requestBody := JsonTemplate{}
+
+	switch resourceType {
+	case model.StrImage:
+		// Image is TB-only resource, just delete from database
+		result := model.ORM.Delete(&model.ImageInfo{}, "namespace = ? AND id = ? AND (resource_type = ? OR resource_type IS NULL OR resource_type = '')",
+			model.SystemCommonNs, resourceId, model.StrImage)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("")
+			return result.Error
+		}
+		log.Debug().Msg("Image deregistered successfully from database")
+		return nil
+
+	case model.StrCustomImage:
+		// Get custom image info from database
+		var temp model.ImageInfo
+		result := model.ORM.Where("namespace = ? AND id = ? AND resource_type = ?",
+			nsId, resourceId, model.StrCustomImage).First(&temp)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("")
+			return result.Error
+		}
+
+		requestBody.ConnectionName = temp.ConnectionName
+		// Use deregister API instead of delete API
+		url = model.SpiderRestUrl + "/regmyimage/" + temp.CspImageName
+		uid = temp.Uid
+
+	case model.StrSpec:
+		// Spec is TB-only resource, just delete from database
+		result := model.ORM.Delete(&model.SpecInfo{}, "namespace = ? AND id = ?", nsId, resourceId)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("")
+			return result.Error
+		}
+		log.Debug().Msg("Spec deregistered successfully from database")
+		return nil
+
+	case model.StrSSHKey:
+		temp := model.SshKeyInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &temp)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+		requestBody.ConnectionName = temp.ConnectionName
+		// Use deregister API: /regkeypair/{Name}
+		url = model.SpiderRestUrl + "/regkeypair/" + temp.CspResourceName
+		uid = temp.Uid
+
+	case model.StrVNet:
+		temp := model.VNetInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &temp)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+		requestBody.ConnectionName = temp.ConnectionName
+		// Use deregister API: /regvpc/{Name}
+		url = model.SpiderRestUrl + "/regvpc/" + temp.CspResourceName
+		childResources = temp.SubnetInfoList
+		uid = temp.Uid
+
+	case model.StrSecurityGroup:
+		temp := model.SecurityGroupInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &temp)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+		requestBody.ConnectionName = temp.ConnectionName
+		// Use deregister API: /regsecuritygroup/{Name}
+		url = model.SpiderRestUrl + "/regsecuritygroup/" + temp.CspResourceName
+		uid = temp.Uid
+
+	case model.StrDataDisk:
+		temp := model.DataDiskInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &temp)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+		requestBody.ConnectionName = temp.ConnectionName
+		// Use deregister API: /regdisk/{Name}
+		url = model.SpiderRestUrl + "/regdisk/" + temp.CspResourceName
+		uid = temp.Uid
+
+	default:
+		err := fmt.Errorf("invalid resourceType for deregistration: %s", resourceType)
+		return err
+	}
+
+	var callResult interface{}
+	client := clientManager.NewHttpClient()
+	method := "DELETE"
+
+	log.Debug().Msg("Sending deregister DELETE request to " + url)
+
+	_, err = clientManager.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		clientManager.VeryShortDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	log.Debug().Msg("Deregister request finished from " + url)
+
+	// Get associated VMs and update their fields to remove references to this resource
+	err = ClearDependencyFromVMs(nsId, resourceType, resourceId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to clear VM resource references")
+		// Continue with cleanup even if VM field update fails
+	}
+
+	// Clean up TB internal resources (same as DelResource)
+	if strings.EqualFold(resourceType, model.StrVNet) {
+		subnets := childResources.([]model.SubnetInfo)
+		for _, v := range subnets {
+			subnetKey := common.GenChildResourceKey(nsId, model.StrSubnet, resourceId, v.Id)
+			err = kvstore.Delete(subnetKey)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+			}
+
+			err = label.DeleteLabelObject(resourceType, v.Uid)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+			}
+		}
+	} else if strings.EqualFold(resourceType, model.StrCustomImage) {
+		// Delete custom image from database
+		result := model.ORM.Delete(&model.ImageInfo{}, "namespace = ? AND id = ? AND resource_type = ?",
+			nsId, resourceId, model.StrCustomImage)
+		if result.Error != nil {
+			log.Error().Err(result.Error).Msg("")
+		} else {
+			log.Debug().Msg("Custom image deregistered successfully from database")
+		}
+	}
+
+	// Delete from kvstore (for non-DB resources)
+	if !strings.EqualFold(resourceType, model.StrImage) &&
+		!strings.EqualFold(resourceType, model.StrCustomImage) &&
+		!strings.EqualFold(resourceType, model.StrSpec) {
+		err = kvstore.Delete(key)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+	}
+
+	err = label.DeleteLabelObject(resourceType, uid)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	}
+
+	return nil
+}
+
+// ClearDeregisteredResourceFromVMs clears resource references from all associated VMs
+// This function updates VM fields to remove references to a deregistered resource
+func ClearDependencyFromVMs(nsId string, resourceType string, resourceId string) error {
+	associatedList, err := GetAssociatedObjectList(nsId, resourceType, resourceId)
+	if err != nil {
+		return err
+	}
+
+	for _, vmKey := range associatedList {
+		mciId, vmId, err := parseVMKeyPath(vmKey)
+		if err != nil {
+			log.Warn().Err(err).Str("vmKey", vmKey).Msg("Failed to parse VM key")
+			continue
+		}
+
+		// Get VM object from kvstore
+		vmStoreKey := common.GenMciKey(nsId, mciId, vmId)
+		vmKeyValue, exists, err := kvstore.GetKv(vmStoreKey)
+		if err != nil || !exists {
+			log.Warn().Msgf("Failed to get VM %s to update fields", vmId)
+			continue
+		}
+
+		// Update VM fields based on resource type
+		vmValue, err := func(vmValue string, resourceType string, resourceId string, vmId string) (string, error) {
+			switch resourceType {
+			case model.StrSSHKey:
+				vmValue, _ = sjson.Set(vmValue, "sshKeyId", "unknown")
+				vmValue, _ = sjson.Set(vmValue, "cspSshKeyId", "unknown")
+				log.Debug().Msgf("Cleared SshKeyId fields from VM %s", vmId)
+
+			case model.StrSecurityGroup:
+				// Remove the security group from the array
+				sgIds := gjson.Get(vmValue, "securityGroupIds").Array()
+				var newSgIds []string
+				for _, sg := range sgIds {
+					if sg.String() != resourceId {
+						newSgIds = append(newSgIds, sg.String())
+					}
+				}
+				vmValue, _ = sjson.Set(vmValue, "securityGroupIds", newSgIds)
+				log.Debug().Msgf("Removed SecurityGroup %s from VM %s", resourceId, vmId)
+
+			case model.StrDataDisk:
+				// Remove the data disk from the array
+				diskIds := gjson.Get(vmValue, "dataDiskIds").Array()
+				var newDiskIds []string
+				for _, disk := range diskIds {
+					if disk.String() != resourceId {
+						newDiskIds = append(newDiskIds, disk.String())
+					}
+				}
+				vmValue, _ = sjson.Set(vmValue, "dataDiskIds", newDiskIds)
+				log.Debug().Msgf("Removed DataDisk %s from VM %s", resourceId, vmId)
+
+			case model.StrCustomImage:
+				vmValue, _ = sjson.Set(vmValue, "imageId", "unknown")
+				vmValue, _ = sjson.Set(vmValue, "cspImageName", "unknown")
+				log.Debug().Msgf("Cleared ImageId fields from VM %s", vmId)
+			}
+
+			return vmValue, nil
+		}(vmKeyValue.Value, resourceType, resourceId, vmId)
+
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to update VM %s fields", vmId)
+			continue
+		}
+
+		// Save updated VM info back to kvstore
+		err = kvstore.Put(vmStoreKey, vmValue)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to save VM %s updates", vmId)
+		}
+	}
+
+	return nil
+}
+
+// parseVMKeyPath parses a VM key path and extracts mciId and vmId
+// Expected format: /ns/{nsId}/mci/{mciId}/vm/{vmId}
+func parseVMKeyPath(vmKey string) (mciId string, vmId string, err error) {
+	parts := strings.Split(vmKey, "/")
+	if len(parts) < 7 || parts[3] != "mci" || parts[5] != "vm" {
+		return "", "", fmt.Errorf("invalid VM key format: %s", vmKey)
+	}
+	return parts[4], parts[6], nil
+}
+
+// CheckSubnetInUseByVMs checks if a subnet is being used by any VMs
+// It retrieves the VNet's associatedObjectList and checks each VM's subnetId field
+func CheckSubnetInUseByVMs(nsId string, vNetId string, subnetId string) (bool, []string, error) {
+	var usingVMs []string
+
+	// Get VNet's associated VMs
+	associatedList, err := GetAssociatedObjectList(nsId, model.StrVNet, vNetId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get VNet's associated object list")
+		return false, nil, err
+	}
+
+	// If no VMs associated with VNet, subnet is not in use
+	if len(associatedList) == 0 {
+		return false, nil, nil
+	}
+
+	// Check each VM's subnetId
+	for _, vmKey := range associatedList {
+		mciId, vmId, err := parseVMKeyPath(vmKey)
+		if err != nil {
+			log.Warn().Err(err).Str("vmKey", vmKey).Msg("Failed to parse VM key")
+			continue
+		}
+
+		// Get VM object from kvstore
+		vmStoreKey := common.GenMciKey(nsId, mciId, vmId)
+		vmKeyValue, exists, err := kvstore.GetKv(vmStoreKey)
+		if err != nil || !exists {
+			log.Warn().Msgf("Failed to get VM %s", vmId)
+			continue
+		}
+
+		// Check if VM uses this subnet
+		vmSubnetId := gjson.Get(vmKeyValue.Value, "subnetId").String()
+		if vmSubnetId == subnetId {
+			usingVMs = append(usingVMs, vmId)
+		}
+	}
+
+	if len(usingVMs) > 0 {
+		return true, usingVMs, nil
+	}
+	return false, nil, nil
+}
+
 // DelEleInSlice delete an element from slice by index
 //   - arr: the reference of slice
 //   - index: the index of element will be deleted

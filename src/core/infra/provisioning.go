@@ -3371,7 +3371,7 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 	vmInfoData.PrivateDNS = callResult.PrivateDNS
 	vmInfoData.RootDiskType = callResult.RootDiskType
 	vmInfoData.RootDiskSize = callResult.RootDiskSize
-	vmInfoData.RootDiskName = callResult.RootDiskName
+	vmInfoData.RootDeviceName = callResult.RootDeviceName
 	vmInfoData.NetworkInterface = callResult.NetworkInterface
 
 	vmInfoData.CspSpecName = callResult.VMSpecName

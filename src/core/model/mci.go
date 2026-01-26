@@ -573,7 +573,7 @@ type SpiderVMInfo struct {
 	PublicDNS         string
 	PrivateIP         string
 	PrivateDNS        string
-	RootDiskName      string // "/dev/sda1", ...
+	RootDeviceName    string // "/dev/sda1", ...
 	SSHAccessPoint    string
 	KeyValueList      []KeyValue
 }
@@ -656,15 +656,15 @@ type VmInfo struct {
 	Label       map[string]string `json:"label"`
 	Description string            `json:"description"`
 
-	Region       RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-	PublicIP     string     `json:"publicIP"`
-	SSHPort      string     `json:"sshPort"`
-	PublicDNS    string     `json:"publicDNS"`
-	PrivateIP    string     `json:"privateIP"`
-	PrivateDNS   string     `json:"privateDNS"`
-	RootDiskType string     `json:"rootDiskType"`
-	RootDiskSize string     `json:"rootDiskSize"`
-	RootDiskName string     `json:"rootDiskName"`
+	Region         RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	PublicIP       string     `json:"publicIP"`
+	SSHPort        string     `json:"sshPort"`
+	PublicDNS      string     `json:"publicDNS"`
+	PrivateIP      string     `json:"privateIP"`
+	PrivateDNS     string     `json:"privateDNS"`
+	RootDiskType   string     `json:"rootDiskType"`
+	RootDiskSize   string     `json:"rootDiskSize"`
+	RootDeviceName string     `json:"RootDeviceName"`
 
 	ConnectionName   string     `json:"connectionName"`
 	ConnectionConfig ConnConfig `json:"connectionConfig"`
