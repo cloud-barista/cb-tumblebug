@@ -107,7 +107,7 @@ def get_decryption_key():
 
     # Prompt for password up to 3 times if the key file is not used or fails
     for attempt in range(3):
-        password = getpass(f"Enter the password to decrypt the credentials file (attempt {attempt + 1}/3): ")
+        password = getpass(f"Enter the password of the encrypted credential to continue (attempt {attempt + 1}/3): ")
         decrypted_content, error = decrypt_credentials(ENC_FILE_PATH, password)
         if error is None:
             return decrypted_content
@@ -125,32 +125,7 @@ print(" - " + Fore.CYAN + "CRED_PATH:" + Fore.RESET + f" {CRED_PATH}")
 print(" - " + Fore.CYAN + "CRED_FILE_NAME:" + Fore.RESET + f" {CRED_FILE_NAME_ENC}")
 print(" - " + Fore.CYAN + "expected completion time:" + Fore.RESET + f" {expected_completion_time_seconds} seconds\n")
 
-# Check server health before proceeding (retry up to 50 times with 1 second interval)
-print(Fore.YELLOW + "Checking server health...")
-health_check_url = f"http://{TUMBLEBUG_SERVER}/tumblebug/readyz"
-max_retries = 50
-retry_interval = 1  # seconds
-
-for attempt in range(1, max_retries + 1):
-    try:
-        health_response = requests.get(health_check_url, headers=HEADERS, timeout=5)
-        if health_response.status_code == 200:
-            print(Fore.GREEN + f"Tumblebug Server is healthy. (attempt {attempt}/{max_retries})\n")
-            break
-        else:
-            if attempt < max_retries:
-                print(Fore.YELLOW + f"Health check failed (status {health_response.status_code}), retrying... ({attempt}/{max_retries})")
-                time.sleep(retry_interval)
-            else:
-                print(Fore.RED + f"Tumblebug health check failed with status {health_response.status_code} after {max_retries} attempts.")
-                sys.exit(1)
-    except requests.exceptions.RequestException as e:
-        if attempt < max_retries:
-            print(Fore.YELLOW + f"Connection failed, retrying... ({attempt}/{max_retries})")
-            time.sleep(retry_interval)
-        else:
-            print(Fore.RED + f"Failed to connect to server after {max_retries} attempts. Check the server address and try again.")
-            sys.exit(1)
+# (Moved) server health check will run after user confirmation to ensure inputs are provided first
 
 # Check for database backup availability early (before asking for confirmation)
 backup_db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets', 'assets.dump.gz')
@@ -280,15 +255,69 @@ elif run_load_assets and not backup_available:
 print(Fore.YELLOW + "="*80)
 print("")
 
-# Wait for user input to proceed
-if not args.yes:
+# Determine if password input will be required
+# If password is needed, it serves as confirmation (skip "proceed?" prompt)
+password_required = run_credentials and not os.path.isfile(KEY_FILE)
+
+# Get decryption key BEFORE health check (if credentials are being registered)
+# This ensures all user inputs are completed before waiting for server
+decrypted_content = None
+cred_data = None
+
+if run_credentials:
+    if password_required:
+        # Password input serves as confirmation - no need for separate "proceed?" prompt
+        print(Fore.CYAN + "Enter the credential password to proceed...")
+    decrypted_content = get_decryption_key()
+    cred_data = yaml.safe_load(decrypted_content)['credentialholder']['admin']
+else:
+    # No credentials to register - ask for confirmation
+    if not args.yes:
+        if input(Fore.CYAN + 'Do you want to proceed? (y/n): ').lower() not in ['y', 'yes']:
+            print(Fore.GREEN + "Cancel [{}]".format(' '.join(sys.argv)))
+            print(Fore.GREEN + "See you soon. :)")
+            sys.exit(0)
+    else:
+        print(Fore.GREEN + "Auto-yes mode enabled - proceeding with selected options...")
+        print("")
+
+# If password was not required but credentials are being registered, ask for confirmation
+if run_credentials and not password_required and not args.yes:
+    # Key file was used, so ask for confirmation
     if input(Fore.CYAN + 'Do you want to proceed? (y/n): ').lower() not in ['y', 'yes']:
         print(Fore.GREEN + "Cancel [{}]".format(' '.join(sys.argv)))
         print(Fore.GREEN + "See you soon. :)")
         sys.exit(0)
-else:
+elif run_credentials and not password_required and args.yes:
     print(Fore.GREEN + "Auto-yes mode enabled - proceeding with selected options...")
     print("")
+
+# Check server health before proceeding (retry up to 50 times with 1 second interval)
+print(Fore.YELLOW + "Checking server health...")
+health_check_url = f"http://{TUMBLEBUG_SERVER}/tumblebug/readyz"
+max_retries = 50
+retry_interval = 1  # seconds
+
+for attempt in range(1, max_retries + 1):
+    try:
+        health_response = requests.get(health_check_url, headers=HEADERS, timeout=5)
+        if health_response.status_code == 200:
+            print(Fore.GREEN + f"Tumblebug Server is healthy. (attempt {attempt}/{max_retries})\n")
+            break
+        else:
+            if attempt < max_retries:
+                print(Fore.YELLOW + f"Health check failed (status {health_response.status_code}), retrying... ({attempt}/{max_retries})")
+                time.sleep(retry_interval)
+            else:
+                print(Fore.RED + f"Tumblebug health check failed with status {health_response.status_code} after {max_retries} attempts.")
+                sys.exit(1)
+    except requests.exceptions.RequestException as e:
+        if attempt < max_retries:
+            print(Fore.YELLOW + f"Connection failed, retrying... ({attempt}/{max_retries})")
+            time.sleep(retry_interval)
+        else:
+            print(Fore.RED + f"Failed to connect to server after {max_retries} attempts. Check the server address and try again.")
+            sys.exit(1)
 
 # Function to encrypt credentials using AES and RSA public key
 def encrypt_credential_value_with_publickey(public_key_pem, credentials):
@@ -454,10 +483,7 @@ def fetch_price():
 
 # Register credentials if requested
 if run_credentials:
-    # Get the decryption key and decrypt the credentials file
-    decrypted_content = get_decryption_key()
-    cred_data = yaml.safe_load(decrypted_content)['credentialholder']['admin']
-    
+    # cred_data was already decrypted before health check to ensure all user inputs complete first
     print(Fore.YELLOW + f"\nRegistering all valid credentials for all cloud regions...")
 
     # Register credentials to TumblebugServer using ThreadPoolExecutor
