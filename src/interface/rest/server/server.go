@@ -622,8 +622,6 @@ func RunServer() {
 	// g.PUT("/:nsId/resources/vNet/:resourceId", rest_resource.RestPutVNet)
 	g.DELETE("/:nsId/resources/vNet/:vNetId", rest_resource.RestDelVNet)
 	g.DELETE("/:nsId/resources/vNet", rest_resource.RestDelAllResources)
-	g.DELETE("/:nsId/deregisterCspResource/vNet/:resourceId", rest_resource.RestDeregisterResource)
-
 	// Network management: subnet associated with vNet
 	g.POST("/:nsId/resources/vNet/:vNetId/subnet", rest_resource.RestPostSubnet)
 	g.GET("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_resource.RestGetSubnet)

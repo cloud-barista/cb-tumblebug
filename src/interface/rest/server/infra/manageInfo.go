@@ -346,7 +346,6 @@ func RestDeregisterMciVm(c echo.Context) error {
 	err := infra.DeregisterMciVm(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("Failed to deregister the VM info")
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
