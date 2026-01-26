@@ -19173,6 +19173,8 @@ components:
     model.VmInfo:
       type: object
       properties:
+        RootDeviceName:
+          type: string
         addtionalDetails:
           type: array
           items:
@@ -19258,8 +19260,6 @@ components:
         resourceType:
           type: string
           description: ResourceType is the type of the resource
-        rootDiskName:
-          type: string
         rootDiskSize:
           type: string
         rootDiskType:
