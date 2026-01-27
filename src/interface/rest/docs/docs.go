@@ -3115,7 +3115,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregister/customImage/{customImageId}": {
+        "/ns/{nsId}/deregisterResource/customImage/{customImageId}": {
             "delete": {
                 "description": "Deregister customImage from Spider and TB without deleting the actual CSP resource",
                 "consumes": [
@@ -3162,7 +3162,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregister/dataDisk/{dataDiskId}": {
+        "/ns/{nsId}/deregisterResource/dataDisk/{dataDiskId}": {
             "delete": {
                 "description": "Deregister Data Disk from Spider and TB without deleting the actual CSP resource",
                 "consumes": [
@@ -3209,7 +3209,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregister/mci/{mciId}/vm/{vmId}": {
+        "/ns/{nsId}/deregisterResource/mci/{mciId}/vm/{vmId}": {
             "delete": {
                 "description": "Deregister VM from Spider and TB without deleting the actual CSP resource",
                 "consumes": [
@@ -3265,7 +3265,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregister/securityGroup/{securityGroupId}": {
+        "/ns/{nsId}/deregisterResource/securityGroup/{securityGroupId}": {
             "delete": {
                 "description": "Deregister Security Group from Spider and TB without deleting the actual CSP resource",
                 "consumes": [
@@ -3312,7 +3312,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregister/sshKey/{sshKeyId}": {
+        "/ns/{nsId}/deregisterResource/sshKey/{sshKeyId}": {
             "delete": {
                 "description": "Deregister SSH Key from Spider and TB without deleting the actual CSP resource",
                 "consumes": [
@@ -3359,7 +3359,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregister/vNet/{vNetId}": {
+        "/ns/{nsId}/deregisterResource/vNet/{vNetId}": {
             "delete": {
                 "description": "Deregister the VNet, which was created in CSP",
                 "consumes": [
@@ -3422,7 +3422,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregister/vNet/{vNetId}/subnet/{subnetId}": {
+        "/ns/{nsId}/deregisterResource/vNet/{vNetId}/subnet/{subnetId}": {
             "delete": {
                 "description": "Deregister Subnet, which was created in CSP",
                 "consumes": [

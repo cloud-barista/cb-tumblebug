@@ -2496,7 +2496,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregister/customImage/{customImageId}:
+  /ns/{nsId}/deregisterResource/customImage/{customImageId}:
     delete:
       tags:
       - "[Infra Resource] Image Management"
@@ -2531,7 +2531,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregister/dataDisk/{dataDiskId}:
+  /ns/{nsId}/deregisterResource/dataDisk/{dataDiskId}:
     delete:
       tags:
       - "[Infra Resource] Data Disk Management"
@@ -2566,7 +2566,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregister/mci/{mciId}/vm/{vmId}:
+  /ns/{nsId}/deregisterResource/mci/{mciId}/vm/{vmId}:
     delete:
       tags:
       - "[MC-Infra] MCI Provisioning and Management"
@@ -2609,7 +2609,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregister/securityGroup/{securityGroupId}:
+  /ns/{nsId}/deregisterResource/securityGroup/{securityGroupId}:
     delete:
       tags:
       - "[Infra Resource] Security Group Management"
@@ -2644,7 +2644,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregister/sshKey/{sshKeyId}:
+  /ns/{nsId}/deregisterResource/sshKey/{sshKeyId}:
     delete:
       tags:
       - "[Infra Resource] Access Key Management"
@@ -2679,7 +2679,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregister/vNet/{vNetId}:
+  /ns/{nsId}/deregisterResource/vNet/{vNetId}:
     delete:
       tags:
       - "[Infra Resource] Network Management"
@@ -2727,7 +2727,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/deregister/vNet/{vNetId}/subnet/{subnetId}:
+  /ns/{nsId}/deregisterResource/vNet/{vNetId}/subnet/{subnetId}:
     delete:
       tags:
       - "[Infra Resource] Network Management"

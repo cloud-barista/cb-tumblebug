@@ -314,7 +314,7 @@ func RestPostRegisterVNet(c echo.Context) error {
 // @Success 201 {object} model.VNetInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/deregister/vNet/{vNetId} [delete]
+// @Router /ns/{nsId}/deregisterResource/vNet/{vNetId} [delete]
 func RestDeleteDeregisterVNet(c echo.Context) error {
 
 	// [Input]

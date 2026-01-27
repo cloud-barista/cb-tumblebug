@@ -169,7 +169,7 @@ func RestDelSecurityGroup(c echo.Context) error {
 // @Param securityGroupId path string true "Security Group ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
-// @Router /ns/{nsId}/deregister/securityGroup/{securityGroupId} [delete]
+// @Router /ns/{nsId}/deregisterResource/securityGroup/{securityGroupId} [delete]
 func RestDeregisterSecurityGroup(c echo.Context) error {
 	// This is a dummy function for Swagger.
 	return nil
