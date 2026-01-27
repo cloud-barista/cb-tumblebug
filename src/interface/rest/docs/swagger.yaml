@@ -7990,7 +7990,7 @@ paths:
                 - type: object
                   properties:
                     '[DEFAULT]':
-                      $ref: '#/components/schemas/resource.RestListObjectStorageResponse'
+                      $ref: '#/components/schemas/model.ObjectStorageListResponse'
                     '[ID]':
                       $ref: '#/components/schemas/model.IdList'
         "404":
@@ -16700,6 +16700,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.Object'
+    model.ObjectStorageListResponse:
+      type: object
+      properties:
+        objectStorage:
+          type: array
+          items:
+            $ref: '#/components/schemas/model.ObjectStorageInfo'
     model.ObjectStorageLocationResponse:
       type: object
       properties:
@@ -19958,13 +19965,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/model.VNetInfo'
-    resource.RestListObjectStorageResponse:
-      type: object
-      properties:
-        objectStorage:
-          type: array
-          items:
-            $ref: '#/components/schemas/model.ObjectStorageInfo'
     resource.RestLookupImageRequest:
       type: object
       properties:

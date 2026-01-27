@@ -39,8 +39,8 @@ type Object struct {
 	StorageClass string `json:"storageClass" example:"STANDARD"`
 }
 
-// ObjectStorageListResponse represents the response structure for listing S3 buckets
-type ObjectStorageListResponse struct {
+// ObjectStorageListBucketsResponse represents the response structure for listing S3 buckets (legacy)
+type ObjectStorageListBucketsResponse struct {
 	Owner   Owner   `json:"owner"`
 	Buckets Buckets `json:"buckets"`
 }
@@ -96,6 +96,11 @@ type ObjectStoragePresignedUrlResponse struct {
 // ObjectStorageListObjectsResponse represents the response structure for listing objects in a bucket
 type ObjectStorageListObjectsResponse struct {
 	Objects []Object `json:"objects"`
+}
+
+// ObjectStorageListResponse represents the response structure for listing object storages
+type ObjectStorageListResponse struct {
+	ObjectStorage []ObjectStorageInfo `json:"objectStorage"`
 }
 
 // ObjectStorageGetCorsResponse represents the response structure for CORS configuration
