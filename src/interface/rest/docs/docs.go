@@ -13014,6 +13014,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/objectStorage/support": {
+            "get": {
+                "description": "Get CSP support information for object storage features (CORS, Versioning)\nIf cspType query parameter is provided, returns support information for that specific CSP\nIf cspType is not provided, returns support information for all CSPs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Object Storage Management"
+                ],
+                "summary": "Get CSP support information for object storage features",
+                "operationId": "GetObjectStorageSupport",
+                "parameters": [
+                    {
+                        "enum": [
+                            "aws",
+                            "gcp",
+                            "azure",
+                            "alibaba",
+                            "tencent",
+                            "ibm",
+                            "openstack",
+                            "ncp",
+                            "nhn",
+                            "kt"
+                        ],
+                        "type": "string",
+                        "description": "CSP Type (e.g., aws, gcp, azure, alibaba, tencent, ibm, openstack, ncp, nhn, kt)",
+                        "name": "cspType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ObjectStorageSupportResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/objects": {
             "get": {
                 "description": "List all objects for a given key",
@@ -20180,6 +20236,19 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ObjectStorageFeatureSupport": {
+            "type": "object",
+            "properties": {
+                "cors": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "versioning": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
         "model.ObjectStorageGetCorsResponse": {
             "type": "object",
             "properties": {
@@ -20384,6 +20453,21 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "Enabled"
+                }
+            }
+        },
+        "model.ObjectStorageSupportResponse": {
+            "type": "object",
+            "properties": {
+                "resourceType": {
+                    "type": "string",
+                    "example": "objectStorage"
+                },
+                "supports": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/model.ObjectStorageFeatureSupport"
+                    }
                 }
             }
         },

@@ -10665,6 +10665,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /objectStorage/support:
+    get:
+      tags:
+      - "[Infra Resource] Object Storage Management"
+      summary: Get CSP support information for object storage features
+      description: |-
+        Get CSP support information for object storage features (CORS, Versioning)
+        If cspType query parameter is provided, returns support information for that specific CSP
+        If cspType is not provided, returns support information for all CSPs
+      operationId: GetObjectStorageSupport
+      parameters:
+      - name: cspType
+        in: query
+        description: "CSP Type (e.g., aws, gcp, azure, alibaba, tencent, ibm, openstack,\
+          \ ncp, nhn, kt)"
+        schema:
+          type: string
+          enum:
+          - aws
+          - gcp
+          - azure
+          - alibaba
+          - tencent
+          - ibm
+          - openstack
+          - ncp
+          - nhn
+          - kt
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ObjectStorageSupportResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /objects:
     get:
       tags:
@@ -16531,6 +16578,15 @@ components:
         description:
           type: string
           example: this bucket is managed by CB-Tumblebug
+    model.ObjectStorageFeatureSupport:
+      type: object
+      properties:
+        cors:
+          type: boolean
+          example: true
+        versioning:
+          type: boolean
+          example: true
     model.ObjectStorageGetCorsResponse:
       type: object
       properties:
@@ -16679,6 +16735,16 @@ components:
         status:
           type: string
           example: Enabled
+    model.ObjectStorageSupportResponse:
+      type: object
+      properties:
+        resourceType:
+          type: string
+          example: objectStorage
+        supports:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/model.ObjectStorageFeatureSupport'
     model.ObjectVersion:
       type: object
       properties:

@@ -152,3 +152,15 @@ type ObjectVersion struct {
 	StorageClass string `json:"storageClass,omitempty" example:"STANDARD"`
 	Owner        Owner  `json:"owner,omitempty"`
 }
+
+// ObjectStorageFeatureSupport represents the feature support information for a CSP
+type ObjectStorageFeatureSupport struct {
+	Cors       bool `json:"cors" example:"true"`
+	Versioning bool `json:"versioning" example:"true"`
+}
+
+// ObjectStorageSupportResponse represents the response structure for CSP support information
+type ObjectStorageSupportResponse struct {
+	ResourceType string                                 `json:"resourceType" example:"objectStorage"`
+	Supports     map[string]ObjectStorageFeatureSupport `json:"supports,omitempty"`
+}
