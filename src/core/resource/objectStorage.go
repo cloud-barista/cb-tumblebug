@@ -280,6 +280,53 @@ func isObjectStorageVersioningSupported(cspType string) bool {
 	return supported
 }
 
+// GetObjectStorageSupport retrieves the CSP support information for object storage features
+// If cspType is provided, it returns support information for that specific CSP
+// If cspType is empty, it returns support information for all CSPs
+func GetObjectStorageSupport(cspType string) (model.ObjectStorageSupportResponse, error) {
+	var response model.ObjectStorageSupportResponse
+
+	// If cspType is specified, return support for that CSP only
+	if cspType != "" {
+		cspType = strings.ToLower(cspType)
+
+		// Check if the CSP exists in the support map
+		isCorsSupported, corsExists := cspSupportingObjectStorageCors[cspType]
+		isVersioningSupported, versioningExists := cspSupportingObjectStorageVersioning[cspType]
+
+		if !corsExists && !versioningExists {
+			return response, fmt.Errorf("unknown CSP type: %s", cspType)
+		}
+
+		response.ResourceType = model.StrObjectStorage
+		response.Supports = map[string]model.ObjectStorageFeatureSupport{
+			cspType: {
+				Cors:       isCorsSupported,
+				Versioning: isVersioningSupported,
+			},
+		}
+		return response, nil
+	}
+
+	// Return support information for all CSPs
+	allSupports := make(map[string]model.ObjectStorageFeatureSupport)
+
+	// Iterate through all CSPs in the CORS support map
+	for _, providerName := range csp.AllCSPs {
+		isCorsSupported := cspSupportingObjectStorageCors[providerName]
+		isVersioningSupported := cspSupportingObjectStorageVersioning[providerName]
+
+		allSupports[providerName] = model.ObjectStorageFeatureSupport{
+			Cors:       isCorsSupported,
+			Versioning: isVersioningSupported,
+		}
+	}
+
+	response.ResourceType = model.StrObjectStorage
+	response.Supports = allSupports
+	return response, nil
+}
+
 /*
  * Functions for object storages (buckets)
  */

@@ -647,6 +647,9 @@ func RunServer() {
 	// sqlDbGroup.GET("/:sqlDbId/request/:requestId", rest_resource.RestGetRequestStatusOfSqlDB)
 	// sqlDbGroup.PUT("//:sqlDbId", rest_resource.RestPutSqlDB)
 
+	// Object Storage support information
+	e.GET("/tumblebug/objectStorage/support", rest_resource.RestGetObjectStorageSupport)
+
 	// Object Storage management
 	g.PUT("/:nsId/resources/objectStorage", rest_resource.RestCreateObjectStorage)
 	g.GET("/:nsId/resources/objectStorage", rest_resource.RestGetAllResources)
