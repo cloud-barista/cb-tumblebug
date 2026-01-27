@@ -9659,7 +9659,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "[DEFAULT]": {
-                                            "$ref": "#/definitions/resource.RestListObjectStorageResponse"
+                                            "$ref": "#/definitions/model.ObjectStorageListResponse"
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/model.IdList"
@@ -20404,6 +20404,17 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ObjectStorageListResponse": {
+            "type": "object",
+            "properties": {
+                "objectStorage": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ObjectStorageInfo"
+                    }
+                }
+            }
+        },
         "model.ObjectStorageLocationResponse": {
             "type": "object",
             "properties": {
@@ -24913,17 +24924,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.VNetInfo"
-                    }
-                }
-            }
-        },
-        "resource.RestListObjectStorageResponse": {
-            "type": "object",
-            "properties": {
-                "objectStorage": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.ObjectStorageInfo"
                     }
                 }
             }

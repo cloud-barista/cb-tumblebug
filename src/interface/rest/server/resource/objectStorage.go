@@ -101,10 +101,6 @@ func RestCreateObjectStorage(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
-type RestListObjectStorageResponse struct {
-	ObjectStorage []model.ObjectStorageInfo `json:"objectStorage"`
-}
-
 // RestListObjectStorages godoc
 // @ID ListObjectStorages
 // @Summary List object storages (buckets)
@@ -116,7 +112,7 @@ type RestListObjectStorageResponse struct {
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex: cspResourceName)"
 // @Param filterVal query string false "Field value for filtering (ex: default-alibaba-ap-northeast-1-vpc)"
-// @Success 200 {object} JSONResult{[DEFAULT]=RestListObjectStorageResponse,[ID]=model.IdList} "Different return structures by the given option param"
+// @Success 200 {object} JSONResult{[DEFAULT]=model.ObjectStorageListResponse,[ID]=model.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/objectStorage [get]
