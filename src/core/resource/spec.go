@@ -370,7 +370,7 @@ func LookupSpec(connConfig string, specName string) (model.SpiderSpecInfo, error
 	}
 
 	client := clientManager.NewHttpClient()
-	client.SetTimeout(2 * time.Minute)
+	client.SetTimeout(4 * time.Minute)
 	url := model.SpiderRestUrl + "/vmspec/" + specName
 	method := "GET"
 	requestBody := model.SpiderConnectionName{}
