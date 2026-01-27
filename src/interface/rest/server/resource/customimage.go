@@ -128,7 +128,7 @@ func RestDelCustomImage(c echo.Context) error {
 // @Param customImageId path string true "customImage ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
-// @Router /ns/{nsId}/deregisterCspResource/customImage/{customImageId} [delete]
+// @Router /ns/{nsId}/deregisterResource/customImage/{customImageId} [delete]
 func RestDeregisterCustomImage(c echo.Context) error {
 	// This is a dummy function for Swagger.
 	return nil

@@ -153,7 +153,7 @@ func RestDelDataDisk(c echo.Context) error {
 // @Param dataDiskId path string true "Data Disk ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
-// @Router /ns/{nsId}/deregisterCspResource/dataDisk/{dataDiskId} [delete]
+// @Router /ns/{nsId}/deregisterResource/dataDisk/{dataDiskId} [delete]
 func RestDeregisterDataDisk(c echo.Context) error {
 	// This is a dummy function for Swagger.
 	return nil

@@ -422,7 +422,7 @@ func RunServer() {
 	//g.GET("/:nsId/mci/:mciId/vm", rest_infra.RestGetAllMciVm)
 	// g.PUT("/:nsId/mci/:mciId/vm/:vmId", rest_infra.RestPutMciVm)
 	g.DELETE("/:nsId/mci/:mciId/vm/:vmId", rest_infra.RestDelMciVm)
-	g.DELETE("/:nsId/mci/:mciId/vm/:vmId/deregister", rest_infra.RestDeregisterMciVm)
+	g.DELETE("/:nsId/deregisterResource/mci/:mciId/vm/:vmId", rest_infra.RestDeregisterMciVm)
 	//g.DELETE("/:nsId/mci/:mciId/vm", rest_infra.RestDelAllMciVm)
 
 	//g.POST("/:nsId/mci/recommend", rest_infra.RestPostMciRecommend)
@@ -555,7 +555,7 @@ func RunServer() {
 	g.PUT("/:nsId/resources/dataDisk/:resourceId", rest_resource.RestPutDataDisk)
 	g.DELETE("/:nsId/resources/dataDisk/:resourceId", rest_resource.RestDelResource)
 	g.DELETE("/:nsId/resources/dataDisk", rest_resource.RestDelAllResources)
-	g.DELETE("/:nsId/deregisterCspResource/dataDisk/:resourceId", rest_resource.RestDeregisterResource)
+	g.DELETE("/:nsId/deregisterResource/dataDisk/:resourceId", rest_resource.RestDeregisterResource)
 	g.GET("/:nsId/mci/:mciId/vm/:vmId/dataDisk", rest_resource.RestGetVmDataDisk)
 	g.POST("/:nsId/mci/:mciId/vm/:vmId/dataDisk", rest_resource.RestPostVmDataDisk)
 	g.PUT("/:nsId/mci/:mciId/vm/:vmId/dataDisk", rest_resource.RestPutVmDataDisk)
@@ -573,7 +573,7 @@ func RunServer() {
 	// g.PUT("/:nsId/resources/customImage/:resourceId", rest_resource.RestPutCustomImage)
 	g.DELETE("/:nsId/resources/customImage/:resourceId", rest_resource.RestDelResource)
 	g.DELETE("/:nsId/resources/customImage", rest_resource.RestDelAllResources)
-	g.DELETE("/:nsId/deregisterCspResource/customImage/:resourceId", rest_resource.RestDeregisterResource)
+	g.DELETE("/:nsId/deregisterResource/customImage/:resourceId", rest_resource.RestDeregisterResource)
 
 	g.POST("/:nsId/resources/sshKey", rest_resource.RestPostSshKey)
 	g.GET("/:nsId/resources/sshKey/:resourceId", rest_resource.RestGetResource)
@@ -581,7 +581,7 @@ func RunServer() {
 	g.PUT("/:nsId/resources/sshKey/:resourceId", rest_resource.RestPutSshKey)
 	g.DELETE("/:nsId/resources/sshKey/:resourceId", rest_resource.RestDelResource)
 	g.DELETE("/:nsId/resources/sshKey", rest_resource.RestDelAllResources)
-	g.DELETE("/:nsId/deregisterCspResource/sshKey/:resourceId", rest_resource.RestDeregisterResource)
+	g.DELETE("/:nsId/deregisterResource/sshKey/:resourceId", rest_resource.RestDeregisterResource)
 
 	g.POST("/:nsId/resources/spec", rest_resource.RestPostSpec)
 	g.GET("/:nsId/resources/spec/:resourceId", rest_resource.RestGetSpec)
@@ -610,7 +610,7 @@ func RunServer() {
 	g.PUT("/:nsId/resources/securityGroup/:resourceId", rest_resource.RestPutSecurityGroup)
 	g.DELETE("/:nsId/resources/securityGroup/:resourceId", rest_resource.RestDelResource)
 	g.DELETE("/:nsId/resources/securityGroup", rest_resource.RestDelAllResources)
-	g.DELETE("/:nsId/deregisterCspResource/securityGroup/:resourceId", rest_resource.RestDeregisterResource)
+	g.DELETE("/:nsId/deregisterResource/securityGroup/:resourceId", rest_resource.RestDeregisterResource)
 
 	g.POST("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_resource.RestPostFirewallRules)
 	g.DELETE("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_resource.RestDelFirewallRules)
@@ -632,9 +632,9 @@ func RunServer() {
 
 	// Network management: register vNet and/or subnets, which was created in CSP
 	g.POST("/:nsId/registerCspResource/vNet", rest_resource.RestPostRegisterVNet)
-	g.DELETE("/:nsId/deregisterCspResource/vNet/:vNetId", rest_resource.RestDeleteDeregisterVNet)
+	g.DELETE("/:nsId/deregisterResource/vNet/:vNetId", rest_resource.RestDeleteDeregisterVNet)
 	g.POST("/:nsId/registerCspResource/vNet/:vNetId/subnet", rest_resource.RestPostRegisterSubnet)
-	g.DELETE("/:nsId/deregisterCspResource/vNet/:vNetId/subnet/:subnetId", rest_resource.RestDeleteDeregisterSubnet)
+	g.DELETE("/:nsId/deregisterResource/vNet/:vNetId/subnet/:subnetId", rest_resource.RestDeleteDeregisterSubnet)
 
 	// SQL database management
 	// g.GET("/:nsId/resources/sqlDb", rest_resource.)

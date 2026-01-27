@@ -149,7 +149,7 @@ func RestDelSshKey(c echo.Context) error {
 // @Param sshKeyId path string true "SSH Key ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
-// @Router /ns/{nsId}/deregisterCspResource/sshKey/{sshKeyId} [delete]
+// @Router /ns/{nsId}/deregisterResource/sshKey/{sshKeyId} [delete]
 func RestDeregisterSshKey(c echo.Context) error {
 	// This is a dummy function for Swagger.
 	return nil

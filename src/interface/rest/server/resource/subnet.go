@@ -350,7 +350,7 @@ func RestPostRegisterSubnet(c echo.Context) error {
 // @Param subnetId path string true "Subnet ID"
 // @Success 200 {object} model.SimpleMsg
 // @Failure 404 {object} model.SimpleMsg
-// @Router /ns/{nsId}/deregisterCspResource/vNet/{vNetId}/subnet/{subnetId} [delete]
+// @Router /ns/{nsId}/deregisterResource/vNet/{vNetId}/subnet/{subnetId} [delete]
 func RestDeleteDeregisterSubnet(c echo.Context) error {
 
 	// [Input]

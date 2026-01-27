@@ -3115,7 +3115,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregisterCspResource/customImage/{customImageId}": {
+        "/ns/{nsId}/deregisterResource/customImage/{customImageId}": {
             "delete": {
                 "description": "Deregister customImage from Spider and TB without deleting the actual CSP resource",
                 "consumes": [
@@ -3162,7 +3162,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregisterCspResource/dataDisk/{dataDiskId}": {
+        "/ns/{nsId}/deregisterResource/dataDisk/{dataDiskId}": {
             "delete": {
                 "description": "Deregister Data Disk from Spider and TB without deleting the actual CSP resource",
                 "consumes": [
@@ -3209,7 +3209,63 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregisterCspResource/securityGroup/{securityGroupId}": {
+        "/ns/{nsId}/deregisterResource/mci/{mciId}/vm/{vmId}": {
+            "delete": {
+                "description": "Deregister VM from Spider and TB without deleting the actual CSP resource",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Provisioning and Management"
+                ],
+                "summary": "Deregister VM in specified MCI",
+                "operationId": "DeregisterMciVm",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/deregisterResource/securityGroup/{securityGroupId}": {
             "delete": {
                 "description": "Deregister Security Group from Spider and TB without deleting the actual CSP resource",
                 "consumes": [
@@ -3256,7 +3312,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregisterCspResource/sshKey/{sshKeyId}": {
+        "/ns/{nsId}/deregisterResource/sshKey/{sshKeyId}": {
             "delete": {
                 "description": "Deregister SSH Key from Spider and TB without deleting the actual CSP resource",
                 "consumes": [
@@ -3303,7 +3359,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregisterCspResource/vNet/{vNetId}": {
+        "/ns/{nsId}/deregisterResource/vNet/{vNetId}": {
             "delete": {
                 "description": "Deregister the VNet, which was created in CSP",
                 "consumes": [
@@ -3366,7 +3422,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/deregisterCspResource/vNet/{vNetId}/subnet/{subnetId}": {
+        "/ns/{nsId}/deregisterResource/vNet/{vNetId}/subnet/{subnetId}": {
             "delete": {
                 "description": "Deregister Subnet, which was created in CSP",
                 "consumes": [
@@ -7093,62 +7149,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.VmInfo"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/mci/{mciId}/vm/{vmId}/deregister": {
-            "delete": {
-                "description": "Deregister VM from Spider and TB without deleting the actual CSP resource",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[MC-Infra] MCI Provisioning and Management"
-                ],
-                "summary": "Deregister VM in specified MCI",
-                "operationId": "DeregisterMciVm",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "default",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mci01",
-                        "description": "MCI ID",
-                        "name": "mciId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "404": {
