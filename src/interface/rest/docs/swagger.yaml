@@ -11238,13 +11238,21 @@ paths:
       description: |-
         Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug.
 
-        **Behavior based on connectionName:**
-        - If `connectionName` is specified: Registers resources from the specified connection only
-        - If `connectionName` is empty or omitted: Registers resources from **all available connections**
+        **New filtering approach (recommended):**
+        - Provider only: Registers resources from all connections of the specified provider
+        - Provider + Region: Registers resources from all zones within the region
+        - Provider + Region + Zone: Registers resources from specific zone
+        - All empty: Registers resources from **all available connections**
+
+        **Backward compatibility:**
+        - `connectionName` is still supported but deprecated. Use provider/region/zone instead.
 
         **Usage Examples:**
-        - Single connection: `{"connectionName": "aws-ap-northeast-2", "nsId": "default", "mciNamePrefix": "mci-01"}`
-        - All connections: `{"connectionName": "", "nsId": "default", "mciNamePrefix": "mci-all"}` or `{"nsId": "default", "mciNamePrefix": "mci-all"}`
+        - All AWS: `{"provider": "aws", "nsId": "default"}`
+        - AWS Seoul region: `{"provider": "aws", "region": "ap-northeast-2", "nsId": "default"}`
+        - AWS Seoul zone 2a: `{"provider": "aws", "region": "ap-northeast-2", "zone": "ap-northeast-2a", "nsId": "default"}`
+        - All connections: `{"nsId": "default", "mciNamePrefix": "mci-all"}`
+        - Single connection (deprecated): `{"connectionName": "aws-ap-northeast-2", "nsId": "default"}`
       operationId: RegisterCspNativeResources
       parameters:
       - name: option
@@ -11273,8 +11281,8 @@ paths:
           - "y"
           - "n"
       requestBody:
-        description: "Specify connectionName (optional for all connections), NS Id,\
-          \ and MCI Name Prefix"
+        description: "Specify provider/region/zone or connectionName (deprecated),\
+          \ NS Id, and MCI Name Prefix"
         content:
           application/json:
             schema:
@@ -11282,19 +11290,25 @@ paths:
         required: true
       responses:
         "200":
-          description: All connections result (when connectionName is empty)
+          description: Multiple connections result
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.RegisterResourceAllResult'
+        "400":
+          description: "Invalid request (e.g., region without provider)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
         "404":
-          description: Not Found
+          description: No connections found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           content:
             application/json:
               schema:
@@ -13245,8 +13259,8 @@ components:
       properties:
         connectionName:
           type: string
-          description: "Optional: if empty or omitted, registers resources from all\
-            \ connections"
+          description: "(Deprecated) Optional: if empty or omitted, registers resources\
+            \ from all connections. Use Provider/Region/Zone instead"
           example: aws-ap-southeast-1
         mciNamePrefix:
           type: string
@@ -13254,6 +13268,20 @@ components:
         nsId:
           type: string
           example: default
+        provider:
+          type: string
+          description: "Optional: Cloud provider name. Empty: all providers"
+          example: aws
+        region:
+          type: string
+          description: "Optional: Region name. Requires Provider. Empty: all regions\
+            \ for the provider"
+          example: ap-northeast-2
+        zone:
+          type: string
+          description: "Optional: Zone name. Requires Provider and Region. Empty:\
+            \ all zones for the region"
+          example: ap-northeast-2a
     common.RestRegisterCspNativeResourcesRequestAll:
       type: object
       properties:
@@ -17705,6 +17733,20 @@ components:
           description: "Resource types (csv): vNet, securityGroup, sshKey, vm, dataDisk,\
             \ customImage. Empty: all"
           example: "vNet,securityGroup"
+        provider:
+          type: string
+          description: "Cloud provider name. Empty: all providers"
+          example: aws
+        region:
+          type: string
+          description: "Region name. Requires Provider. Empty: all regions for the\
+            \ provider"
+          example: ap-northeast-2
+        zone:
+          type: string
+          description: "Zone name. Requires Provider and Region. Empty: all zones\
+            \ for the region"
+          example: ap-northeast-2a
     model.ScheduleJobStatus:
       type: object
       properties:
@@ -17766,6 +17808,12 @@ components:
         option:
           type: string
           example: ""
+        provider:
+          type: string
+          example: aws
+        region:
+          type: string
+          example: ap-northeast-2
         status:
           type: string
           example: Scheduled
@@ -17773,6 +17821,9 @@ components:
           type: integer
           description: Total successful executions
           example: 4
+        zone:
+          type: string
+          example: ap-northeast-2a
     model.SearchImageRequest:
       type: object
       properties:

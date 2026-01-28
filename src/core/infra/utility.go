@@ -855,23 +855,60 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 		if res, err := InspectResources(connConfig, model.StrVM); err != nil {
 			result.SystemMessage += "// VM Inspect Failed: " + err.Error()
 		} else {
+			// Determine MCI creation strategy based on mciFlag
+			useSingleMci := strings.ToLower(mciFlag) == "y"
+			var singleMciName string
+			var singleMciCreated bool
+
+			if useSingleMci {
+				// Single MCI mode: all VMs go into one MCI
+				singleMciName = common.ChangeIdString(mciNamePrefix)
+			}
+
 			for _, r := range res.Resources.OnCspOnly.Info {
 				subGroupName := common.ChangeIdString(fmt.Sprintf("%s-%s-%s", connConfig, r.RefNameOrId, r.CspResourceId))
-				mciName := common.ChangeIdString(fmt.Sprintf("%s-%s", mciNamePrefix, r.RefNameOrId))
 
-				req := model.MciReq{
-					Name: mciName, Description: "MCI for CSP managed VMs", InstallMonAgent: "no",
-					SubGroups: []model.CreateSubGroupReq{{
+				var mciName string
+				if useSingleMci {
+					// Use the same MCI name for all VMs
+					mciName = singleMciName
+				} else {
+					// Create separate MCI for each VM
+					mciName = common.ChangeIdString(fmt.Sprintf("%s-%s", mciNamePrefix, r.RefNameOrId))
+				}
+
+				if useSingleMci && singleMciCreated {
+					// Add VM to existing MCI
+					subGroupReq := &model.CreateSubGroupReq{
 						ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: subGroupName,
 						Description: "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)",
 						Label:       map[string]string{model.LabelRegistered: "true"},
 						// Placeholders
 						ImageId: "unknown", SpecId: "unknown", SshKeyId: "unknown",
 						SubnetId: "unknown", VNetId: "unknown", SecurityGroupIds: []string{"unknown"},
-					}},
+					}
+					_, err = CreateMciGroupVm(nsId, mciName, subGroupReq, true)
+					appendResult(&result, model.StrVM, subGroupName, err, &result.RegisterationOverview.Vm)
+				} else {
+					// Create new MCI (either first VM in single MCI mode, or each VM in separate MCI mode)
+					req := model.MciReq{
+						Name: mciName, Description: "MCI for CSP managed VMs", InstallMonAgent: "no",
+						SubGroups: []model.CreateSubGroupReq{{
+							ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: subGroupName,
+							Description: "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)",
+							Label:       map[string]string{model.LabelRegistered: "true"},
+							// Placeholders
+							ImageId: "unknown", SpecId: "unknown", SshKeyId: "unknown",
+							SubnetId: "unknown", VNetId: "unknown", SecurityGroupIds: []string{"unknown"},
+						}},
+					}
+					_, err = CreateMci(nsId, &req, optionFlag, false)
+					appendResult(&result, model.StrVM, subGroupName, err, &result.RegisterationOverview.Vm)
+
+					if useSingleMci && err == nil {
+						singleMciCreated = true
+					}
 				}
-				_, err = CreateMci(nsId, &req, optionFlag, false)
-				appendResult(&result, model.StrVM, subGroupName, err, &result.RegisterationOverview.Vm)
 			}
 		}
 	}

@@ -494,6 +494,59 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 	return filteredConnections, nil
 }
 
+// GetConnConfigListByProviderRegionZone filters connection configs by provider, region, and zone
+// - provider empty: all connections
+// - provider specified, region empty: all connections for the provider
+// - provider + region specified, zone empty: all connections for the provider and region
+// - provider + region + zone specified: connections matching all three
+func GetConnConfigListByProviderRegionZone(provider, region, zone string) ([]string, error) {
+	// Get all available connections
+	allConnections, err := GetConnConfigList(model.DefaultCredentialHolder, true, true)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get connection config list")
+		return nil, err
+	}
+
+	var filteredConnectionNames []string
+
+	// If provider is empty, return all connection names
+	if provider == "" {
+		for _, conn := range allConnections.Connectionconfig {
+			filteredConnectionNames = append(filteredConnectionNames, conn.ConfigName)
+		}
+		return filteredConnectionNames, nil
+	}
+
+	// Filter by provider, region, and zone
+	for _, conn := range allConnections.Connectionconfig {
+		// Match provider (case-insensitive)
+		if !strings.EqualFold(conn.ProviderName, provider) {
+			continue
+		}
+
+		// If region is specified, match region
+		if region != "" {
+			assignedRegion := conn.RegionZoneInfo.AssignedRegion
+			if assignedRegion != region {
+				continue
+			}
+
+			// If zone is specified, match zone
+			if zone != "" {
+				assignedZone := conn.RegionZoneInfo.AssignedZone
+				if assignedZone != zone {
+					continue
+				}
+			}
+		}
+
+		// Connection matches all criteria
+		filteredConnectionNames = append(filteredConnectionNames, conn.ConfigName)
+	}
+
+	return filteredConnectionNames, nil
+}
+
 // RegisterAllCloudInfo is func to register all cloud info from asset to CB-Spider
 func RegisterAllCloudInfo() error {
 	for providerName := range RuntimeCloudInfo.CSPs {

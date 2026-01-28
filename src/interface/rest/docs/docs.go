@@ -13648,7 +13648,7 @@ const docTemplate = `{
         },
         "/registerCspResources": {
             "post": {
-                "description": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug.\n\n**Behavior based on connectionName:**\n- If ` + "`" + `connectionName` + "`" + ` is specified: Registers resources from the specified connection only\n- If ` + "`" + `connectionName` + "`" + ` is empty or omitted: Registers resources from **all available connections**\n\n**Usage Examples:**\n- Single connection: ` + "`" + `{\"connectionName\": \"aws-ap-northeast-2\", \"nsId\": \"default\", \"mciNamePrefix\": \"mci-01\"}` + "`" + `\n- All connections: ` + "`" + `{\"connectionName\": \"\", \"nsId\": \"default\", \"mciNamePrefix\": \"mci-all\"}` + "`" + ` or ` + "`" + `{\"nsId\": \"default\", \"mciNamePrefix\": \"mci-all\"}` + "`" + `",
+                "description": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug.\n\n**New filtering approach (recommended):**\n- Provider only: Registers resources from all connections of the specified provider\n- Provider + Region: Registers resources from all zones within the region\n- Provider + Region + Zone: Registers resources from specific zone\n- All empty: Registers resources from **all available connections**\n\n**Backward compatibility:**\n- ` + "`" + `connectionName` + "`" + ` is still supported but deprecated. Use provider/region/zone instead.\n\n**Usage Examples:**\n- All AWS: ` + "`" + `{\"provider\": \"aws\", \"nsId\": \"default\"}` + "`" + `\n- AWS Seoul region: ` + "`" + `{\"provider\": \"aws\", \"region\": \"ap-northeast-2\", \"nsId\": \"default\"}` + "`" + `\n- AWS Seoul zone 2a: ` + "`" + `{\"provider\": \"aws\", \"region\": \"ap-northeast-2\", \"zone\": \"ap-northeast-2a\", \"nsId\": \"default\"}` + "`" + `\n- All connections: ` + "`" + `{\"nsId\": \"default\", \"mciNamePrefix\": \"mci-all\"}` + "`" + `\n- Single connection (deprecated): ` + "`" + `{\"connectionName\": \"aws-ap-northeast-2\", \"nsId\": \"default\"}` + "`" + `",
                 "consumes": [
                     "application/json"
                 ],
@@ -13662,7 +13662,7 @@ const docTemplate = `{
                 "operationId": "RegisterCspNativeResources",
                 "parameters": [
                     {
-                        "description": "Specify connectionName (optional for all connections), NS Id, and MCI Name Prefix",
+                        "description": "Specify provider/region/zone or connectionName (deprecated), NS Id, and MCI Name Prefix",
                         "name": "Request",
                         "in": "body",
                         "required": true,
@@ -13702,19 +13702,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "All connections result (when connectionName is empty)",
+                        "description": "Multiple connections result",
                         "schema": {
                             "$ref": "#/definitions/model.RegisterResourceAllResult"
                         }
                     },
+                    "400": {
+                        "description": "Invalid request (e.g., region without provider)",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
                     "404": {
-                        "description": "Not Found",
+                        "description": "No connections found",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -15769,7 +15775,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "connectionName": {
-                    "description": "Optional: if empty or omitted, registers resources from all connections",
+                    "description": "(Deprecated) Optional: if empty or omitted, registers resources from all connections. Use Provider/Region/Zone instead",
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
@@ -15780,6 +15786,21 @@ const docTemplate = `{
                 "nsId": {
                     "type": "string",
                     "example": "default"
+                },
+                "provider": {
+                    "description": "Optional: Cloud provider name. Empty: all providers",
+                    "type": "string",
+                    "example": "aws"
+                },
+                "region": {
+                    "description": "Optional: Region name. Requires Provider. Empty: all regions for the provider",
+                    "type": "string",
+                    "example": "ap-northeast-2"
+                },
+                "zone": {
+                    "description": "Optional: Zone name. Requires Provider and Region. Empty: all zones for the region",
+                    "type": "string",
+                    "example": "ap-northeast-2a"
                 }
             }
         },
@@ -21836,6 +21857,21 @@ const docTemplate = `{
                     "description": "Resource types (csv): vNet, securityGroup, sshKey, vm, dataDisk, customImage. Empty: all",
                     "type": "string",
                     "example": "vNet,securityGroup"
+                },
+                "provider": {
+                    "description": "Cloud provider name. Empty: all providers",
+                    "type": "string",
+                    "example": "aws"
+                },
+                "region": {
+                    "description": "Region name. Requires Provider. Empty: all regions for the provider",
+                    "type": "string",
+                    "example": "ap-northeast-2"
+                },
+                "zone": {
+                    "description": "Zone name. Requires Provider and Region. Empty: all zones for the region",
+                    "type": "string",
+                    "example": "ap-northeast-2a"
                 }
             }
         },
@@ -21918,6 +21954,14 @@ const docTemplate = `{
                     "type": "string",
                     "example": ""
                 },
+                "provider": {
+                    "type": "string",
+                    "example": "aws"
+                },
+                "region": {
+                    "type": "string",
+                    "example": "ap-northeast-2"
+                },
                 "status": {
                     "type": "string",
                     "example": "Scheduled"
@@ -21926,6 +21970,10 @@ const docTemplate = `{
                     "description": "Total successful executions",
                     "type": "integer",
                     "example": 4
+                },
+                "zone": {
+                    "type": "string",
+                    "example": "ap-northeast-2a"
                 }
             }
         },
