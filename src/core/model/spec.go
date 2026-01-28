@@ -113,6 +113,18 @@ type SpiderPriceInfoHandler interface {
 	GetPriceInfo(productFamily string, regionName string, filterList []KeyValue) (string, error) // return string: json format
 }
 
+// SpecSummary is a lightweight struct containing essential spec information for VmInfo
+type SpecSummary struct {
+	CspSpecName         string  `json:"cspSpecName,omitempty" example:"t3.medium"`
+	VCPU                uint16  `json:"vCPU,omitempty" example:"2"`
+	MemoryGiB           float32 `json:"memoryGiB,omitempty" example:"4"`
+	AcceleratorModel    string  `json:"acceleratorModel,omitempty" example:"NVIDIA Tesla V100"`
+	AcceleratorCount    uint8   `json:"acceleratorCount,omitempty" example:"1"`
+	AcceleratorMemoryGB float32 `json:"acceleratorMemoryGB,omitempty" example:"16"`
+	AcceleratorType     string  `json:"acceleratorType,omitempty" example:"GPU"`
+	CostPerHour         float32 `json:"costPerHour,omitempty" example:"0.0416"`
+}
+
 // SpecReq is a struct to handle 'Register spec' request toward CB-Tumblebug.
 type SpecReq struct {
 	// Name is human-readable string to represent the object, used to generate Id

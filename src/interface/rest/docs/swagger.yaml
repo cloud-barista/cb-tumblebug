@@ -14942,6 +14942,26 @@ components:
       - ImageDeleting
       - ImageDeprecated
       - ImageNA
+    model.ImageSummary:
+      type: object
+      properties:
+        cspImageName:
+          type: string
+          example: ami-0123456789abcdef0
+        osArchitecture:
+          type: object
+          example: x86_64
+          allOf:
+          - $ref: '#/components/schemas/model.OSArchitecture'
+        osDistribution:
+          type: string
+          example: Ubuntu 22.04
+        osType:
+          type: string
+          example: ubuntu 22.04
+        resourceType:
+          type: string
+          example: image
     model.InspectResource:
       type: object
       properties:
@@ -18463,6 +18483,33 @@ components:
         totalSuccesses:
           type: integer
           description: TotalSuccesses is the total number of successes for this spec
+    model.SpecSummary:
+      type: object
+      properties:
+        acceleratorCount:
+          type: integer
+          example: 1
+        acceleratorMemoryGB:
+          type: number
+          example: 16.0
+        acceleratorModel:
+          type: string
+          example: NVIDIA Tesla V100
+        acceleratorType:
+          type: string
+          example: GPU
+        costPerHour:
+          type: number
+          example: 0.0416
+        cspSpecName:
+          type: string
+          example: t3.medium
+        memoryGiB:
+          type: number
+          example: 4.0
+        vCPU:
+          type: integer
+          example: 2
     model.SpecsToIgnoreData:
       type: object
       properties:
@@ -19295,6 +19342,8 @@ components:
           type: string
           description: Id is unique identifier for the object
           example: aws-ap-southeast-1
+        image:
+          $ref: '#/components/schemas/model.ImageSummary'
         imageId:
           type: string
         label:
@@ -19341,6 +19390,8 @@ components:
           type: array
           items:
             type: string
+        spec:
+          $ref: '#/components/schemas/model.SpecSummary'
         specId:
           type: string
         sshHostKeyInfo:

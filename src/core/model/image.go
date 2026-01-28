@@ -87,6 +87,15 @@ type SpiderImageInfo struct {
 	KeyValueList []KeyValue `json:"KeyValueList,omitempty" validate:"omitempty" description:"A list of key-value pairs associated with the image."`
 }
 
+// ImageSummary is a lightweight struct containing essential image information for VmInfo
+type ImageSummary struct {
+	ResourceType   string         `json:"resourceType,omitempty" example:"image" description:"image or customImage"`
+	CspImageName   string         `json:"cspImageName,omitempty" example:"ami-0123456789abcdef0"`
+	OSType         string         `json:"osType" gorm:"column:os_type" example:"ubuntu 22.04" description:"Simplified OS name and version string"`
+	OSArchitecture OSArchitecture `json:"osArchitecture,omitempty" example:"x86_64"`
+	OSDistribution string         `json:"osDistribution,omitempty" example:"Ubuntu 22.04"`
+}
+
 // ImageReq is a struct to handle 'Register image' request toward CB-Tumblebug.
 type ImageReq struct {
 	Name           string `json:"name" validate:"required"`
