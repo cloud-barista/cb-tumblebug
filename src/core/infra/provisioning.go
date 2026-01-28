@@ -3522,6 +3522,40 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 		resource.UpdateAssociatedObjectList(nsId, model.StrDataDisk, dataDisk.Id, model.StrAdd, vmKey)
 	}
 
+	// Populate SpecSummary and ImageSummary for VmInfo
+	if vmInfoData.SpecId != "" {
+		specInfo, err := resource.GetSpec(model.SystemCommonNs, vmInfoData.SpecId)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to get spec info for SpecSummary: %s", vmInfoData.SpecId)
+		} else {
+			vmInfoData.Spec = model.SpecSummary{
+				CspSpecName:         specInfo.CspSpecName,
+				VCPU:                specInfo.VCPU,
+				MemoryGiB:           specInfo.MemoryGiB,
+				AcceleratorModel:    specInfo.AcceleratorModel,
+				AcceleratorCount:    specInfo.AcceleratorCount,
+				AcceleratorMemoryGB: specInfo.AcceleratorMemoryGB,
+				AcceleratorType:     specInfo.AcceleratorType,
+				CostPerHour:         specInfo.CostPerHour,
+			}
+		}
+	}
+
+	if vmInfoData.ImageId != "" {
+		imageInfo, err := resource.GetImage(nsId, vmInfoData.ImageId)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to get image info for ImageSummary: %s", vmInfoData.ImageId)
+		} else {
+			vmInfoData.Image = model.ImageSummary{
+				ResourceType:   imageInfo.ResourceType,
+				CspImageName:   imageInfo.CspImageName,
+				OSType:         imageInfo.OSType,
+				OSArchitecture: imageInfo.OSArchitecture,
+				OSDistribution: imageInfo.OSDistribution,
+			}
+		}
+	}
+
 	// Assign a Bastion if none (randomly)
 	UpdateVmInfo(nsId, mciId, *vmInfoData)
 	_, err = SetBastionNodes(nsId, mciId, vmInfoData.Id, "")

@@ -670,8 +670,10 @@ type VmInfo struct {
 	ConnectionConfig ConnConfig `json:"connectionConfig"`
 	SpecId           string     `json:"specId"`
 	CspSpecName      string     `json:"cspSpecName"`
+	Spec             SpecSummary `json:"spec,omitempty"`
 	ImageId          string     `json:"imageId"`
 	CspImageName     string     `json:"cspImageName"`
+	Image            ImageSummary `json:"image,omitempty"`
 	VNetId           string     `json:"vNetId"`
 	CspVNetId        string     `json:"cspVNetId"`
 	SubnetId         string     `json:"subnetId"`

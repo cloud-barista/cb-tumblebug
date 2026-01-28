@@ -18052,6 +18052,35 @@ const docTemplate = `{
                 "ImageNA"
             ]
         },
+        "model.ImageSummary": {
+            "type": "object",
+            "properties": {
+                "cspImageName": {
+                    "type": "string",
+                    "example": "ami-0123456789abcdef0"
+                },
+                "osArchitecture": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.OSArchitecture"
+                        }
+                    ],
+                    "example": "x86_64"
+                },
+                "osDistribution": {
+                    "type": "string",
+                    "example": "Ubuntu 22.04"
+                },
+                "osType": {
+                    "type": "string",
+                    "example": "ubuntu 22.04"
+                },
+                "resourceType": {
+                    "type": "string",
+                    "example": "image"
+                }
+            }
+        },
         "model.InspectResource": {
             "type": "object",
             "properties": {
@@ -22813,6 +22842,43 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SpecSummary": {
+            "type": "object",
+            "properties": {
+                "acceleratorCount": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "acceleratorMemoryGB": {
+                    "type": "number",
+                    "example": 16
+                },
+                "acceleratorModel": {
+                    "type": "string",
+                    "example": "NVIDIA Tesla V100"
+                },
+                "acceleratorType": {
+                    "type": "string",
+                    "example": "GPU"
+                },
+                "costPerHour": {
+                    "type": "number",
+                    "example": 0.0416
+                },
+                "cspSpecName": {
+                    "type": "string",
+                    "example": "t3.medium"
+                },
+                "memoryGiB": {
+                    "type": "number",
+                    "example": 4
+                },
+                "vCPU": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
         "model.SpecsToIgnoreData": {
             "type": "object",
             "properties": {
@@ -23963,6 +24029,9 @@ const docTemplate = `{
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
+                "image": {
+                    "$ref": "#/definitions/model.ImageSummary"
+                },
                 "imageId": {
                     "type": "string"
                 },
@@ -24028,6 +24097,9 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "spec": {
+                    "$ref": "#/definitions/model.SpecSummary"
                 },
                 "specId": {
                     "type": "string"
