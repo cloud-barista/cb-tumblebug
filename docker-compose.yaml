@@ -198,7 +198,7 @@ services:
   # CB-MapUI
   # This is the Map-based client for CB-Tumblebug.
   cb-mapui:
-    image: cloudbaristaorg/cb-mapui:0.12.6
+    image: cloudbaristaorg/cb-mapui:0.12.7
     container_name: cb-mapui
     labels:
       # Explicitly tell Traefik to expose this container
@@ -412,6 +412,8 @@ services:
     depends_on:
       cb-tumblebug-metabase:
         condition: service_started
+      cb-tumblebug-postgres:
+        condition: service_healthy
     volumes:
       - ./init/initMetabase.sh:/scripts/initMetabase.sh:ro
       - ./container-volume/cb-tumblebug-container/meta_db/metabase-init-marker:/marker
@@ -427,22 +429,31 @@ services:
       - ADMIN_PASSWORD=admin1@your.org
     command: |
       sh -c "
-        apk add --no-cache curl jq
+        apk add --no-cache curl jq >/dev/null 2>&1
+        sleep 5  # Wait for services to stabilize
+
+        # Skip if already initialized
         if [ -f /marker/init-completed ]; then
-          echo 'Metabase initialization already completed (marker found)'
-          echo 'Skipping initialization to prevent duplicate databases...'
+          echo '[Metabase] Already initialized, skipping.'
           exit 0
         fi
-        cat /scripts/initMetabase.sh | sh
-        if [ \$? -eq 0 ]; then
-          mkdir -p /marker
-          touch /marker/init-completed
-          echo 'Metabase initialization completed, marker created'
-        fi
+
+        # Retry init up to 3 times
+        for i in 1 2 3; do
+          echo \"[Metabase] Init attempt \$$i/3...\"
+          sh /scripts/initMetabase.sh && {
+            mkdir -p /marker && date > /marker/init-completed
+            echo '[Metabase] Init completed.'
+            exit 0
+          }
+          [ \$$i -lt 3 ] && sleep 30
+        done
+
+        echo '[Metabase] Init failed. Configure manually at http://localhost:3000'
+        exit 1
       "
     restart: "no"
-    # To re-init metabase, remove the marker and metabase data
-    # sudo rm -rf container-volume/cb-tumblebug-container/meta_db/metabase-*
+    # To re-init: sudo rm -rf container-volume/cb-tumblebug-container/meta_db/metabase-*
 
   # # CB-Tumblebug pgAdmin Dashboard for PostgreSQL
   # # Enable this service to manage the PostgreSQL database of CB-Tumblebug.
