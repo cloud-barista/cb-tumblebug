@@ -40,7 +40,10 @@ type ScheduleJobRequest struct {
 	IntervalSeconds int    `json:"intervalSeconds" validate:"required,min=10" example:"60"`    // Execution interval in seconds
 
 	// Job-specific parameters (for registerCspResources)
-	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2"` // Connection configuration name
+	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2"` // (Deprecated) Connection configuration name. Use Provider/Region/Zone instead
+	Provider       string `json:"provider,omitempty" example:"aws"`                      // Cloud provider name. Empty: all providers
+	Region         string `json:"region,omitempty" example:"ap-northeast-2"`             // Region name. Requires Provider. Empty: all regions for the provider
+	Zone           string `json:"zone,omitempty" example:"ap-northeast-2a"`              // Zone name. Requires Provider and Region. Empty: all zones for the region
 	MciNamePrefix  string `json:"mciNamePrefix,omitempty" example:"mci-01"`              // MCI name prefix
 	Option         string `json:"option,omitempty" example:"vNet,securityGroup"`         // Resource types (csv): vNet, securityGroup, sshKey, vm, dataDisk, customImage. Empty: all
 	MciFlag        string `json:"mciFlag,omitempty" example:"y"`                         // MCI flag: y or n
@@ -72,7 +75,10 @@ type ScheduleJobStatus struct {
 	LastResult          string    `json:"lastResult,omitempty" example:"Success (execution #5)"`
 
 	// Job-specific parameters
-	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2"`
+	ConnectionName string `json:"connectionName,omitempty" example:"aws-ap-northeast-2"` // (Deprecated)
+	Provider       string `json:"provider,omitempty" example:"aws"`
+	Region         string `json:"region,omitempty" example:"ap-northeast-2"`
+	Zone           string `json:"zone,omitempty" example:"ap-northeast-2a"`
 	MciNamePrefix  string `json:"mciNamePrefix,omitempty" example:"mci-01"`
 	Option         string `json:"option,omitempty" example:""`
 	MciFlag        string `json:"mciFlag,omitempty" example:"y"`

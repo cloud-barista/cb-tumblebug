@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
@@ -77,7 +78,10 @@ type ScheduledJob struct {
 	Enabled          bool `json:"enabled"`
 
 	// Job-specific parameters
-	ConnectionName string `json:"connectionName,omitempty"` // For registerCspResources
+	ConnectionName string `json:"connectionName,omitempty"` // (Deprecated) For registerCspResources
+	Provider       string `json:"provider,omitempty"`       // For registerCspResources
+	Region         string `json:"region,omitempty"`         // For registerCspResources
+	Zone           string `json:"zone,omitempty"`           // For registerCspResources
 	MciNamePrefix  string `json:"mciNamePrefix,omitempty"`  // For registerCspResources
 	Option         string `json:"option,omitempty"`         // For registerCspResources
 	MciFlag        string `json:"mciFlag,omitempty"`        // For registerCspResources
@@ -274,9 +278,13 @@ func (sm *SchedulerManager) deleteJobFromStore(jobId string) error {
 func (sm *SchedulerManager) findDuplicateJob(req model.ScheduleJobRequest) (*ScheduledJob, bool) {
 	for _, job := range sm.jobs {
 		// Check if job has same configuration (regardless of jobId)
+		// Support both old (ConnectionName) and new (Provider/Region/Zone) fields
 		if job.NsId == req.NsId &&
 			string(job.JobType) == req.JobType &&
 			job.ConnectionName == req.ConnectionName &&
+			job.Provider == req.Provider &&
+			job.Region == req.Region &&
+			job.Zone == req.Zone &&
 			job.MciNamePrefix == req.MciNamePrefix &&
 			job.Option == req.Option &&
 			job.MciFlag == req.MciFlag {
@@ -293,9 +301,10 @@ func (sm *SchedulerManager) CreateScheduledJob(req model.ScheduleJobRequest) (*S
 
 	// Check for duplicate job configuration
 	if existingJob, isDuplicate := sm.findDuplicateJob(req); isDuplicate {
-		return nil, fmt.Errorf("duplicate job already exists: %s (jobType=%s, nsId=%s, connectionName=%s, mciNamePrefix=%s, option=%s, mciFlag=%s)",
+		return nil, fmt.Errorf("duplicate job already exists: %s (jobType=%s, nsId=%s, connectionName=%s, provider=%s, region=%s, zone=%s, mciNamePrefix=%s, option=%s, mciFlag=%s)",
 			existingJob.JobId, existingJob.JobType, existingJob.NsId,
-			existingJob.ConnectionName, existingJob.MciNamePrefix, existingJob.Option, existingJob.MciFlag)
+			existingJob.ConnectionName, existingJob.Provider, existingJob.Region, existingJob.Zone,
+			existingJob.MciNamePrefix, existingJob.Option, existingJob.MciFlag)
 	}
 
 	minimumInterval := 10
@@ -331,6 +340,9 @@ func (sm *SchedulerManager) CreateScheduledJob(req model.ScheduleJobRequest) (*S
 		IntervalSeconds: req.IntervalSeconds,
 		Enabled:         true,
 		ConnectionName:  req.ConnectionName,
+		Provider:        req.Provider,
+		Region:          req.Region,
+		Zone:            req.Zone,
 		MciNamePrefix:   req.MciNamePrefix,
 		Option:          req.Option,
 		MciFlag:         req.MciFlag,
@@ -664,24 +676,67 @@ func (job *ScheduledJob) execute() {
 		// Execute based on job type
 		switch job.JobType {
 		case JobTypeRegisterCspResources:
-			// Smart routing based on connectionName (similar to REST API handler)
-			if job.ConnectionName == "" {
-				// Route to all-connections handler
+			// Determine connection names to process
+			var connectionNames []string
+
+			// Priority 1: Use Provider/Region/Zone if provided
+			if job.Provider != "" || job.Region != "" || job.Zone != "" {
+				log.Info().Msgf("Job %s: Filtering connections by Provider=%s, Region=%s, Zone=%s",
+					job.JobId, job.Provider, job.Region, job.Zone)
+				connectionNames, err = common.GetConnConfigListByProviderRegionZone(job.Provider, job.Region, job.Zone)
+				if err != nil {
+					break
+				}
+				if len(connectionNames) == 0 {
+					err = fmt.Errorf("no connections found matching Provider=%s, Region=%s, Zone=%s",
+						job.Provider, job.Region, job.Zone)
+					break
+				}
+				log.Info().Msgf("Job %s: Found %d matching connections", job.JobId, len(connectionNames))
+			} else if job.ConnectionName != "" {
+				// Priority 2: Use ConnectionName (backward compatibility)
+				connectionNames = []string{job.ConnectionName}
+			} else {
+				// Priority 3: Empty - process all connections
 				result, err = RegisterCspNativeResourcesAll(
 					job.NsId,
 					job.MciNamePrefix,
 					job.Option,
 					job.MciFlag,
 				)
-			} else {
-				// Route to specific connection handler
+				break
+			}
+
+			// Process single connection
+			if len(connectionNames) == 1 {
 				result, err = RegisterCspNativeResources(
 					job.NsId,
-					job.ConnectionName,
+					connectionNames[0],
 					job.MciNamePrefix,
 					job.Option,
 					job.MciFlag,
 				)
+			} else {
+				// Process multiple connections
+				allResult := model.RegisterResourceAllResult{
+					RegisterationResult: []model.RegisterResourceResult{},
+				}
+				for _, connName := range connectionNames {
+					connResult, connErr := RegisterCspNativeResources(
+						job.NsId,
+						connName,
+						job.MciNamePrefix,
+						job.Option,
+						job.MciFlag,
+					)
+					if connErr != nil {
+						connResult.SystemMessage = fmt.Sprintf("Error: %v", connErr)
+					}
+					allResult.RegisterationResult = append(allResult.RegisterationResult, connResult)
+				}
+				allResult.RegisteredConnection = len(connectionNames)
+				allResult.AvailableConnection = len(connectionNames)
+				result = allResult
 			}
 
 		case JobTypeRegisterCspResourcesAll:
@@ -807,6 +862,9 @@ func (job *ScheduledJob) GetStatus() model.ScheduleJobStatus {
 		LastError:           job.LastError,
 		LastResult:          job.LastResult,
 		ConnectionName:      job.ConnectionName,
+		Provider:            job.Provider,
+		Region:              job.Region,
+		Zone:                job.Zone,
 		MciNamePrefix:       job.MciNamePrefix,
 		Option:              job.Option,
 		MciFlag:             job.MciFlag,

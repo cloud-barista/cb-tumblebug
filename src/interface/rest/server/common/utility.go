@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -494,7 +495,10 @@ func RestInspectResourcesOverview(c echo.Context) error {
 
 // Request struct for RestRegisterCspNativeResources
 type RestRegisterCspNativeResourcesRequest struct {
-	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"` // Optional: if empty or omitted, registers resources from all connections
+	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"` // (Deprecated) Optional: if empty or omitted, registers resources from all connections. Use Provider/Region/Zone instead
+	Provider       string `json:"provider" example:"aws"`                      // Optional: Cloud provider name. Empty: all providers
+	Region         string `json:"region" example:"ap-northeast-2"`             // Optional: Region name. Requires Provider. Empty: all regions for the provider
+	Zone           string `json:"zone" example:"ap-northeast-2a"`              // Optional: Zone name. Requires Provider and Region. Empty: all zones for the region
 	NsId           string `json:"nsId" example:"default"`
 	MciNamePrefix  string `json:"mciNamePrefix" example:"csp"`
 }
@@ -504,23 +508,32 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug
 // @Description Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug.
 // @Description
-// @Description **Behavior based on connectionName:**
-// @Description - If `connectionName` is specified: Registers resources from the specified connection only
-// @Description - If `connectionName` is empty or omitted: Registers resources from **all available connections**
+// @Description **New filtering approach (recommended):**
+// @Description - Provider only: Registers resources from all connections of the specified provider
+// @Description - Provider + Region: Registers resources from all zones within the region
+// @Description - Provider + Region + Zone: Registers resources from specific zone
+// @Description - All empty: Registers resources from **all available connections**
+// @Description
+// @Description **Backward compatibility:**
+// @Description - `connectionName` is still supported but deprecated. Use provider/region/zone instead.
 // @Description
 // @Description **Usage Examples:**
-// @Description - Single connection: `{"connectionName": "aws-ap-northeast-2", "nsId": "default", "mciNamePrefix": "mci-01"}`
-// @Description - All connections: `{"connectionName": "", "nsId": "default", "mciNamePrefix": "mci-all"}` or `{"nsId": "default", "mciNamePrefix": "mci-all"}`
+// @Description - All AWS: `{"provider": "aws", "nsId": "default"}`
+// @Description - AWS Seoul region: `{"provider": "aws", "region": "ap-northeast-2", "nsId": "default"}`
+// @Description - AWS Seoul zone 2a: `{"provider": "aws", "region": "ap-northeast-2", "zone": "ap-northeast-2a", "nsId": "default"}`
+// @Description - All connections: `{"nsId": "default", "mciNamePrefix": "mci-all"}`
+// @Description - Single connection (deprecated): `{"connectionName": "aws-ap-northeast-2", "nsId": "default"}`
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
-// @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName (optional for all connections), NS Id, and MCI Name Prefix"
+// @Param Request body RestRegisterCspNativeResourcesRequest true "Specify provider/region/zone or connectionName (deprecated), NS Id, and MCI Name Prefix"
 // @Param option query []string false "Option to specify resourceType (Multi-select available)" collectionFormat(csv) Enums(vNet, securityGroup, sshKey, vm, dataDisk, customImage)
 // @Param mciFlag query string false "Flag to show VMs in a collective MCI form (y,n)" Enums(y, n) default(y)
 // @Success 200 {object} model.RegisterResourceResult "Single connection result"
-// @Success 200 {object} model.RegisterResourceAllResult "All connections result (when connectionName is empty)"
-// @Failure 404 {object} model.SimpleMsg
-// @Failure 500 {object} model.SimpleMsg
+// @Success 200 {object} model.RegisterResourceAllResult "Multiple connections result"
+// @Failure 400 {object} model.SimpleMsg "Invalid request (e.g., region without provider)"
+// @Failure 404 {object} model.SimpleMsg "No connections found"
+// @Failure 500 {object} model.SimpleMsg "Internal server error"
 // @Router /registerCspResources [post]
 func RestRegisterCspNativeResources(c echo.Context) error {
 
@@ -531,17 +544,70 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 	option := c.QueryParam("option")
 	mciFlag := c.QueryParam("mciFlag")
 
-	// If connectionName is empty, register from all connections
-	if u.ConnectionName == "" {
-		log.Info().Msg("ConnectionName is empty, registering resources from all connections")
+	// Determine connection names to process
+	var connectionNames []string
+	var err error
+
+	// Priority 1: Use Provider/Region/Zone if provided
+	if u.Provider != "" || u.Region != "" || u.Zone != "" {
+		// Validate: Region requires Provider, Zone requires Provider and Region
+		if u.Region != "" && u.Provider == "" {
+			return clientManager.EndRequestWithLog(c, fmt.Errorf("region requires provider to be specified"), nil)
+		}
+		if u.Zone != "" && (u.Provider == "" || u.Region == "") {
+			return clientManager.EndRequestWithLog(c, fmt.Errorf("zone requires both provider and region to be specified"), nil)
+		}
+
+		log.Info().Msgf("Filtering connections by Provider=%s, Region=%s, Zone=%s", u.Provider, u.Region, u.Zone)
+		connectionNames, err = common.GetConnConfigListByProviderRegionZone(u.Provider, u.Region, u.Zone)
+		if err != nil {
+			return clientManager.EndRequestWithLog(c, err, nil)
+		}
+
+		if len(connectionNames) == 0 {
+			return clientManager.EndRequestWithLog(c, fmt.Errorf("no connections found matching Provider=%s, Region=%s, Zone=%s", u.Provider, u.Region, u.Zone), nil)
+		}
+
+		log.Info().Msgf("Found %d matching connections: %v", len(connectionNames), connectionNames)
+	} else if u.ConnectionName != "" {
+		// Priority 2: Use ConnectionName (backward compatibility)
+		log.Info().Msgf("Using deprecated connectionName field: %s", u.ConnectionName)
+		connectionNames = []string{u.ConnectionName}
+	} else {
+		// Priority 3: Empty - process all connections
+		log.Info().Msg("No filter specified, registering resources from all connections")
 		content, err := infra.RegisterCspNativeResourcesAll(u.NsId, u.MciNamePrefix, option, mciFlag)
 		return clientManager.EndRequestWithLog(c, err, content)
 	}
 
-	// Register from specific connection
-	log.Info().Msgf("Registering resources from connection: %s", u.ConnectionName)
-	content, err := infra.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.MciNamePrefix, option, mciFlag)
-	return clientManager.EndRequestWithLog(c, err, content)
+	// Process single connection
+	if len(connectionNames) == 1 {
+		log.Info().Msgf("Registering resources from single connection: %s", connectionNames[0])
+		content, err := infra.RegisterCspNativeResources(u.NsId, connectionNames[0], u.MciNamePrefix, option, mciFlag)
+		return clientManager.EndRequestWithLog(c, err, content)
+	}
+
+	// Process multiple connections
+	log.Info().Msgf("Registering resources from %d connections", len(connectionNames))
+	result := model.RegisterResourceAllResult{
+		RegisterationResult: []model.RegisterResourceResult{},
+	}
+
+	startTime := time.Now()
+	for _, connName := range connectionNames {
+		log.Info().Msgf("Processing connection: %s", connName)
+		connResult, err := infra.RegisterCspNativeResources(u.NsId, connName, u.MciNamePrefix, option, mciFlag)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to register resources for connection: %s", connName)
+			connResult.SystemMessage = fmt.Sprintf("Error: %v", err)
+		}
+		result.RegisterationResult = append(result.RegisterationResult, connResult)
+	}
+	result.ElapsedTime = int(time.Since(startTime).Seconds())
+	result.RegisteredConnection = len(connectionNames)
+	result.AvailableConnection = len(connectionNames)
+
+	return clientManager.EndRequestWithLog(c, nil, result)
 
 }
 
