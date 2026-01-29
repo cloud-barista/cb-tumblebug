@@ -198,7 +198,7 @@ func CreateSecurityGroup(nsId string, u *model.SecurityGroupReq, option string) 
 	uid := common.GenUid()
 
 	// Resolve VNetId if not defined during registration
-	if option == "register" && u.VNetId == "not defined" {
+	if option == "register" && u.VNetId == "unknown" {
 		if u.CspResourceId == "" {
 			return model.SecurityGroupInfo{}, fmt.Errorf("vNetId is required when registering SecurityGroup without CspResourceId")
 		}

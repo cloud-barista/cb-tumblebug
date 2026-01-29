@@ -1484,7 +1484,7 @@ func RegisterVNet(nsId string, vNetRegisterReq *model.RegisterVNetReq) (model.VN
 	for _, spSubnetInfo := range spResp.SubnetInfoList {
 		subnetInfo := model.SubnetInfo{
 			ResourceType:    model.StrSubnet,
-			Id:              fmt.Sprintf("%s", spSubnetInfo.IId.SystemId),
+			Id:              fmt.Sprintf("%s", spSubnetInfo.IId.NameId),
 			Name:            fmt.Sprintf("%s", spSubnetInfo.IId.NameId),
 			Uid:             common.GenUid(),
 			ConnectionName:  vNetInfo.ConnectionName,

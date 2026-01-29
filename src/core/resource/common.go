@@ -627,6 +627,8 @@ func DeregisterResource(nsId string, resourceType string, resourceId string) err
 		}
 		temp := resourceObj.(model.ImageInfo)
 		requestBody.ConnectionName = temp.ConnectionName
+		// Use deregister API: /regmyimage/{Name}
+		url = model.SpiderRestUrl + "/regmyimage/" + temp.CspImageName
 		uid = temp.Uid
 
 	case model.StrSSHKey:
