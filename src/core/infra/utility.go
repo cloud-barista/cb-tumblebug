@@ -825,7 +825,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 			for _, r := range res.Resources.OnCspOnly.Info {
 				req := model.SecurityGroupReq{
 					ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: genName(r.CspResourceId),
-					VNetId: "not defined", Description: "Ref name: " + r.RefNameOrId + ". CSP managed Security Group (registered to CB-TB)",
+					VNetId: "unknown", Description: "Ref name: " + r.RefNameOrId + ". CSP managed Security Group (registered to CB-TB)",
 				}
 				_, err = resource.CreateSecurityGroup(nsId, &req, optionFlag)
 				appendResult(&result, model.StrSecurityGroup, req.Name, err, &result.RegisterationOverview.SecurityGroup)
