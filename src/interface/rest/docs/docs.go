@@ -23665,6 +23665,10 @@ const docTemplate = `{
                     "description": "CountRebooting is for counting Rebooting",
                     "type": "integer"
                 },
+                "countRegistering": {
+                    "description": "CountRegistering is for counting Registering",
+                    "type": "integer"
+                },
                 "countResuming": {
                     "description": "CountResuming is for counting Resuming",
                     "type": "integer"

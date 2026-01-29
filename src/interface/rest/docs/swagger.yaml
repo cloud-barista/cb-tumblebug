@@ -19094,6 +19094,9 @@ components:
         countRebooting:
           type: integer
           description: CountRebooting is for counting Rebooting
+        countRegistering:
+          type: integer
+          description: CountRegistering is for counting Registering
         countResuming:
           type: integer
           description: CountResuming is for counting Resuming

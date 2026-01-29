@@ -658,7 +658,12 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 		vmInfoData.PublicIP = ""
 		vmInfoData.PublicDNS = ""
 
-		vmInfoData.Status = model.StatusCreating
+		// Set initial status based on whether this is a registration (CspResourceId is set)
+		if vmRequest.CspResourceId != "" {
+			vmInfoData.Status = model.StatusRegistering
+		} else {
+			vmInfoData.Status = model.StatusCreating
+		}
 		vmInfoData.TargetAction = targetAction
 		vmInfoData.TargetStatus = targetStatus
 
@@ -691,7 +696,11 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 	}
 	wg.Wait()
 
+	// Set option based on whether this is a registration (CspResourceId is set)
 	option := "create"
+	if vmRequest.CspResourceId != "" {
+		option = "register"
+	}
 
 	// Collect all VM info for rate-limited parallel processing
 	var vmInfoList []*model.VmInfo
@@ -751,7 +760,7 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 
 		for _, vm := range mciStatusTmp.Vm {
 			// Check if VM is still in transitional/pending state
-			if vm.Status == model.StatusCreating || vm.Status == model.StatusUndefined || vm.Status == "" {
+			if vm.Status == model.StatusCreating || vm.Status == model.StatusRegistering || vm.Status == model.StatusUndefined || vm.Status == "" {
 				allVmsInFinalState = false
 				pendingCount++
 			} else {
@@ -978,12 +987,18 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 				break
 			}
 
+			// Set initial status based on option (create vs register)
+			initialStatus := model.StatusCreating
+			if option == "register" {
+				initialStatus = model.StatusRegistering
+			}
+
 			vmInfo := model.VmInfo{
 				ResourceType:     model.StrVM,
 				Uid:              common.GenUid(),
 				PublicIP:         "",
 				PublicDNS:        "",
-				Status:           model.StatusCreating,
+				Status:           initialStatus,
 				TargetAction:     model.ActionCreate,
 				TargetStatus:     model.StatusRunning,
 				ConnectionName:   subGroupReq.ConnectionName,
