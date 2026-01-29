@@ -76,6 +76,9 @@ const (
 	// StatusTerminating is const for Terminating
 	StatusTerminating string = "Terminating"
 
+	// StatusRegistering is const for Registering (when registering existing CSP VM)
+	StatusRegistering string = "Registering"
+
 	// StatusUndefined is const for Undefined
 	StatusUndefined string = "Undefined"
 
@@ -774,6 +777,9 @@ type StatusCountInfo struct {
 
 	// CountTerminating is for counting Terminating
 	CountTerminating int `json:"countTerminating"`
+
+	// CountRegistering is for counting Registering
+	CountRegistering int `json:"countRegistering"`
 
 	// CountUndefined is for counting Undefined
 	CountUndefined int `json:"countUndefined"`

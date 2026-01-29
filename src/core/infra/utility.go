@@ -15,6 +15,7 @@ limitations under the License.
 package infra
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
@@ -860,41 +861,68 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 			var singleMciName string
 			var singleMciCreated bool
 
+			// Track registered MCIs for status sync
+			registeredMcis := make(map[string]bool)
+
+			// Track network-based subgroups: key = "vnetId_subnetId", value = subgroup name
+			networkSubgroupMap := make(map[string]string)
+			// Track subgroup VM counts for naming: key = subgroup name, value = VM count
+			subgroupVmCount := make(map[string]int)
+
 			if useSingleMci {
 				// Single MCI mode: all VMs go into one MCI
 				singleMciName = common.ChangeIdString(mciNamePrefix)
 			}
 
-			for _, r := range res.Resources.OnCspOnly.Info {
-				subGroupName := common.ChangeIdString(fmt.Sprintf("%s-%s-%s", connConfig, r.RefNameOrId, r.CspResourceId))
+			// Phase 1: Register all VMs and collect network info
+			// We'll use temporary subgroup names first, then reorganize
+			type registeredVmInfo struct {
+				vmId       string
+				vnetId     string
+				subnetId   string
+				networkKey string
+			}
+			var registeredVms []registeredVmInfo
+
+			for idx, r := range res.Resources.OnCspOnly.Info {
+				// Generate a temporary unique subgroup name for initial registration
+				tempSubGroupName := common.ChangeIdString(fmt.Sprintf("reg-%s-%d", connConfig, idx))
 
 				var mciName string
 				if useSingleMci {
 					// Use the same MCI name for all VMs
 					mciName = singleMciName
 				} else {
-					// Create separate MCI for each VM
+					// Create separate MCI for each VM (use shorter name)
 					mciName = common.ChangeIdString(fmt.Sprintf("%s-%s", mciNamePrefix, r.RefNameOrId))
 				}
 
+				var vmId string
 				if useSingleMci && singleMciCreated {
 					// Add VM to existing MCI
 					subGroupReq := &model.CreateSubGroupReq{
-						ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: subGroupName,
+						ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: tempSubGroupName,
 						Description: "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)",
 						Label:       map[string]string{model.LabelRegistered: "true"},
 						// Placeholders
 						ImageId: "unknown", SpecId: "unknown", SshKeyId: "unknown",
 						SubnetId: "unknown", VNetId: "unknown", SecurityGroupIds: []string{"unknown"},
 					}
-					_, err = CreateMciGroupVm(nsId, mciName, subGroupReq, true)
-					appendResult(&result, model.StrVM, subGroupName, err, &result.RegisterationOverview.Vm)
+					mciInfo, err := CreateMciGroupVm(nsId, mciName, subGroupReq, true)
+					appendResult(&result, model.StrVM, tempSubGroupName, err, &result.RegisterationOverview.Vm)
+					if err == nil {
+						registeredMcis[mciName] = true
+						// Get the VM ID from the newly added VM
+						if mciInfo != nil && len(mciInfo.NewVmList) > 0 {
+							vmId = mciInfo.NewVmList[0]
+						}
+					}
 				} else {
 					// Create new MCI (either first VM in single MCI mode, or each VM in separate MCI mode)
 					req := model.MciReq{
 						Name: mciName, Description: "MCI for CSP managed VMs", InstallMonAgent: "no",
 						SubGroups: []model.CreateSubGroupReq{{
-							ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: subGroupName,
+							ConnectionName: connConfig, CspResourceId: r.CspResourceId, Name: tempSubGroupName,
 							Description: "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)",
 							Label:       map[string]string{model.LabelRegistered: "true"},
 							// Placeholders
@@ -902,12 +930,107 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 							SubnetId: "unknown", VNetId: "unknown", SecurityGroupIds: []string{"unknown"},
 						}},
 					}
-					_, err = CreateMci(nsId, &req, optionFlag, false)
-					appendResult(&result, model.StrVM, subGroupName, err, &result.RegisterationOverview.Vm)
+					mciInfo, err := CreateMci(nsId, &req, optionFlag, false)
+					appendResult(&result, model.StrVM, tempSubGroupName, err, &result.RegisterationOverview.Vm)
 
-					if useSingleMci && err == nil {
-						singleMciCreated = true
+					if err == nil {
+						registeredMcis[mciName] = true
+						if useSingleMci {
+							singleMciCreated = true
+						}
+						// Get the VM ID from the newly created VM
+						if mciInfo != nil && len(mciInfo.NewVmList) > 0 {
+							vmId = mciInfo.NewVmList[0]
+						} else if mciInfo != nil && len(mciInfo.Vm) > 0 {
+							vmId = mciInfo.Vm[0].Id
+						}
 					}
+				}
+
+				// If VM was registered successfully, collect its network info
+				if vmId != "" && useSingleMci {
+					vmInfo, err := GetVmObject(nsId, singleMciName, vmId)
+					if err == nil && vmInfo.VNetId != "" {
+						networkKey := fmt.Sprintf("%s_%s", vmInfo.VNetId, vmInfo.SubnetId)
+						registeredVms = append(registeredVms, registeredVmInfo{
+							vmId:       vmId,
+							vnetId:     vmInfo.VNetId,
+							subnetId:   vmInfo.SubnetId,
+							networkKey: networkKey,
+						})
+					}
+				}
+			}
+
+			// Phase 2: Reorganize subgroups by network configuration (only for single MCI mode)
+			if useSingleMci && len(registeredVms) > 1 {
+				log.Info().Msgf("Reorganizing %d VMs into network-based subgroups in MCI %s", len(registeredVms), singleMciName)
+
+				// Group VMs by network configuration
+				networkGroups := make(map[string][]string) // networkKey -> []vmId
+				for _, vm := range registeredVms {
+					networkGroups[vm.networkKey] = append(networkGroups[vm.networkKey], vm.vmId)
+				}
+
+				// Generate meaningful subgroup names and update VMs
+				subgroupIndex := 1
+				for networkKey, vmIds := range networkGroups {
+					var newSubgroupName string
+					if len(networkGroups) == 1 {
+						// All VMs in same network - use simple name
+						newSubgroupName = fmt.Sprintf("reg-group")
+					} else {
+						// Multiple networks - use indexed name
+						newSubgroupName = fmt.Sprintf("reg-group%d", subgroupIndex)
+						subgroupIndex++
+					}
+
+					// Track for logging
+					networkSubgroupMap[networkKey] = newSubgroupName
+					subgroupVmCount[newSubgroupName] = len(vmIds)
+
+					// Update each VM's SubGroupId
+					for _, vmId := range vmIds {
+						vmInfo, err := GetVmObject(nsId, singleMciName, vmId)
+						if err != nil {
+							log.Warn().Err(err).Msgf("Failed to get VM %s for subgroup update", vmId)
+							continue
+						}
+
+						oldSubgroupId := vmInfo.SubGroupId
+						vmInfo.SubGroupId = newSubgroupName
+						UpdateVmInfo(nsId, singleMciName, vmInfo)
+
+						// Delete old subgroup if it was temporary (starts with "reg-")
+						if oldSubgroupId != "" && strings.HasPrefix(oldSubgroupId, "reg-") && oldSubgroupId != newSubgroupName {
+							oldSubgroupKey := common.GenMciSubGroupKey(nsId, singleMciName, oldSubgroupId)
+							kvstore.Delete(oldSubgroupKey)
+						}
+					}
+
+					// Create or update the new subgroup
+					subgroupKey := common.GenMciSubGroupKey(nsId, singleMciName, newSubgroupName)
+					subgroupInfo := model.SubGroupInfo{
+						ResourceType: model.StrSubGroup,
+						Id:           newSubgroupName,
+						Name:         newSubgroupName,
+						Uid:          common.GenUid(),
+						SubGroupSize: strconv.Itoa(len(vmIds)),
+						VmId:         vmIds,
+					}
+					subgroupVal, _ := json.Marshal(subgroupInfo)
+					kvstore.Put(subgroupKey, string(subgroupVal))
+
+					log.Info().Msgf("Created subgroup '%s' with %d VMs (network: %s)", newSubgroupName, len(vmIds), networkKey)
+				}
+			}
+
+			// Sync MCI status after all VM registrations and reorganization
+			for mciName := range registeredMcis {
+				if _, err := GetMciStatus(nsId, mciName); err != nil {
+					log.Warn().Err(err).Msgf("Failed to sync MCI status for %s after registration", mciName)
+				} else {
+					log.Info().Msgf("MCI %s status synced after VM registration", mciName)
 				}
 			}
 		}

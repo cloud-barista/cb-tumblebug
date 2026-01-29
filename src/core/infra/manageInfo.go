@@ -948,8 +948,8 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 		return mciStatus.Vm[i].Id < mciStatus.Vm[j].Id
 	})
 
-	statusFlag := []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	statusFlagStr := []string{model.StatusFailed, model.StatusSuspended, model.StatusRunning, model.StatusTerminated, model.StatusCreating, model.StatusSuspending, model.StatusResuming, model.StatusRebooting, model.StatusTerminating, model.StatusUndefined}
+	statusFlag := []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	statusFlagStr := []string{model.StatusFailed, model.StatusSuspended, model.StatusRunning, model.StatusTerminated, model.StatusCreating, model.StatusSuspending, model.StatusResuming, model.StatusRebooting, model.StatusTerminating, model.StatusRegistering, model.StatusUndefined}
 	for _, v := range mciStatus.Vm {
 
 		switch v.Status {
@@ -971,8 +971,10 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 			statusFlag[7]++
 		case model.StatusTerminating:
 			statusFlag[8]++
-		default:
+		case model.StatusRegistering:
 			statusFlag[9]++
+		default:
+			statusFlag[10]++
 			log.Warn().Msgf("Undefined status (%s) found in VM %s of MCI %s", v.Status, v.Id, mciId)
 		}
 	}
@@ -992,8 +994,9 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 	statusVmCount := len(mciStatus.Vm)
 	vmInfoCount := len(vmInfos)
 
-	// Check if MCI is still being created to use more stable VM count calculation
+	// Check if MCI is still being created/registered to use more stable VM count calculation
 	isCreating := strings.Contains(mciTmp.Status, model.StatusCreating) ||
+		strings.Contains(mciTmp.Status, model.StatusRegistering) ||
 		strings.Contains(mciTmp.TargetAction, model.ActionCreate) ||
 		strings.Contains(mciTmp.TargetStatus, model.StatusRunning)
 
@@ -1085,7 +1088,8 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 	mciStatus.StatusCount.CountResuming = statusFlag[6]
 	mciStatus.StatusCount.CountRebooting = statusFlag[7]
 	mciStatus.StatusCount.CountTerminating = statusFlag[8]
-	mciStatus.StatusCount.CountUndefined = statusFlag[9]
+	mciStatus.StatusCount.CountRegistering = statusFlag[9]
+	mciStatus.StatusCount.CountUndefined = statusFlag[10]
 
 	// Recovery/fallback handling for TargetAction completion
 	// Primary completion should happen in actual control actions (control.go, provisioning.go)
@@ -1103,9 +1107,9 @@ func GetMciStatus(nsId string, mciId string) (*model.MciStatusInfo, error) {
 			switch mciTargetAction {
 			case model.ActionCreate:
 				// For Create action, completion means all VMs reach final states (Running/Failed/Terminated/Suspended)
-				// VM is considered pending if it's still in transitional states (Creating/Undefined/empty)
+				// VM is considered pending if it's still in transitional states (Creating/Registering/Undefined/empty)
 				// Failed state is considered a final state - provisioning attempt was completed even if unsuccessful
-				if v.Status == model.StatusCreating || v.Status == model.StatusUndefined || v.Status == "" {
+				if v.Status == model.StatusCreating || v.Status == model.StatusRegistering || v.Status == model.StatusUndefined || v.Status == "" {
 					isDone = false
 					pendingVmsCount++
 				}
