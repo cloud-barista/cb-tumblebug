@@ -664,6 +664,17 @@ if run_fetch_price:
     # Start the price fetching
     fetch_price()
 
-# Final message
+# Final message and set initialization status
 if run_all or (run_credentials and run_load_assets):
+    # Notify CB-Tumblebug that initialization is complete
+    try:
+        init_url = f"http://{TUMBLEBUG_SERVER}/tumblebug/readyz/init"
+        response = requests.put(init_url, headers=HEADERS, timeout=10)
+        if response.status_code == 200:
+            print(Fore.GREEN + "\n[OK] System initialization status has been set.")
+        else:
+            print(Fore.YELLOW + f"\n[Warning] Failed to set initialization status: {response.status_code}")
+    except Exception as e:
+        print(Fore.YELLOW + f"\n[Warning] Could not notify initialization completion: {e}")
+
     print(Fore.YELLOW + f"\nThe system is ready to use.")

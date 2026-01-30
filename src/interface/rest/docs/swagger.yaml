@@ -11122,7 +11122,8 @@ paths:
       tags:
       - "[Admin] System Management"
       summary: Check Tumblebug is ready
-      description: Check Tumblebug is ready
+      description: Check Tumblebug is ready. Returns ready status and initialization
+        status.
       operationId: GetReadyz
       responses:
         "200":
@@ -11130,13 +11131,48 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.SimpleMsg'
+                $ref: '#/components/schemas/model.ReadyzResponse'
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ReadyzResponse'
+  /readyz/init:
+    put:
+      tags:
+      - "[Admin] System Management"
+      summary: Set system as initialized
+      description: Set the system initialization status to true. Called by init.py
+        after completing initialization.
+      operationId: SetSystemInitialized
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ReadyzResponse'
         "503":
           description: Service Unavailable
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+    delete:
+      tags:
+      - "[Admin] System Management"
+      summary: Reset system initialization status
+      description: Reset the system initialization status to false. Useful for re-initialization
+        scenarios.
+      operationId: UnsetSystemInitialized
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.ReadyzResponse'
   /recommendSpec:
     post:
       tags:
@@ -17116,6 +17152,18 @@ components:
           type: number
         min:
           type: number
+    model.ReadyzResponse:
+      type: object
+      properties:
+        initialized:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: CB-Tumblebug is ready
+        ready:
+          type: boolean
+          example: true
     model.RecommendSpecReq:
       type: object
       properties:
