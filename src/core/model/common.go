@@ -27,6 +27,13 @@ type SimpleMsg struct {
 	Message string `json:"message" example:"Any message"`
 }
 
+// ReadyzResponse is struct for readyz API response
+type ReadyzResponse struct {
+	Message     string `json:"message" example:"CB-Tumblebug is ready"`
+	Ready       bool   `json:"ready" example:"true"`
+	Initialized bool   `json:"initialized" example:"false"`
+}
+
 // KeyValue is struct for key-value pair
 type KeyValue struct {
 	Key   string `json:"key"`
@@ -118,6 +125,11 @@ type OptionalParameter struct {
 
 // SystemReady is global variable for checking SystemReady status
 var SystemReady bool
+
+// SystemInitialized indicates whether the system has been fully initialized
+// (e.g., credentials and connection configs registered via init.py)
+// This is set to true when PUT /readyz/init is called after init.py completes
+var SystemInitialized bool
 
 var SpiderRestUrl string
 var DragonflyRestUrl string

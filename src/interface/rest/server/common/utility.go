@@ -78,21 +78,80 @@ func Validate(c echo.Context, params []string) error {
 // @ID GetReadyz
 // RestGetReadyz godoc
 // @Summary Check Tumblebug is ready
-// @Description Check Tumblebug is ready
+// @Description Check Tumblebug is ready. Returns ready status and initialization status.
 // @Tags [Admin] System Management
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} model.SimpleMsg
-// @Failure 503 {object} model.SimpleMsg
+// @Success 200 {object} model.ReadyzResponse
+// @Failure 503 {object} model.ReadyzResponse
 // @Router /readyz [get]
 func RestGetReadyz(c echo.Context) error {
-	message := model.SimpleMsg{}
-	message.Message = "CB-Tumblebug is ready"
-	if !model.SystemReady {
-		message.Message = "CB-Tumblebug is NOT ready"
-		return c.JSON(http.StatusServiceUnavailable, &message)
+	response := model.ReadyzResponse{
+		Ready:       model.SystemReady,
+		Initialized: model.SystemInitialized,
 	}
-	return c.JSON(http.StatusOK, &message)
+
+	if !model.SystemReady {
+		response.Message = "CB-Tumblebug is NOT ready"
+		return c.JSON(http.StatusServiceUnavailable, &response)
+	}
+
+	if !model.SystemInitialized {
+		response.Message = "CB-Tumblebug is ready but not initialized (waiting for init.py)"
+	} else {
+		response.Message = "CB-Tumblebug is ready and initialized"
+	}
+
+	return c.JSON(http.StatusOK, &response)
+}
+
+// RestSetSystemInitialized func sets the system initialization status to true.
+// @ID SetSystemInitialized
+// RestSetSystemInitialized godoc
+// @Summary Set system as initialized
+// @Description Set the system initialization status to true. Called by init.py after completing initialization.
+// @Tags [Admin] System Management
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} model.ReadyzResponse
+// @Failure 503 {object} model.SimpleMsg
+// @Router /readyz/init [put]
+func RestSetSystemInitialized(c echo.Context) error {
+	if !model.SystemReady {
+		return c.JSON(http.StatusServiceUnavailable, &model.SimpleMsg{
+			Message: "CB-Tumblebug is NOT ready. Cannot set initialization status.",
+		})
+	}
+
+	model.SystemInitialized = true
+
+	response := model.ReadyzResponse{
+		Message:     "System initialization status set to true",
+		Ready:       model.SystemReady,
+		Initialized: model.SystemInitialized,
+	}
+	return c.JSON(http.StatusOK, &response)
+}
+
+// RestUnsetSystemInitialized func resets the system initialization status to false.
+// @ID UnsetSystemInitialized
+// RestUnsetSystemInitialized godoc
+// @Summary Reset system initialization status
+// @Description Reset the system initialization status to false. Useful for re-initialization scenarios.
+// @Tags [Admin] System Management
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} model.ReadyzResponse
+// @Router /readyz/init [delete]
+func RestUnsetSystemInitialized(c echo.Context) error {
+	model.SystemInitialized = false
+
+	response := model.ReadyzResponse{
+		Message:     "System initialization status reset to false",
+		Ready:       model.SystemReady,
+		Initialized: model.SystemInitialized,
+	}
+	return c.JSON(http.StatusOK, &response)
 }
 
 // RestCheckHTTPVersion godoc

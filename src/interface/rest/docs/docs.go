@@ -13497,7 +13497,7 @@ const docTemplate = `{
         },
         "/readyz": {
             "get": {
-                "description": "Check Tumblebug is ready",
+                "description": "Check Tumblebug is ready. Returns ready status and initialization status.",
                 "consumes": [
                     "application/json"
                 ],
@@ -13513,13 +13513,65 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.SimpleMsg"
+                            "$ref": "#/definitions/model.ReadyzResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.ReadyzResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/readyz/init": {
+            "put": {
+                "description": "Set the system initialization status to true. Called by init.py after completing initialization.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System Management"
+                ],
+                "summary": "Set system as initialized",
+                "operationId": "SetSystemInitialized",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ReadyzResponse"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Reset the system initialization status to false. Useful for re-initialization scenarios.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System Management"
+                ],
+                "summary": "Reset system initialization status",
+                "operationId": "UnsetSystemInitialized",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ReadyzResponse"
                         }
                     }
                 }
@@ -20967,6 +21019,23 @@ const docTemplate = `{
                 },
                 "min": {
                     "type": "number"
+                }
+            }
+        },
+        "model.ReadyzResponse": {
+            "type": "object",
+            "properties": {
+                "initialized": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "message": {
+                    "type": "string",
+                    "example": "CB-Tumblebug is ready"
+                },
+                "ready": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },

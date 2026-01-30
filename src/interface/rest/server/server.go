@@ -180,6 +180,8 @@ func RunServer() {
 	e.GET("/tumblebug/api/*", echoSwagger.WrapHandler)
 
 	e.GET("/tumblebug/readyz", rest_common.RestGetReadyz)
+	e.PUT("/tumblebug/readyz/init", rest_common.RestSetSystemInitialized)
+	e.DELETE("/tumblebug/readyz/init", rest_common.RestUnsetSystemInitialized)
 	e.GET("/tumblebug/httpVersion", rest_common.RestCheckHTTPVersion)
 	e.POST("/tumblebug/testStreamResponse", rest_common.RestTestStreamResponse)
 
@@ -216,6 +218,7 @@ func RunServer() {
 			basicAuthMw = middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
 				Skipper: func(c echo.Context) bool {
 					if c.Path() == "/tumblebug/readyz" ||
+						c.Path() == "/tumblebug/readyz/init" ||
 						c.Path() == "/tumblebug/httpVersion" {
 						return true
 					}
@@ -254,6 +257,7 @@ func RunServer() {
 			} else {
 				authSkipPatterns := [][]string{
 					{"/tumblebug/readyz"},
+					{"/tumblebug/readyz/init"},
 					{"/tumblebug/httpVersion"},
 				}
 				jwtAuthMw = authmw.JwtAuthMw(authSkipPatterns)
@@ -790,6 +794,17 @@ func RunServer() {
 	}(&wg)
 
 	model.SystemReady = true
+
+	// Auto-detect initialization status by checking existing connection configs
+	// If connection configs already exist (from previous init.py run), set SystemInitialized to true
+	connConfigList, err := common.GetConnConfigList("", true, true)
+	if err == nil && len(connConfigList.Connectionconfig) > 0 {
+		model.SystemInitialized = true
+		log.Info().Msgf("Auto-detected %d existing connection configs. SystemInitialized set to true.", len(connConfigList.Connectionconfig))
+	} else {
+		log.Info().Msg("No existing connection configs found. Waiting for init.py to complete initialization.")
+	}
+
 	if err := e.Start(":" + selfPort); err != nil && err != http.ErrServerClosed {
 		log.Error().Err(err).Msg("Error in Starting CB-Tumblebug API Server")
 		e.Logger.Panic("Shuttig down the server: ", err)
