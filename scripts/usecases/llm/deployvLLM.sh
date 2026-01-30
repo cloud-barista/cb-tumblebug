@@ -116,87 +116,21 @@ fi
 echo "Installing additional packages..."
 pip install -U openai transformers huggingface_hub > /dev/null 2>&1
 
-# Create a helper script for serving models
-SERVE_SCRIPT="$HOME/vllm-serve.sh"
-echo "Creating helper script at $SERVE_SCRIPT..."
-
-cat > "$SERVE_SCRIPT" << 'EOF'
-#!/bin/bash
-
-# vLLM Model Serving Helper Script
-# Usage: ./vllm-serve.sh <model_name> [options]
-
-# Ensure script runs with bash
-if [ -z "$BASH_VERSION" ]; then
-  exec /bin/bash "$0" "$@"
-fi
-
-VENV_PATH="$HOME/venv_vllm"
-# shellcheck disable=SC1091
-. "$VENV_PATH/bin/activate"
-
-MODEL=${1:-"Qwen/Qwen2.5-1.5B-Instruct"}
-HOST=${2:-"0.0.0.0"}
-PORT=${3:-"8000"}
-
-# Validate PORT is a number within valid range
-case "$PORT" in
-  ''|*[!0-9]*) 
-    echo "Error: PORT must be a number between 1 and 65535. Got: $PORT"
-    exit 1
-    ;;
-esac
-if [ "$PORT" -lt 1 ] || [ "$PORT" -gt 65535 ]; then
-  echo "Error: PORT must be a number between 1 and 65535. Got: $PORT"
-  exit 1
-fi
-
-# Validate HOST format (basic check for IP or hostname)
-# Allow 0.0.0.0, localhost, valid IPs, and hostnames
-if [[ ! "$HOST" =~ ^[0-9a-zA-Z.:_-]+$ ]]; then
-  echo "Error: HOST contains invalid characters. Got: $HOST"
-  exit 1
-fi
-
-echo "Starting vLLM server..."
-echo "  Model: $MODEL"
-echo "  Host: $HOST"
-echo "  Port: $PORT"
-echo ""
-echo "API Endpoints:"
-echo "  OpenAI Compatible: http://$HOST:$PORT/v1"
-echo "  Models: http://$HOST:$PORT/v1/models"
-echo "  Completions: http://$HOST:$PORT/v1/completions"
-echo "  Chat: http://$HOST:$PORT/v1/chat/completions"
-echo ""
-
-# Run vLLM with OpenAI-compatible API server
-python -m vllm.entrypoints.openai.api_server \
-  --model "$MODEL" \
-  --host "$HOST" \
-  --port "$PORT" \
-  --trust-remote-code
-EOF
-
-chmod +x "$SERVE_SCRIPT"
-
 # Display completion message
 echo "=========================================="
 echo "vLLM Installation Complete!"
 echo "=========================================="
 echo ""
-echo "To serve a model, run:"
+echo "To serve a model, use servevLLM.sh script:"
+echo "  curl -fsSL https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/usecases/llm/servevLLM.sh | bash -s -- <model_name>"
+echo ""
+echo "Or manually:"
 echo "  source ~/venv_vllm/bin/activate"
 echo "  python -m vllm.entrypoints.openai.api_server --model <model_name> --host 0.0.0.0 --port 8000"
 echo ""
-echo "Or use the helper script:"
-echo "  ~/vllm-serve.sh <model_name> [host] [port]"
-echo ""
-echo "Example models:"
-echo "  - Qwen/Qwen2.5-1.5B-Instruct (small, fast)"
-echo "  - meta-llama/Llama-3.2-3B-Instruct"
-echo "  - mistralai/Mistral-7B-Instruct-v0.3"
-echo "  - deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
-echo ""
-echo "API will be available at: http://<your-ip>:8000/v1"
+echo "Recommended models:"
+echo "  - Qwen/Qwen2.5-1.5B-Instruct (small, fast, ~3GB VRAM)"
+echo "  - meta-llama/Llama-3.2-3B-Instruct (~7GB VRAM)"
+echo "  - mistralai/Mistral-7B-Instruct-v0.3 (~15GB VRAM)"
+echo "  - deepseek-ai/DeepSeek-R1-Distill-Qwen-7B (~15GB VRAM)"
 echo ""
