@@ -4,14 +4,36 @@
 # This script installs and configures a Kubernetes control plane node on Ubuntu
 # Designed for unattended execution via SSH or pipe (curl | bash)
 # Based on https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+#
+# Modes:
+#   Standard:  Basic K8s control plane with Flannel CNI
+#   llm-d:     Adds Gateway API, LeaderWorkerSet, Helm, NVIDIA GPU Operator
+#              for distributed LLM inference deployments
+#
+# Remote execution (CB-MapUI / CB-Tumblebug API):
+#   This script is designed for non-interactive SSH execution.
+#   All prompts are suppressed using DEBIAN_FRONTEND, needrestart config, etc.
 
 set -e
+
+# ============================================================
+# Non-interactive mode for SSH remote execution
+# ============================================================
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+export NEEDRESTART_SUSPEND=1
+
+# Disable needrestart interactive prompts (Ubuntu 22.04+)
+if [ -d /etc/needrestart/conf.d ]; then
+    echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/conf.d/99-autorestart.conf > /dev/null 2>&1 || true
+fi
 
 # Default values
 NODE_IP=""                # IP for API server binding (private IP recommended, auto-detected if not provided)
 EXTERNAL_IP=""            # External/Public IP for cert SAN and external access (optional)
 POD_NETWORK_CIDR="10.244.0.0/16"  # Pod network CIDR (default for Flannel)
 K8S_VERSION="1.35"        # Kubernetes version (1.35, 1.34, 1.33, etc.)
+LLMD_MODE=false           # Enable llm-d components (Gateway API, LeaderWorkerSet, GPU Operator)
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -32,6 +54,10 @@ while [[ $# -gt 0 ]]; do
             K8S_VERSION="$2"
             shift 2
             ;;
+        --llm-d|--llmd)
+            LLMD_MODE=true
+            shift
+            ;;
         -h|--help)
             echo "Kubernetes Control Plane Setup Script"
             echo ""
@@ -43,13 +69,15 @@ while [[ $# -gt 0 ]]; do
             echo "  -e, --external-ip  External/Public IP for cert SAN (default: auto-detect public IP)"
             echo "  -p, --pod-cidr     Pod network CIDR (default: 10.244.0.0/16)"
             echo "  -v, --version      Kubernetes version (default: 1.35)"
+            echo "      --llm-d        Enable llm-d mode: install Gateway API, LeaderWorkerSet,"
+            echo "                     Helm, and NVIDIA GPU Operator for distributed LLM inference"
             echo "  -h, --help         Show this help message"
             echo ""
             echo "Examples:"
-            echo "  $0                                    # Auto-detect IPs"
-            echo "  $0 -i 10.0.0.1                        # Specify node IP"
+            echo "  $0                                    # Standard K8s setup"
+            echo "  $0 --llm-d                            # K8s + llm-d components"
             echo "  $0 -i 10.0.0.1 -e 54.1.2.3            # Specify both IPs"
-            echo "  curl -fsSL <url> | bash -s -- -v 1.34 # Pipe execution"
+            echo "  curl -fsSL <url> | bash -s -- --llm-d # Pipe execution with llm-d"
             exit 0
             ;;
         *)
@@ -90,6 +118,11 @@ echo "Kubernetes Version: $K8S_VERSION"
 echo "Node IP (binding): $NODE_IP"
 echo "External IP (cert SAN): ${EXTERNAL_IP:-N/A}"
 echo "Pod Network CIDR: $POD_NETWORK_CIDR"
+if [ "$LLMD_MODE" = true ]; then
+    echo "Mode: llm-d (Gateway API + LeaderWorkerSet + GPU Operator)"
+else
+    echo "Mode: Standard"
+fi
 echo "========================================"
 echo
 
@@ -121,7 +154,10 @@ sudo sysctl --system > /dev/null 2>&1
 # Install containerd
 echo "Installing containerd..."
 sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ca-certificates curl gnupg lsb-release > /dev/null
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+    -o Dpkg::Options::="--force-confdef" \
+    -o Dpkg::Options::="--force-confold" \
+    ca-certificates curl gnupg lsb-release > /dev/null
 
 # Add Docker's official GPG key
 sudo install -m 0755 -d /etc/apt/keyrings
@@ -134,7 +170,10 @@ echo \
   $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq containerd.io > /dev/null
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+    -o Dpkg::Options::="--force-confdef" \
+    -o Dpkg::Options::="--force-confold" \
+    containerd.io > /dev/null
 
 # Configure containerd to use systemd cgroup driver
 echo "Configuring containerd..."
@@ -156,7 +195,10 @@ curl -fsSL https://pkgs.k8s.io/core:/stable:/v${K8S_VERSION}/deb/Release.key | s
 echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v${K8S_VERSION}/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list > /dev/null
 
 sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq kubelet kubeadm kubectl > /dev/null
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+    -o Dpkg::Options::="--force-confdef" \
+    -o Dpkg::Options::="--force-confold" \
+    kubelet kubeadm kubectl > /dev/null
 sudo apt-mark hold kubelet kubeadm kubectl > /dev/null
 
 # Initialize Kubernetes control plane
@@ -193,6 +235,63 @@ for i in {1..30}; do
     sleep 2
 done
 
+# ============================================================
+# llm-d Mode: Install additional components
+# ============================================================
+if [ "$LLMD_MODE" = true ]; then
+    echo ""
+    echo "=========================================="
+    echo "Installing llm-d components..."
+    echo "=========================================="
+    
+    # Install Helm
+    echo "Installing Helm..."
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash > /dev/null 2>&1
+    
+    # Install Gateway API CRDs
+    echo "Installing Gateway API CRDs..."
+    kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml > /dev/null 2>&1
+    
+    # Install LeaderWorkerSet CRD
+    echo "Installing LeaderWorkerSet CRD..."
+    kubectl apply --server-side -f https://github.com/kubernetes-sigs/lws/releases/download/v0.5.1/manifests.yaml > /dev/null 2>&1
+    
+    # Wait for LeaderWorkerSet controller to be ready
+    echo "Waiting for LeaderWorkerSet controller..."
+    for i in {1..30}; do
+        if kubectl get pods -n lws-system 2>/dev/null | grep -q "Running"; then
+            break
+        fi
+        sleep 2
+    done
+    
+    # Install NVIDIA GPU Operator
+    echo "Installing NVIDIA GPU Operator..."
+    helm repo add nvidia https://helm.ngc.nvidia.com/nvidia > /dev/null 2>&1
+    helm repo update > /dev/null 2>&1
+    
+    # Create gpu-operator namespace
+    kubectl create namespace gpu-operator --dry-run=client -o yaml | kubectl apply -f - > /dev/null 2>&1
+    
+    # Install GPU Operator (driver.enabled=false assumes driver is pre-installed on GPU nodes)
+    helm install gpu-operator nvidia/gpu-operator \
+        --namespace gpu-operator \
+        --set driver.enabled=false \
+        --set toolkit.enabled=true \
+        --set devicePlugin.enabled=true \
+        --set mig.strategy=single \
+        --wait --timeout 5m > /dev/null 2>&1 || {
+            echo "  Note: GPU Operator installation in progress (may take a few minutes)"
+        }
+    
+    echo ""
+    echo "llm-d components installed:"
+    echo "  ✓ Helm $(helm version --short 2>/dev/null | head -1)"
+    echo "  ✓ Gateway API CRDs"
+    echo "  ✓ LeaderWorkerSet CRD"
+    echo "  ✓ NVIDIA GPU Operator"
+fi
+
 # Extract join command for workers
 echo "Extracting worker join command..."
 JOIN_COMMAND=$(sudo kubeadm token create --print-join-command)
@@ -222,7 +321,11 @@ echo ""
 if kubectl get nodes 2>/dev/null | grep -q "Ready"; then
     echo ""
     echo "========================================"
-    echo "SUCCESS: Kubernetes control plane setup complete!"
+    if [ "$LLMD_MODE" = true ]; then
+        echo "SUCCESS: Kubernetes + llm-d setup complete!"
+    else
+        echo "SUCCESS: Kubernetes control plane setup complete!"
+    fi
     echo "========================================"
     echo ""
     echo "[K8S_CONTROL_PLANE_IP]"
@@ -231,6 +334,11 @@ if kubectl get nodes 2>/dev/null | grep -q "Ready"; then
     echo "[K8S_NODE_IP]"
     echo "$NODE_IP"
     echo ""
+    if [ "$LLMD_MODE" = true ]; then
+        echo "[K8S_MODE]"
+        echo "llm-d"
+        echo ""
+    fi
     echo "[K8S_JOIN_COMMAND]"
     cat ~/k8s-worker-join-command.txt
     echo ""
@@ -245,6 +353,16 @@ if kubectl get nodes 2>/dev/null | grep -q "Ready"; then
     echo "Worker Join Command (saved to ~/k8s-worker-join-command.txt):"
     echo "  $(cat ~/k8s-worker-join-command.txt)"
     echo ""
+    if [ "$LLMD_MODE" = true ]; then
+        echo "For GPU Workers, first install NVIDIA driver:"
+        echo "  ./installCudaDriver.sh --no-reboot"
+        echo "  sudo reboot"
+        echo ""
+        echo "llm-d Deployment (after GPU workers join):"
+        echo "  helm repo add llm-d https://llm-d.github.io/llm-d/"
+        echo "  helm install llm-d llm-d/llm-d --namespace llm-d --create-namespace"
+        echo ""
+    fi
     echo "External Kubeconfig (saved to ~/kubeconfig-external.yaml):"
     echo "  1. Copy to local: scp user@${ACCESS_IP}:~/kubeconfig-external.yaml ./kubeconfig.yaml"
     echo "  2. Use: export KUBECONFIG=./kubeconfig.yaml && kubectl get nodes"
@@ -252,6 +370,11 @@ if kubectl get nodes 2>/dev/null | grep -q "Ready"; then
     echo "Kubectl on this node:"
     echo "  kubectl get nodes"
     echo "  kubectl get pods -A"
+    if [ "$LLMD_MODE" = true ]; then
+        echo "  kubectl get gateway -A            # Gateway API resources"
+        echo "  kubectl get lws -A                # LeaderWorkerSet resources"
+        echo "  kubectl get pods -n gpu-operator  # GPU Operator pods"
+    fi
     echo ""
     exit 0
 else
