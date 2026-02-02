@@ -28,6 +28,50 @@ if [ -d /etc/needrestart/conf.d ]; then
     echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/conf.d/99-autorestart.conf > /dev/null 2>&1 || true
 fi
 
+# ============================================================
+# Fix dpkg/apt state (cleanup from previous failed installations)
+# ============================================================
+echo "Cleaning up any interrupted package operations..."
+
+# Wait for any existing apt/dpkg locks to be released
+wait_for_apt() {
+    local max_wait=60
+    local waited=0
+    while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || \
+          sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || \
+          sudo fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do
+        if [ $waited -ge $max_wait ]; then
+            echo "Warning: apt lock still held after ${max_wait}s, attempting to proceed..."
+            break
+        fi
+        echo "Waiting for apt lock to be released... ($waited/${max_wait}s)"
+        sleep 5
+        waited=$((waited + 5))
+    done
+}
+
+wait_for_apt
+
+# Kill any stuck apt/dpkg processes (only if they are hanging)
+sudo pkill -9 -f "apt-get|dpkg" 2>/dev/null || true
+sleep 2
+
+# Remove stale lock files
+sudo rm -f /var/lib/dpkg/lock-frontend 2>/dev/null || true
+sudo rm -f /var/lib/dpkg/lock 2>/dev/null || true
+sudo rm -f /var/cache/apt/archives/lock 2>/dev/null || true
+sudo rm -f /var/lib/apt/lists/lock 2>/dev/null || true
+
+# Reconfigure any partially installed packages
+sudo dpkg --configure -a 2>/dev/null || true
+
+# Fix any broken dependencies
+sudo DEBIAN_FRONTEND=noninteractive apt-get -f install -y \
+    -o Dpkg::Options::="--force-confdef" \
+    -o Dpkg::Options::="--force-confold" 2>/dev/null || true
+
+echo "Package system cleanup complete."
+
 # Default values
 NODE_IP=""                # IP for API server binding (private IP recommended, auto-detected if not provided)
 EXTERNAL_IP=""            # External/Public IP for cert SAN and external access (optional)
