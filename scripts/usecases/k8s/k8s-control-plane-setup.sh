@@ -245,39 +245,89 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
     kubelet kubeadm kubectl > /dev/null
 sudo apt-mark hold kubelet kubeadm kubectl > /dev/null
 
-# Initialize Kubernetes control plane
-echo "Initializing Kubernetes control plane..."
-sudo kubeadm init \
-  --apiserver-advertise-address=${NODE_IP} \
-  --pod-network-cidr=${POD_NETWORK_CIDR} \
-  --apiserver-cert-extra-sans=${CERT_SANS} \
-  2>&1 | tee ~/kubeadm-init.log
+# ============================================================
+# Check if Kubernetes is already initialized
+# ============================================================
+K8S_ALREADY_INITIALIZED=false
 
-# Check if initialization succeeded
-if [ ${PIPESTATUS[0]} -ne 0 ]; then
-    echo "ERROR: Kubernetes control plane initialization failed"
-    echo "Check logs at: ~/kubeadm-init.log"
-    exit 1
+if [ -f /etc/kubernetes/admin.conf ]; then
+    echo ""
+    echo "=========================================="
+    echo "Kubernetes cluster already initialized!"
+    echo "=========================================="
+    K8S_ALREADY_INITIALIZED=true
+    
+    # Ensure kubeconfig is set up
+    if [ ! -f "$HOME/.kube/config" ]; then
+        echo "Setting up kubeconfig..."
+        mkdir -p $HOME/.kube
+        sudo cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
+        sudo chown $(id -u):$(id -g) $HOME/.kube/config
+    fi
+    
+    # Check cluster status
+    if kubectl get nodes &>/dev/null; then
+        echo "Cluster is accessible. Current nodes:"
+        kubectl get nodes
+    else
+        echo "Warning: Cluster exists but kubectl cannot connect"
+    fi
+    echo ""
+    
+    if [ "$LLMD_MODE" = true ]; then
+        echo "Proceeding to install llm-d components on existing cluster..."
+    else
+        echo "Nothing to do. Cluster is already set up."
+        echo ""
+        echo "To add llm-d components, run:"
+        echo "  $0 --llm-d"
+        echo ""
+        # Still output the join command for convenience
+        KUBEADM_JOIN_CMD=$(kubeadm token create --print-join-command 2>/dev/null || cat ~/k8s-worker-join-command.txt 2>/dev/null || echo "")
+        if [ -n "$KUBEADM_JOIN_CMD" ]; then
+            echo "[K8S_JOIN_COMMAND]"
+            echo "$KUBEADM_JOIN_CMD"
+        fi
+        exit 0
+    fi
 fi
 
-# Set up kubeconfig for the current user
-echo "Setting up kubeconfig..."
-mkdir -p $HOME/.kube
-sudo cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
+# Only run kubeadm init if not already initialized
+if [ "$K8S_ALREADY_INITIALIZED" = false ]; then
+    # Initialize Kubernetes control plane
+    echo "Initializing Kubernetes control plane..."
+    sudo kubeadm init \
+        --apiserver-advertise-address=${NODE_IP} \
+        --pod-network-cidr=${POD_NETWORK_CIDR} \
+        --apiserver-cert-extra-sans=${CERT_SANS} \
+        2>&1 | tee ~/kubeadm-init.log
 
-# Install Flannel CNI plugin
-echo "Installing Flannel CNI plugin..."
-kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml > /dev/null
-
-# Wait for the node to be ready
-echo "Waiting for node to be ready..."
-for i in {1..30}; do
-    if kubectl get nodes 2>/dev/null | grep -q "Ready"; then
-        break
+    # Check if initialization succeeded
+    if [ ${PIPESTATUS[0]} -ne 0 ]; then
+        echo "ERROR: Kubernetes control plane initialization failed"
+        echo "Check logs at: ~/kubeadm-init.log"
+        exit 1
     fi
-    sleep 2
-done
+
+    # Set up kubeconfig for the current user
+    echo "Setting up kubeconfig..."
+    mkdir -p $HOME/.kube
+    sudo cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
+    sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+    # Install Flannel CNI plugin
+    echo "Installing Flannel CNI plugin..."
+    kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml > /dev/null
+
+    # Wait for the node to be ready
+    echo "Waiting for node to be ready..."
+    for i in {1..30}; do
+        if kubectl get nodes 2>/dev/null | grep -q "Ready"; then
+            break
+        fi
+        sleep 2
+    done
+fi  # End of K8S_ALREADY_INITIALIZED check
 
 # ============================================================
 # llm-d Mode: Install additional components
