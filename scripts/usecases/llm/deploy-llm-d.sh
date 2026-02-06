@@ -240,8 +240,8 @@ helm upgrade --install llm-d llm-d/llm-d \
 echo ""
 echo "Waiting for llm-d pods to be ready..."
 for i in {1..60}; do
-    READY_PODS=$(kubectl get pods -n "$LLM_D_NAMESPACE" -l app.kubernetes.io/name=llm-d -o jsonpath='{.items[*].status.containerStatuses[*].ready}' 2>/dev/null | tr ' ' '\n' | grep -c true || echo 0)
-    TOTAL_PODS=$(kubectl get pods -n "$LLM_D_NAMESPACE" -l app.kubernetes.io/name=llm-d --no-headers 2>/dev/null | wc -l || echo 0)
+    READY_PODS=$(kubectl get pods -n "$LLM_D_NAMESPACE" -l app.kubernetes.io/name=llm-d -o jsonpath='{.items[*].status.containerStatuses[*].ready}' 2>/dev/null | tr ' ' '\n' | grep -c true 2>/dev/null) || READY_PODS=0
+    TOTAL_PODS=$(kubectl get pods -n "$LLM_D_NAMESPACE" -l app.kubernetes.io/name=llm-d --no-headers 2>/dev/null | wc -l | tr -d ' ') || TOTAL_PODS=0
     
     if [ "$READY_PODS" -gt 0 ] && [ "$READY_PODS" -eq "$TOTAL_PODS" ]; then
         echo "  All pods ready ($READY_PODS/$TOTAL_PODS)"

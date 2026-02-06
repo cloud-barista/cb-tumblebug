@@ -441,15 +441,45 @@ echo "Checking for NVSwitch/multi-GPU topology..."
 # Detect NVSwitch via multiple methods:
 #  1. PCI devices: NVSwitch shows up as a separate PCI device
 #  2. Device files: /dev/nvidia-nvswitch* exist after driver load
-#  3. Multi-GPU count: 4+ GPUs typically means HGX with NVSwitch
+#  3. nvidia-smi topology: reports NVSwitch in topology matrix
+#  4. Multi-GPU count: 4+ GPUs typically means HGX with NVSwitch
+#
+# NOTE on lspci format: "00:1e.0 3D controller: NVIDIA Corporation A100-SXM4-40GB"
+#   - Class ("3D controller") comes BEFORE vendor ("NVIDIA")
+#   - NVSwitch shows as "Bridge: NVIDIA Corporation Device 2200" (no "nvswitch" text)
+#   - Use two-stage grep or nvidia-smi for reliable detection
+
+# NVSwitch detection via PCI (use -nn for numeric IDs as fallback)
 NVSWITCH_PCI=$(sudo lspci 2>/dev/null | grep -i -E "nvswitch|nvlink" || true)
+if [ -z "$NVSWITCH_PCI" ]; then
+    # NVSwitch devices have NVIDIA PCI vendor 10de with known device IDs (2200, 22a0, 2320, etc.)
+    # They appear as "Bridge" class, not "3D controller" or "VGA"
+    NVSWITCH_PCI=$(sudo lspci -n 2>/dev/null | grep -i "10de:2[23]" || true)
+fi
 NVSWITCH_DEV=$(ls /dev/nvidia-nvswitch* 2>/dev/null || true)
-GPU_COUNT=$(sudo lspci 2>/dev/null | grep -c -i "nvidia.*3d controller\|nvidia.*vga" || echo "0")
+
+# GPU count: use two-stage grep since lspci format is "Class: Vendor Device"
+#   e.g., "3D controller: NVIDIA Corporation A100-SXM4-40GB"
+#   First grep selects NVIDIA lines, second counts GPU-class devices
+GPU_COUNT=$(sudo lspci 2>/dev/null | grep -i nvidia | grep -i -c "3d controller\|vga compatible") || GPU_COUNT=0
+# Fallback: try nvidia-smi if driver is already loaded (e.g., DKMS auto-loaded)
+if [ "$GPU_COUNT" -eq 0 ] && command -v nvidia-smi &>/dev/null; then
+    GPU_COUNT=$(nvidia-smi -L 2>/dev/null | grep -c "^GPU") || GPU_COUNT=0
+fi
+
+# NVSwitch detection via nvidia-smi topology (works if driver is loaded)
+NVSWITCH_TOPO=""
+if [ -z "$NVSWITCH_PCI" ] && [ -z "$NVSWITCH_DEV" ] && command -v nvidia-smi &>/dev/null; then
+    NVSWITCH_TOPO=$(nvidia-smi topo -m 2>/dev/null | grep -i "nvswitch\|NV[0-9]" || true)
+fi
 
 NEED_FABRIC_MANAGER=false
 if [ -n "$NVSWITCH_PCI" ] || [ -n "$NVSWITCH_DEV" ]; then
     NEED_FABRIC_MANAGER=true
     echo "  NVSwitch detected via PCI/device."
+elif [ -n "$NVSWITCH_TOPO" ]; then
+    NEED_FABRIC_MANAGER=true
+    echo "  NVSwitch detected via nvidia-smi topology."
 elif [ "$GPU_COUNT" -ge 4 ] 2>/dev/null; then
     # HGX systems with 4+ GPUs almost always have NVSwitch
     NEED_FABRIC_MANAGER=true
@@ -460,6 +490,10 @@ if [ "$NEED_FABRIC_MANAGER" = true ]; then
     # Fabric Manager version MUST match the installed driver major version.
     # Mismatch causes: "Version mismatch between FM (X) and driver (Y)" → only GPU 0 accessible.
     DRIVER_MAJOR=$(dpkg -l 2>/dev/null | grep "^ii" | awk '{print $2}' | grep -oP "^nvidia-driver-\K[0-9]+" | sort -rn | head -1 || true)
+    # Fallback: try nvidia-smi if dpkg pattern didn't match (e.g., cuda-drivers metapackage)
+    if [ -z "$DRIVER_MAJOR" ] && command -v nvidia-smi &>/dev/null; then
+        DRIVER_MAJOR=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1 | cut -d. -f1 || true)
+    fi
     if [ -n "$DRIVER_MAJOR" ]; then
         FM_PKG="nvidia-fabricmanager-${DRIVER_MAJOR}"
         echo "  Installing ${FM_PKG} (matching driver version ${DRIVER_MAJOR})..."
@@ -539,7 +573,8 @@ if [ "$INSTALL_CONTAINER_TOOLKIT" = true ]; then
     # Configure containerd (for Kubernetes)
     if command -v containerd &>/dev/null; then
         echo "  Configuring containerd for NVIDIA runtime..."
-        sudo nvidia-ctk runtime configure --runtime=containerd 2>/dev/null || true
+        # --set-as-default: makes nvidia the default runtime (required for GPU Operator validator pods)
+        sudo nvidia-ctk runtime configure --runtime=containerd --set-as-default 2>/dev/null || true
         
         if systemctl is-active --quiet containerd; then
             sudo systemctl restart containerd
