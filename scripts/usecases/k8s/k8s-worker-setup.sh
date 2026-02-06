@@ -237,6 +237,13 @@ containerd config default | sudo tee /etc/containerd/config.toml > /dev/null
 # Enable SystemdCgroup
 sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
 
+# If NVIDIA GPU detected & nvidia-ctk available, re-configure nvidia runtime
+# (containerd config default above resets any previous nvidia-ctk settings)
+if [ "$GPU_DETECTED" = true ] && command -v nvidia-ctk &>/dev/null; then
+    echo "  Re-applying NVIDIA container runtime config..."
+    sudo nvidia-ctk runtime configure --runtime=containerd 2>/dev/null || true
+fi
+
 sudo systemctl restart containerd
 sudo systemctl enable containerd
 
