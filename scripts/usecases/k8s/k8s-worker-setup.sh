@@ -241,7 +241,8 @@ sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/conf
 # (containerd config default above resets any previous nvidia-ctk settings)
 if [ "$GPU_DETECTED" = true ] && command -v nvidia-ctk &>/dev/null; then
     echo "  Re-applying NVIDIA container runtime config..."
-    sudo nvidia-ctk runtime configure --runtime=containerd 2>/dev/null || true
+    # --set-as-default: makes nvidia the default runtime (required for GPU Operator validator pods)
+    sudo nvidia-ctk runtime configure --runtime=containerd --set-as-default 2>/dev/null || true
 fi
 
 sudo systemctl restart containerd

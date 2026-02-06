@@ -444,7 +444,7 @@ echo "Checking for NVSwitch/multi-GPU topology..."
 #  3. Multi-GPU count: 4+ GPUs typically means HGX with NVSwitch
 NVSWITCH_PCI=$(sudo lspci 2>/dev/null | grep -i -E "nvswitch|nvlink" || true)
 NVSWITCH_DEV=$(ls /dev/nvidia-nvswitch* 2>/dev/null || true)
-GPU_COUNT=$(sudo lspci 2>/dev/null | grep -c -i "nvidia.*3d controller\|nvidia.*vga" || echo "0")
+GPU_COUNT=$(sudo lspci 2>/dev/null | grep -c -i "nvidia.*3d controller\|nvidia.*vga") || GPU_COUNT=0
 
 NEED_FABRIC_MANAGER=false
 if [ -n "$NVSWITCH_PCI" ] || [ -n "$NVSWITCH_DEV" ]; then
@@ -539,7 +539,8 @@ if [ "$INSTALL_CONTAINER_TOOLKIT" = true ]; then
     # Configure containerd (for Kubernetes)
     if command -v containerd &>/dev/null; then
         echo "  Configuring containerd for NVIDIA runtime..."
-        sudo nvidia-ctk runtime configure --runtime=containerd 2>/dev/null || true
+        # --set-as-default: makes nvidia the default runtime (required for GPU Operator validator pods)
+        sudo nvidia-ctk runtime configure --runtime=containerd --set-as-default 2>/dev/null || true
         
         if systemctl is-active --quiet containerd; then
             sudo systemctl restart containerd
