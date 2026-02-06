@@ -457,10 +457,19 @@ elif [ "$GPU_COUNT" -ge 4 ] 2>/dev/null; then
 fi
 
 if [ "$NEED_FABRIC_MANAGER" = true ]; then
-    echo "  Installing NVIDIA Fabric Manager (required for multi-GPU communication)..."
+    # Fabric Manager version MUST match the installed driver major version.
+    # Mismatch causes: "Version mismatch between FM (X) and driver (Y)" → only GPU 0 accessible.
+    DRIVER_MAJOR=$(dpkg -l 2>/dev/null | grep "^ii" | awk '{print $2}' | grep -oP "^nvidia-driver-\K[0-9]+" | sort -rn | head -1 || true)
+    if [ -n "$DRIVER_MAJOR" ]; then
+        FM_PKG="nvidia-fabricmanager-${DRIVER_MAJOR}"
+        echo "  Installing ${FM_PKG} (matching driver version ${DRIVER_MAJOR})..."
+    else
+        FM_PKG="nvidia-fabricmanager"
+        echo "  Installing ${FM_PKG}..."
+    fi
     
     set +e
-    "${APT_INSTALL[@]}" nvidia-fabricmanager 2>&1 | tail -10
+    "${APT_INSTALL[@]}" "$FM_PKG" 2>&1 | tail -10
     FM_EXIT=${PIPESTATUS[0]}
     set -e
     
@@ -471,15 +480,25 @@ if [ "$NEED_FABRIC_MANAGER" = true ]; then
         echo "  ✓ Fabric Manager installed and enabled."
         echo "    (Will fully activate after reboot when all GPU modules are loaded)"
     else
-        echo "  WARNING: Failed to install nvidia-fabricmanager (exit code: $FM_EXIT)."
+        echo "  WARNING: Failed to install ${FM_PKG} (exit code: $FM_EXIT)."
         echo "  Multi-GPU communication may not work. Install manually after reboot:"
-        echo "    sudo apt install nvidia-fabricmanager && sudo systemctl enable --now nvidia-fabricmanager"
+        echo "    sudo apt install ${FM_PKG} && sudo systemctl enable --now nvidia-fabricmanager"
     fi
 else
     if [ "$GPU_COUNT" -gt 1 ] 2>/dev/null; then
         echo "  ${GPU_COUNT} GPUs detected (PCIe topology, no NVSwitch). Fabric Manager not needed."
     else
         echo "  Single GPU detected. Fabric Manager not needed."
+    fi
+fi
+
+# Enable nvidia-persistenced for multi-GPU systems to avoid cold-start latency.
+# Without this, the first GPU operation after idle may take ~2s to re-initialize.
+if [ "$GPU_COUNT" -gt 1 ] 2>/dev/null; then
+    if systemctl list-unit-files nvidia-persistenced.service &>/dev/null; then
+        sudo systemctl enable nvidia-persistenced 2>/dev/null || true
+        sudo systemctl start nvidia-persistenced 2>/dev/null || true
+        echo "  ✓ nvidia-persistenced enabled (reduces GPU initialization latency)."
     fi
 fi
 
