@@ -293,21 +293,24 @@ rm -f "$KEYRING_FILE"
 sudo apt-get update -qq
 
 # ============================================================
-# Install NVIDIA Driver
+# Install NVIDIA Driver (open kernel modules)
 # ============================================================
+# Use open kernel modules (nvidia-open) instead of proprietary (nvidia-dkms).
+# Open modules are REQUIRED for Blackwell+ GPUs and work on all Turing+ (2018+) GPUs,
+# which covers all modern cloud GPU instances (T4, A10G, A100, L4, H100, H200, B200, etc.).
 echo "\n========== NVIDIA Driver =========="
 
-echo "Installing cuda-drivers (this may take several minutes)..."
+echo "Installing cuda-drivers-open (this may take several minutes)..."
 INSTALL_LOG=$(mktemp)
 set +e
-"${APT_INSTALL[@]}" cuda-drivers 2>&1 | tee "$INSTALL_LOG"
+"${APT_INSTALL[@]}" cuda-drivers-open 2>&1 | tee "$INSTALL_LOG"
 INSTALL_EXIT_CODE=${PIPESTATUS[0]}
 set -e  # Re-enable exit-on-error
 
 # Check installation result
 if [ $INSTALL_EXIT_CODE -ne 0 ]; then
     echo ""
-    echo "ERROR: cuda-drivers installation failed (exit code: $INSTALL_EXIT_CODE)"
+    echo "ERROR: cuda-drivers-open installation failed (exit code: $INSTALL_EXIT_CODE)"
     
     # Show DKMS build log if it was a DKMS failure
     if grep -q "bad exit status\|Bad return status" "$INSTALL_LOG" 2>/dev/null; then
@@ -321,7 +324,7 @@ if [ $INSTALL_EXIT_CODE -ne 0 ]; then
     fi
     
     echo ""
-    echo "Attempting fallback: install nvidia-driver-550..."
+    echo "Attempting fallback: install nvidia-driver-550-open..."
     
     # First: purge ALL leftover nvidia packages from the failed attempt.
     # Version-less packages (e.g. libnvidia-cfg1) conflict with version-suffixed ones (libnvidia-cfg1-550).
@@ -342,13 +345,13 @@ if [ $INSTALL_EXIT_CODE -ne 0 ]; then
     set +e
     sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
         "${APT_OPTS[@]}" -o Dpkg::Options::="--force-overwrite" \
-        nvidia-driver-550 2>&1 | tee "$INSTALL_LOG"
+        nvidia-driver-550-open 2>&1 | tee "$INSTALL_LOG"
     FALLBACK_EXIT_CODE=${PIPESTATUS[0]}
     set -e
     
     if [ $FALLBACK_EXIT_CODE -ne 0 ]; then
         echo ""
-        echo "ERROR: Fallback nvidia-driver-550 also failed."
+        echo "ERROR: Fallback nvidia-driver-550-open also failed."
         rm -f "$INSTALL_LOG"
         exit 1
     fi
@@ -364,7 +367,7 @@ if echo "$DKMS_STATUS" | grep -q "installed"; then
 else
     echo "DKMS status: ${DKMS_STATUS:-not found}"
     # Check if packages are properly configured
-    BROKEN_DRV=$(dpkg -l | grep -E "nvidia-dkms|nvidia-driver|cuda-drivers" | grep -v "^ii " || true)
+    BROKEN_DRV=$(dpkg -l | grep -E "nvidia-dkms|nvidia-open|nvidia-driver|cuda-drivers" | grep -v "^ii " || true)
     if [ -n "$BROKEN_DRV" ]; then
         echo ""
         echo "WARNING: Driver packages not properly configured:"
