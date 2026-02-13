@@ -9858,11 +9858,11 @@ paths:
         schema:
           type: string
       requestBody:
-        description: Details for an SSH Key object
+        description: SSH Key update details
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.SshKeyInfo'
+              $ref: '#/components/schemas/model.SshKeyUpdateReq'
         required: true
       responses:
         "200":
@@ -9917,6 +9917,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/resources/sshKey/{sshKeyId}/complement:
+    put:
+      tags:
+      - "[Infra Resource] Access Key Management"
+      summary: Complement SSH Key info to enable remote command execution
+      description: Update username and privateKey to enable remote command execution
+        on registered VMs
+      operationId: ComplementSshKeyRemoteCommand
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: sshKeyId
+        in: path
+        description: SSH Key ID
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: Username and privateKey for remote command
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/model.SshKeyComplementReq'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SshKeyInfo'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
+      x-codegen-request-body-name: sshKeyInfo
   /ns/{nsId}/resources/vNet:
     get:
       tags:
@@ -19025,6 +19074,13 @@ components:
           description: "KeyType is the type of the SSH host key (e.g., ssh-rsa, ssh-ed25519,\
             \ ecdsa-sha2-nistp256)"
           example: ssh-ed25519
+    model.SshKeyComplementReq:
+      type: object
+      properties:
+        privateKey:
+          type: string
+        username:
+          type: string
     model.SshKeyInfo:
       type: object
       properties:
@@ -19102,6 +19158,21 @@ components:
         fingerprint:
           type: string
         name:
+          type: string
+        privateKey:
+          type: string
+        publicKey:
+          type: string
+        username:
+          type: string
+        verifiedUsername:
+          type: string
+    model.SshKeyUpdateReq:
+      type: object
+      properties:
+        description:
+          type: string
+        fingerprint:
           type: string
         privateKey:
           type: string

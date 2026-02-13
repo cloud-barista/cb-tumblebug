@@ -264,7 +264,7 @@ func CreateSshKey(nsId string, u *model.SshKeyReq, option string) (model.SshKeyI
 
 // UpdateSshKey accepts to-be TB sshKey objects,
 // updates and returns the updated TB sshKey objects
-func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate model.SshKeyInfo) (model.SshKeyInfo, error) {
+func UpdateSshKey(nsId string, sshKeyId string, update model.SshKeyUpdateReq) (model.SshKeyInfo, error) {
 
 	emptyObj := model.SshKeyInfo{}
 
@@ -272,12 +272,6 @@ func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate model.SshKeyInfo)
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return emptyObj, err
-	}
-
-	if len(fieldsToUpdate.Id) > 0 {
-		err := fmt.Errorf("You should not specify 'id' in the JSON request body.")
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
@@ -308,8 +302,16 @@ func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate model.SshKeyInfo)
 
 	// Update specified fields only
 	toBeSshKey := asIsSshKey
-	toBeSshKeyJSON, _ := json.Marshal(fieldsToUpdate)
-	err = json.Unmarshal(toBeSshKeyJSON, &toBeSshKey)
+	updateBytes, err := json.Marshal(update)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal update fields")
+		return emptyObj, err
+	}
+	err = json.Unmarshal(updateBytes, &toBeSshKey)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to unmarshal update fields")
+		return emptyObj, err
+	}
 
 	log.Info().Msg("PUT UpdateSshKey")
 	Key := common.GenResourceKey(nsId, resourceType, toBeSshKey.Id)
@@ -331,4 +333,56 @@ func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate model.SshKeyInfo)
 	fmt.Printf("<%s> \n %s \n", keyValue.Key, keyValue.Value)
 
 	return toBeSshKey, nil
+}
+
+// ComplementSshKey enable remote command execution for registered SSH keys
+// by updating username and privateKey required for SSH authentication
+func ComplementSshKey(nsId string, sshKeyId string, req model.SshKeyComplementReq) (model.SshKeyInfo, error) {
+	emptyObj := model.SshKeyInfo{}
+	resourceType := model.StrSSHKey
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyObj, err
+	}
+
+	check, err := CheckResource(nsId, resourceType, sshKeyId)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyObj, err
+	}
+
+	if !check {
+		err := fmt.Errorf("The sshKey %s does not exist.", sshKeyId)
+		return emptyObj, err
+	}
+
+	tempInterface, err := GetResource(nsId, resourceType, sshKeyId)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the sshKey %s.", sshKeyId)
+		return emptyObj, err
+	}
+
+	sshKey := model.SshKeyInfo{}
+	err = common.CopySrcToDest(&tempInterface, &sshKey)
+	if err != nil {
+		err := fmt.Errorf("Failed to CopySrcToDest() %s.", sshKeyId)
+		return emptyObj, err
+	}
+
+	// Update username and privateKey for remote command
+	sshKey.Username = req.Username
+	sshKey.PrivateKey = req.PrivateKey
+
+	log.Info().Msg("PUT ComplementSshKey")
+	Key := common.GenResourceKey(nsId, resourceType, sshKey.Id)
+	Val, _ := json.Marshal(sshKey)
+	err = kvstore.Put(Key, string(Val))
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyObj, err
+	}
+
+	return sshKey, nil
 }

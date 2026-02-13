@@ -583,6 +583,7 @@ func RunServer() {
 	g.GET("/:nsId/resources/sshKey/:resourceId", rest_resource.RestGetResource)
 	g.GET("/:nsId/resources/sshKey", rest_resource.RestGetAllResources)
 	g.PUT("/:nsId/resources/sshKey/:resourceId", rest_resource.RestPutSshKey)
+	g.PUT("/:nsId/resources/sshKey/:resourceId/complement", rest_resource.RestComplementSshKey)
 	g.DELETE("/:nsId/resources/sshKey/:resourceId", rest_resource.RestDelResource)
 	g.DELETE("/:nsId/resources/sshKey", rest_resource.RestDelAllResources)
 	g.DELETE("/:nsId/deregisterResource/sshKey/:resourceId", rest_resource.RestDeregisterResource)
