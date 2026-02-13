@@ -13,51 +13,61 @@ extractionPatterns:
       # Basic images are clean, official OS installations without additional software or customization
       basicImageRules:
         # Common rules applied to all CSPs by default
-        # Used as fallback when CSP-specific rules are not defined or empty
+        # Designed to be CSP-agnostic using keyword-based patterns
         common:
           include:
-            - "Ubuntu * 64 bit"
-            - "ubuntu/images/*"
-            - "0001-com-ubuntu-server*"
-            - "Canonical, Ubuntu, * LTS Minimal*"
-            - "Canonical:ubuntu*server*"
-            - "Ubuntu Linux * LTS*"
-            - "ubuntu-*-64bit-*"
-            - "ubuntu-*-base (Hypervisor:KVM)"
-            - "Ubuntu Server * LTS (*)"
-            - "Ubuntu Server * LTS 64bit"
-            - "ubuntu-*-base"
+            # Note: Pattern matching is case-insensitive
+            # Keyword-based patterns (CSP-independent)
+            - "*ubuntu*server*"      # Any image with "ubuntu" and "server" keywords
+            - "*ubuntu*minimal*"     # Any image with "ubuntu" and "minimal" keywords
+            - "*ubuntu*base*"        # Any image with "ubuntu" and "base" keywords
+            - "*ubuntu*64bit*"       # 64-bit format without space (kt, alibaba, etc.)
+            - "*ubuntu*lts*"         # LTS images with any separator (GCP format)
+            - "ubuntu/images/*"      # Path-style naming (common in AWS)
+            # Description-based patterns
+            - "ubuntu server*"       # Images named/described as Ubuntu Server
+            - "ubuntu * lts*"        # LTS version images
+            - "ubuntu * 64 bit"      # 64-bit specification format
           exclude:
+            # Note: Pattern matching is case-insensitive
+            # Use specific patterns to avoid false positives
+            # Commercial/Enterprise variants
+            - "*ubuntu-pro*"         # Ubuntu Pro (paid support)
+            - "*-pro-*"              # Pro variants with dashes
+            - "*:pro-*"              # Azure format pro images
             - "*marketplace*"
-            - "*custom*"
-            - "*test*"
-            - "*dev*"
-            - "*gpusvr*"
-        
-        # CSP-specific rules override common rules independently
-        # - If include is defined and not empty → use CSP-specific include (ignore common include)
-        # - If include is empty or omitted → use common include
-        # - If exclude is defined and not empty → use CSP-specific exclude (ignore common exclude)
-        # - If exclude is empty or omitted → use common exclude
-        cspSpecific:
-          azure:
-            include:
-              - "0001-com-ubuntu-server*gen2"
-            exclude:
-              - "dcassociatesgroupinc:*"  # Third-party vendor
-              - "*marketplace*"
-              - "*daily*"
-          # Add more CSP-specific rules as needed
-          # aws:
-          #   include:
-          #     - "ubuntu/images/hvm-ssd/*"
-          #   exclude:
-          #     - "*community*"
-          # gcp:
-          #   include:
-          #     - "ubuntu-*-amd64"
-          #   exclude:
-          #     - "*custom*"
+            # Development/Testing  
+            - "*daily*"
+            - "*-dev-*"              # More specific than "*-dev*"
+            # GPU/ML images
+            - "*deep learning*"
+            - "* gpu*"               # Images with GPU in name (space prefix)
+            - "*-gpu*"               # Images with GPU suffix (e.g., ubuntu-22.04-gpu)
+            - "*gpu driver*"         # GPU driver pre-installed
+            - "*gpusvr*"             # KT GPU server images
+            - "*nvidia*"             # NVIDIA-related images
+            - "*cuda*"               # CUDA images
+            - "*grid*"               # NVIDIA GRID vGPU driver (Tencent)
+            # Custom kernel images
+            - "*tk4*"                # Tencent Kernel 4.x (custom kernel)
+            # Security/Compliance variants
+            - "*-confidential-*"     # Confidential VM images (hyphen-delimited)
+            - "*cvm:*"               # Confidential VM (Azure format)
+            - "*fips*"
+            # Kubernetes/Container optimized
+            - "*-eks-*"              # EKS optimized
+            - "*kubernetes*"
+            - "*k8s*"
+            - "* - container*"       # Container-optimized images (NHN)
+            # Special purpose images
+            - "* for nat*"           # NAT gateway images (NHN)
+            # Pre-installed software (not basic OS)
+            - "*sql*"                # Database pre-installed (MySQL, PostgreSQL, SQL Server)
+            - "*mariadb*"            # MariaDB
+            - "*redis*"              # Redis
+            - "*kafka*"              # Apache Kafka
+            - "*cubrid*"             # CUBRID
+            - "* with *"             # "with X" pattern (NHN style - middleware pre-installed)
     centos:
       name: "CentOS"
       versions: ["7", "8", "9"]
@@ -82,7 +92,9 @@ extractionPatterns:
       name: "Amazon Linux"
       versions: ["2", "2023"]
       defaultVersion: ""
-      patterns: ["amazon linux", "amzn", "al20", "aws-marketplace", "amazon", "aws linux"]
+      # Note: "amazon" pattern removed - too broad, matches AWS image metadata (ImageOwnerAlias: "amazon")
+      # and causes Ubuntu/Windows images to be misclassified as Amazon Linux
+      patterns: ["amazon linux", "amazon_linux", "amzn", "al20", "amazon-eks", "bottlerocket"]
     azurelinux:
       name: "Azure Linux"
       versions: ["2", "3"]
@@ -164,4 +176,3 @@ extractionPatterns:
     - "bottlerocket-aws-k8s"  # AWS Bottlerocket for Kubernetes (excludes ECS)
     - "flatcar"            # Flatcar Container Linux
     - "talos"              # Talos Linux (K8s-specific OS)
-    

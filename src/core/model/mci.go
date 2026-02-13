@@ -241,8 +241,8 @@ type CreateSubGroupReq struct {
 	// CspResourceId is resource identifier managed by CSP (required for option=register)
 	CspResourceId string `json:"cspResourceId,omitempty" example:"i-014fa6ede6ada0b2c"`
 
-	// if subGroupSize is (not empty) && (> 0), subGroup will be generated. VMs will be created accordingly.
-	SubGroupSize string `json:"subGroupSize" example:"3" default:""`
+	// SubGroupSize is the number of VMs to create in this SubGroup. If > 0, subGroup will be generated.
+	SubGroupSize int `json:"subGroupSize" example:"3"`
 
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label"`
@@ -259,15 +259,15 @@ type CreateSubGroupReq struct {
 	SshKeyId         string   `json:"sshKeyId" validate:"required"`
 	VmUserName       string   `json:"vmUserName,omitempty"`
 	VmUserPassword   string   `json:"vmUserPassword,omitempty"`
-	RootDiskType     string   `json:"rootDiskType,omitempty" example:"default, TYPE1, ..."`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize     string   `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
+	RootDiskType     string   `json:"rootDiskType,omitempty" example:"default, TYPE1, ..."` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
+	RootDiskSize     int      `json:"rootDiskSize,omitempty" example:"50"`                  // Root disk size in GB. 0 = use CSP default.
 	DataDiskIds      []string `json:"dataDiskIds"`
 }
 
 // CreateSubGroupReq is struct to get requirements to create a new server instance
 type ScaleOutSubGroupReq struct {
 	// Define addtional VMs to scaleOut
-	NumVMsToAdd string `json:"numVMsToAdd" validate:"required" example:"2"`
+	NumVMsToAdd int `json:"numVMsToAdd" validate:"required" example:"2"`
 
 	//tobe added accoring to new future capability
 }
@@ -332,8 +332,8 @@ type CreateSubGroupDynamicReq struct {
 	// SubGroup name, actual VM name will be generated with -N postfix.
 	Name string `json:"name" example:"g1"`
 
-	// if subGroupSize is (not empty) && (> 0), subGroup will be generated. VMs will be created accordingly.
-	SubGroupSize string `json:"subGroupSize" example:"3" default:"1"`
+	// SubGroupSize is the number of VMs to create in this SubGroup. If > 0, subGroup will be generated. Default is 1.
+	SubGroupSize int `json:"subGroupSize" example:"3"`
 
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label" example:"{\"role\":\"worker\",\"env\":\"test\"}"`
@@ -346,7 +346,7 @@ type CreateSubGroupDynamicReq struct {
 	ImageId string `json:"imageId" validate:"required" example:"ami-01f71f215b23ba262"`
 
 	RootDiskType string `json:"rootDiskType,omitempty" example:"gp3" default:"default"` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize string `json:"rootDiskSize,omitempty" example:"50" default:"default"`  // "default", Integer (GB): ["50", ..., "1000"]
+	RootDiskSize int    `json:"rootDiskSize,omitempty" example:"50"`                    // Root disk size in GB. 0 = use CSP default.
 
 	VmUserPassword string `json:"vmUserPassword,omitempty" example:"" default:""`
 	// if ConnectionName is given, the VM tries to use associtated credential.
@@ -417,7 +417,7 @@ type ReviewMciDynamicReqInfo struct {
 type ReviewSubGroupDynamicReqInfo struct {
 	// VM request information
 	VmName       string `json:"vmName"`
-	SubGroupSize string `json:"subGroupSize"`
+	SubGroupSize int    `json:"subGroupSize"`
 
 	// Validation status
 	Status    string `json:"status" example:"Ready/Warning/Error"`
@@ -594,7 +594,7 @@ type SubGroupInfo struct {
 	Name string `json:"name" example:"aws-ap-southeast-1"`
 
 	VmId         []string `json:"vmId"`
-	SubGroupSize string   `json:"subGroupSize"`
+	SubGroupSize int      `json:"subGroupSize"`
 }
 
 // MciAssociatedResourceList is struct for associated resource IDs of an MCI
@@ -661,33 +661,33 @@ type VmInfo struct {
 
 	Region         RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
 	PublicIP       string     `json:"publicIP"`
-	SSHPort        string     `json:"sshPort"`
+	SSHPort        int        `json:"sshPort"`
 	PublicDNS      string     `json:"publicDNS"`
 	PrivateIP      string     `json:"privateIP"`
 	PrivateDNS     string     `json:"privateDNS"`
 	RootDiskType   string     `json:"rootDiskType"`
-	RootDiskSize   string     `json:"rootDiskSize"`
+	RootDiskSize   int        `json:"rootDiskSize"`
 	RootDeviceName string     `json:"RootDeviceName"`
 
-	ConnectionName   string     `json:"connectionName"`
-	ConnectionConfig ConnConfig `json:"connectionConfig"`
-	SpecId           string     `json:"specId"`
-	CspSpecName      string     `json:"cspSpecName"`
-	Spec             SpecSummary `json:"spec,omitempty"`
-	ImageId          string     `json:"imageId"`
-	CspImageName     string     `json:"cspImageName"`
+	ConnectionName   string       `json:"connectionName"`
+	ConnectionConfig ConnConfig   `json:"connectionConfig"`
+	SpecId           string       `json:"specId"`
+	CspSpecName      string       `json:"cspSpecName"`
+	Spec             SpecSummary  `json:"spec,omitempty"`
+	ImageId          string       `json:"imageId"`
+	CspImageName     string       `json:"cspImageName"`
 	Image            ImageSummary `json:"image,omitempty"`
-	VNetId           string     `json:"vNetId"`
-	CspVNetId        string     `json:"cspVNetId"`
-	SubnetId         string     `json:"subnetId"`
-	CspSubnetId      string     `json:"cspSubnetId"`
-	NetworkInterface string     `json:"networkInterface"`
-	SecurityGroupIds []string   `json:"securityGroupIds"`
-	DataDiskIds      []string   `json:"dataDiskIds"`
-	SshKeyId         string     `json:"sshKeyId"`
-	CspSshKeyId      string     `json:"cspSshKeyId"`
-	VmUserName       string     `json:"vmUserName,omitempty"`
-	VmUserPassword   string     `json:"vmUserPassword,omitempty"`
+	VNetId           string       `json:"vNetId"`
+	CspVNetId        string       `json:"cspVNetId"`
+	SubnetId         string       `json:"subnetId"`
+	CspSubnetId      string       `json:"cspSubnetId"`
+	NetworkInterface string       `json:"networkInterface"`
+	SecurityGroupIds []string     `json:"securityGroupIds"`
+	DataDiskIds      []string     `json:"dataDiskIds"`
+	SshKeyId         string       `json:"sshKeyId"`
+	CspSshKeyId      string       `json:"cspSshKeyId"`
+	VmUserName       string       `json:"vmUserName,omitempty"`
+	VmUserPassword   string       `json:"vmUserPassword,omitempty"`
 
 	// SshHostKeyInfo contains SSH host key information for TOFU (Trust On First Use) verification
 	SshHostKeyInfo *SshHostKeyInfo `json:"sshHostKeyInfo,omitempty"`
@@ -718,7 +718,7 @@ type MciVmAccessInfo struct {
 	VmId             string     `json:"vmId"`
 	PublicIP         string     `json:"publicIP"`
 	PrivateIP        string     `json:"privateIP"`
-	SSHPort          string     `json:"sshPort"`
+	SSHPort          int        `json:"sshPort"`
 	PrivateKey       string     `json:"privateKey,omitempty"`
 	VmUserName       string     `json:"vmUserName,omitempty"`
 	VmUserPassword   string     `json:"vmUserPassword,omitempty"`
@@ -836,7 +836,7 @@ type MciStatusInfo struct {
 
 	MasterVmId    string `json:"masterVmId" example:"vm-asiaeast1-cb-01"`
 	MasterIp      string `json:"masterIp" example:"32.201.134.113"`
-	MasterSSHPort string `json:"masterSSHPort"`
+	MasterSSHPort int    `json:"masterSSHPort"`
 
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label"`
@@ -890,7 +890,7 @@ type VmStatusInfo struct {
 
 	PublicIp  string `json:"publicIp"`
 	PrivateIp string `json:"privateIp"`
-	SSHPort   string `json:"sshPort"`
+	SSHPort   int    `json:"sshPort"`
 
 	Location Location `json:"location"`
 }
@@ -935,8 +935,8 @@ const (
 type AutoCondition struct {
 	Metric           string   `json:"metric" example:"cpu"`
 	Operator         string   `json:"operator" example:">=" enums:"<,<=,>,>="`
-	Operand          string   `json:"operand" example:"80"`
-	EvaluationPeriod string   `json:"evaluationPeriod" example:"10"`
+	Operand          float64  `json:"operand" example:"80"`
+	EvaluationPeriod int      `json:"evaluationPeriod" example:"10"`
 	EvaluationValue  []string `json:"evaluationValue"`
 	//InitTime	   string 	  `json:"initTime"`  // to check start of duration
 	//Duration	   string 	  `json:"duration"`  // duration for checking
@@ -1292,7 +1292,7 @@ type BastionInfo struct {
 type RecommendSpecReq struct {
 	Filter   FilterInfo   `json:"filter"`
 	Priority PriorityInfo `json:"priority"`
-	Limit    string       `json:"limit" example:"5" enums:"1,2,30"`
+	Limit    int          `json:"limit" example:"5"`
 }
 
 // FilterInfo is struct for .
@@ -1309,7 +1309,7 @@ type FilterCondition struct {
 // Operation is struct for .
 type Operation struct {
 	Operator string `json:"operator" example:"<=" enums:">=,<=,=="` // >=, <=, ==
-	Operand  string `json:"operand" example:"4" enums:"4,8,.."`     // 10, 70, 80, 98, ...
+	Operand  string `json:"operand" example:"4"`                    // 10, 70, 80, 98, ... or string values like "aws", "x86_64"
 }
 
 // PriorityInfo is struct for .
@@ -1320,7 +1320,7 @@ type PriorityInfo struct {
 // FilterCondition is struct for .
 type PriorityCondition struct {
 	Metric    string            `json:"metric" example:"location" enums:"location,cost,random,performance,latency"`
-	Weight    string            `json:"weight" example:"0.3" enums:"0.1,0.2,..."`
+	Weight    float64           `json:"weight" example:"0.3"`
 	Parameter []ParameterKeyVal `json:"parameter,omitempty"`
 }
 

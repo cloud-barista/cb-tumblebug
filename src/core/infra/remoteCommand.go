@@ -554,13 +554,13 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 		return map[int]string{}, map[int]string{}, err
 	}
 
-	bastionEndpoint := fmt.Sprintf("%s:%s", bastionIp, bastionSshPort)
+	bastionEndpoint := fmt.Sprintf("%s:%d", bastionIp, bastionSshPort)
 
 	// Log bastion connection details for debugging
 	log.Debug().
 		Str("bastionVmId", bastionNode.VmId).
 		Str("bastionIp", bastionIp).
-		Str("bastionPort", bastionSshPort).
+		Int("bastionPort", bastionSshPort).
 		Str("bastionEndpoint", bastionEndpoint).
 		Str("bastionUserName", bastionUserName).
 		Msg("Bastion connection details")
@@ -577,7 +577,7 @@ func RunRemoteCommandWithContext(ctx context.Context, nsId string, mciId string,
 	}
 
 	// Set VM SSH config (targetEndpoint, userName, Private Key)
-	targetEndpoint := fmt.Sprintf("%s:%s", targetVmIP, targetSshPort)
+	targetEndpoint := fmt.Sprintf("%s:%d", targetVmIP, targetSshPort)
 	targetSshInfo := model.SshInfo{
 		EndPoint:   targetEndpoint,
 		UserName:   targetUserName,
@@ -832,7 +832,7 @@ func RunRemoteCommandAsyncWithStatus(wg *sync.WaitGroup, nsId string, mciId stri
 }
 
 // VerifySshUserName is func to verify SSH username
-func VerifySshUserName(nsId string, mciId string, vmId string, vmIp string, sshPort string, givenUserName string) (string, string, error) {
+func VerifySshUserName(nsId string, mciId string, vmId string, vmIp string, sshPort int, givenUserName string) (string, string, error) {
 
 	// Disable the verification of SSH username (until bastion host is supported)
 
@@ -1647,7 +1647,7 @@ func TransferFileToMci(nsId string, mciId string, subGroupId string, vmId string
 			}
 
 			targetSshInfo := model.SshInfo{
-				EndPoint:   fmt.Sprintf("%s:%s", targetVmIP, targetSshPort),
+				EndPoint:   fmt.Sprintf("%s:%d", targetVmIP, targetSshPort),
 				UserName:   targetUserName,
 				PrivateKey: []byte(targetPrivateKey),
 			}
@@ -1695,7 +1695,7 @@ func transferFileToVmViaBastion(nsId string, mciId string, vmId string, targetSs
 	}
 
 	bastionSshInfo := model.SshInfo{
-		EndPoint:   fmt.Sprintf("%s:%s", bastionIp, bastionSshPort),
+		EndPoint:   fmt.Sprintf("%s:%d", bastionIp, bastionSshPort),
 		UserName:   bastionUserName,
 		PrivateKey: []byte(bastionPrivateKey),
 	}

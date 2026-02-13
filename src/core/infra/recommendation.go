@@ -65,13 +65,12 @@ func applyFilterPolicies(request *model.FilterSpecsByRangeRequest, plan *model.R
 // setFieldCondition applies the specified condition to the field.
 func setFieldCondition(field reflect.Value, condition model.Operation) error {
 	if field.Kind() == reflect.Struct && (field.Type().Name() == "Range" || field.Type().Name() == "range") {
-		operand, err := strconv.ParseFloat(condition.Operand, 32)
+		operand, err := strconv.ParseFloat(condition.Operand, 64)
 		if err != nil {
-			return err
+			return fmt.Errorf("invalid numeric operand: %s", condition.Operand)
 		}
 		return applyRange(field, condition.Operator, float32(operand))
 	} else if field.Kind() == reflect.String {
-		// Directly set the string value without checking operator.
 		field.SetString(condition.Operand)
 	}
 	return nil
@@ -118,9 +117,10 @@ func RecommendSpec(nsId string, plan model.RecommendSpecReq) ([]model.SpecInfo, 
 	}
 
 	// Set final limit
-	finalLimitNum, err := strconv.Atoi(plan.Limit)
-	if err != nil {
-		finalLimitNum = 0 // Default to no limit if parsing fails
+	finalLimitNum := plan.Limit
+	// Default to no limit if not set
+	if finalLimitNum < 0 {
+		finalLimitNum = 0
 	}
 
 	// Apply final limit to the filter request
@@ -1263,11 +1263,13 @@ func validateK8sMinimumRequirements(plan *model.RecommendSpecReq) error {
 		if condition.Metric == "vCPU" {
 			vCPUConditionExists = true
 			for _, op := range condition.Condition {
-				if val, err := strconv.ParseFloat(op.Operand, 64); err == nil {
-					if val < minVCPU {
-						return fmt.Errorf("K8s node requires minimum vCPU >= %d, but user specified 'vCPU %s %.0f'. Please adjust your filter conditions",
-							minVCPU, op.Operator, val)
-					}
+				val, err := strconv.ParseFloat(op.Operand, 64)
+				if err != nil {
+					continue
+				}
+				if val < minVCPU {
+					return fmt.Errorf("K8s node requires minimum vCPU >= %d, but user specified 'vCPU %s %.0f'. Please adjust your filter conditions",
+						minVCPU, op.Operator, val)
 				}
 			}
 		}
@@ -1275,11 +1277,13 @@ func validateK8sMinimumRequirements(plan *model.RecommendSpecReq) error {
 		if condition.Metric == "memoryGiB" {
 			memoryConditionExists = true
 			for _, op := range condition.Condition {
-				if val, err := strconv.ParseFloat(op.Operand, 64); err == nil {
-					if val < minMemoryGiB {
-						return fmt.Errorf("K8s node requires minimum Memory >= %.1fGB, but user specified 'memoryGiB %s %.1fGB'. Please adjust your filter conditions",
-							minMemoryGiB, op.Operator, val)
-					}
+				val, err := strconv.ParseFloat(op.Operand, 64)
+				if err != nil {
+					continue
+				}
+				if val < minMemoryGiB {
+					return fmt.Errorf("K8s node requires minimum Memory >= %.1fGB, but user specified 'memoryGiB %s %.1fGB'. Please adjust your filter conditions",
+						minMemoryGiB, op.Operator, val)
 				}
 			}
 		}

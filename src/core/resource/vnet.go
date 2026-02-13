@@ -1812,24 +1812,10 @@ func DesignVNets(reqt *model.VNetDesignRequest) (model.VNetDesignResponse, error
 				log.Debug().Msgf("CSP: %s, Region: %s", csp, region)
 				log.Debug().Msgf("connectionName: %s", connectionName)
 
-				// Convert string to integer and check if it's valid
-				subnetCount, err := strconv.Atoi(vnet.SubnetCount)
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to convert SubnetCount to integer")
-					return model.VNetDesignResponse{}, err
-				}
-
-				hostsPerSubent, err := strconv.Atoi(vnet.HostsPerSubnet)
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to convert HostsPerSubnet to integer")
-					return model.VNetDesignResponse{}, err
-				}
-
-				useFirstNZones, err := strconv.Atoi(vnet.UseFirstNZones)
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to convert UseFirstNZones to integer")
-					return model.VNetDesignResponse{}, err
-				}
+				// Use integer fields directly (already int type in model)
+				subnetCount := vnet.SubnetCount
+				hostsPerSubent := vnet.HostsPerSubnet
+				useFirstNZones := vnet.UseFirstNZones
 
 				// Design a vNet
 				log.Debug().Msgf("CSP: %s, Region %s, VNet %02d:\n", mcNetConf.Csp, region, k+1)

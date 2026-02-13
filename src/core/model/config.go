@@ -257,9 +257,9 @@ type CloudSetting struct {
 // NlbSetting is structure for NLB setting
 type NlbSetting struct {
 	Enable    string `yaml:"enable"`
-	Interval  string `yaml:"interval"`
-	Timeout   string `yaml:"timeout"`
-	Threshold string `yaml:"threshold"`
+	Interval  int    `yaml:"interval"`
+	Timeout   int    `yaml:"timeout"`
+	Threshold int    `yaml:"threshold"`
 }
 
 // Nlbsw is structure for NLB setting
@@ -272,7 +272,7 @@ type Nlbsw struct {
 	CommandNlbApplyConfig   string `yaml:"commandNlbApplyConfig"`
 	NlbMciSpecId            string `yaml:"nlbMciSpecId"`
 	NlbMciImageId           string `yaml:"nlbMciImageId"`
-	NlbMciSubGroupSize      string `yaml:"nlbMciSubGroupSize"`
+	NlbMciSubGroupSize      int    `yaml:"nlbMciSubGroupSize"`
 }
 
 // K8sClusterSetting is structure for K8sCluster setting

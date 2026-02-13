@@ -462,7 +462,7 @@ func rollbackCreatedResources(nsId string, createdResources []CreatedResource) e
 // MCI and VM Provisioning
 
 // ScaleOutMciSubGroup is func to create MCI groupVM
-func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToAdd string) (*model.MciInfo, error) {
+func ScaleOutMciSubGroup(nsId string, mciId string, subGroupId string, numVMsToAdd int) (*model.MciInfo, error) {
 	vmIdList, err := ListVmBySubGroup(nsId, mciId, subGroupId)
 	if err != nil {
 		temp := &model.MciInfo{}
@@ -565,11 +565,11 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 	var wg sync.WaitGroup
 
 	// subGroup handling
-	subGroupSize, err := strconv.Atoi(vmRequest.SubGroupSize)
+	subGroupSize := vmRequest.SubGroupSize
 	fmt.Printf("subGroupSize: %v\n", subGroupSize)
 
 	// make subGroup default (any VM going to be in a subGroup)
-	if subGroupSize < 1 || err != nil {
+	if subGroupSize < 1 {
 		subGroupSize = 1
 	}
 
@@ -583,74 +583,62 @@ func CreateMciGroupVm(nsId string, mciId string, vmRequest *model.CreateSubGroup
 		return &model.MciInfo{}, err
 	}
 
-	if subGroupSize > 0 {
+	// Create or update subGroup object (subGroupSize is always >= 1)
+	log.Info().Msg("Create MCI subGroup object")
 
-		log.Info().Msg("Create MCI subGroup object")
+	subGroupInfoData := model.SubGroupInfo{}
+	subGroupInfoData.ResourceType = model.StrSubGroup
+	subGroupInfoData.Id = tentativeVmId
+	subGroupInfoData.Name = tentativeVmId
+	subGroupInfoData.Uid = common.GenUid()
+	subGroupInfoData.SubGroupSize = subGroupSize
 
-		subGroupInfoData := model.SubGroupInfo{}
-		subGroupInfoData.ResourceType = model.StrSubGroup
-		subGroupInfoData.Id = tentativeVmId
-		subGroupInfoData.Name = tentativeVmId
-		subGroupInfoData.Uid = common.GenUid()
-		subGroupInfoData.SubGroupSize = vmRequest.SubGroupSize
-
-		key := common.GenMciSubGroupKey(nsId, mciId, vmRequest.Name)
-		keyValue, exists, err := kvstore.GetKv(key)
-		if err != nil {
-			err = fmt.Errorf("In CreateMciGroupVm(); kvstore.GetKv(): " + err.Error())
+	key := common.GenMciSubGroupKey(nsId, mciId, vmRequest.Name)
+	keyValue, exists, err := kvstore.GetKv(key)
+	if err != nil {
+		err = fmt.Errorf("In CreateMciGroupVm(); kvstore.GetKv(): " + err.Error())
+		log.Error().Err(err).Msg("")
+	}
+	if exists {
+		if newSubGroup {
+			json.Unmarshal([]byte(keyValue.Value), &subGroupInfoData)
+			existingVmSize := subGroupInfoData.SubGroupSize
+			// add the number of existing VMs in the SubGroup with requested number for additions
+			subGroupInfoData.SubGroupSize = existingVmSize + subGroupSize
+			vmStartIndex = existingVmSize + 1
+		} else {
+			err = fmt.Errorf("Duplicated SubGroup ID")
 			log.Error().Err(err).Msg("")
-		}
-		if exists {
-			if newSubGroup {
-				json.Unmarshal([]byte(keyValue.Value), &subGroupInfoData)
-				existingVmSize, err := strconv.Atoi(subGroupInfoData.SubGroupSize)
-				if err != nil {
-					err = fmt.Errorf("In CreateMciGroupVm(); kvstore.GetKv(): " + err.Error())
-					log.Error().Err(err).Msg("")
-				}
-				// add the number of existing VMs in the SubGroup with requested number for additions
-				subGroupInfoData.SubGroupSize = strconv.Itoa(existingVmSize + subGroupSize)
-				vmStartIndex = existingVmSize + 1
-			} else {
-				err = fmt.Errorf("Duplicated SubGroup ID")
-				log.Error().Err(err).Msg("")
-				return nil, err
-			}
-		}
-
-		for i := vmStartIndex; i < subGroupSize+vmStartIndex; i++ {
-			subGroupInfoData.VmId = append(subGroupInfoData.VmId, subGroupInfoData.Id+"-"+strconv.Itoa(i))
-		}
-
-		val, _ := json.Marshal(subGroupInfoData)
-		err = kvstore.Put(key, string(val))
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
-		// check stored subGroup object
-		_, _, err = kvstore.GetKv(key)
-		if err != nil {
-			err = fmt.Errorf("In CreateMciGroupVm(); kvstore.GetKv(): " + err.Error())
-			log.Error().Err(err).Msg("")
-			// return nil, err
+			return nil, err
 		}
 	}
 
-	for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
+	for i := vmStartIndex; i < subGroupSize+vmStartIndex; i++ {
+		subGroupInfoData.VmId = append(subGroupInfoData.VmId, subGroupInfoData.Id+"-"+strconv.Itoa(i))
+	}
+
+	val, _ := json.Marshal(subGroupInfoData)
+	err = kvstore.Put(key, string(val))
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	}
+	// check stored subGroup object
+	_, _, err = kvstore.GetKv(key)
+	if err != nil {
+		err = fmt.Errorf("In CreateMciGroupVm(); kvstore.GetKv(): " + err.Error())
+		log.Error().Err(err).Msg("")
+		// return nil, err
+	}
+
+	// Create VM objects for all VMs in the subGroup
+	for i := vmStartIndex; i < subGroupSize+vmStartIndex; i++ {
 		vmInfoData := model.VmInfo{}
 
-		if subGroupSize == 0 { // for VM (not in a group)
-			vmInfoData.Name = common.ToLower(vmRequest.Name)
-		} else { // for VM (in a group)
-			if i == subGroupSize+vmStartIndex {
-				break
-			}
-			vmInfoData.SubGroupId = common.ToLower(vmRequest.Name)
-			vmInfoData.Name = common.ToLower(vmRequest.Name) + "-" + strconv.Itoa(i)
+		vmInfoData.SubGroupId = common.ToLower(vmRequest.Name)
+		vmInfoData.Name = common.ToLower(vmRequest.Name) + "-" + strconv.Itoa(i)
 
-			log.Debug().Msg("vmInfoData.Name: " + vmInfoData.Name)
+		log.Debug().Msg("vmInfoData.Name: " + vmInfoData.Name)
 
-		}
 		vmInfoData.ResourceType = model.StrVM
 		vmInfoData.Id = vmInfoData.Name
 		vmInfoData.Uid = common.GenUid()
@@ -864,17 +852,13 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 		errorMu        sync.Mutex
 	)
 
-	// Count total VMs to be created
+	// Count total VMs to be created (minimum 1 per subGroup)
 	for _, subGroupReq := range req.SubGroups {
-		if subGroupReq.SubGroupSize != "" {
-			if size, err := strconv.Atoi(subGroupReq.SubGroupSize); err == nil && size > 0 {
-				totalVmCount += size
-			} else {
-				totalVmCount += 1
-			}
-		} else {
-			totalVmCount += 1
+		vmCount := subGroupReq.SubGroupSize
+		if vmCount < 1 {
+			vmCount = 1
 		}
+		totalVmCount += vmCount
 	}
 
 	// Helper function to add VM creation error (with mutex for standalone use)
@@ -957,8 +941,8 @@ func CreateMci(nsId string, req *model.MciReq, option string, isReqFromDynamic b
 
 	// Process VM requests and build configurations
 	for _, subGroupReq := range req.SubGroups {
-		subGroupSize, err := strconv.Atoi(subGroupReq.SubGroupSize)
-		if err != nil {
+		subGroupSize := subGroupReq.SubGroupSize
+		if subGroupSize < 1 {
 			subGroupSize = 1
 		}
 
@@ -1800,8 +1784,8 @@ func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynam
 	}
 
 	// Validate SubGroupSize
-	if subGroupDynamicReq.SubGroupSize == "" {
-		subGroupDynamicReq.SubGroupSize = "1"
+	if subGroupDynamicReq.SubGroupSize <= 0 {
+		subGroupDynamicReq.SubGroupSize = 1
 		vmReview.Warnings = append(vmReview.Warnings, "SubGroupSize not specified, defaulting to 1")
 		hasVmWarning = true
 	}
@@ -1849,11 +1833,9 @@ func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynam
 
 			// Add cost estimation if available
 			if specInfo.CostPerHour > 0 {
-				subGroupSizeInt := 1
-				if subGroupDynamicReq.SubGroupSize != "" {
-					if parsed, err := strconv.Atoi(subGroupDynamicReq.SubGroupSize); err == nil {
-						subGroupSizeInt = parsed
-					}
+				subGroupSizeInt := subGroupDynamicReq.SubGroupSize
+				if subGroupSizeInt < 1 {
+					subGroupSizeInt = 1
 				}
 				vmReview.EstimatedCost = fmt.Sprintf("$%.4f/hour", float64(specInfo.CostPerHour)*float64(subGroupSizeInt))
 				vmCost = float64(specInfo.CostPerHour) * float64(subGroupSizeInt)
@@ -1908,8 +1890,8 @@ func reviewSingleSubGroupDynamicReq(subGroupDynamicReq model.CreateSubGroupDynam
 	if subGroupDynamicReq.RootDiskType != "" && subGroupDynamicReq.RootDiskType != "default" {
 		vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk type configured: %s, be sure it's supported by the provider", subGroupDynamicReq.RootDiskType))
 	}
-	if subGroupDynamicReq.RootDiskSize != "" && subGroupDynamicReq.RootDiskSize != "default" {
-		vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk size configured: %s GB, be sure it meets minimum requirements", subGroupDynamicReq.RootDiskSize))
+	if subGroupDynamicReq.RootDiskSize > 0 {
+		vmReview.Info = append(vmReview.Info, fmt.Sprintf("Root disk size configured: %d GB, be sure it meets minimum requirements", subGroupDynamicReq.RootDiskSize))
 	}
 
 	// Check provisioning history and risk analysis
@@ -2535,7 +2517,7 @@ func CreateSystemMciDynamic(option string) (*model.MciInfo, error) {
 			log.Debug().Msg(" - v.RegionName: " + v.RegionZoneInfoName)
 
 			recommendSpecReq.Filter.Policy = append(recommendSpecReq.Filter.Policy, model.FilterCondition{Metric: "region", Condition: condition})
-			recommendSpecReq.Limit = "1"
+			recommendSpecReq.Limit = 1
 			common.PrintJsonPretty(recommendSpecReq)
 
 			specList, err := RecommendSpec(model.SystemCommonNs, recommendSpecReq)
@@ -3225,7 +3207,12 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 	}
 
 	requestBody.ReqInfo.RootDiskType = vmInfoData.RootDiskType
-	requestBody.ReqInfo.RootDiskSize = vmInfoData.RootDiskSize
+	// Convert int to string for Spider API
+	if vmInfoData.RootDiskSize > 0 {
+		requestBody.ReqInfo.RootDiskSize = strconv.Itoa(vmInfoData.RootDiskSize)
+	} else {
+		requestBody.ReqInfo.RootDiskSize = ""
+	}
 
 	if option == "register" {
 		requestBody.ReqInfo.CSPid = vmInfoData.CspResourceId
@@ -3380,12 +3367,20 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 	vmInfoData.CspResourceId = callResult.IId.SystemId
 	vmInfoData.Region = callResult.Region
 	vmInfoData.PublicIP = callResult.PublicIP
-	vmInfoData.SSHPort, _ = TrimIP(callResult.SSHAccessPoint)
+	// Convert port string from Spider to int
+	if portStr, err := TrimIP(callResult.SSHAccessPoint); err == nil {
+		if port, err := strconv.Atoi(portStr); err == nil {
+			vmInfoData.SSHPort = port
+		}
+	}
 	vmInfoData.PublicDNS = callResult.PublicDNS
 	vmInfoData.PrivateIP = callResult.PrivateIP
 	vmInfoData.PrivateDNS = callResult.PrivateDNS
 	vmInfoData.RootDiskType = callResult.RootDiskType
-	vmInfoData.RootDiskSize = callResult.RootDiskSize
+	// Convert RootDiskSize string from Spider to int
+	if rootDiskSize, err := strconv.Atoi(callResult.RootDiskSize); err == nil {
+		vmInfoData.RootDiskSize = rootDiskSize
+	}
 	vmInfoData.RootDeviceName = callResult.RootDeviceName
 	vmInfoData.NetworkInterface = callResult.NetworkInterface
 
@@ -3982,16 +3977,16 @@ func getK8sClusterReqFromDynamicReq(reqID string, nsId string, dReq *model.K8sCl
 		k8sngReq.OnAutoScaling = "true"
 	}
 	k8sngReq.DesiredNodeSize = dReq.DesiredNodeSize
-	if k8sngReq.DesiredNodeSize == "" {
-		k8sngReq.DesiredNodeSize = "1"
+	if k8sngReq.DesiredNodeSize <= 0 {
+		k8sngReq.DesiredNodeSize = 1
 	}
 	k8sngReq.MinNodeSize = dReq.MinNodeSize
-	if k8sngReq.MinNodeSize == "" {
-		k8sngReq.MinNodeSize = "1"
+	if k8sngReq.MinNodeSize <= 0 {
+		k8sngReq.MinNodeSize = 1
 	}
 	k8sngReq.MaxNodeSize = dReq.MaxNodeSize
-	if k8sngReq.MaxNodeSize == "" {
-		k8sngReq.MaxNodeSize = "2"
+	if k8sngReq.MaxNodeSize <= 0 {
+		k8sngReq.MaxNodeSize = 2
 	}
 	k8sReq.Description = dReq.Description
 	k8sReq.Name = dReq.Name
@@ -4142,16 +4137,16 @@ func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo 
 		k8sNgReq.OnAutoScaling = "true"
 	}
 	k8sNgReq.DesiredNodeSize = dReq.DesiredNodeSize
-	if k8sNgReq.DesiredNodeSize == "" {
-		k8sNgReq.DesiredNodeSize = "1"
+	if k8sNgReq.DesiredNodeSize <= 0 {
+		k8sNgReq.DesiredNodeSize = 1
 	}
 	k8sNgReq.MinNodeSize = dReq.MinNodeSize
-	if k8sNgReq.MinNodeSize == "" {
-		k8sNgReq.MinNodeSize = "1"
+	if k8sNgReq.MinNodeSize <= 0 {
+		k8sNgReq.MinNodeSize = 1
 	}
 	k8sNgReq.MaxNodeSize = dReq.MaxNodeSize
-	if k8sNgReq.MaxNodeSize == "" {
-		k8sNgReq.MaxNodeSize = "2"
+	if k8sNgReq.MaxNodeSize <= 0 {
+		k8sNgReq.MaxNodeSize = 2
 	}
 	k8sNgReq.Description = dReq.Description
 	k8sNgReq.Label = dReq.Label

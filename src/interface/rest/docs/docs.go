@@ -16030,8 +16030,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "evaluationPeriod": {
-                    "type": "string",
-                    "example": "10"
+                    "type": "integer",
+                    "example": 10
                 },
                 "evaluationValue": {
                     "type": "array",
@@ -16044,8 +16044,8 @@ const docTemplate = `{
                     "example": "cpu"
                 },
                 "operand": {
-                    "type": "string",
-                    "example": "80"
+                    "type": "number",
+                    "example": 80
                 },
                 "operator": {
                     "type": "string",
@@ -16400,16 +16400,16 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "desiredNodeSize": {
-                    "type": "string",
-                    "example": "1"
+                    "type": "integer",
+                    "example": 1
                 },
                 "maxNodeSize": {
-                    "type": "string",
-                    "example": "3"
+                    "type": "integer",
+                    "example": 3
                 },
                 "minNodeSize": {
-                    "type": "string",
-                    "example": "1"
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
@@ -16464,7 +16464,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "rootDiskSize": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "rootDiskType": {
                     "type": "string"
@@ -16863,10 +16863,9 @@ const docTemplate = `{
                     "example": "g1"
                 },
                 "rootDiskSize": {
-                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
-                    "type": "string",
-                    "default": "default",
-                    "example": "50"
+                    "description": "Root disk size in GB. 0 = use CSP default.",
+                    "type": "integer",
+                    "example": 50
                 },
                 "rootDiskType": {
                     "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
@@ -16880,10 +16879,9 @@ const docTemplate = `{
                     "example": "aws+ap-northeast-2+t3.nano"
                 },
                 "subGroupSize": {
-                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be generated. VMs will be created accordingly.",
-                    "type": "string",
-                    "default": "1",
-                    "example": "3"
+                    "description": "SubGroupSize is the number of VMs to create in this SubGroup. If \u003e 0, subGroup will be generated. Default is 1.",
+                    "type": "integer",
+                    "example": 3
                 },
                 "vmUserPassword": {
                     "type": "string",
@@ -16945,9 +16943,9 @@ const docTemplate = `{
                     "example": "g1-1"
                 },
                 "rootDiskSize": {
-                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
-                    "type": "string",
-                    "example": "default, 30, 42, ..."
+                    "description": "Root disk size in GB. 0 = use CSP default.",
+                    "type": "integer",
+                    "example": 50
                 },
                 "rootDiskType": {
                     "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
@@ -16967,9 +16965,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "subGroupSize": {
-                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be generated. VMs will be created accordingly.",
-                    "type": "string",
-                    "example": "3"
+                    "description": "SubGroupSize is the number of VMs to create in this SubGroup. If \u003e 0, subGroup will be generated.",
+                    "type": "integer",
+                    "example": 3
                 },
                 "subnetId": {
                     "type": "string"
@@ -17120,8 +17118,9 @@ const docTemplate = `{
                     "example": "Available"
                 },
                 "diskSize": {
-                    "type": "string",
-                    "example": "77"
+                    "description": "Disk size in GB",
+                    "type": "integer",
+                    "example": 77
                 },
                 "diskType": {
                     "type": "string",
@@ -17196,9 +17195,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "diskSize": {
-                    "type": "string",
-                    "default": "100",
-                    "example": "77"
+                    "description": "Disk size in GB",
+                    "type": "integer",
+                    "example": 77
                 },
                 "diskType": {
                     "type": "string",
@@ -17220,7 +17219,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "diskSize": {
-                    "type": "string"
+                    "description": "Disk size in GB",
+                    "type": "integer"
                 }
             }
         },
@@ -17235,9 +17235,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "diskSize": {
-                    "type": "string",
-                    "default": "100",
-                    "example": "77"
+                    "description": "Disk size in GB",
+                    "type": "integer",
+                    "example": 77
                 },
                 "diskType": {
                     "type": "string",
@@ -18388,9 +18388,8 @@ const docTemplate = `{
                     "example": "Description"
                 },
                 "desiredNodeSize": {
-                    "type": "string",
-                    "default": "1",
-                    "example": "1"
+                    "type": "integer",
+                    "example": 1
                 },
                 "imageId": {
                     "description": "ImageId is field for id of a image in common namespace",
@@ -18405,14 +18404,12 @@ const docTemplate = `{
                     }
                 },
                 "maxNodeSize": {
-                    "type": "string",
-                    "default": "2",
-                    "example": "3"
+                    "type": "integer",
+                    "example": 3
                 },
                 "minNodeSize": {
-                    "type": "string",
-                    "default": "1",
-                    "example": "1"
+                    "type": "integer",
+                    "example": 1
                 },
                 "name": {
                     "description": "K8sCluster name if it is not empty. Optional when used with namePrefix in multi-cluster creation.",
@@ -18430,10 +18427,9 @@ const docTemplate = `{
                     "example": "true"
                 },
                 "rootDiskSize": {
-                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
-                    "type": "string",
-                    "default": "default",
-                    "example": "default, 30, 42, ..."
+                    "description": "Root disk size in GB. 0 = use CSP default.",
+                    "type": "integer",
+                    "example": 30
                 },
                 "rootDiskType": {
                     "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
@@ -18891,9 +18887,8 @@ const docTemplate = `{
                     "example": "Description"
                 },
                 "desiredNodeSize": {
-                    "type": "string",
-                    "default": "1",
-                    "example": "1"
+                    "type": "integer",
+                    "example": 1
                 },
                 "imageId": {
                     "description": "ImageId is field for id of a image in common namespace",
@@ -18908,14 +18903,12 @@ const docTemplate = `{
                     }
                 },
                 "maxNodeSize": {
-                    "type": "string",
-                    "default": "2",
-                    "example": "3"
+                    "type": "integer",
+                    "example": 3
                 },
                 "minNodeSize": {
-                    "type": "string",
-                    "default": "1",
-                    "example": "1"
+                    "type": "integer",
+                    "example": 1
                 },
                 "name": {
                     "description": "K8sNodeGroup name if it is not empty.",
@@ -18928,10 +18921,9 @@ const docTemplate = `{
                     "example": "true"
                 },
                 "rootDiskSize": {
-                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
-                    "type": "string",
-                    "default": "default",
-                    "example": "default, 30, 42, ..."
+                    "description": "Root disk size in GB. 0 = use CSP default.",
+                    "type": "integer",
+                    "example": 30
                 },
                 "rootDiskType": {
                     "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_essd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
@@ -18997,7 +18989,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "rootDiskSize": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "rootDiskType": {
                     "type": "string"
@@ -19030,8 +19022,8 @@ const docTemplate = `{
                     "example": "Description"
                 },
                 "desiredNodeSize": {
-                    "type": "string",
-                    "example": "1"
+                    "type": "integer",
+                    "example": 1
                 },
                 "imageId": {
                     "type": "string",
@@ -19045,12 +19037,12 @@ const docTemplate = `{
                     }
                 },
                 "maxNodeSize": {
-                    "type": "string",
-                    "example": "3"
+                    "type": "integer",
+                    "example": 3
                 },
                 "minNodeSize": {
-                    "type": "string",
-                    "example": "1"
+                    "type": "integer",
+                    "example": 1
                 },
                 "name": {
                     "type": "string",
@@ -19062,9 +19054,9 @@ const docTemplate = `{
                     "example": "true"
                 },
                 "rootDiskSize": {
-                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
-                    "type": "string",
-                    "example": "40"
+                    "description": "Root disk size in GB. 0 = use CSP default.",
+                    "type": "integer",
+                    "example": 40
                 },
                 "rootDiskType": {
                     "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
@@ -19784,7 +19776,7 @@ const docTemplate = `{
                     "example": "32.201.134.113"
                 },
                 "masterSSHPort": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "masterVmId": {
                     "type": "string",
@@ -19854,7 +19846,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "sshPort": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "vmId": {
                     "type": "string"
@@ -19949,19 +19941,19 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "interval": {
-                    "description": "secs, Interval time between health checks.",
-                    "type": "string",
-                    "example": "default"
+                    "description": "secs, Interval time between health checks. 0 = use default.",
+                    "type": "integer",
+                    "example": 10
                 },
                 "threshold": {
-                    "description": "num, The number of continuous health checks to change the VM status.",
-                    "type": "string",
-                    "example": "default"
+                    "description": "num, The number of continuous health checks to change the VM status. 0 = use default.",
+                    "type": "integer",
+                    "example": 3
                 },
                 "timeout": {
-                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
-                    "type": "string",
-                    "example": "default"
+                    "description": "secs, Waiting time to decide an unhealthy VM when no response. 0 = use default.",
+                    "type": "integer",
+                    "example": 10
                 }
             }
         },
@@ -20624,13 +20616,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "operand": {
-                    "description": "10, 70, 80, 98, ...",
+                    "description": "10, 70, 80, 98, ... or string values like \"aws\", \"x86_64\"",
                     "type": "string",
-                    "enum": [
-                        "4",
-                        "8",
-                        ".."
-                    ],
                     "example": "4"
                 },
                 "operator": {
@@ -20814,13 +20801,8 @@ const docTemplate = `{
                     }
                 },
                 "weight": {
-                    "type": "string",
-                    "enum": [
-                        "0.1",
-                        "0.2",
-                        "..."
-                    ],
-                    "example": "0.3"
+                    "type": "number",
+                    "example": 0.3
                 }
             }
         },
@@ -21046,13 +21028,8 @@ const docTemplate = `{
                     "$ref": "#/definitions/model.FilterInfo"
                 },
                 "limit": {
-                    "type": "string",
-                    "enum": [
-                        "1",
-                        "2",
-                        "30"
-                    ],
-                    "example": "5"
+                    "type": "integer",
+                    "example": 5
                 },
                 "priority": {
                     "$ref": "#/definitions/model.PriorityInfo"
@@ -21801,7 +21778,7 @@ const docTemplate = `{
                     "example": "Ready/Warning/Error"
                 },
                 "subGroupSize": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "vmName": {
                     "description": "VM request information",
@@ -21867,8 +21844,8 @@ const docTemplate = `{
             "properties": {
                 "numVMsToAdd": {
                     "description": "Define addtional VMs to scaleOut",
-                    "type": "string",
-                    "example": "2"
+                    "type": "integer",
+                    "example": 2
                 }
             }
         },
@@ -22863,7 +22840,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rootDiskSize": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "rootDiskType": {
                     "type": "string"
@@ -23944,13 +23921,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "hostsPerSubnet": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "subnetCount": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "useFirstNZones": {
-                    "type": "string"
+                    "type": "integer"
                 }
             }
         },
@@ -24208,7 +24185,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rootDiskSize": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "rootDiskType": {
                     "type": "string"
@@ -24237,7 +24214,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "sshPort": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "status": {
                     "description": "Required by CB-Tumblebug",
@@ -24358,7 +24335,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "sshPort": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "status": {
                     "type": "string"

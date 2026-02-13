@@ -124,7 +124,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mciID string, mciServi
 		MciId:       mciID,
 		VmId:        vmID,
 		PublicIp:    vmIP,
-		Port:        sshPort,
+		Port:        strconv.Itoa(sshPort),
 		UserName:    userName,
 		SshKey:      privateKey,
 		CspType:     vmInfoTmp.ConnectionConfig.ProviderName,

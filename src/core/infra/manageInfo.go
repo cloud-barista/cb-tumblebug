@@ -444,7 +444,7 @@ func GetMciAccessInfo(nsId string, mciId string, option string) (*model.MciAcces
 					log.Info().Err(err).Msg("")
 					vmAccessInfo.PublicIP = ""
 					vmAccessInfo.PrivateIP = ""
-					vmAccessInfo.SSHPort = ""
+					vmAccessInfo.SSHPort = 0
 				} else {
 					vmAccessInfo.PublicIP = vmInfo.PublicIp
 					vmAccessInfo.PrivateIP = vmInfo.PrivateIp
@@ -1312,18 +1312,23 @@ func GetVmCurrentPublicIp(nsId string, mciId string, vmId string) (model.VmStatu
 	vmStatusTmp := model.VmStatusInfo{}
 	vmStatusTmp.PublicIp = callResult.PublicIP
 	vmStatusTmp.PrivateIp = callResult.PrivateIP
-	vmStatusTmp.SSHPort, _ = TrimIP(callResult.SSHAccessPoint)
+	// Convert port string from Spider to int
+	if portStr, err := TrimIP(callResult.SSHAccessPoint); err == nil {
+		if port, err := strconv.Atoi(portStr); err == nil {
+			vmStatusTmp.SSHPort = port
+		}
+	}
 
 	return vmStatusTmp, nil
 }
 
 // GetVmIp is func to get VM IP to return PublicIP, PrivateIP, SSHPort
-func GetVmIp(nsId string, mciId string, vmId string) (string, string, string, error) {
+func GetVmIp(nsId string, mciId string, vmId string) (string, string, int, error) {
 
 	vmObject, err := GetVmObject(nsId, mciId, vmId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return "", "", "", err
+		return "", "", 0, err
 	}
 
 	return vmObject.PublicIP, vmObject.PrivateIP, vmObject.SSHPort, nil

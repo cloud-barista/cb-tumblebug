@@ -85,7 +85,7 @@ func CreateDataDisk(nsId string, u *model.DataDiskReq, option string) (model.Dat
 			Name:     uid,
 			CSPid:    u.CspResourceId, // for option=register
 			DiskType: u.DiskType,
-			DiskSize: u.DiskSize,
+			DiskSize: strconv.Itoa(u.DiskSize),
 		},
 	}
 
@@ -125,6 +125,8 @@ func CreateDataDisk(nsId string, u *model.DataDiskReq, option string) (model.Dat
 
 	tempSpiderDiskInfo := &callResult
 
+	diskSizeFromSpider, _ := strconv.Atoi(tempSpiderDiskInfo.DiskSize)
+
 	content := model.DataDiskInfo{
 		ResourceType:         resourceType,
 		Id:                   u.Name,
@@ -132,7 +134,7 @@ func CreateDataDisk(nsId string, u *model.DataDiskReq, option string) (model.Dat
 		Uid:                  uid,
 		ConnectionName:       u.ConnectionName,
 		DiskType:             tempSpiderDiskInfo.DiskType,
-		DiskSize:             tempSpiderDiskInfo.DiskSize,
+		DiskSize:             diskSizeFromSpider,
 		CspResourceId:        tempSpiderDiskInfo.IId.SystemId,
 		CspResourceName:      tempSpiderDiskInfo.IId.NameId,
 		Status:               tempSpiderDiskInfo.Status,
@@ -174,7 +176,7 @@ func CreateDataDisk(nsId string, u *model.DataDiskReq, option string) (model.Dat
 		model.LabelName:            content.Name,
 		model.LabelUid:             content.Uid,
 		model.LabelDiskType:        content.DiskType,
-		model.LabelDiskSize:        content.DiskSize,
+		model.LabelDiskSize:        strconv.Itoa(content.DiskSize),
 		model.LabelCspResourceId:   content.CspResourceId,
 		model.LabelCspResourceName: content.CspResourceName,
 		model.LabelDescription:     content.Description,
@@ -188,12 +190,6 @@ func CreateDataDisk(nsId string, u *model.DataDiskReq, option string) (model.Dat
 	}
 
 	return content, nil
-}
-
-// DataDiskUpsizeReq is a struct to handle 'Upsize dataDisk' request toward CB-Tumblebug.
-type DataDiskUpsizeReq struct {
-	DiskSize    string `json:"diskSize" validate:"required"`
-	Description string `json:"description"`
 }
 
 // UpsizeDataDisk accepts DataDisk upsize request, creates and returns an TB dataDisk object
@@ -237,22 +233,18 @@ func UpsizeDataDisk(nsId string, resourceId string, u *model.DataDiskUpsizeReq) 
 
 	dataDisk := dataDiskInterface.(model.DataDiskInfo)
 
-	diskSize_as_is, _ := strconv.Atoi(dataDisk.DiskSize)
-	diskSize_to_be, err := strconv.Atoi(u.DiskSize)
-	if err != nil {
-		err := fmt.Errorf("Failed to convert the desired disk size (%s) into int.", u.DiskSize)
-		return model.DataDiskInfo{}, err
-	}
+	diskSize_as_is := dataDisk.DiskSize
+	diskSize_to_be := u.DiskSize
 
 	if !(diskSize_as_is < diskSize_to_be) {
-		err := fmt.Errorf("Desired disk size (%s GB) should be > %s GB.", u.DiskSize, dataDisk.DiskSize)
+		err := fmt.Errorf("Desired disk size (%d GB) should be > %d GB.", u.DiskSize, dataDisk.DiskSize)
 		return model.DataDiskInfo{}, err
 	}
 
 	requestBody := model.SpiderDiskUpsizeReqWrapper{
 		ConnectionName: dataDisk.ConnectionName,
 		ReqInfo: model.SpiderDiskUpsizeReq{
-			Size: u.DiskSize,
+			Size: strconv.Itoa(u.DiskSize),
 		},
 	}
 

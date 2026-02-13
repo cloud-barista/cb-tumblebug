@@ -3,72 +3,72 @@ cloud:
     enable: "y"
     nlb:
       enable: "y"
-      interval: "10"
-      timeout: "9"
-      threshold: "3"
+      interval: 10
+      timeout: 9
+      threshold: 3
     k8scluster:
       enable: "y"
   aws:
     enable: "y"
     nlb:
       enable: "y"
-      interval: "10"
-      timeout: "-1"
-      threshold: "3"
+      interval: 10
+      timeout: -1
+      threshold: 3
     k8scluster:
       enable: "y"
   azure:
     enable: "y"
     nlb:
       enable: "y"
-      interval: "10"
-      timeout: "9"
-      threshold: "3"
+      interval: 10
+      timeout: 9
+      threshold: 3
     k8scluster:
       enable: "y"
   gcp:
     enable: "y"
     nlb:
       enable: "y"
-      interval: "10"
-      timeout: "9"
-      threshold: "3"
+      interval: 10
+      timeout: 9
+      threshold: 3
     k8scluster:
       enable: "y"
   alibaba:
     enable: "y"
     nlb:
       enable: "y"
-      interval: "10"
-      timeout: "9"
-      threshold: "3"
+      interval: 10
+      timeout: 9
+      threshold: 3
     k8scluster:
       enable: "y"
   tencent:
     enable: "y"
     nlb:
       enable: "y"
-      interval: "10"
-      timeout: "9"
-      threshold: "3"
+      interval: 10
+      timeout: 9
+      threshold: 3
     k8scluster:
       enable: "y"
   ibm:
     enable: "y"
     nlb:
       enable: "y"
-      interval: "10"
-      timeout: "9"
-      threshold: "3"
+      interval: 10
+      timeout: 9
+      threshold: 3
     k8scluster:
       enable: "n"
   ncp:
     enable: "y"
     nlb:
       enable: "y"
-      interval: "10"
-      timeout: "9"
-      threshold: "3"
+      interval: 10
+      timeout: 9
+      threshold: 3
     k8scluster:
       enable: "y"
   nhn:
@@ -79,18 +79,18 @@ cloud:
     enable: "y"
     nlb:
       enable: "n"
-      interval: "10"
-      timeout: "9"
-      threshold: "3"
+      interval: 10
+      timeout: 9
+      threshold: 3
     k8scluster:
       enable: "n"
   cloudit	:
     enable: "y"
     nlb:
       enable: "n"
-      interval: "10"
-      timeout: "9"
-      threshold: "3"
+      interval: 10
+      timeout: 9
+      threshold: 3
     k8scluster:
       enable: "n"
 nlbsw:
@@ -100,6 +100,6 @@ nlbsw:
   commandNlbDeploy: "sudo ~/deployNlb.sh"
   commandNlbAddTargetNode: "sudo ~/addTargetNode.sh"
   commandNlbApplyConfig: "sudo ~/applyConfig.sh"
-  nlbMcisSpecId: "aws-ap-northeast-2-t2-small"
-  nlbMcisImageId: "ubuntu18.04"
-  nlbMcisSubGroupSize: "2"
+  nlbMciSpecId: "aws-ap-northeast-2-t2-small"
+  nlbMciImageId: "ubuntu18.04"
+  nlbMciSubGroupSize: 2
