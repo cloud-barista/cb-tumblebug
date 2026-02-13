@@ -95,9 +95,9 @@ type RegionDetails struct {
 }
 
 type VNetDetails struct {
-	SubnetCount    string `json:"subnetCount"`
-	HostsPerSubnet string `json:"hostsPerSubnet"`
-	UseFirstNZones string `json:"useFirstNZones"`
+	SubnetCount    int `json:"subnetCount"`
+	HostsPerSubnet int `json:"hostsPerSubnet"`
+	UseFirstNZones int `json:"useFirstNZones"`
 }
 
 type VNetDesignResponse struct {

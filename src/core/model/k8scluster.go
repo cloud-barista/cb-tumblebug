@@ -135,14 +135,14 @@ type K8sNodeGroupReq struct {
 	ImageId      string `json:"imageId" example:"image-01"`
 	SpecId       string `json:"specId" example:"spec-01"`
 	RootDiskType string `json:"rootDiskType" example:"cloud_essd" enum:"default, TYPE1, ..."` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize string `json:"rootDiskSize" example:"40" enum:"default, 30, 42, ..."`        // "default", Integer (GB): ["50", ..., "1000"]
+	RootDiskSize int    `json:"rootDiskSize" example:"40"` // Root disk size in GB. 0 = use CSP default.
 	SshKeyId     string `json:"sshKeyId" example:"sshkey-01"`
 
 	// autoscale config.
 	OnAutoScaling   string `json:"onAutoScaling" example:"true"`
-	DesiredNodeSize string `json:"desiredNodeSize" example:"1"`
-	MinNodeSize     string `json:"minNodeSize" example:"1"`
-	MaxNodeSize     string `json:"maxNodeSize" example:"3"`
+	DesiredNodeSize int    `json:"desiredNodeSize" example:"1"`
+	MinNodeSize     int    `json:"minNodeSize" example:"1"`
+	MaxNodeSize     int    `json:"maxNodeSize" example:"3"`
 
 	// Label is for describing the object by keywords
 	Label map[string]string `json:"label"`
@@ -191,9 +191,9 @@ type SpiderChangeAutoscaleSizeReqInfo struct {
 
 // ChangeK8sNodeGroupAutoscaleSizeReq is a struct to handle 'Change K8sNodeGroup's Autoscale Size' request toward CB-Tumblebug.
 type ChangeK8sNodeGroupAutoscaleSizeReq struct {
-	DesiredNodeSize string `json:"desiredNodeSize" example:"1"`
-	MinNodeSize     string `json:"minNodeSize" example:"1"`
-	MaxNodeSize     string `json:"maxNodeSize" example:"3"`
+	DesiredNodeSize int `json:"desiredNodeSize" example:"1"`
+	MinNodeSize     int `json:"minNodeSize" example:"1"`
+	MaxNodeSize     int `json:"maxNodeSize" example:"3"`
 }
 
 // SpiderChangeAutoscaleSizeRes is a wrapper struct to get JSON body of 'Change Autoscale Size' response
@@ -412,7 +412,7 @@ type K8sNodeGroupInfo struct {
 	ImageId         string             `json:"imageId"`
 	SpecId          string             `json:"specId"`
 	RootDiskType    string             `json:"rootDiskType"`
-	RootDiskSize    string             `json:"rootDiskSize"`
+	RootDiskSize    int                `json:"rootDiskSize"`
 	SshKeyId        string             `json:"sshKeyId"`
 	OnAutoScaling   bool               `json:"onAutoScaling"`
 	DesiredNodeSize int                `json:"desiredNodeSize"`
@@ -511,12 +511,12 @@ type K8sClusterDynamicReq struct {
 	ImageId string `json:"imageId" validate:"required" example:"default, tencent+ap-seoul+ubuntu20.04"`
 
 	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..." default:"default"` // "default", Integer (GB): ["50", ..., "1000"]
+	RootDiskSize int    `json:"rootDiskSize,omitempty" example:"30"` // Root disk size in GB. 0 = use CSP default.
 
 	OnAutoScaling   string `json:"onAutoScaling,omitempty" default:"true" example:"true"`
-	DesiredNodeSize string `json:"desiredNodeSize,omitempty" default:"1" example:"1"`
-	MinNodeSize     string `json:"minNodeSize,omitempty" default:"1" example:"1"`
-	MaxNodeSize     string `json:"maxNodeSize,omitempty" default:"2" example:"3"`
+	DesiredNodeSize int    `json:"desiredNodeSize,omitempty" example:"1"`
+	MinNodeSize     int    `json:"minNodeSize,omitempty" example:"1"`
+	MaxNodeSize     int    `json:"maxNodeSize,omitempty" example:"3"`
 
 	// if ConnectionName is given, the VM tries to use associtated credential.
 	// if not, it will use predefined ConnectionName in Spec objects
@@ -540,12 +540,12 @@ type K8sNodeGroupDynamicReq struct {
 	ImageId string `json:"imageId" validate:"required" example:"default, tencent+ap-seoul+ubuntu20.04"`
 
 	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..." default:"default"` // "default", Integer (GB): ["50", ..., "1000"]
+	RootDiskSize int    `json:"rootDiskSize,omitempty" example:"30"` // Root disk size in GB. 0 = use CSP default.
 
 	OnAutoScaling   string `json:"onAutoScaling,omitempty" default:"true" example:"true"`
-	DesiredNodeSize string `json:"desiredNodeSize,omitempty" default:"1" example:"1"`
-	MinNodeSize     string `json:"minNodeSize,omitempty" default:"1" example:"1"`
-	MaxNodeSize     string `json:"maxNodeSize,omitempty" default:"2" example:"3"`
+	DesiredNodeSize int    `json:"desiredNodeSize,omitempty" example:"1"`
+	MinNodeSize     int    `json:"minNodeSize,omitempty" example:"1"`
+	MaxNodeSize     int    `json:"maxNodeSize,omitempty" example:"3"`
 }
 
 // K8sClusterContainerCmdReq is struct for remote command

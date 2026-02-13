@@ -86,7 +86,7 @@ type DataDiskReq struct {
 	Name           string `json:"name" validate:"required" example:"aws-ap-southeast-1-datadisk"`
 	ConnectionName string `json:"connectionName" validate:"required" example:"aws-ap-southeast-1"`
 	DiskType       string `json:"diskType" example:"default"`
-	DiskSize       string `json:"diskSize" validate:"required" example:"77" default:"100"`
+	DiskSize       int    `json:"diskSize" validate:"required" example:"77"` // Disk size in GB
 	Description    string `json:"description,omitempty"`
 
 	// Fields for "Register existing dataDisk" feature
@@ -98,7 +98,7 @@ type DataDiskReq struct {
 type DataDiskVmReq struct {
 	Name        string `json:"name" validate:"required" example:"aws-ap-southeast-1-datadisk"`
 	DiskType    string `json:"diskType" example:"default"`
-	DiskSize    string `json:"diskSize" validate:"required" example:"77" default:"100"`
+	DiskSize    int    `json:"diskSize" validate:"required" example:"77"` // Disk size in GB
 	Description string `json:"description,omitempty"`
 }
 
@@ -122,7 +122,7 @@ type DataDiskInfo struct {
 	ConnectionConfig ConnConfig `json:"connectionConfig"`
 
 	DiskType             string     `json:"diskType" example:"standard"`
-	DiskSize             string     `json:"diskSize" example:"77"`
+	DiskSize             int        `json:"diskSize" example:"77"` // Disk size in GB
 	Status               DiskStatus `json:"status" example:"Available"` // Available, Unavailable, Attached, ...
 	AssociatedObjectList []string   `json:"associatedObjectList" example:"/ns/default/mci/mci01/vm/aws-ap-southeast-1-1"`
 	CreatedTime          time.Time  `json:"createdTime,omitempty" example:"2022-10-12T05:09:51.05Z"`
@@ -140,6 +140,6 @@ type DataDiskInfo struct {
 
 // DataDiskUpsizeReq is a struct to handle 'Upsize dataDisk' request toward CB-Tumblebug.
 type DataDiskUpsizeReq struct {
-	DiskSize    string `json:"diskSize" validate:"required"`
+	DiskSize    int    `json:"diskSize" validate:"required"` // Disk size in GB
 	Description string `json:"description"`
 }

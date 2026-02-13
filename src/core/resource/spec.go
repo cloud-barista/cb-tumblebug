@@ -117,7 +117,9 @@ func ConvertSpiderSpecToTumblebugSpec(connConfig model.ConnConfig, spiderSpec mo
 	tumblebugSpec.MemoryGiB = float32(tempFloat64 / 1024)
 	tempFloat64, _ = strconv.ParseFloat(spiderSpec.DiskSizeGB, 32)
 	tumblebugSpec.DiskSizeGB = float32(tempFloat64)
-	tumblebugSpec.RootDiskSize = spiderSpec.DiskSizeGB
+	if rootDiskSizeInt, err := strconv.Atoi(spiderSpec.DiskSizeGB); err == nil {
+		tumblebugSpec.RootDiskSize = rootDiskSizeInt
+	}
 
 	tumblebugSpec.Details = spiderSpec.KeyValueList
 
@@ -1013,7 +1015,10 @@ func UpdateSpecsFromAsset(nsId string) error {
 		cspSpecName := row[2]
 		specInfoId := GetProviderRegionZoneResourceKey(providerName, regionName, "", cspSpecName)
 		rootDiskType := row[15]
-		rootDiskSize := row[16]
+		rootDiskSize := 0
+		if s, err := strconv.Atoi(strings.ReplaceAll(row[16], " ", "")); err == nil {
+			rootDiskSize = s
+		}
 		acceleratorType := row[17]
 		acceleratorModel := row[18]
 		acceleratorCount := 0
@@ -1211,7 +1216,7 @@ func mergeSpecWithCSVData(existingSpec model.SpecInfo, csvSpec model.SpecInfo) m
 	if existingSpec.RootDiskType == "" {
 		mergedSpec.RootDiskType = csvSpec.RootDiskType
 	}
-	if existingSpec.RootDiskSize == "" {
+	if existingSpec.RootDiskSize <= 0 {
 		mergedSpec.RootDiskSize = csvSpec.RootDiskSize
 	}
 

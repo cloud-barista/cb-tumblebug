@@ -78,6 +78,10 @@ func CreateMcSwNlb(nsId string, mciId string, req *model.NLBReq, option string) 
 	specId := common.RuntimeConf.Nlbsw.NlbMciSpecId
 	imageId := common.RuntimeConf.Nlbsw.NlbMciImageId
 	subGroupSize := common.RuntimeConf.Nlbsw.NlbMciSubGroupSize
+	if subGroupSize <= 0 {
+		log.Warn().Msgf("NlbMciSubGroupSize not set or invalid, using default 1")
+		subGroupSize = 1
+	}
 
 	// Option can be applied
 	// get recommended location and spec for the NLB host based on existing MCI
@@ -239,9 +243,9 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 			HealthChecker: model.SpiderNLBHealthCheckerReq{
 				Protocol:  u.TargetGroup.Protocol,
 				Port:      u.TargetGroup.Port,
-				Interval:  u.HealthChecker.Interval,
-				Timeout:   u.HealthChecker.Timeout,
-				Threshold: u.HealthChecker.Threshold,
+				Interval:  strconv.Itoa(u.HealthChecker.Interval),
+				Timeout:   strconv.Itoa(u.HealthChecker.Timeout),
+				Threshold: strconv.Itoa(u.HealthChecker.Threshold),
 			},
 			VMGroup: model.SpiderNLBSubGroupReq{
 				Protocol: u.TargetGroup.Protocol,
@@ -282,19 +286,21 @@ func CreateNLB(nsId string, mciId string, u *model.NLBReq, option string) (model
 
 	getCloudSetting()
 
-	// Set nlb health checker info
-	valuesFromYaml := model.NLBHealthCheckerInfo{}
-	valuesFromYaml.Interval, _ = strconv.Atoi(cloudSetting.Nlb.Interval)
-	valuesFromYaml.Timeout, _ = strconv.Atoi(cloudSetting.Nlb.Timeout)
-	valuesFromYaml.Threshold, _ = strconv.Atoi(cloudSetting.Nlb.Threshold)
+	// Set nlb health checker info from YAML config (already int type)
+	valuesFromYaml := model.NLBHealthCheckerInfo{
+		Interval:  cloudSetting.Nlb.Interval,
+		Timeout:   cloudSetting.Nlb.Timeout,
+		Threshold: cloudSetting.Nlb.Threshold,
+	}
 
-	if u.HealthChecker.Interval == "default" || u.HealthChecker.Interval == "" {
+	// Use 0 to indicate "use default from YAML config"
+	if u.HealthChecker.Interval == 0 {
 		requestBody.ReqInfo.HealthChecker.Interval = strconv.Itoa(valuesFromYaml.Interval)
 	}
-	if u.HealthChecker.Timeout == "default" || u.HealthChecker.Timeout == "" {
+	if u.HealthChecker.Timeout == 0 {
 		requestBody.ReqInfo.HealthChecker.Timeout = strconv.Itoa(valuesFromYaml.Timeout)
 	}
-	if u.HealthChecker.Threshold == "default" || u.HealthChecker.Threshold == "" {
+	if u.HealthChecker.Threshold == 0 {
 		requestBody.ReqInfo.HealthChecker.Threshold = strconv.Itoa(valuesFromYaml.Threshold)
 	}
 

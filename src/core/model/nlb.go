@@ -59,9 +59,9 @@ type NLBHealthCheckerReq struct {
 	// Protocol  string `json:"protocol" example:"TCP"`      // TCP|HTTP|HTTPS
 	// Port      string `json:"port" example:"22"`           // Listener Port or 1-65535
 
-	Interval  string `json:"interval" example:"default"`  // secs, Interval time between health checks.
-	Timeout   string `json:"timeout" example:"default"`   // secs, Waiting time to decide an unhealthy VM when no response.
-	Threshold string `json:"threshold" example:"default"` // num, The number of continuous health checks to change the VM status.
+	Interval  int `json:"interval" example:"10"`  // secs, Interval time between health checks. 0 = use default.
+	Timeout   int `json:"timeout" example:"10"`   // secs, Waiting time to decide an unhealthy VM when no response. 0 = use default.
+	Threshold int `json:"threshold" example:"3"` // num, The number of continuous health checks to change the VM status. 0 = use default.
 }
 
 type SpiderNLBSubGroupReq struct {

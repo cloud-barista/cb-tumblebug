@@ -13436,8 +13436,8 @@ components:
       type: object
       properties:
         evaluationPeriod:
-          type: string
-          example: "10"
+          type: integer
+          example: 10
         evaluationValue:
           type: array
           items:
@@ -13446,8 +13446,8 @@ components:
           type: string
           example: cpu
         operand:
-          type: string
-          example: "80"
+          type: number
+          example: 80.0
         operator:
           type: string
           example: '>='
@@ -13705,14 +13705,14 @@ components:
       type: object
       properties:
         desiredNodeSize:
-          type: string
-          example: "1"
+          type: integer
+          example: 1
         maxNodeSize:
-          type: string
-          example: "3"
+          type: integer
+          example: 3
         minNodeSize:
-          type: string
-          example: "1"
+          type: integer
+          example: 1
     model.ChangeK8sNodeGroupAutoscaleSizeRes:
       type: object
       properties:
@@ -13752,7 +13752,7 @@ components:
         onAutoScaling:
           type: boolean
         rootDiskSize:
-          type: string
+          type: integer
         rootDiskType:
           type: string
         specId:
@@ -14048,10 +14048,9 @@ components:
           description: "SubGroup name, actual VM name will be generated with -N postfix."
           example: g1
         rootDiskSize:
-          type: string
-          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
-          example: "50"
-          default: default
+          type: integer
+          description: Root disk size in GB. 0 = use CSP default.
+          example: 50
         rootDiskType:
           type: string
           description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
@@ -14066,11 +14065,10 @@ components:
           description: SpecId is field for id of a spec in common namespace
           example: aws+ap-northeast-2+t3.nano
         subGroupSize:
-          type: string
-          description: "if subGroupSize is (not empty) && (> 0), subGroup will be\
-            \ generated. VMs will be created accordingly."
-          example: "3"
-          default: "1"
+          type: integer
+          description: "SubGroupSize is the number of VMs to create in this SubGroup.\
+            \ If > 0, subGroup will be generated. Default is 1."
+          example: 3
         vmUserPassword:
           type: string
           example: ""
@@ -14122,9 +14120,9 @@ components:
             -N postfix.
           example: g1-1
         rootDiskSize:
-          type: string
-          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
-          example: "default, 30, 42, ..."
+          type: integer
+          description: Root disk size in GB. 0 = use CSP default.
+          example: 50
         rootDiskType:
           type: string
           description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
@@ -14142,10 +14140,10 @@ components:
         sshKeyId:
           type: string
         subGroupSize:
-          type: string
-          description: "if subGroupSize is (not empty) && (> 0), subGroup will be\
-            \ generated. VMs will be created accordingly."
-          example: "3"
+          type: integer
+          description: "SubGroupSize is the number of VMs to create in this SubGroup.\
+            \ If > 0, subGroup will be generated."
+          example: 3
         subnetId:
           type: string
         vNetId:
@@ -14257,8 +14255,9 @@ components:
           type: string
           example: Available
         diskSize:
-          type: string
-          example: "77"
+          type: integer
+          description: Disk size in GB
+          example: 77
         diskType:
           type: string
           example: standard
@@ -14317,9 +14316,9 @@ components:
         description:
           type: string
         diskSize:
-          type: string
-          example: "77"
-          default: "100"
+          type: integer
+          description: Disk size in GB
+          example: 77
         diskType:
           type: string
           example: default
@@ -14334,7 +14333,8 @@ components:
         description:
           type: string
         diskSize:
-          type: string
+          type: integer
+          description: Disk size in GB
     model.DataDiskVmReq:
       required:
       - diskSize
@@ -14344,9 +14344,9 @@ components:
         description:
           type: string
         diskSize:
-          type: string
-          example: "77"
-          default: "100"
+          type: integer
+          description: Disk size in GB
+          example: 77
         diskType:
           type: string
           example: default
@@ -15191,9 +15191,8 @@ components:
           type: string
           example: Description
         desiredNodeSize:
-          type: string
-          example: "1"
-          default: "1"
+          type: integer
+          example: 1
         imageId:
           type: string
           description: ImageId is field for id of a image in common namespace
@@ -15204,13 +15203,11 @@ components:
             type: string
           description: Label is for describing the object by keywords
         maxNodeSize:
-          type: string
-          example: "3"
-          default: "2"
+          type: integer
+          example: 3
         minNodeSize:
-          type: string
-          example: "1"
-          default: "1"
+          type: integer
+          example: 1
         name:
           type: string
           description: K8sCluster name if it is not empty. Optional when used with
@@ -15225,10 +15222,9 @@ components:
           example: "true"
           default: "true"
         rootDiskSize:
-          type: string
-          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
-          example: "default, 30, 42, ..."
-          default: default
+          type: integer
+          description: Root disk size in GB. 0 = use CSP default.
+          example: 30
         rootDiskType:
           type: string
           description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
@@ -15562,9 +15558,8 @@ components:
           type: string
           example: Description
         desiredNodeSize:
-          type: string
-          example: "1"
-          default: "1"
+          type: integer
+          example: 1
         imageId:
           type: string
           description: ImageId is field for id of a image in common namespace
@@ -15575,13 +15570,11 @@ components:
             type: string
           description: Label is for describing the object by keywords
         maxNodeSize:
-          type: string
-          example: "3"
-          default: "2"
+          type: integer
+          example: 3
         minNodeSize:
-          type: string
-          example: "1"
-          default: "1"
+          type: integer
+          example: 1
         name:
           type: string
           description: K8sNodeGroup name if it is not empty.
@@ -15591,10 +15584,9 @@ components:
           example: "true"
           default: "true"
         rootDiskSize:
-          type: string
-          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
-          example: "default, 30, 42, ..."
-          default: default
+          type: integer
+          description: Root disk size in GB. 0 = use CSP default.
+          example: 30
         rootDiskType:
           type: string
           description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
@@ -15647,7 +15639,7 @@ components:
         onAutoScaling:
           type: boolean
         rootDiskSize:
-          type: string
+          type: integer
         rootDiskType:
           type: string
         specId:
@@ -15669,8 +15661,8 @@ components:
           type: string
           example: Description
         desiredNodeSize:
-          type: string
-          example: "1"
+          type: integer
+          example: 1
         imageId:
           type: string
           example: image-01
@@ -15680,11 +15672,11 @@ components:
             type: string
           description: Label is for describing the object by keywords
         maxNodeSize:
-          type: string
-          example: "3"
+          type: integer
+          example: 3
         minNodeSize:
-          type: string
-          example: "1"
+          type: integer
+          example: 1
         name:
           type: string
           example: k8sng01
@@ -15693,9 +15685,9 @@ components:
           description: autoscale config.
           example: "true"
         rootDiskSize:
-          type: string
-          description: "\"default\", Integer (GB): [\"50\", ..., \"1000\"]"
-          example: "40"
+          type: integer
+          description: Root disk size in GB. 0 = use CSP default.
+          example: 40
         rootDiskType:
           type: string
           description: "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\"\
@@ -16258,7 +16250,7 @@ components:
           type: string
           example: 32.201.134.113
         masterSSHPort:
-          type: string
+          type: integer
         masterVmId:
           type: string
           example: vm-asiaeast1-cb-01
@@ -16306,7 +16298,7 @@ components:
         publicIP:
           type: string
         sshPort:
-          type: string
+          type: integer
         vmId:
           type: string
         vmUserName:
@@ -16372,18 +16364,19 @@ components:
       type: object
       properties:
         interval:
-          type: string
-          description: "secs, Interval time between health checks."
-          example: default
+          type: integer
+          description: "secs, Interval time between health checks. 0 = use default."
+          example: 10
         threshold:
-          type: string
+          type: integer
           description: "num, The number of continuous health checks to change the\
-            \ VM status."
-          example: default
+            \ VM status. 0 = use default."
+          example: 3
         timeout:
-          type: string
-          description: "secs, Waiting time to decide an unhealthy VM when no response."
-          example: default
+          type: integer
+          description: "secs, Waiting time to decide an unhealthy VM when no response.\
+            \ 0 = use default."
+          example: 10
     model.NLBInfo:
       type: object
       properties:
@@ -16867,12 +16860,8 @@ components:
       properties:
         operand:
           type: string
-          description: "10, 70, 80, 98, ..."
+          description: "10, 70, 80, 98, ... or string values like \"aws\", \"x86_64\""
           example: "4"
-          enum:
-          - "4"
-          - "8"
-          - ..
         operator:
           type: string
           description: ">=, <=, =="
@@ -17001,12 +16990,8 @@ components:
           items:
             $ref: '#/components/schemas/model.ParameterKeyVal'
         weight:
-          type: string
-          example: "0.3"
-          enum:
-          - "0.1"
-          - "0.2"
-          - '...'
+          type: number
+          example: 0.3
     model.PriorityConditionExample:
       type: object
       properties:
@@ -17170,12 +17155,8 @@ components:
         filter:
           $ref: '#/components/schemas/model.FilterInfo'
         limit:
-          type: string
-          example: "5"
-          enum:
-          - "1"
-          - "2"
-          - "30"
+          type: integer
+          example: 5
         priority:
           $ref: '#/components/schemas/model.PriorityInfo'
     model.RecommendSpecRequestOptions:
@@ -17690,7 +17671,7 @@ components:
           description: Validation status
           example: Ready/Warning/Error
         subGroupSize:
-          type: string
+          type: integer
         vmName:
           type: string
           description: VM request information
@@ -17734,9 +17715,9 @@ components:
       type: object
       properties:
         numVMsToAdd:
-          type: string
+          type: integer
           description: Define addtional VMs to scaleOut
-          example: "2"
+          example: 2
     model.ScheduleJobListResponse:
       type: object
       properties:
@@ -18509,7 +18490,7 @@ components:
         regionName:
           type: string
         rootDiskSize:
-          type: string
+          type: integer
         rootDiskType:
           type: string
         systemLabel:
@@ -19293,11 +19274,11 @@ components:
       type: object
       properties:
         hostsPerSubnet:
-          type: string
+          type: integer
         subnetCount:
-          type: string
+          type: integer
         useFirstNZones:
-          type: string
+          type: integer
     model.VNetInfo:
       type: object
       properties:
@@ -19485,7 +19466,7 @@ components:
           type: string
           description: ResourceType is the type of the resource
         rootDiskSize:
-          type: string
+          type: integer
         rootDiskType:
           type: string
         securityGroupIds:
@@ -19505,7 +19486,7 @@ components:
         sshKeyId:
           type: string
         sshPort:
-          type: string
+          type: integer
         status:
           type: string
           description: Required by CB-Tumblebug
@@ -19595,7 +19576,7 @@ components:
         publicIp:
           type: string
         sshPort:
-          type: string
+          type: integer
         status:
           type: string
         systemMessage:

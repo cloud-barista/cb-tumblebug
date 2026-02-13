@@ -1015,7 +1015,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mciNamePrefix st
 						Id:           newSubgroupName,
 						Name:         newSubgroupName,
 						Uid:          common.GenUid(),
-						SubGroupSize: strconv.Itoa(len(vmIds)),
+						SubGroupSize: len(vmIds),
 						VmId:         vmIds,
 					}
 					subgroupVal, _ := json.Marshal(subgroupInfo)

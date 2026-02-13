@@ -107,14 +107,17 @@ type KeyWithEncryptedValue struct {
 
 // AddItem adds a new item to the model.IdList
 func (list *IdList) AddItem(id string) {
+	if list.mux == nil {
+		list.mux = &sync.Mutex{}
+	}
 	list.mux.Lock()
 	defer list.mux.Unlock()
 	list.IdList = append(list.IdList, id)
 }
 
 type IdList struct {
-	IdList []string `json:"output"`
-	mux    sync.Mutex
+	IdList []string   `json:"output"`
+	mux    *sync.Mutex
 }
 
 // OptionalParameter is struct for optional parameter for function (ex. VmId)

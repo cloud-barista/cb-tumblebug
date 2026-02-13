@@ -1,27 +1,24 @@
 providerName,regionName,cspImageName,osType,description,supportedInstance,infraType
-AZURE,all,Canonical:0001-com-ubuntu-pro-bionic:pro-18_04-lts-gen2:18.04.202510010,Ubuntu 18.04,,,vm
-AZURE,all,Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:20.04.202505200,Ubuntu 20.04,,,vm
-AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202510230,Ubuntu 22.04,,,vm
-AZURE,all,Canonical:ubuntu-24_04-lts:cvm:24.04.202509250,Ubuntu 24.04,,,vm
-AZURE,all,Canonical:ubuntu-24_04-lts:minimal:24.04.202509300,Ubuntu 24.04,,,vm
-AZURE,all,Canonical:ubuntu-24_04-lts:minimal-arm64:24.04.202509300,Ubuntu 24.04,,,vm
-AZURE,all,Canonical:ubuntu-24_04-lts:server:24.04.202510010,Ubuntu 24.04,,,vm
-AZURE,all,Canonical:ubuntu-24_04-lts:server-arm64:24.04.202510010,Ubuntu 24.04,,,vm
-AZURE,all,Canonical:ubuntu-24_04-lts:ubuntu-pro:24.04.202510020,Ubuntu 24.04,,,vm
-AZURE,all,Canonical:ubuntu-24_04-lts:ubuntu-pro-arm64:24.04.202510020,Ubuntu 24.04,,,vm
-AZURE,all,Debian:debian-10:10-gen2:0.20240430.1733,Debian 10,,,vm
-AZURE,all,Debian:debian-11:11-gen2:0.20250801.2191,Debian 11,,,vm
-AZURE,all,Debian:debian-12:12-gen2:0.20250814.2204,Debian 12,,,vm
-AZURE,all,OpenLogic:CentOS:7_9-gen2:7.9.2023030701,CentOS 7,,,vm
-AZURE,all,OpenLogic:CentOS-LVM:8-lvm-gen2:8.5.2022101401,CentOS 8,,,vm
-AZURE,all,RedHat:RHEL:74-gen2:7.4.2021051702,Red Hat Enterprise Linux 7,,,vm
-AZURE,all,RedHat:RHEL-HA:8_10-gen2:8.10.2025011519,Red Hat Enterprise Linux 8,,,vm
-AZURE,all,RedHat:RHEL:9-lvm-gen2:9.6.2025073003,Red Hat Enterprise Linux 9,,,vm
-AZURE,all,MicrosoftWindowsServer:windowsserver-gen2preview:2012-r2-datacenter-gen2:9600.19431.1908092124,Windows 2012 R2,,,vm
-AZURE,all,MicrosoftWindowsServer:windowsserver-gen2preview:2016-datacenter-gen2:2016.127.20190620,Windows 2016,,,vm
-AZURE,all,MicrosoftWindowsServer:windowsserver-gen2preview:2019-datacenter-gen2:2019.0.20190620,Windows 2019,,,vm
-AZURE,all,RedHat:rhel-arm64:8_8-arm64-gen2:8.8.2023080216,Red Hat Enterprise Linux 8 (ARM64),,,vm
-AZURE,all,Oracle:Oracle-Linux:ol93-arm64-lvm-gen2:9.3.3,Oracle Linux 9 (ARM64),,,vm
-AZURE,all,almalinux:almalinux-arm:10-arm64-64k-gen2:10.0.202505290,AlmaLinux 10 (ARM64),,,vm
-AZURE,all,SUSE:opensuse-leap-15-6-arm64:gen2:2025.07.28,SUSE Linux Enterprise Server 15 (ARM64),,,vm
-AZURE,all,MicrosoftCBLMariner:azure-linux-3:azure-linux-3-arm64-gen2-fips:3.20250729.01,Azure Linux 3 (ARM64),,,vm
+AZURE,all,Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:20.04.202505200,Ubuntu 20.04,Server LTS Gen2,,vm
+AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:22.04.202601310,Ubuntu 22.04,Server LTS Gen2,,vm
+AZURE,all,Canonical:ubuntu-22_04-lts:server:22.04.202512181,Ubuntu 22.04,Server LTS,,vm
+AZURE,all,Canonical:ubuntu-24_04-lts:server:24.04.202601300,Ubuntu 24.04,Server LTS,,vm
+AZURE,all,Canonical:ubuntu-24_04-lts:minimal:24.04.202601300,Ubuntu 24.04,Minimal,,vm
+AZURE,all,Canonical:ubuntu-25_04:server:25.04.202512190,Ubuntu 25.04,Server,,vm
+AZURE,all,Canonical:ubuntu-24_04-lts:server-arm64:24.04.202601300,Ubuntu 24.04 (ARM64),Server ARM64,,vm
+AZURE,all,Canonical:ubuntu-24_04-lts:minimal-arm64:24.04.202601300,Ubuntu 24.04 (ARM64),Minimal ARM64,,vm
+AZURE,all,Debian:debian-10:10-gen2:0.20240703.1797,Debian 10,Gen2,,vm
+AZURE,all,Debian:debian-11:11-gen2:0.20260203.2377,Debian 11,Gen2,,vm
+AZURE,all,Debian:debian-12:12-gen2:0.20260210.2384,Debian 12,Gen2,,vm
+AZURE,all,OpenLogic:CentOS:7_9-gen2:7.9.2023030701,CentOS 7,Gen2,,vm
+AZURE,all,OpenLogic:CentOS-LVM:8-lvm-gen2:8.5.2022101401,CentOS 8,LVM Gen2,,vm
+AZURE,all,RedHat:RHEL:74-gen2:7.4.2021051702,Red Hat Enterprise Linux 7,Gen2,,vm
+AZURE,all,RedHat:rhel-raw:89-gen2:8.9.2024020916,Red Hat Enterprise Linux 8,Raw Gen2,,vm
+AZURE,all,RedHat:rhel-raw:95_gen2:9.5.2024120516,Red Hat Enterprise Linux 9,Raw Gen2,,vm
+AZURE,all,RedHat:rhel-arm64:8_8-arm64-gen2:8.8.2023080216,Red Hat Enterprise Linux 8 (ARM64),ARM64 Gen2,,vm
+AZURE,all,MicrosoftWindowsServer:windowsserver-gen2preview:2016-datacenter-gen2:2016.127.20190620,Windows 2016,Datacenter Gen2,,vm
+AZURE,all,MicrosoftWindowsServer:windowsserver-gen2preview:2019-datacenter-gen2:2019.0.20190620,Windows 2019,Datacenter Gen2,,vm
+AZURE,all,Oracle:Oracle-Linux:ol93-arm64-lvm-gen2:9.3.3,Oracle Linux 9 (ARM64),LVM Gen2,,vm
+AZURE,all,almalinux:almalinux-arm:10-arm64-64k-gen2:10.0.202505290,AlmaLinux 10 (ARM64),Gen2,,vm
+AZURE,all,SUSE:opensuse-leap-15-6-arm64:gen2:2025.07.28,SUSE Linux Enterprise Server 15 (ARM64),Gen2,,vm
+AZURE,all,MicrosoftCBLMariner:azure-linux-3:azure-linux-3-arm64-gen2-fips:3.20250729.01,Azure Linux 3 (ARM64),FIPS Gen2,,vm

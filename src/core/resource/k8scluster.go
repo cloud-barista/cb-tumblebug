@@ -461,17 +461,21 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string, skip
 			return emptyObj, createErr
 		}
 
+		spRootDiskSize := ""
+		if v.RootDiskSize > 0 {
+			spRootDiskSize = strconv.Itoa(v.RootDiskSize)
+		}
 		spNodeGroupList = append(spNodeGroupList, model.SpiderNodeGroupReqInfo{
 			Name:            spName,
 			ImageName:       spImgName,
 			VMSpecName:      spSpecName,
 			RootDiskType:    v.RootDiskType,
-			RootDiskSize:    v.RootDiskSize,
+			RootDiskSize:    spRootDiskSize,
 			KeyPairName:     spKpName,
 			OnAutoScaling:   v.OnAutoScaling,
-			DesiredNodeSize: v.DesiredNodeSize,
-			MinNodeSize:     v.MinNodeSize,
-			MaxNodeSize:     v.MaxNodeSize,
+			DesiredNodeSize: strconv.Itoa(v.DesiredNodeSize),
+			MinNodeSize:     strconv.Itoa(v.MinNodeSize),
+			MaxNodeSize:     strconv.Itoa(v.MaxNodeSize),
 		})
 	}
 
@@ -763,6 +767,10 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.K8sNodeGroupReq)
 	// Update the cluster's nodegroup list
 	tbK8sCInfo.K8sNodeGroupList = newK8sNodeGroupInfoList
 
+	spRootDiskSize := ""
+	if u.RootDiskSize > 0 {
+		spRootDiskSize = strconv.Itoa(u.RootDiskSize)
+	}
 	requestBody := model.SpiderNodeGroupReq{
 		ConnectionName: tbK8sCInfo.ConnectionName,
 		ReqInfo: model.SpiderNodeGroupReqInfo{
@@ -770,14 +778,14 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.K8sNodeGroupReq)
 			ImageName:    spImgName,
 			VMSpecName:   spSpecName,
 			RootDiskType: u.RootDiskType,
-			RootDiskSize: u.RootDiskSize,
+			RootDiskSize: spRootDiskSize,
 			KeyPairName:  spKpName,
 
 			// autoscale config.
 			OnAutoScaling:   u.OnAutoScaling,
-			DesiredNodeSize: u.DesiredNodeSize,
-			MinNodeSize:     u.MinNodeSize,
-			MaxNodeSize:     u.MaxNodeSize,
+			DesiredNodeSize: strconv.Itoa(u.DesiredNodeSize),
+			MinNodeSize:     strconv.Itoa(u.MinNodeSize),
+			MaxNodeSize:     strconv.Itoa(u.MaxNodeSize),
 		},
 	}
 
@@ -1032,9 +1040,9 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 	requestBody := model.SpiderChangeAutoscaleSizeReq{
 		ConnectionName: tbK8sCInfo.ConnectionName,
 		ReqInfo: model.SpiderChangeAutoscaleSizeReqInfo{
-			DesiredNodeSize: u.DesiredNodeSize,
-			MinNodeSize:     u.MinNodeSize,
-			MaxNodeSize:     u.MaxNodeSize,
+			DesiredNodeSize: strconv.Itoa(u.DesiredNodeSize),
+			MinNodeSize:     strconv.Itoa(u.MinNodeSize),
+			MaxNodeSize:     strconv.Itoa(u.MaxNodeSize),
 		},
 	}
 
@@ -1963,7 +1971,7 @@ func updateK8sNodeGroupInfoFromSpiderNodeGroupInfo(tbK8sNGInfo *model.K8sNodeGro
 	}
 
 	tbK8sNGInfo.RootDiskType = spNGInfo.RootDiskType
-	tbK8sNGInfo.RootDiskSize = spNGInfo.RootDiskSize
+	tbK8sNGInfo.RootDiskSize, _ = strconv.Atoi(spNGInfo.RootDiskSize)
 	tbK8sNGInfo.OnAutoScaling = spNGInfo.OnAutoScaling
 	tbK8sNGInfo.DesiredNodeSize = spNGInfo.DesiredNodeSize
 	tbK8sNGInfo.MinNodeSize = spNGInfo.MinNodeSize
@@ -2068,26 +2076,9 @@ func fillK8sNodeGroupInfoFromK8sNodeGroupReq(tbK8sNGInfo *model.K8sNodeGroupInfo
 		tbK8sNGInfo.OnAutoScaling = true
 	}
 
-	if size, err := strconv.Atoi(tbK8sNGReq.DesiredNodeSize); err == nil {
-		tbK8sNGInfo.DesiredNodeSize = size
-	} else {
-		log.Warn().Msgf("Failed to parse DesiredNodeSize '%s', defaulting to 1", tbK8sNGReq.DesiredNodeSize)
-		tbK8sNGInfo.DesiredNodeSize = 1
-	}
-
-	if size, err := strconv.Atoi(tbK8sNGReq.MinNodeSize); err == nil {
-		tbK8sNGInfo.MinNodeSize = size
-	} else {
-		log.Warn().Msgf("Failed to parse MinNodeSize '%s', defaulting to 1", tbK8sNGReq.MinNodeSize)
-		tbK8sNGInfo.MinNodeSize = 1
-	}
-
-	if size, err := strconv.Atoi(tbK8sNGReq.MaxNodeSize); err == nil {
-		tbK8sNGInfo.MaxNodeSize = size
-	} else {
-		log.Warn().Msgf("Failed to parse MaxNodeSize '%s', defaulting to 2", tbK8sNGReq.MaxNodeSize)
-		tbK8sNGInfo.MaxNodeSize = 2
-	}
+	tbK8sNGInfo.DesiredNodeSize = tbK8sNGReq.DesiredNodeSize
+	tbK8sNGInfo.MinNodeSize = tbK8sNGReq.MinNodeSize
+	tbK8sNGInfo.MaxNodeSize = tbK8sNGReq.MaxNodeSize
 }
 
 func fillK8sNodeGroupInfoListFromK8sNodeGroupReqList(tbK8sNGInfoList *[]model.K8sNodeGroupInfo, tbK8sNGReqList *[]model.K8sNodeGroupReq) {

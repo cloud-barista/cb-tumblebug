@@ -116,7 +116,7 @@ func OrchestrationController() {
 						fmt.Printf("[monData.Value] AverMci: %f,  SumMci: %f \n", averMci, sumMci)
 
 						// Before adding new value, ensure the list doesn't exceed evaluationPeriod length
-						evaluationPeriod, _ := strconv.Atoi(mciPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationPeriod)
+						evaluationPeriod := mciPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationPeriod
 						evaluationValue := mciPolicyTmp.Policy[policyIndex].AutoCondition.EvaluationValue
 
 						// Add new value to the beginning of the list
@@ -152,7 +152,7 @@ func OrchestrationController() {
 
 						//Detecting
 						operator := mciPolicyTmp.Policy[policyIndex].AutoCondition.Operator
-						operand, _ := strconv.ParseFloat(mciPolicyTmp.Policy[policyIndex].AutoCondition.Operand, 64)
+						operand := mciPolicyTmp.Policy[policyIndex].AutoCondition.Operand
 
 						if evaluationPeriod == 0 {
 							log.Debug().Msg("[Checking] Not available evaluationPeriod ")
