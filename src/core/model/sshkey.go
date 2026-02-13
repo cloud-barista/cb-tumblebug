@@ -85,3 +85,19 @@ type SshKeyInfo struct {
 	// SystemLabel is for describing the Resource in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel,omitempty" example:"Managed by CB-Tumblebug" default:""`
 }
+
+// UpdatableSshKeyInfo is a struct for updating SSH key fields via PUT.
+type SshKeyUpdateReq struct {
+	Description      string `json:"description"`
+	Fingerprint      string `json:"fingerprint"`
+	Username         string `json:"username"`
+	VerifiedUsername string `json:"verifiedUsername"`
+	PublicKey        string `json:"publicKey"`
+	PrivateKey       string `json:"privateKey"`
+}
+
+// SshKeyActivateReq is a struct for updating SSH key fields for reactivating remote command.
+type SshKeyActivateReq struct {
+	Username   string `json:"username"`
+	PrivateKey string `json:"privateKey"`
+}

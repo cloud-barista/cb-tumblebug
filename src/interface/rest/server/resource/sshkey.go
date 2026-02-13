@@ -57,7 +57,7 @@ func RestPostSshKey(c echo.Context) error {
 // @Tags [Infra Resource] Access Key Management
 // @Accept  json
 // @Produce  json
-// @Param sshKeyInfo body model.SshKeyInfo true "Details for an SSH Key object"
+// @Param sshKeyInfo body model.SshKeyUpdateReq true "SSH Key update details"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param sshKeyId path string true "SshKey ID"
 // @Success 200 {object} model.SshKeyInfo
@@ -69,12 +69,40 @@ func RestPutSshKey(c echo.Context) error {
 	nsId := c.Param("nsId")
 	sshKeyId := c.Param("resourceId")
 
-	u := &model.SshKeyInfo{}
+	u := &model.SshKeyUpdateReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
 	content, err := resource.UpdateSshKey(nsId, sshKeyId, *u)
+	return clientManager.EndRequestWithLog(c, err, content)
+}
+
+// RestActivateSshKey godoc
+// @ID ActivateSshKeyRemoteCommand
+// @Summary Activate remote command execution for SSH Key
+// @Description Update username and privateKey to enable remote command execution on registered VMs
+// @Tags [Infra Resource] Access Key Management
+// @Accept  json
+// @Produce  json
+// @Param sshKeyInfo body model.SshKeyActivateReq true "Username and privateKey for remote command"
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param sshKeyId path string true "SSH Key ID"
+// @Success 200 {object} model.SshKeyInfo
+// @Failure 404 {object} model.SimpleMsg
+// @Failure 500 {object} model.SimpleMsg
+// @Router /ns/{nsId}/resources/sshKey/{sshKeyId}/activate [put]
+func RestActivateSshKey(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	sshKeyId := c.Param("resourceId")
+
+	u := &model.SshKeyActivateReq{}
+	if err := c.Bind(u); err != nil {
+		return clientManager.EndRequestWithLog(c, err, nil)
+	}
+
+	content, err := resource.ActivateSshKey(nsId, sshKeyId, *u)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

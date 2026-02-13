@@ -11971,12 +11971,12 @@ const docTemplate = `{
                 "operationId": "PutSshKey",
                 "parameters": [
                     {
-                        "description": "Details for an SSH Key object",
+                        "description": "SSH Key update details",
                         "name": "sshKeyInfo",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.SshKeyInfo"
+                            "$ref": "#/definitions/model.SshKeyUpdateReq"
                         }
                     },
                     {
@@ -12055,6 +12055,68 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/sshKey/{sshKeyId}/activate": {
+            "put": {
+                "description": "Update username and privateKey to enable remote command execution on registered VMs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra Resource] Access Key Management"
+                ],
+                "summary": "Activate remote command execution for SSH Key",
+                "operationId": "ActivateSshKeyRemoteCommand",
+                "parameters": [
+                    {
+                        "description": "Username and privateKey for remote command",
+                        "name": "sshKeyInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SshKeyActivateReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "SSH Key ID",
+                        "name": "sshKeyId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SshKeyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/model.SimpleMsg"
                         }
@@ -23581,6 +23643,17 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SshKeyActivateReq": {
+            "type": "object",
+            "properties": {
+                "privateKey": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "model.SshKeyInfo": {
             "type": "object",
             "properties": {
@@ -23680,6 +23753,29 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "privateKey": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "verifiedUsername": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SshKeyUpdateReq": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "fingerprint": {
                     "type": "string"
                 },
                 "privateKey": {
