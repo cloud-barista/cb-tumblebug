@@ -335,9 +335,9 @@ func UpdateSshKey(nsId string, sshKeyId string, update model.SshKeyUpdateReq) (m
 	return toBeSshKey, nil
 }
 
-// ActivateSshKey activates remote command execution for registered SSH keys
+// ComplementSshKey enable remote command execution for registered SSH keys
 // by updating username and privateKey required for SSH authentication
-func ActivateSshKey(nsId string, sshKeyId string, req model.SshKeyActivateReq) (model.SshKeyInfo, error) {
+func ComplementSshKey(nsId string, sshKeyId string, req model.SshKeyComplementReq) (model.SshKeyInfo, error) {
 	emptyObj := model.SshKeyInfo{}
 	resourceType := model.StrSSHKey
 
@@ -375,7 +375,7 @@ func ActivateSshKey(nsId string, sshKeyId string, req model.SshKeyActivateReq) (
 	sshKey.Username = req.Username
 	sshKey.PrivateKey = req.PrivateKey
 
-	log.Info().Msg("PUT ActivateSshKey")
+	log.Info().Msg("PUT ComplementSshKey")
 	Key := common.GenResourceKey(nsId, resourceType, sshKey.Id)
 	Val, _ := json.Marshal(sshKey)
 	err = kvstore.Put(Key, string(Val))

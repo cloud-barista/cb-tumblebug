@@ -78,31 +78,31 @@ func RestPutSshKey(c echo.Context) error {
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 
-// RestActivateSshKey godoc
-// @ID ActivateSshKeyRemoteCommand
-// @Summary Activate remote command execution for SSH Key
+// RestComplementSshKey godoc
+// @ID ComplementSshKeyRemoteCommand
+// @Summary Complement SSH Key info to enable remote command execution
 // @Description Update username and privateKey to enable remote command execution on registered VMs
 // @Tags [Infra Resource] Access Key Management
 // @Accept  json
 // @Produce  json
-// @Param sshKeyInfo body model.SshKeyActivateReq true "Username and privateKey for remote command"
+// @Param sshKeyInfo body model.SshKeyComplementReq true "Username and privateKey for remote command"
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param sshKeyId path string true "SSH Key ID"
 // @Success 200 {object} model.SshKeyInfo
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
-// @Router /ns/{nsId}/resources/sshKey/{sshKeyId}/activate [put]
-func RestActivateSshKey(c echo.Context) error {
+// @Router /ns/{nsId}/resources/sshKey/{sshKeyId}/complement [put]
+func RestComplementSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	sshKeyId := c.Param("resourceId")
 
-	u := &model.SshKeyActivateReq{}
+	u := &model.SshKeyComplementReq{}
 	if err := c.Bind(u); err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	content, err := resource.ActivateSshKey(nsId, sshKeyId, *u)
+	content, err := resource.ComplementSshKey(nsId, sshKeyId, *u)
 	return clientManager.EndRequestWithLog(c, err, content)
 }
 

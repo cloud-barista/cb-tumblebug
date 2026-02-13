@@ -96,8 +96,8 @@ type SshKeyUpdateReq struct {
 	PrivateKey       string `json:"privateKey"`
 }
 
-// SshKeyActivateReq is a struct for updating SSH key fields for reactivating remote command.
-type SshKeyActivateReq struct {
+// SshKeyComplementReq is a struct for updating SSH key fields for reactivating remote command.
+type SshKeyComplementReq struct {
 	Username   string `json:"username"`
 	PrivateKey string `json:"privateKey"`
 }

@@ -9917,14 +9917,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
-  /ns/{nsId}/resources/sshKey/{sshKeyId}/activate:
+  /ns/{nsId}/resources/sshKey/{sshKeyId}/complement:
     put:
       tags:
       - "[Infra Resource] Access Key Management"
-      summary: Activate remote command execution for SSH Key
+      summary: Complement SSH Key info to enable remote command execution
       description: Update username and privateKey to enable remote command execution
         on registered VMs
-      operationId: ActivateSshKeyRemoteCommand
+      operationId: ComplementSshKeyRemoteCommand
       parameters:
       - name: nsId
         in: path
@@ -9944,7 +9944,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/model.SshKeyActivateReq'
+              $ref: '#/components/schemas/model.SshKeyComplementReq'
         required: true
       responses:
         "200":
@@ -19074,7 +19074,7 @@ components:
           description: "KeyType is the type of the SSH host key (e.g., ssh-rsa, ssh-ed25519,\
             \ ecdsa-sha2-nistp256)"
           example: ssh-ed25519
-    model.SshKeyActivateReq:
+    model.SshKeyComplementReq:
       type: object
       properties:
         privateKey:

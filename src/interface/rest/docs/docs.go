@@ -12062,7 +12062,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/resources/sshKey/{sshKeyId}/activate": {
+        "/ns/{nsId}/resources/sshKey/{sshKeyId}/complement": {
             "put": {
                 "description": "Update username and privateKey to enable remote command execution on registered VMs",
                 "consumes": [
@@ -12074,8 +12074,8 @@ const docTemplate = `{
                 "tags": [
                     "[Infra Resource] Access Key Management"
                 ],
-                "summary": "Activate remote command execution for SSH Key",
-                "operationId": "ActivateSshKeyRemoteCommand",
+                "summary": "Complement SSH Key info to enable remote command execution",
+                "operationId": "ComplementSshKeyRemoteCommand",
                 "parameters": [
                     {
                         "description": "Username and privateKey for remote command",
@@ -12083,7 +12083,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.SshKeyActivateReq"
+                            "$ref": "#/definitions/model.SshKeyComplementReq"
                         }
                     },
                     {
@@ -23643,7 +23643,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.SshKeyActivateReq": {
+        "model.SshKeyComplementReq": {
             "type": "object",
             "properties": {
                 "privateKey": {
