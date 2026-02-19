@@ -15,6 +15,7 @@ limitations under the License.
 package infra
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -40,6 +41,32 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/ssh"
 )
+
+// sshLogMeta carries streaming context for SSE log publishing.
+// It is stored in the context via sshLogMetaKey so that runSSHWithContext
+// can publish real-time log lines without changing its function signature.
+type sshLogMeta struct {
+	XRequestId   string
+	VmId         string
+	CommandIndex int
+}
+
+// contextKey is an unexported type for context keys in this package
+type contextKey string
+
+// sshLogMetaCtxKey is the context key for sshLogMeta
+const sshLogMetaCtxKey contextKey = "sshLogMeta"
+
+// withSSHLogMeta returns a new context carrying the given sshLogMeta
+func withSSHLogMeta(ctx context.Context, meta *sshLogMeta) context.Context {
+	return context.WithValue(ctx, sshLogMetaCtxKey, meta)
+}
+
+// getSSHLogMeta extracts sshLogMeta from context, or nil if not present
+func getSSHLogMeta(ctx context.Context) *sshLogMeta {
+	meta, _ := ctx.Value(sshLogMetaCtxKey).(*sshLogMeta)
+	return meta
+}
 
 // cancelInfo stores cancel function and metadata for status updates
 type cancelInfo struct {
@@ -317,6 +344,13 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 			vmCtx, vmCancel := context.WithCancel(parentCtx)
 			registerCancelFunc(xRequestId, vmId, nsId, mciId, cmdIndex, vmCancel)
 
+			// Inject SSE streaming metadata into context so runSSHWithContext can publish log lines
+			vmCtx = withSSHLogMeta(vmCtx, &sshLogMeta{
+				XRequestId:   xRequestId,
+				VmId:         vmId,
+				CommandIndex: cmdIndex,
+			})
+
 			// Execute and clean up
 			result := runRemoteCommandWithContextAndStatus(vmCtx, nsId, mciId, vmId, req.UserName, cmds, cmdIndex)
 
@@ -331,6 +365,35 @@ func RemoteCommandToMci(nsId string, mciId string, subGroupId string, vmId strin
 		}(targetVmId, commands, vmCommandIndices[targetVmId])
 	}
 	wg.Wait() // goroutine sync wg
+
+	// Publish CommandDone event to SSE subscribers
+	completedVms := 0
+	failedVms := 0
+	for _, r := range resultArray {
+		if r.Err != nil {
+			failedVms++
+		} else {
+			completedVms++
+		}
+	}
+	// Calculate wall clock elapsed from the start of the parent context
+	// parentCtx was created with timeout, so deadline - timeout = start time
+	var elapsedSec int64
+	if deadline, ok := parentCtx.Deadline(); ok {
+		startTime := deadline.Add(-timeout)
+		elapsedSec = int64(time.Since(startTime).Seconds())
+	}
+
+	PublishCommandEvent(xRequestId, model.CommandStreamEvent{
+		Type:      model.EventCommandDone,
+		Timestamp: time.Now().Format(time.RFC3339Nano),
+		Summary: &model.CommandDoneSummary{
+			TotalVms:       len(vmList),
+			CompletedVms:   completedVms,
+			FailedVms:      failedVms,
+			ElapsedSeconds: elapsedSec,
+		},
+	})
 
 	return resultArray, nil
 }
@@ -1483,13 +1546,69 @@ CONNECTION_ESTABLISHED:
 		stderrDone := make(chan struct{})
 		waitDone := make(chan error, 1)
 
+		// Check if SSE streaming metadata is available in the context
+		logMeta := getSSHLogMeta(ctx)
+
+		// maxLogLineLen is the max characters per log line published to SSE
+		const maxLogLineLen = 4096
+
 		go func() {
-			io.Copy(io.MultiWriter(os.Stdout, &stdoutBuf), stdoutPipe)
+			if logMeta != nil {
+				// Streaming mode: use bufio.Scanner to publish lines in real time
+				stdoutLineNum := 0
+				scanner := bufio.NewScanner(io.TeeReader(stdoutPipe, io.MultiWriter(os.Stdout, &stdoutBuf)))
+				scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024) // up to 1MB lines
+				for scanner.Scan() {
+					stdoutLineNum++
+					line := scanner.Text()
+					if len(line) > maxLogLineLen {
+						line = line[:maxLogLineLen] + "...(truncated)"
+					}
+					PublishCommandEvent(logMeta.XRequestId, model.CommandStreamEvent{
+						Type:         model.EventCommandLog,
+						VmId:         logMeta.VmId,
+						CommandIndex: logMeta.CommandIndex,
+						Timestamp:    time.Now().Format(time.RFC3339Nano),
+						Log: &model.CommandLogEntry{
+							Stream:     "stdout",
+							Line:       line,
+							LineNumber: stdoutLineNum,
+						},
+					})
+				}
+			} else {
+				// Legacy mode: bulk copy
+				io.Copy(io.MultiWriter(os.Stdout, &stdoutBuf), stdoutPipe)
+			}
 			close(stdoutDone)
 		}()
 
 		go func() {
-			io.Copy(io.MultiWriter(os.Stderr, &stderrBuf), stderrPipe)
+			if logMeta != nil {
+				stderrLineNum := 0
+				scanner := bufio.NewScanner(io.TeeReader(stderrPipe, io.MultiWriter(os.Stderr, &stderrBuf)))
+				scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+				for scanner.Scan() {
+					stderrLineNum++
+					line := scanner.Text()
+					if len(line) > maxLogLineLen {
+						line = line[:maxLogLineLen] + "...(truncated)"
+					}
+					PublishCommandEvent(logMeta.XRequestId, model.CommandStreamEvent{
+						Type:         model.EventCommandLog,
+						VmId:         logMeta.VmId,
+						CommandIndex: logMeta.CommandIndex,
+						Timestamp:    time.Now().Format(time.RFC3339Nano),
+						Log: &model.CommandLogEntry{
+							Stream:     "stderr",
+							Line:       line,
+							LineNumber: stderrLineNum,
+						},
+					})
+				}
+			} else {
+				io.Copy(io.MultiWriter(os.Stderr, &stderrBuf), stderrPipe)
+			}
 			close(stderrDone)
 		}()
 
@@ -2514,6 +2633,24 @@ func AddCommandStatusInfo(nsId, mciId, vmId, xRequestId, commandRequested, comma
 		return 0, err
 	}
 
+	// Publish CommandStatus event for newly queued command
+	if xRequestId != "" {
+		PublishCommandEvent(xRequestId, model.CommandStreamEvent{
+			Type:         model.EventCommandStatus,
+			VmId:         vmId,
+			CommandIndex: nextIndex,
+			Timestamp:    time.Now().Format(time.RFC3339Nano),
+			Status: &model.CommandStatusInfo{
+				Index:            nextIndex,
+				XRequestId:       xRequestId,
+				CommandRequested: commandRequested,
+				CommandExecuted:  commandExecuted,
+				Status:           model.CommandStatusQueued,
+				StartedTime:      time.Now().Format(time.RFC3339),
+			},
+		})
+	}
+
 	log.Info().
 		Str("nsId", nsId).
 		Str("mciId", mciId).
@@ -2543,12 +2680,19 @@ func UpdateCommandStatusInfo(nsId, mciId, vmId string, index int, status model.C
 		return err
 	}
 
+	// Track the xRequestId and updated status for SSE publishing
+	var updatedXRequestId string
+	var updatedStatusInfo *model.CommandStatusInfo
+
 	err = updateVmCommandStatusSafe(nsId, mciId, vmId, func(commandStatus *[]model.CommandStatusInfo) error {
 		// Find the command status by index using helper function
 		cmdStatus, cmdIndex := findCommandByIndex(*commandStatus, index)
 		if cmdStatus == nil {
 			return fmt.Errorf("command with index %d not found for VM (ID: %s)", index, vmId)
 		}
+
+		// Capture xRequestId for SSE publishing
+		updatedXRequestId = cmdStatus.XRequestId
 
 		// Update status and completion time
 		startTime, _ := time.Parse(time.RFC3339, cmdStatus.StartedTime)
@@ -2581,12 +2725,27 @@ func UpdateCommandStatusInfo(nsId, mciId, vmId string, index int, status model.C
 			(*commandStatus)[cmdIndex].Stderr = stderr
 		}
 
+		// Capture a copy of the updated status for SSE publishing
+		statusCopy := (*commandStatus)[cmdIndex]
+		updatedStatusInfo = &statusCopy
+
 		return nil
 	})
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
+	}
+
+	// Publish CommandStatus event to SSE subscribers (non-blocking, no-op if no session exists)
+	if updatedXRequestId != "" && updatedStatusInfo != nil {
+		PublishCommandEvent(updatedXRequestId, model.CommandStreamEvent{
+			Type:         model.EventCommandStatus,
+			VmId:         vmId,
+			CommandIndex: index,
+			Timestamp:    time.Now().Format(time.RFC3339Nano),
+			Status:       updatedStatusInfo,
+		})
 	}
 
 	log.Info().

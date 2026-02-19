@@ -50,6 +50,9 @@ var RequestSkipPatterns = []SkipRule{
 	// Request tracking endpoints (avoid recursive logging)
 	{Patterns: []string{"/tumblebug/request"}},
 	{Patterns: []string{"/tumblebug/requests"}},
+
+	// SSE streaming endpoints — BodyDump and TracingMiddleware interfere with streaming responses
+	{Method: "GET", Patterns: []string{"/stream/cmd/"}},
 }
 
 // ==============================================================================

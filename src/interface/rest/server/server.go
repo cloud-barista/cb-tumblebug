@@ -437,6 +437,9 @@ func RunServer() {
 	g.POST("/:nsId/cmd/mci/:mciId", rest_infra.RestPostCmdMci)
 	g.POST("/:nsId/transferFile/mci/:mciId", rest_infra.RestPostFileToMci)
 
+	// SSE stream for real-time command execution log streaming
+	g.GET("/:nsId/stream/cmd/mci/:mciId", rest_infra.RestGetCmdMciStream)
+
 	// Command Status Management for VMs
 	g.GET("/:nsId/mci/:mciId/vm/:vmId/commandStatus/:index", rest_infra.RestGetVmCommandStatus)
 	g.GET("/:nsId/mci/:mciId/vm/:vmId/commandStatus", rest_infra.RestListVmCommandStatus)

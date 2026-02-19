@@ -7,9 +7,10 @@ Comprehensive guide for executing remote commands and transferring files to MCI 
 1. [Overview](#overview)
 2. [Key Concepts](#key-concepts)
 3. [Architecture](#architecture)
-4. [SSH Host Key Verification (TOFU)](#ssh-host-key-verification-tofu)
-5. [API Reference](#api-reference)
-6. [Usage Examples](#usage-examples)
+4. [Real-Time Streaming (SSE)](#real-time-streaming-sse)
+5. [SSH Host Key Verification (TOFU)](#ssh-host-key-verification-tofu)
+6. [API Reference](#api-reference)
+7. [Usage Examples](#usage-examples)
 
 ---
 
@@ -207,6 +208,166 @@ graph TB
 
 ---
 
+## Real-Time Streaming (SSE)
+
+### Overview
+
+By default, the remote command API operates in **synchronous mode** — the HTTP response is returned only after all VMs finish execution. For long-running commands across many VMs, this means the client must wait with no visibility into progress.
+
+**Async mode with SSE (Server-Sent Events)** solves this by:
+1. Returning an `HTTP 202 Accepted` immediately with an `xRequestId`
+2. Executing commands in the background
+3. Streaming real-time events (status changes, stdout/stderr lines, completion) via an SSE endpoint
+
+### Sync vs Async Mode
+
+| Feature | Sync Mode (default) | Async Mode (`?async=true`) |
+|---------|--------------------|--------------------------|
+| Response | Waits for all VMs to finish | Returns `202 Accepted` immediately |
+| Output | Full result in response body | Real-time events via SSE stream |
+| Progress visibility | None until completion | Live status updates per VM |
+| Use case | Short commands, scripted workflows | Long-running commands, interactive UIs |
+
+### Architecture
+
+```mermaid
+sequenceDiagram
+    actor Client
+    participant API as Tumblebug API
+    participant Broker as CommandLogBroker
+    participant VMs as Target VMs
+    
+    Client->>API: POST /cmd/mci/{mciId}?async=true
+    Note right of Client: x-request-id: cmd-mci01-1234
+    API-->>Client: 202 Accepted {xRequestId}
+    
+    Note over API,VMs: Background Execution
+    API->>Broker: Create session (xRequestId)
+    API->>VMs: SSH Connect & Execute (parallel)
+    
+    Client->>API: GET /stream/cmd/mci/{mciId}?xRequestId=cmd-mci01-1234
+    API->>Broker: Subscribe(xRequestId)
+    Broker-->>API: Replay buffered events
+    API-->>Client: SSE: CommandStatus (Queued)
+    
+    VMs-->>API: stdout line
+    API->>Broker: Publish(CommandLog)
+    Broker-->>API: Forward to subscriber
+    API-->>Client: SSE: CommandLog {line}
+    
+    VMs-->>API: Command complete
+    API->>Broker: Publish(CommandStatus: Completed)
+    API-->>Client: SSE: CommandStatus (Completed)
+    
+    Note over API,VMs: All VMs finished
+    API->>Broker: Publish(CommandDone)
+    API-->>Client: SSE: CommandDone {summary}
+    Note over Client: Stream ends
+```
+
+### SSE Event Types
+
+The SSE stream delivers three types of events, each as a JSON object in `data:` frames:
+
+#### 1. `CommandStatus`
+
+Sent when a VM's command execution status changes (e.g., Queued → Handling → Completed).
+
+```json
+{
+  "type": "CommandStatus",
+  "vmId": "g1-1",
+  "commandIndex": 1,
+  "timestamp": "2024-01-15T10:30:01Z",
+  "status": {
+    "mciId": "mci01",
+    "vmId": "g1-1",
+    "status": "Handling",
+    "command": "echo hello && hostname"
+  }
+}
+```
+
+**Status Transitions:**
+```mermaid
+stateDiagram-v2
+    [*] --> Queued: Command registered
+    Queued --> Handling: SSH session started
+    Handling --> Completed: All commands succeeded
+    Handling --> Failed: Command error
+    Handling --> Timeout: Context deadline exceeded
+    Handling --> Cancelled: User cancelled
+    Handling --> Interrupted: Execution interrupted
+```
+
+#### 2. `CommandLog`
+
+Sent for each line of stdout/stderr output from an SSH session, in real-time.
+
+```json
+{
+  "type": "CommandLog",
+  "vmId": "g1-1",
+  "commandIndex": 1,
+  "timestamp": "2024-01-15T10:30:02Z",
+  "log": {
+    "stream": "stdout",
+    "line": "Hello World",
+    "lineNumber": 1
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `log.stream` | `"stdout"` or `"stderr"` |
+| `log.line` | Output line content |
+| `log.lineNumber` | Sequential line number per stream per VM |
+
+#### 3. `CommandDone`
+
+The **terminal event** — sent once when all VMs have finished. The SSE stream closes after this event.
+
+```json
+{
+  "type": "CommandDone",
+  "timestamp": "2024-01-15T10:30:45Z",
+  "summary": {
+    "totalVms": 5,
+    "completedVms": 4,
+    "failedVms": 1,
+    "elapsedSeconds": 44
+  }
+}
+```
+
+If the command failed before reaching any VMs (e.g., preprocessing error), the `error` field is included:
+
+```json
+{
+  "type": "CommandDone",
+  "timestamp": "2024-01-15T10:30:01Z",
+  "summary": {
+    "totalVms": 0,
+    "completedVms": 0,
+    "failedVms": 0,
+    "elapsedSeconds": 0,
+    "error": "built-in function GetPublicIP error: no VM found (ID: /ns/default/mci/mci01/vm/g1-1)"
+  }
+}
+```
+
+### CommandLogBroker (Internal)
+
+The broker manages SSE event distribution using an in-memory per-request session:
+
+- **Ring Buffer**: Up to 10,000 events per request, enabling late-joining clients to replay history
+- **Non-blocking Publish**: Slow subscribers don't block the command execution pipeline
+- **Auto-cleanup**: Sessions are removed 30 seconds after `CommandDone`
+- **Late Join**: Clients connecting after execution starts receive all buffered events, then live updates
+
+---
+
 ## SSH Host Key Verification (TOFU)
 
 ### What is TOFU?
@@ -325,6 +486,7 @@ POST /tumblebug/ns/{nsId}/cmd/mci/{mciId}
 | `subGroupId` | string | Target specific subgroup only |
 | `vmId` | string | Target specific VM only |
 | `labelSelector` | string | Filter VMs by label (e.g., `role=worker`) |
+| `async` | bool | Set to `true` for async mode with SSE streaming |
 
 **Request Body:**
 ```json
@@ -358,6 +520,47 @@ POST /tumblebug/ns/{nsId}/cmd/mci/{mciId}
   ]
 }
 ```
+
+**Async Response (when `?async=true`):**
+
+Returns `HTTP 202 Accepted` immediately:
+```json
+{
+  "xRequestId": "cmd-mci01-1234567890",
+  "message": "Command execution started. Use GET /tumblebug/ns/{nsId}/stream/cmd/mci/{mciId}?xRequestId={xRequestId} for real-time streaming."
+}
+```
+
+### Stream Command Execution Logs (SSE)
+
+Subscribe to real-time command execution events via Server-Sent Events.
+
+```
+GET /tumblebug/ns/{nsId}/stream/cmd/mci/{mciId}?xRequestId={xRequestId}
+```
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `xRequestId` | string | **Required.** The request ID returned from `POST /cmd/mci/{mciId}?async=true` |
+
+**Response:** `Content-Type: text/event-stream`
+
+The response is an SSE stream. Each event is delivered as:
+```
+data: {"type":"CommandStatus","vmId":"g1-1", ...}
+
+data: {"type":"CommandLog","vmId":"g1-1","log":{"stream":"stdout","line":"Hello","lineNumber":1}, ...}
+
+data: {"type":"CommandDone","summary":{"totalVms":3,"completedVms":3,"failedVms":0,"elapsedSeconds":12}}
+```
+
+The stream ends after the `CommandDone` event is sent. A keepalive comment (`: keepalive`) is sent every 15 seconds to prevent proxy/load-balancer timeouts.
+
+**Notes:**
+- The SSE endpoint requires **BasicAuth** (same credentials as other Tumblebug APIs)
+- Standard `EventSource` API does not support custom headers; use `fetch()` with `ReadableStream` for browser clients
+- If the client connects after execution has started, buffered events are replayed first
 
 ### Transfer File to MCI
 
@@ -507,6 +710,113 @@ curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/mci/mci01?vmId=g1-1
 
 ```bash
 curl -X GET "http://localhost:1323/tumblebug/ns/default/mci/mci01/vm/g1-1/sshHostKey"
+```
+
+### Example 7: Async Command with SSE Streaming
+
+**Step 1:** Start command execution in async mode
+
+```bash
+curl -X POST "http://localhost:1323/tumblebug/ns/default/cmd/mci/mci01?async=true" \
+  -H "Content-Type: application/json" \
+  -H "x-request-id: my-cmd-001" \
+  -u default:default \
+  -d '{
+    "command": ["apt update", "apt install -y nginx"],
+    "timeoutMinutes": 10
+  }'
+```
+
+Response:
+```json
+{
+  "xRequestId": "my-cmd-001",
+  "message": "Command execution started. Use GET /tumblebug/ns/{nsId}/stream/cmd/mci/{mciId}?xRequestId={xRequestId} for real-time streaming."
+}
+```
+
+**Step 2:** Connect to SSE stream for real-time logs
+
+```bash
+curl -N "http://localhost:1323/tumblebug/ns/default/stream/cmd/mci/mci01?xRequestId=my-cmd-001" \
+  -H "Accept: text/event-stream" \
+  -u default:default
+```
+
+Output (SSE stream):
+```
+: connected to stream for xRequestId=my-cmd-001
+
+data: {"type":"CommandStatus","vmId":"g1-1","commandIndex":1,"timestamp":"...","status":{"status":"Queued"}}
+
+data: {"type":"CommandStatus","vmId":"g1-1","commandIndex":1,"timestamp":"...","status":{"status":"Handling"}}
+
+data: {"type":"CommandLog","vmId":"g1-1","commandIndex":1,"timestamp":"...","log":{"stream":"stdout","line":"Hit:1 http://archive.ubuntu.com/ubuntu jammy InRelease","lineNumber":1}}
+
+data: {"type":"CommandLog","vmId":"g1-1","commandIndex":1,"timestamp":"...","log":{"stream":"stdout","line":"Reading package lists...","lineNumber":2}}
+
+data: {"type":"CommandStatus","vmId":"g1-1","commandIndex":1,"timestamp":"...","status":{"status":"Completed"}}
+
+data: {"type":"CommandDone","timestamp":"...","summary":{"totalVms":3,"completedVms":3,"failedVms":0,"elapsedSeconds":45}}
+```
+
+### Example 8: Async Command with SSE (JavaScript/Browser)
+
+```javascript
+// Step 1: Start async command
+const response = await fetch('http://localhost:1323/tumblebug/ns/default/cmd/mci/mci01?async=true', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Basic ' + btoa('default:default'),
+    'x-request-id': 'my-cmd-001'
+  },
+  body: JSON.stringify({
+    command: ['echo hello', 'hostname'],
+    timeoutMinutes: 5
+  })
+});
+
+const { xRequestId } = await response.json();
+
+// Step 2: Connect to SSE stream (using fetch + ReadableStream for BasicAuth support)
+const sseResponse = await fetch(
+  `http://localhost:1323/tumblebug/ns/default/stream/cmd/mci/mci01?xRequestId=${xRequestId}`,
+  {
+    headers: {
+      'Accept': 'text/event-stream',
+      'Authorization': 'Basic ' + btoa('default:default')
+    }
+  }
+);
+
+const reader = sseResponse.body.getReader();
+const decoder = new TextDecoder();
+let buffer = '';
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+
+  buffer += decoder.decode(value, { stream: true });
+
+  let boundary;
+  while ((boundary = buffer.indexOf('\n\n')) !== -1) {
+    const message = buffer.substring(0, boundary);
+    buffer = buffer.substring(boundary + 2);
+
+    for (const line of message.split('\n')) {
+      if (line.startsWith('data: ')) {
+        const event = JSON.parse(line.substring(6));
+        console.log(`[${event.type}]`, event.vmId || '', event);
+
+        if (event.type === 'CommandDone') {
+          console.log('All VMs finished:', event.summary);
+        }
+      }
+    }
+  }
+}
 ```
 
 ---

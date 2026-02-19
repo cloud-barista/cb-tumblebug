@@ -15,16 +15,19 @@ limitations under the License.
 package infra
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/infra"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // convertSshCmdResultForAPI converts internal SshCmdResult to API-friendly format
@@ -58,6 +61,7 @@ func convertSshCmdResultForAPI(internal []model.SshCmdResult) model.MciSshCmdRes
 // @ID PostCmdMci
 // @Summary Send a command to specified MCI
 // @Description Send a command to specified MCI. Use query parameters to target specific subGroup or VM.
+// @Description When async=true, returns immediately with xRequestId and streams results via SSE at GET /stream/ns/{nsId}/cmd/mci/{mciId}?xRequestId={xRequestId}
 // @Tags [MC-Infra] MCI Remote Command
 // @Accept  json
 // @Produce  json
@@ -67,8 +71,10 @@ func convertSshCmdResultForAPI(internal []model.SshCmdResult) model.MciSshCmdRes
 // @Param subGroupId query string false "subGroupId to apply the command only for VMs in subGroup of MCI" default(g1)
 // @Param vmId query string false "vmId to apply the command only for a VM in MCI" default(g1-1)
 // @Param labelSelector query string false "Target VM Label selector query. Example: sys.id=g1-1,role=worker"
+// @Param async query string false "If true, execute asynchronously and return xRequestId for SSE streaming" default(false)
 // @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} model.MciSshCmdResultForAPI
+// @Success 202 {object} map[string]string "Async mode: returns xRequestId"
 // @Failure 404 {object} model.SimpleMsg
 // @Failure 500 {object} model.SimpleMsg
 // @Router /ns/{nsId}/cmd/mci/{mciId} [post]
@@ -78,6 +84,7 @@ func RestPostCmdMci(c echo.Context) error {
 	mciId := c.Param("mciId")
 	subGroupId := c.QueryParam("subGroupId")
 	vmId := c.QueryParam("vmId")
+	asyncMode := c.QueryParam("async") == "true"
 	//Label selector query. Example: env=production,tier=backend
 	labelSelector := c.QueryParam("labelSelector")
 
@@ -95,6 +102,42 @@ func RestPostCmdMci(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
+	if asyncMode {
+		// Async mode: launch execution in background and return xRequestId immediately
+		go func() {
+			_, err := infra.RemoteCommandToMci(nsId, mciId, subGroupId, vmId, labelSelector, req, xRequestId)
+			if err != nil {
+				log.Error().Err(err).Str("xRequestId", xRequestId).Msg("Async remote command execution failed")
+
+				// Small delay to give SSE clients time to connect before publishing the terminal event.
+				// Without this, the CommandDone event may be published before the client subscribes,
+				// and while the ring buffer should replay it, this avoids timing edge cases.
+				time.Sleep(500 * time.Millisecond)
+
+				// Publish a CommandDone event with error info so SSE clients don't hang forever
+				log.Info().Str("xRequestId", xRequestId).Msg("Publishing CommandDone (error) event for SSE subscribers")
+				infra.PublishCommandEvent(xRequestId, model.CommandStreamEvent{
+					Type:      model.EventCommandDone,
+					Timestamp: time.Now().Format(time.RFC3339Nano),
+					Summary: &model.CommandDoneSummary{
+						TotalVms:       0,
+						CompletedVms:   0,
+						FailedVms:      0,
+						ElapsedSeconds: 0,
+						Error:          err.Error(),
+					},
+				})
+			}
+		}()
+
+		c.Response().Header().Set("X-Request-Id", xRequestId)
+		return c.JSON(http.StatusAccepted, map[string]string{
+			"xRequestId": xRequestId,
+			"message":    "Command execution started. Use GET /tumblebug/ns/{nsId}/stream/cmd/mci/{mciId}?xRequestId={xRequestId} for real-time streaming.",
+		})
+	}
+
+	// Sync mode (default): execute and wait for result
 	output, err := infra.RemoteCommandToMci(nsId, mciId, subGroupId, vmId, labelSelector, req, xRequestId)
 	if err != nil {
 		return clientManager.EndRequestWithLog(c, err, nil)
@@ -749,4 +792,93 @@ func RestCancelExecutionTask(c echo.Context) error {
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 	return clientManager.EndRequestWithLog(c, nil, response)
+}
+
+// RestGetCmdMciStream godoc
+// @ID GetCmdMciStream
+// @Summary Stream real-time command execution logs via SSE
+// @Description Subscribe to Server-Sent Events (SSE) for real-time command execution logs.
+// @Description Use the xRequestId returned from POST /ns/{nsId}/cmd/mci/{mciId}?async=true to connect.
+// @Description Events: CommandStatus (status transitions), CommandLog (stdout/stderr lines), CommandDone (terminal).
+// @Tags [MC-Infra] MCI Remote Command
+// @Produce text/event-stream
+// @Param nsId path string true "Namespace ID" default(default)
+// @Param mciId path string true "MCI ID" default(mci01)
+// @Param xRequestId query string true "Request ID from async command execution"
+// @Success 200 {object} model.CommandStreamEvent "SSE stream of command events"
+// @Failure 400 {object} model.SimpleMsg "Missing xRequestId"
+// @Router /ns/{nsId}/stream/cmd/mci/{mciId} [get]
+func RestGetCmdMciStream(c echo.Context) error {
+	xRequestId := c.QueryParam("xRequestId")
+	if xRequestId == "" {
+		return c.JSON(http.StatusBadRequest, model.SimpleMsg{Message: "xRequestId query parameter is required"})
+	}
+
+	log.Info().Str("xRequestId", xRequestId).Msg("SSE stream client connected")
+
+	// Set SSE headers
+	c.Response().Header().Set("Content-Type", "text/event-stream")
+	c.Response().Header().Set("Cache-Control", "no-cache")
+	c.Response().Header().Set("Connection", "keep-alive")
+	c.Response().Header().Set("X-Accel-Buffering", "no") // Disable nginx buffering
+	c.Response().WriteHeader(http.StatusOK)
+	c.Response().Flush()
+
+	// Subscribe to the command log broker
+	eventCh, cleanup := infra.SubscribeCommandEvents(xRequestId)
+	defer cleanup()
+
+	enc := json.NewEncoder(c.Response())
+	clientGone := c.Request().Context().Done()
+
+	// Send initial SSE comment as keepalive / connection confirmation
+	fmt.Fprintf(c.Response(), ": connected to stream for xRequestId=%s\n\n", xRequestId)
+	c.Response().Flush()
+
+	// Keepalive ticker to prevent proxy/load-balancer timeouts
+	keepaliveTicker := time.NewTicker(15 * time.Second)
+	defer keepaliveTicker.Stop()
+
+	eventCount := 0
+	for {
+		select {
+		case <-clientGone:
+			// Client disconnected
+			log.Debug().Str("xRequestId", xRequestId).Int("eventsSent", eventCount).Msg("SSE client disconnected")
+			return nil
+
+		case event, ok := <-eventCh:
+			if !ok {
+				// Channel closed (session ended)
+				// Send a final SSE comment before closing
+				log.Info().Str("xRequestId", xRequestId).Int("eventsSent", eventCount).Msg("SSE stream channel closed, ending stream")
+				fmt.Fprint(c.Response(), ": stream ended\n\n")
+				c.Response().Flush()
+				return nil
+			}
+
+			eventCount++
+			log.Debug().Str("xRequestId", xRequestId).Str("eventType", string(event.Type)).Int("eventCount", eventCount).Msg("Sending SSE event to client")
+
+			// Write SSE format: "data: {json}\n\n"
+			fmt.Fprint(c.Response(), "data: ")
+			if err := enc.Encode(event); err != nil {
+				log.Error().Err(err).Str("xRequestId", xRequestId).Msg("Failed to encode SSE event")
+				return nil
+			}
+			fmt.Fprint(c.Response(), "\n")
+			c.Response().Flush()
+
+			// If this is the terminal event, end the stream
+			if event.Type == model.EventCommandDone {
+				log.Info().Str("xRequestId", xRequestId).Int("eventsSent", eventCount).Msg("SSE stream completed (CommandDone sent)")
+				return nil
+			}
+
+		case <-keepaliveTicker.C:
+			// Send SSE comment as keepalive
+			fmt.Fprint(c.Response(), ": keepalive\n\n")
+			c.Response().Flush()
+		}
+	}
 }
