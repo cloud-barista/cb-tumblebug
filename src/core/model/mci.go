@@ -1244,6 +1244,74 @@ type MciHandlingCommandCountResponse struct {
 	TotalHandlingCount int `json:"totalHandlingCount" example:"3"`
 }
 
+// CommandStreamEventType represents the type of SSE event for command streaming
+type CommandStreamEventType string
+
+const (
+	// EventCommandStatus is sent when a command's status changes (Queued→Handling→Completed etc.)
+	EventCommandStatus CommandStreamEventType = "CommandStatus"
+
+	// EventCommandLog is sent for real-time stdout/stderr log lines during SSH execution
+	EventCommandLog CommandStreamEventType = "CommandLog"
+
+	// EventCommandDone is sent when all VMs have finished execution (terminal event)
+	EventCommandDone CommandStreamEventType = "CommandDone"
+)
+
+// CommandStreamEvent is a single SSE event sent to streaming clients
+type CommandStreamEvent struct {
+	// Type indicates the kind of event
+	Type CommandStreamEventType `json:"type" example:"CommandLog"`
+
+	// VmId identifies which VM this event belongs to
+	VmId string `json:"vmId" example:"g1-1"`
+
+	// CommandIndex is the command status index in VmInfo.CommandStatus
+	CommandIndex int `json:"commandIndex" example:"1"`
+
+	// Timestamp is when the event was generated (RFC3339)
+	Timestamp string `json:"timestamp" example:"2024-01-15T10:30:05Z"`
+
+	// Status is populated for EventCommandStatus events (reuses existing CommandStatusInfo)
+	Status *CommandStatusInfo `json:"status,omitempty"`
+
+	// Log is populated for EventCommandLog events
+	Log *CommandLogEntry `json:"log,omitempty"`
+
+	// Summary is populated for EventCommandDone events
+	Summary *CommandDoneSummary `json:"summary,omitempty"`
+}
+
+// CommandLogEntry represents a single log line from SSH command execution
+type CommandLogEntry struct {
+	// Stream indicates the source: "stdout" or "stderr"
+	Stream string `json:"stream" example:"stdout"`
+
+	// Line is the log line content (truncated at 4096 chars)
+	Line string `json:"line" example:"total 8"`
+
+	// LineNumber is the sequential line number within this stream for this VM
+	LineNumber int `json:"lineNumber" example:"1"`
+}
+
+// CommandDoneSummary is sent as the final SSE event when all VMs finish
+type CommandDoneSummary struct {
+	// TotalVms is the number of VMs that were targeted
+	TotalVms int `json:"totalVms" example:"3"`
+
+	// CompletedVms is the number of VMs that completed successfully
+	CompletedVms int `json:"completedVms" example:"2"`
+
+	// FailedVms is the number of VMs that failed
+	FailedVms int `json:"failedVms" example:"1"`
+
+	// ElapsedSeconds is total wall-clock time for the entire command execution
+	ElapsedSeconds int64 `json:"elapsedSeconds" example:"45"`
+
+	// Error is set when the command execution failed before reaching VMs (e.g., preprocessing error)
+	Error string `json:"error,omitempty" example:"built-in function GetPublicIP error: no VM found"`
+}
+
 // SshCmdResult is struct for SshCmd Result
 type SshCmdResult struct { // Tumblebug
 	MciId   string         `json:"mciId"`

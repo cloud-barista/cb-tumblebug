@@ -2088,8 +2088,9 @@ paths:
       tags:
       - "[MC-Infra] MCI Remote Command"
       summary: Send a command to specified MCI
-      description: Send a command to specified MCI. Use query parameters to target
-        specific subGroup or VM.
+      description: |-
+        Send a command to specified MCI. Use query parameters to target specific subGroup or VM.
+        When async=true, returns immediately with xRequestId and streams results via SSE at GET /stream/ns/{nsId}/cmd/mci/{mciId}?xRequestId={xRequestId}
       operationId: PostCmdMci
       parameters:
       - name: nsId
@@ -2123,6 +2124,13 @@ paths:
         description: "Target VM Label selector query. Example: sys.id=g1-1,role=worker"
         schema:
           type: string
+      - name: async
+        in: query
+        description: "If true, execute asynchronously and return xRequestId for SSE\
+          \ streaming"
+        schema:
+          type: string
+          default: "false"
       - name: x-request-id
         in: header
         description: Custom request ID
@@ -2142,6 +2150,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.MciSshCmdResultForAPI'
+        "202":
+          description: "Async mode: returns xRequestId"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
         "404":
           description: Not Found
           content:
@@ -10438,6 +10454,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/model.SimpleMsg'
+  /ns/{nsId}/stream/cmd/mci/{mciId}:
+    get:
+      tags:
+      - "[MC-Infra] MCI Remote Command"
+      summary: Stream real-time command execution logs via SSE
+      description: |-
+        Subscribe to Server-Sent Events (SSE) for real-time command execution logs.
+        Use the xRequestId returned from POST /ns/{nsId}/cmd/mci/{mciId}?async=true to connect.
+        Events: CommandStatus (status transitions), CommandLog (stdout/stderr lines), CommandDone (terminal).
+      operationId: GetCmdMciStream
+      parameters:
+      - name: nsId
+        in: path
+        description: Namespace ID
+        required: true
+        schema:
+          type: string
+          default: default
+      - name: mciId
+        in: path
+        description: MCI ID
+        required: true
+        schema:
+          type: string
+          default: mci01
+      - name: xRequestId
+        in: query
+        description: Request ID from async command execution
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: SSE stream of command events
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/model.CommandStreamEvent'
+        "400":
+          description: Missing xRequestId
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/model.SimpleMsg'
   /ns/{nsId}/transferFile/k8sCluster/{k8sClusterId}:
     post:
       tags:
@@ -13881,6 +13941,31 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/model.CSPDetail'
+    model.CommandDoneSummary:
+      type: object
+      properties:
+        completedVms:
+          type: integer
+          description: CompletedVms is the number of VMs that completed successfully
+          example: 2
+        elapsedSeconds:
+          type: integer
+          description: ElapsedSeconds is total wall-clock time for the entire command
+            execution
+          example: 45
+        error:
+          type: string
+          description: "Error is set when the command execution failed before reaching\
+            \ VMs (e.g., preprocessing error)"
+          example: "built-in function GetPublicIP error: no VM found"
+        failedVms:
+          type: integer
+          description: FailedVms is the number of VMs that failed
+          example: 1
+        totalVms:
+          type: integer
+          description: TotalVms is the number of VMs that were targeted
+          example: 3
     model.CommandExecutionStatus:
       type: string
       enum:
@@ -13899,6 +13984,22 @@ components:
       - CommandStatusTimeout
       - CommandStatusCancelled
       - CommandStatusInterrupted
+    model.CommandLogEntry:
+      type: object
+      properties:
+        line:
+          type: string
+          description: Line is the log line content (truncated at 4096 chars)
+          example: total 8
+        lineNumber:
+          type: integer
+          description: LineNumber is the sequential line number within this stream
+            for this VM
+          example: 1
+        stream:
+          type: string
+          description: "Stream indicates the source: \"stdout\" or \"stderr\""
+          example: stdout
     model.CommandStatusInfo:
       type: object
       properties:
@@ -13983,6 +14084,53 @@ components:
           description: Total is the total number of commands matching the criteria
             (before limit/offset)
           example: 25
+    model.CommandStreamEvent:
+      type: object
+      properties:
+        commandIndex:
+          type: integer
+          description: CommandIndex is the command status index in VmInfo.CommandStatus
+          example: 1
+        log:
+          type: object
+          description: Log is populated for EventCommandLog events
+          allOf:
+          - $ref: '#/components/schemas/model.CommandLogEntry'
+        status:
+          type: object
+          description: Status is populated for EventCommandStatus events (reuses existing
+            CommandStatusInfo)
+          allOf:
+          - $ref: '#/components/schemas/model.CommandStatusInfo'
+        summary:
+          type: object
+          description: Summary is populated for EventCommandDone events
+          allOf:
+          - $ref: '#/components/schemas/model.CommandDoneSummary'
+        timestamp:
+          type: string
+          description: Timestamp is when the event was generated (RFC3339)
+          example: 2024-01-15T10:30:05Z
+        type:
+          type: object
+          description: Type indicates the kind of event
+          example: CommandLog
+          allOf:
+          - $ref: '#/components/schemas/model.CommandStreamEventType'
+        vmId:
+          type: string
+          description: VmId identifies which VM this event belongs to
+          example: g1-1
+    model.CommandStreamEventType:
+      type: string
+      enum:
+      - CommandStatus
+      - CommandLog
+      - CommandDone
+      x-enum-varnames:
+      - EventCommandStatus
+      - EventCommandLog
+      - EventCommandDone
     model.ConfigInfo:
       type: object
       properties:

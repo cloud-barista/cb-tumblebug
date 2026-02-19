@@ -2599,7 +2599,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/cmd/mci/{mciId}": {
             "post": {
-                "description": "Send a command to specified MCI. Use query parameters to target specific subGroup or VM.",
+                "description": "Send a command to specified MCI. Use query parameters to target specific subGroup or VM.\nWhen async=true, returns immediately with xRequestId and streams results via SSE at GET /stream/ns/{nsId}/cmd/mci/{mciId}?xRequestId={xRequestId}",
                 "consumes": [
                     "application/json"
                 ],
@@ -2659,6 +2659,13 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "false",
+                        "description": "If true, execute asynchronously and return xRequestId for SSE streaming",
+                        "name": "async",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Custom request ID",
                         "name": "x-request-id",
                         "in": "header"
@@ -2669,6 +2676,15 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.MciSshCmdResultForAPI"
+                        }
+                    },
+                    "202": {
+                        "description": "Async mode: returns xRequestId",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "404": {
@@ -12747,6 +12763,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/stream/cmd/mci/{mciId}": {
+            "get": {
+                "description": "Subscribe to Server-Sent Events (SSE) for real-time command execution logs.\nUse the xRequestId returned from POST /ns/{nsId}/cmd/mci/{mciId}?async=true to connect.\nEvents: CommandStatus (status transitions), CommandLog (stdout/stderr lines), CommandDone (terminal).",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "[MC-Infra] MCI Remote Command"
+                ],
+                "summary": "Stream real-time command execution logs via SSE",
+                "operationId": "GetCmdMciStream",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "default",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mci01",
+                        "description": "MCI ID",
+                        "name": "mciId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Request ID from async command execution",
+                        "name": "xRequestId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSE stream of command events",
+                        "schema": {
+                            "$ref": "#/definitions/model.CommandStreamEvent"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing xRequestId",
+                        "schema": {
+                            "$ref": "#/definitions/model.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/transferFile/k8sCluster/{k8sClusterId}": {
             "post": {
                 "description": "Transfer a file to specified Container in K8sCluster. The tar command is required in the container.\n[note] This feature is not intended for general use\nThis API is provided as an exceptional and limited function for specific purposes such as migration.\nKubernetes resource information required as input for this API is not currently provided, and its availability in the future is uncertain.",
@@ -16648,6 +16716,36 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CommandDoneSummary": {
+            "type": "object",
+            "properties": {
+                "completedVms": {
+                    "description": "CompletedVms is the number of VMs that completed successfully",
+                    "type": "integer",
+                    "example": 2
+                },
+                "elapsedSeconds": {
+                    "description": "ElapsedSeconds is total wall-clock time for the entire command execution",
+                    "type": "integer",
+                    "example": 45
+                },
+                "error": {
+                    "description": "Error is set when the command execution failed before reaching VMs (e.g., preprocessing error)",
+                    "type": "string",
+                    "example": "built-in function GetPublicIP error: no VM found"
+                },
+                "failedVms": {
+                    "description": "FailedVms is the number of VMs that failed",
+                    "type": "integer",
+                    "example": 1
+                },
+                "totalVms": {
+                    "description": "TotalVms is the number of VMs that were targeted",
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
         "model.CommandExecutionStatus": {
             "type": "string",
             "enum": [
@@ -16668,6 +16766,26 @@ const docTemplate = `{
                 "CommandStatusCancelled",
                 "CommandStatusInterrupted"
             ]
+        },
+        "model.CommandLogEntry": {
+            "type": "object",
+            "properties": {
+                "line": {
+                    "description": "Line is the log line content (truncated at 4096 chars)",
+                    "type": "string",
+                    "example": "total 8"
+                },
+                "lineNumber": {
+                    "description": "LineNumber is the sequential line number within this stream for this VM",
+                    "type": "integer",
+                    "example": 1
+                },
+                "stream": {
+                    "description": "Stream indicates the source: \"stdout\" or \"stderr\"",
+                    "type": "string",
+                    "example": "stdout"
+                }
+            }
         },
         "model.CommandStatusInfo": {
             "type": "object",
@@ -16764,6 +16882,72 @@ const docTemplate = `{
                     "example": 25
                 }
             }
+        },
+        "model.CommandStreamEvent": {
+            "type": "object",
+            "properties": {
+                "commandIndex": {
+                    "description": "CommandIndex is the command status index in VmInfo.CommandStatus",
+                    "type": "integer",
+                    "example": 1
+                },
+                "log": {
+                    "description": "Log is populated for EventCommandLog events",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.CommandLogEntry"
+                        }
+                    ]
+                },
+                "status": {
+                    "description": "Status is populated for EventCommandStatus events (reuses existing CommandStatusInfo)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.CommandStatusInfo"
+                        }
+                    ]
+                },
+                "summary": {
+                    "description": "Summary is populated for EventCommandDone events",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.CommandDoneSummary"
+                        }
+                    ]
+                },
+                "timestamp": {
+                    "description": "Timestamp is when the event was generated (RFC3339)",
+                    "type": "string",
+                    "example": "2024-01-15T10:30:05Z"
+                },
+                "type": {
+                    "description": "Type indicates the kind of event",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.CommandStreamEventType"
+                        }
+                    ],
+                    "example": "CommandLog"
+                },
+                "vmId": {
+                    "description": "VmId identifies which VM this event belongs to",
+                    "type": "string",
+                    "example": "g1-1"
+                }
+            }
+        },
+        "model.CommandStreamEventType": {
+            "type": "string",
+            "enum": [
+                "CommandStatus",
+                "CommandLog",
+                "CommandDone"
+            ],
+            "x-enum-varnames": [
+                "EventCommandStatus",
+                "EventCommandLog",
+                "EventCommandDone"
+            ]
         },
         "model.ConfigInfo": {
             "type": "object",
