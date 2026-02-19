@@ -342,7 +342,7 @@ func LookupSpecList(connConfig string) (model.SpiderSpecList, error) {
 		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		clientManager.MediumDuration,
+		clientManager.VeryLongDuration,
 	)
 
 	if err != nil {
@@ -389,7 +389,7 @@ func LookupSpec(connConfig string, specName string) (model.SpiderSpecInfo, error
 			clientManager.SetUseBody(requestBody),
 			&requestBody,
 			&callResult,
-			clientManager.MediumDuration,
+			clientManager.VeryLongDuration,
 		)
 		return err
 	}, "LookupSpec", specName)
@@ -1525,7 +1525,7 @@ func LookupPriceList(connConfig model.ConnConfig) (model.SpiderCloudPrice, error
 		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		clientManager.MediumDuration,
+		clientManager.VeryLongDuration,
 	)
 
 	if err != nil {
@@ -1592,7 +1592,7 @@ func GetAvailableRegionZonesForSpec(provider string, cspSpecName string) (model.
 		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&apiResponse,
-		clientManager.MediumDuration,
+		clientManager.VeryLongDuration,
 	)
 
 	if err != nil {
