@@ -118,7 +118,7 @@ func LookupMyImage(connConfig string, myImageId string) (model.SpiderMyImageInfo
 		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		clientManager.MediumDuration,
+		clientManager.VeryLongDuration,
 	)
 
 	if err != nil {

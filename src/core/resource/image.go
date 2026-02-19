@@ -336,7 +336,7 @@ func lookupRegularImageOnly(connConfig string, imageId string) (model.SpiderImag
 		clientManager.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		clientManager.MediumDuration,
+		clientManager.VeryLongDuration,
 	)
 
 	if err != nil {

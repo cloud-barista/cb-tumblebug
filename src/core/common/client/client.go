@@ -68,6 +68,8 @@ const (
 	MediumDuration = 5 * time.Second
 	// LongDuration is a duration for long-term cache
 	LongDuration = 10 * time.Second
+	// VeryLongDuration is a duration for very long-term cache
+	VeryLongDuration = 300 * time.Second
 )
 
 // NoBody is a constant for empty body
