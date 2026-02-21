@@ -1,8 +1,15 @@
 #!/bin/bash
 
-# Check NVIDIA driver
-echo "Checking NVIDIA driver with nvidia-smi"
-nvidia-smi
+# Check GPU driver
+if command -v nvidia-smi &> /dev/null; then
+    echo "Checking NVIDIA driver with nvidia-smi"
+    nvidia-smi
+elif command -v rocm-smi &> /dev/null; then
+    echo "Checking AMD driver with rocm-smi"
+    rocm-smi
+else
+    echo "No supported GPU driver found"
+fi
 
 # Install Ollama
 echo "Installing Ollama"
