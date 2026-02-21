@@ -62,6 +62,17 @@ MODEL_FILE="$HOME/vllm-serve.model"
 HEALTH_CHECK_TIMEOUT=300  # 5 minutes max wait for server startup
 HEALTH_CHECK_INTERVAL=5   # Check every 5 seconds
 
+# Detect GPU type
+if command -v nvidia-smi >/dev/null 2>&1; then
+  GPU_TYPE="nvidia"
+elif command -v rocm-smi >/dev/null 2>&1; then
+  GPU_TYPE="amd"
+else
+  echo "Error: No supported GPU found (nvidia-smi or rocm-smi required)."
+  exit 1
+fi
+echo "GPU type: $GPU_TYPE"
+
 # Check if venv exists
 if [ ! -d "$VENV_PATH" ]; then
   echo "Error: vLLM virtual environment not found at $VENV_PATH"

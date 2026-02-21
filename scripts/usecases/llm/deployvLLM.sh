@@ -28,15 +28,25 @@ echo "=========================================="
 echo "vLLM Installation and Setup"
 echo "=========================================="
 
-# Check for NVIDIA GPU (vLLM requires CUDA)
-echo "Checking for NVIDIA GPU..."
+# Detect GPU type
+echo "Detecting GPU hardware..."
+
 if command -v nvidia-smi >/dev/null 2>&1; then
+  echo "Found NVIDIA GPU(s):"
   nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
   GPU_COUNT=$(nvidia-smi --query-gpu=name --format=csv,noheader | wc -l)
-  echo "Detected $GPU_COUNT GPU(s)"
+  GPU_TYPE="nvidia"
+  echo "Detected $GPU_COUNT NVIDIA GPU(s)"
+elif command -v rocm-smi >/dev/null 2>&1; then
+  echo "Found AMD GPU(s):"
+  rocm-smi --showproductname
+  GPU_COUNT=$(rocm-smi -i | grep -c "GPU\[")
+  GPU_TYPE="amd"
+  echo "Detected $GPU_COUNT AMD GPU(s)"
 else
-  echo "Warning: nvidia-smi not found. vLLM requires NVIDIA GPU with CUDA support."
-  echo "Please install NVIDIA drivers first using installCudaDriver.sh"
+  echo "Error: No supported GPU found. vLLM requires either:"
+  echo "  - NVIDIA GPU with CUDA (nvidia-smi must be available)"
+  echo "  - AMD GPU with ROCm (rocm-smi must be available)"
   exit 1
 fi
 
@@ -82,25 +92,34 @@ echo "Upgrading pip..."
 pip install --upgrade pip > /dev/null 2>&1
 
 # Install vLLM
-echo "Installing vLLM (this may take a few minutes)..."
+# - NVIDIA: PyPI default wheels are CUDA-compiled, so plain pip install works.
+# - AMD: Add the ROCm extra-index-url to fetch ROCm-compiled PyTorch instead of the default CUDA wheels.
+echo "Installing vLLM for $GPU_TYPE GPU(s) (this may take a few minutes)..."
 LOG_FILE="$HOME/vllm_install.log"
 echo "Logging vLLM installation details to $LOG_FILE"
 
 set +e  # Temporarily disable exit on error for pip install
-pip install -U vllm > "$LOG_FILE" 2>&1
-INSTALL_RESULT=$?
+
+if [ "$GPU_TYPE" = "nvidia" ]; then
+  pip install -U vllm > "$LOG_FILE" 2>&1
+  INSTALL_RESULT=$?
+  if [ $INSTALL_RESULT -ne 0 ]; then
+    echo "Failed with default wheels. Trying CUDA 12.1 wheels..."
+    pip install vllm --extra-index-url https://download.pytorch.org/whl/cu121 >> "$LOG_FILE" 2>&1
+    INSTALL_RESULT=$?
+  fi
+else
+  # The index tag (rocmX.Y) must match the major.minor of the installed ROCm version.
+  ROCM_INDEX_TAG="rocm7.0"
+  pip install -U vllm --extra-index-url "https://download.pytorch.org/whl/${ROCM_INDEX_TAG}" > "$LOG_FILE" 2>&1
+  INSTALL_RESULT=$?
+fi
+
 set -e
 
 if [ $INSTALL_RESULT -ne 0 ]; then
-  echo "Failed to install vLLM with default wheels. Trying with CUDA 12.1 wheels..."
-  set +e
-  pip install vllm --extra-index-url https://download.pytorch.org/whl/cu121 >> "$LOG_FILE" 2>&1
-  INSTALL_RESULT=$?
-  set -e
-  if [ $INSTALL_RESULT -ne 0 ]; then
-    echo "vLLM installation failed. See $LOG_FILE for detailed error messages."
-    exit 1
-  fi
+  echo "vLLM installation failed. See $LOG_FILE for detailed error messages."
+  exit 1
 fi
 
 # Verify installation
@@ -118,7 +137,7 @@ pip install -U openai transformers huggingface_hub > /dev/null 2>&1
 
 # Display completion message
 echo "=========================================="
-echo "vLLM Installation Complete!"
+echo "vLLM Installation Complete! (GPU: $GPU_TYPE, Count: $GPU_COUNT)"
 echo "=========================================="
 echo ""
 echo "To serve a model, use servevLLM.sh script:"
