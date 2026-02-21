@@ -65,9 +65,11 @@ const (
 	LabelZone            string = "sys.zone"
 	LabelStatus          string = "sys.status"
 	LabelCspVNetId       string = "sys.cspVNetId"
-	LabelCspVNetName     string = "sys.cspVNetName"
-	LabelCidr            string = "sys.cidr"
-	LabelSubnetId        string = "sys.subnetId"
+	LabelCspVNetName        string = "sys.cspVNetName"
+	LabelCidr               string = "sys.cidr"
+	LabelSubnetId           string = "sys.subnetId"
+	LabelPlaceholder        string = "sys.placeholder"
+	LabelRequiresComplement string = "sys.requiresComplement"
 )
 
 // GetLabelConstantsMap returns a map with label-related system constants as keys and their example values.

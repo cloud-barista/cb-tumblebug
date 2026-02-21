@@ -66,7 +66,7 @@ type SpiderSecurityInfoList struct {
 type SecurityGroupReq struct { // Tumblebug
 	Name           string             `json:"name" validate:"required"`
 	ConnectionName string             `json:"connectionName" validate:"required"`
-	VNetId         string             `json:"vNetId" validate:"required"`
+	VNetId         string             `json:"vNetId"` // Optional for registration: some CSPs (e.g., Azure, Tencent, NHN) don't bind SG to VPC
 	Description    string             `json:"description"`
 	FirewallRules  *[]FirewallRuleReq `json:"firewallRules"` // validate:"required"`
 
