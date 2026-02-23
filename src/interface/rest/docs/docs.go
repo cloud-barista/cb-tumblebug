@@ -22525,8 +22525,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "connectionName",
-                "name",
-                "vNetId"
+                "name"
             ],
             "properties": {
                 "connectionName": {
@@ -22551,6 +22550,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "vNetId": {
+                    "description": "Optional for registration: some CSPs (e.g., Azure, Tencent, NHN) don't bind SG to VPC",
                     "type": "string"
                 }
             }

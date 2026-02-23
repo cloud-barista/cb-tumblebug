@@ -18292,7 +18292,6 @@ components:
       required:
       - connectionName
       - name
-      - vNetId
       type: object
       properties:
         connectionName:
@@ -18312,6 +18311,8 @@ components:
           type: string
         vNetId:
           type: string
+          description: "Optional for registration: some CSPs (e.g., Azure, Tencent,\
+            \ NHN) don't bind SG to VPC"
     model.SecurityGroupUpdateReq:
       type: object
       properties:
