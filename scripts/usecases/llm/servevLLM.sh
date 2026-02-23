@@ -67,6 +67,7 @@ if command -v nvidia-smi >/dev/null 2>&1; then
   GPU_TYPE="nvidia"
 elif command -v rocm-smi >/dev/null 2>&1; then
   GPU_TYPE="amd"
+  export VLLM_TARGET_DEVICE=rocm
 else
   echo "Error: No supported GPU found (nvidia-smi or rocm-smi required)."
   exit 1
@@ -200,17 +201,6 @@ fi
 # Start vLLM server
 echo "Starting vLLM server with model: $MODEL_NAME"
 echo "Log file: $LOG_FILE"
-
-# AMD: explicitly set ROCm backend so vLLM doesn't fail device auto-detection
-if [ "$GPU_TYPE" = "amd" ]; then
-  export VLLM_TARGET_DEVICE=rocm
-  GPU_COUNT=$(rocm-smi -i 2>/dev/null | grep -c "GPU\[" || echo 1)
-  # Build comma-separated list: 0,1,2,...
-  HIP_DEVICES=$(seq -s, 0 $((GPU_COUNT - 1)))
-  export HIP_VISIBLE_DEVICES="$HIP_DEVICES"
-  export ROCR_VISIBLE_DEVICES="$HIP_DEVICES"
-  echo "AMD env: VLLM_TARGET_DEVICE=rocm, HIP_VISIBLE_DEVICES=$HIP_DEVICES ($GPU_COUNT GPU(s))"
-fi
 
 # Clear old log file
 > "$LOG_FILE"
