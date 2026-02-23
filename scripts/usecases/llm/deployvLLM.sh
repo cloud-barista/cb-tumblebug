@@ -28,15 +28,25 @@ echo "=========================================="
 echo "vLLM Installation and Setup"
 echo "=========================================="
 
-# Check for NVIDIA GPU (vLLM requires CUDA)
-echo "Checking for NVIDIA GPU..."
+# Detect GPU type
+echo "Detecting GPU hardware..."
+
 if command -v nvidia-smi >/dev/null 2>&1; then
+  echo "Found NVIDIA GPU(s):"
   nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
   GPU_COUNT=$(nvidia-smi --query-gpu=name --format=csv,noheader | wc -l)
-  echo "Detected $GPU_COUNT GPU(s)"
+  GPU_TYPE="nvidia"
+  echo "Detected $GPU_COUNT NVIDIA GPU(s)"
+elif command -v rocm-smi >/dev/null 2>&1; then
+  echo "Found AMD GPU(s):"
+  rocm-smi --showproductname
+  GPU_COUNT=$(rocm-smi -i | grep -c "GPU\[")
+  GPU_TYPE="amd"
+  echo "Detected $GPU_COUNT AMD GPU(s)"
 else
-  echo "Warning: nvidia-smi not found. vLLM requires NVIDIA GPU with CUDA support."
-  echo "Please install NVIDIA drivers first using installCudaDriver.sh"
+  echo "Error: No supported GPU found. vLLM requires either:"
+  echo "  - NVIDIA GPU with CUDA (nvidia-smi must be available)"
+  echo "  - AMD GPU with ROCm (rocm-smi must be available)"
   exit 1
 fi
 
@@ -60,14 +70,32 @@ fi
 echo "Installing system dependencies..."
 export DEBIAN_FRONTEND=noninteractive
 sudo apt-get update -qq
-sudo apt-get install -y python3-pip python3-venv curl jq > /dev/null 2>&1
+
+# AMD ROCm pre-built vllm wheels are Python 3.12 only (cp312).
+# Install python3.12 for AMD; use system python3 for NVIDIA.
+if [ "$GPU_TYPE" = "amd" ]; then
+  sudo apt-get install -y python3-pip curl jq > /dev/null 2>&1
+  # python3.12 may not be in default repos on Ubuntu 22.04 — add deadsnakes PPA
+  if ! apt-cache show python3.12 > /dev/null 2>&1; then
+    echo "  Adding deadsnakes PPA for python3.12..."
+    sudo apt-get install -y software-properties-common > /dev/null 2>&1
+    sudo add-apt-repository -y ppa:deadsnakes/ppa > /dev/null 2>&1
+    sudo apt-get update -qq
+  fi
+  sudo apt-get install -y python3.12 python3.12-venv python3.12-dev > /dev/null 2>&1
+  PYTHON_BIN="python3.12"
+else
+  sudo apt-get install -y python3-pip python3-venv curl jq > /dev/null 2>&1
+  PYTHON_BIN="python3"
+fi
+echo "Using $($PYTHON_BIN --version)"
 
 # Setup virtual environment
 VENV_PATH="$HOME/venv_vllm"
 echo "Setting up Python virtual environment at $VENV_PATH..."
 
 if [ ! -d "$VENV_PATH" ]; then
-  python3 -m venv "$VENV_PATH"
+  "$PYTHON_BIN" -m venv "$VENV_PATH"
   echo "Created new virtual environment."
 else
   echo "Virtual environment already exists."
@@ -82,25 +110,62 @@ echo "Upgrading pip..."
 pip install --upgrade pip > /dev/null 2>&1
 
 # Install vLLM
-echo "Installing vLLM (this may take a few minutes)..."
+echo "Installing vLLM for $GPU_TYPE GPU(s) (this may take a few minutes)..."
 LOG_FILE="$HOME/vllm_install.log"
 echo "Logging vLLM installation details to $LOG_FILE"
 
 set +e  # Temporarily disable exit on error for pip install
-pip install -U vllm > "$LOG_FILE" 2>&1
-INSTALL_RESULT=$?
+
+if [ "$GPU_TYPE" = "nvidia" ]; then
+  pip install -U vllm > "$LOG_FILE" 2>&1
+  INSTALL_RESULT=$?
+  if [ $INSTALL_RESULT -ne 0 ]; then
+    echo "Failed with default wheels. Trying CUDA 12.1 wheels..."
+    pip install vllm --extra-index-url https://download.pytorch.org/whl/cu121 >> "$LOG_FILE" 2>&1
+    INSTALL_RESULT=$?
+  fi
+else
+  # === AMD ROCm: install pre-built ROCm vllm wheel via uv ===
+  # Pre-built wheels available at wheels.vllm.ai/rocm/ (Python 3.12 / ROCm 7.0+).
+  # uv must be used: it gives --extra-index-url higher priority than PyPI,
+  # preventing pip from selecting the CUDA wheel from PyPI instead.
+  ROCM_VERSION=$(cat /opt/rocm/.info/version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)
+  ROCM_VERSION=${ROCM_VERSION:-$(rocm-smi --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)}
+  echo "Installed ROCm version: ${ROCM_VERSION:-unknown}"
+
+  # Install uv if not already available
+  if ! command -v uv &>/dev/null; then
+    echo "Installing uv (fast Python package manager)..."
+    pip install uv >> "$LOG_FILE" 2>&1
+  fi
+
+  echo "Installing pre-built ROCm vllm wheel from https://wheels.vllm.ai/rocm/ ..."
+  uv pip install vllm --extra-index-url "https://wheels.vllm.ai/rocm/" >> "$LOG_FILE" 2>&1
+  INSTALL_RESULT=$?
+
+  if [ $INSTALL_RESULT -eq 0 ]; then
+    HIP_VER=$(python -c "import torch; print(torch.version.hip or '')" 2>/dev/null || true)
+    if [ -z "$HIP_VER" ]; then
+      echo "ERROR: vllm installed but torch has no HIP support (CUDA wheel was selected)."
+      echo "  This should not happen with uv. Check $LOG_FILE for details."
+      INSTALL_RESULT=1
+    else
+      echo "  Pre-built ROCm vllm installed (torch HIP: $HIP_VER)"
+    fi
+  else
+    echo "ERROR: Pre-built ROCm vllm wheel installation failed."
+    echo "  Possible reasons:"
+    echo "    - No wheel available for ROCm ${ROCM_VERSION} / Python 3.12"
+    echo "    - Check available wheels: https://wheels.vllm.ai/rocm/"
+    echo "  See $LOG_FILE for details."
+  fi
+fi
+
 set -e
 
 if [ $INSTALL_RESULT -ne 0 ]; then
-  echo "Failed to install vLLM with default wheels. Trying with CUDA 12.1 wheels..."
-  set +e
-  pip install vllm --extra-index-url https://download.pytorch.org/whl/cu121 >> "$LOG_FILE" 2>&1
-  INSTALL_RESULT=$?
-  set -e
-  if [ $INSTALL_RESULT -ne 0 ]; then
-    echo "vLLM installation failed. See $LOG_FILE for detailed error messages."
-    exit 1
-  fi
+  echo "vLLM installation failed. See $LOG_FILE for detailed error messages."
+  exit 1
 fi
 
 # Verify installation
@@ -118,7 +183,7 @@ pip install -U openai transformers huggingface_hub > /dev/null 2>&1
 
 # Display completion message
 echo "=========================================="
-echo "vLLM Installation Complete!"
+echo "vLLM Installation Complete! (GPU: $GPU_TYPE, Count: $GPU_COUNT)"
 echo "=========================================="
 echo ""
 echo "To serve a model, use servevLLM.sh script:"
