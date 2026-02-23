@@ -116,8 +116,32 @@ func (list *IdList) AddItem(id string) {
 }
 
 type IdList struct {
-	IdList []string   `json:"output"`
+	IdList []string `json:"output"`
 	mux    *sync.Mutex
+}
+
+// ResourceDeleteResult represents the result of a single resource deletion operation.
+type ResourceDeleteResult struct {
+	// Resource type (e.g., "securityGroup", "sshKey", "vNet")
+	ResourceType string `json:"resourceType" example:"securityGroup"`
+	// Resource ID
+	ResourceId string `json:"resourceId" example:"default-shared-aws-ap-northeast-2"`
+	// Whether the deletion was successful
+	Success bool `json:"success" example:"true"`
+	// Descriptive message (error detail on failure, empty on success)
+	Message string `json:"message" example:"Cannot delete resource because it is still referenced by ..."`
+}
+
+// ResourceDeleteResults represents the aggregated results of a batch resource deletion operation.
+type ResourceDeleteResults struct {
+	// Total number of resources processed
+	Total int `json:"total" example:"10"`
+	// Number of successfully deleted resources
+	SuccessCount int `json:"successCount" example:"8"`
+	// Number of failed deletions
+	FailedCount int `json:"failedCount" example:"2"`
+	// Individual results per resource
+	Results []ResourceDeleteResult `json:"results"`
 }
 
 // OptionalParameter is struct for optional parameter for function (ex. VmId)
@@ -515,6 +539,12 @@ type SpiderSubnetInfo struct {
 	IPv4_CIDR    string     `json:"ipv4_CIDR"`
 	KeyValueList []KeyValue `json:"keyValueList"`
 	TagList      []KeyValue `json:"tagList"`
+}
+
+// SpiderBooleanInfo is struct for boolean type response from CB-Spider DELETE operations
+// Spider returns {"Result": "true"} or {"Result": "false"} for delete operations
+type SpiderBooleanInfo struct {
+	Result string `json:"Result"`
 }
 
 // SpiderAllVpcInfoWrapper is struct for wrapping VPC info response from CB-Spider

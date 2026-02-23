@@ -48,27 +48,14 @@ func RestDelAllResources(c echo.Context) error {
 
 	content, err := resource.DelAllResources(nsId, resourceType, subString, forceFlag)
 
-	log.Info().Msgf("DelAllResources completed for nsId: %s, resourceType: %s, results: %+v", nsId, resourceType, content)
-	log.Info().Msgf("Content.IdList length: %d, content: %+v", len(content.IdList), content.IdList)
+	log.Info().Msgf("DelAllResources completed for nsId: %s, resourceType: %s — total: %d, success: %d, failed: %d", nsId, resourceType, content.Total, content.SuccessCount, content.FailedCount)
 
 	if err != nil {
 		log.Error().Err(err).Msgf("DelAllResources failed for nsId: %s, resourceType: %s", nsId, resourceType)
 		return clientManager.EndRequestWithLog(c, err, nil)
 	}
 
-	// Avoid JSON serialization issues with sync.Mutex in IdList struct
-	// Create a clean response structure without mutex
-	type DeleteResponse struct {
-		Output []string `json:"output"`
-	}
-
-	response := DeleteResponse{
-		Output: content.IdList, // Extract the actual string slice from IdList struct
-	}
-
-	log.Info().Msgf("Returning response with %d items: %+v", len(content.IdList), response)
-
-	return clientManager.EndRequestWithLog(c, nil, response)
+	return clientManager.EndRequestWithLog(c, nil, content)
 }
 
 // RestDelResource is a common function to handle 'DelResource' REST API requests.
@@ -392,7 +379,7 @@ func RestCreateSharedResource(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
-// @Success 200 {object} model.IdList
+// @Success 200 {object} model.ResourceDeleteResults
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/sharedResources [delete]
 func RestDelAllSharedResources(c echo.Context) error {

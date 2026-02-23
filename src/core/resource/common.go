@@ -188,27 +188,27 @@ func init() {
 }
 
 // DelAllResources deletes all TB Resource objects of the given resourceType.
-func DelAllResources(nsId string, resourceType string, subString string, forceFlag string) (model.IdList, error) {
-	var resultList []string
+func DelAllResources(nsId string, resourceType string, subString string, forceFlag string) (model.ResourceDeleteResults, error) {
+	var resultList []model.ResourceDeleteResult
 	var mutex sync.Mutex  // Protect shared slice access
 	var wg sync.WaitGroup // Synchronize all goroutines
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return model.IdList{IdList: resultList}, err
+		return model.ResourceDeleteResults{Results: resultList}, err
 	}
 
 	resourceIdList, err := ListResourceId(nsId, resourceType)
 	if err != nil {
-		return model.IdList{IdList: resultList}, err
+		return model.ResourceDeleteResults{Results: resultList}, err
 	}
 
 	if len(resourceIdList) == 0 {
 		errString := fmt.Sprintf("There is no %s resource in %s", resourceType, nsId)
 		err := fmt.Errorf(errString)
 		log.Error().Err(err).Msg("")
-		return model.IdList{IdList: resultList}, err
+		return model.ResourceDeleteResults{Results: resultList}, err
 	}
 
 	// Channel to capture errors
@@ -276,13 +276,13 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 					common.RandomSleep(0, 1*1000)
 
 					// Attempt to delete the resource
-					deleteStatus := "[Done] "
-					errString := ""
+					success := true
+					errMessage := ""
 
 					err := DelResource(nsId, resourceType, resourceId, forceFlag)
 					if err != nil {
-						deleteStatus = "[Failed] "
-						errString = " (" + err.Error() + ")"
+						success = false
+						errMessage = err.Error()
 
 						// Safe error channel send - check if channel is still open
 						if atomic.LoadInt32(&errChanClosed) == 0 {
@@ -299,9 +299,18 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 
 					// Safely append the result to resultList using mutex
 					mutex.Lock()
-					resultList = append(resultList, deleteStatus+resourceType+": "+resourceId+errString)
+					resultList = append(resultList, model.ResourceDeleteResult{
+						ResourceType: resourceType,
+						ResourceId:   resourceId,
+						Success:      success,
+						Message:      errMessage,
+					})
 					mutex.Unlock()
 
+					deleteStatus := "[Done]"
+					if !success {
+						deleteStatus = "[Failed]"
+					}
 					elapsedTime := time.Since(startTime)
 					log.Debug().Str("connectionName", connName).Str("resourceId", resourceId).
 						Str("status", deleteStatus).Dur("elapsed", elapsedTime).Msg("Resource deletion completed")
@@ -329,15 +338,37 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 
 	log.Info().Msgf("DelAllResources completed. Total results: %d", len(resultList))
 	for i, result := range resultList {
-		log.Debug().Msgf("Result %d: %s", i, result)
+		status := "[Done]"
+		if !result.Success {
+			status = "[Failed]"
+		}
+		log.Debug().Msgf("Result %d: %s %s: %s %s", i, status, result.ResourceType, result.ResourceId, result.Message)
 	}
 
-	// Sort the results for consistent output ordering
-	sort.Strings(resultList)
+	// Sort the results for consistent output ordering (by ResourceType then ResourceId)
+	sort.Slice(resultList, func(i, j int) bool {
+		if resultList[i].ResourceType != resultList[j].ResourceType {
+			return resultList[i].ResourceType < resultList[j].ResourceType
+		}
+		return resultList[i].ResourceId < resultList[j].ResourceId
+	})
 
-	// Create a simple response without mutex to avoid JSON serialization issues
-	response := model.IdList{
-		IdList: resultList,
+	// Build summary counts
+	successCount := 0
+	failedCount := 0
+	for _, r := range resultList {
+		if r.Success {
+			successCount++
+		} else {
+			failedCount++
+		}
+	}
+
+	response := model.ResourceDeleteResults{
+		Total:        len(resultList),
+		SuccessCount: successCount,
+		FailedCount:  failedCount,
+		Results:      resultList,
 	}
 
 	return response, nil
@@ -375,17 +406,22 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	// In CheckResource() above, calling 'kvstore.GetKv()' and checking err parts exist.
 	// So, in here, we don't need to check whether keyValue == nil or err != nil.
 
-	/* Disabled the deletion protection feature
-	associatedList, _ := GetAssociatedObjectList(nsId, resourceType, resourceId)
-	if len(associatedList) == 0 {
-		// continue
-	} else {
-		errString := " [Failed]" + " Associated with [" + strings.Join(associatedList[:], ", ") + "]"
-		err := fmt.Errorf(errString)
-		log.Error().Err(err).Msg("")
-		return err
+	// Pre-deletion dependency check: verify the resource is not still referenced by any VMs or other objects.
+	// This prevents unnecessary CSP API calls that would fail with DependencyViolation errors.
+	// Skipped when forceFlag is set, allowing forced cleanup of orphaned resources.
+	if forceFlag != "true" {
+		associatedList, assocErr := GetAssociatedObjectList(nsId, resourceType, resourceId)
+		if assocErr != nil {
+			log.Error().Err(assocErr).Msgf("Failed to check associated objects for %s '%s'; blocking deletion for safety", resourceType, resourceId)
+			return fmt.Errorf("cannot delete %s '%s': failed to verify dependencies: %w", resourceType, resourceId, assocErr)
+		}
+		if len(associatedList) > 0 {
+			err := fmt.Errorf("cannot delete %s '%s': still referenced by %d object(s): %v",
+				resourceType, resourceId, len(associatedList), associatedList)
+			log.Warn().Err(err).Msg("Resource has active associations, deletion blocked")
+			return err
+		}
 	}
-	*/
 
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
@@ -521,7 +557,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	if forceFlag == "true" {
 		url += "?force=true"
 	}
-	var callResult interface{}
+	var callResult model.SpiderBooleanInfo
 	client := clientManager.NewHttpClient()
 	method := "DELETE"
 	//client.SetTimeout(60 * time.Second)
@@ -543,7 +579,25 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		log.Error().Err(err).Msg("")
 		return err
 	}
-	log.Debug().Msg("Deleting request finished from " + url)
+
+	// Validate Spider's response Result field
+	// Spider returns {"Result": "true"} on successful deletion, {"Result": "false"} when deletion was not performed.
+	// Previously this was not checked, causing CB-TB to delete its kvstore entry even when Spider didn't actually delete the resource.
+	if !strings.EqualFold(callResult.Result, "true") {
+		err := fmt.Errorf("Spider returned Result=%q for DELETE %s/%s (resource may still exist on Spider/CSP)", callResult.Result, resourceType, resourceId)
+		log.Error().Err(err).Msg("Resource deletion not confirmed by Spider")
+		return err
+	}
+	log.Debug().Msgf("Spider confirmed deletion (Result=%s) for %s/%s", callResult.Result, resourceType, resourceId)
+
+	// Re-verify with Spider that the resource is actually gone
+	// This provides defense-in-depth against inconsistencies between Spider response and actual state
+	if err := verifyResourceDeletedOnSpider(url, requestBody.ConnectionName, resourceType, resourceId); err != nil {
+		log.Warn().Err(err).Msgf("Resource %s/%s may still exist on Spider after deletion was reported as successful", resourceType, resourceId)
+		// Do not fail here — Spider said it deleted, but GET still found it.
+		// Log a warning so operators can investigate, but proceed with kvstore cleanup
+		// since Spider's DELETE response was authoritative.
+	}
 
 	if strings.EqualFold(resourceType, model.StrVNet) {
 		// var subnetKeys []string
@@ -591,6 +645,50 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 
 	return nil
+}
+
+// verifyResourceDeletedOnSpider re-checks with Spider that a resource no longer exists after a successful DELETE.
+// It sends a GET request to Spider for the resource and expects an HTTP error (404 or 500 with "not found").
+// If Spider still returns the resource, it logs a warning for operator investigation.
+func verifyResourceDeletedOnSpider(deleteUrl string, connectionName string, resourceType string, resourceId string) error {
+	// Build the GET URL from the DELETE URL (strip ?force=true query param if present)
+	getUrl := strings.Split(deleteUrl, "?")[0]
+
+	type JsonTemplate struct {
+		ConnectionName string
+	}
+	requestBody := JsonTemplate{ConnectionName: connectionName}
+
+	var verifyResult interface{}
+	client := clientManager.NewHttpClient()
+
+	log.Debug().Msgf("Re-verifying deletion: GET %s (connectionName=%s)", getUrl, connectionName)
+
+	_, err := clientManager.ExecuteHttpRequest(
+		client,
+		"GET",
+		getUrl,
+		nil,
+		clientManager.SetUseBody(requestBody),
+		&requestBody,
+		&verifyResult,
+		clientManager.VeryShortDuration,
+	)
+
+	if err != nil {
+		// Expected: Spider returns HTTP 500 with "not found" or similar error → resource is indeed gone
+		errMsg := strings.ToLower(err.Error())
+		if strings.Contains(errMsg, "not exist") || strings.Contains(errMsg, "not found") || strings.Contains(errMsg, "does not exist") {
+			log.Debug().Msgf("Re-verification confirmed: %s/%s no longer exists on Spider", resourceType, resourceId)
+			return nil
+		}
+		// Other errors (e.g., network issue) — log but don't block
+		log.Warn().Err(err).Msgf("Re-verification GET failed with unexpected error for %s/%s", resourceType, resourceId)
+		return nil
+	}
+
+	// If GET succeeded (HTTP 200), the resource still exists on Spider — this is unexpected after a successful DELETE
+	return fmt.Errorf("resource %s/%s still exists on Spider after DELETE reported success (re-verification GET returned HTTP 200)", resourceType, resourceId)
 }
 
 // DeregisterResource deregisters the TB Resource object from Spider and TB without deleting the actual CSP resource
@@ -2169,9 +2267,9 @@ func CreateSharedResourceWithOptions(nsId string, resType string, connectionName
 }
 
 // DeleteSharedResources deletes all Default securityGroup, sshKey, vNet objects
-func DeleteSharedResources(nsId string) (model.IdList, error) {
+func DeleteSharedResources(nsId string) (model.ResourceDeleteResults, error) {
 
-	output := model.IdList{}
+	output := model.ResourceDeleteResults{}
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -2183,23 +2281,52 @@ func DeleteSharedResources(nsId string) (model.IdList, error) {
 	list, err := DelAllResources(nsId, model.StrSecurityGroup, matchedSubstring, "false")
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		output.IdList = append(output.IdList, err.Error())
 	}
-	output.IdList = append(output.IdList, list.IdList...)
+	output.Results = append(output.Results, list.Results...)
 
 	list, err = DelAllResources(nsId, model.StrSSHKey, matchedSubstring, "false")
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		output.IdList = append(output.IdList, err.Error())
 	}
-	output.IdList = append(output.IdList, list.IdList...)
+	output.Results = append(output.Results, list.Results...)
+
+	// Check if any SecurityGroup deletions failed before attempting VNet deletion
+	// Failed SGs on CSP will cause VNet deletion to fail with DependencyViolation
+	var sgFailures []model.ResourceDeleteResult
+	var failedSgIds []string
+	for _, item := range output.Results {
+		if item.ResourceType == model.StrSecurityGroup && !item.Success {
+			sgFailures = append(sgFailures, item)
+			failedSgIds = append(failedSgIds, item.ResourceId)
+		}
+	}
+	if len(sgFailures) > 0 {
+		log.Warn().Msgf("[Warning] %d SecurityGroup(s) failed to delete. VNet deletion may fail due to CSP dependency (e.g., DependencyViolation). Failed SGs: %v", len(sgFailures), failedSgIds)
+	}
 
 	list, err = DelAllResources(nsId, model.StrVNet, matchedSubstring, "false")
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		output.IdList = append(output.IdList, err.Error())
+		if len(sgFailures) > 0 {
+			log.Error().Err(err).Msgf("VNet deletion failed, possibly due to %d unresolved SecurityGroup dependency(ies) on CSP. Failed SG IDs: %v", len(sgFailures), failedSgIds)
+		} else {
+			log.Error().Err(err).Msg("")
+		}
 	}
-	output.IdList = append(output.IdList, list.IdList...)
+	output.Results = append(output.Results, list.Results...)
+
+	// Build summary counts
+	successCount := 0
+	failedCount := 0
+	for _, r := range output.Results {
+		if r.Success {
+			successCount++
+		} else {
+			failedCount++
+		}
+	}
+	output.Total = len(output.Results)
+	output.SuccessCount = successCount
+	output.FailedCount = failedCount
 
 	return output, nil
 }

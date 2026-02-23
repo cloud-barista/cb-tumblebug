@@ -8744,7 +8744,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.IdList"
+                            "$ref": "#/definitions/model.ResourceDeleteResults"
                         }
                     },
                     "404": {
@@ -9031,7 +9031,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.IdList"
+                            "$ref": "#/definitions/model.ResourceDeleteResults"
                         }
                     },
                     "404": {
@@ -9448,7 +9448,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.IdList"
+                            "$ref": "#/definitions/model.ResourceDeleteResults"
                         }
                     },
                     "404": {
@@ -10951,7 +10951,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.IdList"
+                            "$ref": "#/definitions/model.ResourceDeleteResults"
                         }
                     },
                     "404": {
@@ -11908,7 +11908,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.IdList"
+                            "$ref": "#/definitions/model.ResourceDeleteResults"
                         }
                     },
                     "404": {
@@ -12307,7 +12307,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.IdList"
+                            "$ref": "#/definitions/model.ResourceDeleteResults"
                         }
                     },
                     "404": {
@@ -12751,7 +12751,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.IdList"
+                            "$ref": "#/definitions/model.ResourceDeleteResults"
                         }
                     },
                     "404": {
@@ -21573,6 +21573,58 @@ const docTemplate = `{
                 },
                 "onTumblebug": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.ResourceDeleteResult": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "description": "Descriptive message (error detail on failure, empty on success)",
+                    "type": "string",
+                    "example": "Cannot delete resource because it is still referenced by ..."
+                },
+                "resourceId": {
+                    "description": "Resource ID",
+                    "type": "string",
+                    "example": "default-shared-aws-ap-northeast-2"
+                },
+                "resourceType": {
+                    "description": "Resource type (e.g., \"securityGroup\", \"sshKey\", \"vNet\")",
+                    "type": "string",
+                    "example": "securityGroup"
+                },
+                "success": {
+                    "description": "Whether the deletion was successful",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "model.ResourceDeleteResults": {
+            "type": "object",
+            "properties": {
+                "failedCount": {
+                    "description": "Number of failed deletions",
+                    "type": "integer",
+                    "example": 2
+                },
+                "results": {
+                    "description": "Individual results per resource",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ResourceDeleteResult"
+                    }
+                },
+                "successCount": {
+                    "description": "Number of successfully deleted resources",
+                    "type": "integer",
+                    "example": 8
+                },
+                "total": {
+                    "description": "Total number of resources processed",
+                    "type": "integer",
+                    "example": 10
                 }
             }
         },
