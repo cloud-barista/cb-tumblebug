@@ -276,7 +276,7 @@ func CreatePlaceholderSshKey(nsId string, connectionName string, vmName string, 
 		return emptyObj, err
 	}
 
-	placeholderName := common.ChangeIdString(fmt.Sprintf("%s-gcp-placeholder-%s", connectionName, vmUid))
+	placeholderName := common.ChangeIdString(fmt.Sprintf("%s-ssh-placeholder-%s", connectionName, vmUid))
 
 	// Check if the placeholder SSH key already exists
 	check, err := CheckResource(nsId, resourceType, placeholderName)
@@ -305,6 +305,19 @@ func CreatePlaceholderSshKey(nsId string, connectionName string, vmName string, 
 	}
 	content, err := CreateSshKey(nsId, &req, "")
 	if err != nil {
+		// Handle race condition: another goroutine may have created the same placeholder concurrently
+		if strings.Contains(err.Error(), "already exists") {
+			log.Warn().Msgf("Placeholder SSH key '%s' was created concurrently; fetching existing resource", placeholderName)
+			existingRes, getErr := GetResource(nsId, resourceType, placeholderName)
+			if getErr != nil {
+				return emptyObj, fmt.Errorf("placeholder SSH key '%s' already exists but failed to retrieve: %w", placeholderName, getErr)
+			}
+			existingKey := model.SshKeyInfo{}
+			if copyErr := common.CopySrcToDest(&existingRes, &existingKey); copyErr != nil {
+				return emptyObj, fmt.Errorf("failed to convert existing placeholder SSH key after concurrent creation: %w", copyErr)
+			}
+			return existingKey, nil
+		}
 		return emptyObj, fmt.Errorf("failed to create placeholder SSH key through Spider: %w", err)
 	}
 

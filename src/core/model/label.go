@@ -99,8 +99,10 @@ func GetLabelConstantsMap() map[string]string {
 		LabelZone:            "zone-1",
 		LabelStatus:          "Running",
 		LabelCspVNetId:       "csp-vnet-1234",
-		LabelCspVNetName:     "csp-vnet-1234",
-		LabelCidr:            "10.0.0.0/24",
+		LabelCspVNetName:        "csp-vnet-1234",
+		LabelCidr:               "10.0.0.0/24",
+		LabelPlaceholder:        "true",
+		LabelRequiresComplement: "true",
 	}
 }
 
