@@ -7309,7 +7309,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.IdList'
+                $ref: '#/components/schemas/model.ResourceDeleteResults'
         "404":
           description: Not Found
           content:
@@ -7520,7 +7520,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.IdList'
+                $ref: '#/components/schemas/model.ResourceDeleteResults'
         "404":
           description: Not Found
           content:
@@ -7832,7 +7832,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.IdList'
+                $ref: '#/components/schemas/model.ResourceDeleteResults'
         "404":
           description: Not Found
           content:
@@ -9021,7 +9021,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.IdList'
+                $ref: '#/components/schemas/model.ResourceDeleteResults'
         "404":
           description: Not Found
           content:
@@ -9806,7 +9806,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.IdList'
+                $ref: '#/components/schemas/model.ResourceDeleteResults'
         "404":
           description: Not Found
           content:
@@ -10106,7 +10106,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.IdList'
+                $ref: '#/components/schemas/model.ResourceDeleteResults'
         "404":
           description: Not Found
           content:
@@ -10447,7 +10447,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/model.IdList'
+                $ref: '#/components/schemas/model.ResourceDeleteResults'
         "404":
           description: Not Found
           content:
@@ -17552,6 +17552,46 @@ components:
           type: integer
         onTumblebug:
           type: integer
+    model.ResourceDeleteResult:
+      type: object
+      properties:
+        message:
+          type: string
+          description: "Descriptive message (error detail on failure, empty on success)"
+          example: Cannot delete resource because it is still referenced by ...
+        resourceId:
+          type: string
+          description: Resource ID
+          example: default-shared-aws-ap-northeast-2
+        resourceType:
+          type: string
+          description: "Resource type (e.g., \"securityGroup\", \"sshKey\", \"vNet\"\
+            )"
+          example: securityGroup
+        success:
+          type: boolean
+          description: Whether the deletion was successful
+          example: true
+    model.ResourceDeleteResults:
+      type: object
+      properties:
+        failedCount:
+          type: integer
+          description: Number of failed deletions
+          example: 2
+        results:
+          type: array
+          description: Individual results per resource
+          items:
+            $ref: '#/components/schemas/model.ResourceDeleteResult'
+        successCount:
+          type: integer
+          description: Number of successfully deleted resources
+          example: 8
+        total:
+          type: integer
+          description: Total number of resources processed
+          example: 10
     model.ResourceDetail:
       type: object
       properties:

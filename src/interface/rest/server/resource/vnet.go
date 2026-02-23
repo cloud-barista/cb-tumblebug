@@ -241,7 +241,7 @@ func RestDelVNet(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(default)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
-// @Success 200 {object} model.IdList
+// @Success 200 {object} model.ResourceDeleteResults
 // @Failure 404 {object} model.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet [delete]
 func RestDelAllVNet(c echo.Context) error {
