@@ -3481,15 +3481,39 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 		vmInfoData.SecurityGroupIds = matchedSgIds
 
 		// access Key
-		resourceListInNs, err = resource.ListResource(nsId, model.StrSSHKey, "cspResourceName", callResult.KeyPairIId.SystemId)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		} else {
-			resourcesInNs := resourceListInNs.([]model.SshKeyInfo) // type assertion
-			for _, resource := range resourcesInNs {
-				if resource.ConnectionName == requestBody.ConnectionName {
-					vmInfoData.SshKeyId = resource.Id
+		sshKeyMatched := false
+		if callResult.KeyPairIId.SystemId != "" {
+			resourceListInNs, err = resource.ListResource(nsId, model.StrSSHKey, "cspResourceName", callResult.KeyPairIId.SystemId)
+			if err != nil {
+				log.Warn().Err(err).Msg("Failed to list SSH keys for matching")
+			} else {
+				resourcesInNs := resourceListInNs.([]model.SshKeyInfo) // type assertion
+				for _, res := range resourcesInNs {
+					if res.ConnectionName == requestBody.ConnectionName {
+						vmInfoData.SshKeyId = res.Id
+						sshKeyMatched = true
+						break
+					}
 				}
+			}
+		}
+
+		// GCP does not have SSH key as an independent resource object.
+		// Create a placeholder SSH key so that VM registration can proceed.
+		// The user can later update this SSH key via the ComplementSshKey API.
+		if !sshKeyMatched {
+			providerName := strings.ToLower(vmInfoData.ConnectionConfig.ProviderName)
+			if providerName == csp.GCP {
+				log.Info().Msgf("GCP detected: creating placeholder SSH key for VM '%s' (GCP does not manage SSH keys as independent resources)", vmInfoData.Name)
+				placeholderSshKey, placeholderErr := resource.CreatePlaceholderSshKey(nsId, requestBody.ConnectionName, vmInfoData.Name, vmInfoData.Uid)
+				if placeholderErr != nil {
+					log.Error().Err(placeholderErr).Msgf("Failed to create placeholder SSH key for GCP VM '%s'", vmInfoData.Name)
+				} else {
+					vmInfoData.SshKeyId = placeholderSshKey.Id
+					log.Info().Msgf("Successfully created placeholder SSH key '%s' for GCP VM '%s'", placeholderSshKey.Id, vmInfoData.Name)
+				}
+			} else {
+				log.Warn().Msgf("No matching SSH key found for VM '%s' (provider: %s, cspKeyPairId: %s)", vmInfoData.Name, providerName, callResult.KeyPairIId.SystemId)
 			}
 		}
 
@@ -3502,7 +3526,9 @@ func CreateVm(wg *sync.WaitGroup, nsId string, mciId string, vmInfoData *model.V
 	}
 
 	//resource.UpdateAssociatedObjectList(nsId, model.StrSpec, vmInfoData.SpecId, model.StrAdd, vmKey)
-	resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, vmInfoData.SshKeyId, model.StrAdd, vmKey)
+	if vmInfoData.SshKeyId != "" {
+		resource.UpdateAssociatedObjectList(nsId, model.StrSSHKey, vmInfoData.SshKeyId, model.StrAdd, vmKey)
+	}
 	resource.UpdateAssociatedObjectList(nsId, model.StrVNet, vmInfoData.VNetId, model.StrAdd, vmKey)
 
 	for _, v := range vmInfoData.SecurityGroupIds {

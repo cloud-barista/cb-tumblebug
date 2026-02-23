@@ -65,9 +65,11 @@ const (
 	LabelZone            string = "sys.zone"
 	LabelStatus          string = "sys.status"
 	LabelCspVNetId       string = "sys.cspVNetId"
-	LabelCspVNetName     string = "sys.cspVNetName"
-	LabelCidr            string = "sys.cidr"
-	LabelSubnetId        string = "sys.subnetId"
+	LabelCspVNetName        string = "sys.cspVNetName"
+	LabelCidr               string = "sys.cidr"
+	LabelSubnetId           string = "sys.subnetId"
+	LabelPlaceholder        string = "sys.placeholder"
+	LabelRequiresComplement string = "sys.requiresComplement"
 )
 
 // GetLabelConstantsMap returns a map with label-related system constants as keys and their example values.
@@ -97,8 +99,10 @@ func GetLabelConstantsMap() map[string]string {
 		LabelZone:            "zone-1",
 		LabelStatus:          "Running",
 		LabelCspVNetId:       "csp-vnet-1234",
-		LabelCspVNetName:     "csp-vnet-1234",
-		LabelCidr:            "10.0.0.0/24",
+		LabelCspVNetName:        "csp-vnet-1234",
+		LabelCidr:               "10.0.0.0/24",
+		LabelPlaceholder:        "true",
+		LabelRequiresComplement: "true",
 	}
 }
 

@@ -167,6 +167,11 @@ func CreateSecurityGroup(nsId string, u *model.SecurityGroupReq, option string) 
 			}
 			return temp, err
 		}
+
+		// VNetId is required for normal creation (not register)
+		if u.VNetId == "" {
+			return model.SecurityGroupInfo{}, fmt.Errorf("vNetId is required when creating SecurityGroup")
+		}
 	}
 
 	err = validate.Struct(u)
@@ -209,50 +214,61 @@ func CreateSecurityGroup(nsId string, u *model.SecurityGroupReq, option string) 
 			return model.SecurityGroupInfo{}, err
 		}
 
-		// Find matching VNet in Tumblebug by VNet's CspResourceId
-		resourceList, err := ListResource(nsId, model.StrVNet, "", "")
-		if err != nil {
-			log.Error().Err(err).Msg("Cannot list vNet resources")
-			return model.SecurityGroupInfo{}, fmt.Errorf("cannot list vNet resources: %w", err)
-		}
+		if cspVNetId == "" {
+			// Some CSPs (e.g., Azure, Tencent, NHN) don't bind SecurityGroup to a specific VPC.
+			// Set VNetId to empty so the registration can proceed without VPC association.
+			u.VNetId = ""
+			log.Info().Msgf("SecurityGroup '%s' is not bound to any VPC (CSP does not associate SG with VPC)", u.CspResourceId)
+		} else {
+			// Find matching VNet in Tumblebug by VNet's CspResourceId
+			resourceList, err := ListResource(nsId, model.StrVNet, "", "")
+			if err != nil {
+				log.Error().Err(err).Msg("Cannot list vNet resources")
+				return model.SecurityGroupInfo{}, fmt.Errorf("cannot list vNet resources: %w", err)
+			}
 
-		var content struct {
-			VNet []model.VNetInfo `json:"vNet"`
-		}
-		content.VNet = resourceList.([]model.VNetInfo)
+			var content struct {
+				VNet []model.VNetInfo `json:"vNet"`
+			}
+			content.VNet = resourceList.([]model.VNetInfo)
 
-		vNetFound := false
-		for _, r := range content.VNet {
-			if r.ConnectionName == u.ConnectionName && r.CspResourceId == cspVNetId {
-				u.VNetId = r.Id
-				vNetFound = true
-				log.Info().Msgf("Found matching VNet: %s for SecurityGroup", cspVNetId)
-				break
+			vNetFound := false
+			for _, r := range content.VNet {
+				if r.ConnectionName == u.ConnectionName && r.CspResourceId == cspVNetId {
+					u.VNetId = r.Id
+					vNetFound = true
+					log.Info().Msgf("Found matching VNet: %s for SecurityGroup", cspVNetId)
+					break
+				}
+			}
+
+			if !vNetFound {
+				return model.SecurityGroupInfo{}, fmt.Errorf("no matching VNet found for %s in namespace %s", cspVNetId, nsId)
 			}
 		}
-
-		if !vNetFound {
-			return model.SecurityGroupInfo{}, fmt.Errorf("no matching VNet found for %s in namespace %s", cspVNetId, nsId)
-		}
-	}
-
-	vNetInfo := model.VNetInfo{}
-	tempInterface, err := GetResource(nsId, model.StrVNet, u.VNetId)
-	if err != nil {
-		err := fmt.Errorf("Failed to get the VNetInfo " + u.VNetId + ".")
-		return model.SecurityGroupInfo{}, err
-	}
-	err = common.CopySrcToDest(&tempInterface, &vNetInfo)
-	if err != nil {
-		err := fmt.Errorf("Failed to get the VNetInfo-CopySrcToDest() " + u.VNetId + ".")
-		return model.SecurityGroupInfo{}, err
 	}
 
 	requestBody := model.SpiderSecurityReqInfoWrapper{}
 	requestBody.ConnectionName = u.ConnectionName
 	requestBody.ReqInfo.Name = uid
-	requestBody.ReqInfo.VPCName = vNetInfo.CspResourceName
 	requestBody.ReqInfo.CSPId = u.CspResourceId
+
+	// Fetch VNet info to populate VPCName for Spider request (skip if VNetId is empty)
+	if u.VNetId != "" {
+		vNetInfo := model.VNetInfo{}
+		tempInterface, err := GetResource(nsId, model.StrVNet, u.VNetId)
+		if err != nil {
+			err := fmt.Errorf("Failed to get the VNetInfo " + u.VNetId + ".")
+			return model.SecurityGroupInfo{}, err
+		}
+		err = common.CopySrcToDest(&tempInterface, &vNetInfo)
+		if err != nil {
+			err := fmt.Errorf("Failed to get the VNetInfo-CopySrcToDest() " + u.VNetId + ".")
+			return model.SecurityGroupInfo{}, err
+		}
+		requestBody.ReqInfo.VPCName = vNetInfo.CspResourceName
+	}
+	// else: VPCName remains empty — Spider now accepts empty VPCName for CSPs that don't bind SG to VPC
 
 	// requestBody.ReqInfo.SecurityRules = u.FirewallRules
 	if u.FirewallRules != nil {
