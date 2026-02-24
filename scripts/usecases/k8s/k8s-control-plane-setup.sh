@@ -53,8 +53,8 @@ wait_for_apt() {
 wait_for_apt
 
 # Kill any stuck apt/dpkg processes (only if they are hanging)
-# Note: Use grep -v to exclude pkill itself from the match to avoid self-kill
-sudo pgrep -f "apt-get|dpkg" | grep -v $$ | xargs -r sudo kill -9 2>/dev/null || true
+# Note: Use pgrep to find apt/dpkg processes and force-kill them if necessary
+sudo pgrep -f "apt-get|dpkg" | xargs -r sudo kill -9 2>/dev/null || true
 sleep 2
 
 # Remove stale lock files
@@ -347,52 +347,124 @@ if [ "$LLMD_MODE" = true ]; then
     echo "Installing llm-d components..."
     echo "=========================================="
     
+    LLMD_INSTALL_ERRORS=0
+
     # Install Helm
     echo "Installing Helm..."
-    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash > /dev/null 2>&1
+    if ! command -v helm &>/dev/null; then
+        curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash > /dev/null 2>&1
+    fi
+    if command -v helm &>/dev/null; then
+        echo "  ✓ Helm $(helm version --short 2>/dev/null | head -1)"
+    else
+        echo "  ✗ Helm installation failed"
+        LLMD_INSTALL_ERRORS=$((LLMD_INSTALL_ERRORS + 1))
+    fi
     
-    # Install Gateway API CRDs
-    echo "Installing Gateway API CRDs..."
-    kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml > /dev/null 2>&1
+    # Install Gateway API CRDs (with retry)
+    GATEWAY_API_VERSION="v1.2.1"
+    GATEWAY_API_URL="https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml"
+    echo "Installing Gateway API CRDs (${GATEWAY_API_VERSION})..."
+    GATEWAY_INSTALLED=false
+    for attempt in 1 2 3; do
+        if kubectl apply -f "$GATEWAY_API_URL" 2>&1; then
+            GATEWAY_INSTALLED=true
+            break
+        fi
+        echo "  Retry ${attempt}/3..."
+        sleep 3
+    done
+    # Verify CRD actually exists
+    if kubectl get crd gateways.gateway.networking.k8s.io &>/dev/null; then
+        echo "  ✓ Gateway API CRDs verified"
+    else
+        echo "  ✗ Gateway API CRDs NOT found after installation (apply returned: $GATEWAY_INSTALLED)"
+        echo "    URL: $GATEWAY_API_URL"
+        LLMD_INSTALL_ERRORS=$((LLMD_INSTALL_ERRORS + 1))
+    fi
     
-    # Install LeaderWorkerSet CRD
-    echo "Installing LeaderWorkerSet CRD..."
-    kubectl apply --server-side -f https://github.com/kubernetes-sigs/lws/releases/download/v0.5.1/manifests.yaml > /dev/null 2>&1
+    # Install LeaderWorkerSet CRD (with retry)
+    LWS_VERSION="v0.6.2"
+    LWS_URL="https://github.com/kubernetes-sigs/lws/releases/download/${LWS_VERSION}/manifests.yaml"
+    echo "Installing LeaderWorkerSet CRD (${LWS_VERSION})..."
+    LWS_INSTALLED=false
+    for attempt in 1 2 3; do
+        if kubectl apply --server-side -f "$LWS_URL" 2>&1; then
+            LWS_INSTALLED=true
+            break
+        fi
+        echo "  Retry ${attempt}/3..."
+        sleep 3
+    done
+    # Verify CRD actually exists
+    if kubectl get crd leaderworkersets.leaderworkerset.x-k8s.io &>/dev/null; then
+        echo "  ✓ LeaderWorkerSet CRD verified"
+    else
+        echo "  ✗ LeaderWorkerSet CRD NOT found after installation (apply returned: $LWS_INSTALLED)"
+        echo "    URL: $LWS_URL"
+        LLMD_INSTALL_ERRORS=$((LLMD_INSTALL_ERRORS + 1))
+    fi
     
     # Wait for LeaderWorkerSet controller to be ready
     echo "Waiting for LeaderWorkerSet controller..."
+    LWS_READY=false
     for i in {1..30}; do
         if kubectl get pods -n lws-system 2>/dev/null | grep -q "Running"; then
+            LWS_READY=true
             break
         fi
         sleep 2
     done
+    if [ "$LWS_READY" = true ]; then
+        echo "  ✓ LeaderWorkerSet controller is running"
+    else
+        echo "  ⚠ LeaderWorkerSet controller not yet ready (may take longer)"
+    fi
     
     # Install NVIDIA GPU Operator
     echo "Installing NVIDIA GPU Operator..."
-    helm repo add nvidia https://helm.ngc.nvidia.com/nvidia > /dev/null 2>&1
-    helm repo update > /dev/null 2>&1
+    helm repo add nvidia https://helm.ngc.nvidia.com/nvidia 2>&1 || true
+    helm repo update 2>&1 || true
     
     # Create gpu-operator namespace
     kubectl create namespace gpu-operator --dry-run=client -o yaml | kubectl apply -f - > /dev/null 2>&1
     
     # Install GPU Operator (driver.enabled=false assumes driver is pre-installed on GPU nodes)
-    helm install gpu-operator nvidia/gpu-operator \
-        --namespace gpu-operator \
-        --set driver.enabled=false \
-        --set toolkit.enabled=true \
-        --set devicePlugin.enabled=true \
-        --set mig.strategy=single \
-        --wait --timeout 5m > /dev/null 2>&1 || {
-            echo "  Note: GPU Operator installation in progress (may take a few minutes)"
-        }
+    # Use upgrade --install to handle idempotent re-runs
+    if helm list -n gpu-operator 2>/dev/null | grep -q gpu-operator; then
+        echo "  GPU Operator already installed, upgrading..."
+        helm upgrade gpu-operator nvidia/gpu-operator \
+            --namespace gpu-operator \
+            --set driver.enabled=false \
+            --set toolkit.enabled=true \
+            --set devicePlugin.enabled=true \
+            --set mig.strategy=single \
+            --wait --timeout 5m 2>&1 || {
+                echo "  ⚠ GPU Operator upgrade in progress (may take a few minutes)"
+            }
+    else
+        helm install gpu-operator nvidia/gpu-operator \
+            --namespace gpu-operator \
+            --set driver.enabled=false \
+            --set toolkit.enabled=true \
+            --set devicePlugin.enabled=true \
+            --set mig.strategy=single \
+            --wait --timeout 5m 2>&1 || {
+                echo "  ⚠ GPU Operator installation in progress (may take a few minutes)"
+            }
+    fi
+    echo "  ✓ NVIDIA GPU Operator configured"
     
     echo ""
-    echo "llm-d components installed:"
-    echo "  ✓ Helm $(helm version --short 2>/dev/null | head -1)"
-    echo "  ✓ Gateway API CRDs"
-    echo "  ✓ LeaderWorkerSet CRD"
-    echo "  ✓ NVIDIA GPU Operator"
+    if [ "$LLMD_INSTALL_ERRORS" -gt 0 ]; then
+        echo "=========================================="
+        echo "WARNING: ${LLMD_INSTALL_ERRORS} llm-d component(s) failed to install"
+        echo "=========================================="
+        echo "Check network connectivity and retry with: $0 --llm-d"
+        echo ""
+    else
+        echo "llm-d components installed successfully."
+    fi
 fi
 
 # Extract join command for workers

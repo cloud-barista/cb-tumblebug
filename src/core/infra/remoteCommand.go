@@ -1549,7 +1549,7 @@ CONNECTION_ESTABLISHED:
 		// Check if SSE streaming metadata is available in the context
 		logMeta := getSSHLogMeta(ctx)
 
-		// maxLogLineLen is the max characters per log line published to SSE
+		// maxLogLineLen is the max bytes per log line published to SSE
 		const maxLogLineLen = 131072 // 128KB per line (enough for base64-encoded files like kubeconfig)
 
 		go func() {
@@ -2712,7 +2712,7 @@ func UpdateCommandStatusInfo(nsId, mciId, vmId string, index int, status model.C
 		(*commandStatus)[cmdIndex].ResultSummary = resultSummary
 		(*commandStatus)[cmdIndex].ErrorMessage = errorMessage
 
-		// Truncate output if too long (limit to 100000 characters for history)
+		// Truncate output if too long (limit to 100000 bytes for history)
 		if len(stdout) > 100000 {
 			(*commandStatus)[cmdIndex].Stdout = stdout[:100000] + "...(truncated)"
 		} else {
