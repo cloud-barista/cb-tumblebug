@@ -1626,6 +1626,14 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 				return res, nil
 			}
 
+			// If status is "Unknown" (e.g., due to Spider API error), do not attempt to update and just return current status
+			// This prevents infinite loops of API calls when Spider is unreachable or returns errors
+			// TODO: Consider adding a retry mechanism or alerting for "Unknown" status if it persists for too long
+			if res.Status == "Unknown" {
+				log.Trace().Msgf("DataDisk %s has Unknown status. It cannot be updated.", res.Id)
+				return res, nil
+			}
+
 			// Update TB DataDisk object's 'status' field (only for unstable states)
 			log.Debug().Msgf("Updating status for dataDisk ID:%s (current: %s)", res.Id, res.Status)
 			url := fmt.Sprintf("%s/disk/%s", model.SpiderRestUrl, res.CspResourceName)
@@ -1655,9 +1663,12 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 				return res, err
 			}
 
-			res.Status = callResult.Status
-			// fmt.Printf("res.Status: %s \n", res.Status) // for debug
-			UpdateResourceObject(nsId, model.StrDataDisk, res)
+			if res.Status != callResult.Status {
+				log.Debug().Msgf("DataDisk %s status changed from %s to %s", res.Id, res.Status, callResult.Status)
+				res.Status = callResult.Status
+				// fmt.Printf("res.Status: %s \n", res.Status) // for debug
+				UpdateResourceObject(nsId, model.StrDataDisk, res)
+			}
 
 			return res, nil
 		case model.StrObjectStorage:

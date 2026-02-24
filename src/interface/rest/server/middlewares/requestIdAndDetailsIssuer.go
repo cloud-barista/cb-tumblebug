@@ -37,6 +37,9 @@ func RequestIdAndDetailsIssuer(next echo.HandlerFunc) echo.HandlerFunc {
 			RequestInfo: clientManager.ExtractRequestInfo(c.Request()),
 		}
 		clientManager.RequestMap.Store(reqID, details)
+		// Note: requestMapEntryCount is an approximate counter and may temporarily
+		// diverge from the actual number of entries in RequestMap.
+		clientManager.IncrementRequestMapCount()
 
 		// log.Debug().Msg("End - Request ID middleware")
 

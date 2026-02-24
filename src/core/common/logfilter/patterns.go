@@ -53,6 +53,25 @@ var RequestSkipPatterns = []SkipRule{
 
 	// SSE streaming endpoints — BodyDump and TracingMiddleware interfere with streaming responses
 	{Method: "GET", Patterns: []string{"/stream/cmd/"}},
+
+	// High-frequency polling endpoints from UI (cb-mapui)
+	// These are called every 5-10 seconds and storing their large response bodies
+	// in RequestMap causes unbounded memory growth (memory leak).
+	// MCI list/status polling
+	{Method: "GET", Patterns: []string{"/mci", "option=status"}},
+	{Method: "GET", Patterns: []string{"/mci", "option=id"}},
+	{Method: "GET", Patterns: []string{"/mci", "option=simple"}},
+
+	// Kubernetes cluster polling
+	{Method: "GET", Patterns: []string{"/k8sCluster"}},
+
+	// Resource list polling (vNet, securityGroup, sshKey, etc.)
+	{Method: "GET", Patterns: []string{"/resources/vNet"}},
+	{Method: "GET", Patterns: []string{"/resources/securityGroup"}},
+	{Method: "GET", Patterns: []string{"/resources/vpn"}},
+	{Method: "GET", Patterns: []string{"/resources/sshKey"}},
+	{Method: "GET", Patterns: []string{"/resources/customImage"}},
+	{Method: "GET", Patterns: []string{"/resources/dataDisk"}},
 }
 
 // ==============================================================================
