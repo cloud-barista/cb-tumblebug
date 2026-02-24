@@ -1359,38 +1359,11 @@ func GetVmSpecId(nsId string, mciId string, vmId string) string {
 	return content.SpecId
 }
 
-// Rate limiting constants for different levels
-const (
-	defaultMaxConcurrentRegionsPerCSP = 10 // Default maximum concurrent regions per CSP
-	defaultMaxConcurrentVMsPerRegion  = 30 // Default maximum concurrent VMs per region
-)
-
-// CSP-specific rate limiting configurations
-var cspRateLimits = map[string]struct {
-	maxRegions      int
-	maxVMsPerRegion int
-}{
-	csp.AWS:       {maxRegions: 10, maxVMsPerRegion: 30},
-	csp.Azure:     {maxRegions: 8, maxVMsPerRegion: 25},
-	csp.GCP:       {maxRegions: 12, maxVMsPerRegion: 35},
-	csp.Alibaba:   {maxRegions: 6, maxVMsPerRegion: 20},
-	csp.Tencent:   {maxRegions: 6, maxVMsPerRegion: 20},
-	csp.NCP:       {maxRegions: 3, maxVMsPerRegion: 15}, // NCP has stricter limits
-	csp.NHN:       {maxRegions: 5, maxVMsPerRegion: 20},
-	csp.OpenStack: {maxRegions: 5, maxVMsPerRegion: 15},
-}
-
-// getRateLimitsForCSP returns rate limiting configuration for a specific CSP
+// getRateLimitsForCSP returns rate limiting configuration for VM status fetching
+// for a specific CSP, using the centralized configuration in csp package.
 func getRateLimitsForCSP(cspName string) (int, int) {
-	// Normalize CSP name to lowercase for lookup
-	normalizedCSP := strings.ToLower(cspName)
-
-	if limits, exists := cspRateLimits[normalizedCSP]; exists {
-		return limits.maxRegions, limits.maxVMsPerRegion
-	}
-
-	// Return default values for unknown CSPs
-	return defaultMaxConcurrentRegionsPerCSP, defaultMaxConcurrentVMsPerRegion
+	config := csp.GetRateLimitConfig(cspName)
+	return config.MaxConcurrentRegionsForStatus, config.MaxVMsPerRegionForStatus
 }
 
 // VmGroupInfo represents VM grouping information for rate limiting

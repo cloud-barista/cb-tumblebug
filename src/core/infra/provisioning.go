@@ -35,32 +35,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// CSP-specific rate limiting configurations for VM creation
-var vmCreateRateLimits = map[string]struct {
-	maxRegions      int
-	maxVMsPerRegion int
-}{
-	// csp.Azure:     {maxRegions: 8, maxVMsPerRegion: 25},
-	// csp.AWS:       {maxRegions: 10, maxVMsPerRegion: 30},
-	// csp.GCP:       {maxRegions: 12, maxVMsPerRegion: 35},
-	// csp.Alibaba:   {maxRegions: 6, maxVMsPerRegion: 20},
-	// csp.Tencent:   {maxRegions: 6, maxVMsPerRegion: 20},
-	csp.NCP: {maxRegions: 5, maxVMsPerRegion: 15}, // NCP has stricter limits
-	// csp.NHN:       {maxRegions: 5, maxVMsPerRegion: 20},
-	// csp.OpenStack: {maxRegions: 5, maxVMsPerRegion: 15},
-}
-
-// getVmCreateRateLimitsForCSP returns rate limiting configuration for VM creation
+// getVmCreateRateLimitsForCSP returns rate limiting configuration for VM creation.
+// Uses centralized CSP config from csp.GetRateLimitConfig() with built-in fallback for unknown CSPs.
 func getVmCreateRateLimitsForCSP(cspName string) (int, int) {
-	// Normalize CSP name to lowercase for lookup
-	normalizedCSP := strings.ToLower(cspName)
-
-	if limits, exists := vmCreateRateLimits[normalizedCSP]; exists {
-		return limits.maxRegions, limits.maxVMsPerRegion
-	}
-
-	// Return default values for unknown CSPs
-	return 30, 20 // defaultMaxConcurrentRegionsPerCSP, defaultMaxConcurrentVMsPerRegion
+	config := csp.GetRateLimitConfig(cspName)
+	return config.MaxConcurrentRegions, config.MaxVMsPerRegion
 }
 
 // MciReqStructLevelValidation is func to validate fields in MciReqStruct

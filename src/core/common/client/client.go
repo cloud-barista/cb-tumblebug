@@ -20,8 +20,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/logfilter"
@@ -607,6 +611,228 @@ type RequestDetails struct {
 // RequestMap is a map for request details
 var RequestMap = sync.Map{}
 
+// requestMapEntryCount tracks the approximate number of entries in RequestMap.
+// Using atomic for lock-free counting (sync.Map has no built-in Len()).
+var requestMapEntryCount int64
+
+const (
+	// requestMapTTL is the maximum age of entries in RequestMap before automatic cleanup.
+	// Entries older than this are saved to file and then deleted from memory.
+	requestMapTTL = 1 * time.Hour
+
+	// requestMapCleanupInterval is how often the cleanup goroutine runs.
+	requestMapCleanupInterval = 10 * time.Minute
+
+	// requestMapMaxEntries is the maximum number of entries allowed in RequestMap.
+	// When exceeded, the oldest entries are saved to file and evicted.
+	requestMapMaxEntries = 1000
+
+	// requestMapDumpInterval is how often RequestMap is auto-saved to a JSON file.
+	requestMapDumpInterval = 30 * time.Minute
+)
+
+func init() {
+	// Start background goroutines for RequestMap maintenance.
+	go func() {
+		cleanupTicker := time.NewTicker(requestMapCleanupInterval)
+		dumpTicker := time.NewTicker(requestMapDumpInterval)
+		defer cleanupTicker.Stop()
+		defer dumpTicker.Stop()
+
+		for {
+			select {
+			case <-cleanupTicker.C:
+				cleanupRequestMap()
+			case <-dumpTicker.C:
+				autoSaveRequestMap()
+			}
+		}
+	}()
+}
+
+// IncrementRequestMapCount increments the RequestMap entry counter.
+// Call this when adding a new entry to RequestMap.
+func IncrementRequestMapCount() {
+	atomic.AddInt64(&requestMapEntryCount, 1)
+}
+
+// DecrementRequestMapCount decrements the RequestMap entry counter.
+func DecrementRequestMapCount() {
+	atomic.AddInt64(&requestMapEntryCount, -1)
+}
+
+// GetRequestMapCount returns the current approximate entry count.
+func GetRequestMapCount() int64 {
+	return atomic.LoadInt64(&requestMapEntryCount)
+}
+
+// cleanupRequestMap removes entries older than requestMapTTL and enforces max entry limit.
+// Evicted entries are saved to a JSON file before deletion.
+func cleanupRequestMap() {
+	cutoff := time.Now().Add(-requestMapTTL)
+	var expiredKeys []string
+	var expiredEntries []RequestDetails
+
+	// Phase 1: Collect expired entries
+	RequestMap.Range(func(key, value interface{}) bool {
+		details, ok := value.(RequestDetails)
+		if !ok {
+			// Entry has unexpected type; remove it without adjusting the counter,
+			// since it may not have been counted when inserted.
+			RequestMap.Delete(key)
+			log.Warn().Interface("key", key).Msg("cleanupRequestMap: removed entry with unexpected type from RequestMap")
+			return true
+		}
+
+		entryTime := details.EndTime
+		if entryTime.IsZero() {
+			entryTime = details.StartTime
+		}
+
+		if entryTime.Before(cutoff) {
+			expiredKeys = append(expiredKeys, key.(string))
+			expiredEntries = append(expiredEntries, details)
+		}
+		return true
+	})
+
+	// Phase 2: Save expired entries to file before deleting
+	if len(expiredEntries) > 0 {
+		saveRequestEntriesToFile(expiredEntries, "ttl_cleanup")
+		for _, k := range expiredKeys {
+			RequestMap.Delete(k)
+			atomic.AddInt64(&requestMapEntryCount, -1)
+		}
+		log.Info().Int("evictedCount", len(expiredKeys)).Msg("RequestMap TTL cleanup: saved and evicted expired entries")
+	}
+
+	// Phase 3: Enforce max entry limit (evict oldest if over limit)
+	currentCount := atomic.LoadInt64(&requestMapEntryCount)
+	if currentCount > requestMapMaxEntries {
+		evictOldestEntries(int(currentCount - requestMapMaxEntries))
+	}
+}
+
+// evictOldestEntries removes the N oldest entries from RequestMap, saving them to file first.
+func evictOldestEntries(count int) {
+	if count <= 0 {
+		return
+	}
+
+	// Collect all entries with their keys and times
+	type keyedEntry struct {
+		key     string
+		details RequestDetails
+		sortBy  time.Time
+	}
+	var entries []keyedEntry
+
+	RequestMap.Range(func(key, value interface{}) bool {
+		details, ok := value.(RequestDetails)
+		if !ok {
+			return true
+		}
+		t := details.EndTime
+		if t.IsZero() {
+			t = details.StartTime
+		}
+		entries = append(entries, keyedEntry{key: key.(string), details: details, sortBy: t})
+		return true
+	})
+
+	// Sort by time (oldest first)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].sortBy.Before(entries[j].sortBy)
+	})
+
+	// Evict the oldest N entries
+	if count > len(entries) {
+		count = len(entries)
+	}
+	evicted := entries[:count]
+
+	// Save to file
+	evictedDetails := make([]RequestDetails, len(evicted))
+	for i, e := range evicted {
+		evictedDetails[i] = e.details
+	}
+	saveRequestEntriesToFile(evictedDetails, "max_entries_evict")
+
+	// Delete from map
+	for _, e := range evicted {
+		RequestMap.Delete(e.key)
+		atomic.AddInt64(&requestMapEntryCount, -1)
+	}
+
+	log.Info().Int("evictedCount", count).Int64("remainingCount", atomic.LoadInt64(&requestMapEntryCount)).
+		Msg("RequestMap max-entries eviction: saved and evicted oldest entries")
+}
+
+// autoSaveRequestMap periodically saves all current RequestMap entries to a JSON file.
+// This provides a persistent snapshot for post-mortem analysis even if the server crashes.
+func autoSaveRequestMap() {
+	var allEntries []RequestDetails
+
+	RequestMap.Range(func(key, value interface{}) bool {
+		if details, ok := value.(RequestDetails); ok {
+			allEntries = append(allEntries, details)
+		}
+		return true
+	})
+
+	if len(allEntries) == 0 {
+		return
+	}
+
+	saveRequestEntriesToFile(allEntries, "auto_snapshot")
+	log.Debug().Int("entryCount", len(allEntries)).Msg("RequestMap auto-snapshot saved")
+}
+
+// saveRequestEntriesToFile writes request entries to a JSON file in the log directory.
+// The filename includes the reason (e.g., "ttl_cleanup", "max_entries_evict", "auto_snapshot").
+func saveRequestEntriesToFile(entries []RequestDetails, reason string) {
+	if len(entries) == 0 {
+		return
+	}
+
+	// Sort by StartTime for chronological order
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].StartTime.Before(entries[j].StartTime)
+	})
+
+	logDir := getRequestLogDir()
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		log.Error().Err(err).Str("dir", logDir).Msg("Failed to create request log directory")
+		return
+	}
+
+	filename := fmt.Sprintf("request_%s_%s.json", reason, time.Now().Format("20060102_150405"))
+	filePath := filepath.Join(logDir, filename)
+
+	data, err := json.MarshalIndent(entries, "", "  ")
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal RequestMap entries for file dump")
+		return
+	}
+
+	if err := os.WriteFile(filePath, data, 0644); err != nil {
+		log.Error().Err(err).Str("path", filePath).Msg("Failed to write RequestMap dump file")
+		return
+	}
+
+	log.Debug().Str("path", filePath).Int("entries", len(entries)).Str("reason", reason).
+		Msg("RequestMap entries saved to file")
+}
+
+// getRequestLogDir returns the directory path for request log files.
+func getRequestLogDir() string {
+	rootPath := os.Getenv("TB_ROOT_PATH")
+	if rootPath == "" {
+		rootPath = "."
+	}
+	return filepath.Join(rootPath, "log", "request_dump")
+}
+
 // ProgressInfo contains the progress information of a request.
 type ProgressInfo struct {
 	Title string      `json:"title"`
@@ -683,6 +909,19 @@ func EndRequestWithLog(c echo.Context, err error, responseData interface{}) erro
 
 	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
 
+	// If no request ID (request tracking was skipped for this endpoint),
+	// return the response directly without RequestMap tracking.
+	// This happens when the endpoint is in RequestSkipPatterns (e.g., frequently polled endpoints).
+	if reqID == "" {
+		if err != nil {
+			if responseData == nil {
+				return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+			}
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
+		}
+		return c.JSON(http.StatusOK, responseData)
+	}
+
 	if v, ok := RequestMap.Load(reqID); ok {
 		details := v.(RequestDetails)
 		details.EndTime = time.Now()
@@ -706,7 +945,15 @@ func EndRequestWithLog(c echo.Context, err error, responseData interface{}) erro
 		return c.JSON(http.StatusOK, responseData)
 	}
 
-	return c.JSON(http.StatusNotFound, map[string]string{"message": "Invalid Request ID"})
+	// Request ID exists but not found in RequestMap - should not normally happen
+	log.Warn().Str("reqID", reqID).Msg("Request ID not found in RequestMap, returning response without tracking")
+	if err != nil {
+		if responseData == nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
+	}
+	return c.JSON(http.StatusOK, responseData)
 }
 
 // UpdateRequestProgress updates the handling status of the request.

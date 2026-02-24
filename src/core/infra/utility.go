@@ -565,13 +565,28 @@ func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 		return model.InspectResourceAllResult{}, err
 	}
 
+	totalConnections := len(connectionConfigList.Connectionconfig)
 	output := model.InspectResourceAllResult{}
+
+	if totalConnections == 0 {
+		return output, nil
+	}
+
+	// Use channel to collect results safely (no data race on append)
+	resultChan := make(chan model.InspectResourceResult, totalConnections)
+
+	// Use global semaphore to limit concurrent inspect operations
+	inspectSemaphore := make(chan struct{}, csp.GlobalMaxConcurrentConnections)
 
 	var wait sync.WaitGroup
 	for _, k := range connectionConfigList.Connectionconfig {
 		wait.Add(1)
 		go func(k model.ConnConfig) {
 			defer wait.Done()
+
+			// Acquire semaphore to limit concurrency
+			inspectSemaphore <- struct{}{}
+			defer func() { <-inspectSemaphore }()
 
 			common.RandomSleep(0, 60*1000)
 			temp := model.InspectResourceResult{}
@@ -650,13 +665,24 @@ func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 			temp.TumblebugOverview.NLB = inspectResult.ResourceOverview.OnTumblebug
 			temp.CspOnlyOverview.NLB = inspectResult.ResourceOverview.OnCspOnly
 
-			temp.ElapsedTime = int(math.Round(time.Now().Sub(startTimeForConnection).Seconds()))
+			temp.ElapsedTime = int(math.Round(time.Since(startTimeForConnection).Seconds()))
 
-			output.InspectResult = append(output.InspectResult, temp)
+			// Send result to channel (safe for concurrent sends)
+			resultChan <- temp
 
 		}(k)
 	}
-	wait.Wait()
+
+	// Close channel after all goroutines complete
+	go func() {
+		wait.Wait()
+		close(resultChan)
+	}()
+
+	// Collect results from channel (single consumer — no race)
+	for temp := range resultChan {
+		output.InspectResult = append(output.InspectResult, temp)
+	}
 
 	errorConnectionCnt := 0
 	for _, k := range output.InspectResult {
@@ -685,14 +711,23 @@ func InspectResourcesOverview() (model.InspectResourceAllResult, error) {
 		return output.InspectResult[i].ConnectionName < output.InspectResult[j].ConnectionName
 	})
 
-	output.ElapsedTime = int(math.Round(time.Now().Sub(startTime).Seconds()))
-	output.RegisteredConnection = len(connectionConfigList.Connectionconfig)
-	output.AvailableConnection = output.RegisteredConnection - errorConnectionCnt
+	output.ElapsedTime = int(math.Round(time.Since(startTime).Seconds()))
+	output.RegisteredConnection = totalConnections
+	output.AvailableConnection = totalConnections - errorConnectionCnt
 
 	return output, err
 }
 
-// RegisterCspNativeResourcesAll func registers all CSP-native resources into CB-TB
+// getRegisterRateLimitsForCSP returns rate limiting config for resource registration.
+// Uses centralized CSP config from csp.GetRateLimitConfig() with built-in fallback for unknown CSPs.
+func getRegisterRateLimitsForCSP(providerName string) (maxConns int, delayMinMs int, delayMaxMs int) {
+	config := csp.GetRateLimitConfig(providerName)
+	return config.MaxConcurrentRegistrations, config.RegistrationDelayMinMs, config.RegistrationDelayMaxMs
+}
+
+// RegisterCspNativeResourcesAll registers all CSP-native resources into CB-TB
+// using hierarchical rate limiting: global cap → per-CSP cap → per-connection processing.
+// Results are collected via a channel to avoid data races.
 func RegisterCspNativeResourcesAll(nsId string, mciNamePrefix string, option string, mciFlag string) (model.RegisterResourceAllResult, error) {
 	startTime := time.Now()
 
@@ -708,40 +743,94 @@ func RegisterCspNativeResourcesAll(nsId string, mciNamePrefix string, option str
 		return model.RegisterResourceAllResult{}, err
 	}
 
-	output := model.RegisterResourceAllResult{}
-
-	var wait sync.WaitGroup
-	for _, k := range connectionConfigList.Connectionconfig {
-		wait.Add(1)
-		go func(k model.ConnConfig) {
-			defer wait.Done()
-
-			mciNameForRegister := mciNamePrefix + "-" + k.ConfigName
-			// Assign RandomSleep range by clouds
-			// This code is temporal, CB-Spider needs to be enhnaced for locking mechanism.
-			// CB-SP v0.5.9 will not help with rate limit issue.
-			if strings.Contains(k.ConfigName, csp.Alibaba) {
-				common.RandomSleep(100*1000, 200*1000)
-			} else if strings.Contains(k.ConfigName, csp.AWS) {
-				common.RandomSleep(300*1000, 500*1000)
-			} else if strings.Contains(k.ConfigName, csp.GCP) {
-				common.RandomSleep(700*1000, 900*1000)
-			} else {
-			}
-
-			common.RandomSleep(0, 50*1000)
-
-			registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mciNameForRegister, option, mciFlag)
-			if err != nil {
-				log.Error().Err(err).Msg("")
-			}
-
-			output.RegisterationResult = append(output.RegisterationResult, registerResult)
-
-		}(k)
+	totalConnections := len(connectionConfigList.Connectionconfig)
+	if totalConnections == 0 {
+		return model.RegisterResourceAllResult{}, nil
 	}
-	wait.Wait()
 
+	// Step 1: Group connections by CSP (ProviderName)
+	cspGroups := make(map[string][]model.ConnConfig) // providerName -> []ConnConfig
+	for _, k := range connectionConfigList.Connectionconfig {
+		provider := strings.ToLower(k.ProviderName)
+		cspGroups[provider] = append(cspGroups[provider], k)
+	}
+
+	log.Info().Msgf("RegisterCspNativeResourcesAll: %d connections grouped into %d CSPs (global concurrency limit: %d)",
+		totalConnections, len(cspGroups), csp.GlobalMaxConcurrentConnections)
+	for provider, conns := range cspGroups {
+		maxConns, _, _ := getRegisterRateLimitsForCSP(provider)
+		log.Info().Msgf("  CSP %s: %d connections (max concurrent: %d)", provider, len(conns), maxConns)
+	}
+
+	// Step 2: Create channel to collect results safely (Fix #3: avoid data race on append)
+	resultChan := make(chan model.RegisterResourceResult, totalConnections)
+
+	// Step 3: Global semaphore to cap total concurrent goroutines
+	globalSemaphore := make(chan struct{}, csp.GlobalMaxConcurrentConnections)
+
+	// Step 4: Process CSPs in parallel, each with its own per-CSP semaphore
+	var cspWg sync.WaitGroup
+	for provider, connections := range cspGroups {
+		cspWg.Add(1)
+		go func(providerName string, connConfigs []model.ConnConfig) {
+			defer cspWg.Done()
+
+			maxConns, delayMinMs, delayMaxMs := getRegisterRateLimitsForCSP(providerName)
+			cspSemaphore := make(chan struct{}, maxConns)
+
+			log.Info().Msgf("Starting resource registration for CSP %s: %d connections (max concurrent: %d, delay: %d-%dms)",
+				providerName, len(connConfigs), maxConns, delayMinMs, delayMaxMs)
+
+			var connWg sync.WaitGroup
+			for _, connConfig := range connConfigs {
+				connWg.Add(1)
+				go func(k model.ConnConfig) {
+					defer connWg.Done()
+
+					// Acquire global semaphore (total concurrency cap)
+					globalSemaphore <- struct{}{}
+					defer func() { <-globalSemaphore }()
+
+					// Acquire per-CSP semaphore (CSP-specific concurrency cap)
+					cspSemaphore <- struct{}{}
+					defer func() { <-cspSemaphore }()
+
+					// Stagger start with CSP-specific delay to avoid API rate limit bursts
+					common.RandomSleep(delayMinMs, delayMaxMs)
+
+					mciNameForRegister := mciNamePrefix + "-" + k.ConfigName
+
+					log.Debug().Msgf("Registering resources for connection %s (CSP: %s)", k.ConfigName, providerName)
+					registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mciNameForRegister, option, mciFlag)
+					if err != nil {
+						log.Error().Err(err).Msgf("Failed to register resources for connection %s", k.ConfigName)
+					}
+					log.Debug().Msgf("Completed registration for connection %s (CSP: %s, elapsed: %ds)",
+						k.ConfigName, providerName, registerResult.ElapsedTime)
+
+					// Send result to channel (no race condition — channel is safe for concurrent sends)
+					resultChan <- registerResult
+				}(connConfig)
+			}
+			connWg.Wait()
+
+			log.Info().Msgf("Completed resource registration for CSP %s (%d connections)", providerName, len(connConfigs))
+		}(provider, connections)
+	}
+
+	// Step 5: Close channel after all goroutines complete
+	go func() {
+		cspWg.Wait()
+		close(resultChan)
+	}()
+
+	// Step 6: Collect results from channel
+	output := model.RegisterResourceAllResult{}
+	for result := range resultChan {
+		output.RegisterationResult = append(output.RegisterationResult, result)
+	}
+
+	// Step 7: Aggregate overview counts
 	errorConnectionCnt := 0
 	for _, k := range output.RegisterationResult {
 		output.RegisterationOverview.VNet += k.RegisterationOverview.VNet
@@ -758,13 +847,16 @@ func RegisterCspNativeResourcesAll(nsId string, mciNamePrefix string, option str
 		}
 	}
 
-	output.ElapsedTime = int(math.Round(time.Now().Sub(startTime).Seconds()))
-	output.RegisteredConnection = len(connectionConfigList.Connectionconfig)
-	output.AvailableConnection = output.RegisteredConnection - errorConnectionCnt
+	output.ElapsedTime = int(math.Round(time.Since(startTime).Seconds()))
+	output.RegisteredConnection = totalConnections
+	output.AvailableConnection = totalConnections - errorConnectionCnt
 
 	sort.SliceStable(output.RegisterationResult, func(i, j int) bool {
 		return output.RegisterationResult[i].ConnectionName < output.RegisterationResult[j].ConnectionName
 	})
+
+	log.Info().Msgf("RegisterCspNativeResourcesAll completed: %d connections, %d errors, %ds elapsed",
+		totalConnections, errorConnectionCnt, output.ElapsedTime)
 
 	return output, err
 }

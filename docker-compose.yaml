@@ -164,7 +164,7 @@ services:
 
   # CB-Spider
   cb-spider:
-    image: cloudbaristaorg/cb-spider:0.12.5
+    image: cloudbaristaorg/cb-spider:0.12.6
     container_name: cb-spider
     # build:
     #   context: ../cb-spider
@@ -182,9 +182,10 @@ services:
     environment:
       - PLUGIN_SW=OFF
       - SERVER_ADDRESS=0.0.0.0:1024
-      # Should match with TB_API_USERNAME and TB_API_PASSWORD in cb-tumblebug
-      - API_USERNAME=default
-      - API_PASSWORD=$$2a$$10$$4PKzCuJ6fPYsbCF.HR//ieLjaCzBAdwORchx62F2JRXQsuR3d9T0q
+      # Should match with TB_API_USERNAME in cb-tumblebug environment
+      - SPIDER_USERNAME=default
+      # Should match with TB_API_PASSWORD in cb-tumblebug environment
+      - SPIDER_PASSWORD=$$2a$$10$$4PKzCuJ6fPYsbCF.HR//ieLjaCzBAdwORchx62F2JRXQsuR3d9T0q
       - SPIDER_LOG_LEVEL=error
       - SPIDER_HISCALL_LOG_LEVEL=error
       - ID_TRANSFORM_MODE=OFF
@@ -199,7 +200,7 @@ services:
   # CB-MapUI
   # This is the Map-based client for CB-Tumblebug.
   cb-mapui:
-    image: cloudbaristaorg/cb-mapui:0.12.9
+    image: cloudbaristaorg/cb-mapui:0.12.10
     container_name: cb-mapui
     labels:
       # Explicitly tell Traefik to expose this container
