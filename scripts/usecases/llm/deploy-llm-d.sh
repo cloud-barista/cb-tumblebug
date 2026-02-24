@@ -138,7 +138,7 @@ if ! kubectl cluster-info &>/dev/null; then
     PREREQ_FAILED=true
 else
     echo "  ✓ Kubernetes cluster accessible"
-    K8S_VERSION=$(kubectl version --short 2>/dev/null | grep Server | awk '{print $3}' || kubectl version -o json 2>/dev/null | grep -o '"gitVersion": "[^"]*"' | head -1 | cut -d'"' -f4)
+    K8S_VERSION=$(kubectl version -o json 2>/dev/null | grep -o '"gitVersion": "[^"]*"' | tail -1 | cut -d'"' -f4 || kubectl version --short 2>/dev/null | grep Server | awk '{print $3}' || echo "")
     echo "    Kubernetes version: ${K8S_VERSION:-unknown}"
 fi
 
@@ -147,7 +147,7 @@ if kubectl get crd gateways.gateway.networking.k8s.io &>/dev/null; then
     echo "  ✓ Gateway API CRDs installed"
 else
     echo "  ✗ Gateway API CRDs not found"
-    echo "    Install with: kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml"
+    echo "    Install with: kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.1/standard-install.yaml"
     PREREQ_FAILED=true
 fi
 
@@ -156,7 +156,7 @@ if kubectl get crd leaderworkersets.leaderworkerset.x-k8s.io &>/dev/null; then
     echo "  ✓ LeaderWorkerSet CRD installed"
 else
     echo "  ✗ LeaderWorkerSet CRD not found"
-    echo "    Install with: kubectl apply --server-side -f https://github.com/kubernetes-sigs/lws/releases/download/v0.5.1/manifests.yaml"
+    echo "    Install with: kubectl apply --server-side -f https://github.com/kubernetes-sigs/lws/releases/download/v0.6.2/manifests.yaml"
     PREREQ_FAILED=true
 fi
 
