@@ -52,7 +52,8 @@ wait_for_apt() {
 wait_for_apt
 
 # Kill any stuck apt/dpkg processes (only if they are hanging)
-sudo pkill -9 -f "apt-get|dpkg" 2>/dev/null || true
+# Note: Use grep -v to exclude pkill itself from the match to avoid self-kill
+sudo pgrep -f "apt-get|dpkg" | grep -v $$ | xargs -r sudo kill -9 2>/dev/null || true
 sleep 2
 
 # Remove stale lock files
