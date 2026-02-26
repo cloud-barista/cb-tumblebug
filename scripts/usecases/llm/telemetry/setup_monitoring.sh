@@ -1,17 +1,21 @@
 #!/bin/bash
 set -e
 
-GPU_VM_IP="${1}"
-
-if [ -z "$GPU_VM_IP" ]; then
-  echo "❌ Error: Target GPU VM IP is required."
-  echo "👉 Usage: bash setup_monitoring.sh <GPU_VM_IP>"
+if [ $# -eq 0 ]; then
+  echo "❌ Error: At least one GPU VM IP is required."
+  echo "👉 Usage: bash setup_monitoring.sh <GPU_VM_IP1> <GPU_VM_IP2> ..."
+  echo "👉 Example: bash setup_monitoring.sh 104.42.74.157 3.96.201.235"
   exit 1
 fi
 
+GPU_VM_IPS=("$@")
+
 echo "=========================================="
 echo "📊 Installing LLM Monitoring Stack"
-echo "Target GPU VM IP: $GPU_VM_IP"
+echo "Target GPU VMs: ${#GPU_VM_IPS[@]} nodes"
+for ip in "${GPU_VM_IPS[@]}"; do
+  echo "  - $ip"
+done
 echo "=========================================="
 
 # 1. Install Docker if missing
@@ -27,6 +31,17 @@ cd "$WORK_DIR"
 
 # 2. Generate prometheus.yml (Scraping ONLY Telegraf 9101)
 echo "Generating prometheus.yml..."
+
+# Build targets array
+TARGETS=""
+for ip in "${GPU_VM_IPS[@]}"; do
+  if [ -z "$TARGETS" ]; then
+    TARGETS="'${ip}:9101'"
+  else
+    TARGETS="${TARGETS}, '${ip}:9101'"
+  fi
+done
+
 cat <<EOF > prometheus.yml
 global:
   scrape_interval: 5s
@@ -35,7 +50,7 @@ scrape_configs:
   # Single Gateway Target: Telegraf automatically provides Node, DCGM, and vLLM data
   - job_name: 'gpu_vm_telegraf_gateway'
     static_configs:
-      - targets: ['${GPU_VM_IP}:9101']
+      - targets: [${TARGETS}]
 EOF
 
 # 3. Generate docker-compose.yml
