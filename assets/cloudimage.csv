@@ -22,3 +22,22 @@ AZURE,all,Oracle:Oracle-Linux:ol93-arm64-lvm-gen2:9.3.3,Oracle Linux 9 (ARM64),L
 AZURE,all,almalinux:almalinux-arm:10-arm64-64k-gen2:10.0.202505290,AlmaLinux 10 (ARM64),Gen2,,vm
 AZURE,all,SUSE:opensuse-leap-15-6-arm64:gen2:2025.07.28,SUSE Linux Enterprise Server 15 (ARM64),Gen2,,vm
 AZURE,all,MicrosoftCBLMariner:azure-linux-3:azure-linux-3-arm64-gen2-fips:3.20250729.01,Azure Linux 3 (ARM64),FIPS Gen2,,vm
+AWS,all,AL2023_x86_64_STANDARD,Amazon Linux 2023,EKS Node - Standard x86_64,,
+AWS,all,AL2023_ARM_64_STANDARD,Amazon Linux 2023,EKS Node - Standard ARM64,,
+AWS,all,BOTTLEROCKET_x86_64,Bottlerocket,EKS Node - x86_64,,
+AWS,all,BOTTLEROCKET_ARM_64,Bottlerocket,EKS Node - ARM64,,
+AWS,all,WINDOWS_FULL_2019_x86_64,Windows Server 2019 Full,EKS Node - Windows Full,,
+AWS,all,WINDOWS_CORE_2019_x86_64,Windows Server 2019 Core,EKS Node - Windows Core,,
+AWS,all,WINDOWS_FULL_2022_x86_64,Windows Server 2022 Full,EKS Node - Windows Full,,
+AWS,all,WINDOWS_CORE_2022_x86_64,Windows Server 2022 Core,EKS Node - Windows Core,,
+AWS,all,AL2_x86_64,Amazon Linux 2,EKS Node - x86_64,,
+AWS,all,AL2_x86_64_GPU,Amazon Linux 2 GPU,EKS Node - GPU x86_64,,
+AWS,all,AL2_ARM_64,Amazon Linux 2,EKS Node - ARM64,,
+AWS,all,UBUNTU_20_04,Ubuntu 20.04,EKS Node - Ubuntu 20.04,,
+AWS,all,UBUNTU_22_04,Ubuntu 22.04,EKS Node - Ubuntu 22.04,,
+GCP,all,COS_CONTAINERD,Container-Optimized OS,GKE Node - Containerd,,
+GCP,all,COS,Container-Optimized OS,GKE Node - Docker,,
+GCP,all,UBUNTU_CONTAINERD,Ubuntu,GKE Node - Containerd,,
+GCP,all,UBUNTU,Ubuntu,GKE Node - Docker,,
+GCP,all,WINDOWS_LTSC_CONTAINERD,Windows LTSC,GKE Node - Containerd,,
+GCP,all,WINDOWS_SAC_CONTAINERD,Windows SAC,GKE Node - Containerd,,
