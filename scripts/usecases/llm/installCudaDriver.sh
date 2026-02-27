@@ -355,11 +355,16 @@ show_dkms_log() {
     fi
 }
 
-# Build driver candidate list based on vGPU detection
+# Build driver candidate list based on vGPU detection.
+# IMPORTANT: Use version-pinned packages (cuda-drivers-550) BEFORE unversioned (cuda-drivers).
+# The unversioned 'cuda-drivers' metapackage always pulls the LATEST driver from the CUDA repo.
+# Newer driver branches (e.g., 590.x) may drop support for certain GPU PCI IDs
+# (e.g., L4 GPU 10de:27b8 is "not supported by NVIDIA 590.48.01").
+# The 550.x branch is the current production/stable branch with broad GPU support.
 if [ "$IS_VGPU" = true ]; then
-    DRIVER_CANDIDATES=("cuda-drivers" "nvidia-driver-550")
+    DRIVER_CANDIDATES=("cuda-drivers-550" "nvidia-driver-550" "cuda-drivers")
 else
-    DRIVER_CANDIDATES=("cuda-drivers-open" "cuda-drivers" "nvidia-driver-550-open" "nvidia-driver-550")
+    DRIVER_CANDIDATES=("cuda-drivers-550-open" "cuda-drivers-open" "cuda-drivers-550" "nvidia-driver-550-open" "nvidia-driver-550" "cuda-drivers")
 fi
 
 for CANDIDATE in "${DRIVER_CANDIDATES[@]}"; do
