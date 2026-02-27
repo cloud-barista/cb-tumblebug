@@ -355,6 +355,21 @@ show_dkms_log() {
     fi
 }
 
+# Pre-cleanup: Remove any existing NVIDIA driver packages to avoid version conflicts.
+# This is critical for re-runs where a previously installed (incompatible) driver
+# would block the installation of a different version branch.
+EXISTING_NV=$(dpkg -l 2>/dev/null | grep "^ii" | awk '{print $2}' | grep -E "^(cuda-drivers|nvidia-driver|nvidia-dkms|nvidia-kernel|nvidia-firmware|libnvidia-|nvidia-modprobe|nvidia-settings|nvidia-compute|xserver-xorg-video-nvidia)" || true)
+if [ -n "$EXISTING_NV" ]; then
+    echo "Removing existing NVIDIA driver packages to allow clean installation..."
+    echo "  Packages to remove: $(echo $EXISTING_NV | wc -w) packages"
+    sudo systemctl stop nvidia-persistenced 2>/dev/null || true
+    sudo dpkg --force-all --purge $EXISTING_NV 2>&1 | tail -5 || true
+    sudo rm -rf /var/lib/dkms/nvidia 2>/dev/null || true
+    sudo dpkg --configure -a 2>/dev/null || true
+    sudo apt-get -f install -y 2>&1 | tail -3 || true
+    echo "  ✓ Existing packages removed."
+fi
+
 # Build driver candidate list based on vGPU detection.
 # IMPORTANT: Use version-pinned packages (cuda-drivers-550) BEFORE unversioned (cuda-drivers).
 # The unversioned 'cuda-drivers' metapackage always pulls the LATEST driver from the CUDA repo.
