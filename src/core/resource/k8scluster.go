@@ -31,6 +31,7 @@ import (
 	clientManager "github.com/cloud-barista/cb-tumblebug/src/core/common/client"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/label"
 	"github.com/cloud-barista/cb-tumblebug/src/core/model"
+	"github.com/cloud-barista/cb-tumblebug/src/core/model/csp"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
@@ -414,7 +415,8 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string, skip
 		} else {
 			// CSP supports image designation (e.g., AWS, GCP, Alibaba, NHN, Tencent)
 			if v.ImageId == "" || v.ImageId == "default" {
-				spImgName = ""
+				// Apply default type for AWS/GCP when imageId is not specified
+				spImgName = getDefaultK8sImageName(connConfig.ProviderName)
 			} else {
 				spImgName, err = GetCspResourceName(nsId, model.StrImage, v.ImageId)
 				if spImgName == "" || err != nil {
@@ -432,6 +434,10 @@ func CreateK8sCluster(nsId string, req *model.K8sClusterReq, option string, skip
 					}
 				} else {
 					log.Info().Msgf("Use the Image %s in ns %s", spImgName, nsId)
+				}
+				// Validate: AWS/GCP must use isKubernetesImage=true images
+				if createErr = validateK8sImageForProvider(nsId, connConfig.ProviderName, v.ImageId); createErr != nil {
+					return emptyObj, createErr
 				}
 			}
 		}
@@ -702,7 +708,8 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.K8sNodeGroupReq)
 	} else {
 		// CSP supports image designation (e.g., AWS, GCP, Alibaba, NHN, Tencent)
 		if u.ImageId == "" || u.ImageId == "default" {
-			spImgName = ""
+			// Apply default type for AWS/GCP when imageId is not specified
+			spImgName = getDefaultK8sImageName(connConfig.ProviderName)
 		} else {
 			spImgName, err = GetCspResourceName(nsId, model.StrImage, u.ImageId)
 			if spImgName == "" || err != nil {
@@ -721,6 +728,10 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *model.K8sNodeGroupReq)
 				}
 			} else {
 				log.Info().Msgf("Use the Image %s in ns %s", spImgName, nsId)
+			}
+			// Validate: AWS/GCP must use isKubernetesImage=true images
+			if err = validateK8sImageForProvider(nsId, connConfig.ProviderName, u.ImageId); err != nil {
+				return emptyObj, err
 			}
 		}
 	}
@@ -2186,4 +2197,41 @@ func convertSpiderNodeGroupStatusToK8sNodeGroupStatus(spNodeGroupStatus model.Sp
 	}
 
 	return model.K8sNodeGroupInactive
+}
+
+// getDefaultK8sImageName returns the default K8s node image type name for the given provider.
+// Returns empty string for providers that do not use type-based image selection.
+func getDefaultK8sImageName(providerName string) string {
+	switch strings.ToLower(providerName) {
+	case csp.AWS:
+		return "AL2023_x86_64_STANDARD"
+	case csp.GCP:
+		return "COS_CONTAINERD"
+	default:
+		return ""
+	}
+}
+
+// validateK8sImageForProvider validates that the provided imageId is a valid K8s node image
+// for AWS/GCP. These providers only support type-based image selection (not direct imageId).
+func validateK8sImageForProvider(nsId, providerName, imageId string) error {
+	switch strings.ToLower(providerName) {
+	case csp.AWS, csp.GCP:
+		imgInfo, err := GetImage(nsId, imageId)
+		if err != nil {
+			imgInfo, err = GetImage(model.SystemCommonNs, imageId)
+			if err != nil {
+				return fmt.Errorf("image(%s) not found", imageId)
+			}
+		}
+		if !imgInfo.IsKubernetesImage {
+			return fmt.Errorf(
+				"provider(%s) only supports K8s node image types for cluster creation. "+
+					"Image(%s) is not a valid K8s node image type. "+
+					"Use searchImage(isKubernetesImage=true, provider=%s) to find valid options",
+				providerName, imageId, providerName,
+			)
+		}
+	}
+	return nil
 }

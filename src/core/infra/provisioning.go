@@ -4105,7 +4105,9 @@ func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo 
 	// In K8sNodeGroup, allows dReq.ImageId to be set to "default" or ""
 	if strings.EqualFold(dReq.ImageId, "default") ||
 		strings.EqualFold(dReq.ImageId, "") {
-		// do nothing
+		// Use default - Spider will auto-map AMI Type based on VMSpec
+		k8sNgReq.ImageId = ""
+		log.Debug().Msg("ImageId is empty or default. Spider will auto-map AMI Type based on VMSpec.")
 	} else {
 		// Check if the image is available (DB or CSP) and auto-register if needed
 		_, isAutoRegistered, err := resource.EnsureImageAvailable(nsId, k8sClusterInfo.ConnectionName, dReq.ImageId)
@@ -4116,6 +4118,9 @@ func getK8sNodeGroupReqFromDynamicReq(reqID string, nsId string, k8sClusterInfo 
 		if isAutoRegistered {
 			log.Info().Msgf("Image '%s' was auto-registered from CSP for K8sNodeGroup", dReq.ImageId)
 		}
+		// ✅ FIX: Assign imageId to request (this was missing!)
+		k8sNgReq.ImageId = dReq.ImageId
+		log.Debug().Msgf("Using user-specified imageId: %s", dReq.ImageId)
 	}
 
 	// Default resource name has this pattern (nsId + "-shared-" + vmReq.ConnectionName)

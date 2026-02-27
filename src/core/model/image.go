@@ -136,7 +136,7 @@ type ImageInfo struct {
 	CreationDate string `json:"creationDate"`
 
 	IsGPUImage        bool `json:"isGPUImage" gorm:"column:is_gpu_image" enum:"true|false" default:"false" description:"Whether the image is GPU-enabled or not."`
-	IsKubernetesImage bool `json:"isKubernetesImage" gorm:"column:is_kubernetes_image" enum:"true|false" default:"false" description:"Whether the image is Kubernetes-enabled or not."`
+	IsKubernetesImage bool `json:"isKubernetesImage" gorm:"column:is_kubernetes_image" enum:"true|false" default:"false" description:"Whether this image can be used to create K8s nodes. For AWS/GCP, only type identifiers registered in cloudimage.csv are true."`
 	IsBasicImage      bool `json:"isBasicImage" gorm:"column:is_basic_image" enum:"true|false" default:"false" description:"Whether the image is a basic OS image or not."`
 
 	OSType string `json:"osType" gorm:"column:os_type" example:"ubuntu 22.04" description:"Simplified OS name and version string"`
@@ -203,7 +203,8 @@ type SearchImageRequest struct {
 	// Even if the image is not ready for GPU usage, it can be used with GPU by installing GPU drivers and libraries manually.
 	IsGPUImage *bool `json:"isGPUImage" example:"false"`
 
-	// Whether the image is specialized image only for Kubernetes nodes.
+	// Whether this image can be used to create K8s nodes.
+	// For AWS/GCP, only type identifiers registered in cloudimage.csv are true.
 	// If not specified, both true and false images will be included in the search results.
 	// Images that are not specialized for Kubernetes also can be used as Kubernetes nodes. It depends on CSPs.
 	IsKubernetesImage *bool `json:"isKubernetesImage" example:"false"`
@@ -261,7 +262,7 @@ type SearchImageRequestOptions struct {
 	// Whether the image is specialized image only for Kubernetes nodes.
 	// If not specified, both true and false images will be included in the search results.
 	// Images that are not specialized for Kubernetes also can be used as Kubernetes nodes. It depends on CSPs.
-	IsKubernetesImage []bool `json:"isKubernetesImage" description:"Whether the image is specialized image only for Kubernetes nodes."`
+	IsKubernetesImage []bool `json:"isKubernetesImage" description:"Whether this image can be used to create K8s nodes. For AWS/GCP, only type identifiers registered in cloudimage.csv are true."`
 
 	// Whether the image is registered by CB-Tumblebug asset file or not.
 	IsRegisteredByAsset []bool `json:"isRegisteredByAsset" description:"Whether the image is registered by asset or not."`
