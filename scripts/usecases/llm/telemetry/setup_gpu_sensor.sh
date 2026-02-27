@@ -3,10 +3,14 @@ set -e
 
 echo "Starting GPU VM Monitoring Setup (All-in-Docker Gateway)..."
 
-# 1. Check Docker dependency
+# 1. Install Docker if missing
 if ! command -v docker >/dev/null 2>&1; then
-  echo "Error: Docker is required but not installed."
-  exit 1
+  echo "Docker not found. Installing Docker..."
+  curl -fsSL https://get.docker.com -o get-docker.sh
+  sudo sh get-docker.sh
+  sudo apt-get install -y docker-compose-plugin
+  rm -f get-docker.sh
+  echo "✓ Docker installed successfully"
 fi
 
 # 2. Clean up existing containers
