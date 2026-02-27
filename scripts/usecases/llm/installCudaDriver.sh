@@ -293,28 +293,59 @@ rm -f "$KEYRING_FILE"
 sudo apt-get update -qq
 
 # ============================================================
-# Install NVIDIA Driver (open kernel modules)
+# Detect vGPU vs bare-metal/passthrough
 # ============================================================
-# Use open kernel modules (nvidia-open) instead of proprietary (nvidia-dkms).
-# Open modules are REQUIRED for Blackwell+ GPUs and work on all Turing+ (2018+) GPUs,
-# which covers all modern cloud GPU instances (T4, A10G, A100, L4, H100, H200, B200, etc.).
+# NVIDIA open kernel modules do NOT support vGPU configurations.
+# Cloud instances (AWS g6, Azure NCas, etc.) often expose GPUs as vGPU,
+# which requires proprietary (closed-source) kernel modules.
+IS_VGPU=false
+# Method 1: vGPU guests typically show "3D controller" instead of "VGA compatible controller"
+if sudo lspci 2>/dev/null | grep -i nvidia | grep -qi "3d controller"; then
+    IS_VGPU=true
+fi
+# Method 2: Check for NVIDIA GRID/vGPU device files
+if [ -d /proc/driver/nvidia/gpus ] && grep -q -ri "vGPU\|GRID" /proc/driver/nvidia/ 2>/dev/null; then
+    IS_VGPU=true
+fi
+
+if [ "$IS_VGPU" = true ]; then
+    echo "  ⚠ vGPU detected (3D controller). Open kernel modules are NOT supported."
+    echo "  → Using proprietary (closed-source) driver."
+fi
+
+# Install linux-modules-extra (CSP custom kernels may need it for GPU support)
+echo "Installing linux-modules-extra for kernel ${KERNEL_VERSION}..."
+"${APT_INSTALL[@]}" "linux-modules-extra-${KERNEL_VERSION}" 2>&1 | tail -3 || true
+
+# ============================================================
+# Install NVIDIA Driver
+# ============================================================
+# Driver selection strategy:
+# - vGPU: ONLY proprietary drivers (open modules fail with "not supported by open nvidia.ko")
+# - Passthrough/bare-metal: try open first (required for Blackwell+), then proprietary fallback
 echo "\n========== NVIDIA Driver =========="
 
-echo "Installing cuda-drivers-open (this may take several minutes)..."
 INSTALL_LOG=$(mktemp)
-set +e
-"${APT_INSTALL[@]}" cuda-drivers-open 2>&1 | tee "$INSTALL_LOG"
-INSTALL_EXIT_CODE=${PIPESTATUS[0]}
-set -e  # Re-enable exit-on-error
+DRIVER_INSTALLED=false
 
-# Check installation result
-if [ $INSTALL_EXIT_CODE -ne 0 ]; then
-    echo ""
-    echo "ERROR: cuda-drivers-open installation failed (exit code: $INSTALL_EXIT_CODE)"
-    
-    # Show DKMS build log if it was a DKMS failure
+# Helper: purge broken/leftover nvidia packages before retrying
+cleanup_nvidia_packages() {
+    LEFTOVER_PKGS=$(dpkg -l 2>/dev/null | grep -E "nvidia|cuda|libnvidia" | grep -v "^ii " | grep -v "^un " | awk '{print $2}' || true)
+    if [ -n "$LEFTOVER_PKGS" ]; then
+        echo "  Cleaning up leftover packages..."
+        sudo dpkg --force-all --purge $LEFTOVER_PKGS 2>&1 | tail -5 || true
+        sudo rm -rf /var/lib/dkms/nvidia 2>/dev/null || true
+        sudo dpkg --configure -a 2>/dev/null || true
+    fi
+    VERSIONLESS_PKGS=$(dpkg -l 2>/dev/null | grep "^ii" | awk '{print $2}' | grep -E "^libnvidia-|^nvidia-" | grep -v -- "-[0-9]" || true)
+    if [ -n "$VERSIONLESS_PKGS" ]; then
+        sudo dpkg --force-all --purge $VERSIONLESS_PKGS 2>&1 | tail -3 || true
+    fi
+}
+
+# Helper: show DKMS build log on failure
+show_dkms_log() {
     if grep -q "bad exit status\|Bad return status" "$INSTALL_LOG" 2>/dev/null; then
-        echo ""
         echo "DKMS kernel module build failed."
         DKMS_LOG=$(find /var/lib/dkms/nvidia/*/build/make.log -type f 2>/dev/null | head -1)
         if [ -n "$DKMS_LOG" ]; then
@@ -322,41 +353,58 @@ if [ $INSTALL_EXIT_CODE -ne 0 ]; then
             tail -20 "$DKMS_LOG" 2>/dev/null || true
         fi
     fi
-    
-    echo ""
-    echo "Attempting fallback: install nvidia-driver-550-open..."
-    
-    # First: purge ALL leftover nvidia packages from the failed attempt.
-    # Version-less packages (e.g. libnvidia-cfg1) conflict with version-suffixed ones (libnvidia-cfg1-550).
-    echo "  Cleaning up leftover packages from failed attempt..."
-    LEFTOVER_PKGS=$(dpkg -l 2>/dev/null | grep -E "nvidia|cuda|libnvidia" | grep -v "^ii " | grep -v "^un " | awk '{print $2}' || true)
-    if [ -n "$LEFTOVER_PKGS" ]; then
-        sudo dpkg --force-all --purge $LEFTOVER_PKGS 2>&1 | tail -5 || true
-        sudo rm -rf /var/lib/dkms/nvidia 2>/dev/null || true
-        sudo dpkg --configure -a 2>/dev/null || true
-    fi
-    # Also remove any version-less nvidia libs that were auto-installed
-    VERSIONLESS_PKGS=$(dpkg -l 2>/dev/null | grep "^ii" | awk '{print $2}' | grep -E "^libnvidia-|^nvidia-" | grep -v -- "-[0-9]" || true)
-    if [ -n "$VERSIONLESS_PKGS" ]; then
-        echo "  Removing version-less nvidia packages: $(echo $VERSIONLESS_PKGS | tr '\n' ' ')"
-        sudo dpkg --force-all --purge $VERSIONLESS_PKGS 2>&1 | tail -3 || true
-    fi
-    
-    set +e
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-        "${APT_OPTS[@]}" -o Dpkg::Options::="--force-overwrite" \
-        nvidia-driver-550-open 2>&1 | tee "$INSTALL_LOG"
-    FALLBACK_EXIT_CODE=${PIPESTATUS[0]}
-    set -e
-    
-    if [ $FALLBACK_EXIT_CODE -ne 0 ]; then
-        echo ""
-        echo "ERROR: Fallback nvidia-driver-550-open also failed."
-        rm -f "$INSTALL_LOG"
-        exit 1
-    fi
+}
+
+# Build driver candidate list based on vGPU detection
+if [ "$IS_VGPU" = true ]; then
+    DRIVER_CANDIDATES=("cuda-drivers" "nvidia-driver-550")
+else
+    DRIVER_CANDIDATES=("cuda-drivers-open" "cuda-drivers" "nvidia-driver-550-open" "nvidia-driver-550")
 fi
+
+for CANDIDATE in "${DRIVER_CANDIDATES[@]}"; do
+    echo ""
+    echo "Attempting: ${CANDIDATE}..."
+    set +e
+    if [[ "$CANDIDATE" == nvidia-driver-* ]]; then
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            "${APT_OPTS[@]}" -o Dpkg::Options::="--force-overwrite" \
+            "$CANDIDATE" 2>&1 | tee "$INSTALL_LOG"
+    else
+        "${APT_INSTALL[@]}" "$CANDIDATE" 2>&1 | tee "$INSTALL_LOG"
+    fi
+    CANDIDATE_EXIT=${PIPESTATUS[0]}
+    set -e
+
+    if [ $CANDIDATE_EXIT -eq 0 ]; then
+        echo "✓ Successfully installed: ${CANDIDATE}"
+        DRIVER_INSTALLED=true
+        break
+    else
+        echo "✗ ${CANDIDATE} failed (exit code: $CANDIDATE_EXIT)"
+        show_dkms_log
+        cleanup_nvidia_packages
+    fi
+done
+
 rm -f "$INSTALL_LOG"
+
+if [ "$DRIVER_INSTALLED" != true ]; then
+    echo ""
+    echo "ERROR: All driver installation attempts failed."
+    echo "Tried: ${DRIVER_CANDIDATES[*]}"
+    exit 1
+fi
+
+# Ensure nvidia-modprobe is installed (creates /dev/nvidia* device nodes).
+# cuda-drivers-open includes this as a dependency, but Ubuntu's
+# nvidia-driver-550-open does NOT. Without it, nvidia-smi fails with
+# "couldn't communicate with the NVIDIA driver" even though the kernel
+# module is loaded, because /dev/nvidia0 and /dev/nvidia-uvm are missing.
+if ! dpkg -l nvidia-modprobe 2>/dev/null | grep -q "^ii"; then
+    echo "Installing nvidia-modprobe (required for /dev/nvidia* device nodes)..."
+    "${APT_INSTALL[@]}" nvidia-modprobe 2>&1 | tail -3 || true
+fi
 
 # Verify: check DKMS status (the critical gate for nvidia-smi after reboot)
 echo ""
