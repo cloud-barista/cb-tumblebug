@@ -3,6 +3,17 @@
 # =============================================================================
 # Prometheus Metrics to CSV Exporter (Multi-IP Support)
 # =============================================================================
+# Supports three execution modes:
+#   1. No arguments: exports all metrics for all IPs (last 60 minutes)
+#   2. CLI arguments: --minutes, --ips, --metrics, --step
+#   3. Config file (legacy): ./export_metrics.sh my_config.conf
+#
+# Examples:
+#   curl -fsSL .../export_metrics.sh | bash
+#   curl -fsSL .../export_metrics.sh | bash -s -- --minutes 120 --ips "1.2.3.4,5.6.7.8"
+#   curl -fsSL .../export_metrics.sh | bash -s -- --metrics "node_cpu_seconds_total,vllm:num_requests_running"
+#   ./export_metrics.sh my_config.conf
+# =============================================================================
 
 set -e
 
@@ -11,58 +22,86 @@ usage() {
   cat <<EOF
 📊 Prometheus Metrics CSV Exporter
 
-Usage: ./export_metrics.sh <config_file>
+Usage:
+  ./export_metrics.sh [options]           # CLI mode
+  ./export_metrics.sh <config_file>       # Config file mode (legacy)
+  curl ... | bash                         # Remote execution (all defaults)
+  curl ... | bash -s -- [options]         # Remote execution with options
 
-Description:
-  Export Prometheus metrics to CSV using a configuration file (.conf).
+Options:
+  --minutes <N>       Time range in minutes (default: 60)
+  --ips <ip1,ip2>     Comma-separated list of target VM IPs (default: all)
+  --metrics <m1,m2>   Comma-separated list of metric names (default: all)
+  --step <interval>   Scrape step interval (default: 15s)
+  -h, --help          Show this help message
 
-Configuration File Format Example:
+Config File Format Example:
 --------------------------------------------------
-# 1. Time range in minutes (default: 60)
 MINUTES=60
-
-# 2. Filter specific VM IPs (Array). 
-# Leave empty ( IPS=() ) to fetch data from all VMs.
-IPS=(
-  "104.42.74.157"
-  "3.96.201.235"
-)
-
-# 3. List of metrics to export (Array). 
-# Leave empty ( METRICS=() ) to export all available metrics.
-METRICS=(
-  "gpu_average_package_power"
-  "node_cpu_seconds_total"
-  "vllm:num_requests_running"
-)
+IPS=( "104.42.74.157" "3.96.201.235" )
+METRICS=( "gpu_average_package_power" "node_cpu_seconds_total" )
 --------------------------------------------------
 EOF
   exit 1
 }
-
-# Check arguments
-if [ $# -ne 1 ]; then usage; fi
-CONFIG_FILE="$1"
-if [ "$CONFIG_FILE" = "-h" ] || [ "$CONFIG_FILE" = "--help" ]; then usage; fi
-if [ ! -f "$CONFIG_FILE" ]; then echo "❌ Error: Configuration file not found: $CONFIG_FILE"; exit 1; fi
-
-echo "📋 Loading configuration file: $CONFIG_FILE"
 
 # Safely initialize arrays for METRICS and IPS
 declare -a METRICS
 declare -a IPS
 IP="" # For backward compatibility
 MINUTES=60
+CUSTOM_STEP=""
 
-# Load configuration file
-source "$CONFIG_FILE"
+# Parse arguments
+if [ $# -eq 0 ]; then
+  # No arguments: use all defaults (remote-friendly mode)
+  echo "📊 Running with defaults (all metrics, all IPs, last 60 minutes)"
+elif [ $# -eq 1 ] && [[ "$1" != --* ]] && [ "$1" != "-h" ]; then
+  # Single non-flag argument: treat as config file (legacy mode)
+  CONFIG_FILE="$1"
+  if [ "$CONFIG_FILE" = "-h" ] || [ "$CONFIG_FILE" = "--help" ]; then usage; fi
+  if [ ! -f "$CONFIG_FILE" ]; then echo "❌ Error: Configuration file not found: $CONFIG_FILE"; exit 1; fi
+  echo "📋 Loading configuration file: $CONFIG_FILE"
+  source "$CONFIG_FILE"
+else
+  # CLI argument mode
+  # Helper: require a non-empty value for a flag
+  require_arg() { [ $# -ge 3 ] && [ -n "$3" ] || { echo "❌ Error: $2 requires a non-empty value."; exit 1; }; }
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -h|--help) usage ;;
+      --minutes)
+        require_arg $# "$1" "$2"
+        if ! [[ "$2" =~ ^[1-9][0-9]*$ ]]; then
+          echo "❌ Error: --minutes must be a positive integer (e.g., 60)."
+          exit 1
+        fi
+        MINUTES="$2"; shift 2 ;;
+      --ips)
+        require_arg $# "$1" "$2"
+        IFS=',' read -ra IPS <<< "$2"; shift 2 ;;
+      --metrics)
+        require_arg $# "$1" "$2"
+        IFS=',' read -ra METRICS <<< "$2"; shift 2 ;;
+      --step)
+        require_arg $# "$1" "$2"
+        if ! [[ "$2" =~ ^([0-9]+(ms|s|m|h|d|w|y))+$ ]]; then
+          echo "❌ Error: --step value '$2' is not a valid Prometheus duration (e.g., 15s, 5m, 1h30m)."
+          exit 1
+        fi
+        CUSTOM_STEP="$2"; shift 2 ;;
+      *)
+        echo "❌ Unknown option: $1"; usage ;;
+    esac
+  done
+fi
 
 # Backward compatibility: If IP="xxx" is used, add it to the IPS array
 if [ -n "$IP" ]; then IPS+=("$IP"); fi
 
 PROMETHEUS_URL="http://localhost:9090"
 OUTPUT_DIR="./metrics_export"
-STEP="15s"
+STEP="${CUSTOM_STEP:-15s}"
 
 # Check and install required packages if missing
 for cmd in curl jq; do
