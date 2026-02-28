@@ -343,20 +343,24 @@ EOF
     # NVIDIA open kernel modules do NOT support vGPU configurations.
     # Cloud instances (AWS g6, Azure NCas, etc.) often expose GPUs as vGPU,
     # which requires proprietary (closed-source) kernel modules.
-    # Detect vGPU by checking PCI subsystem or kernel module signature.
+    # Detect vGPU by checking for GRID/vGPU branding, mediated devices, or
+    # NVIDIA driver vGPU indicators. Avoid relying on PCI class alone (e.g. "3D controller").
     IS_VGPU=false
-    # Method 1: Check for vGPU PCI subsystem class (0x0302 = 3D controller, common for vGPU)
-    # vGPU guests typically show "3D controller" instead of "VGA compatible controller"
-    if sudo lspci 2>/dev/null | grep -i nvidia | grep -qi "3d controller"; then
+    # Method 1: Check for NVIDIA GRID/vGPU branding in lspci device description
+    if sudo lspci -nn 2>/dev/null | grep -i nvidia | grep -Eqi "GRID|vGPU"; then
         IS_VGPU=true
     fi
-    # Method 2: Check for NVIDIA GRID/vGPU device files or modules
+    # Method 2: Check for mediated-device (mdev) instances, commonly used for vGPU
+    if [ -d /sys/bus/mdev/devices ] && ls -1 /sys/bus/mdev/devices 2>/dev/null | grep -q .; then
+        IS_VGPU=true
+    fi
+    # Method 3: Check for NVIDIA GRID/vGPU device files or modules (after driver install)
     if [ -d /proc/driver/nvidia/gpus ] && grep -q -ri "vGPU\|GRID" /proc/driver/nvidia/ 2>/dev/null; then
         IS_VGPU=true
     fi
 
     if [ "$IS_VGPU" = true ]; then
-        echo "  ⚠ vGPU detected (3D controller). Open kernel modules are NOT supported."
+        echo "  ⚠ vGPU environment detected. Open kernel modules are NOT supported."
         echo "  → Using proprietary (closed-source) driver."
     fi
 

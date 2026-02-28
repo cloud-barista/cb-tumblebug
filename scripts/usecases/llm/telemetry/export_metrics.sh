@@ -65,15 +65,30 @@ elif [ $# -eq 1 ] && [[ "$1" != --* ]] && [ "$1" != "-h" ]; then
   source "$CONFIG_FILE"
 else
   # CLI argument mode
+  # Helper: require a non-empty value for a flag
+  require_arg() { [ $# -ge 3 ] && [ -n "$3" ] || { echo "❌ Error: $2 requires a non-empty value."; exit 1; }; }
   while [ $# -gt 0 ]; do
     case "$1" in
       -h|--help) usage ;;
-      --minutes) MINUTES="$2"; shift 2 ;;
+      --minutes)
+        require_arg $# "$1" "$2"
+        if ! [[ "$2" =~ ^[1-9][0-9]*$ ]]; then
+          echo "❌ Error: --minutes must be a positive integer (e.g., 60)."
+          exit 1
+        fi
+        MINUTES="$2"; shift 2 ;;
       --ips)
+        require_arg $# "$1" "$2"
         IFS=',' read -ra IPS <<< "$2"; shift 2 ;;
       --metrics)
+        require_arg $# "$1" "$2"
         IFS=',' read -ra METRICS <<< "$2"; shift 2 ;;
       --step)
+        require_arg $# "$1" "$2"
+        if ! [[ "$2" =~ ^([0-9]+(ms|s|m|h|d|w|y))+$ ]]; then
+          echo "❌ Error: --step value '$2' is not a valid Prometheus duration (e.g., 15s, 5m, 1h30m)."
+          exit 1
+        fi
         CUSTOM_STEP="$2"; shift 2 ;;
       *)
         echo "❌ Unknown option: $1"; usage ;;

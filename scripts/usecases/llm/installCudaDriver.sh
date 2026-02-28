@@ -318,17 +318,25 @@ sudo apt-get update -qq
 # Cloud instances (AWS g6, Azure NCas, etc.) often expose GPUs as vGPU,
 # which requires proprietary (closed-source) kernel modules.
 IS_VGPU=false
-# Method 1: vGPU guests typically show "3D controller" instead of "VGA compatible controller"
-if sudo lspci 2>/dev/null | grep -i nvidia | grep -qi "3d controller"; then
+# Method 1: Check PCI descriptions for explicit NVIDIA GRID/vGPU identifiers
+if sudo lspci -nnk 2>/dev/null | grep -i nvidia | grep -Eqi "vGPU|GRID"; then
     IS_VGPU=true
 fi
-# Method 2: Check for NVIDIA GRID/vGPU device files
+# Method 2: Check for NVIDIA GRID/vGPU signals in driver state (after driver is present)
 if [ -d /proc/driver/nvidia/gpus ] && grep -q -ri "vGPU\|GRID" /proc/driver/nvidia/ 2>/dev/null; then
     IS_VGPU=true
 fi
+# Method 3: Check for mediated device (mdev) / vGPU VFIO indicators
+if [ "$IS_VGPU" = false ]; then
+    if [ -d /sys/bus/mdev/devices ] && ls /sys/bus/mdev/devices 2>/dev/null | grep -q .; then
+        IS_VGPU=true
+    elif lsmod 2>/dev/null | grep -qi "nvidia_vgpu_vfio"; then
+        IS_VGPU=true
+    fi
+fi
 
 if [ "$IS_VGPU" = true ]; then
-    echo "  ⚠ vGPU detected (3D controller). Open kernel modules are NOT supported."
+    echo "  ⚠ vGPU environment detected (NVIDIA GRID/vGPU or mediated device). Open kernel modules are NOT supported."
     echo "  → Using proprietary (closed-source) driver."
 fi
 
