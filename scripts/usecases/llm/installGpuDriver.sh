@@ -75,6 +75,7 @@ sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock \
 # ============================================================
 AUTO_REBOOT=true
 GPU_TYPE=""        # empty = auto-detect
+FORCE_VGPU=false   # --vgpu flag: force proprietary driver (for fractional/vGPU instances)
 
 # NVIDIA config
 INSTALL_TOOLKIT=false
@@ -101,6 +102,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-reboot)
             AUTO_REBOOT=false
+            shift
+            ;;
+        --vgpu)
+            FORCE_VGPU=true
             shift
             ;;
         --with-toolkit)
@@ -130,6 +135,8 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Common options:"
             echo "  --gpu TYPE         GPU type: nvidia or amd (default: auto-detect)"
+            echo "  --vgpu             Force proprietary driver for fractional/vGPU instances"
+            echo "                     (e.g., AWS g6f, Azure NCas_T4_v3 fractional)"
             echo "  --no-reboot        Skip automatic reboot after installation"
             echo "  -h, --help         Show this help message"
             echo ""
@@ -343,20 +350,50 @@ EOF
     # NVIDIA open kernel modules do NOT support vGPU configurations.
     # Cloud instances (AWS g6, Azure NCas, etc.) often expose GPUs as vGPU,
     # which requires proprietary (closed-source) kernel modules.
-    # Detect vGPU by checking for GRID/vGPU branding, mediated devices, or
-    # NVIDIA driver vGPU indicators. Avoid relying on PCI class alone (e.g. "3D controller").
+    # Detect vGPU by checking for GRID/vGPU branding, mediated devices,
+    # or NVIDIA driver vGPU indicators.
+    # Avoid relying on PCI class alone (e.g. "3D controller").
     IS_VGPU=false
+    # If --vgpu flag was passed, skip auto-detection entirely
+    if [ "$FORCE_VGPU" = true ]; then
+        IS_VGPU=true
+        echo "  → --vgpu flag set: forcing proprietary driver."
+    fi
     # Method 1: Check for NVIDIA GRID/vGPU branding in lspci device description
-    if sudo lspci -nn 2>/dev/null | grep -i nvidia | grep -Eqi "GRID|vGPU"; then
+    if [ "$IS_VGPU" = false ] && sudo lspci -nn 2>/dev/null | grep -i nvidia | grep -Eqi "GRID|vGPU"; then
         IS_VGPU=true
     fi
     # Method 2: Check for mediated-device (mdev) instances, commonly used for vGPU
-    if [ -d /sys/bus/mdev/devices ] && ls -1 /sys/bus/mdev/devices 2>/dev/null | grep -q .; then
+    if [ "$IS_VGPU" = false ] && [ -d /sys/bus/mdev/devices ] && ls -1 /sys/bus/mdev/devices 2>/dev/null | grep -q .; then
         IS_VGPU=true
     fi
     # Method 3: Check for NVIDIA GRID/vGPU device files or modules (after driver install)
-    if [ -d /proc/driver/nvidia/gpus ] && grep -q -ri "vGPU\|GRID" /proc/driver/nvidia/ 2>/dev/null; then
+    if [ "$IS_VGPU" = false ] && [ -d /proc/driver/nvidia/gpus ] && grep -q -ri "vGPU\\|GRID" /proc/driver/nvidia/ 2>/dev/null; then
         IS_VGPU=true
+    fi
+    # Method 4: Detect fractional/vGPU via PCI BAR (memory region) size.
+    # Fractional vGPU instances (e.g., AWS g6f) expose only a slice of the
+    # GPU framebuffer, resulting in a much smaller PCI BAR than full passthrough.
+    # Full datacenter GPUs have BAR1 >= 16GB (T4=16GB, L4=24GB, A100=64GB).
+    # Fractional vGPUs typically show BAR < 8GB (e.g., g6f.2xlarge ≈ 5.6GB).
+    # This method is CSP-agnostic — works on AWS, GCP, Azure, or any provider.
+    if [ "$IS_VGPU" = false ]; then
+        # Get the largest NVIDIA GPU PCI memory BAR size in MB
+        GPU_BAR_MB=0
+        while IFS= read -r pci_addr; do
+            # Parse 'Memory at ... [size=NNG]' or '[size=NNM]' from lspci -v
+            BAR_SIZES=$(sudo lspci -v -s "$pci_addr" 2>/dev/null | grep -oP 'size=\K[0-9]+[MG]' || true)
+            for sz in $BAR_SIZES; do
+                val=${sz%[MG]}
+                [[ "$sz" == *G ]] && val=$((val * 1024))
+                [ "$val" -gt "$GPU_BAR_MB" ] 2>/dev/null && GPU_BAR_MB=$val
+            done
+        done < <(sudo lspci -D 2>/dev/null | grep -i nvidia | grep -i '3d controller\|vga compatible' | awk '{print $1}')
+        # Threshold: 8GB (8192MB). All full datacenter GPUs have BAR >= 16GB.
+        if [ "$GPU_BAR_MB" -gt 0 ] && [ "$GPU_BAR_MB" -lt 8192 ]; then
+            IS_VGPU=true
+            echo "  ⚠ Fractional GPU detected (PCI BAR: ${GPU_BAR_MB}MB < 8GB threshold)."
+        fi
     fi
 
     if [ "$IS_VGPU" = true ]; then
