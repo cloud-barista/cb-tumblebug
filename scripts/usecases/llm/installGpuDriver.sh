@@ -351,7 +351,7 @@ EOF
     # Cloud instances (AWS g6, Azure NCas, etc.) often expose GPUs as vGPU,
     # which requires proprietary (closed-source) kernel modules.
     # Detect vGPU by checking for GRID/vGPU branding, mediated devices,
-    # cloud instance metadata, or NVIDIA driver vGPU indicators.
+    # or NVIDIA driver vGPU indicators.
     # Avoid relying on PCI class alone (e.g. "3D controller").
     IS_VGPU=false
     # If --vgpu flag was passed, skip auto-detection entirely
@@ -364,11 +364,11 @@ EOF
         IS_VGPU=true
     fi
     # Method 2: Check for mediated-device (mdev) instances, commonly used for vGPU
-    if [ -d /sys/bus/mdev/devices ] && ls -1 /sys/bus/mdev/devices 2>/dev/null | grep -q .; then
+    if [ "$IS_VGPU" = false ] && [ -d /sys/bus/mdev/devices ] && ls -1 /sys/bus/mdev/devices 2>/dev/null | grep -q .; then
         IS_VGPU=true
     fi
     # Method 3: Check for NVIDIA GRID/vGPU device files or modules (after driver install)
-    if [ -d /proc/driver/nvidia/gpus ] && grep -q -ri "vGPU\\|GRID" /proc/driver/nvidia/ 2>/dev/null; then
+    if [ "$IS_VGPU" = false ] && [ -d /proc/driver/nvidia/gpus ] && grep -q -ri "vGPU\\|GRID" /proc/driver/nvidia/ 2>/dev/null; then
         IS_VGPU=true
     fi
     # Method 4: Detect fractional/vGPU via PCI BAR (memory region) size.

@@ -335,7 +335,7 @@ if [ "$IS_VGPU" = false ] && sudo lspci -nnk 2>/dev/null | grep -i nvidia | grep
     IS_VGPU=true
 fi
 # Method 2: Check for NVIDIA GRID/vGPU signals in driver state (after driver is present)
-if [ -d /proc/driver/nvidia/gpus ] && grep -q -ri "vGPU\|GRID" /proc/driver/nvidia/ 2>/dev/null; then
+if [ "$IS_VGPU" = false ] && [ -d /proc/driver/nvidia/gpus ] && grep -q -ri "vGPU\|GRID" /proc/driver/nvidia/ 2>/dev/null; then
     IS_VGPU=true
 fi
 # Method 3: Check for mediated device (mdev) / vGPU VFIO indicators
