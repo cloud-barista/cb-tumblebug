@@ -95,6 +95,7 @@ AUTO_REBOOT=true
 INSTALL_TOOLKIT=false
 INSTALL_CONTAINER_TOOLKIT=true
 CUDA_VERSION=""  # Empty = latest, or specify like "12-6"
+FORCE_VGPU=false   # --vgpu flag: force proprietary driver (for fractional/vGPU instances)
 
 # Common apt-get options to suppress all interactive prompts
 APT_OPTS=(-o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold")
@@ -107,6 +108,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --no-reboot)
             AUTO_REBOOT=false
+            shift
+            ;;
+        --vgpu)
+            FORCE_VGPU=true
             shift
             ;;
         --with-toolkit)
@@ -127,6 +132,8 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: $0 [OPTIONS]"
             echo ""
             echo "Options:"
+            echo "  --vgpu             Force proprietary driver for fractional/vGPU instances"
+            echo "                     (e.g., AWS g6f, Azure NCas_T4_v3 fractional)"
             echo "  --with-toolkit     Install CUDA Toolkit for development (nvcc, libraries)"
             echo "  --driver-only      Install driver only, skip Container Toolkit"
             echo "  --cuda-version VER Specify CUDA version (e.g., 12-6). Default: latest"
@@ -318,8 +325,13 @@ sudo apt-get update -qq
 # Cloud instances (AWS g6, Azure NCas, etc.) often expose GPUs as vGPU,
 # which requires proprietary (closed-source) kernel modules.
 IS_VGPU=false
+# If --vgpu flag was passed, skip auto-detection entirely
+if [ "$FORCE_VGPU" = true ]; then
+    IS_VGPU=true
+    echo "  → --vgpu flag set: forcing proprietary driver."
+fi
 # Method 1: Check PCI descriptions for explicit NVIDIA GRID/vGPU identifiers
-if sudo lspci -nnk 2>/dev/null | grep -i nvidia | grep -Eqi "vGPU|GRID"; then
+if [ "$IS_VGPU" = false ] && sudo lspci -nnk 2>/dev/null | grep -i nvidia | grep -Eqi "vGPU|GRID"; then
     IS_VGPU=true
 fi
 # Method 2: Check for NVIDIA GRID/vGPU signals in driver state (after driver is present)
@@ -334,9 +346,33 @@ if [ "$IS_VGPU" = false ]; then
         IS_VGPU=true
     fi
 fi
+# Method 4: Detect fractional/vGPU via PCI BAR (memory region) size.
+# Fractional vGPU instances (e.g., AWS g6f) expose only a slice of the
+# GPU framebuffer, resulting in a much smaller PCI BAR than full passthrough.
+# Full datacenter GPUs have BAR1 >= 16GB (T4=16GB, L4=24GB, A100=64GB).
+# Fractional vGPUs typically show BAR < 8GB (e.g., g6f.2xlarge ≈ 5.6GB).
+# This method is CSP-agnostic — works on AWS, GCP, Azure, or any provider.
+if [ "$IS_VGPU" = false ]; then
+    # Get the largest NVIDIA GPU PCI memory BAR size in MB
+    GPU_BAR_MB=0
+    while IFS= read -r pci_addr; do
+        # Parse 'Memory at ... [size=NNG]' or '[size=NNM]' from lspci -v
+        BAR_SIZES=$(sudo lspci -v -s "$pci_addr" 2>/dev/null | grep -oP 'size=\K[0-9]+[MG]' || true)
+        for sz in $BAR_SIZES; do
+            val=${sz%[MG]}
+            [[ "$sz" == *G ]] && val=$((val * 1024))
+            [ "$val" -gt "$GPU_BAR_MB" ] 2>/dev/null && GPU_BAR_MB=$val
+        done
+    done < <(sudo lspci -D 2>/dev/null | grep -i nvidia | grep -i '3d controller\|vga compatible' | awk '{print $1}')
+    # Threshold: 8GB (8192MB). All full datacenter GPUs have BAR >= 16GB.
+    if [ "$GPU_BAR_MB" -gt 0 ] && [ "$GPU_BAR_MB" -lt 8192 ]; then
+        IS_VGPU=true
+        echo "  ⚠ Fractional GPU detected (PCI BAR: ${GPU_BAR_MB}MB < 8GB threshold)."
+    fi
+fi
 
 if [ "$IS_VGPU" = true ]; then
-    echo "  ⚠ vGPU environment detected (NVIDIA GRID/vGPU or mediated device). Open kernel modules are NOT supported."
+    echo "  ⚠ vGPU environment detected. Open kernel modules are NOT supported."
     echo "  → Using proprietary (closed-source) driver."
 fi
 
