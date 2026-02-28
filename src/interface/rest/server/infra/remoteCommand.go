@@ -858,7 +858,7 @@ func RestGetCmdMciStream(c echo.Context) error {
 			}
 
 			eventCount++
-			log.Debug().Str("xRequestId", xRequestId).Str("eventType", string(event.Type)).Int("eventCount", eventCount).Msg("Sending SSE event to client")
+			// log.Debug().Str("xRequestId", xRequestId).Str("eventType", string(event.Type)).Int("eventCount", eventCount).Msg("Sending SSE event to client")
 
 			// Write SSE format: "data: {json}\n\n"
 			fmt.Fprint(c.Response(), "data: ")
