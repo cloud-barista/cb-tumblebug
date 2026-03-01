@@ -126,9 +126,12 @@ func ConvertSpiderImageToTumblebugImage(nsId, connConfig string, spiderImage mod
 		tumblebugImage.IsGPUImage = true
 	}
 	// Check if this is a Kubernetes image
-	if common.IsK8sImage(searchStr) {
-		tumblebugImage.InfraType = "k8s|kubernetes|container"
-		tumblebugImage.IsKubernetesImage = true
+	// AWS/GCP do not use imageId for K8s node creation; skip keyword-based detection.
+	// IsKubernetesImage=true for AWS/GCP is set only via cloudimage.csv asset loading.
+	if providerName != csp.AWS && providerName != csp.GCP {
+		if common.IsK8sImage(searchStr) {
+			tumblebugImage.IsKubernetesImage = true
+		}
 	}
 	tumblebugImage.ImageStatus = spiderImage.ImageStatus
 	// Check if this is a deprecated image
@@ -1245,6 +1248,12 @@ func createBasicImageInfoFromCSV(nsId, providerName, regionName, cspImageName, c
 	// Set infra type
 	imageInfo.InfraType = expandInfraType(infraType)
 
+	// AWS/GCP rows registered in cloudimage.csv are always K8s node image types.
+	// They are not real imageIds but type identifiers (ami-type / image-type).
+	if strings.EqualFold(providerName, csp.AWS) || strings.EqualFold(providerName, csp.GCP) {
+		imageInfo.IsKubernetesImage = true
+	}
+
 	return imageInfo
 }
 
@@ -1289,7 +1298,11 @@ func mergeCSPDetails(target *model.ImageInfo, source *model.ImageInfo) {
 	target.CreationDate = source.CreationDate
 	target.ImageStatus = source.ImageStatus
 	target.IsGPUImage = source.IsGPUImage
-	target.IsKubernetesImage = source.IsKubernetesImage
+	// Do not overwrite IsKubernetesImage for AWS/GCP CSV-loaded images.
+	// Their IsKubernetesImage=true is set by policy (cloudimage.csv), not by CSP lookup.
+	if !strings.EqualFold(target.ProviderName, csp.AWS) && !strings.EqualFold(target.ProviderName, csp.GCP) {
+		target.IsKubernetesImage = source.IsKubernetesImage
+	}
 	target.Details = source.Details
 }
 
@@ -1299,6 +1312,12 @@ func updateExistingImageFromCSV(existingImage model.ImageInfo, osType, descripti
 	existingImage.Description = description
 	existingImage.InfraType = expandInfraType(infraType)
 	existingImage.SystemLabel = model.StrFromAssets
+
+	// Re-apply policy: AWS/GCP CSV-registered images are always K8s node image types.
+	if strings.EqualFold(existingImage.ProviderName, csp.AWS) || strings.EqualFold(existingImage.ProviderName, csp.GCP) {
+		existingImage.IsKubernetesImage = true
+	}
+
 	return existingImage
 }
 
